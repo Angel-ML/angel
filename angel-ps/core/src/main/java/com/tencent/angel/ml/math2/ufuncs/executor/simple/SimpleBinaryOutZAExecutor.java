@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -19,16 +19,49 @@
 package com.tencent.angel.ml.math2.ufuncs.executor.simple;
 
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.storage.IntDoubleSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntDoubleVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntFloatSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntFloatVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntIntSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntIntVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntLongSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntLongVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongDoubleSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongDoubleVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongFloatSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongFloatVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongIntSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongIntVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongLongSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongLongVectorStorage;
+import com.tencent.angel.ml.math2.ufuncs.executor.StorageSwitch;
 import com.tencent.angel.ml.math2.ufuncs.expression.Binary;
-import com.tencent.angel.ml.math2.vector.*;
-import it.unimi.dsi.fastutil.ints.*;
-import it.unimi.dsi.fastutil.longs.*;
-import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import com.tencent.angel.ml.math2.utils.ArrayCopy;
 import com.tencent.angel.ml.math2.utils.Constant;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.IntDummyVector;
+import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.ml.math2.vector.IntIntVector;
+import com.tencent.angel.ml.math2.vector.IntLongVector;
+import com.tencent.angel.ml.math2.vector.LongDoubleVector;
+import com.tencent.angel.ml.math2.vector.LongDummyVector;
+import com.tencent.angel.ml.math2.vector.LongFloatVector;
+import com.tencent.angel.ml.math2.vector.LongIntVector;
+import com.tencent.angel.ml.math2.vector.LongLongVector;
+import com.tencent.angel.ml.math2.vector.Vector;
+import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import it.unimi.dsi.fastutil.ints.Int2FloatMap;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2LongMap;
+import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
+import it.unimi.dsi.fastutil.longs.Long2FloatMap;
+import it.unimi.dsi.fastutil.longs.Long2IntMap;
+import it.unimi.dsi.fastutil.longs.Long2LongMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 public class SimpleBinaryOutZAExecutor {
+
   public static Vector apply(Vector v1, Vector v2, Binary op) {
     if (v1 instanceof IntDoubleVector && v2 instanceof IntDoubleVector) {
       return apply((IntDoubleVector) v1, (IntDoubleVector) v2, op);
@@ -92,10 +125,9 @@ public class SimpleBinaryOutZAExecutor {
   }
 
   private static Vector apply(IntDoubleVector v1, IntDoubleVector v2, Binary op) {
-    IntDoubleVector res;
+    IntDoubleVectorStorage newStorage = (IntDoubleVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isDense() && v2.isDense()) {
-      res = v1.copy();
-      double[] resValues = res.getStorage().getValues();
+      double[] resValues = newStorage.getValues();
       double[] v1Values = v1.getStorage().getValues();
       double[] v2Values = v2.getStorage().getValues();
       int length = v1Values.length;
@@ -103,8 +135,9 @@ public class SimpleBinaryOutZAExecutor {
         resValues[idx] = op.apply(v1Values[idx], v2Values[idx]);
       }
     } else if (v1.isDense() && v2.isSparse()) {
-      if (op.isKeepStorage() || v2.size() > Constant.sparseDenseStorageThreshold * v2.getDim()) {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptyDense();
+      if ((v2.isSparse() && v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) ||
+          (v2.isSorted() && v2.getSize() >= Constant.sortedDenseStorageThreshold * v2.dim())) {
+        // dense preferred, KeepStorage is guaranteed
         double[] newValues = newStorage.getValues();
         double[] v1Values = v1.getStorage().getValues();
         ObjectIterator<Int2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
@@ -113,23 +146,30 @@ public class SimpleBinaryOutZAExecutor {
           int idx = entry.getIntKey();
           newValues[idx] = op.apply(v1Values[idx], entry.getDoubleValue());
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
-        double[] v1Values = v1.getStorage().getValues();
-        ObjectIterator<Int2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Int2DoubleMap.Entry entry = iter.next();
-          int idx = entry.getIntKey();
-          newStorage.set(idx, op.apply(v1Values[idx], entry.getDoubleValue()));
+        if (op.isKeepStorage()) {
+          double[] newValues = newStorage.getValues();
+          double[] v1Values = v1.getStorage().getValues();
+          ObjectIterator<Int2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
+          while (iter.hasNext()) {
+            Int2DoubleMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            newValues[idx] = op.apply(v1Values[idx], entry.getDoubleValue());
+          }
+        } else {
+          double[] v1Values = v1.getStorage().getValues();
+          ObjectIterator<Int2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
+          while (iter.hasNext()) {
+            Int2DoubleMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            newStorage.set(idx, op.apply(v1Values[idx], entry.getDoubleValue()));
+          }
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isDense() && v2.isSorted()) {
-      if (op.isKeepStorage() || v2.size() > Constant.sortedDenseStorageThreshold * v2.getDim()) {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptyDense();
+      if ((v2.isSparse() && v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) ||
+          (v2.isSorted() && v2.getSize() >= Constant.sortedDenseStorageThreshold * v2.dim())) {
+        // dense preferred, KeepStorage is guaranteed
         double[] newValues = newStorage.getValues();
         double[] v1Values = v1.getStorage().getValues();
         int[] vIndices = v2.getStorage().getIndices();
@@ -139,30 +179,31 @@ public class SimpleBinaryOutZAExecutor {
           int idx = vIndices[i];
           newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptySorted((int) (v2.size()));
-        int[] resIndices = newStorage.getIndices();
-        double[] resValues = newStorage.getValues();
-
-        double[] v1Values = v1.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        double[] v2Values = v2.getStorage().getValues();
-        int size = v2.size();
-        for (int i = 0; i < size; i++) {
-          int idx = vIndices[i];
-          resIndices[i] = idx;
-          resValues[i] = op.apply(v1Values[idx], v2Values[i]);
+        if (op.isKeepStorage()) {
+          double[] newValues = newStorage.getValues();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] vIndices = v2.getStorage().getIndices();
+          double[] v2Values = v2.getStorage().getValues();
+          int size = v2.size();
+          for (int i = 0; i < size; i++) {
+            int idx = vIndices[i];
+            newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
+          }
+        } else {
+          double[] v1Values = v1.getStorage().getValues();
+          int[] vIndices = v2.getStorage().getIndices();
+          double[] v2Values = v2.getStorage().getValues();
+          int size = v2.size();
+          for (int i = 0; i < size; i++) {
+            int idx = vIndices[i];
+            newStorage.set(idx, op.apply(v1Values[idx], v2Values[i]));
+          }
         }
-
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse() && v2.isDense()) {
-      if (op.isKeepStorage() || v1.size() < Constant.sparseDenseStorageThreshold * v1.getDim()) {
-        res = v1.copy();
-        ObjectIterator<Int2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      if (op.isKeepStorage() || v1.size() <= Constant.sparseDenseStorageThreshold * v1.getDim()) {
+        ObjectIterator<Int2DoubleMap.Entry> iter = newStorage.entryIterator();
         double[] v2Values = v2.getStorage().getValues();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
@@ -170,7 +211,6 @@ public class SimpleBinaryOutZAExecutor {
           entry.setValue(op.apply(entry.getDoubleValue(), v2Values[idx]));
         }
       } else {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptyDense();
         double[] newValues = newStorage.getValues();
         ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         double[] v2Values = v2.getStorage().getValues();
@@ -179,23 +219,21 @@ public class SimpleBinaryOutZAExecutor {
           int idx = entry.getIntKey();
           newValues[idx] = op.apply(entry.getDoubleValue(), v2Values[idx]);
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSorted() && v2.isDense()) {
-      if (op.isKeepStorage() || v1.size() < Constant.sortedDenseStorageThreshold * v1.getDim()) {
-        res = v1.copy();
-        double[] resValues = res.getStorage().getValues();
+      if (op.isKeepStorage() || v1.size() <= Constant.sortedDenseStorageThreshold * v1.getDim()) {
+        double[] resValues = newStorage.getValues();
+        int[] resIndices = newStorage.getIndices();
 
         int[] v1Indices = v1.getStorage().getIndices();
         double[] v1Values = v1.getStorage().getValues();
         double[] v2Values = v2.getStorage().getValues();
         int size = v1.size();
         for (int i = 0; i < size; i++) {
+          resIndices[i] = v1Indices[i];
           resValues[i] = op.apply(v1Values[i], v2Values[v1Indices[i]]);
         }
       } else {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptyDense();
         double[] newValues = newStorage.getValues();
         int[] v1Indices = v1.getStorage().getIndices();
         double[] v1Values = v1.getStorage().getValues();
@@ -205,12 +243,11 @@ public class SimpleBinaryOutZAExecutor {
           int idx = v1Indices[k];
           newValues[idx] = op.apply(v1Values[k], v2Values[idx]);
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse() && v2.isSparse()) {
-      if (v1.size() > v2.size()) {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
         IntDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -220,74 +257,148 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getDoubleValue()));
           }
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Int2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         IntDoubleVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getDoubleValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        ObjectIterator<Int2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
+        IntDoubleVectorStorage v1storage = v1.getStorage();
+        while (iter.hasNext()) {
+          Int2DoubleMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v1storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), entry.getDoubleValue()));
+          }
+        }
+      } else {// preferred dense
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
+        IntDoubleVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Int2DoubleMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (op.isKeepStorage() || v1.size() < v2.size() * Constant.sparseSortedThreshold) {
-        res = v1.copy();
-        ObjectIterator<Int2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        int[] v2Indices = v2.getStorage().getIndices();
+        double[] v2Values = v2.getStorage().getValues();
+
+        IntDoubleVectorStorage storage = v1.getStorage();
+        int size = v2.size();
+        for (int i = 0; i < size; i++) {
+          int idx = v2Indices[i];
+          if (storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
+          }
+        }
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         IntDoubleVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getDoubleValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else {
-        int[] vIndices = v2.getStorage().getIndices();
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        int[] v2Indices = v2.getStorage().getIndices();
         double[] v2Values = v2.getStorage().getValues();
-        int[] resIndices = ArrayCopy.copy(vIndices);
-        double[] resValues = new double[v2Values.length];
+
         IntDoubleVectorStorage storage = v1.getStorage();
         int size = v2.size();
         for (int i = 0; i < size; i++) {
-          int idx = vIndices[i];
+          int idx = v2Indices[i];
           if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(storage.get(idx), v2Values[i]);
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-
-        IntDoubleVectorStorage newStorage =
-          new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else { // preferred dense
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
+        IntDoubleVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Int2DoubleMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (op.isKeepStorage() || v1.size() * Constant.sparseSortedThreshold < v2.size()) {
-        res = v1.copy();
-        double[] resValues = res.getStorage().getValues();
-
-        int[] v1Indices = v1.getStorage().getIndices();
-        double[] v1Values = v1.getStorage().getValues();
-        IntDoubleVectorStorage storage = v2.getStorage();
-        int size = v1.size();
-        for (int i = 0; i < size; i++) {
-          int idx = v1Indices[i];
-          if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(v1Values[i], storage.get(idx));
-          } else {
-            resValues[i] = 0;
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v2.size
+          ObjectIterator<Int2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
+          IntDoubleVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Int2DoubleMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getDoubleValue()));
+            }
+          }
+        } else {//sparse preferred
+          ObjectIterator<Int2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
+          IntDoubleVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Int2DoubleMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getDoubleValue()));
+            }
           }
         }
-      } else {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          int[] resIndices = newStorage.getIndices();
+          double[] resValues = newStorage.getValues();
+
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          IntDoubleVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          IntDoubleVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Int2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
         IntDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -297,8 +408,34 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1storage.get(idx), entry.getDoubleValue()));
           }
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else {//dense preferred
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          int[] resIndices = newStorage.getIndices();
+          double[] resValues = newStorage.getValues();
+
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          IntDoubleVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {//dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          IntDoubleVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
       int v1Pointor = 0;
@@ -306,46 +443,172 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (size1 > size2) {
-        int[] v1Indices = v1.getStorage().getIndices();
-        double[] v1Values = v1.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        double[] v2Values = v2.getStorage().getValues();
-        int[] resIndices = ArrayCopy.copy(vIndices);
-        double[] resValues = new double[v2Values.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {//sorted v2.size
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          double[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v2Indices);
+          double[] resValues = new double[v2Values.length];
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (vIndices[v1Pointor] == v1Indices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          double[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-        IntDoubleVectorStorage newStorage =
-          new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        int[] resIndices = res.getStorage().getIndices();
-        double[] resValues = res.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        double[] v2Values = v2.getStorage().getValues();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          double[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          double[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// sparse preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          double[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {// sorted v2.size
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          double[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v2Indices);
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          double[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          double[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          double[] v2Values = v2.getStorage().getValues();
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       }
@@ -353,14 +616,14 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return res;
+    return new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   private static Vector apply(IntDoubleVector v1, IntFloatVector v2, Binary op) {
-    IntDoubleVector res;
+    IntDoubleVectorStorage newStorage = (IntDoubleVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isDense() && v2.isDense()) {
-      res = v1.copy();
-      double[] resValues = res.getStorage().getValues();
+      double[] resValues = newStorage.getValues();
       double[] v1Values = v1.getStorage().getValues();
       float[] v2Values = v2.getStorage().getValues();
       int length = v1Values.length;
@@ -368,8 +631,9 @@ public class SimpleBinaryOutZAExecutor {
         resValues[idx] = op.apply(v1Values[idx], v2Values[idx]);
       }
     } else if (v1.isDense() && v2.isSparse()) {
-      if (op.isKeepStorage() || v2.size() > Constant.sparseDenseStorageThreshold * v2.getDim()) {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptyDense();
+      if ((v2.isSparse() && v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) ||
+          (v2.isSorted() && v2.getSize() >= Constant.sortedDenseStorageThreshold * v2.dim())) {
+        // dense preferred, KeepStorage is guaranteed
         double[] newValues = newStorage.getValues();
         double[] v1Values = v1.getStorage().getValues();
         ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
@@ -378,23 +642,30 @@ public class SimpleBinaryOutZAExecutor {
           int idx = entry.getIntKey();
           newValues[idx] = op.apply(v1Values[idx], entry.getFloatValue());
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
-        double[] v1Values = v1.getStorage().getValues();
-        ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Int2FloatMap.Entry entry = iter.next();
-          int idx = entry.getIntKey();
-          newStorage.set(idx, op.apply(v1Values[idx], entry.getFloatValue()));
+        if (op.isKeepStorage()) {
+          double[] newValues = newStorage.getValues();
+          double[] v1Values = v1.getStorage().getValues();
+          ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
+          while (iter.hasNext()) {
+            Int2FloatMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            newValues[idx] = op.apply(v1Values[idx], entry.getFloatValue());
+          }
+        } else {
+          double[] v1Values = v1.getStorage().getValues();
+          ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
+          while (iter.hasNext()) {
+            Int2FloatMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            newStorage.set(idx, op.apply(v1Values[idx], entry.getFloatValue()));
+          }
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isDense() && v2.isSorted()) {
-      if (op.isKeepStorage() || v2.size() > Constant.sortedDenseStorageThreshold * v2.getDim()) {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptyDense();
+      if ((v2.isSparse() && v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) ||
+          (v2.isSorted() && v2.getSize() >= Constant.sortedDenseStorageThreshold * v2.dim())) {
+        // dense preferred, KeepStorage is guaranteed
         double[] newValues = newStorage.getValues();
         double[] v1Values = v1.getStorage().getValues();
         int[] vIndices = v2.getStorage().getIndices();
@@ -404,30 +675,31 @@ public class SimpleBinaryOutZAExecutor {
           int idx = vIndices[i];
           newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptySorted((int) (v2.size()));
-        int[] resIndices = newStorage.getIndices();
-        double[] resValues = newStorage.getValues();
-
-        double[] v1Values = v1.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        float[] v2Values = v2.getStorage().getValues();
-        int size = v2.size();
-        for (int i = 0; i < size; i++) {
-          int idx = vIndices[i];
-          resIndices[i] = idx;
-          resValues[i] = op.apply(v1Values[idx], v2Values[i]);
+        if (op.isKeepStorage()) {
+          double[] newValues = newStorage.getValues();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] vIndices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          int size = v2.size();
+          for (int i = 0; i < size; i++) {
+            int idx = vIndices[i];
+            newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
+          }
+        } else {
+          double[] v1Values = v1.getStorage().getValues();
+          int[] vIndices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          int size = v2.size();
+          for (int i = 0; i < size; i++) {
+            int idx = vIndices[i];
+            newStorage.set(idx, op.apply(v1Values[idx], v2Values[i]));
+          }
         }
-
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse() && v2.isDense()) {
-      if (op.isKeepStorage() || v1.size() < Constant.sparseDenseStorageThreshold * v1.getDim()) {
-        res = v1.copy();
-        ObjectIterator<Int2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      if (op.isKeepStorage() || v1.size() <= Constant.sparseDenseStorageThreshold * v1.getDim()) {
+        ObjectIterator<Int2DoubleMap.Entry> iter = newStorage.entryIterator();
         float[] v2Values = v2.getStorage().getValues();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
@@ -435,7 +707,6 @@ public class SimpleBinaryOutZAExecutor {
           entry.setValue(op.apply(entry.getDoubleValue(), v2Values[idx]));
         }
       } else {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptyDense();
         double[] newValues = newStorage.getValues();
         ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         float[] v2Values = v2.getStorage().getValues();
@@ -444,23 +715,21 @@ public class SimpleBinaryOutZAExecutor {
           int idx = entry.getIntKey();
           newValues[idx] = op.apply(entry.getDoubleValue(), v2Values[idx]);
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSorted() && v2.isDense()) {
-      if (op.isKeepStorage() || v1.size() < Constant.sortedDenseStorageThreshold * v1.getDim()) {
-        res = v1.copy();
-        double[] resValues = res.getStorage().getValues();
+      if (op.isKeepStorage() || v1.size() <= Constant.sortedDenseStorageThreshold * v1.getDim()) {
+        double[] resValues = newStorage.getValues();
+        int[] resIndices = newStorage.getIndices();
 
         int[] v1Indices = v1.getStorage().getIndices();
         double[] v1Values = v1.getStorage().getValues();
         float[] v2Values = v2.getStorage().getValues();
         int size = v1.size();
         for (int i = 0; i < size; i++) {
+          resIndices[i] = v1Indices[i];
           resValues[i] = op.apply(v1Values[i], v2Values[v1Indices[i]]);
         }
       } else {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptyDense();
         double[] newValues = newStorage.getValues();
         int[] v1Indices = v1.getStorage().getIndices();
         double[] v1Values = v1.getStorage().getValues();
@@ -470,12 +739,11 @@ public class SimpleBinaryOutZAExecutor {
           int idx = v1Indices[k];
           newValues[idx] = op.apply(v1Values[k], v2Values[idx]);
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse() && v2.isSparse()) {
-      if (v1.size() > v2.size()) {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
         IntDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -485,74 +753,148 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getFloatValue()));
           }
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Int2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         IntFloatVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getDoubleValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
+        IntDoubleVectorStorage v1storage = v1.getStorage();
+        while (iter.hasNext()) {
+          Int2FloatMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v1storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), entry.getFloatValue()));
+          }
+        }
+      } else {// preferred dense
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
+        IntFloatVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Int2DoubleMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (op.isKeepStorage() || v1.size() < v2.size() * Constant.sparseSortedThreshold) {
-        res = v1.copy();
-        ObjectIterator<Int2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        int[] v2Indices = v2.getStorage().getIndices();
+        float[] v2Values = v2.getStorage().getValues();
+
+        IntDoubleVectorStorage storage = v1.getStorage();
+        int size = v2.size();
+        for (int i = 0; i < size; i++) {
+          int idx = v2Indices[i];
+          if (storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
+          }
+        }
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         IntFloatVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getDoubleValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else {
-        int[] vIndices = v2.getStorage().getIndices();
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        int[] v2Indices = v2.getStorage().getIndices();
         float[] v2Values = v2.getStorage().getValues();
-        int[] resIndices = ArrayCopy.copy(vIndices);
-        double[] resValues = new double[v2Values.length];
+
         IntDoubleVectorStorage storage = v1.getStorage();
         int size = v2.size();
         for (int i = 0; i < size; i++) {
-          int idx = vIndices[i];
+          int idx = v2Indices[i];
           if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(storage.get(idx), v2Values[i]);
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-
-        IntDoubleVectorStorage newStorage =
-          new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else { // preferred dense
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
+        IntFloatVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Int2DoubleMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (op.isKeepStorage() || v1.size() * Constant.sparseSortedThreshold < v2.size()) {
-        res = v1.copy();
-        double[] resValues = res.getStorage().getValues();
-
-        int[] v1Indices = v1.getStorage().getIndices();
-        double[] v1Values = v1.getStorage().getValues();
-        IntFloatVectorStorage storage = v2.getStorage();
-        int size = v1.size();
-        for (int i = 0; i < size; i++) {
-          int idx = v1Indices[i];
-          if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(v1Values[i], storage.get(idx));
-          } else {
-            resValues[i] = 0;
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v2.size
+          ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
+          IntDoubleVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Int2FloatMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getFloatValue()));
+            }
+          }
+        } else {//sparse preferred
+          ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
+          IntDoubleVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Int2FloatMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getFloatValue()));
+            }
           }
         }
-      } else {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          int[] resIndices = newStorage.getIndices();
+          double[] resValues = newStorage.getValues();
+
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          IntFloatVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          IntFloatVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
         IntDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -562,8 +904,34 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1storage.get(idx), entry.getFloatValue()));
           }
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else {//dense preferred
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          int[] resIndices = newStorage.getIndices();
+          double[] resValues = newStorage.getValues();
+
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          IntFloatVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {//dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          IntFloatVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
       int v1Pointor = 0;
@@ -571,46 +939,172 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (size1 > size2) {
-        int[] v1Indices = v1.getStorage().getIndices();
-        double[] v1Values = v1.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        float[] v2Values = v2.getStorage().getValues();
-        int[] resIndices = ArrayCopy.copy(vIndices);
-        double[] resValues = new double[v2Values.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {//sorted v2.size
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v2Indices);
+          double[] resValues = new double[v2Values.length];
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (vIndices[v1Pointor] == v1Indices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-        IntDoubleVectorStorage newStorage =
-          new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        int[] resIndices = res.getStorage().getIndices();
-        double[] resValues = res.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        float[] v2Values = v2.getStorage().getValues();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          double[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// sparse preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {// sorted v2.size
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v2Indices);
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       }
@@ -618,14 +1112,14 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return res;
+    return new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   private static Vector apply(IntDoubleVector v1, IntLongVector v2, Binary op) {
-    IntDoubleVector res;
+    IntDoubleVectorStorage newStorage = (IntDoubleVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isDense() && v2.isDense()) {
-      res = v1.copy();
-      double[] resValues = res.getStorage().getValues();
+      double[] resValues = newStorage.getValues();
       double[] v1Values = v1.getStorage().getValues();
       long[] v2Values = v2.getStorage().getValues();
       int length = v1Values.length;
@@ -633,8 +1127,9 @@ public class SimpleBinaryOutZAExecutor {
         resValues[idx] = op.apply(v1Values[idx], v2Values[idx]);
       }
     } else if (v1.isDense() && v2.isSparse()) {
-      if (op.isKeepStorage() || v2.size() > Constant.sparseDenseStorageThreshold * v2.getDim()) {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptyDense();
+      if ((v2.isSparse() && v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) ||
+          (v2.isSorted() && v2.getSize() >= Constant.sortedDenseStorageThreshold * v2.dim())) {
+        // dense preferred, KeepStorage is guaranteed
         double[] newValues = newStorage.getValues();
         double[] v1Values = v1.getStorage().getValues();
         ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
@@ -643,23 +1138,30 @@ public class SimpleBinaryOutZAExecutor {
           int idx = entry.getIntKey();
           newValues[idx] = op.apply(v1Values[idx], entry.getLongValue());
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
-        double[] v1Values = v1.getStorage().getValues();
-        ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Int2LongMap.Entry entry = iter.next();
-          int idx = entry.getIntKey();
-          newStorage.set(idx, op.apply(v1Values[idx], entry.getLongValue()));
+        if (op.isKeepStorage()) {
+          double[] newValues = newStorage.getValues();
+          double[] v1Values = v1.getStorage().getValues();
+          ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
+          while (iter.hasNext()) {
+            Int2LongMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            newValues[idx] = op.apply(v1Values[idx], entry.getLongValue());
+          }
+        } else {
+          double[] v1Values = v1.getStorage().getValues();
+          ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
+          while (iter.hasNext()) {
+            Int2LongMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            newStorage.set(idx, op.apply(v1Values[idx], entry.getLongValue()));
+          }
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isDense() && v2.isSorted()) {
-      if (op.isKeepStorage() || v2.size() > Constant.sortedDenseStorageThreshold * v2.getDim()) {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptyDense();
+      if ((v2.isSparse() && v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) ||
+          (v2.isSorted() && v2.getSize() >= Constant.sortedDenseStorageThreshold * v2.dim())) {
+        // dense preferred, KeepStorage is guaranteed
         double[] newValues = newStorage.getValues();
         double[] v1Values = v1.getStorage().getValues();
         int[] vIndices = v2.getStorage().getIndices();
@@ -669,30 +1171,31 @@ public class SimpleBinaryOutZAExecutor {
           int idx = vIndices[i];
           newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptySorted((int) (v2.size()));
-        int[] resIndices = newStorage.getIndices();
-        double[] resValues = newStorage.getValues();
-
-        double[] v1Values = v1.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        long[] v2Values = v2.getStorage().getValues();
-        int size = v2.size();
-        for (int i = 0; i < size; i++) {
-          int idx = vIndices[i];
-          resIndices[i] = idx;
-          resValues[i] = op.apply(v1Values[idx], v2Values[i]);
+        if (op.isKeepStorage()) {
+          double[] newValues = newStorage.getValues();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] vIndices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          int size = v2.size();
+          for (int i = 0; i < size; i++) {
+            int idx = vIndices[i];
+            newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
+          }
+        } else {
+          double[] v1Values = v1.getStorage().getValues();
+          int[] vIndices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          int size = v2.size();
+          for (int i = 0; i < size; i++) {
+            int idx = vIndices[i];
+            newStorage.set(idx, op.apply(v1Values[idx], v2Values[i]));
+          }
         }
-
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse() && v2.isDense()) {
-      if (op.isKeepStorage() || v1.size() < Constant.sparseDenseStorageThreshold * v1.getDim()) {
-        res = v1.copy();
-        ObjectIterator<Int2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      if (op.isKeepStorage() || v1.size() <= Constant.sparseDenseStorageThreshold * v1.getDim()) {
+        ObjectIterator<Int2DoubleMap.Entry> iter = newStorage.entryIterator();
         long[] v2Values = v2.getStorage().getValues();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
@@ -700,7 +1203,6 @@ public class SimpleBinaryOutZAExecutor {
           entry.setValue(op.apply(entry.getDoubleValue(), v2Values[idx]));
         }
       } else {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptyDense();
         double[] newValues = newStorage.getValues();
         ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         long[] v2Values = v2.getStorage().getValues();
@@ -709,23 +1211,21 @@ public class SimpleBinaryOutZAExecutor {
           int idx = entry.getIntKey();
           newValues[idx] = op.apply(entry.getDoubleValue(), v2Values[idx]);
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSorted() && v2.isDense()) {
-      if (op.isKeepStorage() || v1.size() < Constant.sortedDenseStorageThreshold * v1.getDim()) {
-        res = v1.copy();
-        double[] resValues = res.getStorage().getValues();
+      if (op.isKeepStorage() || v1.size() <= Constant.sortedDenseStorageThreshold * v1.getDim()) {
+        double[] resValues = newStorage.getValues();
+        int[] resIndices = newStorage.getIndices();
 
         int[] v1Indices = v1.getStorage().getIndices();
         double[] v1Values = v1.getStorage().getValues();
         long[] v2Values = v2.getStorage().getValues();
         int size = v1.size();
         for (int i = 0; i < size; i++) {
+          resIndices[i] = v1Indices[i];
           resValues[i] = op.apply(v1Values[i], v2Values[v1Indices[i]]);
         }
       } else {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptyDense();
         double[] newValues = newStorage.getValues();
         int[] v1Indices = v1.getStorage().getIndices();
         double[] v1Values = v1.getStorage().getValues();
@@ -735,12 +1235,11 @@ public class SimpleBinaryOutZAExecutor {
           int idx = v1Indices[k];
           newValues[idx] = op.apply(v1Values[k], v2Values[idx]);
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse() && v2.isSparse()) {
-      if (v1.size() > v2.size()) {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
         IntDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -750,74 +1249,148 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getLongValue()));
           }
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Int2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         IntLongVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getDoubleValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
+        IntDoubleVectorStorage v1storage = v1.getStorage();
+        while (iter.hasNext()) {
+          Int2LongMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v1storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), entry.getLongValue()));
+          }
+        }
+      } else {// preferred dense
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
+        IntLongVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Int2DoubleMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (op.isKeepStorage() || v1.size() < v2.size() * Constant.sparseSortedThreshold) {
-        res = v1.copy();
-        ObjectIterator<Int2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        int[] v2Indices = v2.getStorage().getIndices();
+        long[] v2Values = v2.getStorage().getValues();
+
+        IntDoubleVectorStorage storage = v1.getStorage();
+        int size = v2.size();
+        for (int i = 0; i < size; i++) {
+          int idx = v2Indices[i];
+          if (storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
+          }
+        }
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         IntLongVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getDoubleValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else {
-        int[] vIndices = v2.getStorage().getIndices();
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        int[] v2Indices = v2.getStorage().getIndices();
         long[] v2Values = v2.getStorage().getValues();
-        int[] resIndices = ArrayCopy.copy(vIndices);
-        double[] resValues = new double[v2Values.length];
+
         IntDoubleVectorStorage storage = v1.getStorage();
         int size = v2.size();
         for (int i = 0; i < size; i++) {
-          int idx = vIndices[i];
+          int idx = v2Indices[i];
           if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(storage.get(idx), v2Values[i]);
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-
-        IntDoubleVectorStorage newStorage =
-          new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else { // preferred dense
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
+        IntLongVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Int2DoubleMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (op.isKeepStorage() || v1.size() * Constant.sparseSortedThreshold < v2.size()) {
-        res = v1.copy();
-        double[] resValues = res.getStorage().getValues();
-
-        int[] v1Indices = v1.getStorage().getIndices();
-        double[] v1Values = v1.getStorage().getValues();
-        IntLongVectorStorage storage = v2.getStorage();
-        int size = v1.size();
-        for (int i = 0; i < size; i++) {
-          int idx = v1Indices[i];
-          if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(v1Values[i], storage.get(idx));
-          } else {
-            resValues[i] = 0;
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v2.size
+          ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
+          IntDoubleVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Int2LongMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getLongValue()));
+            }
+          }
+        } else {//sparse preferred
+          ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
+          IntDoubleVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Int2LongMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getLongValue()));
+            }
           }
         }
-      } else {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          int[] resIndices = newStorage.getIndices();
+          double[] resValues = newStorage.getValues();
+
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          IntLongVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          IntLongVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
         IntDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -827,8 +1400,34 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1storage.get(idx), entry.getLongValue()));
           }
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else {//dense preferred
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          int[] resIndices = newStorage.getIndices();
+          double[] resValues = newStorage.getValues();
+
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          IntLongVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {//dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          IntLongVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
       int v1Pointor = 0;
@@ -836,46 +1435,172 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (size1 > size2) {
-        int[] v1Indices = v1.getStorage().getIndices();
-        double[] v1Values = v1.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        long[] v2Values = v2.getStorage().getValues();
-        int[] resIndices = ArrayCopy.copy(vIndices);
-        double[] resValues = new double[v2Values.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {//sorted v2.size
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v2Indices);
+          double[] resValues = new double[v2Values.length];
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (vIndices[v1Pointor] == v1Indices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-        IntDoubleVectorStorage newStorage =
-          new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        int[] resIndices = res.getStorage().getIndices();
-        double[] resValues = res.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        long[] v2Values = v2.getStorage().getValues();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          double[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// sparse preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {// sorted v2.size
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v2Indices);
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       }
@@ -883,14 +1608,14 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return res;
+    return new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   private static Vector apply(IntDoubleVector v1, IntIntVector v2, Binary op) {
-    IntDoubleVector res;
+    IntDoubleVectorStorage newStorage = (IntDoubleVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isDense() && v2.isDense()) {
-      res = v1.copy();
-      double[] resValues = res.getStorage().getValues();
+      double[] resValues = newStorage.getValues();
       double[] v1Values = v1.getStorage().getValues();
       int[] v2Values = v2.getStorage().getValues();
       int length = v1Values.length;
@@ -898,8 +1623,9 @@ public class SimpleBinaryOutZAExecutor {
         resValues[idx] = op.apply(v1Values[idx], v2Values[idx]);
       }
     } else if (v1.isDense() && v2.isSparse()) {
-      if (op.isKeepStorage() || v2.size() > Constant.sparseDenseStorageThreshold * v2.getDim()) {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptyDense();
+      if ((v2.isSparse() && v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) ||
+          (v2.isSorted() && v2.getSize() >= Constant.sortedDenseStorageThreshold * v2.dim())) {
+        // dense preferred, KeepStorage is guaranteed
         double[] newValues = newStorage.getValues();
         double[] v1Values = v1.getStorage().getValues();
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
@@ -908,23 +1634,30 @@ public class SimpleBinaryOutZAExecutor {
           int idx = entry.getIntKey();
           newValues[idx] = op.apply(v1Values[idx], entry.getIntValue());
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
-        double[] v1Values = v1.getStorage().getValues();
-        ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Int2IntMap.Entry entry = iter.next();
-          int idx = entry.getIntKey();
-          newStorage.set(idx, op.apply(v1Values[idx], entry.getIntValue()));
+        if (op.isKeepStorage()) {
+          double[] newValues = newStorage.getValues();
+          double[] v1Values = v1.getStorage().getValues();
+          ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          while (iter.hasNext()) {
+            Int2IntMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            newValues[idx] = op.apply(v1Values[idx], entry.getIntValue());
+          }
+        } else {
+          double[] v1Values = v1.getStorage().getValues();
+          ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          while (iter.hasNext()) {
+            Int2IntMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            newStorage.set(idx, op.apply(v1Values[idx], entry.getIntValue()));
+          }
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isDense() && v2.isSorted()) {
-      if (op.isKeepStorage() || v2.size() > Constant.sortedDenseStorageThreshold * v2.getDim()) {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptyDense();
+      if ((v2.isSparse() && v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) ||
+          (v2.isSorted() && v2.getSize() >= Constant.sortedDenseStorageThreshold * v2.dim())) {
+        // dense preferred, KeepStorage is guaranteed
         double[] newValues = newStorage.getValues();
         double[] v1Values = v1.getStorage().getValues();
         int[] vIndices = v2.getStorage().getIndices();
@@ -934,30 +1667,31 @@ public class SimpleBinaryOutZAExecutor {
           int idx = vIndices[i];
           newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptySorted((int) (v2.size()));
-        int[] resIndices = newStorage.getIndices();
-        double[] resValues = newStorage.getValues();
-
-        double[] v1Values = v1.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        int[] v2Values = v2.getStorage().getValues();
-        int size = v2.size();
-        for (int i = 0; i < size; i++) {
-          int idx = vIndices[i];
-          resIndices[i] = idx;
-          resValues[i] = op.apply(v1Values[idx], v2Values[i]);
+        if (op.isKeepStorage()) {
+          double[] newValues = newStorage.getValues();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] vIndices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int size = v2.size();
+          for (int i = 0; i < size; i++) {
+            int idx = vIndices[i];
+            newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
+          }
+        } else {
+          double[] v1Values = v1.getStorage().getValues();
+          int[] vIndices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int size = v2.size();
+          for (int i = 0; i < size; i++) {
+            int idx = vIndices[i];
+            newStorage.set(idx, op.apply(v1Values[idx], v2Values[i]));
+          }
         }
-
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse() && v2.isDense()) {
-      if (op.isKeepStorage() || v1.size() < Constant.sparseDenseStorageThreshold * v1.getDim()) {
-        res = v1.copy();
-        ObjectIterator<Int2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      if (op.isKeepStorage() || v1.size() <= Constant.sparseDenseStorageThreshold * v1.getDim()) {
+        ObjectIterator<Int2DoubleMap.Entry> iter = newStorage.entryIterator();
         int[] v2Values = v2.getStorage().getValues();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
@@ -965,7 +1699,6 @@ public class SimpleBinaryOutZAExecutor {
           entry.setValue(op.apply(entry.getDoubleValue(), v2Values[idx]));
         }
       } else {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptyDense();
         double[] newValues = newStorage.getValues();
         ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         int[] v2Values = v2.getStorage().getValues();
@@ -974,23 +1707,21 @@ public class SimpleBinaryOutZAExecutor {
           int idx = entry.getIntKey();
           newValues[idx] = op.apply(entry.getDoubleValue(), v2Values[idx]);
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSorted() && v2.isDense()) {
-      if (op.isKeepStorage() || v1.size() < Constant.sortedDenseStorageThreshold * v1.getDim()) {
-        res = v1.copy();
-        double[] resValues = res.getStorage().getValues();
+      if (op.isKeepStorage() || v1.size() <= Constant.sortedDenseStorageThreshold * v1.getDim()) {
+        double[] resValues = newStorage.getValues();
+        int[] resIndices = newStorage.getIndices();
 
         int[] v1Indices = v1.getStorage().getIndices();
         double[] v1Values = v1.getStorage().getValues();
         int[] v2Values = v2.getStorage().getValues();
         int size = v1.size();
         for (int i = 0; i < size; i++) {
+          resIndices[i] = v1Indices[i];
           resValues[i] = op.apply(v1Values[i], v2Values[v1Indices[i]]);
         }
       } else {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptyDense();
         double[] newValues = newStorage.getValues();
         int[] v1Indices = v1.getStorage().getIndices();
         double[] v1Values = v1.getStorage().getValues();
@@ -1000,12 +1731,11 @@ public class SimpleBinaryOutZAExecutor {
           int idx = v1Indices[k];
           newValues[idx] = op.apply(v1Values[k], v2Values[idx]);
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse() && v2.isSparse()) {
-      if (v1.size() > v2.size()) {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
         IntDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -1015,74 +1745,148 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
           }
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Int2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         IntIntVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getDoubleValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+        IntDoubleVectorStorage v1storage = v1.getStorage();
+        while (iter.hasNext()) {
+          Int2IntMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v1storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
+          }
+        }
+      } else {// preferred dense
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
+        IntIntVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Int2DoubleMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (op.isKeepStorage() || v1.size() < v2.size() * Constant.sparseSortedThreshold) {
-        res = v1.copy();
-        ObjectIterator<Int2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        int[] v2Indices = v2.getStorage().getIndices();
+        int[] v2Values = v2.getStorage().getValues();
+
+        IntDoubleVectorStorage storage = v1.getStorage();
+        int size = v2.size();
+        for (int i = 0; i < size; i++) {
+          int idx = v2Indices[i];
+          if (storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
+          }
+        }
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         IntIntVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getDoubleValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else {
-        int[] vIndices = v2.getStorage().getIndices();
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        int[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
-        int[] resIndices = ArrayCopy.copy(vIndices);
-        double[] resValues = new double[v2Values.length];
+
         IntDoubleVectorStorage storage = v1.getStorage();
         int size = v2.size();
         for (int i = 0; i < size; i++) {
-          int idx = vIndices[i];
+          int idx = v2Indices[i];
           if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(storage.get(idx), v2Values[i]);
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-
-        IntDoubleVectorStorage newStorage =
-          new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else { // preferred dense
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
+        IntIntVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Int2DoubleMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (op.isKeepStorage() || v1.size() * Constant.sparseSortedThreshold < v2.size()) {
-        res = v1.copy();
-        double[] resValues = res.getStorage().getValues();
-
-        int[] v1Indices = v1.getStorage().getIndices();
-        double[] v1Values = v1.getStorage().getValues();
-        IntIntVectorStorage storage = v2.getStorage();
-        int size = v1.size();
-        for (int i = 0; i < size; i++) {
-          int idx = v1Indices[i];
-          if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(v1Values[i], storage.get(idx));
-          } else {
-            resValues[i] = 0;
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v2.size
+          ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          IntDoubleVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Int2IntMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
+            }
+          }
+        } else {//sparse preferred
+          ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          IntDoubleVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Int2IntMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
+            }
           }
         }
-      } else {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          int[] resIndices = newStorage.getIndices();
+          double[] resValues = newStorage.getValues();
+
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          IntIntVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          IntIntVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
         IntDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -1092,8 +1896,34 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
           }
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else {//dense preferred
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          int[] resIndices = newStorage.getIndices();
+          double[] resValues = newStorage.getValues();
+
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          IntIntVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {//dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          IntIntVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
       int v1Pointor = 0;
@@ -1101,46 +1931,172 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (size1 > size2) {
-        int[] v1Indices = v1.getStorage().getIndices();
-        double[] v1Values = v1.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        int[] v2Values = v2.getStorage().getValues();
-        int[] resIndices = ArrayCopy.copy(vIndices);
-        double[] resValues = new double[v2Values.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {//sorted v2.size
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v2Indices);
+          double[] resValues = new double[v2Values.length];
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (vIndices[v1Pointor] == v1Indices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-        IntDoubleVectorStorage newStorage =
-          new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        int[] resIndices = res.getStorage().getIndices();
-        double[] resValues = res.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        int[] v2Values = v2.getStorage().getValues();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          double[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// sparse preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {// sorted v2.size
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v2Indices);
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       }
@@ -1148,14 +2104,14 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return res;
+    return new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   private static Vector apply(IntFloatVector v1, IntFloatVector v2, Binary op) {
-    IntFloatVector res;
+    IntFloatVectorStorage newStorage = (IntFloatVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isDense() && v2.isDense()) {
-      res = v1.copy();
-      float[] resValues = res.getStorage().getValues();
+      float[] resValues = newStorage.getValues();
       float[] v1Values = v1.getStorage().getValues();
       float[] v2Values = v2.getStorage().getValues();
       int length = v1Values.length;
@@ -1163,8 +2119,9 @@ public class SimpleBinaryOutZAExecutor {
         resValues[idx] = op.apply(v1Values[idx], v2Values[idx]);
       }
     } else if (v1.isDense() && v2.isSparse()) {
-      if (op.isKeepStorage() || v2.size() > Constant.sparseDenseStorageThreshold * v2.getDim()) {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptyDense();
+      if ((v2.isSparse() && v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) ||
+          (v2.isSorted() && v2.getSize() >= Constant.sortedDenseStorageThreshold * v2.dim())) {
+        // dense preferred, KeepStorage is guaranteed
         float[] newValues = newStorage.getValues();
         float[] v1Values = v1.getStorage().getValues();
         ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
@@ -1173,23 +2130,30 @@ public class SimpleBinaryOutZAExecutor {
           int idx = entry.getIntKey();
           newValues[idx] = op.apply(v1Values[idx], entry.getFloatValue());
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
-        float[] v1Values = v1.getStorage().getValues();
-        ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Int2FloatMap.Entry entry = iter.next();
-          int idx = entry.getIntKey();
-          newStorage.set(idx, op.apply(v1Values[idx], entry.getFloatValue()));
+        if (op.isKeepStorage()) {
+          float[] newValues = newStorage.getValues();
+          float[] v1Values = v1.getStorage().getValues();
+          ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
+          while (iter.hasNext()) {
+            Int2FloatMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            newValues[idx] = op.apply(v1Values[idx], entry.getFloatValue());
+          }
+        } else {
+          float[] v1Values = v1.getStorage().getValues();
+          ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
+          while (iter.hasNext()) {
+            Int2FloatMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            newStorage.set(idx, op.apply(v1Values[idx], entry.getFloatValue()));
+          }
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isDense() && v2.isSorted()) {
-      if (op.isKeepStorage() || v2.size() > Constant.sortedDenseStorageThreshold * v2.getDim()) {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptyDense();
+      if ((v2.isSparse() && v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) ||
+          (v2.isSorted() && v2.getSize() >= Constant.sortedDenseStorageThreshold * v2.dim())) {
+        // dense preferred, KeepStorage is guaranteed
         float[] newValues = newStorage.getValues();
         float[] v1Values = v1.getStorage().getValues();
         int[] vIndices = v2.getStorage().getIndices();
@@ -1199,30 +2163,31 @@ public class SimpleBinaryOutZAExecutor {
           int idx = vIndices[i];
           newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptySorted((int) (v2.size()));
-        int[] resIndices = newStorage.getIndices();
-        float[] resValues = newStorage.getValues();
-
-        float[] v1Values = v1.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        float[] v2Values = v2.getStorage().getValues();
-        int size = v2.size();
-        for (int i = 0; i < size; i++) {
-          int idx = vIndices[i];
-          resIndices[i] = idx;
-          resValues[i] = op.apply(v1Values[idx], v2Values[i]);
+        if (op.isKeepStorage()) {
+          float[] newValues = newStorage.getValues();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] vIndices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          int size = v2.size();
+          for (int i = 0; i < size; i++) {
+            int idx = vIndices[i];
+            newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
+          }
+        } else {
+          float[] v1Values = v1.getStorage().getValues();
+          int[] vIndices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          int size = v2.size();
+          for (int i = 0; i < size; i++) {
+            int idx = vIndices[i];
+            newStorage.set(idx, op.apply(v1Values[idx], v2Values[i]));
+          }
         }
-
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse() && v2.isDense()) {
-      if (op.isKeepStorage() || v1.size() < Constant.sparseDenseStorageThreshold * v1.getDim()) {
-        res = v1.copy();
-        ObjectIterator<Int2FloatMap.Entry> iter = res.getStorage().entryIterator();
+      if (op.isKeepStorage() || v1.size() <= Constant.sparseDenseStorageThreshold * v1.getDim()) {
+        ObjectIterator<Int2FloatMap.Entry> iter = newStorage.entryIterator();
         float[] v2Values = v2.getStorage().getValues();
         while (iter.hasNext()) {
           Int2FloatMap.Entry entry = iter.next();
@@ -1230,7 +2195,6 @@ public class SimpleBinaryOutZAExecutor {
           entry.setValue(op.apply(entry.getFloatValue(), v2Values[idx]));
         }
       } else {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptyDense();
         float[] newValues = newStorage.getValues();
         ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         float[] v2Values = v2.getStorage().getValues();
@@ -1239,23 +2203,21 @@ public class SimpleBinaryOutZAExecutor {
           int idx = entry.getIntKey();
           newValues[idx] = op.apply(entry.getFloatValue(), v2Values[idx]);
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSorted() && v2.isDense()) {
-      if (op.isKeepStorage() || v1.size() < Constant.sortedDenseStorageThreshold * v1.getDim()) {
-        res = v1.copy();
-        float[] resValues = res.getStorage().getValues();
+      if (op.isKeepStorage() || v1.size() <= Constant.sortedDenseStorageThreshold * v1.getDim()) {
+        float[] resValues = newStorage.getValues();
+        int[] resIndices = newStorage.getIndices();
 
         int[] v1Indices = v1.getStorage().getIndices();
         float[] v1Values = v1.getStorage().getValues();
         float[] v2Values = v2.getStorage().getValues();
         int size = v1.size();
         for (int i = 0; i < size; i++) {
+          resIndices[i] = v1Indices[i];
           resValues[i] = op.apply(v1Values[i], v2Values[v1Indices[i]]);
         }
       } else {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptyDense();
         float[] newValues = newStorage.getValues();
         int[] v1Indices = v1.getStorage().getIndices();
         float[] v1Values = v1.getStorage().getValues();
@@ -1265,12 +2227,11 @@ public class SimpleBinaryOutZAExecutor {
           int idx = v1Indices[k];
           newValues[idx] = op.apply(v1Values[k], v2Values[idx]);
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse() && v2.isSparse()) {
-      if (v1.size() > v2.size()) {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
         IntFloatVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -1280,74 +2241,148 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getFloatValue()));
           }
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Int2FloatMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         IntFloatVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Int2FloatMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getFloatValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
+        IntFloatVectorStorage v1storage = v1.getStorage();
+        while (iter.hasNext()) {
+          Int2FloatMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v1storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), entry.getFloatValue()));
+          }
+        }
+      } else {// preferred dense
+        ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
+        IntFloatVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Int2FloatMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (op.isKeepStorage() || v1.size() < v2.size() * Constant.sparseSortedThreshold) {
-        res = v1.copy();
-        ObjectIterator<Int2FloatMap.Entry> iter = res.getStorage().entryIterator();
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        int[] v2Indices = v2.getStorage().getIndices();
+        float[] v2Values = v2.getStorage().getValues();
+
+        IntFloatVectorStorage storage = v1.getStorage();
+        int size = v2.size();
+        for (int i = 0; i < size; i++) {
+          int idx = v2Indices[i];
+          if (storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
+          }
+        }
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         IntFloatVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Int2FloatMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getFloatValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
-      } else {
-        int[] vIndices = v2.getStorage().getIndices();
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        int[] v2Indices = v2.getStorage().getIndices();
         float[] v2Values = v2.getStorage().getValues();
-        int[] resIndices = ArrayCopy.copy(vIndices);
-        float[] resValues = new float[v2Values.length];
+
         IntFloatVectorStorage storage = v1.getStorage();
         int size = v2.size();
         for (int i = 0; i < size; i++) {
-          int idx = vIndices[i];
+          int idx = v2Indices[i];
           if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(storage.get(idx), v2Values[i]);
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-
-        IntFloatVectorStorage newStorage =
-          new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else { // preferred dense
+        ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
+        IntFloatVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Int2FloatMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (op.isKeepStorage() || v1.size() * Constant.sparseSortedThreshold < v2.size()) {
-        res = v1.copy();
-        float[] resValues = res.getStorage().getValues();
-
-        int[] v1Indices = v1.getStorage().getIndices();
-        float[] v1Values = v1.getStorage().getValues();
-        IntFloatVectorStorage storage = v2.getStorage();
-        int size = v1.size();
-        for (int i = 0; i < size; i++) {
-          int idx = v1Indices[i];
-          if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(v1Values[i], storage.get(idx));
-          } else {
-            resValues[i] = 0;
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v2.size
+          ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
+          IntFloatVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Int2FloatMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getFloatValue()));
+            }
+          }
+        } else {//sparse preferred
+          ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
+          IntFloatVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Int2FloatMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getFloatValue()));
+            }
           }
         }
-      } else {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          int[] resIndices = newStorage.getIndices();
+          float[] resValues = newStorage.getValues();
+
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          IntFloatVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          IntFloatVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
         IntFloatVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -1357,8 +2392,34 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1storage.get(idx), entry.getFloatValue()));
           }
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else {//dense preferred
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          int[] resIndices = newStorage.getIndices();
+          float[] resValues = newStorage.getValues();
+
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          IntFloatVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {//dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          IntFloatVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
       int v1Pointor = 0;
@@ -1366,46 +2427,172 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (size1 > size2) {
-        int[] v1Indices = v1.getStorage().getIndices();
-        float[] v1Values = v1.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        float[] v2Values = v2.getStorage().getValues();
-        int[] resIndices = ArrayCopy.copy(vIndices);
-        float[] resValues = new float[v2Values.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {//sorted v2.size
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v2Indices);
+          float[] resValues = new float[v2Values.length];
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (vIndices[v1Pointor] == v1Indices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-        IntFloatVectorStorage newStorage =
-          new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        int[] resIndices = res.getStorage().getIndices();
-        float[] resValues = res.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        float[] v2Values = v2.getStorage().getValues();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          float[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// sparse preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {// sorted v2.size
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v2Indices);
+          float[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          float[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          float[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       }
@@ -1413,14 +2600,14 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return res;
+    return new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   private static Vector apply(IntFloatVector v1, IntLongVector v2, Binary op) {
-    IntFloatVector res;
+    IntFloatVectorStorage newStorage = (IntFloatVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isDense() && v2.isDense()) {
-      res = v1.copy();
-      float[] resValues = res.getStorage().getValues();
+      float[] resValues = newStorage.getValues();
       float[] v1Values = v1.getStorage().getValues();
       long[] v2Values = v2.getStorage().getValues();
       int length = v1Values.length;
@@ -1428,8 +2615,9 @@ public class SimpleBinaryOutZAExecutor {
         resValues[idx] = op.apply(v1Values[idx], v2Values[idx]);
       }
     } else if (v1.isDense() && v2.isSparse()) {
-      if (op.isKeepStorage() || v2.size() > Constant.sparseDenseStorageThreshold * v2.getDim()) {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptyDense();
+      if ((v2.isSparse() && v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) ||
+          (v2.isSorted() && v2.getSize() >= Constant.sortedDenseStorageThreshold * v2.dim())) {
+        // dense preferred, KeepStorage is guaranteed
         float[] newValues = newStorage.getValues();
         float[] v1Values = v1.getStorage().getValues();
         ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
@@ -1438,23 +2626,30 @@ public class SimpleBinaryOutZAExecutor {
           int idx = entry.getIntKey();
           newValues[idx] = op.apply(v1Values[idx], entry.getLongValue());
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
-        float[] v1Values = v1.getStorage().getValues();
-        ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Int2LongMap.Entry entry = iter.next();
-          int idx = entry.getIntKey();
-          newStorage.set(idx, op.apply(v1Values[idx], entry.getLongValue()));
+        if (op.isKeepStorage()) {
+          float[] newValues = newStorage.getValues();
+          float[] v1Values = v1.getStorage().getValues();
+          ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
+          while (iter.hasNext()) {
+            Int2LongMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            newValues[idx] = op.apply(v1Values[idx], entry.getLongValue());
+          }
+        } else {
+          float[] v1Values = v1.getStorage().getValues();
+          ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
+          while (iter.hasNext()) {
+            Int2LongMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            newStorage.set(idx, op.apply(v1Values[idx], entry.getLongValue()));
+          }
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isDense() && v2.isSorted()) {
-      if (op.isKeepStorage() || v2.size() > Constant.sortedDenseStorageThreshold * v2.getDim()) {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptyDense();
+      if ((v2.isSparse() && v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) ||
+          (v2.isSorted() && v2.getSize() >= Constant.sortedDenseStorageThreshold * v2.dim())) {
+        // dense preferred, KeepStorage is guaranteed
         float[] newValues = newStorage.getValues();
         float[] v1Values = v1.getStorage().getValues();
         int[] vIndices = v2.getStorage().getIndices();
@@ -1464,30 +2659,31 @@ public class SimpleBinaryOutZAExecutor {
           int idx = vIndices[i];
           newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptySorted((int) (v2.size()));
-        int[] resIndices = newStorage.getIndices();
-        float[] resValues = newStorage.getValues();
-
-        float[] v1Values = v1.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        long[] v2Values = v2.getStorage().getValues();
-        int size = v2.size();
-        for (int i = 0; i < size; i++) {
-          int idx = vIndices[i];
-          resIndices[i] = idx;
-          resValues[i] = op.apply(v1Values[idx], v2Values[i]);
+        if (op.isKeepStorage()) {
+          float[] newValues = newStorage.getValues();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] vIndices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          int size = v2.size();
+          for (int i = 0; i < size; i++) {
+            int idx = vIndices[i];
+            newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
+          }
+        } else {
+          float[] v1Values = v1.getStorage().getValues();
+          int[] vIndices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          int size = v2.size();
+          for (int i = 0; i < size; i++) {
+            int idx = vIndices[i];
+            newStorage.set(idx, op.apply(v1Values[idx], v2Values[i]));
+          }
         }
-
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse() && v2.isDense()) {
-      if (op.isKeepStorage() || v1.size() < Constant.sparseDenseStorageThreshold * v1.getDim()) {
-        res = v1.copy();
-        ObjectIterator<Int2FloatMap.Entry> iter = res.getStorage().entryIterator();
+      if (op.isKeepStorage() || v1.size() <= Constant.sparseDenseStorageThreshold * v1.getDim()) {
+        ObjectIterator<Int2FloatMap.Entry> iter = newStorage.entryIterator();
         long[] v2Values = v2.getStorage().getValues();
         while (iter.hasNext()) {
           Int2FloatMap.Entry entry = iter.next();
@@ -1495,7 +2691,6 @@ public class SimpleBinaryOutZAExecutor {
           entry.setValue(op.apply(entry.getFloatValue(), v2Values[idx]));
         }
       } else {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptyDense();
         float[] newValues = newStorage.getValues();
         ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         long[] v2Values = v2.getStorage().getValues();
@@ -1504,23 +2699,21 @@ public class SimpleBinaryOutZAExecutor {
           int idx = entry.getIntKey();
           newValues[idx] = op.apply(entry.getFloatValue(), v2Values[idx]);
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSorted() && v2.isDense()) {
-      if (op.isKeepStorage() || v1.size() < Constant.sortedDenseStorageThreshold * v1.getDim()) {
-        res = v1.copy();
-        float[] resValues = res.getStorage().getValues();
+      if (op.isKeepStorage() || v1.size() <= Constant.sortedDenseStorageThreshold * v1.getDim()) {
+        float[] resValues = newStorage.getValues();
+        int[] resIndices = newStorage.getIndices();
 
         int[] v1Indices = v1.getStorage().getIndices();
         float[] v1Values = v1.getStorage().getValues();
         long[] v2Values = v2.getStorage().getValues();
         int size = v1.size();
         for (int i = 0; i < size; i++) {
+          resIndices[i] = v1Indices[i];
           resValues[i] = op.apply(v1Values[i], v2Values[v1Indices[i]]);
         }
       } else {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptyDense();
         float[] newValues = newStorage.getValues();
         int[] v1Indices = v1.getStorage().getIndices();
         float[] v1Values = v1.getStorage().getValues();
@@ -1530,12 +2723,11 @@ public class SimpleBinaryOutZAExecutor {
           int idx = v1Indices[k];
           newValues[idx] = op.apply(v1Values[k], v2Values[idx]);
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse() && v2.isSparse()) {
-      if (v1.size() > v2.size()) {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
         IntFloatVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -1545,74 +2737,148 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getLongValue()));
           }
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Int2FloatMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         IntLongVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Int2FloatMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getFloatValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
+        IntFloatVectorStorage v1storage = v1.getStorage();
+        while (iter.hasNext()) {
+          Int2LongMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v1storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), entry.getLongValue()));
+          }
+        }
+      } else {// preferred dense
+        ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
+        IntLongVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Int2FloatMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (op.isKeepStorage() || v1.size() < v2.size() * Constant.sparseSortedThreshold) {
-        res = v1.copy();
-        ObjectIterator<Int2FloatMap.Entry> iter = res.getStorage().entryIterator();
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        int[] v2Indices = v2.getStorage().getIndices();
+        long[] v2Values = v2.getStorage().getValues();
+
+        IntFloatVectorStorage storage = v1.getStorage();
+        int size = v2.size();
+        for (int i = 0; i < size; i++) {
+          int idx = v2Indices[i];
+          if (storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
+          }
+        }
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         IntLongVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Int2FloatMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getFloatValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
-      } else {
-        int[] vIndices = v2.getStorage().getIndices();
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        int[] v2Indices = v2.getStorage().getIndices();
         long[] v2Values = v2.getStorage().getValues();
-        int[] resIndices = ArrayCopy.copy(vIndices);
-        float[] resValues = new float[v2Values.length];
+
         IntFloatVectorStorage storage = v1.getStorage();
         int size = v2.size();
         for (int i = 0; i < size; i++) {
-          int idx = vIndices[i];
+          int idx = v2Indices[i];
           if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(storage.get(idx), v2Values[i]);
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-
-        IntFloatVectorStorage newStorage =
-          new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else { // preferred dense
+        ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
+        IntLongVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Int2FloatMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (op.isKeepStorage() || v1.size() * Constant.sparseSortedThreshold < v2.size()) {
-        res = v1.copy();
-        float[] resValues = res.getStorage().getValues();
-
-        int[] v1Indices = v1.getStorage().getIndices();
-        float[] v1Values = v1.getStorage().getValues();
-        IntLongVectorStorage storage = v2.getStorage();
-        int size = v1.size();
-        for (int i = 0; i < size; i++) {
-          int idx = v1Indices[i];
-          if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(v1Values[i], storage.get(idx));
-          } else {
-            resValues[i] = 0;
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v2.size
+          ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
+          IntFloatVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Int2LongMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getLongValue()));
+            }
+          }
+        } else {//sparse preferred
+          ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
+          IntFloatVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Int2LongMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getLongValue()));
+            }
           }
         }
-      } else {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          int[] resIndices = newStorage.getIndices();
+          float[] resValues = newStorage.getValues();
+
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          IntLongVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          IntLongVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
         IntFloatVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -1622,8 +2888,34 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1storage.get(idx), entry.getLongValue()));
           }
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else {//dense preferred
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          int[] resIndices = newStorage.getIndices();
+          float[] resValues = newStorage.getValues();
+
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          IntLongVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {//dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          IntLongVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
       int v1Pointor = 0;
@@ -1631,46 +2923,172 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (size1 > size2) {
-        int[] v1Indices = v1.getStorage().getIndices();
-        float[] v1Values = v1.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        long[] v2Values = v2.getStorage().getValues();
-        int[] resIndices = ArrayCopy.copy(vIndices);
-        float[] resValues = new float[v2Values.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {//sorted v2.size
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v2Indices);
+          float[] resValues = new float[v2Values.length];
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (vIndices[v1Pointor] == v1Indices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-        IntFloatVectorStorage newStorage =
-          new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        int[] resIndices = res.getStorage().getIndices();
-        float[] resValues = res.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        long[] v2Values = v2.getStorage().getValues();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          float[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// sparse preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {// sorted v2.size
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v2Indices);
+          float[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          float[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          float[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       }
@@ -1678,14 +3096,14 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return res;
+    return new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   private static Vector apply(IntFloatVector v1, IntIntVector v2, Binary op) {
-    IntFloatVector res;
+    IntFloatVectorStorage newStorage = (IntFloatVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isDense() && v2.isDense()) {
-      res = v1.copy();
-      float[] resValues = res.getStorage().getValues();
+      float[] resValues = newStorage.getValues();
       float[] v1Values = v1.getStorage().getValues();
       int[] v2Values = v2.getStorage().getValues();
       int length = v1Values.length;
@@ -1693,8 +3111,9 @@ public class SimpleBinaryOutZAExecutor {
         resValues[idx] = op.apply(v1Values[idx], v2Values[idx]);
       }
     } else if (v1.isDense() && v2.isSparse()) {
-      if (op.isKeepStorage() || v2.size() > Constant.sparseDenseStorageThreshold * v2.getDim()) {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptyDense();
+      if ((v2.isSparse() && v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) ||
+          (v2.isSorted() && v2.getSize() >= Constant.sortedDenseStorageThreshold * v2.dim())) {
+        // dense preferred, KeepStorage is guaranteed
         float[] newValues = newStorage.getValues();
         float[] v1Values = v1.getStorage().getValues();
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
@@ -1703,23 +3122,30 @@ public class SimpleBinaryOutZAExecutor {
           int idx = entry.getIntKey();
           newValues[idx] = op.apply(v1Values[idx], entry.getIntValue());
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
-        float[] v1Values = v1.getStorage().getValues();
-        ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Int2IntMap.Entry entry = iter.next();
-          int idx = entry.getIntKey();
-          newStorage.set(idx, op.apply(v1Values[idx], entry.getIntValue()));
+        if (op.isKeepStorage()) {
+          float[] newValues = newStorage.getValues();
+          float[] v1Values = v1.getStorage().getValues();
+          ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          while (iter.hasNext()) {
+            Int2IntMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            newValues[idx] = op.apply(v1Values[idx], entry.getIntValue());
+          }
+        } else {
+          float[] v1Values = v1.getStorage().getValues();
+          ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          while (iter.hasNext()) {
+            Int2IntMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            newStorage.set(idx, op.apply(v1Values[idx], entry.getIntValue()));
+          }
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isDense() && v2.isSorted()) {
-      if (op.isKeepStorage() || v2.size() > Constant.sortedDenseStorageThreshold * v2.getDim()) {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptyDense();
+      if ((v2.isSparse() && v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) ||
+          (v2.isSorted() && v2.getSize() >= Constant.sortedDenseStorageThreshold * v2.dim())) {
+        // dense preferred, KeepStorage is guaranteed
         float[] newValues = newStorage.getValues();
         float[] v1Values = v1.getStorage().getValues();
         int[] vIndices = v2.getStorage().getIndices();
@@ -1729,30 +3155,31 @@ public class SimpleBinaryOutZAExecutor {
           int idx = vIndices[i];
           newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptySorted((int) (v2.size()));
-        int[] resIndices = newStorage.getIndices();
-        float[] resValues = newStorage.getValues();
-
-        float[] v1Values = v1.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        int[] v2Values = v2.getStorage().getValues();
-        int size = v2.size();
-        for (int i = 0; i < size; i++) {
-          int idx = vIndices[i];
-          resIndices[i] = idx;
-          resValues[i] = op.apply(v1Values[idx], v2Values[i]);
+        if (op.isKeepStorage()) {
+          float[] newValues = newStorage.getValues();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] vIndices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int size = v2.size();
+          for (int i = 0; i < size; i++) {
+            int idx = vIndices[i];
+            newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
+          }
+        } else {
+          float[] v1Values = v1.getStorage().getValues();
+          int[] vIndices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int size = v2.size();
+          for (int i = 0; i < size; i++) {
+            int idx = vIndices[i];
+            newStorage.set(idx, op.apply(v1Values[idx], v2Values[i]));
+          }
         }
-
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse() && v2.isDense()) {
-      if (op.isKeepStorage() || v1.size() < Constant.sparseDenseStorageThreshold * v1.getDim()) {
-        res = v1.copy();
-        ObjectIterator<Int2FloatMap.Entry> iter = res.getStorage().entryIterator();
+      if (op.isKeepStorage() || v1.size() <= Constant.sparseDenseStorageThreshold * v1.getDim()) {
+        ObjectIterator<Int2FloatMap.Entry> iter = newStorage.entryIterator();
         int[] v2Values = v2.getStorage().getValues();
         while (iter.hasNext()) {
           Int2FloatMap.Entry entry = iter.next();
@@ -1760,7 +3187,6 @@ public class SimpleBinaryOutZAExecutor {
           entry.setValue(op.apply(entry.getFloatValue(), v2Values[idx]));
         }
       } else {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptyDense();
         float[] newValues = newStorage.getValues();
         ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         int[] v2Values = v2.getStorage().getValues();
@@ -1769,23 +3195,21 @@ public class SimpleBinaryOutZAExecutor {
           int idx = entry.getIntKey();
           newValues[idx] = op.apply(entry.getFloatValue(), v2Values[idx]);
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSorted() && v2.isDense()) {
-      if (op.isKeepStorage() || v1.size() < Constant.sortedDenseStorageThreshold * v1.getDim()) {
-        res = v1.copy();
-        float[] resValues = res.getStorage().getValues();
+      if (op.isKeepStorage() || v1.size() <= Constant.sortedDenseStorageThreshold * v1.getDim()) {
+        float[] resValues = newStorage.getValues();
+        int[] resIndices = newStorage.getIndices();
 
         int[] v1Indices = v1.getStorage().getIndices();
         float[] v1Values = v1.getStorage().getValues();
         int[] v2Values = v2.getStorage().getValues();
         int size = v1.size();
         for (int i = 0; i < size; i++) {
+          resIndices[i] = v1Indices[i];
           resValues[i] = op.apply(v1Values[i], v2Values[v1Indices[i]]);
         }
       } else {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptyDense();
         float[] newValues = newStorage.getValues();
         int[] v1Indices = v1.getStorage().getIndices();
         float[] v1Values = v1.getStorage().getValues();
@@ -1795,12 +3219,11 @@ public class SimpleBinaryOutZAExecutor {
           int idx = v1Indices[k];
           newValues[idx] = op.apply(v1Values[k], v2Values[idx]);
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse() && v2.isSparse()) {
-      if (v1.size() > v2.size()) {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
         IntFloatVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -1810,74 +3233,148 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
           }
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Int2FloatMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         IntIntVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Int2FloatMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getFloatValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+        IntFloatVectorStorage v1storage = v1.getStorage();
+        while (iter.hasNext()) {
+          Int2IntMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v1storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
+          }
+        }
+      } else {// preferred dense
+        ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
+        IntIntVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Int2FloatMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (op.isKeepStorage() || v1.size() < v2.size() * Constant.sparseSortedThreshold) {
-        res = v1.copy();
-        ObjectIterator<Int2FloatMap.Entry> iter = res.getStorage().entryIterator();
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        int[] v2Indices = v2.getStorage().getIndices();
+        int[] v2Values = v2.getStorage().getValues();
+
+        IntFloatVectorStorage storage = v1.getStorage();
+        int size = v2.size();
+        for (int i = 0; i < size; i++) {
+          int idx = v2Indices[i];
+          if (storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
+          }
+        }
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         IntIntVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Int2FloatMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getFloatValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
-      } else {
-        int[] vIndices = v2.getStorage().getIndices();
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        int[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
-        int[] resIndices = ArrayCopy.copy(vIndices);
-        float[] resValues = new float[v2Values.length];
+
         IntFloatVectorStorage storage = v1.getStorage();
         int size = v2.size();
         for (int i = 0; i < size; i++) {
-          int idx = vIndices[i];
+          int idx = v2Indices[i];
           if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(storage.get(idx), v2Values[i]);
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-
-        IntFloatVectorStorage newStorage =
-          new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else { // preferred dense
+        ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
+        IntIntVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Int2FloatMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (op.isKeepStorage() || v1.size() * Constant.sparseSortedThreshold < v2.size()) {
-        res = v1.copy();
-        float[] resValues = res.getStorage().getValues();
-
-        int[] v1Indices = v1.getStorage().getIndices();
-        float[] v1Values = v1.getStorage().getValues();
-        IntIntVectorStorage storage = v2.getStorage();
-        int size = v1.size();
-        for (int i = 0; i < size; i++) {
-          int idx = v1Indices[i];
-          if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(v1Values[i], storage.get(idx));
-          } else {
-            resValues[i] = 0;
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v2.size
+          ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          IntFloatVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Int2IntMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
+            }
+          }
+        } else {//sparse preferred
+          ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          IntFloatVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Int2IntMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
+            }
           }
         }
-      } else {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          int[] resIndices = newStorage.getIndices();
+          float[] resValues = newStorage.getValues();
+
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          IntIntVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          IntIntVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
         IntFloatVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -1887,8 +3384,34 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
           }
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else {//dense preferred
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          int[] resIndices = newStorage.getIndices();
+          float[] resValues = newStorage.getValues();
+
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          IntIntVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {//dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          IntIntVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
       int v1Pointor = 0;
@@ -1896,46 +3419,172 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (size1 > size2) {
-        int[] v1Indices = v1.getStorage().getIndices();
-        float[] v1Values = v1.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        int[] v2Values = v2.getStorage().getValues();
-        int[] resIndices = ArrayCopy.copy(vIndices);
-        float[] resValues = new float[v2Values.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {//sorted v2.size
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v2Indices);
+          float[] resValues = new float[v2Values.length];
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (vIndices[v1Pointor] == v1Indices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-        IntFloatVectorStorage newStorage =
-          new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        int[] resIndices = res.getStorage().getIndices();
-        float[] resValues = res.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        int[] v2Values = v2.getStorage().getValues();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          float[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// sparse preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {// sorted v2.size
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v2Indices);
+          float[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          float[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          float[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       }
@@ -1943,14 +3592,14 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return res;
+    return new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   private static Vector apply(IntLongVector v1, IntLongVector v2, Binary op) {
-    IntLongVector res;
+    IntLongVectorStorage newStorage = (IntLongVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isDense() && v2.isDense()) {
-      res = v1.copy();
-      long[] resValues = res.getStorage().getValues();
+      long[] resValues = newStorage.getValues();
       long[] v1Values = v1.getStorage().getValues();
       long[] v2Values = v2.getStorage().getValues();
       int length = v1Values.length;
@@ -1958,8 +3607,9 @@ public class SimpleBinaryOutZAExecutor {
         resValues[idx] = op.apply(v1Values[idx], v2Values[idx]);
       }
     } else if (v1.isDense() && v2.isSparse()) {
-      if (op.isKeepStorage() || v2.size() > Constant.sparseDenseStorageThreshold * v2.getDim()) {
-        IntLongVectorStorage newStorage = v1.getStorage().emptyDense();
+      if ((v2.isSparse() && v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) ||
+          (v2.isSorted() && v2.getSize() >= Constant.sortedDenseStorageThreshold * v2.dim())) {
+        // dense preferred, KeepStorage is guaranteed
         long[] newValues = newStorage.getValues();
         long[] v1Values = v1.getStorage().getValues();
         ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
@@ -1968,23 +3618,30 @@ public class SimpleBinaryOutZAExecutor {
           int idx = entry.getIntKey();
           newValues[idx] = op.apply(v1Values[idx], entry.getLongValue());
         }
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        IntLongVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
-        long[] v1Values = v1.getStorage().getValues();
-        ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Int2LongMap.Entry entry = iter.next();
-          int idx = entry.getIntKey();
-          newStorage.set(idx, op.apply(v1Values[idx], entry.getLongValue()));
+        if (op.isKeepStorage()) {
+          long[] newValues = newStorage.getValues();
+          long[] v1Values = v1.getStorage().getValues();
+          ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
+          while (iter.hasNext()) {
+            Int2LongMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            newValues[idx] = op.apply(v1Values[idx], entry.getLongValue());
+          }
+        } else {
+          long[] v1Values = v1.getStorage().getValues();
+          ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
+          while (iter.hasNext()) {
+            Int2LongMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            newStorage.set(idx, op.apply(v1Values[idx], entry.getLongValue()));
+          }
         }
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isDense() && v2.isSorted()) {
-      if (op.isKeepStorage() || v2.size() > Constant.sortedDenseStorageThreshold * v2.getDim()) {
-        IntLongVectorStorage newStorage = v1.getStorage().emptyDense();
+      if ((v2.isSparse() && v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) ||
+          (v2.isSorted() && v2.getSize() >= Constant.sortedDenseStorageThreshold * v2.dim())) {
+        // dense preferred, KeepStorage is guaranteed
         long[] newValues = newStorage.getValues();
         long[] v1Values = v1.getStorage().getValues();
         int[] vIndices = v2.getStorage().getIndices();
@@ -1994,30 +3651,31 @@ public class SimpleBinaryOutZAExecutor {
           int idx = vIndices[i];
           newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
         }
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        IntLongVectorStorage newStorage = v1.getStorage().emptySorted((int) (v2.size()));
-        int[] resIndices = newStorage.getIndices();
-        long[] resValues = newStorage.getValues();
-
-        long[] v1Values = v1.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        long[] v2Values = v2.getStorage().getValues();
-        int size = v2.size();
-        for (int i = 0; i < size; i++) {
-          int idx = vIndices[i];
-          resIndices[i] = idx;
-          resValues[i] = op.apply(v1Values[idx], v2Values[i]);
+        if (op.isKeepStorage()) {
+          long[] newValues = newStorage.getValues();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] vIndices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          int size = v2.size();
+          for (int i = 0; i < size; i++) {
+            int idx = vIndices[i];
+            newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
+          }
+        } else {
+          long[] v1Values = v1.getStorage().getValues();
+          int[] vIndices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          int size = v2.size();
+          for (int i = 0; i < size; i++) {
+            int idx = vIndices[i];
+            newStorage.set(idx, op.apply(v1Values[idx], v2Values[i]));
+          }
         }
-
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse() && v2.isDense()) {
-      if (op.isKeepStorage() || v1.size() < Constant.sparseDenseStorageThreshold * v1.getDim()) {
-        res = v1.copy();
-        ObjectIterator<Int2LongMap.Entry> iter = res.getStorage().entryIterator();
+      if (op.isKeepStorage() || v1.size() <= Constant.sparseDenseStorageThreshold * v1.getDim()) {
+        ObjectIterator<Int2LongMap.Entry> iter = newStorage.entryIterator();
         long[] v2Values = v2.getStorage().getValues();
         while (iter.hasNext()) {
           Int2LongMap.Entry entry = iter.next();
@@ -2025,7 +3683,6 @@ public class SimpleBinaryOutZAExecutor {
           entry.setValue(op.apply(entry.getLongValue(), v2Values[idx]));
         }
       } else {
-        IntLongVectorStorage newStorage = v1.getStorage().emptyDense();
         long[] newValues = newStorage.getValues();
         ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
         long[] v2Values = v2.getStorage().getValues();
@@ -2034,23 +3691,21 @@ public class SimpleBinaryOutZAExecutor {
           int idx = entry.getIntKey();
           newValues[idx] = op.apply(entry.getLongValue(), v2Values[idx]);
         }
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSorted() && v2.isDense()) {
-      if (op.isKeepStorage() || v1.size() < Constant.sortedDenseStorageThreshold * v1.getDim()) {
-        res = v1.copy();
-        long[] resValues = res.getStorage().getValues();
+      if (op.isKeepStorage() || v1.size() <= Constant.sortedDenseStorageThreshold * v1.getDim()) {
+        long[] resValues = newStorage.getValues();
+        int[] resIndices = newStorage.getIndices();
 
         int[] v1Indices = v1.getStorage().getIndices();
         long[] v1Values = v1.getStorage().getValues();
         long[] v2Values = v2.getStorage().getValues();
         int size = v1.size();
         for (int i = 0; i < size; i++) {
+          resIndices[i] = v1Indices[i];
           resValues[i] = op.apply(v1Values[i], v2Values[v1Indices[i]]);
         }
       } else {
-        IntLongVectorStorage newStorage = v1.getStorage().emptyDense();
         long[] newValues = newStorage.getValues();
         int[] v1Indices = v1.getStorage().getIndices();
         long[] v1Values = v1.getStorage().getValues();
@@ -2060,12 +3715,11 @@ public class SimpleBinaryOutZAExecutor {
           int idx = v1Indices[k];
           newValues[idx] = op.apply(v1Values[k], v2Values[idx]);
         }
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse() && v2.isSparse()) {
-      if (v1.size() > v2.size()) {
-        IntLongVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
         IntLongVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -2075,74 +3729,148 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getLongValue()));
           }
         }
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Int2LongMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
         IntLongVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Int2LongMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getLongValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
+        IntLongVectorStorage v1storage = v1.getStorage();
+        while (iter.hasNext()) {
+          Int2LongMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v1storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), entry.getLongValue()));
+          }
+        }
+      } else {// preferred dense
+        ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
+        IntLongVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Int2LongMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
           }
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (op.isKeepStorage() || v1.size() < v2.size() * Constant.sparseSortedThreshold) {
-        res = v1.copy();
-        ObjectIterator<Int2LongMap.Entry> iter = res.getStorage().entryIterator();
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        int[] v2Indices = v2.getStorage().getIndices();
+        long[] v2Values = v2.getStorage().getValues();
+
+        IntLongVectorStorage storage = v1.getStorage();
+        int size = v2.size();
+        for (int i = 0; i < size; i++) {
+          int idx = v2Indices[i];
+          if (storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
+          }
+        }
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
         IntLongVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Int2LongMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getLongValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
           }
         }
-      } else {
-        int[] vIndices = v2.getStorage().getIndices();
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        int[] v2Indices = v2.getStorage().getIndices();
         long[] v2Values = v2.getStorage().getValues();
-        int[] resIndices = ArrayCopy.copy(vIndices);
-        long[] resValues = new long[v2Values.length];
+
         IntLongVectorStorage storage = v1.getStorage();
         int size = v2.size();
         for (int i = 0; i < size; i++) {
-          int idx = vIndices[i];
+          int idx = v2Indices[i];
           if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(storage.get(idx), v2Values[i]);
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-
-        IntLongVectorStorage newStorage =
-          new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else { // preferred dense
+        ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
+        IntLongVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Int2LongMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (op.isKeepStorage() || v1.size() * Constant.sparseSortedThreshold < v2.size()) {
-        res = v1.copy();
-        long[] resValues = res.getStorage().getValues();
-
-        int[] v1Indices = v1.getStorage().getIndices();
-        long[] v1Values = v1.getStorage().getValues();
-        IntLongVectorStorage storage = v2.getStorage();
-        int size = v1.size();
-        for (int i = 0; i < size; i++) {
-          int idx = v1Indices[i];
-          if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(v1Values[i], storage.get(idx));
-          } else {
-            resValues[i] = 0;
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v2.size
+          ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
+          IntLongVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Int2LongMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getLongValue()));
+            }
+          }
+        } else {//sparse preferred
+          ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
+          IntLongVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Int2LongMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getLongValue()));
+            }
           }
         }
-      } else {
-        IntLongVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          int[] resIndices = newStorage.getIndices();
+          long[] resValues = newStorage.getValues();
+
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          IntLongVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          IntLongVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
         IntLongVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -2152,8 +3880,34 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1storage.get(idx), entry.getLongValue()));
           }
         }
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else {//dense preferred
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          int[] resIndices = newStorage.getIndices();
+          long[] resValues = newStorage.getValues();
+
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          IntLongVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {//dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          IntLongVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
       int v1Pointor = 0;
@@ -2161,46 +3915,172 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (size1 > size2) {
-        int[] v1Indices = v1.getStorage().getIndices();
-        long[] v1Values = v1.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        long[] v2Values = v2.getStorage().getValues();
-        int[] resIndices = ArrayCopy.copy(vIndices);
-        long[] resValues = new long[v2Values.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {//sorted v2.size
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v2Indices);
+          long[] resValues = new long[v2Values.length];
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (vIndices[v1Pointor] == v1Indices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-        IntLongVectorStorage newStorage =
-          new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        int[] resIndices = res.getStorage().getIndices();
-        long[] resValues = res.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        long[] v2Values = v2.getStorage().getValues();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          long[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// sparse preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {// sorted v2.size
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v2Indices);
+          long[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          long[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          long[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       }
@@ -2208,14 +4088,14 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return res;
+    return new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   private static Vector apply(IntLongVector v1, IntIntVector v2, Binary op) {
-    IntLongVector res;
+    IntLongVectorStorage newStorage = (IntLongVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isDense() && v2.isDense()) {
-      res = v1.copy();
-      long[] resValues = res.getStorage().getValues();
+      long[] resValues = newStorage.getValues();
       long[] v1Values = v1.getStorage().getValues();
       int[] v2Values = v2.getStorage().getValues();
       int length = v1Values.length;
@@ -2223,8 +4103,9 @@ public class SimpleBinaryOutZAExecutor {
         resValues[idx] = op.apply(v1Values[idx], v2Values[idx]);
       }
     } else if (v1.isDense() && v2.isSparse()) {
-      if (op.isKeepStorage() || v2.size() > Constant.sparseDenseStorageThreshold * v2.getDim()) {
-        IntLongVectorStorage newStorage = v1.getStorage().emptyDense();
+      if ((v2.isSparse() && v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) ||
+          (v2.isSorted() && v2.getSize() >= Constant.sortedDenseStorageThreshold * v2.dim())) {
+        // dense preferred, KeepStorage is guaranteed
         long[] newValues = newStorage.getValues();
         long[] v1Values = v1.getStorage().getValues();
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
@@ -2233,23 +4114,30 @@ public class SimpleBinaryOutZAExecutor {
           int idx = entry.getIntKey();
           newValues[idx] = op.apply(v1Values[idx], entry.getIntValue());
         }
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        IntLongVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
-        long[] v1Values = v1.getStorage().getValues();
-        ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Int2IntMap.Entry entry = iter.next();
-          int idx = entry.getIntKey();
-          newStorage.set(idx, op.apply(v1Values[idx], entry.getIntValue()));
+        if (op.isKeepStorage()) {
+          long[] newValues = newStorage.getValues();
+          long[] v1Values = v1.getStorage().getValues();
+          ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          while (iter.hasNext()) {
+            Int2IntMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            newValues[idx] = op.apply(v1Values[idx], entry.getIntValue());
+          }
+        } else {
+          long[] v1Values = v1.getStorage().getValues();
+          ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          while (iter.hasNext()) {
+            Int2IntMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            newStorage.set(idx, op.apply(v1Values[idx], entry.getIntValue()));
+          }
         }
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isDense() && v2.isSorted()) {
-      if (op.isKeepStorage() || v2.size() > Constant.sortedDenseStorageThreshold * v2.getDim()) {
-        IntLongVectorStorage newStorage = v1.getStorage().emptyDense();
+      if ((v2.isSparse() && v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) ||
+          (v2.isSorted() && v2.getSize() >= Constant.sortedDenseStorageThreshold * v2.dim())) {
+        // dense preferred, KeepStorage is guaranteed
         long[] newValues = newStorage.getValues();
         long[] v1Values = v1.getStorage().getValues();
         int[] vIndices = v2.getStorage().getIndices();
@@ -2259,30 +4147,31 @@ public class SimpleBinaryOutZAExecutor {
           int idx = vIndices[i];
           newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
         }
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        IntLongVectorStorage newStorage = v1.getStorage().emptySorted((int) (v2.size()));
-        int[] resIndices = newStorage.getIndices();
-        long[] resValues = newStorage.getValues();
-
-        long[] v1Values = v1.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        int[] v2Values = v2.getStorage().getValues();
-        int size = v2.size();
-        for (int i = 0; i < size; i++) {
-          int idx = vIndices[i];
-          resIndices[i] = idx;
-          resValues[i] = op.apply(v1Values[idx], v2Values[i]);
+        if (op.isKeepStorage()) {
+          long[] newValues = newStorage.getValues();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] vIndices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int size = v2.size();
+          for (int i = 0; i < size; i++) {
+            int idx = vIndices[i];
+            newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
+          }
+        } else {
+          long[] v1Values = v1.getStorage().getValues();
+          int[] vIndices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int size = v2.size();
+          for (int i = 0; i < size; i++) {
+            int idx = vIndices[i];
+            newStorage.set(idx, op.apply(v1Values[idx], v2Values[i]));
+          }
         }
-
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse() && v2.isDense()) {
-      if (op.isKeepStorage() || v1.size() < Constant.sparseDenseStorageThreshold * v1.getDim()) {
-        res = v1.copy();
-        ObjectIterator<Int2LongMap.Entry> iter = res.getStorage().entryIterator();
+      if (op.isKeepStorage() || v1.size() <= Constant.sparseDenseStorageThreshold * v1.getDim()) {
+        ObjectIterator<Int2LongMap.Entry> iter = newStorage.entryIterator();
         int[] v2Values = v2.getStorage().getValues();
         while (iter.hasNext()) {
           Int2LongMap.Entry entry = iter.next();
@@ -2290,7 +4179,6 @@ public class SimpleBinaryOutZAExecutor {
           entry.setValue(op.apply(entry.getLongValue(), v2Values[idx]));
         }
       } else {
-        IntLongVectorStorage newStorage = v1.getStorage().emptyDense();
         long[] newValues = newStorage.getValues();
         ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
         int[] v2Values = v2.getStorage().getValues();
@@ -2299,23 +4187,21 @@ public class SimpleBinaryOutZAExecutor {
           int idx = entry.getIntKey();
           newValues[idx] = op.apply(entry.getLongValue(), v2Values[idx]);
         }
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSorted() && v2.isDense()) {
-      if (op.isKeepStorage() || v1.size() < Constant.sortedDenseStorageThreshold * v1.getDim()) {
-        res = v1.copy();
-        long[] resValues = res.getStorage().getValues();
+      if (op.isKeepStorage() || v1.size() <= Constant.sortedDenseStorageThreshold * v1.getDim()) {
+        long[] resValues = newStorage.getValues();
+        int[] resIndices = newStorage.getIndices();
 
         int[] v1Indices = v1.getStorage().getIndices();
         long[] v1Values = v1.getStorage().getValues();
         int[] v2Values = v2.getStorage().getValues();
         int size = v1.size();
         for (int i = 0; i < size; i++) {
+          resIndices[i] = v1Indices[i];
           resValues[i] = op.apply(v1Values[i], v2Values[v1Indices[i]]);
         }
       } else {
-        IntLongVectorStorage newStorage = v1.getStorage().emptyDense();
         long[] newValues = newStorage.getValues();
         int[] v1Indices = v1.getStorage().getIndices();
         long[] v1Values = v1.getStorage().getValues();
@@ -2325,12 +4211,11 @@ public class SimpleBinaryOutZAExecutor {
           int idx = v1Indices[k];
           newValues[idx] = op.apply(v1Values[k], v2Values[idx]);
         }
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse() && v2.isSparse()) {
-      if (v1.size() > v2.size()) {
-        IntLongVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
         IntLongVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -2340,74 +4225,148 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
           }
         }
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Int2LongMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
         IntIntVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Int2LongMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getLongValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+        IntLongVectorStorage v1storage = v1.getStorage();
+        while (iter.hasNext()) {
+          Int2IntMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v1storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
+          }
+        }
+      } else {// preferred dense
+        ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
+        IntIntVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Int2LongMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
           }
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (op.isKeepStorage() || v1.size() < v2.size() * Constant.sparseSortedThreshold) {
-        res = v1.copy();
-        ObjectIterator<Int2LongMap.Entry> iter = res.getStorage().entryIterator();
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        int[] v2Indices = v2.getStorage().getIndices();
+        int[] v2Values = v2.getStorage().getValues();
+
+        IntLongVectorStorage storage = v1.getStorage();
+        int size = v2.size();
+        for (int i = 0; i < size; i++) {
+          int idx = v2Indices[i];
+          if (storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
+          }
+        }
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
         IntIntVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Int2LongMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getLongValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
           }
         }
-      } else {
-        int[] vIndices = v2.getStorage().getIndices();
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        int[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
-        int[] resIndices = ArrayCopy.copy(vIndices);
-        long[] resValues = new long[v2Values.length];
+
         IntLongVectorStorage storage = v1.getStorage();
         int size = v2.size();
         for (int i = 0; i < size; i++) {
-          int idx = vIndices[i];
+          int idx = v2Indices[i];
           if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(storage.get(idx), v2Values[i]);
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-
-        IntLongVectorStorage newStorage =
-          new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else { // preferred dense
+        ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
+        IntIntVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Int2LongMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (op.isKeepStorage() || v1.size() * Constant.sparseSortedThreshold < v2.size()) {
-        res = v1.copy();
-        long[] resValues = res.getStorage().getValues();
-
-        int[] v1Indices = v1.getStorage().getIndices();
-        long[] v1Values = v1.getStorage().getValues();
-        IntIntVectorStorage storage = v2.getStorage();
-        int size = v1.size();
-        for (int i = 0; i < size; i++) {
-          int idx = v1Indices[i];
-          if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(v1Values[i], storage.get(idx));
-          } else {
-            resValues[i] = 0;
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v2.size
+          ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          IntLongVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Int2IntMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
+            }
+          }
+        } else {//sparse preferred
+          ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          IntLongVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Int2IntMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
+            }
           }
         }
-      } else {
-        IntLongVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          int[] resIndices = newStorage.getIndices();
+          long[] resValues = newStorage.getValues();
+
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          IntIntVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          IntIntVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
         IntLongVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -2417,8 +4376,34 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
           }
         }
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else {//dense preferred
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          int[] resIndices = newStorage.getIndices();
+          long[] resValues = newStorage.getValues();
+
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          IntIntVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {//dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          IntIntVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
       int v1Pointor = 0;
@@ -2426,46 +4411,172 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (size1 > size2) {
-        int[] v1Indices = v1.getStorage().getIndices();
-        long[] v1Values = v1.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        int[] v2Values = v2.getStorage().getValues();
-        int[] resIndices = ArrayCopy.copy(vIndices);
-        long[] resValues = new long[v2Values.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {//sorted v2.size
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v2Indices);
+          long[] resValues = new long[v2Values.length];
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (vIndices[v1Pointor] == v1Indices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-        IntLongVectorStorage newStorage =
-          new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        int[] resIndices = res.getStorage().getIndices();
-        long[] resValues = res.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        int[] v2Values = v2.getStorage().getValues();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          long[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// sparse preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {// sorted v2.size
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v2Indices);
+          long[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          long[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          long[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       }
@@ -2473,14 +4584,14 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return res;
+    return new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   private static Vector apply(IntIntVector v1, IntIntVector v2, Binary op) {
-    IntIntVector res;
+    IntIntVectorStorage newStorage = (IntIntVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isDense() && v2.isDense()) {
-      res = v1.copy();
-      int[] resValues = res.getStorage().getValues();
+      int[] resValues = newStorage.getValues();
       int[] v1Values = v1.getStorage().getValues();
       int[] v2Values = v2.getStorage().getValues();
       int length = v1Values.length;
@@ -2488,8 +4599,9 @@ public class SimpleBinaryOutZAExecutor {
         resValues[idx] = op.apply(v1Values[idx], v2Values[idx]);
       }
     } else if (v1.isDense() && v2.isSparse()) {
-      if (op.isKeepStorage() || v2.size() > Constant.sparseDenseStorageThreshold * v2.getDim()) {
-        IntIntVectorStorage newStorage = v1.getStorage().emptyDense();
+      if ((v2.isSparse() && v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) ||
+          (v2.isSorted() && v2.getSize() >= Constant.sortedDenseStorageThreshold * v2.dim())) {
+        // dense preferred, KeepStorage is guaranteed
         int[] newValues = newStorage.getValues();
         int[] v1Values = v1.getStorage().getValues();
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
@@ -2498,23 +4610,30 @@ public class SimpleBinaryOutZAExecutor {
           int idx = entry.getIntKey();
           newValues[idx] = op.apply(v1Values[idx], entry.getIntValue());
         }
-        res =
-          new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
       } else {
-        IntIntVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
-        int[] v1Values = v1.getStorage().getValues();
-        ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Int2IntMap.Entry entry = iter.next();
-          int idx = entry.getIntKey();
-          newStorage.set(idx, op.apply(v1Values[idx], entry.getIntValue()));
+        if (op.isKeepStorage()) {
+          int[] newValues = newStorage.getValues();
+          int[] v1Values = v1.getStorage().getValues();
+          ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          while (iter.hasNext()) {
+            Int2IntMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            newValues[idx] = op.apply(v1Values[idx], entry.getIntValue());
+          }
+        } else {
+          int[] v1Values = v1.getStorage().getValues();
+          ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          while (iter.hasNext()) {
+            Int2IntMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            newStorage.set(idx, op.apply(v1Values[idx], entry.getIntValue()));
+          }
         }
-        res =
-          new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
       }
     } else if (v1.isDense() && v2.isSorted()) {
-      if (op.isKeepStorage() || v2.size() > Constant.sortedDenseStorageThreshold * v2.getDim()) {
-        IntIntVectorStorage newStorage = v1.getStorage().emptyDense();
+      if ((v2.isSparse() && v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) ||
+          (v2.isSorted() && v2.getSize() >= Constant.sortedDenseStorageThreshold * v2.dim())) {
+        // dense preferred, KeepStorage is guaranteed
         int[] newValues = newStorage.getValues();
         int[] v1Values = v1.getStorage().getValues();
         int[] vIndices = v2.getStorage().getIndices();
@@ -2524,30 +4643,31 @@ public class SimpleBinaryOutZAExecutor {
           int idx = vIndices[i];
           newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
         }
-        res =
-          new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
       } else {
-        IntIntVectorStorage newStorage = v1.getStorage().emptySorted((int) (v2.size()));
-        int[] resIndices = newStorage.getIndices();
-        int[] resValues = newStorage.getValues();
-
-        int[] v1Values = v1.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        int[] v2Values = v2.getStorage().getValues();
-        int size = v2.size();
-        for (int i = 0; i < size; i++) {
-          int idx = vIndices[i];
-          resIndices[i] = idx;
-          resValues[i] = op.apply(v1Values[idx], v2Values[i]);
+        if (op.isKeepStorage()) {
+          int[] newValues = newStorage.getValues();
+          int[] v1Values = v1.getStorage().getValues();
+          int[] vIndices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int size = v2.size();
+          for (int i = 0; i < size; i++) {
+            int idx = vIndices[i];
+            newValues[idx] = op.apply(v1Values[idx], v2Values[i]);
+          }
+        } else {
+          int[] v1Values = v1.getStorage().getValues();
+          int[] vIndices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int size = v2.size();
+          for (int i = 0; i < size; i++) {
+            int idx = vIndices[i];
+            newStorage.set(idx, op.apply(v1Values[idx], v2Values[i]));
+          }
         }
-
-        res =
-          new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
       }
     } else if (v1.isSparse() && v2.isDense()) {
-      if (op.isKeepStorage() || v1.size() < Constant.sparseDenseStorageThreshold * v1.getDim()) {
-        res = v1.copy();
-        ObjectIterator<Int2IntMap.Entry> iter = res.getStorage().entryIterator();
+      if (op.isKeepStorage() || v1.size() <= Constant.sparseDenseStorageThreshold * v1.getDim()) {
+        ObjectIterator<Int2IntMap.Entry> iter = newStorage.entryIterator();
         int[] v2Values = v2.getStorage().getValues();
         while (iter.hasNext()) {
           Int2IntMap.Entry entry = iter.next();
@@ -2555,7 +4675,6 @@ public class SimpleBinaryOutZAExecutor {
           entry.setValue(op.apply(entry.getIntValue(), v2Values[idx]));
         }
       } else {
-        IntIntVectorStorage newStorage = v1.getStorage().emptyDense();
         int[] newValues = newStorage.getValues();
         ObjectIterator<Int2IntMap.Entry> iter = v1.getStorage().entryIterator();
         int[] v2Values = v2.getStorage().getValues();
@@ -2564,23 +4683,21 @@ public class SimpleBinaryOutZAExecutor {
           int idx = entry.getIntKey();
           newValues[idx] = op.apply(entry.getIntValue(), v2Values[idx]);
         }
-        res =
-          new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
       }
     } else if (v1.isSorted() && v2.isDense()) {
-      if (op.isKeepStorage() || v1.size() < Constant.sortedDenseStorageThreshold * v1.getDim()) {
-        res = v1.copy();
-        int[] resValues = res.getStorage().getValues();
+      if (op.isKeepStorage() || v1.size() <= Constant.sortedDenseStorageThreshold * v1.getDim()) {
+        int[] resValues = newStorage.getValues();
+        int[] resIndices = newStorage.getIndices();
 
         int[] v1Indices = v1.getStorage().getIndices();
         int[] v1Values = v1.getStorage().getValues();
         int[] v2Values = v2.getStorage().getValues();
         int size = v1.size();
         for (int i = 0; i < size; i++) {
+          resIndices[i] = v1Indices[i];
           resValues[i] = op.apply(v1Values[i], v2Values[v1Indices[i]]);
         }
       } else {
-        IntIntVectorStorage newStorage = v1.getStorage().emptyDense();
         int[] newValues = newStorage.getValues();
         int[] v1Indices = v1.getStorage().getIndices();
         int[] v1Values = v1.getStorage().getValues();
@@ -2590,12 +4707,11 @@ public class SimpleBinaryOutZAExecutor {
           int idx = v1Indices[k];
           newValues[idx] = op.apply(v1Values[k], v2Values[idx]);
         }
-        res =
-          new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
       }
     } else if (v1.isSparse() && v2.isSparse()) {
-      if (v1.size() > v2.size()) {
-        IntIntVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
         IntIntVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -2605,74 +4721,148 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
           }
         }
-        res =
-          new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Int2IntMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2IntMap.Entry> iter = v1.getStorage().entryIterator();
         IntIntVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Int2IntMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getIntValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getIntValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+        IntIntVectorStorage v1storage = v1.getStorage();
+        while (iter.hasNext()) {
+          Int2IntMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v1storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
+          }
+        }
+      } else {// preferred dense
+        ObjectIterator<Int2IntMap.Entry> iter = v1.getStorage().entryIterator();
+        IntIntVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Int2IntMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getIntValue(), v2.get(idx)));
           }
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (op.isKeepStorage() || v1.size() < v2.size() * Constant.sparseSortedThreshold) {
-        res = v1.copy();
-        ObjectIterator<Int2IntMap.Entry> iter = res.getStorage().entryIterator();
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        int[] v2Indices = v2.getStorage().getIndices();
+        int[] v2Values = v2.getStorage().getValues();
+
+        IntIntVectorStorage storage = v1.getStorage();
+        int size = v2.size();
+        for (int i = 0; i < size; i++) {
+          int idx = v2Indices[i];
+          if (storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
+          }
+        }
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2IntMap.Entry> iter = v1.getStorage().entryIterator();
         IntIntVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Int2IntMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getIntValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getIntValue(), v2.get(idx)));
           }
         }
-      } else {
-        int[] vIndices = v2.getStorage().getIndices();
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        int[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
-        int[] resIndices = ArrayCopy.copy(vIndices);
-        int[] resValues = new int[v2Values.length];
+
         IntIntVectorStorage storage = v1.getStorage();
         int size = v2.size();
         for (int i = 0; i < size; i++) {
-          int idx = vIndices[i];
+          int idx = v2Indices[i];
           if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(storage.get(idx), v2Values[i]);
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-
-        IntIntVectorStorage newStorage =
-          new IntIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res =
-          new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
+      } else { // preferred dense
+        ObjectIterator<Int2IntMap.Entry> iter = v1.getStorage().entryIterator();
+        IntIntVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Int2IntMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getIntValue(), v2.get(idx)));
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (op.isKeepStorage() || v1.size() * Constant.sparseSortedThreshold < v2.size()) {
-        res = v1.copy();
-        int[] resValues = res.getStorage().getValues();
-
-        int[] v1Indices = v1.getStorage().getIndices();
-        int[] v1Values = v1.getStorage().getValues();
-        IntIntVectorStorage storage = v2.getStorage();
-        int size = v1.size();
-        for (int i = 0; i < size; i++) {
-          int idx = v1Indices[i];
-          if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(v1Values[i], storage.get(idx));
-          } else {
-            resValues[i] = 0;
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v2.size
+          ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          IntIntVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Int2IntMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
+            }
+          }
+        } else {//sparse preferred
+          ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          IntIntVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Int2IntMap.Entry entry = iter.next();
+            int idx = entry.getIntKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
+            }
           }
         }
-      } else {
-        IntIntVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          int[] resIndices = newStorage.getIndices();
+          int[] resValues = newStorage.getValues();
+
+          int[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          IntIntVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          IntIntVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
         IntIntVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -2682,8 +4872,34 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
           }
         }
-        res =
-          new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
+      } else {//dense preferred
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          int[] resIndices = newStorage.getIndices();
+          int[] resValues = newStorage.getValues();
+
+          int[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          IntIntVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {//dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          IntIntVectorStorage storage = v2.getStorage();
+          int size = v1.size();
+          for (int i = 0; i < size; i++) {
+            int idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
       int v1Pointor = 0;
@@ -2691,46 +4907,172 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (size1 > size2) {
-        int[] v1Indices = v1.getStorage().getIndices();
-        int[] v1Values = v1.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        int[] v2Values = v2.getStorage().getValues();
-        int[] resIndices = ArrayCopy.copy(vIndices);
-        int[] resValues = new int[v2Values.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {//sorted v2.size
+          int[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v2Indices);
+          int[] resValues = new int[v2Values.length];
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (vIndices[v1Pointor] == v1Indices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-        IntIntVectorStorage newStorage =
-          new IntIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res =
-          new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
-      } else {
-        res = v1.copy();
-        int[] resIndices = res.getStorage().getIndices();
-        int[] resValues = res.getStorage().getValues();
-        int[] vIndices = v2.getStorage().getIndices();
-        int[] v2Values = v2.getStorage().getValues();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          int[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// sparse preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {// sorted v2.size
+          int[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v2Indices);
+          int[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          int[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          int[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       }
@@ -2738,14 +5080,16 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return res;
+    return new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   private static Vector apply(LongDoubleVector v1, LongDoubleVector v2, Binary op) {
-    LongDoubleVector res;
+    LongDoubleVectorStorage newStorage = (LongDoubleVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isSparse() && v2.isSparse()) {
-      if (v1.size() > v2.size()) {
-        LongDoubleVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
         LongDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -2755,74 +5099,148 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getDoubleValue()));
           }
         }
-        res = new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Long2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         LongDoubleVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Long2DoubleMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getDoubleValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        ObjectIterator<Long2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
+        LongDoubleVectorStorage v1storage = v1.getStorage();
+        while (iter.hasNext()) {
+          Long2DoubleMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v1storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), entry.getDoubleValue()));
+          }
+        }
+      } else {// preferred dense
+        ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
+        LongDoubleVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2DoubleMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (op.isKeepStorage() || v1.size() < v2.size() * Constant.sparseSortedThreshold) {
-        res = v1.copy();
-        ObjectIterator<Long2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        long[] v2Indices = v2.getStorage().getIndices();
+        double[] v2Values = v2.getStorage().getValues();
+
+        LongDoubleVectorStorage storage = v1.getStorage();
+        long size = v2.size();
+        for (int i = 0; i < size; i++) {
+          long idx = v2Indices[i];
+          if (storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
+          }
+        }
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         LongDoubleVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Long2DoubleMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getDoubleValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else {
-        long[] vIndices = v2.getStorage().getIndices();
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        long[] v2Indices = v2.getStorage().getIndices();
         double[] v2Values = v2.getStorage().getValues();
-        long[] resIndices = ArrayCopy.copy(vIndices);
-        double[] resValues = new double[v2Values.length];
+
         LongDoubleVectorStorage storage = v1.getStorage();
         long size = v2.size();
         for (int i = 0; i < size; i++) {
-          long idx = vIndices[i];
+          long idx = v2Indices[i];
           if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(storage.get(idx), v2Values[i]);
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-
-        LongDoubleVectorStorage newStorage =
-          new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else { // preferred dense
+        ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
+        LongDoubleVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2DoubleMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (op.isKeepStorage() || v1.size() * Constant.sparseSortedThreshold < v2.size()) {
-        res = v1.copy();
-        double[] resValues = res.getStorage().getValues();
-
-        long[] v1Indices = v1.getStorage().getIndices();
-        double[] v1Values = v1.getStorage().getValues();
-        LongDoubleVectorStorage storage = v2.getStorage();
-        long size = v1.size();
-        for (int i = 0; i < size; i++) {
-          long idx = v1Indices[i];
-          if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(v1Values[i], storage.get(idx));
-          } else {
-            resValues[i] = 0;
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v2.size
+          ObjectIterator<Long2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
+          LongDoubleVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Long2DoubleMap.Entry entry = iter.next();
+            long idx = entry.getLongKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getDoubleValue()));
+            }
+          }
+        } else {//sparse preferred
+          ObjectIterator<Long2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
+          LongDoubleVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Long2DoubleMap.Entry entry = iter.next();
+            long idx = entry.getLongKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getDoubleValue()));
+            }
           }
         }
-      } else {
-        LongDoubleVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          long[] resIndices = newStorage.getIndices();
+          double[] resValues = newStorage.getValues();
+
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          LongDoubleVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          LongDoubleVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Long2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
         LongDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -2832,8 +5250,34 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1storage.get(idx), entry.getDoubleValue()));
           }
         }
-        res = new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else {//dense preferred
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          long[] resIndices = newStorage.getIndices();
+          double[] resValues = newStorage.getValues();
+
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          LongDoubleVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {//dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          LongDoubleVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
       int v1Pointor = 0;
@@ -2841,46 +5285,172 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (size1 > size2) {
-        long[] v1Indices = v1.getStorage().getIndices();
-        double[] v1Values = v1.getStorage().getValues();
-        long[] vIndices = v2.getStorage().getIndices();
-        double[] v2Values = v2.getStorage().getValues();
-        long[] resIndices = ArrayCopy.copy(vIndices);
-        double[] resValues = new double[v2Values.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {//sorted v2.size
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          double[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v2Indices);
+          double[] resValues = new double[v2Values.length];
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (vIndices[v1Pointor] == v1Indices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          double[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-        LongDoubleVectorStorage newStorage =
-          new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        long[] resIndices = res.getStorage().getIndices();
-        double[] resValues = res.getStorage().getValues();
-        long[] vIndices = v2.getStorage().getIndices();
-        double[] v2Values = v2.getStorage().getValues();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          double[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          double[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// sparse preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          double[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {// sorted v2.size
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          double[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v2Indices);
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          double[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          double[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          double[] v2Values = v2.getStorage().getValues();
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       }
@@ -2888,14 +5458,16 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return res;
+    return new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   private static Vector apply(LongDoubleVector v1, LongFloatVector v2, Binary op) {
-    LongDoubleVector res;
+    LongDoubleVectorStorage newStorage = (LongDoubleVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isSparse() && v2.isSparse()) {
-      if (v1.size() > v2.size()) {
-        LongDoubleVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
         LongDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -2905,74 +5477,148 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getFloatValue()));
           }
         }
-        res = new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Long2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         LongFloatVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Long2DoubleMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getDoubleValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
+        LongDoubleVectorStorage v1storage = v1.getStorage();
+        while (iter.hasNext()) {
+          Long2FloatMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v1storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), entry.getFloatValue()));
+          }
+        }
+      } else {// preferred dense
+        ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
+        LongFloatVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2DoubleMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (op.isKeepStorage() || v1.size() < v2.size() * Constant.sparseSortedThreshold) {
-        res = v1.copy();
-        ObjectIterator<Long2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        long[] v2Indices = v2.getStorage().getIndices();
+        float[] v2Values = v2.getStorage().getValues();
+
+        LongDoubleVectorStorage storage = v1.getStorage();
+        long size = v2.size();
+        for (int i = 0; i < size; i++) {
+          long idx = v2Indices[i];
+          if (storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
+          }
+        }
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         LongFloatVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Long2DoubleMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getDoubleValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else {
-        long[] vIndices = v2.getStorage().getIndices();
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        long[] v2Indices = v2.getStorage().getIndices();
         float[] v2Values = v2.getStorage().getValues();
-        long[] resIndices = ArrayCopy.copy(vIndices);
-        double[] resValues = new double[v2Values.length];
+
         LongDoubleVectorStorage storage = v1.getStorage();
         long size = v2.size();
         for (int i = 0; i < size; i++) {
-          long idx = vIndices[i];
+          long idx = v2Indices[i];
           if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(storage.get(idx), v2Values[i]);
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-
-        LongDoubleVectorStorage newStorage =
-          new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else { // preferred dense
+        ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
+        LongFloatVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2DoubleMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (op.isKeepStorage() || v1.size() * Constant.sparseSortedThreshold < v2.size()) {
-        res = v1.copy();
-        double[] resValues = res.getStorage().getValues();
-
-        long[] v1Indices = v1.getStorage().getIndices();
-        double[] v1Values = v1.getStorage().getValues();
-        LongFloatVectorStorage storage = v2.getStorage();
-        long size = v1.size();
-        for (int i = 0; i < size; i++) {
-          long idx = v1Indices[i];
-          if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(v1Values[i], storage.get(idx));
-          } else {
-            resValues[i] = 0;
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v2.size
+          ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
+          LongDoubleVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Long2FloatMap.Entry entry = iter.next();
+            long idx = entry.getLongKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getFloatValue()));
+            }
+          }
+        } else {//sparse preferred
+          ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
+          LongDoubleVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Long2FloatMap.Entry entry = iter.next();
+            long idx = entry.getLongKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getFloatValue()));
+            }
           }
         }
-      } else {
-        LongDoubleVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          long[] resIndices = newStorage.getIndices();
+          double[] resValues = newStorage.getValues();
+
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          LongFloatVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          LongFloatVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
         LongDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -2982,8 +5628,34 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1storage.get(idx), entry.getFloatValue()));
           }
         }
-        res = new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else {//dense preferred
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          long[] resIndices = newStorage.getIndices();
+          double[] resValues = newStorage.getValues();
+
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          LongFloatVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {//dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          LongFloatVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
       int v1Pointor = 0;
@@ -2991,46 +5663,172 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (size1 > size2) {
-        long[] v1Indices = v1.getStorage().getIndices();
-        double[] v1Values = v1.getStorage().getValues();
-        long[] vIndices = v2.getStorage().getIndices();
-        float[] v2Values = v2.getStorage().getValues();
-        long[] resIndices = ArrayCopy.copy(vIndices);
-        double[] resValues = new double[v2Values.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {//sorted v2.size
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v2Indices);
+          double[] resValues = new double[v2Values.length];
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (vIndices[v1Pointor] == v1Indices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-        LongDoubleVectorStorage newStorage =
-          new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        long[] resIndices = res.getStorage().getIndices();
-        double[] resValues = res.getStorage().getValues();
-        long[] vIndices = v2.getStorage().getIndices();
-        float[] v2Values = v2.getStorage().getValues();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          double[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// sparse preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {// sorted v2.size
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v2Indices);
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       }
@@ -3038,14 +5836,16 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return res;
+    return new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   private static Vector apply(LongDoubleVector v1, LongLongVector v2, Binary op) {
-    LongDoubleVector res;
+    LongDoubleVectorStorage newStorage = (LongDoubleVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isSparse() && v2.isSparse()) {
-      if (v1.size() > v2.size()) {
-        LongDoubleVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
         LongDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -3055,74 +5855,148 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getLongValue()));
           }
         }
-        res = new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Long2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         LongLongVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Long2DoubleMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getDoubleValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
+        LongDoubleVectorStorage v1storage = v1.getStorage();
+        while (iter.hasNext()) {
+          Long2LongMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v1storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), entry.getLongValue()));
+          }
+        }
+      } else {// preferred dense
+        ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
+        LongLongVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2DoubleMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (op.isKeepStorage() || v1.size() < v2.size() * Constant.sparseSortedThreshold) {
-        res = v1.copy();
-        ObjectIterator<Long2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        long[] v2Indices = v2.getStorage().getIndices();
+        long[] v2Values = v2.getStorage().getValues();
+
+        LongDoubleVectorStorage storage = v1.getStorage();
+        long size = v2.size();
+        for (int i = 0; i < size; i++) {
+          long idx = v2Indices[i];
+          if (storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
+          }
+        }
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         LongLongVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Long2DoubleMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getDoubleValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else {
-        long[] vIndices = v2.getStorage().getIndices();
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        long[] v2Indices = v2.getStorage().getIndices();
         long[] v2Values = v2.getStorage().getValues();
-        long[] resIndices = ArrayCopy.copy(vIndices);
-        double[] resValues = new double[v2Values.length];
+
         LongDoubleVectorStorage storage = v1.getStorage();
         long size = v2.size();
         for (int i = 0; i < size; i++) {
-          long idx = vIndices[i];
+          long idx = v2Indices[i];
           if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(storage.get(idx), v2Values[i]);
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-
-        LongDoubleVectorStorage newStorage =
-          new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else { // preferred dense
+        ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
+        LongLongVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2DoubleMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (op.isKeepStorage() || v1.size() * Constant.sparseSortedThreshold < v2.size()) {
-        res = v1.copy();
-        double[] resValues = res.getStorage().getValues();
-
-        long[] v1Indices = v1.getStorage().getIndices();
-        double[] v1Values = v1.getStorage().getValues();
-        LongLongVectorStorage storage = v2.getStorage();
-        long size = v1.size();
-        for (int i = 0; i < size; i++) {
-          long idx = v1Indices[i];
-          if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(v1Values[i], storage.get(idx));
-          } else {
-            resValues[i] = 0;
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v2.size
+          ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
+          LongDoubleVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Long2LongMap.Entry entry = iter.next();
+            long idx = entry.getLongKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getLongValue()));
+            }
+          }
+        } else {//sparse preferred
+          ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
+          LongDoubleVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Long2LongMap.Entry entry = iter.next();
+            long idx = entry.getLongKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getLongValue()));
+            }
           }
         }
-      } else {
-        LongDoubleVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          long[] resIndices = newStorage.getIndices();
+          double[] resValues = newStorage.getValues();
+
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          LongLongVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          LongLongVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
         LongDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -3132,8 +6006,34 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1storage.get(idx), entry.getLongValue()));
           }
         }
-        res = new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else {//dense preferred
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          long[] resIndices = newStorage.getIndices();
+          double[] resValues = newStorage.getValues();
+
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          LongLongVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {//dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          LongLongVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
       int v1Pointor = 0;
@@ -3141,46 +6041,172 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (size1 > size2) {
-        long[] v1Indices = v1.getStorage().getIndices();
-        double[] v1Values = v1.getStorage().getValues();
-        long[] vIndices = v2.getStorage().getIndices();
-        long[] v2Values = v2.getStorage().getValues();
-        long[] resIndices = ArrayCopy.copy(vIndices);
-        double[] resValues = new double[v2Values.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {//sorted v2.size
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v2Indices);
+          double[] resValues = new double[v2Values.length];
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (vIndices[v1Pointor] == v1Indices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-        LongDoubleVectorStorage newStorage =
-          new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        long[] resIndices = res.getStorage().getIndices();
-        double[] resValues = res.getStorage().getValues();
-        long[] vIndices = v2.getStorage().getIndices();
-        long[] v2Values = v2.getStorage().getValues();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          double[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// sparse preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {// sorted v2.size
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v2Indices);
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       }
@@ -3188,14 +6214,16 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return res;
+    return new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   private static Vector apply(LongDoubleVector v1, LongIntVector v2, Binary op) {
-    LongDoubleVector res;
+    LongDoubleVectorStorage newStorage = (LongDoubleVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isSparse() && v2.isSparse()) {
-      if (v1.size() > v2.size()) {
-        LongDoubleVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
         LongDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -3205,74 +6233,148 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
           }
         }
-        res = new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Long2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         LongIntVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Long2DoubleMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getDoubleValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
+        LongDoubleVectorStorage v1storage = v1.getStorage();
+        while (iter.hasNext()) {
+          Long2IntMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v1storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
+          }
+        }
+      } else {// preferred dense
+        ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
+        LongIntVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2DoubleMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (op.isKeepStorage() || v1.size() < v2.size() * Constant.sparseSortedThreshold) {
-        res = v1.copy();
-        ObjectIterator<Long2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        long[] v2Indices = v2.getStorage().getIndices();
+        int[] v2Values = v2.getStorage().getValues();
+
+        LongDoubleVectorStorage storage = v1.getStorage();
+        long size = v2.size();
+        for (int i = 0; i < size; i++) {
+          long idx = v2Indices[i];
+          if (storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
+          }
+        }
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         LongIntVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Long2DoubleMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getDoubleValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else {
-        long[] vIndices = v2.getStorage().getIndices();
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        long[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
-        long[] resIndices = ArrayCopy.copy(vIndices);
-        double[] resValues = new double[v2Values.length];
+
         LongDoubleVectorStorage storage = v1.getStorage();
         long size = v2.size();
         for (int i = 0; i < size; i++) {
-          long idx = vIndices[i];
+          long idx = v2Indices[i];
           if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(storage.get(idx), v2Values[i]);
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-
-        LongDoubleVectorStorage newStorage =
-          new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else { // preferred dense
+        ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
+        LongIntVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2DoubleMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (op.isKeepStorage() || v1.size() * Constant.sparseSortedThreshold < v2.size()) {
-        res = v1.copy();
-        double[] resValues = res.getStorage().getValues();
-
-        long[] v1Indices = v1.getStorage().getIndices();
-        double[] v1Values = v1.getStorage().getValues();
-        LongIntVectorStorage storage = v2.getStorage();
-        long size = v1.size();
-        for (int i = 0; i < size; i++) {
-          long idx = v1Indices[i];
-          if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(v1Values[i], storage.get(idx));
-          } else {
-            resValues[i] = 0;
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v2.size
+          ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          LongDoubleVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Long2IntMap.Entry entry = iter.next();
+            long idx = entry.getLongKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
+            }
+          }
+        } else {//sparse preferred
+          ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          LongDoubleVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Long2IntMap.Entry entry = iter.next();
+            long idx = entry.getLongKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
+            }
           }
         }
-      } else {
-        LongDoubleVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          long[] resIndices = newStorage.getIndices();
+          double[] resValues = newStorage.getValues();
+
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          LongIntVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          LongIntVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
         LongDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -3282,8 +6384,34 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
           }
         }
-        res = new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else {//dense preferred
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          long[] resIndices = newStorage.getIndices();
+          double[] resValues = newStorage.getValues();
+
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          LongIntVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {//dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          LongIntVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
       int v1Pointor = 0;
@@ -3291,46 +6419,172 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (size1 > size2) {
-        long[] v1Indices = v1.getStorage().getIndices();
-        double[] v1Values = v1.getStorage().getValues();
-        long[] vIndices = v2.getStorage().getIndices();
-        int[] v2Values = v2.getStorage().getValues();
-        long[] resIndices = ArrayCopy.copy(vIndices);
-        double[] resValues = new double[v2Values.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {//sorted v2.size
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v2Indices);
+          double[] resValues = new double[v2Values.length];
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (vIndices[v1Pointor] == v1Indices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-        LongDoubleVectorStorage newStorage =
-          new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        long[] resIndices = res.getStorage().getIndices();
-        double[] resValues = res.getStorage().getValues();
-        long[] vIndices = v2.getStorage().getIndices();
-        int[] v2Values = v2.getStorage().getValues();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          double[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// sparse preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {// sorted v2.size
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v2Indices);
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       }
@@ -3338,14 +6592,16 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return res;
+    return new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   private static Vector apply(LongFloatVector v1, LongFloatVector v2, Binary op) {
-    LongFloatVector res;
+    LongFloatVectorStorage newStorage = (LongFloatVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isSparse() && v2.isSparse()) {
-      if (v1.size() > v2.size()) {
-        LongFloatVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
         LongFloatVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -3355,74 +6611,148 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getFloatValue()));
           }
         }
-        res = new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Long2FloatMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         LongFloatVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Long2FloatMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getFloatValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
+        LongFloatVectorStorage v1storage = v1.getStorage();
+        while (iter.hasNext()) {
+          Long2FloatMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v1storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), entry.getFloatValue()));
+          }
+        }
+      } else {// preferred dense
+        ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
+        LongFloatVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2FloatMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (op.isKeepStorage() || v1.size() < v2.size() * Constant.sparseSortedThreshold) {
-        res = v1.copy();
-        ObjectIterator<Long2FloatMap.Entry> iter = res.getStorage().entryIterator();
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        long[] v2Indices = v2.getStorage().getIndices();
+        float[] v2Values = v2.getStorage().getValues();
+
+        LongFloatVectorStorage storage = v1.getStorage();
+        long size = v2.size();
+        for (int i = 0; i < size; i++) {
+          long idx = v2Indices[i];
+          if (storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
+          }
+        }
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         LongFloatVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Long2FloatMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getFloatValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
-      } else {
-        long[] vIndices = v2.getStorage().getIndices();
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        long[] v2Indices = v2.getStorage().getIndices();
         float[] v2Values = v2.getStorage().getValues();
-        long[] resIndices = ArrayCopy.copy(vIndices);
-        float[] resValues = new float[v2Values.length];
+
         LongFloatVectorStorage storage = v1.getStorage();
         long size = v2.size();
         for (int i = 0; i < size; i++) {
-          long idx = vIndices[i];
+          long idx = v2Indices[i];
           if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(storage.get(idx), v2Values[i]);
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-
-        LongFloatVectorStorage newStorage =
-          new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else { // preferred dense
+        ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
+        LongFloatVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2FloatMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (op.isKeepStorage() || v1.size() * Constant.sparseSortedThreshold < v2.size()) {
-        res = v1.copy();
-        float[] resValues = res.getStorage().getValues();
-
-        long[] v1Indices = v1.getStorage().getIndices();
-        float[] v1Values = v1.getStorage().getValues();
-        LongFloatVectorStorage storage = v2.getStorage();
-        long size = v1.size();
-        for (int i = 0; i < size; i++) {
-          long idx = v1Indices[i];
-          if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(v1Values[i], storage.get(idx));
-          } else {
-            resValues[i] = 0;
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v2.size
+          ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
+          LongFloatVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Long2FloatMap.Entry entry = iter.next();
+            long idx = entry.getLongKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getFloatValue()));
+            }
+          }
+        } else {//sparse preferred
+          ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
+          LongFloatVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Long2FloatMap.Entry entry = iter.next();
+            long idx = entry.getLongKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getFloatValue()));
+            }
           }
         }
-      } else {
-        LongFloatVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          long[] resIndices = newStorage.getIndices();
+          float[] resValues = newStorage.getValues();
+
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          LongFloatVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          LongFloatVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
         LongFloatVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -3432,8 +6762,34 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1storage.get(idx), entry.getFloatValue()));
           }
         }
-        res = new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else {//dense preferred
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          long[] resIndices = newStorage.getIndices();
+          float[] resValues = newStorage.getValues();
+
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          LongFloatVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {//dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          LongFloatVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
       int v1Pointor = 0;
@@ -3441,46 +6797,172 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (size1 > size2) {
-        long[] v1Indices = v1.getStorage().getIndices();
-        float[] v1Values = v1.getStorage().getValues();
-        long[] vIndices = v2.getStorage().getIndices();
-        float[] v2Values = v2.getStorage().getValues();
-        long[] resIndices = ArrayCopy.copy(vIndices);
-        float[] resValues = new float[v2Values.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {//sorted v2.size
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v2Indices);
+          float[] resValues = new float[v2Values.length];
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (vIndices[v1Pointor] == v1Indices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-        LongFloatVectorStorage newStorage =
-          new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        long[] resIndices = res.getStorage().getIndices();
-        float[] resValues = res.getStorage().getValues();
-        long[] vIndices = v2.getStorage().getIndices();
-        float[] v2Values = v2.getStorage().getValues();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          float[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// sparse preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {// sorted v2.size
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v2Indices);
+          float[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          float[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          float[] v2Values = v2.getStorage().getValues();
+          float[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       }
@@ -3488,14 +6970,16 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return res;
+    return new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   private static Vector apply(LongFloatVector v1, LongLongVector v2, Binary op) {
-    LongFloatVector res;
+    LongFloatVectorStorage newStorage = (LongFloatVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isSparse() && v2.isSparse()) {
-      if (v1.size() > v2.size()) {
-        LongFloatVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
         LongFloatVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -3505,74 +6989,148 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getLongValue()));
           }
         }
-        res = new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Long2FloatMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         LongLongVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Long2FloatMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getFloatValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
+        LongFloatVectorStorage v1storage = v1.getStorage();
+        while (iter.hasNext()) {
+          Long2LongMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v1storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), entry.getLongValue()));
+          }
+        }
+      } else {// preferred dense
+        ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
+        LongLongVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2FloatMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (op.isKeepStorage() || v1.size() < v2.size() * Constant.sparseSortedThreshold) {
-        res = v1.copy();
-        ObjectIterator<Long2FloatMap.Entry> iter = res.getStorage().entryIterator();
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        long[] v2Indices = v2.getStorage().getIndices();
+        long[] v2Values = v2.getStorage().getValues();
+
+        LongFloatVectorStorage storage = v1.getStorage();
+        long size = v2.size();
+        for (int i = 0; i < size; i++) {
+          long idx = v2Indices[i];
+          if (storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
+          }
+        }
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         LongLongVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Long2FloatMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getFloatValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
-      } else {
-        long[] vIndices = v2.getStorage().getIndices();
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        long[] v2Indices = v2.getStorage().getIndices();
         long[] v2Values = v2.getStorage().getValues();
-        long[] resIndices = ArrayCopy.copy(vIndices);
-        float[] resValues = new float[v2Values.length];
+
         LongFloatVectorStorage storage = v1.getStorage();
         long size = v2.size();
         for (int i = 0; i < size; i++) {
-          long idx = vIndices[i];
+          long idx = v2Indices[i];
           if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(storage.get(idx), v2Values[i]);
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-
-        LongFloatVectorStorage newStorage =
-          new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else { // preferred dense
+        ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
+        LongLongVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2FloatMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (op.isKeepStorage() || v1.size() * Constant.sparseSortedThreshold < v2.size()) {
-        res = v1.copy();
-        float[] resValues = res.getStorage().getValues();
-
-        long[] v1Indices = v1.getStorage().getIndices();
-        float[] v1Values = v1.getStorage().getValues();
-        LongLongVectorStorage storage = v2.getStorage();
-        long size = v1.size();
-        for (int i = 0; i < size; i++) {
-          long idx = v1Indices[i];
-          if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(v1Values[i], storage.get(idx));
-          } else {
-            resValues[i] = 0;
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v2.size
+          ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
+          LongFloatVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Long2LongMap.Entry entry = iter.next();
+            long idx = entry.getLongKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getLongValue()));
+            }
+          }
+        } else {//sparse preferred
+          ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
+          LongFloatVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Long2LongMap.Entry entry = iter.next();
+            long idx = entry.getLongKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getLongValue()));
+            }
           }
         }
-      } else {
-        LongFloatVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          long[] resIndices = newStorage.getIndices();
+          float[] resValues = newStorage.getValues();
+
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          LongLongVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          LongLongVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
         LongFloatVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -3582,8 +7140,34 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1storage.get(idx), entry.getLongValue()));
           }
         }
-        res = new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else {//dense preferred
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          long[] resIndices = newStorage.getIndices();
+          float[] resValues = newStorage.getValues();
+
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          LongLongVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {//dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          LongLongVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
       int v1Pointor = 0;
@@ -3591,46 +7175,172 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (size1 > size2) {
-        long[] v1Indices = v1.getStorage().getIndices();
-        float[] v1Values = v1.getStorage().getValues();
-        long[] vIndices = v2.getStorage().getIndices();
-        long[] v2Values = v2.getStorage().getValues();
-        long[] resIndices = ArrayCopy.copy(vIndices);
-        float[] resValues = new float[v2Values.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {//sorted v2.size
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v2Indices);
+          float[] resValues = new float[v2Values.length];
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (vIndices[v1Pointor] == v1Indices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-        LongFloatVectorStorage newStorage =
-          new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        long[] resIndices = res.getStorage().getIndices();
-        float[] resValues = res.getStorage().getValues();
-        long[] vIndices = v2.getStorage().getIndices();
-        long[] v2Values = v2.getStorage().getValues();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          float[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// sparse preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {// sorted v2.size
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v2Indices);
+          float[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          float[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          float[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       }
@@ -3638,14 +7348,16 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return res;
+    return new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   private static Vector apply(LongFloatVector v1, LongIntVector v2, Binary op) {
-    LongFloatVector res;
+    LongFloatVectorStorage newStorage = (LongFloatVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isSparse() && v2.isSparse()) {
-      if (v1.size() > v2.size()) {
-        LongFloatVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
         LongFloatVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -3655,74 +7367,148 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
           }
         }
-        res = new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Long2FloatMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         LongIntVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Long2FloatMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getFloatValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
+        LongFloatVectorStorage v1storage = v1.getStorage();
+        while (iter.hasNext()) {
+          Long2IntMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v1storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
+          }
+        }
+      } else {// preferred dense
+        ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
+        LongIntVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2FloatMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (op.isKeepStorage() || v1.size() < v2.size() * Constant.sparseSortedThreshold) {
-        res = v1.copy();
-        ObjectIterator<Long2FloatMap.Entry> iter = res.getStorage().entryIterator();
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        long[] v2Indices = v2.getStorage().getIndices();
+        int[] v2Values = v2.getStorage().getValues();
+
+        LongFloatVectorStorage storage = v1.getStorage();
+        long size = v2.size();
+        for (int i = 0; i < size; i++) {
+          long idx = v2Indices[i];
+          if (storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
+          }
+        }
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         LongIntVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Long2FloatMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getFloatValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
-      } else {
-        long[] vIndices = v2.getStorage().getIndices();
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        long[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
-        long[] resIndices = ArrayCopy.copy(vIndices);
-        float[] resValues = new float[v2Values.length];
+
         LongFloatVectorStorage storage = v1.getStorage();
         long size = v2.size();
         for (int i = 0; i < size; i++) {
-          long idx = vIndices[i];
+          long idx = v2Indices[i];
           if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(storage.get(idx), v2Values[i]);
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-
-        LongFloatVectorStorage newStorage =
-          new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else { // preferred dense
+        ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
+        LongIntVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2FloatMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (op.isKeepStorage() || v1.size() * Constant.sparseSortedThreshold < v2.size()) {
-        res = v1.copy();
-        float[] resValues = res.getStorage().getValues();
-
-        long[] v1Indices = v1.getStorage().getIndices();
-        float[] v1Values = v1.getStorage().getValues();
-        LongIntVectorStorage storage = v2.getStorage();
-        long size = v1.size();
-        for (int i = 0; i < size; i++) {
-          long idx = v1Indices[i];
-          if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(v1Values[i], storage.get(idx));
-          } else {
-            resValues[i] = 0;
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v2.size
+          ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          LongFloatVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Long2IntMap.Entry entry = iter.next();
+            long idx = entry.getLongKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
+            }
+          }
+        } else {//sparse preferred
+          ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          LongFloatVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Long2IntMap.Entry entry = iter.next();
+            long idx = entry.getLongKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
+            }
           }
         }
-      } else {
-        LongFloatVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          long[] resIndices = newStorage.getIndices();
+          float[] resValues = newStorage.getValues();
+
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          LongIntVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          LongIntVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
         LongFloatVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -3732,8 +7518,34 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
           }
         }
-        res = new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else {//dense preferred
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          long[] resIndices = newStorage.getIndices();
+          float[] resValues = newStorage.getValues();
+
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          LongIntVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {//dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          LongIntVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
       int v1Pointor = 0;
@@ -3741,46 +7553,172 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (size1 > size2) {
-        long[] v1Indices = v1.getStorage().getIndices();
-        float[] v1Values = v1.getStorage().getValues();
-        long[] vIndices = v2.getStorage().getIndices();
-        int[] v2Values = v2.getStorage().getValues();
-        long[] resIndices = ArrayCopy.copy(vIndices);
-        float[] resValues = new float[v2Values.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {//sorted v2.size
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v2Indices);
+          float[] resValues = new float[v2Values.length];
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (vIndices[v1Pointor] == v1Indices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-        LongFloatVectorStorage newStorage =
-          new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        long[] resIndices = res.getStorage().getIndices();
-        float[] resValues = res.getStorage().getValues();
-        long[] vIndices = v2.getStorage().getIndices();
-        int[] v2Values = v2.getStorage().getValues();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          float[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// sparse preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {// sorted v2.size
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v2Indices);
+          float[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          float[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          float[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       }
@@ -3788,14 +7726,16 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return res;
+    return new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   private static Vector apply(LongLongVector v1, LongLongVector v2, Binary op) {
-    LongLongVector res;
+    LongLongVectorStorage newStorage = (LongLongVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isSparse() && v2.isSparse()) {
-      if (v1.size() > v2.size()) {
-        LongLongVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
         LongLongVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -3805,74 +7745,148 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getLongValue()));
           }
         }
-        res = new LongLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Long2LongMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2LongMap.Entry> iter = v1.getStorage().entryIterator();
         LongLongVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Long2LongMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getLongValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
+        LongLongVectorStorage v1storage = v1.getStorage();
+        while (iter.hasNext()) {
+          Long2LongMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v1storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), entry.getLongValue()));
+          }
+        }
+      } else {// preferred dense
+        ObjectIterator<Long2LongMap.Entry> iter = v1.getStorage().entryIterator();
+        LongLongVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2LongMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
           }
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (op.isKeepStorage() || v1.size() < v2.size() * Constant.sparseSortedThreshold) {
-        res = v1.copy();
-        ObjectIterator<Long2LongMap.Entry> iter = res.getStorage().entryIterator();
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        long[] v2Indices = v2.getStorage().getIndices();
+        long[] v2Values = v2.getStorage().getValues();
+
+        LongLongVectorStorage storage = v1.getStorage();
+        long size = v2.size();
+        for (int i = 0; i < size; i++) {
+          long idx = v2Indices[i];
+          if (storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
+          }
+        }
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2LongMap.Entry> iter = v1.getStorage().entryIterator();
         LongLongVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Long2LongMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getLongValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
           }
         }
-      } else {
-        long[] vIndices = v2.getStorage().getIndices();
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        long[] v2Indices = v2.getStorage().getIndices();
         long[] v2Values = v2.getStorage().getValues();
-        long[] resIndices = ArrayCopy.copy(vIndices);
-        long[] resValues = new long[v2Values.length];
+
         LongLongVectorStorage storage = v1.getStorage();
         long size = v2.size();
         for (int i = 0; i < size; i++) {
-          long idx = vIndices[i];
+          long idx = v2Indices[i];
           if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(storage.get(idx), v2Values[i]);
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-
-        LongLongVectorStorage newStorage =
-          new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else { // preferred dense
+        ObjectIterator<Long2LongMap.Entry> iter = v1.getStorage().entryIterator();
+        LongLongVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2LongMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (op.isKeepStorage() || v1.size() * Constant.sparseSortedThreshold < v2.size()) {
-        res = v1.copy();
-        long[] resValues = res.getStorage().getValues();
-
-        long[] v1Indices = v1.getStorage().getIndices();
-        long[] v1Values = v1.getStorage().getValues();
-        LongLongVectorStorage storage = v2.getStorage();
-        long size = v1.size();
-        for (int i = 0; i < size; i++) {
-          long idx = v1Indices[i];
-          if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(v1Values[i], storage.get(idx));
-          } else {
-            resValues[i] = 0;
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v2.size
+          ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
+          LongLongVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Long2LongMap.Entry entry = iter.next();
+            long idx = entry.getLongKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getLongValue()));
+            }
+          }
+        } else {//sparse preferred
+          ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
+          LongLongVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Long2LongMap.Entry entry = iter.next();
+            long idx = entry.getLongKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getLongValue()));
+            }
           }
         }
-      } else {
-        LongLongVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          long[] resIndices = newStorage.getIndices();
+          long[] resValues = newStorage.getValues();
+
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          LongLongVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          LongLongVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
         LongLongVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -3882,8 +7896,34 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1storage.get(idx), entry.getLongValue()));
           }
         }
-        res = new LongLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else {//dense preferred
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          long[] resIndices = newStorage.getIndices();
+          long[] resValues = newStorage.getValues();
+
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          LongLongVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {//dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          LongLongVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
       int v1Pointor = 0;
@@ -3891,46 +7931,172 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (size1 > size2) {
-        long[] v1Indices = v1.getStorage().getIndices();
-        long[] v1Values = v1.getStorage().getValues();
-        long[] vIndices = v2.getStorage().getIndices();
-        long[] v2Values = v2.getStorage().getValues();
-        long[] resIndices = ArrayCopy.copy(vIndices);
-        long[] resValues = new long[v2Values.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {//sorted v2.size
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v2Indices);
+          long[] resValues = new long[v2Values.length];
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (vIndices[v1Pointor] == v1Indices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-        LongLongVectorStorage newStorage =
-          new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        long[] resIndices = res.getStorage().getIndices();
-        long[] resValues = res.getStorage().getValues();
-        long[] vIndices = v2.getStorage().getIndices();
-        long[] v2Values = v2.getStorage().getValues();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          long[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// sparse preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {// sorted v2.size
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v2Indices);
+          long[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          long[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          long[] v2Values = v2.getStorage().getValues();
+          long[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       }
@@ -3938,14 +8104,16 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return res;
+    return new LongLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   private static Vector apply(LongLongVector v1, LongIntVector v2, Binary op) {
-    LongLongVector res;
+    LongLongVectorStorage newStorage = (LongLongVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isSparse() && v2.isSparse()) {
-      if (v1.size() > v2.size()) {
-        LongLongVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
         LongLongVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -3955,74 +8123,148 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
           }
         }
-        res = new LongLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Long2LongMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2LongMap.Entry> iter = v1.getStorage().entryIterator();
         LongIntVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Long2LongMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getLongValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
+        LongLongVectorStorage v1storage = v1.getStorage();
+        while (iter.hasNext()) {
+          Long2IntMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v1storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
+          }
+        }
+      } else {// preferred dense
+        ObjectIterator<Long2LongMap.Entry> iter = v1.getStorage().entryIterator();
+        LongIntVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2LongMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
           }
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (op.isKeepStorage() || v1.size() < v2.size() * Constant.sparseSortedThreshold) {
-        res = v1.copy();
-        ObjectIterator<Long2LongMap.Entry> iter = res.getStorage().entryIterator();
-        LongIntVectorStorage v2storage = v2.getStorage();
-        while (iter.hasNext()) {
-          Long2LongMap.Entry entry = iter.next();
-          long idx = entry.getLongKey();
-          if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getLongValue(), v2.get(idx)));
-          } else {
-            iter.remove();
-          }
-        }
-      } else {
-        long[] vIndices = v2.getStorage().getIndices();
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        long[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
-        long[] resIndices = ArrayCopy.copy(vIndices);
-        long[] resValues = new long[v2Values.length];
+
         LongLongVectorStorage storage = v1.getStorage();
         long size = v2.size();
         for (int i = 0; i < size; i++) {
-          long idx = vIndices[i];
+          long idx = v2Indices[i];
           if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(storage.get(idx), v2Values[i]);
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2LongMap.Entry> iter = v1.getStorage().entryIterator();
+        LongIntVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2LongMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        long[] v2Indices = v2.getStorage().getIndices();
+        int[] v2Values = v2.getStorage().getValues();
 
-        LongLongVectorStorage newStorage =
-          new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+        LongLongVectorStorage storage = v1.getStorage();
+        long size = v2.size();
+        for (int i = 0; i < size; i++) {
+          long idx = v2Indices[i];
+          if (storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
+          }
+        }
+      } else { // preferred dense
+        ObjectIterator<Long2LongMap.Entry> iter = v1.getStorage().entryIterator();
+        LongIntVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2LongMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (op.isKeepStorage() || v1.size() * Constant.sparseSortedThreshold < v2.size()) {
-        res = v1.copy();
-        long[] resValues = res.getStorage().getValues();
-
-        long[] v1Indices = v1.getStorage().getIndices();
-        long[] v1Values = v1.getStorage().getValues();
-        LongIntVectorStorage storage = v2.getStorage();
-        long size = v1.size();
-        for (int i = 0; i < size; i++) {
-          long idx = v1Indices[i];
-          if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(v1Values[i], storage.get(idx));
-          } else {
-            resValues[i] = 0;
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v2.size
+          ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          LongLongVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Long2IntMap.Entry entry = iter.next();
+            long idx = entry.getLongKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
+            }
+          }
+        } else {//sparse preferred
+          ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          LongLongVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Long2IntMap.Entry entry = iter.next();
+            long idx = entry.getLongKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
+            }
           }
         }
-      } else {
-        LongLongVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          long[] resIndices = newStorage.getIndices();
+          long[] resValues = newStorage.getValues();
+
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          LongIntVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          LongIntVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
         LongLongVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -4032,8 +8274,34 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
           }
         }
-        res = new LongLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else {//dense preferred
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          long[] resIndices = newStorage.getIndices();
+          long[] resValues = newStorage.getValues();
+
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          LongIntVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {//dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          LongIntVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
       int v1Pointor = 0;
@@ -4041,46 +8309,172 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (size1 > size2) {
-        long[] v1Indices = v1.getStorage().getIndices();
-        long[] v1Values = v1.getStorage().getValues();
-        long[] vIndices = v2.getStorage().getIndices();
-        int[] v2Values = v2.getStorage().getValues();
-        long[] resIndices = ArrayCopy.copy(vIndices);
-        long[] resValues = new long[v2Values.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {//sorted v2.size
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v2Indices);
+          long[] resValues = new long[v2Values.length];
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (vIndices[v1Pointor] == v1Indices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-        LongLongVectorStorage newStorage =
-          new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        long[] resIndices = res.getStorage().getIndices();
-        long[] resValues = res.getStorage().getValues();
-        long[] vIndices = v2.getStorage().getIndices();
-        int[] v2Values = v2.getStorage().getValues();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          long[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// sparse preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {// sorted v2.size
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v2Indices);
+          long[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          long[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          long[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       }
@@ -4088,14 +8482,16 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return res;
+    return new LongLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   private static Vector apply(LongIntVector v1, LongIntVector v2, Binary op) {
-    LongIntVector res;
+    LongIntVectorStorage newStorage = (LongIntVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isSparse() && v2.isSparse()) {
-      if (v1.size() > v2.size()) {
-        LongIntVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
         LongIntVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -4105,74 +8501,148 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
           }
         }
-        res = new LongIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Long2IntMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2IntMap.Entry> iter = v1.getStorage().entryIterator();
         LongIntVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Long2IntMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getIntValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getIntValue(), v2.get(idx)));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
+        LongIntVectorStorage v1storage = v1.getStorage();
+        while (iter.hasNext()) {
+          Long2IntMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v1storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
+          }
+        }
+      } else {// preferred dense
+        ObjectIterator<Long2IntMap.Entry> iter = v1.getStorage().entryIterator();
+        LongIntVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2IntMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getIntValue(), v2.get(idx)));
           }
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (op.isKeepStorage() || v1.size() < v2.size() * Constant.sparseSortedThreshold) {
-        res = v1.copy();
-        ObjectIterator<Long2IntMap.Entry> iter = res.getStorage().entryIterator();
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        long[] v2Indices = v2.getStorage().getIndices();
+        int[] v2Values = v2.getStorage().getValues();
+
+        LongIntVectorStorage storage = v1.getStorage();
+        long size = v2.size();
+        for (int i = 0; i < size; i++) {
+          long idx = v2Indices[i];
+          if (storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
+          }
+        }
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2IntMap.Entry> iter = v1.getStorage().entryIterator();
         LongIntVectorStorage v2storage = v2.getStorage();
         while (iter.hasNext()) {
           Long2IntMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2storage.hasKey(idx)) {
-            entry.setValue(op.apply(entry.getIntValue(), v2.get(idx)));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(entry.getIntValue(), v2.get(idx)));
           }
         }
-      } else {
-        long[] vIndices = v2.getStorage().getIndices();
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        long[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
-        long[] resIndices = ArrayCopy.copy(vIndices);
-        int[] resValues = new int[v2Values.length];
+
         LongIntVectorStorage storage = v1.getStorage();
         long size = v2.size();
         for (int i = 0; i < size; i++) {
-          long idx = vIndices[i];
+          long idx = v2Indices[i];
           if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(storage.get(idx), v2Values[i]);
+            newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-
-        LongIntVectorStorage newStorage =
-          new LongIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else { // preferred dense
+        ObjectIterator<Long2IntMap.Entry> iter = v1.getStorage().entryIterator();
+        LongIntVectorStorage v2storage = v2.getStorage();
+        while (iter.hasNext()) {
+          Long2IntMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2storage.hasKey(idx)) {
+            newStorage.set(idx, op.apply(entry.getIntValue(), v2.get(idx)));
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (op.isKeepStorage() || v1.size() * Constant.sparseSortedThreshold < v2.size()) {
-        res = v1.copy();
-        int[] resValues = res.getStorage().getValues();
-
-        long[] v1Indices = v1.getStorage().getIndices();
-        int[] v1Values = v1.getStorage().getValues();
-        LongIntVectorStorage storage = v2.getStorage();
-        long size = v1.size();
-        for (int i = 0; i < size; i++) {
-          long idx = v1Indices[i];
-          if (storage.hasKey(idx)) {
-            resValues[i] = op.apply(v1Values[i], storage.get(idx));
-          } else {
-            resValues[i] = 0;
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v2.size
+          ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          LongIntVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Long2IntMap.Entry entry = iter.next();
+            long idx = entry.getLongKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
+            }
+          }
+        } else {//sparse preferred
+          ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
+          LongIntVectorStorage v1storage = v1.getStorage();
+          while (iter.hasNext()) {
+            Long2IntMap.Entry entry = iter.next();
+            long idx = entry.getLongKey();
+            if (v1storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
+            }
           }
         }
-      } else {
-        LongIntVectorStorage newStorage = v1.getStorage().emptySparse((int) v2.size());
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          long[] resIndices = newStorage.getIndices();
+          int[] resValues = newStorage.getValues();
+
+          long[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          LongIntVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          LongIntVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
         LongIntVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -4182,8 +8652,34 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1storage.get(idx), entry.getIntValue()));
           }
         }
-        res = new LongIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
+      } else {//dense preferred
+        if (op.isKeepStorage()) {// sorted preferred v1.size
+          long[] resIndices = newStorage.getIndices();
+          int[] resValues = newStorage.getValues();
+
+          long[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          LongIntVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              resIndices[i] = idx;
+              resValues[i] = op.apply(v1Values[i], storage.get(idx));
+            }
+          }
+        } else {//dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          LongIntVectorStorage storage = v2.getStorage();
+          long size = v1.size();
+          for (int i = 0; i < size; i++) {
+            long idx = v1Indices[i];
+            if (storage.hasKey(idx)) {
+              newStorage.set(idx, op.apply(v1Values[i], storage.get(idx)));
+            }
+          }
+        }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
       int v1Pointor = 0;
@@ -4191,46 +8687,172 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (size1 > size2) {
-        long[] v1Indices = v1.getStorage().getIndices();
-        int[] v1Values = v1.getStorage().getValues();
-        long[] vIndices = v2.getStorage().getIndices();
-        int[] v2Values = v2.getStorage().getValues();
-        long[] resIndices = ArrayCopy.copy(vIndices);
-        int[] resValues = new int[v2Values.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
+          .dim()) {
+        if (op.isKeepStorage()) {//sorted v2.size
+          long[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v2Indices);
+          int[] resValues = new int[v2Values.length];
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (vIndices[v1Pointor] == v1Indices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < v1Indices[v2Pointor]) {
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-        LongIntVectorStorage newStorage =
-          new LongIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        long[] resIndices = res.getStorage().getIndices();
-        int[] resValues = res.getStorage().getValues();
-        long[] vIndices = v2.getStorage().getIndices();
-        int[] v2Values = v2.getStorage().getValues();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          int[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], v2Values[v2Pointor]);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// sparse preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {// sorted v2.size
+          long[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v2Indices);
+          int[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          int[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], v2Values[v2Pointor]);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {// dense preferred
+          long[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getStorage().getIndices();
+          int[] v2Values = v2.getStorage().getValues();
+          int[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage
+                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       }
@@ -4238,17 +8860,16 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return res;
+    return new LongIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
 
-
   public static Vector apply(IntDoubleVector v1, IntDummyVector v2, Binary op) {
-    IntDoubleVector res;
+    IntDoubleVectorStorage newStorage = (IntDoubleVectorStorage) StorageSwitch.apply(v1, v2, op);
 
     if (v1.isDense()) {
-      if (op.isKeepStorage()) {
-        IntDoubleVectorStorage newStorage = v1.getStorage().emptyDense();
+      if (op.isKeepStorage() || v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) {
         double[] resValues = newStorage.getValues();
 
         double[] v1Values = v1.getStorage().getValues();
@@ -4256,51 +8877,54 @@ public class SimpleBinaryOutZAExecutor {
         for (int idx : vIndices) {
           resValues[idx] = op.apply(v1Values[idx], 1);
         }
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        int[] resIndices = ArrayCopy.copy(v2.getIndices());
-        double[] resValues = new double[resIndices.length];
-
         double[] v1Values = v1.getStorage().getValues();
         int[] vIndices = v2.getIndices();
-        int i = 0;
         for (int idx : vIndices) {
-          resValues[i] = op.apply(v1Values[idx], 1);
-          i++;
+          newStorage.set(idx, op.apply(v1Values[idx], 1));
         }
-
-        IntDoubleSortedVectorStorage newStorage =
-          new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse()) {
-      if (v1.size() > v2.size() && !op.isKeepStorage()) {
-        int[] resIndices = ArrayCopy.copy(v2.getIndices());
-        double[] resValues = new double[resIndices.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        int[] v2Indices = v2.getIndices();
         int size = v2.size();
         for (int i = 0; i < size; i++) {
-          int idx = resIndices[i];
-          if (v1.getStorage().hasKey(idx)) {
-            resValues[i] = op.apply(v1.get(idx), 1);
+          int idx = v2Indices[i];
+          if (v1.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-
-        IntDoubleSortedVectorStorage newStorage =
-          new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        return new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Int2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2.hasKey(idx)) {
-            entry.setValue(op.apply(v1.get(idx), 1));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        int[] v2Indices = v2.getIndices();
+        int size = v2.size();
+        for (int i = 0; i < size; i++) {
+          int idx = v2Indices[i];
+          if (v1.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
+          }
+        }
+      } else { // preferred dense
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Int2DoubleMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
       }
@@ -4310,58 +8934,171 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (size1 < size2) {
-        res = v1.copy();
-        int[] resIndices = res.getStorage().getIndices();
-        double[] resValues = res.getStorage().getValues();
-        int[] vIndices = v2.getIndices();
+      if (size1 >= size2 && size2 <= Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+          int[] resIndices = ArrayCopy.copy(v2.getIndices());
+          double[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], 1);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v2Indices[v2Pointor] < v1Indices[v1Pointor]) {
+              v2Pointor++;
+            } else { // v2Indices[v2Pointor] > v1Indices[v1Pointor]
+              v1Pointor++;
+            }
+          }
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (size1 <= size2 && size1 <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          double[] resValues = newStorage.getValues();
+          int[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (size1 > size2 && size2 > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+          int[] resIndices = ArrayCopy.copy(v2.getIndices());
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v2Indices[v2Pointor] < v1Indices[v1Pointor]) {
+              v2Pointor++;
+            } else { // v2Indices[v2Pointor] > v1Indices[v1Pointor]
+              v1Pointor++;
+            }
+          }
+
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {//dense or sparse
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       } else {
-        int[] resIndices = ArrayCopy.copy(v2.getIndices());
-        double[] resValues = new double[resIndices.length];
-        int[] v1Indices = v1.getStorage().getIndices();
-        double[] v1Values = v1.getStorage().getValues();
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          double[] resValues = newStorage.getValues();
+          int[] v2Indices = v2.getIndices();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (v1Indices[v1Pointor] == resIndices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v2Pointor] < v1Indices[v1Pointor]) {
-            v2Pointor++;
-          } else { // resIndices[v2Pointor] > v1Indices[v1Pointor]
-            v1Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {//dense or sparse
+          int[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-
-        IntDoubleSortedVectorStorage newStorage =
-          new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     }
 
-    return res;
+    return new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   public static Vector apply(IntFloatVector v1, IntDummyVector v2, Binary op) {
-    IntFloatVector res;
+    IntFloatVectorStorage newStorage = (IntFloatVectorStorage) StorageSwitch.apply(v1, v2, op);
 
     if (v1.isDense()) {
-      if (op.isKeepStorage()) {
-        IntFloatVectorStorage newStorage = v1.getStorage().emptyDense();
+      if (op.isKeepStorage() || v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) {
         float[] resValues = newStorage.getValues();
 
         float[] v1Values = v1.getStorage().getValues();
@@ -4369,51 +9106,54 @@ public class SimpleBinaryOutZAExecutor {
         for (int idx : vIndices) {
           resValues[idx] = op.apply(v1Values[idx], 1);
         }
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        int[] resIndices = ArrayCopy.copy(v2.getIndices());
-        float[] resValues = new float[resIndices.length];
-
         float[] v1Values = v1.getStorage().getValues();
         int[] vIndices = v2.getIndices();
-        int i = 0;
         for (int idx : vIndices) {
-          resValues[i] = op.apply(v1Values[idx], 1);
-          i++;
+          newStorage.set(idx, op.apply(v1Values[idx], 1));
         }
-
-        IntFloatSortedVectorStorage newStorage =
-          new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse()) {
-      if (v1.size() > v2.size() && !op.isKeepStorage()) {
-        int[] resIndices = ArrayCopy.copy(v2.getIndices());
-        float[] resValues = new float[resIndices.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        int[] v2Indices = v2.getIndices();
         int size = v2.size();
         for (int i = 0; i < size; i++) {
-          int idx = resIndices[i];
-          if (v1.getStorage().hasKey(idx)) {
-            resValues[i] = op.apply(v1.get(idx), 1);
+          int idx = v2Indices[i];
+          if (v1.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-
-        IntFloatSortedVectorStorage newStorage =
-          new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        return new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Int2FloatMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Int2FloatMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2.hasKey(idx)) {
-            entry.setValue(op.apply(v1.get(idx), 1));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        int[] v2Indices = v2.getIndices();
+        int size = v2.size();
+        for (int i = 0; i < size; i++) {
+          int idx = v2Indices[i];
+          if (v1.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
+          }
+        }
+      } else { // preferred dense
+        ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Int2FloatMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
       }
@@ -4423,58 +9163,171 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (size1 < size2) {
-        res = v1.copy();
-        int[] resIndices = res.getStorage().getIndices();
-        float[] resValues = res.getStorage().getValues();
-        int[] vIndices = v2.getIndices();
+      if (size1 >= size2 && size2 <= Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+          int[] resIndices = ArrayCopy.copy(v2.getIndices());
+          float[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], 1);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v2Indices[v2Pointor] < v1Indices[v1Pointor]) {
+              v2Pointor++;
+            } else { // v2Indices[v2Pointor] > v1Indices[v1Pointor]
+              v1Pointor++;
+            }
+          }
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (size1 <= size2 && size1 <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          float[] resValues = newStorage.getValues();
+          int[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (size1 > size2 && size2 > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+          int[] resIndices = ArrayCopy.copy(v2.getIndices());
+          float[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v2Indices[v2Pointor] < v1Indices[v1Pointor]) {
+              v2Pointor++;
+            } else { // v2Indices[v2Pointor] > v1Indices[v1Pointor]
+              v1Pointor++;
+            }
+          }
+
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {//dense or sparse
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       } else {
-        int[] resIndices = ArrayCopy.copy(v2.getIndices());
-        float[] resValues = new float[resIndices.length];
-        int[] v1Indices = v1.getStorage().getIndices();
-        float[] v1Values = v1.getStorage().getValues();
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          float[] resValues = newStorage.getValues();
+          int[] v2Indices = v2.getIndices();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (v1Indices[v1Pointor] == resIndices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v2Pointor] < v1Indices[v1Pointor]) {
-            v2Pointor++;
-          } else { // resIndices[v2Pointor] > v1Indices[v1Pointor]
-            v1Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {//dense or sparse
+          int[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-
-        IntFloatSortedVectorStorage newStorage =
-          new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     }
 
-    return res;
+    return new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   public static Vector apply(IntLongVector v1, IntDummyVector v2, Binary op) {
-    IntLongVector res;
+    IntLongVectorStorage newStorage = (IntLongVectorStorage) StorageSwitch.apply(v1, v2, op);
 
     if (v1.isDense()) {
-      if (op.isKeepStorage()) {
-        IntLongVectorStorage newStorage = v1.getStorage().emptyDense();
+      if (op.isKeepStorage() || v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) {
         long[] resValues = newStorage.getValues();
 
         long[] v1Values = v1.getStorage().getValues();
@@ -4482,51 +9335,54 @@ public class SimpleBinaryOutZAExecutor {
         for (int idx : vIndices) {
           resValues[idx] = op.apply(v1Values[idx], 1);
         }
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       } else {
-        int[] resIndices = ArrayCopy.copy(v2.getIndices());
-        long[] resValues = new long[resIndices.length];
-
         long[] v1Values = v1.getStorage().getValues();
         int[] vIndices = v2.getIndices();
-        int i = 0;
         for (int idx : vIndices) {
-          resValues[i] = op.apply(v1Values[idx], 1);
-          i++;
+          newStorage.set(idx, op.apply(v1Values[idx], 1));
         }
-
-        IntLongSortedVectorStorage newStorage =
-          new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     } else if (v1.isSparse()) {
-      if (v1.size() > v2.size() && !op.isKeepStorage()) {
-        int[] resIndices = ArrayCopy.copy(v2.getIndices());
-        long[] resValues = new long[resIndices.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        int[] v2Indices = v2.getIndices();
         int size = v2.size();
         for (int i = 0; i < size; i++) {
-          int idx = resIndices[i];
-          if (v1.getStorage().hasKey(idx)) {
-            resValues[i] = op.apply(v1.get(idx), 1);
+          int idx = v2Indices[i];
+          if (v1.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-
-        IntLongSortedVectorStorage newStorage =
-          new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        return new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Int2LongMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Int2LongMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2.hasKey(idx)) {
-            entry.setValue(op.apply(v1.get(idx), 1));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        int[] v2Indices = v2.getIndices();
+        int size = v2.size();
+        for (int i = 0; i < size; i++) {
+          int idx = v2Indices[i];
+          if (v1.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
+          }
+        }
+      } else { // preferred dense
+        ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Int2LongMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
       }
@@ -4536,58 +9392,171 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (size1 < size2) {
-        res = v1.copy();
-        int[] resIndices = res.getStorage().getIndices();
-        long[] resValues = res.getStorage().getValues();
-        int[] vIndices = v2.getIndices();
+      if (size1 >= size2 && size2 <= Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+          int[] resIndices = ArrayCopy.copy(v2.getIndices());
+          long[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], 1);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v2Indices[v2Pointor] < v1Indices[v1Pointor]) {
+              v2Pointor++;
+            } else { // v2Indices[v2Pointor] > v1Indices[v1Pointor]
+              v1Pointor++;
+            }
+          }
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (size1 <= size2 && size1 <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          long[] resValues = newStorage.getValues();
+          int[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (size1 > size2 && size2 > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+          int[] resIndices = ArrayCopy.copy(v2.getIndices());
+          long[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v2Indices[v2Pointor] < v1Indices[v1Pointor]) {
+              v2Pointor++;
+            } else { // v2Indices[v2Pointor] > v1Indices[v1Pointor]
+              v1Pointor++;
+            }
+          }
+
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {//dense or sparse
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       } else {
-        int[] resIndices = ArrayCopy.copy(v2.getIndices());
-        long[] resValues = new long[resIndices.length];
-        int[] v1Indices = v1.getStorage().getIndices();
-        long[] v1Values = v1.getStorage().getValues();
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          long[] resValues = newStorage.getValues();
+          int[] v2Indices = v2.getIndices();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (v1Indices[v1Pointor] == resIndices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v2Pointor] < v1Indices[v1Pointor]) {
-            v2Pointor++;
-          } else { // resIndices[v2Pointor] > v1Indices[v1Pointor]
-            v1Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {//dense or sparse
+          int[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-
-        IntLongSortedVectorStorage newStorage =
-          new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     }
 
-    return res;
+    return new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   public static Vector apply(IntIntVector v1, IntDummyVector v2, Binary op) {
-    IntIntVector res;
+    IntIntVectorStorage newStorage = (IntIntVectorStorage) StorageSwitch.apply(v1, v2, op);
 
     if (v1.isDense()) {
-      if (op.isKeepStorage()) {
-        IntIntVectorStorage newStorage = v1.getStorage().emptyDense();
+      if (op.isKeepStorage() || v2.getSize() >= Constant.sparseDenseStorageThreshold * v2.dim()) {
         int[] resValues = newStorage.getValues();
 
         int[] v1Values = v1.getStorage().getValues();
@@ -4595,51 +9564,54 @@ public class SimpleBinaryOutZAExecutor {
         for (int idx : vIndices) {
           resValues[idx] = op.apply(v1Values[idx], 1);
         }
-        res =
-          new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
       } else {
-        int[] resIndices = ArrayCopy.copy(v2.getIndices());
-        int[] resValues = new int[resIndices.length];
-
         int[] v1Values = v1.getStorage().getValues();
         int[] vIndices = v2.getIndices();
-        int i = 0;
         for (int idx : vIndices) {
-          resValues[i] = op.apply(v1Values[idx], 1);
-          i++;
+          newStorage.set(idx, op.apply(v1Values[idx], 1));
         }
-
-        IntIntSortedVectorStorage newStorage =
-          new IntIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res =
-          new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
       }
     } else if (v1.isSparse()) {
-      if (v1.size() > v2.size() && !op.isKeepStorage()) {
-        int[] resIndices = ArrayCopy.copy(v2.getIndices());
-        int[] resValues = new int[resIndices.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        int[] v2Indices = v2.getIndices();
         int size = v2.size();
         for (int i = 0; i < size; i++) {
-          int idx = resIndices[i];
-          if (v1.getStorage().hasKey(idx)) {
-            resValues[i] = op.apply(v1.get(idx), 1);
+          int idx = v2Indices[i];
+          if (v1.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-
-        IntIntSortedVectorStorage newStorage =
-          new IntIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        return new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Int2IntMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Int2IntMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Int2IntMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
           if (v2.hasKey(idx)) {
-            entry.setValue(op.apply(v1.get(idx), 1));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        int[] v2Indices = v2.getIndices();
+        int size = v2.size();
+        for (int i = 0; i < size; i++) {
+          int idx = v2Indices[i];
+          if (v1.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
+          }
+        }
+      } else { // preferred dense
+        ObjectIterator<Int2IntMap.Entry> iter = v1.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Int2IntMap.Entry entry = iter.next();
+          int idx = entry.getIntKey();
+          if (v2.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
       }
@@ -4649,81 +9621,210 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (size1 < size2) {
-        res = v1.copy();
-        int[] resIndices = res.getStorage().getIndices();
-        int[] resValues = res.getStorage().getValues();
-        int[] vIndices = v2.getIndices();
+      if (size1 >= size2 && size2 <= Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+          int[] resIndices = ArrayCopy.copy(v2.getIndices());
+          int[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], 1);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v2Indices[v2Pointor] < v1Indices[v1Pointor]) {
+              v2Pointor++;
+            } else { // v2Indices[v2Pointor] > v1Indices[v1Pointor]
+              v1Pointor++;
+            }
+          }
+          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (size1 <= size2 && size1 <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          int[] resValues = newStorage.getValues();
+          int[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {
+          int[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (size1 > size2 && size2 > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+          int[] resIndices = ArrayCopy.copy(v2.getIndices());
+          int[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v2Indices[v2Pointor] < v1Indices[v1Pointor]) {
+              v2Pointor++;
+            } else { // v2Indices[v2Pointor] > v1Indices[v1Pointor]
+              v1Pointor++;
+            }
+          }
+
+          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {//dense or sparse
+          int[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       } else {
-        int[] resIndices = ArrayCopy.copy(v2.getIndices());
-        int[] resValues = new int[resIndices.length];
-        int[] v1Indices = v1.getStorage().getIndices();
-        int[] v1Values = v1.getStorage().getValues();
+        if (op.isKeepStorage()) {
+          int[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          int[] resIndices = ArrayCopy.copy(v1Indices);
+          int[] resValues = newStorage.getValues();
+          int[] v2Indices = v2.getIndices();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (v1Indices[v1Pointor] == resIndices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v2Pointor] < v1Indices[v1Pointor]) {
-            v2Pointor++;
-          } else { // resIndices[v2Pointor] > v1Indices[v1Pointor]
-            v1Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {//dense or sparse
+          int[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          int[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-
-        IntIntSortedVectorStorage newStorage =
-          new IntIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res =
-          new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
       }
     }
 
-    return res;
+    return new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   public static Vector apply(LongDoubleVector v1, LongDummyVector v2, Binary op) {
-    LongDoubleVector res;
+    LongDoubleVectorStorage newStorage = (LongDoubleVectorStorage) StorageSwitch.apply(v1, v2, op);
 
     if (v1.isSparse()) {
-      if (v1.size() > v2.size() && !op.isKeepStorage()) {
-        long[] resIndices = ArrayCopy.copy(v2.getIndices());
-        double[] resValues = new double[resIndices.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        long[] v2Indices = v2.getIndices();
         long size = v2.size();
         for (int i = 0; i < size; i++) {
-          long idx = resIndices[i];
-          if (v1.getStorage().hasKey(idx)) {
-            resValues[i] = op.apply(v1.get(idx), 1);
+          long idx = v2Indices[i];
+          if (v1.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-
-        LongDoubleSortedVectorStorage newStorage =
-          new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        return new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Long2DoubleMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Long2DoubleMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2.hasKey(idx)) {
-            entry.setValue(op.apply(v1.get(idx), 1));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        long[] v2Indices = v2.getIndices();
+        long size = v2.size();
+        for (int i = 0; i < size; i++) {
+          long idx = v2Indices[i];
+          if (v1.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
+          }
+        }
+      } else { // preferred dense
+        ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Long2DoubleMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
       }
@@ -4733,81 +9834,210 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (size1 < size2) {
-        res = v1.copy();
-        long[] resIndices = res.getStorage().getIndices();
-        double[] resValues = res.getStorage().getValues();
-        long[] vIndices = v2.getIndices();
+      if (size1 >= size2 && size2 <= Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+          long[] resIndices = ArrayCopy.copy(v2.getIndices());
+          double[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], 1);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v2Indices[v2Pointor] < v1Indices[v1Pointor]) {
+              v2Pointor++;
+            } else { // v2Indices[v2Pointor] > v1Indices[v1Pointor]
+              v1Pointor++;
+            }
+          }
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (size1 <= size2 && size1 <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          double[] resValues = newStorage.getValues();
+          long[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (size1 > size2 && size2 > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+          long[] resIndices = ArrayCopy.copy(v2.getIndices());
+          double[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v2Indices[v2Pointor] < v1Indices[v1Pointor]) {
+              v2Pointor++;
+            } else { // v2Indices[v2Pointor] > v1Indices[v1Pointor]
+              v1Pointor++;
+            }
+          }
+
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {//dense or sparse
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       } else {
-        long[] resIndices = ArrayCopy.copy(v2.getIndices());
-        double[] resValues = new double[resIndices.length];
-        long[] v1Indices = v1.getStorage().getIndices();
-        double[] v1Values = v1.getStorage().getValues();
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          double[] resValues = newStorage.getValues();
+          long[] v2Indices = v2.getIndices();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (v1Indices[v1Pointor] == resIndices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v2Pointor] < v1Indices[v1Pointor]) {
-            v2Pointor++;
-          } else { // resIndices[v2Pointor] > v1Indices[v1Pointor]
-            v1Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {//dense or sparse
+          long[] v1Indices = v1.getStorage().getIndices();
+          double[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-
-        LongDoubleSortedVectorStorage newStorage =
-          new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     }
 
-    return res;
+    return new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   public static Vector apply(LongFloatVector v1, LongDummyVector v2, Binary op) {
-    LongFloatVector res;
+    LongFloatVectorStorage newStorage = (LongFloatVectorStorage) StorageSwitch.apply(v1, v2, op);
 
     if (v1.isSparse()) {
-      if (v1.size() > v2.size() && !op.isKeepStorage()) {
-        long[] resIndices = ArrayCopy.copy(v2.getIndices());
-        float[] resValues = new float[resIndices.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        long[] v2Indices = v2.getIndices();
         long size = v2.size();
         for (int i = 0; i < size; i++) {
-          long idx = resIndices[i];
-          if (v1.getStorage().hasKey(idx)) {
-            resValues[i] = op.apply(v1.get(idx), 1);
+          long idx = v2Indices[i];
+          if (v1.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-
-        LongFloatSortedVectorStorage newStorage =
-          new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        return new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Long2FloatMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Long2FloatMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2.hasKey(idx)) {
-            entry.setValue(op.apply(v1.get(idx), 1));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        long[] v2Indices = v2.getIndices();
+        long size = v2.size();
+        for (int i = 0; i < size; i++) {
+          long idx = v2Indices[i];
+          if (v1.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
+          }
+        }
+      } else { // preferred dense
+        ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Long2FloatMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
       }
@@ -4817,81 +10047,210 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (size1 < size2) {
-        res = v1.copy();
-        long[] resIndices = res.getStorage().getIndices();
-        float[] resValues = res.getStorage().getValues();
-        long[] vIndices = v2.getIndices();
+      if (size1 >= size2 && size2 <= Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+          long[] resIndices = ArrayCopy.copy(v2.getIndices());
+          float[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], 1);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v2Indices[v2Pointor] < v1Indices[v1Pointor]) {
+              v2Pointor++;
+            } else { // v2Indices[v2Pointor] > v1Indices[v1Pointor]
+              v1Pointor++;
+            }
+          }
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (size1 <= size2 && size1 <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          float[] resValues = newStorage.getValues();
+          long[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (size1 > size2 && size2 > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+          long[] resIndices = ArrayCopy.copy(v2.getIndices());
+          float[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v2Indices[v2Pointor] < v1Indices[v1Pointor]) {
+              v2Pointor++;
+            } else { // v2Indices[v2Pointor] > v1Indices[v1Pointor]
+              v1Pointor++;
+            }
+          }
+
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {//dense or sparse
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       } else {
-        long[] resIndices = ArrayCopy.copy(v2.getIndices());
-        float[] resValues = new float[resIndices.length];
-        long[] v1Indices = v1.getStorage().getIndices();
-        float[] v1Values = v1.getStorage().getValues();
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          float[] resValues = newStorage.getValues();
+          long[] v2Indices = v2.getIndices();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (v1Indices[v1Pointor] == resIndices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v2Pointor] < v1Indices[v1Pointor]) {
-            v2Pointor++;
-          } else { // resIndices[v2Pointor] > v1Indices[v1Pointor]
-            v1Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {//dense or sparse
+          long[] v1Indices = v1.getStorage().getIndices();
+          float[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-
-        LongFloatSortedVectorStorage newStorage =
-          new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     }
 
-    return res;
+    return new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   public static Vector apply(LongLongVector v1, LongDummyVector v2, Binary op) {
-    LongLongVector res;
+    LongLongVectorStorage newStorage = (LongLongVectorStorage) StorageSwitch.apply(v1, v2, op);
 
     if (v1.isSparse()) {
-      if (v1.size() > v2.size() && !op.isKeepStorage()) {
-        long[] resIndices = ArrayCopy.copy(v2.getIndices());
-        long[] resValues = new long[resIndices.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        long[] v2Indices = v2.getIndices();
         long size = v2.size();
         for (int i = 0; i < size; i++) {
-          long idx = resIndices[i];
-          if (v1.getStorage().hasKey(idx)) {
-            resValues[i] = op.apply(v1.get(idx), 1);
+          long idx = v2Indices[i];
+          if (v1.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-
-        LongLongSortedVectorStorage newStorage =
-          new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        return new LongLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Long2LongMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2LongMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Long2LongMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2.hasKey(idx)) {
-            entry.setValue(op.apply(v1.get(idx), 1));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        long[] v2Indices = v2.getIndices();
+        long size = v2.size();
+        for (int i = 0; i < size; i++) {
+          long idx = v2Indices[i];
+          if (v1.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
+          }
+        }
+      } else { // preferred dense
+        ObjectIterator<Long2LongMap.Entry> iter = v1.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Long2LongMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
       }
@@ -4901,81 +10260,210 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (size1 < size2) {
-        res = v1.copy();
-        long[] resIndices = res.getStorage().getIndices();
-        long[] resValues = res.getStorage().getValues();
-        long[] vIndices = v2.getIndices();
+      if (size1 >= size2 && size2 <= Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+          long[] resIndices = ArrayCopy.copy(v2.getIndices());
+          long[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], 1);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v2Indices[v2Pointor] < v1Indices[v1Pointor]) {
+              v2Pointor++;
+            } else { // v2Indices[v2Pointor] > v1Indices[v1Pointor]
+              v1Pointor++;
+            }
+          }
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (size1 <= size2 && size1 <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          long[] resValues = newStorage.getValues();
+          long[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (size1 > size2 && size2 > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+          long[] resIndices = ArrayCopy.copy(v2.getIndices());
+          long[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v2Indices[v2Pointor] < v1Indices[v1Pointor]) {
+              v2Pointor++;
+            } else { // v2Indices[v2Pointor] > v1Indices[v1Pointor]
+              v1Pointor++;
+            }
+          }
+
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {//dense or sparse
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       } else {
-        long[] resIndices = ArrayCopy.copy(v2.getIndices());
-        long[] resValues = new long[resIndices.length];
-        long[] v1Indices = v1.getStorage().getIndices();
-        long[] v1Values = v1.getStorage().getValues();
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          long[] resValues = newStorage.getValues();
+          long[] v2Indices = v2.getIndices();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (v1Indices[v1Pointor] == resIndices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v2Pointor] < v1Indices[v1Pointor]) {
-            v2Pointor++;
-          } else { // resIndices[v2Pointor] > v1Indices[v1Pointor]
-            v1Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {//dense or sparse
+          long[] v1Indices = v1.getStorage().getIndices();
+          long[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-
-        LongLongSortedVectorStorage newStorage =
-          new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     }
 
-    return res;
+    return new LongLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
   public static Vector apply(LongIntVector v1, LongDummyVector v2, Binary op) {
-    LongIntVector res;
+    LongIntVectorStorage newStorage = (LongIntVectorStorage) StorageSwitch.apply(v1, v2, op);
 
     if (v1.isSparse()) {
-      if (v1.size() > v2.size() && !op.isKeepStorage()) {
-        long[] resIndices = ArrayCopy.copy(v2.getIndices());
-        int[] resValues = new int[resIndices.length];
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
+          .dim()) {
+        // sparse preferred, keep storage guaranteed
+        long[] v2Indices = v2.getIndices();
         long size = v2.size();
         for (int i = 0; i < size; i++) {
-          long idx = resIndices[i];
-          if (v1.getStorage().hasKey(idx)) {
-            resValues[i] = op.apply(v1.get(idx), 1);
+          long idx = v2Indices[i];
+          if (v1.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-
-        LongIntSortedVectorStorage newStorage =
-          new LongIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        return new LongIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
-      } else {
-        res = v1.copy();
-        ObjectIterator<Long2IntMap.Entry> iter = res.getStorage().entryIterator();
+      } else if (v1.getSize() <= v2.getSize()
+          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+        // sparse preferred, keep storage guaranteed
+        ObjectIterator<Long2IntMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Long2IntMap.Entry entry = iter.next();
           long idx = entry.getLongKey();
           if (v2.hasKey(idx)) {
-            entry.setValue(op.apply(v1.get(idx), 1));
-          } else {
-            iter.remove();
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
+          }
+        }
+      } else if (v1.getSize() > v2.getSize()
+          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+        // preferred dense
+        long[] v2Indices = v2.getIndices();
+        long size = v2.size();
+        for (int i = 0; i < size; i++) {
+          long idx = v2Indices[i];
+          if (v1.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
+          }
+        }
+      } else { // preferred dense
+        ObjectIterator<Long2IntMap.Entry> iter = v1.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Long2IntMap.Entry entry = iter.next();
+          long idx = entry.getLongKey();
+          if (v2.hasKey(idx)) {
+            newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
       }
@@ -4985,50 +10473,164 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (size1 < size2) {
-        res = v1.copy();
-        long[] resIndices = res.getStorage().getIndices();
-        int[] resValues = res.getStorage().getValues();
-        long[] vIndices = v2.getIndices();
+      if (size1 >= size2 && size2 <= Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+          long[] resIndices = ArrayCopy.copy(v2.getIndices());
+          int[] resValues = newStorage.getValues();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (resIndices[v1Pointor] == vIndices[v2Pointor]) {
-            resValues[v1Pointor] = op.apply(resValues[v1Pointor], 1);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v1Pointor] < vIndices[v2Pointor]) {
-            resValues[v1Pointor] = 0;
-            v1Pointor++;
-          } else { // v1Indices[v1Pointor] > vIndices[v2Pointor]
-            v2Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v2Indices[v2Pointor] < v1Indices[v1Pointor]) {
+              v2Pointor++;
+            } else { // v2Indices[v2Pointor] > v1Indices[v1Pointor]
+              v1Pointor++;
+            }
+          }
+          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (size1 <= size2 && size1 <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          int[] resValues = newStorage.getValues();
+          long[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {
+          long[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+        }
+      } else if (size1 > size2 && size2 > Constant.sortedDenseStorageThreshold * v2.dim()) {
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+          long[] resIndices = ArrayCopy.copy(v2.getIndices());
+          int[] resValues = newStorage.getValues();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v2Indices[v2Pointor] < v1Indices[v1Pointor]) {
+              v2Pointor++;
+            } else { // v2Indices[v2Pointor] > v1Indices[v1Pointor]
+              v1Pointor++;
+            }
+          }
+
+          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
+              resValues);
+        } else {//dense or sparse
+          long[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
       } else {
-        long[] resIndices = ArrayCopy.copy(v2.getIndices());
-        int[] resValues = new int[resIndices.length];
-        long[] v1Indices = v1.getStorage().getIndices();
-        int[] v1Values = v1.getStorage().getValues();
+        if (op.isKeepStorage()) {
+          long[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          long[] resIndices = ArrayCopy.copy(v1Indices);
+          int[] resValues = newStorage.getValues();
+          long[] v2Indices = v2.getIndices();
 
-        while (v1Pointor < size1 && v2Pointor < size2) {
-          if (v1Indices[v1Pointor] == resIndices[v2Pointor]) {
-            resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
-            v1Pointor++;
-            v2Pointor++;
-          } else if (resIndices[v2Pointor] < v1Indices[v1Pointor]) {
-            v2Pointor++;
-          } else { // resIndices[v2Pointor] > v1Indices[v1Pointor]
-            v1Pointor++;
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
+          }
+          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
+              resValues);
+        } else {//dense or sparse
+          long[] v1Indices = v1.getStorage().getIndices();
+          int[] v1Values = v1.getStorage().getValues();
+          long[] v2Indices = v2.getIndices();
+
+          while (v1Pointor < size1 && v2Pointor < size2) {
+            if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+              v1Pointor++;
+              v2Pointor++;
+            } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
+              v1Pointor++;
+            } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
+              v2Pointor++;
+            }
           }
         }
-
-        LongIntSortedVectorStorage newStorage =
-          new LongIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
-        res = new LongIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newStorage);
       }
     }
 
-    return res;
+    return new LongIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+        newStorage);
   }
 
 

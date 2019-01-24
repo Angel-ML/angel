@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -22,10 +22,19 @@ package com.tencent.angel.ml.math2.utils;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math2.MFactory;
 import com.tencent.angel.ml.math2.VFactory;
-import com.tencent.angel.ml.math2.matrix.*;
-import com.tencent.angel.ml.math2.vector.*;
+import com.tencent.angel.ml.math2.matrix.BlasDoubleMatrix;
+import com.tencent.angel.ml.math2.matrix.BlasFloatMatrix;
+import com.tencent.angel.ml.math2.matrix.BlasMatrix;
+import com.tencent.angel.ml.math2.matrix.Matrix;
+import com.tencent.angel.ml.math2.matrix.RBCompIntDoubleMatrix;
+import com.tencent.angel.ml.math2.matrix.RBCompIntFloatMatrix;
+import com.tencent.angel.ml.math2.vector.CompIntDoubleVector;
+import com.tencent.angel.ml.math2.vector.CompIntFloatVector;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.IntFloatVector;
 
 public class MatrixUtils {
+
   public static BlasDoubleMatrix rbCompDense2Blas(RBCompIntDoubleMatrix mat) {
     assert mat != null;
 
