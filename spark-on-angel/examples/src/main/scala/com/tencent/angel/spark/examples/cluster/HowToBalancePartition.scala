@@ -14,14 +14,15 @@ object HowToBalancePartition {
     val sc = new SparkContext(conf)
 
     val params = ArgsUtil.parse(args)
-    val numPart = params.getOrElse("numPart", "500").toInt
+    val numPart = params.getOrElse("numPart", "800").toInt
     val input = params.getOrElse("input", "data/census/census_148d_train.libsvm")
 
 
 
     val freq = sc.textFile(input)
       .map(s => (DataLoader.parseLongDummy(s, -1))).flatMap(f => f.getX.asInstanceOf[LongDummyVector].getIndices)
-      .map(f => f / 0xfffffffffffL).map(f => (f, 1L)).reduceByKey(_ + _).collect()
+//      .distinct()
+      .map(f => f / 0xfffffffffL).map(f => (f, 1L)).reduceByKey(_ + _).collect()
 
     val sorted = freq.sortBy(f => f._1)
 
@@ -36,6 +37,7 @@ object HowToBalancePartition {
     starts.append(0L)
     for (i <- 0 until size) {
       if (current > per) {
+        println(current)
         current = 0L
         starts.append(sorted(i)._1)
       }
@@ -44,7 +46,7 @@ object HowToBalancePartition {
 
     println(starts.size)
 
-    println(starts.map(f => f << 44).mkString("L,"))
+    println(starts.map(f => f << 36).mkString("L,"))
 
   }
 

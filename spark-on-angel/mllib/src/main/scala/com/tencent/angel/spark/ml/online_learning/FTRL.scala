@@ -96,8 +96,6 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     }.distinct
 
     start = System.currentTimeMillis()
-//    val localZ = zPS.pull(indices)
-//    val localN = nPS.pull(indices)
 
     PSContext.instance()
     val client = MatrixClientFactory.get(zPS.poolId, PSContext.getTaskId)
@@ -150,8 +148,6 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     val optimTime = end - start
 
     start = System.currentTimeMillis()
-//    zPS.increment(deltaZ)
-//    nPS.increment(deltaN)
     val update = new Array[Vector](2)
     update(0) = deltaZ
     update(1) = deltaN
