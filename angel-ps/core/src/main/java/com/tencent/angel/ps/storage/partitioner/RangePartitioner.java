@@ -75,6 +75,12 @@ public class RangePartitioner implements Partitioner {
     int matrixId = mContext.getMatrixId();
     int row = mContext.getRowNum();
     long col = mContext.getColNum();
+    long start = mContext.getIndexStart();
+    long end = mContext.getIndexEnd();
+    if(end > start) {
+      col = end - start;
+    }
+
     long validIndexNum = mContext.getValidIndexNum();
     if (col > 0 && validIndexNum > col) {
       validIndexNum = col;
@@ -133,14 +139,19 @@ public class RangePartitioner implements Partitioner {
     mContext.setMaxRowNumInBlock(blockRow);
     mContext.setMaxColNumInBlock(blockCol);
 
-    long minValue = 0;
-    long maxValue = 0;
-    if (col == -1) {
-      minValue = getMinIndex(mContext);
-      maxValue = getMaxIndex(mContext);
+    long minValue;
+    long maxValue;
+    if(end - start > 0) {
+      minValue = start;
+      maxValue = end;
     } else {
-      minValue = 0;
-      maxValue = col;
+      if (col == -1) {
+        minValue = getMinIndex(mContext);
+        maxValue = getMaxIndex(mContext);
+      } else {
+        minValue = 0;
+        maxValue = col;
+      }
     }
 
     int startRow;
