@@ -1,12 +1,8 @@
 package com.tencent.angel.spark.examples.cluster
 
-import java.util
-import java.util.List
-
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.math2.vector.{LongDummyVector, LongFloatVector}
-import com.tencent.angel.ml.matrix.{MatrixContext, PartitionMeta, RowType}
-import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
+import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.core.metric.AUC
@@ -45,7 +41,7 @@ object FTRLExample {
     val partNum = (SparkUtils.getNumCores(SparkContext.getOrCreate().getConf) * 6.15).toInt
 
     val data = sc.textFile(input).repartition(partNum)
-      .map(s => (DataLoader.parseLongDummy(s, dim), DataLoader.parseLabel(s, false)))
+      .map(s => (DataLoader.parseLongFloat(s, dim), DataLoader.parseLabel(s, false)))
       .map {
         f =>
           f._1.setY(f._2)
@@ -55,9 +51,9 @@ object FTRLExample {
     data.persist(StorageLevel.DISK_ONLY)
     val size = data.count()
 
-    val max = data.map(f => f.getX.asInstanceOf[LongDummyVector].getIndices.max).max()
-    val min = data.map(f => f.getX.asInstanceOf[LongDummyVector].getIndices.min).min()
-    val nnz = data.flatMap(f => f.getX.asInstanceOf[LongDummyVector].getIndices.distinct).map(f => (f, 1))
+    val max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.max).max()
+    val min = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.min).min()
+    val nnz = data.flatMap(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.distinct).map(f => (f, 1))
         .reduceByKey(_ + _).count()
 
     println(s"num examples = ${size} min_index=$min max_index=$max dim=$nnz")
