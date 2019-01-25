@@ -31,6 +31,7 @@ import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.model.output.format.{ColIdValueTextRowFormat, RowIdColIdValueTextRowFormat}
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.ps.storage.partitioner.{ColumnRangePartitioner, Partitioner}
+import com.tencent.angel.psagent.matrix.MatrixClientFactory
 import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
 import com.tencent.angel.spark.ml.psf.ftrl.{ComputeW, FTRLPartitioner}
 import com.tencent.angel.spark.models.PSVector
@@ -62,11 +63,15 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
   def init(dim: Long): Unit = init(dim, RowType.T_FLOAT_SPARSE_LONGKEY)
 
   def init(start: Long, end: Long, nnz: Long, rowType: RowType): Unit = {
+    init(start, end, nnz, rowType, new FTRLPartitioner())
+  }
+
+  def init(start: Long, end: Long, nnz: Long, rowType: RowType, partitioner: Partitioner): Unit = {
     val ctx = new MatrixContext()
     ctx.setName(name)
     ctx.setColNum(end)
     ctx.setRowNum(3)
-    ctx.setPartitionerClass(classOf[FTRLPartitioner])
+    ctx.setPartitionerClass(partitioner.getClass)
     ctx.setRowType(rowType)
     ctx.setValidIndexNum(nnz)
     ctx.setMaxColNumInBlock(start)
@@ -91,8 +96,13 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     }.distinct
 
     start = System.currentTimeMillis()
-    val localZ = zPS.pull(indices)
-    val localN = nPS.pull(indices)
+
+    PSContext.instance()
+    val client = MatrixClientFactory.get(zPS.poolId, PSContext.getTaskId)
+    val vectors = client.get(Array(0, 1), indices)
+    val (localZ, localN) = (vectors(0), vectors(1))
+
+
     end = System.currentTimeMillis()
     val pullTime = end - start
 
@@ -138,8 +148,10 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     val optimTime = end - start
 
     start = System.currentTimeMillis()
-    zPS.increment(deltaZ)
-    nPS.increment(deltaN)
+    val update = new Array[Vector](2)
+    update(0) = deltaZ
+    update(1) = deltaN
+    client.increment(Array(0, 1), update, true)
     end = System.currentTimeMillis()
     val pushTime = end - start
 
@@ -177,90 +189,6 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     }
   }
 
-  /**
-    * Optimizing only for LongDoubleVector. This version is ok and the model is correct.
-    *
-    * @param batch   : training mini-batch examples
-    * @param costFun : function to calculate gradients
-    * @return Loss for this batch
-    */
-  def optimize(batch: Array[(Vector, Double)],
-               costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)): Double = {
-
-    val dim = batch.head._1.dim()
-    val featIds = batch.flatMap { case (v, _) =>
-      v match {
-        case longV: LongDoubleVector => longV.getStorage.getIndices
-        case dummyV: LongDummyVector => dummyV.getIndices
-        case _ => throw new Exception("only support SparseVector and DummyVector")
-      }
-    }.distinct
-
-    val localZ = zPS.pull(featIds).asInstanceOf[LongDoubleVector]
-    val localN = nPS.pull(featIds).asInstanceOf[LongDoubleVector]
-
-    val deltaZ = VFactory.sparseLongKeyDoubleVector(dim)
-    val deltaN = VFactory.sparseLongKeyDoubleVector(dim)
-
-    val fetaValues = featIds.map { fId =>
-      val zVal = localZ.get(fId)
-      val nVal = localN.get(fId)
-
-      updateWeight(fId, zVal, nVal, alpha, beta, lambda1, lambda2)
-    }
-
-    val localW = VFactory.sparseLongKeyDoubleVector(dim, featIds, fetaValues)
-
-    val lossSum = batch.map { case (feature, label) =>
-      optimize(feature, label, localN, localW, deltaZ, deltaN, costFun)
-    }.sum
-
-    zPS.increment(deltaZ)
-    nPS.increment(deltaN)
-
-    println(s"${lossSum / batch.length}")
-
-    lossSum
-  }
-
-  /**
-    * Optimizing for one example (feature, label)
-    *
-    * @param feature
-    * @param label
-    * @param localN , N in the local executor
-    * @param localW . weight in the local executor
-    * @param deltaZ , delta value for z
-    * @param deltaN , delta value for n
-    * @param costFun
-    * @return
-    */
-  def optimize(feature: Vector,
-               label: Double,
-               localN: LongDoubleVector,
-               localW: LongDoubleVector,
-               deltaZ: LongDoubleVector,
-               deltaN: LongDoubleVector,
-               costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)
-              ): Double = {
-
-    val featIndices = feature match {
-      case longV: LongDoubleVector => longV.getStorage.getIndices
-      case dummyV: LongDummyVector => dummyV.getIndices
-    }
-
-    val (newGradient, loss) = costFun(localW, label, feature)
-
-    featIndices.foreach { fId =>
-      val nVal = localN.get(fId)
-      val gOnId = newGradient.get(fId)
-      val dOnId = 1.0 / alpha * (Math.sqrt(nVal + gOnId * gOnId) - Math.sqrt(nVal))
-
-      deltaZ.set(fId, deltaZ.get(fId) + gOnId - dOnId * localW.get(fId))
-      deltaN.set(fId, deltaN.get(fId) + gOnId * gOnId)
-    }
-    (loss)
-  }
 
   /**
     * calculate w from z and n and store it in the w row
@@ -268,38 +196,9 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     * @return
     */
   def weight: PSVector = {
-//    val wPS = PSVector.duplicate(zPS)
     val func = new ComputeW(wPS.poolId, alpha, beta, lambda1, lambda2)
     wPS.psfUpdate(func).get()
     wPS
-  }
-
-  /**
-    * calculate w from z and n for one dimension
-    *
-    * @param fId
-    * @param zOnId
-    * @param nOnId
-    * @param alpha
-    * @param beta
-    * @param lambda1
-    * @param lambda2
-    * @return
-    */
-  def updateWeight(fId: Long,
-                   zOnId: Double,
-                   nOnId: Double,
-                   alpha: Double,
-                   beta: Double,
-                   lambda1: Double,
-                   lambda2: Double): Double = {
-    if (fId == regularSkipFeatIndex) {
-      -1.0 * alpha * zOnId / (beta + Math.sqrt(nOnId))
-    } else if (Math.abs(zOnId) <= lambda1) {
-      0.0
-    } else {
-      (-1) * (1.0 / (lambda2 + (beta + Math.sqrt(nOnId)) / alpha)) * (zOnId - Math.signum(zOnId).toInt * lambda1)
-    }
   }
 
   def log1pExp(x: Double): Double = {
@@ -310,15 +209,23 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     }
   }
 
+  /**
+    * Save z and n for increment training
+    * @param path
+    */
   def save(path: String): Unit = {
     val format = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
     val modelContext = new ModelSaveContext(path)
     val matrixContext = new MatrixSaveContext(name, format)
-    matrixContext.addIndices(Array(0, 1, 2))
+    matrixContext.addIndices(Array(0, 1))
     modelContext.addMatrix(matrixContext)
     AngelPSContext.save(modelContext)
   }
 
+  /**
+    * Save w for model serving
+    * @param path
+    */
   def saveWeight(path: String): Unit = {
     val format = classOf[ColIdValueTextRowFormat].getCanonicalName
     val modelContext = new ModelSaveContext(path)
