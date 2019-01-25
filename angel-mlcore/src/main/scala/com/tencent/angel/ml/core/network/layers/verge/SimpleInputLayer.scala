@@ -19,12 +19,12 @@
 package com.tencent.angel.ml.core.network.layers.verge
 
 
-import com.tencent.angel.ml.core.network.TransFunc
-import com.tencent.angel.ml.core.network.Graph
+import com.tencent.angel.ml.core.network.{Graph, TransFunc}
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.variable._
 import com.tencent.angel.ml.core.optimizer.Optimizer
-import com.tencent.angel.ml.core.utils.{LayerKeys, OptUtils}
+import com.tencent.angel.ml.core.utils.{LayerKeys, MLException, OptUtils}
+import com.tencent.angel.ml.math2.MFactory
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import org.apache.commons.logging.LogFactory
@@ -42,9 +42,9 @@ class SimpleInputLayer(name: String,
   private val LOG = LogFactory.getLog(classOf[SimpleInputLayer])
 
   private val weight: MatVariable = graph.provider.getMatVariable(s"${name}_weight", outputDim,
-    graph.indexRange, optimizer, withInput = true)
+    graph.indexRange, optimizer, allowPullWithIndex = true)
   private val bias: VecVariable = graph.provider.getVecVariable(s"${name}_bias", outputDim,
-    null, withInput = true)
+    null, allowPullWithIndex = false)
 
   override protected def doForward(input: Matrix): Matrix = {
     // the input can be both dense and sparse
@@ -62,9 +62,9 @@ class SimpleInputLayer(name: String,
     gradWeight.imul(graph.normalFactor)
     graph.putGradient(weight.asInstanceOf[Variable], gradWeight)
 
-    graph.putGradient(bias.asInstanceOf[Variable],
-      OptUtils.wrapVector2Matrix(gradWeight.average(0))
-    )
+    val gradBias = OptUtils.wrapVector2Matrix(gradWeight.average(1))
+
+    graph.putGradient(bias.asInstanceOf[Variable], gradBias)
   }
 
   override def toString: String = {

@@ -28,6 +28,7 @@ import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.variable.{MatVariable, Variable, VecVariable}
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.utils.{LayerKeys, MLException, OptUtils}
+import com.tencent.angel.ml.math2.MFactory
 import org.apache.commons.logging.LogFactory
 import org.json4s.JsonAST.{JField, JString}
 import org.json4s.JsonDSL._
@@ -40,21 +41,24 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
   private val LOG = LogFactory.getLog(classOf[FCLayer])
 
   private val weight: MatVariable = graph.provider.getMatVariable(s"${name}_weight", outputDim,
-    inputLayer.outputDim, optimizer, withInput = false)
+    inputLayer.outputDim, optimizer, allowPullWithIndex = false)
   private val bias: VecVariable = graph.provider.getVecVariable(s"${name}_bias", outputDim,
-    null, withInput = false)
+    null, allowPullWithIndex = false)
 
   @transient private var middleCache: Matrix = _
+  @transient private var subDim: Int = -1
 
   override protected def doForward(input: Matrix): Matrix = {
     val inputNew = input match {
       case mat: RBCompIntDoubleMatrix =>
         // for Double embedding layer
         middleCache = MatrixUtils.rbCompDense2Blas(mat)
+        subDim = mat.getSubDim
         middleCache
       case mat: RBCompIntFloatMatrix =>
         // for Double embedding layer
         middleCache = MatrixUtils.rbCompDense2Blas(mat)
+        subDim = mat.getSubDim
         middleCache
       case mat: BlasMatrix =>
         // other layers, but the input layer, their out put is Blas
@@ -71,15 +75,20 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
     // 1. calculate backward
     val transBack = transFunc.calGrad(forward(), gradInput)
     // both transBack and weight are Blas
-    val backwardValue = Ufuncs.dot(transBack, false, weight, false)
-    graph.put2Cache(backwardKey, backwardValue)
+    val backwardTemp: Matrix = Ufuncs.dot(transBack, false, weight, false)
 
     // 2. calculate gradient
-    val lastOutput = if (middleCache != null) {
-      middleCache
+    val (backwardValue, lastOutput) = if (middleCache != null) {
+      val backwardValue: Matrix = backwardTemp match {
+        case mat: BlasDoubleMatrix => MatrixUtils.blas2RBCompDense(mat, subDim)
+        case mat: BlasFloatMatrix => MatrixUtils.blas2RBCompDense(mat, subDim)
+      }
+      backwardValue -> middleCache
     } else {
-      input
+      backwardTemp -> input
     }
+
+    graph.put2Cache(backwardKey, backwardValue)
 
     // both transBack and lastOutput are Blas
     val gradWeight = Ufuncs.dot(transBack, true, lastOutput, false)
@@ -87,9 +96,9 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
 
     graph.putGradient(weight.asInstanceOf[Variable], gradWeight)
 
-    graph.putGradient(bias.asInstanceOf[Variable],
-      OptUtils.wrapVector2Matrix(gradWeight.average(0))
-    )
+    val gradBias = OptUtils.wrapVector2Matrix(gradWeight.average(1))
+
+    graph.putGradient(bias.asInstanceOf[Variable], gradBias)
 
     backwardValue
   }

@@ -14,8 +14,8 @@ import com.tencent.angel.ml.math2.{MFactory, StorageType, vector}
 
 
 class LocalBlasMatVariable(name: String, val numRows: Int, val numCols: Long, updater: Updater,
-                           rowType: RowType, withInput: Boolean)(implicit graph: Graph)
-  extends LocalVariable(name, rowType, updater, withInput) with BlasMatVariable {
+                           rowType: RowType, allowPullWithIndex: Boolean)(implicit graph: Graph)
+  extends LocalVariable(name, rowType, updater, allowPullWithIndex) with BlasMatVariable {
   override protected var matrix: Matrix = _
 
   override def create(envCtx: EvnContext): Unit = {
@@ -83,7 +83,6 @@ class LocalBlasMatVariable(name: String, val numRows: Int, val numCols: Long, up
 
     try {
       if (state == VarState.Initialized || state == VarState.Ready) {
-        assert(indices == null)
         if (matrix == null) {
           matrix = storage.getRow(0).getStorage match {
             case s: IntDoubleDenseVectorStorage =>
@@ -101,19 +100,6 @@ class LocalBlasMatVariable(name: String, val numRows: Int, val numCols: Long, up
       }
 
       assert(state == VarState.Ready)
-    } finally {
-      writeLock.unlock()
-    }
-
-  }
-
-  def push(features: Matrix, backward: Matrix): Unit = {
-    writeLock.lock()
-
-    try {
-      assert(state == VarState.Ready)
-      val grad: Matrix = Ufuncs.dot(backward, true, features, false).imul(graph.normalFactor)
-      OptUtils.getRowAsMatrix(storage, numSlot, numRows, numCols.toInt).iadd(grad)
     } finally {
       writeLock.unlock()
     }

@@ -13,8 +13,7 @@
   },
   "default_optimizer": {
     "type": "momentum",
-    "momentum": 0.9,
-    "reg2": 0.01
+    "momentum": 0.9
   },
   "layers": [
     {

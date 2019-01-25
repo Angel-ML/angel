@@ -14,8 +14,8 @@ import com.tencent.angel.ml.math2.{MFactory, StorageType}
 
 
 class LocalMatVariable(name: String, val numRows: Int, val numCols: Long, updater: Updater,
-                       rowType: RowType, withInput: Boolean)(implicit graph: Graph)
-  extends LocalVariable(name, rowType, updater, withInput) with MatVariable {
+                       rowType: RowType, allowPullWithIndex: Boolean)(implicit graph: Graph)
+  extends LocalVariable(name, rowType, updater, allowPullWithIndex) with MatVariable {
   override protected var matrix: Matrix = _
 
   protected var mean: Double = 0

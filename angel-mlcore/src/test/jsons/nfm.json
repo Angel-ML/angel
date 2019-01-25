@@ -6,7 +6,7 @@
     "validateratio": 0.1
   },
   "model": {
-    "modeltype": "T_FLOAT_SPARSE_LONGKEY",
+    "modeltype": "T_FLOAT_SPARSE",
     "modelsize": 148
   },
   "train": {

@@ -132,7 +132,7 @@ object VecVariable {
 }
 
 
-abstract class Variable(val name: String, val rowType: RowType, val updater: Updater, val withInput: Boolean)(implicit val graph: Graph)
+abstract class Variable(val name: String, val rowType: RowType, val updater: Updater, val allowPullWithIndex: Boolean)(implicit val graph: Graph)
   extends TrainCycle {
   graph.addVariable(this)
 

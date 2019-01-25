@@ -11,8 +11,8 @@ import com.tencent.angel.model.{MatrixLoadContext, ModelTools}
 import org.apache.hadoop.conf.Configuration
 
 
-abstract class LocalVariable(name: String, rowType: RowType, updater: Updater, withInput: Boolean)(
-  implicit graph: Graph) extends Variable(name, rowType, updater, withInput) {
+abstract class LocalVariable(name: String, rowType: RowType, updater: Updater, allowPullWithIndex: Boolean)(
+  implicit graph: Graph) extends Variable(name, rowType, updater, allowPullWithIndex) {
   var storage: Matrix = _
 
   override def load(envCtx: EvnContext, path: String): Unit = {

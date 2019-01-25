@@ -121,26 +121,16 @@ object EmbedUtils {
           VFactory.compIntFloatVector(
             v.dim().toInt * partitions.length, partitions.map(_.asInstanceOf[IntFloatVector]), v.dim().toInt
           )
-        case v: LongDoubleVector =>
-          VFactory.compLongDoubleVector(
-            v.dim() * partitions.length, partitions.map(_.asInstanceOf[LongDoubleVector]), v.dim()
-          )
-        case v: LongFloatVector =>
-          VFactory.compLongFloatVector(
-            v.dim() * partitions.length, partitions.map(_.asInstanceOf[LongFloatVector]), v.dim()
-          )
+        case _ => throw MLException("Vector type is not supported!")
       }
     }
 
-    rows.head match {
-      case _: CompIntDoubleVector =>
-        MFactory.rbCompIntDoubleMatrix(rows.map(_.asInstanceOf[CompIntDoubleVector]))
-      case _: CompIntFloatVector =>
-        MFactory.rbCompIntFloatMatrix(rows.map(_.asInstanceOf[CompIntFloatVector]))
-      case _: CompLongDoubleVector =>
-        MFactory.rbCompLongDoubleMatrix(rows.map(_.asInstanceOf[CompLongDoubleVector]))
-      case _: CompLongFloatVector =>
-        MFactory.rbCompLongFloatMatrix(rows.map(_.asInstanceOf[CompLongFloatVector]))
+    if (rows.head.getType.isDouble) {
+      MFactory.rbCompIntDoubleMatrix(rows.map(_.asInstanceOf[CompIntDoubleVector]))
+    } else if (rows.head.getType.isFloat) {
+      MFactory.rbCompIntFloatMatrix(rows.map(_.asInstanceOf[CompIntFloatVector]))
+    } else {
+      throw MLException("Vector type is not supported!")
     }
   }
 

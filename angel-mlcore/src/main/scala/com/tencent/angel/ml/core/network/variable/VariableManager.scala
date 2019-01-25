@@ -79,7 +79,7 @@ class VariableManager (graph: Graph) {
     val isSparseFormat = graph.dataFormat == "libsvm" || graph.dataFormat == "dummy"
 
     variables.values().foreach {
-      case variable if isSparseFormat && variable.withInput =>
+      case variable if isSparseFormat && variable.allowPullWithIndex =>
         variable.pull(epoch, graph.placeHolder.getIndices)
       case variable => variable.pull(epoch)
     }
@@ -91,7 +91,7 @@ class VariableManager (graph: Graph) {
     val variable = getVariable(name)
     if (variable != null) {
       variable match {
-        case v if isSparseFormat && v.withInput =>
+        case v if isSparseFormat && v.allowPullWithIndex =>
           v.pull(epoch, graph.placeHolder.getIndices)
         case v => v.pull(epoch)
       }

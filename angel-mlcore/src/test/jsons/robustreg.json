@@ -1,4 +1,16 @@
 {
+  "data": {
+    "format": "libsvm",
+    "indexrange": 123,
+    "validateratio": 0.1
+  },
+  "train": {
+    "epoch": 10,
+    "lr": 1.0
+  },
+  "model": {
+    "modeltype": "T_FLOAT_DENSE"
+  },
   "default_optimizer": {
     "type": "momentum",
     "momentum": 0.9,

@@ -134,6 +134,7 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
   // forward
   def calForward(): Double = {
     val start = System.currentTimeMillis()
+    clearCache()
     val loss = lossLayer.calLoss()
     val end = System.currentTimeMillis()
 
@@ -158,6 +159,7 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
 
   def predict(): List[PredictResult] = {
     val start = System.currentTimeMillis()
+    clearCache()
     val res = lossLayer.predict()
     val end = System.currentTimeMillis()
     timeStats.predictTime += end - start

@@ -14,8 +14,8 @@ import com.tencent.angel.ml.math2.{MFactory, StorageType}
 
 
 class LocalVecVariable(name: String, val length: Long, updater: Updater,
-                       rowType: RowType, withInput: Boolean)(implicit graph: Graph)
-  extends LocalVariable(name, rowType, updater, withInput) with VecVariable {
+                       rowType: RowType, allowPullWithIndex: Boolean)(implicit graph: Graph)
+  extends LocalVariable(name, rowType, updater, allowPullWithIndex) with VecVariable {
   override protected var vector: Vector = _
   // override protected val rowsSaved: Array[Int] = Array(0)
 

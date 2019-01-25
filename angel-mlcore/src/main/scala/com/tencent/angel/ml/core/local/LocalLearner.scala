@@ -62,7 +62,6 @@ class LocalLearner(conf: SharedConf) extends Learner {
       // LOG.info("start to update ...")
       graph.update[VoidType](epoch * numBatch + batchCount, graph.placeHolder.getBatchSize) // update parameters on PS
 
-
       // waiting all gradient update finished
       // LOG.info("waiting for update barrier ...")
       // barrier(0, graph)

@@ -11,22 +11,27 @@ import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.core.utils.ValueNotAllowed
 
 class LocalEmbedVariable(name: String, numRows: Int, numCols: Long, updater: Updater,
-                         rowType: RowType, withInput: Boolean)(implicit graph: Graph)
-  extends LocalMatVariable(name, numRows, numCols, updater, rowType, withInput) with EmbedVariable {
+                         rowType: RowType, allowPullWithIndex: Boolean)(implicit graph: Graph)
+  extends LocalMatVariable(name, numRows, numCols, updater, rowType, allowPullWithIndex) with EmbedVariable {
 
   override def pull(epoch: Int, indices: Vector = null): Unit = {
     writeLock.lock()
 
     try {
-      assert(indices != null)
       if (state == VarState.Initialized || state == VarState.Ready) {
         embeddings.clear()
 
-        indices.getStorage match {
-          case s: IntIntDenseVectorStorage =>
-            s.getValues.foreach { idx => embeddings.put(idx.toLong, storage.getRow(idx)) }
-          case s: IntLongDenseVectorStorage =>
-            s.getValues.foreach { idx => embeddings.put(idx, storage.getRow(idx.toInt)) }
+        if (indices != null) {
+          indices.getStorage match {
+            case s: IntIntDenseVectorStorage =>
+              s.getValues.foreach { idx => embeddings.put(idx.toLong, storage.getRow(idx)) }
+            case s: IntLongDenseVectorStorage =>
+              s.getValues.foreach { idx => embeddings.put(idx, storage.getRow(idx.toInt)) }
+          }
+        } else {
+          (0 until numRows).foreach{ idx =>
+            embeddings.put(idx.toLong, storage.getRow(idx))
+          }
         }
 
         matrix = EmbedUtils.geneMatrix(graph, embeddings)

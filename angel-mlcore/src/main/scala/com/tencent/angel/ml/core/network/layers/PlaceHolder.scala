@@ -45,7 +45,7 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
   private val keyType: String = SharedConf.keyType()
   private val inputDataFormat: String = SharedConf.inputDataFormat
 
-  var isFeed: Boolean = false
+  // var isFeed: Boolean = false
 
   def feedData(data: Array[LabeledData]): Unit = {
     feats = null
