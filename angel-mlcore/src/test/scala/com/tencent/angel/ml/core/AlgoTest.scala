@@ -98,12 +98,12 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
   }
 
   test("LogReg") {
-    init2(getJson("logreg"), getDataFile("a9a", "dummy"))
+    init2(getJson("logreg"), getDataFile("a9a"))
     train2()
   }
 
   test("MixedLR") {
-    init2(getJson("mixedlr"), getDataFile("a9a", "dummy"))
+    init2(getJson("mixedlr"), getDataFile("a9a"))
     train2()
   }
 

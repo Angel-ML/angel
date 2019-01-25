@@ -9,7 +9,7 @@
     "lr": 1.0
   },
   "model": {
-    "modeltype": "T_FLOAT_DENSE"
+    "modeltype": "T_FLOAT_SPARSE"
   },
   "default_optimizer": {
     "type": "momentum",

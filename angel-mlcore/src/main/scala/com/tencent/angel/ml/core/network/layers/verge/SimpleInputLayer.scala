@@ -58,12 +58,10 @@ class SimpleInputLayer(name: String,
     val transBack = transFunc.calGrad(forward(), gradInput)
     // the input can be both dense and sparse, but transBack is dense
     val gradWeight: Matrix = Ufuncs.dot(transBack, true, input, false)
-
-    gradWeight.imul(graph.normalFactor)
+      .imul(graph.normalFactor)
     graph.putGradient(weight.asInstanceOf[Variable], gradWeight)
 
-    val gradBias = OptUtils.wrapVector2Matrix(gradWeight.average(1))
-
+    val gradBias = OptUtils.wrapVector2Matrix(transBack.sum(0).imul(graph.normalFactor))
     graph.putGradient(bias.asInstanceOf[Variable], gradBias)
   }
 

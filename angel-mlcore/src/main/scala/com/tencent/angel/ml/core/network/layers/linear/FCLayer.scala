@@ -19,16 +19,14 @@
 package com.tencent.angel.ml.core.network.layers.linear
 
 
-import com.tencent.angel.ml.core.network.TransFunc
-import com.tencent.angel.ml.core.network.Graph
-import com.tencent.angel.ml.math2.matrix._
-import com.tencent.angel.ml.math2.ufuncs.Ufuncs
-import com.tencent.angel.ml.math2.utils.MatrixUtils
+import com.tencent.angel.ml.core.network.{Graph, TransFunc}
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.variable.{MatVariable, Variable, VecVariable}
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.utils.{LayerKeys, MLException, OptUtils}
-import com.tencent.angel.ml.math2.MFactory
+import com.tencent.angel.ml.math2.matrix._
+import com.tencent.angel.ml.math2.ufuncs.Ufuncs
+import com.tencent.angel.ml.math2.utils.MatrixUtils
 import org.apache.commons.logging.LogFactory
 import org.json4s.JsonAST.{JField, JString}
 import org.json4s.JsonDSL._
@@ -92,12 +90,10 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
 
     // both transBack and lastOutput are Blas
     val gradWeight = Ufuncs.dot(transBack, true, lastOutput, false)
-    gradWeight.imul(graph.normalFactor)
-
+      .imul(graph.normalFactor)
     graph.putGradient(weight.asInstanceOf[Variable], gradWeight)
 
-    val gradBias = OptUtils.wrapVector2Matrix(gradWeight.average(1))
-
+    val gradBias = OptUtils.wrapVector2Matrix(transBack.sum(0).imul(graph.normalFactor))
     graph.putGradient(bias.asInstanceOf[Variable], gradBias)
 
     backwardValue

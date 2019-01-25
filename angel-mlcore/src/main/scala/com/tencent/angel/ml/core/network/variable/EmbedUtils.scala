@@ -150,7 +150,7 @@ object EmbedUtils {
     method.invoke(vec).asInstanceOf[Array[Vector]]
   }
 
-  def calGradient(features: Matrix, backward: Matrix): Matrix = {
+  def calGradient(features: Matrix, backward: Matrix)(implicit graph: Graph): Matrix = {
     val gradMap: JHashMap[JLong, Vector] = new JHashMap[JLong, Vector]()
 
     (0 until features.getNumRows).foreach { rId =>
@@ -159,51 +159,38 @@ object EmbedUtils {
 
       row.getStorage match {
         case s: IntDoubleSparseVectorStorage =>
-          val iter = s.entryIterator()
-          var id: Int = 0
-          while (iter.hasNext) {
-            val entry = iter.next()
-            val key = entry.getIntKey
-            val value = entry.getDoubleValue
-            val update = partitions(id)
-            mergeUpdate(gradMap, key, update, value)
-            id += 1
+          s.getIndices.sorted.zipWithIndex.foreach { case (key, idx) =>
+            val value = s.get(key)
+            val update = partitions(idx)
+            mergeUpdate(gradMap, key.toLong, update, value)
           }
         case s: IntFloatSparseVectorStorage =>
-          val iter = s.entryIterator()
-          var id: Int = 0
-          while (iter.hasNext) {
-            val entry = iter.next()
-            val key = entry.getIntKey
-            val value = entry.getFloatValue
-            val update = partitions(id)
-            mergeUpdate(gradMap, key, update, value)
-            id += 1
+          s.getIndices.sorted.zipWithIndex.foreach { case (key, idx) =>
+            val value = s.get(key)
+            val update = partitions(idx)
+            mergeUpdate(gradMap, key.toLong, update, value)
           }
         case s: LongDoubleSparseVectorStorage =>
-          val iter = s.entryIterator()
-          var id: Int = 0
-          while (iter.hasNext) {
-            val entry = iter.next()
-            val key = entry.getLongKey
-            val value = entry.getDoubleValue
-            val update = partitions(id)
+          s.getIndices.sorted.zipWithIndex.foreach { case (key, idx) =>
+            val value = s.get(key)
+            val update = partitions(idx)
             mergeUpdate(gradMap, key, update, value)
-            id += 1
           }
         case s: LongFloatSparseVectorStorage =>
-          val iter = s.entryIterator()
-          var id: Int = 0
-          while (iter.hasNext) {
-            val entry = iter.next()
-            val key = entry.getLongKey
-            val value = entry.getFloatValue
-            val update = partitions(id)
+          s.getIndices.sorted.zipWithIndex.foreach { case (key, idx) =>
+            val value = s.get(key)
+            val update = partitions(idx)
             mergeUpdate(gradMap, key, update, value)
-            id += 1
           }
         case _ => throw MLException("Data type is not support!")
       }
+    }
+
+    val iter = gradMap.keySet().iterator()
+    val normalFactor = graph.normalFactor
+    while (iter.hasNext) {
+      val key = iter.next()
+      gradMap.get(key).imul(normalFactor)
     }
 
     new MapMatrix(0, 0, gradMap)
