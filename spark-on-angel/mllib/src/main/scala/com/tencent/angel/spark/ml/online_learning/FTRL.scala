@@ -33,7 +33,7 @@ import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadC
 import com.tencent.angel.ps.storage.partitioner.{ColumnRangePartitioner, Partitioner}
 import com.tencent.angel.psagent.matrix.MatrixClientFactory
 import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
-import com.tencent.angel.spark.ml.psf.ftrl.{ComputeW, FTRLPartitioner}
+import com.tencent.angel.spark.ml.psf.ftrl.ComputeW
 import com.tencent.angel.spark.models.PSVector
 import com.tencent.angel.spark.models.impl.PSVectorImpl
 
@@ -63,18 +63,14 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
   def init(dim: Long): Unit = init(dim, RowType.T_FLOAT_SPARSE_LONGKEY)
 
   def init(start: Long, end: Long, nnz: Long, rowType: RowType): Unit = {
-    init(start, end, nnz, rowType, new FTRLPartitioner())
+    init(start, end, nnz, rowType, new ColumnRangePartitioner())
   }
 
   def init(start: Long, end: Long, nnz: Long, rowType: RowType, partitioner: Partitioner): Unit = {
-    val ctx = new MatrixContext()
-    ctx.setName(name)
-    ctx.setColNum(end)
-    ctx.setRowNum(3)
+    val ctx = new MatrixContext(name, 3, start, end)
     ctx.setPartitionerClass(partitioner.getClass)
     ctx.setRowType(rowType)
     ctx.setValidIndexNum(nnz)
-    ctx.setMaxColNumInBlock(start)
     val matId = PSMatrixUtils.createPSMatrix(ctx)
 
     zPS = new PSVectorImpl(matId, 0, end, rowType)

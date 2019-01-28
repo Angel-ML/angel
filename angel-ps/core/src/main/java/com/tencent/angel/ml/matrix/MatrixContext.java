@@ -60,14 +60,10 @@ public class MatrixContext implements Serializable {
    */
   private long colNum;
 
-  public long getIndexStart() {
-    return indexStart;
-  }
-
   /**
    * Index range start
    */
-  private long indexStart;
+  private long indexStart = 0L;
 
   /**
    * Index range end
@@ -77,7 +73,7 @@ public class MatrixContext implements Serializable {
   /**
    * Number of valid indexes
    */
-  private long validIndexNum;
+  private long validIndexNum = 0L;
 
   /**
    * Number of rows for one block
@@ -132,15 +128,8 @@ public class MatrixContext implements Serializable {
     this(name, rowNum, colNum, -1, -1, -1, RowType.T_DOUBLE_DENSE);
   }
 
-  /**
-   * Create a new MatrixContext
-   *
-   * @param name matrix name
-   * @param rowNum matrix row number
-   * @param colNum matrix column number
-   */
-  public MatrixContext(String name, int rowNum, long colNum, long validIndexNum) {
-    this(name, rowNum, colNum, validIndexNum, -1, -1, RowType.T_DOUBLE_DENSE);
+  public MatrixContext(String name, int rowNum, long start, long end) {
+    this(name, rowNum, end - start, start, end, -1, -1, -1, new ArrayList<>(), RowType.T_DOUBLE_DENSE);
   }
 
 
@@ -202,7 +191,7 @@ public class MatrixContext implements Serializable {
    */
   public MatrixContext(String name, int rowNum, long colNum, long validIndexNum,
       int maxRowNumInBlock, long maxColNumInBlock, RowType rowType) {
-    this(name, rowNum, colNum, -1, -1, validIndexNum, maxRowNumInBlock, maxColNumInBlock,
+    this(name, rowNum, colNum, 0, colNum, validIndexNum, maxRowNumInBlock, maxColNumInBlock,
         new ArrayList<>(), rowType);
   }
 
@@ -223,8 +212,21 @@ public class MatrixContext implements Serializable {
     this.name = name;
     this.rowNum = rowNum;
     this.colNum = colNum;
+
+    if (colNum == -1) {
+      if (rowType.isIntKey()) {
+        indexStart = Integer.MIN_VALUE;
+        indexEnd = Integer.MAX_VALUE;
+      } else {
+        indexStart = Long.MIN_VALUE;
+        indexEnd = Long.MAX_VALUE;
+      }
+      colNum = indexEnd - indexStart;
+    }
+
     this.indexStart = indexStart;
     this.indexEnd = indexEnd;
+    assert (colNum == indexEnd - indexStart);
     this.validIndexNum = validIndexNum;
     this.maxRowNumInBlock = maxRowNumInBlock;
     this.maxColNumInBlock = maxColNumInBlock;
@@ -433,6 +435,14 @@ public class MatrixContext implements Serializable {
   }
 
   /**
+   * get index range start
+   * @return
+   */
+  public long getIndexStart() {
+    return indexStart;
+  }
+
+  /**
    * Get index range end
    *
    * @return index range end
@@ -546,6 +556,8 @@ public class MatrixContext implements Serializable {
     colNum = meta.getCol();
     maxRowNumInBlock = meta.getBlockRow();
     maxColNumInBlock = meta.getBlockCol();
+    indexStart = meta.getFeatureIndexStart();
+    indexEnd = meta.getFeatureIndexEnd();
     rowType = RowType.valueOf(meta.getRowType());
     Map<String, String> oldAttributes = meta.getOptions();
     if (oldAttributes != null && !oldAttributes.isEmpty()) {
