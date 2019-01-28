@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,12 +18,20 @@
 
 package com.tencent.angel.ml.math2.ufuncs.executor.matrix;
 
+<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/UnaryMatrixExecutor.java
 import com.tencent.angel.ml.math2.exceptions.MathException;
 import com.tencent.angel.ml.math2.matrix.*;
+=======
+import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.math2.matrix.BlasDoubleMatrix;
+import com.tencent.angel.ml.math2.matrix.BlasFloatMatrix;
+import com.tencent.angel.ml.math2.matrix.Matrix;
+import com.tencent.angel.ml.math2.matrix.RowBasedMatrix;
+>>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/UnaryMatrixExecutor.java
 import com.tencent.angel.ml.math2.ufuncs.expression.Unary;
-import com.tencent.angel.ml.math2.vector.Vector;
 
 public class UnaryMatrixExecutor {
+
   public static Matrix apply(Matrix mat, Unary op) {
     if (mat instanceof BlasDoubleMatrix) {
       return apply((BlasDoubleMatrix) mat, op);
@@ -50,7 +58,7 @@ public class UnaryMatrixExecutor {
         newData[i] = op.apply(data[i]);
       }
       return new BlasDoubleMatrix(mat.getMatrixId(), mat.getClock(), mat.getNumRows(),
-        mat.getNumCols(), newData);
+          mat.getNumCols(), newData);
     }
   }
 
@@ -68,7 +76,7 @@ public class UnaryMatrixExecutor {
         newData[i] = op.apply(data[i]);
       }
       return new BlasFloatMatrix(mat.getMatrixId(), mat.getClock(), mat.getNumRows(),
-        mat.getNumCols(), newData);
+          mat.getNumCols(), newData);
     }
   }
 }

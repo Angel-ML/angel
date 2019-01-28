@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,12 +18,63 @@
 
 package com.tencent.angel.ml.math2;
 
+<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/VFactory.java
 import com.tencent.angel.ml.math2.exceptions.MathException;
 import com.tencent.angel.ml.math2.storage.*;
 import com.tencent.angel.ml.math2.vector.*;
 import com.tencent.angel.ml.math2.utils.RowType;
+=======
+import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.math2.storage.IntDoubleDenseVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntDoubleSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntDoubleSparseVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntDoubleVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntFloatSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntFloatSparseVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntFloatVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntIntDenseVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntIntSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntIntSparseVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntIntVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntLongDenseVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntLongSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntLongSparseVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntLongVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongDoubleSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongDoubleSparseVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongDoubleVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongFloatSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongFloatVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongIntSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongIntSparseVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongIntVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongLongSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongLongSparseVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongLongVectorStorage;
+import com.tencent.angel.ml.math2.vector.CompIntDoubleVector;
+import com.tencent.angel.ml.math2.vector.CompIntFloatVector;
+import com.tencent.angel.ml.math2.vector.CompIntIntVector;
+import com.tencent.angel.ml.math2.vector.CompIntLongVector;
+import com.tencent.angel.ml.math2.vector.CompLongDoubleVector;
+import com.tencent.angel.ml.math2.vector.CompLongFloatVector;
+import com.tencent.angel.ml.math2.vector.CompLongIntVector;
+import com.tencent.angel.ml.math2.vector.CompLongLongVector;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.IntDummyVector;
+import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.ml.math2.vector.IntIntVector;
+import com.tencent.angel.ml.math2.vector.IntLongVector;
+import com.tencent.angel.ml.math2.vector.LongDoubleVector;
+import com.tencent.angel.ml.math2.vector.LongDummyVector;
+import com.tencent.angel.ml.math2.vector.LongFloatVector;
+import com.tencent.angel.ml.math2.vector.LongIntVector;
+import com.tencent.angel.ml.math2.vector.LongLongVector;
+>>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/VFactory.java
 
 public class VFactory {
+
   public static IntDoubleVector denseDoubleVector(int matrixId, int rowId, int clock, int dim) {
     IntDoubleVectorStorage storage = new IntDoubleDenseVectorStorage(dim);
     return new IntDoubleVector(matrixId, rowId, clock, dim, storage);
@@ -35,7 +86,7 @@ public class VFactory {
   }
 
   public static IntDoubleVector denseDoubleVector(int matrixId, int rowId, int clock,
-    double[] values) {
+      double[] values) {
     IntDoubleVectorStorage storage = new IntDoubleDenseVectorStorage(values);
     return new IntDoubleVector(matrixId, rowId, clock, values.length, storage);
   }
@@ -56,7 +107,7 @@ public class VFactory {
   }
 
   public static IntFloatVector denseFloatVector(int matrixId, int rowId, int clock,
-    float[] values) {
+      float[] values) {
     IntFloatVectorStorage storage = new IntFloatDenseVectorStorage(values);
     return new IntFloatVector(matrixId, rowId, clock, values.length, storage);
   }
@@ -117,7 +168,7 @@ public class VFactory {
   }
 
   public static IntDoubleVector sparseDoubleVector(int matrixId, int rowId, int clock, int dim,
-    int capacity) {
+      int capacity) {
     IntDoubleVectorStorage storage = new IntDoubleSparseVectorStorage(dim, capacity);
     return new IntDoubleVector(matrixId, rowId, clock, dim, storage);
   }
@@ -128,7 +179,7 @@ public class VFactory {
   }
 
   public static IntDoubleVector sparseDoubleVector(int matrixId, int rowId, int clock, int dim,
-    int[] indices, double[] values) {
+      int[] indices, double[] values) {
     IntDoubleVectorStorage storage = new IntDoubleSparseVectorStorage(dim, indices, values);
     return new IntDoubleVector(matrixId, rowId, clock, dim, storage);
   }
@@ -139,7 +190,7 @@ public class VFactory {
   }
 
   public static LongDoubleVector sparseLongKeyDoubleVector(int matrixId, int rowId, int clock,
-    long dim) {
+      long dim) {
     LongDoubleVectorStorage storage = new LongDoubleSparseVectorStorage(dim);
     return new LongDoubleVector(matrixId, rowId, clock, dim, storage);
   }
@@ -150,7 +201,7 @@ public class VFactory {
   }
 
   public static LongDoubleVector sparseLongKeyDoubleVector(int matrixId, int rowId, int clock,
-    long dim, int capacity) {
+      long dim, int capacity) {
     LongDoubleVectorStorage storage = new LongDoubleSparseVectorStorage(dim, capacity);
     return new LongDoubleVector(matrixId, rowId, clock, dim, storage);
   }
@@ -161,13 +212,13 @@ public class VFactory {
   }
 
   public static LongDoubleVector sparseLongKeyDoubleVector(int matrixId, int rowId, int clock,
-    long dim, long[] indices, double[] values) {
+      long dim, long[] indices, double[] values) {
     LongDoubleVectorStorage storage = new LongDoubleSparseVectorStorage(dim, indices, values);
     return new LongDoubleVector(matrixId, rowId, clock, dim, storage);
   }
 
   public static LongDoubleVector sparseLongKeyDoubleVector(long dim, long[] indices,
-    double[] values) {
+      double[] values) {
     LongDoubleVectorStorage storage = new LongDoubleSparseVectorStorage(dim, indices, values);
     return new LongDoubleVector(0, 0, 0, dim, storage);
   }
@@ -183,7 +234,7 @@ public class VFactory {
   }
 
   public static IntFloatVector sparseFloatVector(int matrixId, int rowId, int clock, int dim,
-    int capacity) {
+      int capacity) {
     IntFloatVectorStorage storage = new IntFloatSparseVectorStorage(dim, capacity);
     return new IntFloatVector(matrixId, rowId, clock, dim, storage);
   }
@@ -194,7 +245,7 @@ public class VFactory {
   }
 
   public static IntFloatVector sparseFloatVector(int matrixId, int rowId, int clock, int dim,
-    int[] indices, float[] values) {
+      int[] indices, float[] values) {
     IntFloatVectorStorage storage = new IntFloatSparseVectorStorage(dim, indices, values);
     return new IntFloatVector(matrixId, rowId, clock, dim, storage);
   }
@@ -205,7 +256,7 @@ public class VFactory {
   }
 
   public static LongFloatVector sparseLongKeyFloatVector(int matrixId, int rowId, int clock,
-    long dim) {
+      long dim) {
     LongFloatVectorStorage storage = new LongFloatSparseVectorStorage(dim);
     return new LongFloatVector(matrixId, rowId, clock, dim, storage);
   }
@@ -216,7 +267,7 @@ public class VFactory {
   }
 
   public static LongFloatVector sparseLongKeyFloatVector(int matrixId, int rowId, int clock,
-    long dim, int capacity) {
+      long dim, int capacity) {
     LongFloatVectorStorage storage = new LongFloatSparseVectorStorage(dim, capacity);
     return new LongFloatVector(matrixId, rowId, clock, dim, storage);
   }
@@ -227,7 +278,7 @@ public class VFactory {
   }
 
   public static LongFloatVector sparseLongKeyFloatVector(int matrixId, int rowId, int clock,
-    long dim, long[] indices, float[] values) {
+      long dim, long[] indices, float[] values) {
     LongFloatVectorStorage storage = new LongFloatSparseVectorStorage(dim, indices, values);
     return new LongFloatVector(matrixId, rowId, clock, dim, storage);
   }
@@ -248,7 +299,7 @@ public class VFactory {
   }
 
   public static IntLongVector sparseLongVector(int matrixId, int rowId, int clock, int dim,
-    int capacity) {
+      int capacity) {
     IntLongVectorStorage storage = new IntLongSparseVectorStorage(dim, capacity);
     return new IntLongVector(matrixId, rowId, clock, dim, storage);
   }
@@ -259,7 +310,7 @@ public class VFactory {
   }
 
   public static IntLongVector sparseLongVector(int matrixId, int rowId, int clock, int dim,
-    int[] indices, long[] values) {
+      int[] indices, long[] values) {
     IntLongVectorStorage storage = new IntLongSparseVectorStorage(dim, indices, values);
     return new IntLongVector(matrixId, rowId, clock, dim, storage);
   }
@@ -270,7 +321,7 @@ public class VFactory {
   }
 
   public static LongLongVector sparseLongKeyLongVector(int matrixId, int rowId, int clock,
-    long dim) {
+      long dim) {
     LongLongVectorStorage storage = new LongLongSparseVectorStorage(dim);
     return new LongLongVector(matrixId, rowId, clock, dim, storage);
   }
@@ -281,7 +332,7 @@ public class VFactory {
   }
 
   public static LongLongVector sparseLongKeyLongVector(int matrixId, int rowId, int clock, long dim,
-    int capacity) {
+      int capacity) {
     LongLongVectorStorage storage = new LongLongSparseVectorStorage(dim, capacity);
     return new LongLongVector(matrixId, rowId, clock, dim, storage);
   }
@@ -292,7 +343,7 @@ public class VFactory {
   }
 
   public static LongLongVector sparseLongKeyLongVector(int matrixId, int rowId, int clock, long dim,
-    long[] indices, long[] values) {
+      long[] indices, long[] values) {
     LongLongVectorStorage storage = new LongLongSparseVectorStorage(dim, indices, values);
     return new LongLongVector(matrixId, rowId, clock, dim, storage);
   }
@@ -313,7 +364,7 @@ public class VFactory {
   }
 
   public static IntIntVector sparseIntVector(int matrixId, int rowId, int clock, int dim,
-    int capacity) {
+      int capacity) {
     IntIntVectorStorage storage = new IntIntSparseVectorStorage(dim, capacity);
     return new IntIntVector(matrixId, rowId, clock, dim, storage);
   }
@@ -324,7 +375,7 @@ public class VFactory {
   }
 
   public static IntIntVector sparseIntVector(int matrixId, int rowId, int clock, int dim,
-    int[] indices, int[] values) {
+      int[] indices, int[] values) {
     IntIntVectorStorage storage = new IntIntSparseVectorStorage(dim, indices, values);
     return new IntIntVector(matrixId, rowId, clock, dim, storage);
   }
@@ -345,7 +396,7 @@ public class VFactory {
   }
 
   public static LongIntVector sparseLongKeyIntVector(int matrixId, int rowId, int clock, long dim,
-    int capacity) {
+      int capacity) {
     LongIntVectorStorage storage = new LongIntSparseVectorStorage(dim, capacity);
     return new LongIntVector(matrixId, rowId, clock, dim, storage);
   }
@@ -356,7 +407,7 @@ public class VFactory {
   }
 
   public static LongIntVector sparseLongKeyIntVector(int matrixId, int rowId, int clock, long dim,
-    long[] indices, int[] values) {
+      long[] indices, int[] values) {
     LongIntVectorStorage storage = new LongIntSparseVectorStorage(dim, indices, values);
     return new LongIntVector(matrixId, rowId, clock, dim, storage);
   }
@@ -377,7 +428,7 @@ public class VFactory {
   }
 
   public static IntDoubleVector sortedDoubleVector(int matrixId, int rowId, int clock, int dim,
-    int capacity) {
+      int capacity) {
     IntDoubleSortedVectorStorage storage = new IntDoubleSortedVectorStorage(dim, capacity);
     return new IntDoubleVector(matrixId, rowId, clock, dim, storage);
   }
@@ -388,21 +439,21 @@ public class VFactory {
   }
 
   public static IntDoubleVector sortedDoubleVector(int matrixId, int rowId, int clock, int dim,
-    int size, int[] indices, double[] values) {
+      int size, int[] indices, double[] values) {
     IntDoubleSortedVectorStorage storage =
-      new IntDoubleSortedVectorStorage(dim, size, indices, values);
+        new IntDoubleSortedVectorStorage(dim, size, indices, values);
     return new IntDoubleVector(matrixId, rowId, clock, dim, storage);
   }
 
   public static IntDoubleVector sortedDoubleVector(int dim, int size, int[] indices,
-    double[] values) {
+      double[] values) {
     IntDoubleSortedVectorStorage storage =
-      new IntDoubleSortedVectorStorage(dim, size, indices, values);
+        new IntDoubleSortedVectorStorage(dim, size, indices, values);
     return new IntDoubleVector(0, 0, 0, dim, storage);
   }
 
   public static IntDoubleVector sortedDoubleVector(int matrixId, int rowId, int clock, int dim,
-    int[] indices, double[] values) {
+      int[] indices, double[] values) {
     IntDoubleSortedVectorStorage storage = new IntDoubleSortedVectorStorage(dim, indices, values);
     return new IntDoubleVector(matrixId, rowId, clock, dim, storage);
   }
@@ -413,7 +464,7 @@ public class VFactory {
   }
 
   public static LongDoubleVector sortedLongKeyDoubleVector(int matrixId, int rowId, int clock,
-    long dim) {
+      long dim) {
     LongDoubleSortedVectorStorage storage = new LongDoubleSortedVectorStorage(dim);
     return new LongDoubleVector(matrixId, rowId, clock, dim, storage);
   }
@@ -424,7 +475,7 @@ public class VFactory {
   }
 
   public static LongDoubleVector sortedLongKeyDoubleVector(int matrixId, int rowId, int clock,
-    long dim, int capacity) {
+      long dim, int capacity) {
     LongDoubleSortedVectorStorage storage = new LongDoubleSortedVectorStorage(dim, capacity);
     return new LongDoubleVector(matrixId, rowId, clock, dim, storage);
   }
@@ -435,27 +486,27 @@ public class VFactory {
   }
 
   public static LongDoubleVector sortedLongKeyDoubleVector(int matrixId, int rowId, int clock,
-    long dim, int size, long[] indices, double[] values) {
+      long dim, int size, long[] indices, double[] values) {
     LongDoubleSortedVectorStorage storage =
-      new LongDoubleSortedVectorStorage(dim, size, indices, values);
+        new LongDoubleSortedVectorStorage(dim, size, indices, values);
     return new LongDoubleVector(matrixId, rowId, clock, dim, storage);
   }
 
   public static LongDoubleVector sortedLongKeyDoubleVector(long dim, int size, long[] indices,
-    double[] values) {
+      double[] values) {
     LongDoubleSortedVectorStorage storage =
-      new LongDoubleSortedVectorStorage(dim, size, indices, values);
+        new LongDoubleSortedVectorStorage(dim, size, indices, values);
     return new LongDoubleVector(0, 0, 0, dim, storage);
   }
 
   public static LongDoubleVector sortedLongKeyDoubleVector(int matrixId, int rowId, int clock,
-    long dim, long[] indices, double[] values) {
+      long dim, long[] indices, double[] values) {
     LongDoubleSortedVectorStorage storage = new LongDoubleSortedVectorStorage(dim, indices, values);
     return new LongDoubleVector(matrixId, rowId, clock, dim, storage);
   }
 
   public static LongDoubleVector sortedLongKeyDoubleVector(long dim, long[] indices,
-    double[] values) {
+      double[] values) {
     LongDoubleSortedVectorStorage storage = new LongDoubleSortedVectorStorage(dim, indices, values);
     return new LongDoubleVector(0, 0, 0, dim, storage);
   }
@@ -471,7 +522,7 @@ public class VFactory {
   }
 
   public static IntFloatVector sortedFloatVector(int matrixId, int rowId, int clock, int dim,
-    int capacity) {
+      int capacity) {
     IntFloatSortedVectorStorage storage = new IntFloatSortedVectorStorage(dim, capacity);
     return new IntFloatVector(matrixId, rowId, clock, dim, storage);
   }
@@ -482,20 +533,20 @@ public class VFactory {
   }
 
   public static IntFloatVector sortedFloatVector(int matrixId, int rowId, int clock, int dim,
-    int size, int[] indices, float[] values) {
+      int size, int[] indices, float[] values) {
     IntFloatSortedVectorStorage storage =
-      new IntFloatSortedVectorStorage(dim, size, indices, values);
+        new IntFloatSortedVectorStorage(dim, size, indices, values);
     return new IntFloatVector(matrixId, rowId, clock, dim, storage);
   }
 
   public static IntFloatVector sortedFloatVector(int dim, int size, int[] indices, float[] values) {
     IntFloatSortedVectorStorage storage =
-      new IntFloatSortedVectorStorage(dim, size, indices, values);
+        new IntFloatSortedVectorStorage(dim, size, indices, values);
     return new IntFloatVector(0, 0, 0, dim, storage);
   }
 
   public static IntFloatVector sortedFloatVector(int matrixId, int rowId, int clock, int dim,
-    int[] indices, float[] values) {
+      int[] indices, float[] values) {
     IntFloatSortedVectorStorage storage = new IntFloatSortedVectorStorage(dim, indices, values);
     return new IntFloatVector(matrixId, rowId, clock, dim, storage);
   }
@@ -506,7 +557,7 @@ public class VFactory {
   }
 
   public static LongFloatVector sortedLongKeyFloatVector(int matrixId, int rowId, int clock,
-    long dim) {
+      long dim) {
     LongFloatSortedVectorStorage storage = new LongFloatSortedVectorStorage(dim);
     return new LongFloatVector(matrixId, rowId, clock, dim, storage);
   }
@@ -517,7 +568,7 @@ public class VFactory {
   }
 
   public static LongFloatVector sortedLongKeyFloatVector(int matrixId, int rowId, int clock,
-    long dim, int capacity) {
+      long dim, int capacity) {
     LongFloatSortedVectorStorage storage = new LongFloatSortedVectorStorage(dim, capacity);
     return new LongFloatVector(matrixId, rowId, clock, dim, storage);
   }
@@ -528,21 +579,21 @@ public class VFactory {
   }
 
   public static LongFloatVector sortedLongKeyFloatVector(int matrixId, int rowId, int clock,
-    long dim, int size, long[] indices, float[] values) {
+      long dim, int size, long[] indices, float[] values) {
     LongFloatSortedVectorStorage storage =
-      new LongFloatSortedVectorStorage(dim, size, indices, values);
+        new LongFloatSortedVectorStorage(dim, size, indices, values);
     return new LongFloatVector(matrixId, rowId, clock, dim, storage);
   }
 
   public static LongFloatVector sortedLongKeyFloatVector(long dim, int size, long[] indices,
-    float[] values) {
+      float[] values) {
     LongFloatSortedVectorStorage storage =
-      new LongFloatSortedVectorStorage(dim, size, indices, values);
+        new LongFloatSortedVectorStorage(dim, size, indices, values);
     return new LongFloatVector(0, 0, 0, dim, storage);
   }
 
   public static LongFloatVector sortedLongKeyFloatVector(int matrixId, int rowId, int clock,
-    long dim, long[] indices, float[] values) {
+      long dim, long[] indices, float[] values) {
     LongFloatSortedVectorStorage storage = new LongFloatSortedVectorStorage(dim, indices, values);
     return new LongFloatVector(matrixId, rowId, clock, dim, storage);
   }
@@ -563,7 +614,7 @@ public class VFactory {
   }
 
   public static IntLongVector sortedLongVector(int matrixId, int rowId, int clock, int dim,
-    int capacity) {
+      int capacity) {
     IntLongSortedVectorStorage storage = new IntLongSortedVectorStorage(dim, capacity);
     return new IntLongVector(matrixId, rowId, clock, dim, storage);
   }
@@ -574,7 +625,7 @@ public class VFactory {
   }
 
   public static IntLongVector sortedLongVector(int matrixId, int rowId, int clock, int dim,
-    int size, int[] indices, long[] values) {
+      int size, int[] indices, long[] values) {
     IntLongSortedVectorStorage storage = new IntLongSortedVectorStorage(dim, size, indices, values);
     return new IntLongVector(matrixId, rowId, clock, dim, storage);
   }
@@ -585,7 +636,7 @@ public class VFactory {
   }
 
   public static IntLongVector sortedLongVector(int matrixId, int rowId, int clock, int dim,
-    int[] indices, long[] values) {
+      int[] indices, long[] values) {
     IntLongSortedVectorStorage storage = new IntLongSortedVectorStorage(dim, indices, values);
     return new IntLongVector(matrixId, rowId, clock, dim, storage);
   }
@@ -596,7 +647,7 @@ public class VFactory {
   }
 
   public static LongLongVector sortedLongKeyLongVector(int matrixId, int rowId, int clock,
-    long dim) {
+      long dim) {
     LongLongSortedVectorStorage storage = new LongLongSortedVectorStorage(dim);
     return new LongLongVector(matrixId, rowId, clock, dim, storage);
   }
@@ -607,7 +658,7 @@ public class VFactory {
   }
 
   public static LongLongVector sortedLongKeyLongVector(int matrixId, int rowId, int clock, long dim,
-    int capacity) {
+      int capacity) {
     LongLongSortedVectorStorage storage = new LongLongSortedVectorStorage(dim, capacity);
     return new LongLongVector(matrixId, rowId, clock, dim, storage);
   }
@@ -618,21 +669,21 @@ public class VFactory {
   }
 
   public static LongLongVector sortedLongKeyLongVector(int matrixId, int rowId, int clock, long dim,
-    int size, long[] indices, long[] values) {
+      int size, long[] indices, long[] values) {
     LongLongSortedVectorStorage storage =
-      new LongLongSortedVectorStorage(dim, size, indices, values);
+        new LongLongSortedVectorStorage(dim, size, indices, values);
     return new LongLongVector(matrixId, rowId, clock, dim, storage);
   }
 
   public static LongLongVector sortedLongKeyLongVector(long dim, int size, long[] indices,
-    long[] values) {
+      long[] values) {
     LongLongSortedVectorStorage storage =
-      new LongLongSortedVectorStorage(dim, size, indices, values);
+        new LongLongSortedVectorStorage(dim, size, indices, values);
     return new LongLongVector(0, 0, 0, dim, storage);
   }
 
   public static LongLongVector sortedLongKeyLongVector(int matrixId, int rowId, int clock, long dim,
-    long[] indices, long[] values) {
+      long[] indices, long[] values) {
     LongLongSortedVectorStorage storage = new LongLongSortedVectorStorage(dim, indices, values);
     return new LongLongVector(matrixId, rowId, clock, dim, storage);
   }
@@ -653,7 +704,7 @@ public class VFactory {
   }
 
   public static IntIntVector sortedIntVector(int matrixId, int rowId, int clock, int dim,
-    int capacity) {
+      int capacity) {
     IntIntSortedVectorStorage storage = new IntIntSortedVectorStorage(dim, capacity);
     return new IntIntVector(matrixId, rowId, clock, dim, storage);
   }
@@ -664,7 +715,7 @@ public class VFactory {
   }
 
   public static IntIntVector sortedIntVector(int matrixId, int rowId, int clock, int dim, int size,
-    int[] indices, int[] values) {
+      int[] indices, int[] values) {
     IntIntSortedVectorStorage storage = new IntIntSortedVectorStorage(dim, size, indices, values);
     return new IntIntVector(matrixId, rowId, clock, dim, storage);
   }
@@ -675,7 +726,7 @@ public class VFactory {
   }
 
   public static IntIntVector sortedIntVector(int matrixId, int rowId, int clock, int dim,
-    int[] indices, int[] values) {
+      int[] indices, int[] values) {
     IntIntSortedVectorStorage storage = new IntIntSortedVectorStorage(dim, indices, values);
     return new IntIntVector(matrixId, rowId, clock, dim, storage);
   }
@@ -696,7 +747,7 @@ public class VFactory {
   }
 
   public static LongIntVector sortedLongKeyIntVector(int matrixId, int rowId, int clock, long dim,
-    int capacity) {
+      int capacity) {
     LongIntSortedVectorStorage storage = new LongIntSortedVectorStorage(dim, capacity);
     return new LongIntVector(matrixId, rowId, clock, dim, storage);
   }
@@ -707,19 +758,19 @@ public class VFactory {
   }
 
   public static LongIntVector sortedLongKeyIntVector(int matrixId, int rowId, int clock, long dim,
-    int size, long[] indices, int[] values) {
+      int size, long[] indices, int[] values) {
     LongIntSortedVectorStorage storage = new LongIntSortedVectorStorage(dim, size, indices, values);
     return new LongIntVector(matrixId, rowId, clock, dim, storage);
   }
 
   public static LongIntVector sortedLongKeyIntVector(long dim, int size, long[] indices,
-    int[] values) {
+      int[] values) {
     LongIntSortedVectorStorage storage = new LongIntSortedVectorStorage(dim, size, indices, values);
     return new LongIntVector(0, 0, 0, dim, storage);
   }
 
   public static LongIntVector sortedLongKeyIntVector(int matrixId, int rowId, int clock, long dim,
-    long[] indices, int[] values) {
+      long[] indices, int[] values) {
     LongIntSortedVectorStorage storage = new LongIntSortedVectorStorage(dim, indices, values);
     return new LongIntVector(matrixId, rowId, clock, dim, storage);
   }
@@ -730,7 +781,7 @@ public class VFactory {
   }
 
   public static IntDummyVector intDummyVector(int matrixId, int rowId, int clock, int dim,
-    int[] values) {
+      int[] values) {
     return new IntDummyVector(matrixId, rowId, clock, dim, values);
   }
 
@@ -739,7 +790,7 @@ public class VFactory {
   }
 
   public static LongDummyVector longDummyVector(int matrixId, int rowId, int clock, long dim,
-    long[] values) {
+      long[] values) {
     return new LongDummyVector(matrixId, rowId, clock, dim, values);
   }
 
@@ -749,17 +800,17 @@ public class VFactory {
 
   //---------------------------------------------------------------
   public static CompIntDoubleVector compIntDoubleVector(int matrixId, int rowId, int clock, int dim,
-    IntDoubleVector[] partitions, int subDim) {
+      IntDoubleVector[] partitions, int subDim) {
     return new CompIntDoubleVector(matrixId, rowId, clock, dim, partitions, subDim);
   }
 
   public static CompIntDoubleVector compIntDoubleVector(int dim, IntDoubleVector[] partitions,
-    int subDim) {
+      int subDim) {
     return new CompIntDoubleVector(dim, partitions, subDim);
   }
 
   public static CompIntDoubleVector compIntDoubleVector(int matrixId, int rowId, int clock, int dim,
-    IntDoubleVector[] partitions) {
+      IntDoubleVector[] partitions) {
     return new CompIntDoubleVector(matrixId, rowId, clock, dim, partitions);
   }
 
@@ -768,7 +819,7 @@ public class VFactory {
   }
 
   public static CompIntDoubleVector compIntDoubleVector(int matrixId, int rowId, int clock, int dim,
-    int subDim, StorageType storageType) {
+      int subDim, StorageType storageType) {
     int numParts = (dim + subDim - 1) / subDim;
     IntDoubleVector[] partitions = new IntDoubleVector[numParts];
     switch (storageType) {
@@ -805,12 +856,12 @@ public class VFactory {
   }
 
   public static CompIntDoubleVector compIntDoubleVector(int dim, int subDim,
-    StorageType storageType) {
+      StorageType storageType) {
     return compIntDoubleVector(0, 0, 0, dim, subDim, storageType);
   }
 
   public static CompIntDoubleVector compIntDoubleVector(int matrixId, int rowId, int clock, int dim,
-    int subDim) {
+      int subDim) {
     return new CompIntDoubleVector(matrixId, rowId, clock, dim, subDim);
   }
 
@@ -819,17 +870,17 @@ public class VFactory {
   }
 
   public static CompIntFloatVector compIntFloatVector(int matrixId, int rowId, int clock, int dim,
-    IntFloatVector[] partitions, int subDim) {
+      IntFloatVector[] partitions, int subDim) {
     return new CompIntFloatVector(matrixId, rowId, clock, dim, partitions, subDim);
   }
 
   public static CompIntFloatVector compIntFloatVector(int dim, IntFloatVector[] partitions,
-    int subDim) {
+      int subDim) {
     return new CompIntFloatVector(dim, partitions, subDim);
   }
 
   public static CompIntFloatVector compIntFloatVector(int matrixId, int rowId, int clock, int dim,
-    IntFloatVector[] partitions) {
+      IntFloatVector[] partitions) {
     return new CompIntFloatVector(matrixId, rowId, clock, dim, partitions);
   }
 
@@ -838,7 +889,7 @@ public class VFactory {
   }
 
   public static CompIntFloatVector compIntFloatVector(int matrixId, int rowId, int clock, int dim,
-    int subDim, StorageType storageType) {
+      int subDim, StorageType storageType) {
     int numParts = (dim + subDim - 1) / subDim;
     IntFloatVector[] partitions = new IntFloatVector[numParts];
     switch (storageType) {
@@ -875,12 +926,12 @@ public class VFactory {
   }
 
   public static CompIntFloatVector compIntFloatVector(int dim, int subDim,
-    StorageType storageType) {
+      StorageType storageType) {
     return compIntFloatVector(0, 0, 0, dim, subDim, storageType);
   }
 
   public static CompIntFloatVector compIntFloatVector(int matrixId, int rowId, int clock, int dim,
-    int subDim) {
+      int subDim) {
     return new CompIntFloatVector(matrixId, rowId, clock, dim, subDim);
   }
 
@@ -889,17 +940,17 @@ public class VFactory {
   }
 
   public static CompIntLongVector compIntLongVector(int matrixId, int rowId, int clock, int dim,
-    IntLongVector[] partitions, int subDim) {
+      IntLongVector[] partitions, int subDim) {
     return new CompIntLongVector(matrixId, rowId, clock, dim, partitions, subDim);
   }
 
   public static CompIntLongVector compIntLongVector(int dim, IntLongVector[] partitions,
-    int subDim) {
+      int subDim) {
     return new CompIntLongVector(dim, partitions, subDim);
   }
 
   public static CompIntLongVector compIntLongVector(int matrixId, int rowId, int clock, int dim,
-    IntLongVector[] partitions) {
+      IntLongVector[] partitions) {
     return new CompIntLongVector(matrixId, rowId, clock, dim, partitions);
   }
 
@@ -908,7 +959,7 @@ public class VFactory {
   }
 
   public static CompIntLongVector compIntLongVector(int matrixId, int rowId, int clock, int dim,
-    int subDim, StorageType storageType) {
+      int subDim, StorageType storageType) {
     int numParts = (dim + subDim - 1) / subDim;
     IntLongVector[] partitions = new IntLongVector[numParts];
     switch (storageType) {
@@ -949,7 +1000,7 @@ public class VFactory {
   }
 
   public static CompIntLongVector compIntLongVector(int matrixId, int rowId, int clock, int dim,
-    int subDim) {
+      int subDim) {
     return new CompIntLongVector(matrixId, rowId, clock, dim, subDim);
   }
 
@@ -958,7 +1009,7 @@ public class VFactory {
   }
 
   public static CompIntIntVector compIntIntVector(int matrixId, int rowId, int clock, int dim,
-    IntIntVector[] partitions, int subDim) {
+      IntIntVector[] partitions, int subDim) {
     return new CompIntIntVector(matrixId, rowId, clock, dim, partitions, subDim);
   }
 
@@ -967,7 +1018,7 @@ public class VFactory {
   }
 
   public static CompIntIntVector compIntIntVector(int matrixId, int rowId, int clock, int dim,
-    IntIntVector[] partitions) {
+      IntIntVector[] partitions) {
     return new CompIntIntVector(matrixId, rowId, clock, dim, partitions);
   }
 
@@ -976,7 +1027,7 @@ public class VFactory {
   }
 
   public static CompIntIntVector compIntIntVector(int matrixId, int rowId, int clock, int dim,
-    int subDim, StorageType storageType) {
+      int subDim, StorageType storageType) {
     int numParts = (dim + subDim - 1) / subDim;
     IntIntVector[] partitions = new IntIntVector[numParts];
     switch (storageType) {
@@ -1017,7 +1068,7 @@ public class VFactory {
   }
 
   public static CompIntIntVector compIntIntVector(int matrixId, int rowId, int clock, int dim,
-    int subDim) {
+      int subDim) {
     return new CompIntIntVector(matrixId, rowId, clock, dim, subDim);
   }
 
@@ -1026,17 +1077,17 @@ public class VFactory {
   }
 
   public static CompLongDoubleVector compLongDoubleVector(int matrixId, int rowId, int clock,
-    long dim, LongDoubleVector[] partitions, long subDim) {
+      long dim, LongDoubleVector[] partitions, long subDim) {
     return new CompLongDoubleVector(matrixId, rowId, clock, dim, partitions, subDim);
   }
 
   public static CompLongDoubleVector compLongDoubleVector(long dim, LongDoubleVector[] partitions,
-    long subDim) {
+      long subDim) {
     return new CompLongDoubleVector(dim, partitions, subDim);
   }
 
   public static CompLongDoubleVector compLongDoubleVector(int matrixId, int rowId, int clock,
-    long dim, LongDoubleVector[] partitions) {
+      long dim, LongDoubleVector[] partitions) {
     return new CompLongDoubleVector(matrixId, rowId, clock, dim, partitions);
   }
 
@@ -1045,7 +1096,7 @@ public class VFactory {
   }
 
   public static CompLongDoubleVector compLongDoubleVector(int matrixId, int rowId, int clock,
-    long dim, long subDim, StorageType storageType) {
+      long dim, long subDim, StorageType storageType) {
     int numParts = (int) ((dim + subDim - 1) / subDim);
     LongDoubleVector[] partitions = new LongDoubleVector[numParts];
     switch (storageType) {
@@ -1075,12 +1126,12 @@ public class VFactory {
   }
 
   public static CompLongDoubleVector compLongDoubleVector(long dim, long subDim,
-    StorageType storageType) {
+      StorageType storageType) {
     return compLongDoubleVector(0, 0, 0, dim, subDim, storageType);
   }
 
   public static CompLongDoubleVector compLongDoubleVector(int matrixId, int rowId, int clock,
-    long dim, long subDim) {
+      long dim, long subDim) {
     return new CompLongDoubleVector(matrixId, rowId, clock, dim, subDim);
   }
 
@@ -1089,17 +1140,17 @@ public class VFactory {
   }
 
   public static CompLongFloatVector compLongFloatVector(int matrixId, int rowId, int clock,
-    long dim, LongFloatVector[] partitions, long subDim) {
+      long dim, LongFloatVector[] partitions, long subDim) {
     return new CompLongFloatVector(matrixId, rowId, clock, dim, partitions, subDim);
   }
 
   public static CompLongFloatVector compLongFloatVector(long dim, LongFloatVector[] partitions,
-    long subDim) {
+      long subDim) {
     return new CompLongFloatVector(dim, partitions, subDim);
   }
 
   public static CompLongFloatVector compLongFloatVector(int matrixId, int rowId, int clock,
-    long dim, LongFloatVector[] partitions) {
+      long dim, LongFloatVector[] partitions) {
     return new CompLongFloatVector(matrixId, rowId, clock, dim, partitions);
   }
 
@@ -1108,7 +1159,7 @@ public class VFactory {
   }
 
   public static CompLongFloatVector compLongFloatVector(int matrixId, int rowId, int clock,
-    long dim, long subDim, StorageType storageType) {
+      long dim, long subDim, StorageType storageType) {
     int numParts = (int) ((dim + subDim - 1) / subDim);
     LongFloatVector[] partitions = new LongFloatVector[numParts];
     switch (storageType) {
@@ -1138,12 +1189,12 @@ public class VFactory {
   }
 
   public static CompLongFloatVector compLongFloatVector(long dim, long subDim,
-    StorageType storageType) {
+      StorageType storageType) {
     return compLongFloatVector(0, 0, 0, dim, subDim, storageType);
   }
 
   public static CompLongFloatVector compLongFloatVector(int matrixId, int rowId, int clock,
-    long dim, long subDim) {
+      long dim, long subDim) {
     return new CompLongFloatVector(matrixId, rowId, clock, dim, subDim);
   }
 
@@ -1152,17 +1203,17 @@ public class VFactory {
   }
 
   public static CompLongLongVector compLongLongVector(int matrixId, int rowId, int clock, long dim,
-    LongLongVector[] partitions, long subDim) {
+      LongLongVector[] partitions, long subDim) {
     return new CompLongLongVector(matrixId, rowId, clock, dim, partitions, subDim);
   }
 
   public static CompLongLongVector compLongLongVector(long dim, LongLongVector[] partitions,
-    long subDim) {
+      long subDim) {
     return new CompLongLongVector(dim, partitions, subDim);
   }
 
   public static CompLongLongVector compLongLongVector(int matrixId, int rowId, int clock, long dim,
-    LongLongVector[] partitions) {
+      LongLongVector[] partitions) {
     return new CompLongLongVector(matrixId, rowId, clock, dim, partitions);
   }
 
@@ -1171,7 +1222,7 @@ public class VFactory {
   }
 
   public static CompLongLongVector compLongLongVector(int matrixId, int rowId, int clock, long dim,
-    long subDim, StorageType storageType) {
+      long subDim, StorageType storageType) {
     int numParts = (int) ((dim + subDim - 1) / subDim);
     LongLongVector[] partitions = new LongLongVector[numParts];
     switch (storageType) {
@@ -1201,12 +1252,12 @@ public class VFactory {
   }
 
   public static CompLongLongVector compLongLongVector(long dim, long subDim,
-    StorageType storageType) {
+      StorageType storageType) {
     return compLongLongVector(0, 0, 0, dim, subDim, storageType);
   }
 
   public static CompLongLongVector compLongLongVector(int matrixId, int rowId, int clock, long dim,
-    long subDim) {
+      long subDim) {
     return new CompLongLongVector(matrixId, rowId, clock, dim, subDim);
   }
 
@@ -1215,17 +1266,17 @@ public class VFactory {
   }
 
   public static CompLongIntVector compLongIntVector(int matrixId, int rowId, int clock, long dim,
-    LongIntVector[] partitions, long subDim) {
+      LongIntVector[] partitions, long subDim) {
     return new CompLongIntVector(matrixId, rowId, clock, dim, partitions, subDim);
   }
 
   public static CompLongIntVector compLongIntVector(long dim, LongIntVector[] partitions,
-    long subDim) {
+      long subDim) {
     return new CompLongIntVector(dim, partitions, subDim);
   }
 
   public static CompLongIntVector compLongIntVector(int matrixId, int rowId, int clock, long dim,
-    LongIntVector[] partitions) {
+      LongIntVector[] partitions) {
     return new CompLongIntVector(matrixId, rowId, clock, dim, partitions);
   }
 
@@ -1234,7 +1285,7 @@ public class VFactory {
   }
 
   public static CompLongIntVector compLongIntVector(int matrixId, int rowId, int clock, long dim,
-    long subDim, StorageType storageType) {
+      long subDim, StorageType storageType) {
     int numParts = (int) ((dim + subDim - 1) / subDim);
     LongIntVector[] partitions = new LongIntVector[numParts];
     switch (storageType) {
@@ -1264,12 +1315,12 @@ public class VFactory {
   }
 
   public static CompLongIntVector compLongIntVector(long dim, long subDim,
-    StorageType storageType) {
+      StorageType storageType) {
     return compLongIntVector(0, 0, 0, dim, subDim, storageType);
   }
 
   public static CompLongIntVector compLongIntVector(int matrixId, int rowId, int clock, long dim,
-    long subDim) {
+      long subDim) {
     return new CompLongIntVector(matrixId, rowId, clock, dim, subDim);
   }
 

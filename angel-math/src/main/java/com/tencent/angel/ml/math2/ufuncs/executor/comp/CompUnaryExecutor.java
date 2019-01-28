@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -23,14 +23,32 @@ import com.tencent.angel.ml.math2.ufuncs.executor.UnaryExecutor;
 import com.tencent.angel.ml.math2.ufuncs.expression.Unary;
 import com.tencent.angel.ml.math2.utils.ForkJoinUtils;
 import com.tencent.angel.ml.math2.utils.VectorUtils;
-import com.tencent.angel.ml.math2.vector.*;
-
-import java.util.concurrent.*;
+import com.tencent.angel.ml.math2.vector.CompIntDoubleVector;
+import com.tencent.angel.ml.math2.vector.CompIntFloatVector;
+import com.tencent.angel.ml.math2.vector.CompIntIntVector;
+import com.tencent.angel.ml.math2.vector.CompIntLongVector;
+import com.tencent.angel.ml.math2.vector.CompLongDoubleVector;
+import com.tencent.angel.ml.math2.vector.CompLongFloatVector;
+import com.tencent.angel.ml.math2.vector.CompLongIntVector;
+import com.tencent.angel.ml.math2.vector.CompLongLongVector;
+import com.tencent.angel.ml.math2.vector.ComponentVector;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.ml.math2.vector.IntIntVector;
+import com.tencent.angel.ml.math2.vector.IntLongVector;
+import com.tencent.angel.ml.math2.vector.LongDoubleVector;
+import com.tencent.angel.ml.math2.vector.LongFloatVector;
+import com.tencent.angel.ml.math2.vector.LongIntVector;
+import com.tencent.angel.ml.math2.vector.LongLongVector;
+import com.tencent.angel.ml.math2.vector.Vector;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveAction;
 
 
 public class CompUnaryExecutor {
-  private static ForkJoinPool pool = ForkJoinUtils.getPool();
+
   private static final int THREADS = ForkJoinUtils.getNCores();
+  private static ForkJoinPool pool = ForkJoinUtils.getPool();
 
   public static Vector apply(ComponentVector v1, Unary op) {
     ComponentVector result;
@@ -48,6 +66,7 @@ public class CompUnaryExecutor {
     return (Vector) result;
   }
 
+<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/comp/CompUnaryExecutor.java
   private static class CompUnaExe extends RecursiveAction {
     int start, end, threshold;
     ComponentVector v, result;
@@ -98,8 +117,10 @@ public class CompUnaryExecutor {
     }
   }
 
+=======
+>>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/comp/CompUnaryExecutor.java
   private static void apply(CompIntDoubleVector v, Unary op, CompIntDoubleVector result, int start,
-    int end) {
+      int end) {
     IntDoubleVector[] v1Parts = v.getPartitions();
 
     if (op.isInplace()) {
@@ -115,7 +136,7 @@ public class CompUnaryExecutor {
   }
 
   private static void apply(CompIntFloatVector v, Unary op, CompIntFloatVector result, int start,
-    int end) {
+      int end) {
     IntFloatVector[] v1Parts = v.getPartitions();
 
     if (op.isInplace()) {
@@ -131,7 +152,7 @@ public class CompUnaryExecutor {
   }
 
   private static void apply(CompIntLongVector v, Unary op, CompIntLongVector result, int start,
-    int end) {
+      int end) {
     IntLongVector[] v1Parts = v.getPartitions();
 
     if (op.isInplace()) {
@@ -147,7 +168,7 @@ public class CompUnaryExecutor {
   }
 
   private static void apply(CompIntIntVector v, Unary op, CompIntIntVector result, int start,
-    int end) {
+      int end) {
     IntIntVector[] v1Parts = v.getPartitions();
 
     if (op.isInplace()) {
@@ -163,7 +184,7 @@ public class CompUnaryExecutor {
   }
 
   private static void apply(CompLongDoubleVector v, Unary op, CompLongDoubleVector result,
-    int start, int end) {
+      int start, int end) {
     LongDoubleVector[] v1Parts = v.getPartitions();
 
     if (op.isInplace()) {
@@ -179,7 +200,7 @@ public class CompUnaryExecutor {
   }
 
   private static void apply(CompLongFloatVector v, Unary op, CompLongFloatVector result, int start,
-    int end) {
+      int end) {
     LongFloatVector[] v1Parts = v.getPartitions();
 
     if (op.isInplace()) {
@@ -195,7 +216,7 @@ public class CompUnaryExecutor {
   }
 
   private static void apply(CompLongLongVector v, Unary op, CompLongLongVector result, int start,
-    int end) {
+      int end) {
     LongLongVector[] v1Parts = v.getPartitions();
 
     if (op.isInplace()) {
@@ -211,7 +232,7 @@ public class CompUnaryExecutor {
   }
 
   private static void apply(CompLongIntVector v, Unary op, CompLongIntVector result, int start,
-    int end) {
+      int end) {
     LongIntVector[] v1Parts = v.getPartitions();
 
     if (op.isInplace()) {
@@ -222,6 +243,58 @@ public class CompUnaryExecutor {
       LongIntVector[] resParts = result.getPartitions();
       for (int i = start; i <= end; i++) {
         resParts[i] = (LongIntVector) UnaryExecutor.apply(v1Parts[i], op);
+      }
+    }
+  }
+
+  private static class CompUnaExe extends RecursiveAction {
+
+    int start, end, threshold;
+    ComponentVector v, result;
+    Unary op;
+
+    public CompUnaExe(ComponentVector v, Unary op, ComponentVector result, int start, int end) {
+      assert v != null && op != null;
+      this.start = start;
+      this.end = end;
+      this.threshold = (v.getNumPartitions() + THREADS - 1) / THREADS;
+      ;
+      this.v = v;
+      this.result = result;
+      this.op = op;
+    }
+
+    @Override
+    protected void compute() {
+      boolean canCompute = (end - start) < threshold;
+
+      if (canCompute) {
+        if (v instanceof CompIntDoubleVector) {
+          apply((CompIntDoubleVector) v, op, (CompIntDoubleVector) result, start, end);
+        } else if (v instanceof CompIntFloatVector) {
+          apply((CompIntFloatVector) v, op, (CompIntFloatVector) result, start, end);
+        } else if (v instanceof CompIntLongVector) {
+          apply((CompIntLongVector) v, op, (CompIntLongVector) result, start, end);
+        } else if (v instanceof CompIntIntVector) {
+          apply((CompIntIntVector) v, op, (CompIntIntVector) result, start, end);
+        } else if (v instanceof CompLongDoubleVector) {
+          apply((CompLongDoubleVector) v, op, (CompLongDoubleVector) result, start, end);
+        } else if (v instanceof CompLongFloatVector) {
+          apply((CompLongFloatVector) v, op, (CompLongFloatVector) result, start, end);
+        } else if (v instanceof CompLongLongVector) {
+          apply((CompLongLongVector) v, op, (CompLongLongVector) result, start, end);
+        } else if (v instanceof CompLongIntVector) {
+          apply((CompLongIntVector) v, op, (CompLongIntVector) result, start, end);
+        } else {
+          throw new AngelException("Vector type is not support!");
+        }
+      } else {
+        int middle = (start + end) >> 1;
+
+        CompUnaExe left = new CompUnaExe(v, op, result, start, middle);
+        CompUnaExe right = new CompUnaExe(v, op, result, middle + 1, end);
+
+        invokeAll(left, right);
       }
     }
   }

@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,15 +18,22 @@
 
 package com.tencent.angel.ml.math2.matrix;
 
+<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/matrix/RBIntLongMatrix.java
 import com.tencent.angel.ml.math2.MFactory;
+=======
+>>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/matrix/RBIntLongMatrix.java
 import com.tencent.angel.ml.math2.VFactory;
-import com.tencent.angel.ml.math2.StorageType;
-import com.tencent.angel.ml.math2.storage.*;
-import com.tencent.angel.ml.math2.ufuncs.executor.*;
-import com.tencent.angel.ml.math2.ufuncs.expression.*;
-import com.tencent.angel.ml.math2.vector.*;
+import com.tencent.angel.ml.math2.storage.IntLongDenseVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntLongSparseVectorStorage;
+import com.tencent.angel.ml.math2.ufuncs.executor.BinaryExecutor;
+import com.tencent.angel.ml.math2.ufuncs.executor.UnaryExecutor;
+import com.tencent.angel.ml.math2.ufuncs.expression.Binary;
+import com.tencent.angel.ml.math2.ufuncs.expression.Unary;
+import com.tencent.angel.ml.math2.vector.IntLongVector;
+import com.tencent.angel.ml.math2.vector.Vector;
 
 public class RBIntLongMatrix extends RowBasedMatrix<IntLongVector> {
+
   public RBIntLongMatrix() {
     super();
   }
@@ -61,12 +68,14 @@ public class RBIntLongMatrix extends RowBasedMatrix<IntLongVector> {
   }
 
   public void set(int i, int j, long value) {
-    if (null == rows[i])
+    if (null == rows[i]) {
       initEmpty(i);
+    }
     rows[i].set(j, value);
   }
 
-  @Override public Vector diag() {
+  @Override
+  public Vector diag() {
     long[] resArr = new long[rows.length];
     for (int i = 0; i < rows.length; i++) {
       if (null == rows[i]) {
@@ -80,7 +89,8 @@ public class RBIntLongMatrix extends RowBasedMatrix<IntLongVector> {
     return new IntLongVector(getMatrixId(), 0, getClock(), resArr.length, storage);
   }
 
-  @Override public RowBasedMatrix calulate(int rowId, Vector other, Binary op) {
+  @Override
+  public RowBasedMatrix calulate(int rowId, Vector other, Binary op) {
     assert other != null;
     RBIntLongMatrix res;
     if (op.isInplace()) {
@@ -89,8 +99,9 @@ public class RBIntLongMatrix extends RowBasedMatrix<IntLongVector> {
       res = new RBIntLongMatrix(matrixId, clock, rows.length, (int) cols);
     }
 
-    if (null == rows[rowId])
+    if (null == rows[rowId]) {
       initEmpty(rowId);
+    }
 
     if (op.isInplace()) {
       BinaryExecutor.apply(rows[rowId], other, op);
@@ -107,7 +118,8 @@ public class RBIntLongMatrix extends RowBasedMatrix<IntLongVector> {
     return res;
   }
 
-  @Override public RowBasedMatrix calulate(Vector other, Binary op) {
+  @Override
+  public RowBasedMatrix calulate(Vector other, Binary op) {
     assert other != null;
     RBIntLongMatrix res;
     if (op.isInplace()) {
@@ -117,47 +129,55 @@ public class RBIntLongMatrix extends RowBasedMatrix<IntLongVector> {
     }
     if (op.isInplace()) {
       for (int rowId = 0; rowId < rows.length; rowId++) {
-        if (null == rows[rowId])
+        if (null == rows[rowId]) {
           initEmpty(rowId);
+        }
         BinaryExecutor.apply(rows[rowId], other, op);
       }
     } else {
       for (int rowId = 0; rowId < rows.length; rowId++) {
-        if (null == rows[rowId])
+        if (null == rows[rowId]) {
           initEmpty(rowId);
+        }
         res.setRow(rowId, (IntLongVector) BinaryExecutor.apply(rows[rowId], other, op));
       }
     }
     return res;
   }
 
-  @Override public RowBasedMatrix calulate(Matrix other, Binary op) {
+  @Override
+  public RowBasedMatrix calulate(Matrix other, Binary op) {
     assert other instanceof RowBasedMatrix;
 
     if (op.isInplace()) {
       for (int i = 0; i < rows.length; i++) {
-        if (null == rows[i])
+        if (null == rows[i]) {
           initEmpty(i);
-        if (null == ((RowBasedMatrix) other).rows[i])
+        }
+        if (null == ((RowBasedMatrix) other).rows[i]) {
           ((RowBasedMatrix) other).initEmpty(i);
+        }
         BinaryExecutor.apply(rows[i], ((RowBasedMatrix) other).rows[i], op);
       }
       return this;
     } else {
       IntLongVector[] outRows = new IntLongVector[rows.length];
       for (int i = 0; i < rows.length; i++) {
-        if (null == rows[i])
+        if (null == rows[i]) {
           initEmpty(i);
-        if (null == ((RowBasedMatrix) other).rows[i])
+        }
+        if (null == ((RowBasedMatrix) other).rows[i]) {
           ((RowBasedMatrix) other).initEmpty(i);
+        }
         outRows[i] =
-          (IntLongVector) BinaryExecutor.apply(rows[i], ((RowBasedMatrix) other).rows[i], op);
+            (IntLongVector) BinaryExecutor.apply(rows[i], ((RowBasedMatrix) other).rows[i], op);
       }
       return new RBIntLongMatrix(matrixId, clock, outRows);
     }
   }
 
-  @Override public RowBasedMatrix calulate(Unary op) {
+  @Override
+  public RowBasedMatrix calulate(Unary op) {
     if (op.isInplace()) {
       for (Vector vec : rows) {
         UnaryExecutor.apply(vec, op);
@@ -166,34 +186,39 @@ public class RBIntLongMatrix extends RowBasedMatrix<IntLongVector> {
     } else {
       IntLongVector[] outRows = new IntLongVector[rows.length];
       for (int i = 0; i < rows.length; i++) {
-        if (null == rows[i])
+        if (null == rows[i]) {
           initEmpty(i);
+        }
         outRows[i] = (IntLongVector) UnaryExecutor.apply(rows[i], op);
       }
       return new RBIntLongMatrix(matrixId, clock, outRows);
     }
   }
 
-  @Override public void setRow(int idx, IntLongVector v) {
+  @Override
+  public void setRow(int idx, IntLongVector v) {
     assert cols == v.getDim();
     rows[idx] = v;
   }
 
-  @Override public void setRows(IntLongVector[] rows) {
+  @Override
+  public void setRows(IntLongVector[] rows) {
     for (IntLongVector v : rows) {
       assert cols == v.getDim();
     }
     this.rows = rows;
   }
 
-  @Override public void initEmpty(int idx) {
+  @Override
+  public void initEmpty(int idx) {
     if (null == rows[idx]) {
       IntLongSparseVectorStorage storage = new IntLongSparseVectorStorage((int) getDim());
       rows[idx] = new IntLongVector(matrixId, idx, clock, (int) getDim(), storage);
     }
   }
 
-  @Override public double min() {
+  @Override
+  public double min() {
     double minVal = Double.MAX_VALUE;
     for (IntLongVector ele : rows) {
       if (null != ele) {
@@ -211,7 +236,8 @@ public class RBIntLongMatrix extends RowBasedMatrix<IntLongVector> {
     return minVal;
   }
 
-  @Override public Vector min(int axis) {
+  @Override
+  public Vector min(int axis) {
     assert axis == 1;
     double[] minArr = new double[rows.length];
     for (int i = 0; i < rows.length; i++) {
@@ -225,7 +251,8 @@ public class RBIntLongMatrix extends RowBasedMatrix<IntLongVector> {
     return VFactory.denseDoubleVector(matrixId, 0, clock, minArr);
   }
 
-  @Override public Vector max(int axis) {
+  @Override
+  public Vector max(int axis) {
     assert axis == 1;
     double[] maxArr = new double[rows.length];
     for (int i = 0; i < rows.length; i++) {
@@ -239,7 +266,8 @@ public class RBIntLongMatrix extends RowBasedMatrix<IntLongVector> {
     return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
   }
 
-  @Override public double max() {
+  @Override
+  public double max() {
     double maxVal = Double.MIN_VALUE;
     for (IntLongVector ele : rows) {
       if (null != ele) {
@@ -257,7 +285,8 @@ public class RBIntLongMatrix extends RowBasedMatrix<IntLongVector> {
     return maxVal;
   }
 
-  @Override public Vector sum(int axis) {
+  @Override
+  public Vector sum(int axis) {
     assert axis == 1;
     double[] maxArr = new double[rows.length];
     for (int i = 0; i < rows.length; i++) {
@@ -270,7 +299,8 @@ public class RBIntLongMatrix extends RowBasedMatrix<IntLongVector> {
     return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
   }
 
-  @Override public Vector average(int axis) {
+  @Override
+  public Vector average(int axis) {
     assert axis == 1;
     double[] maxArr = new double[rows.length];
     for (int i = 0; i < rows.length; i++) {
@@ -283,7 +313,8 @@ public class RBIntLongMatrix extends RowBasedMatrix<IntLongVector> {
     return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
   }
 
-  @Override public Vector std(int axis) {
+  @Override
+  public Vector std(int axis) {
     assert axis == 1;
     double[] maxArr = new double[rows.length];
     for (int i = 0; i < rows.length; i++) {
@@ -296,7 +327,8 @@ public class RBIntLongMatrix extends RowBasedMatrix<IntLongVector> {
     return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
   }
 
-  @Override public Vector norm(int axis) {
+  @Override
+  public Vector norm(int axis) {
     assert axis == 1;
     double[] maxArr = new double[rows.length];
     for (int i = 0; i < rows.length; i++) {
@@ -309,7 +341,8 @@ public class RBIntLongMatrix extends RowBasedMatrix<IntLongVector> {
     return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
   }
 
-  @Override public Matrix copy() {
+  @Override
+  public Matrix copy() {
     IntLongVector[] newRows = new IntLongVector[rows.length];
     for (int i = 0; i < rows.length; i++) {
       newRows[i] = rows[i].copy();

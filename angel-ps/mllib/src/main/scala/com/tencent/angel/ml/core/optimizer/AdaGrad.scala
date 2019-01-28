@@ -29,9 +29,7 @@ class AdaGrad(stepSize: Double, val beta: Double) extends Optimizer(stepSize) {
   override protected var numSlot: Int = 2
 
   override def update(matrixId: Int, numFactors: Int, epoch: Int): Future[VoidResult] = {
-
-    val func = new AdaGradUpdateFunc(matrixId, numFactors, epsilon, beta, lr, regL1Param, regL2Param, epoch)
-    PSAgentContext.get().getUserRequestAdapter.update(func)
+    update(matrixId, numFactors, epoch, 1)
   }
 
   override def update(matrixId: Int, numFactors: Int, epoch: Int, batchSize: Int): Future[VoidResult] = {

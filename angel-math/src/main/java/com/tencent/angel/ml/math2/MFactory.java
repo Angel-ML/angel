@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,16 +18,56 @@
 
 package com.tencent.angel.ml.math2;
 
+<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/MFactory.java
 import com.tencent.angel.ml.math2.exceptions.MathException;
 import com.tencent.angel.ml.math2.matrix.*;
 import com.tencent.angel.ml.math2.vector.*;
 import com.tencent.angel.ml.math2.utils.RowType;
 
+=======
+import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.math2.matrix.BlasDoubleMatrix;
+import com.tencent.angel.ml.math2.matrix.BlasFloatMatrix;
+import com.tencent.angel.ml.math2.matrix.MapMatrix;
+import com.tencent.angel.ml.math2.matrix.RBCompIntDoubleMatrix;
+import com.tencent.angel.ml.math2.matrix.RBCompIntFloatMatrix;
+import com.tencent.angel.ml.math2.matrix.RBCompIntIntMatrix;
+import com.tencent.angel.ml.math2.matrix.RBCompIntLongMatrix;
+import com.tencent.angel.ml.math2.matrix.RBCompLongDoubleMatrix;
+import com.tencent.angel.ml.math2.matrix.RBCompLongFloatMatrix;
+import com.tencent.angel.ml.math2.matrix.RBCompLongIntMatrix;
+import com.tencent.angel.ml.math2.matrix.RBCompLongLongMatrix;
+import com.tencent.angel.ml.math2.matrix.RBIntDoubleMatrix;
+import com.tencent.angel.ml.math2.matrix.RBIntFloatMatrix;
+import com.tencent.angel.ml.math2.matrix.RBIntIntMatrix;
+import com.tencent.angel.ml.math2.matrix.RBIntLongMatrix;
+import com.tencent.angel.ml.math2.matrix.RBLongDoubleMatrix;
+import com.tencent.angel.ml.math2.matrix.RBLongFloatMatrix;
+import com.tencent.angel.ml.math2.matrix.RBLongIntMatrix;
+import com.tencent.angel.ml.math2.matrix.RBLongLongMatrix;
+import com.tencent.angel.ml.math2.vector.CompIntDoubleVector;
+import com.tencent.angel.ml.math2.vector.CompIntFloatVector;
+import com.tencent.angel.ml.math2.vector.CompIntIntVector;
+import com.tencent.angel.ml.math2.vector.CompIntLongVector;
+import com.tencent.angel.ml.math2.vector.CompLongDoubleVector;
+import com.tencent.angel.ml.math2.vector.CompLongFloatVector;
+import com.tencent.angel.ml.math2.vector.CompLongIntVector;
+import com.tencent.angel.ml.math2.vector.CompLongLongVector;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.ml.math2.vector.IntIntVector;
+import com.tencent.angel.ml.math2.vector.IntLongVector;
+import com.tencent.angel.ml.math2.vector.LongDoubleVector;
+import com.tencent.angel.ml.math2.vector.LongFloatVector;
+import com.tencent.angel.ml.math2.vector.LongIntVector;
+import com.tencent.angel.ml.math2.vector.LongLongVector;
+>>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/MFactory.java
 import java.util.HashMap;
 
 public class MFactory {
+
   public static RBCompIntDoubleMatrix rbCompIntDoubleMatrix(int matrixId, int clock,
-    CompIntDoubleVector[] rows) {
+      CompIntDoubleVector[] rows) {
     return new RBCompIntDoubleMatrix(matrixId, clock, rows);
   }
 
@@ -36,7 +76,7 @@ public class MFactory {
   }
 
   public static RBCompIntDoubleMatrix rbCompIntDoubleMatrix(int matrixId, int clock, int numRows,
-    int numCols, int subDim) {
+      int numCols, int subDim) {
     return new RBCompIntDoubleMatrix(matrixId, clock, numRows, numCols, subDim);
   }
 
@@ -45,7 +85,7 @@ public class MFactory {
   }
 
   public static RBCompIntDoubleMatrix rbCompIntDoubleMatrix(int matrixId, int clock, int numRows,
-    int numCols, int subDim, StorageType storageType) {
+      int numCols, int subDim, StorageType storageType) {
     CompIntDoubleVector[] rows = new CompIntDoubleVector[numRows];
     for (int i = 0; i < numRows; i++) {
       rows[i] = VFactory.compIntDoubleVector(matrixId, i, clock, numCols, subDim, storageType);
@@ -55,7 +95,7 @@ public class MFactory {
   }
 
   public static RBCompIntDoubleMatrix rbCompIntDoubleMatrix(int numRows, int numCols, int subDim,
-    StorageType storageType) {
+      StorageType storageType) {
     CompIntDoubleVector[] rows = new CompIntDoubleVector[numRows];
     for (int i = 0; i < numRows; i++) {
       rows[i] = VFactory.compIntDoubleVector(0, i, 0, numCols, subDim, storageType);
@@ -65,7 +105,7 @@ public class MFactory {
   }
 
   public static RBCompIntFloatMatrix rbCompIntFloatMatrix(int matrixId, int clock,
-    CompIntFloatVector[] rows) {
+      CompIntFloatVector[] rows) {
     return new RBCompIntFloatMatrix(matrixId, clock, rows);
   }
 
@@ -74,7 +114,7 @@ public class MFactory {
   }
 
   public static RBCompIntFloatMatrix rbCompIntFloatMatrix(int matrixId, int clock, int numRows,
-    int numCols, int subDim) {
+      int numCols, int subDim) {
     return new RBCompIntFloatMatrix(matrixId, clock, numRows, numCols, subDim);
   }
 
@@ -83,7 +123,7 @@ public class MFactory {
   }
 
   public static RBCompIntFloatMatrix rbCompIntFloatMatrix(int matrixId, int clock, int numRows,
-    int numCols, int subDim, StorageType storageType) {
+      int numCols, int subDim, StorageType storageType) {
     CompIntFloatVector[] rows = new CompIntFloatVector[numRows];
     for (int i = 0; i < numRows; i++) {
       rows[i] = VFactory.compIntFloatVector(matrixId, i, clock, numCols, subDim, storageType);
@@ -93,7 +133,7 @@ public class MFactory {
   }
 
   public static RBCompIntFloatMatrix rbCompIntFloatMatrix(int numRows, int numCols, int subDim,
-    StorageType storageType) {
+      StorageType storageType) {
     CompIntFloatVector[] rows = new CompIntFloatVector[numRows];
     for (int i = 0; i < numRows; i++) {
       rows[i] = VFactory.compIntFloatVector(0, i, 0, numCols, subDim, storageType);
@@ -103,7 +143,7 @@ public class MFactory {
   }
 
   public static RBCompIntLongMatrix rbCompIntLongMatrix(int matrixId, int clock,
-    CompIntLongVector[] rows) {
+      CompIntLongVector[] rows) {
     return new RBCompIntLongMatrix(matrixId, clock, rows);
   }
 
@@ -112,7 +152,7 @@ public class MFactory {
   }
 
   public static RBCompIntLongMatrix rbCompIntLongMatrix(int matrixId, int clock, int numRows,
-    int numCols, int subDim) {
+      int numCols, int subDim) {
     return new RBCompIntLongMatrix(matrixId, clock, numRows, numCols, subDim);
   }
 
@@ -121,7 +161,7 @@ public class MFactory {
   }
 
   public static RBCompIntLongMatrix rbCompIntLongMatrix(int matrixId, int clock, int numRows,
-    int numCols, int subDim, StorageType storageType) {
+      int numCols, int subDim, StorageType storageType) {
     CompIntLongVector[] rows = new CompIntLongVector[numRows];
     for (int i = 0; i < numRows; i++) {
       rows[i] = VFactory.compIntLongVector(matrixId, i, clock, numCols, subDim, storageType);
@@ -131,7 +171,7 @@ public class MFactory {
   }
 
   public static RBCompIntLongMatrix rbCompIntLongMatrix(int numRows, int numCols, int subDim,
-    StorageType storageType) {
+      StorageType storageType) {
     CompIntLongVector[] rows = new CompIntLongVector[numRows];
     for (int i = 0; i < numRows; i++) {
       rows[i] = VFactory.compIntLongVector(0, i, 0, numCols, subDim, storageType);
@@ -141,7 +181,7 @@ public class MFactory {
   }
 
   public static RBCompIntIntMatrix rbCompIntIntMatrix(int matrixId, int clock,
-    CompIntIntVector[] rows) {
+      CompIntIntVector[] rows) {
     return new RBCompIntIntMatrix(matrixId, clock, rows);
   }
 
@@ -150,7 +190,7 @@ public class MFactory {
   }
 
   public static RBCompIntIntMatrix rbCompIntIntMatrix(int matrixId, int clock, int numRows,
-    int numCols, int subDim) {
+      int numCols, int subDim) {
     return new RBCompIntIntMatrix(matrixId, clock, numRows, numCols, subDim);
   }
 
@@ -159,7 +199,7 @@ public class MFactory {
   }
 
   public static RBCompIntIntMatrix rbCompIntIntMatrix(int matrixId, int clock, int numRows,
-    int numCols, int subDim, StorageType storageType) {
+      int numCols, int subDim, StorageType storageType) {
     CompIntIntVector[] rows = new CompIntIntVector[numRows];
     for (int i = 0; i < numRows; i++) {
       rows[i] = VFactory.compIntIntVector(matrixId, i, clock, numCols, subDim, storageType);
@@ -169,7 +209,7 @@ public class MFactory {
   }
 
   public static RBCompIntIntMatrix rbCompIntIntMatrix(int numRows, int numCols, int subDim,
-    StorageType storageType) {
+      StorageType storageType) {
     CompIntIntVector[] rows = new CompIntIntVector[numRows];
     for (int i = 0; i < numRows; i++) {
       rows[i] = VFactory.compIntIntVector(0, i, 0, numCols, subDim, storageType);
@@ -179,7 +219,7 @@ public class MFactory {
   }
 
   public static RBCompLongDoubleMatrix rbCompLongDoubleMatrix(int matrixId, int clock,
-    CompLongDoubleVector[] rows) {
+      CompLongDoubleVector[] rows) {
     return new RBCompLongDoubleMatrix(matrixId, clock, rows);
   }
 
@@ -188,17 +228,17 @@ public class MFactory {
   }
 
   public static RBCompLongDoubleMatrix rbCompLongDoubleMatrix(int matrixId, int clock, int numRows,
-    long numCols, long subDim) {
+      long numCols, long subDim) {
     return new RBCompLongDoubleMatrix(matrixId, clock, numRows, numCols, subDim);
   }
 
   public static RBCompLongDoubleMatrix rbCompLongDoubleMatrix(int numRows, long numCols,
-    long subDim) {
+      long subDim) {
     return new RBCompLongDoubleMatrix(numRows, numCols, subDim);
   }
 
   public static RBCompLongDoubleMatrix rbCompLongDoubleMatrix(int matrixId, int clock, int numRows,
-    long numCols, long subDim, StorageType storageType) {
+      long numCols, long subDim, StorageType storageType) {
     CompLongDoubleVector[] rows = new CompLongDoubleVector[numRows];
     for (int i = 0; i < numRows; i++) {
       rows[i] = VFactory.compLongDoubleVector(matrixId, i, clock, numCols, subDim, storageType);
@@ -208,7 +248,7 @@ public class MFactory {
   }
 
   public static RBCompLongDoubleMatrix rbCompLongDoubleMatrix(int numRows, long numCols,
-    long subDim, StorageType storageType) {
+      long subDim, StorageType storageType) {
     CompLongDoubleVector[] rows = new CompLongDoubleVector[numRows];
     for (int i = 0; i < numRows; i++) {
       rows[i] = VFactory.compLongDoubleVector(0, i, 0, numCols, subDim, storageType);
@@ -218,7 +258,7 @@ public class MFactory {
   }
 
   public static RBCompLongFloatMatrix rbCompLongFloatMatrix(int matrixId, int clock,
-    CompLongFloatVector[] rows) {
+      CompLongFloatVector[] rows) {
     return new RBCompLongFloatMatrix(matrixId, clock, rows);
   }
 
@@ -227,17 +267,17 @@ public class MFactory {
   }
 
   public static RBCompLongFloatMatrix rbCompLongFloatMatrix(int matrixId, int clock, int numRows,
-    long numCols, long subDim) {
+      long numCols, long subDim) {
     return new RBCompLongFloatMatrix(matrixId, clock, numRows, numCols, subDim);
   }
 
   public static RBCompLongFloatMatrix rbCompLongFloatMatrix(int numRows, long numCols,
-    long subDim) {
+      long subDim) {
     return new RBCompLongFloatMatrix(numRows, numCols, subDim);
   }
 
   public static RBCompLongFloatMatrix rbCompLongFloatMatrix(int matrixId, int clock, int numRows,
-    long numCols, long subDim, StorageType storageType) {
+      long numCols, long subDim, StorageType storageType) {
     CompLongFloatVector[] rows = new CompLongFloatVector[numRows];
     for (int i = 0; i < numRows; i++) {
       rows[i] = VFactory.compLongFloatVector(matrixId, i, clock, numCols, subDim, storageType);
@@ -247,7 +287,7 @@ public class MFactory {
   }
 
   public static RBCompLongFloatMatrix rbCompLongFloatMatrix(int numRows, long numCols, long subDim,
-    StorageType storageType) {
+      StorageType storageType) {
     CompLongFloatVector[] rows = new CompLongFloatVector[numRows];
     for (int i = 0; i < numRows; i++) {
       rows[i] = VFactory.compLongFloatVector(0, i, 0, numCols, subDim, storageType);
@@ -257,7 +297,7 @@ public class MFactory {
   }
 
   public static RBCompLongLongMatrix rbCompLongLongMatrix(int matrixId, int clock,
-    CompLongLongVector[] rows) {
+      CompLongLongVector[] rows) {
     return new RBCompLongLongMatrix(matrixId, clock, rows);
   }
 
@@ -266,7 +306,7 @@ public class MFactory {
   }
 
   public static RBCompLongLongMatrix rbCompLongLongMatrix(int matrixId, int clock, int numRows,
-    long numCols, long subDim) {
+      long numCols, long subDim) {
     return new RBCompLongLongMatrix(matrixId, clock, numRows, numCols, subDim);
   }
 
@@ -275,7 +315,7 @@ public class MFactory {
   }
 
   public static RBCompLongLongMatrix rbCompLongLongMatrix(int matrixId, int clock, int numRows,
-    long numCols, long subDim, StorageType storageType) {
+      long numCols, long subDim, StorageType storageType) {
     CompLongLongVector[] rows = new CompLongLongVector[numRows];
     for (int i = 0; i < numRows; i++) {
       rows[i] = VFactory.compLongLongVector(matrixId, i, clock, numCols, subDim, storageType);
@@ -285,7 +325,7 @@ public class MFactory {
   }
 
   public static RBCompLongLongMatrix rbCompLongLongMatrix(int numRows, long numCols, long subDim,
-    StorageType storageType) {
+      StorageType storageType) {
     CompLongLongVector[] rows = new CompLongLongVector[numRows];
     for (int i = 0; i < numRows; i++) {
       rows[i] = VFactory.compLongLongVector(0, i, 0, numCols, subDim, storageType);
@@ -295,7 +335,7 @@ public class MFactory {
   }
 
   public static RBCompLongIntMatrix rbCompLongIntMatrix(int matrixId, int clock,
-    CompLongIntVector[] rows) {
+      CompLongIntVector[] rows) {
     return new RBCompLongIntMatrix(matrixId, clock, rows);
   }
 
@@ -304,7 +344,7 @@ public class MFactory {
   }
 
   public static RBCompLongIntMatrix rbCompLongIntMatrix(int matrixId, int clock, int numRows,
-    long numCols, long subDim) {
+      long numCols, long subDim) {
     return new RBCompLongIntMatrix(matrixId, clock, numRows, numCols, subDim);
   }
 
@@ -313,7 +353,7 @@ public class MFactory {
   }
 
   public static RBCompLongIntMatrix rbCompLongIntMatrix(int matrixId, int clock, int numRows,
-    long numCols, long subDim, StorageType storageType) {
+      long numCols, long subDim, StorageType storageType) {
     CompLongIntVector[] rows = new CompLongIntVector[numRows];
     for (int i = 0; i < numRows; i++) {
       rows[i] = VFactory.compLongIntVector(matrixId, i, clock, numCols, subDim, storageType);
@@ -323,7 +363,7 @@ public class MFactory {
   }
 
   public static RBCompLongIntMatrix rbCompLongIntMatrix(int numRows, long numCols, long subDim,
-    StorageType storageType) {
+      StorageType storageType) {
     CompLongIntVector[] rows = new CompLongIntVector[numRows];
     for (int i = 0; i < numRows; i++) {
       rows[i] = VFactory.compLongIntVector(0, i, 0, numCols, subDim, storageType);
@@ -335,17 +375,17 @@ public class MFactory {
   //---------------------------------------------------
 
   public static RBIntDoubleMatrix rbIntDoubleMatrix(int matrixId, int clock,
-    IntDoubleVector[] rows) {
+      IntDoubleVector[] rows) {
     return new RBIntDoubleMatrix(matrixId, clock, rows);
   }
 
   public static RBIntDoubleMatrix rbIntDoubleMatrix(int matrixId, int clock, int numRows,
-    int numCols) {
+      int numCols) {
     return new RBIntDoubleMatrix(matrixId, clock, numRows, numCols);
   }
 
   public static RBIntDoubleMatrix rbIntDoubleMatrix(int matrixId, int clock, int numRows,
-    int numCols, StorageType storageType) {
+      int numCols, StorageType storageType) {
     IntDoubleVector[] rows = new IntDoubleVector[numRows];
     for (int i = 0; i < numRows; i++) {
       switch (storageType) {
@@ -365,7 +405,7 @@ public class MFactory {
   }
 
   public static RBIntDoubleMatrix rbIntDoubleMatrix(int numRows, int numCols,
-    StorageType storageType) {
+      StorageType storageType) {
     IntDoubleVector[] rows = new IntDoubleVector[numRows];
     for (int i = 0; i < numRows; i++) {
       switch (storageType) {
@@ -397,12 +437,12 @@ public class MFactory {
   }
 
   public static RBIntFloatMatrix rbIntFloatMatrix(int matrixId, int clock, int numRows,
-    int numCols) {
+      int numCols) {
     return new RBIntFloatMatrix(matrixId, clock, numRows, numCols);
   }
 
   public static RBIntFloatMatrix rbIntFloatMatrix(int matrixId, int clock, int numRows, int numCols,
-    StorageType storageType) {
+      StorageType storageType) {
     IntFloatVector[] rows = new IntFloatVector[numRows];
     for (int i = 0; i < numRows; i++) {
       switch (storageType) {
@@ -422,7 +462,7 @@ public class MFactory {
   }
 
   public static RBIntFloatMatrix rbIntFloatMatrix(int numRows, int numCols,
-    StorageType storageType) {
+      StorageType storageType) {
     IntFloatVector[] rows = new IntFloatVector[numRows];
     for (int i = 0; i < numRows; i++) {
       switch (storageType) {
@@ -458,7 +498,7 @@ public class MFactory {
   }
 
   public static RBIntLongMatrix rbIntLongMatrix(int matrixId, int clock, int numRows, int numCols,
-    StorageType storageType) {
+      StorageType storageType) {
     IntLongVector[] rows = new IntLongVector[numRows];
     for (int i = 0; i < numRows; i++) {
       switch (storageType) {
@@ -513,7 +553,7 @@ public class MFactory {
   }
 
   public static RBIntIntMatrix rbIntIntMatrix(int matrixId, int clock, int numRows, int numCols,
-    StorageType storageType) {
+      StorageType storageType) {
     IntIntVector[] rows = new IntIntVector[numRows];
     for (int i = 0; i < numRows; i++) {
       switch (storageType) {
@@ -560,17 +600,17 @@ public class MFactory {
   }
 
   public static RBLongDoubleMatrix rbLongDoubleMatrix(int matrixId, int clock,
-    LongDoubleVector[] rows) {
+      LongDoubleVector[] rows) {
     return new RBLongDoubleMatrix(matrixId, clock, rows);
   }
 
   public static RBLongDoubleMatrix rbLongDoubleMatrix(int matrixId, int clock, int numRows,
-    long numCols) {
+      long numCols) {
     return new RBLongDoubleMatrix(matrixId, clock, numRows, numCols);
   }
 
   public static RBLongDoubleMatrix rbLongDoubleMatrix(int matrixId, int clock, int numRows,
-    long numCols, StorageType storageType) {
+      long numCols, StorageType storageType) {
     LongDoubleVector[] rows = new LongDoubleVector[numRows];
     for (int i = 0; i < numRows; i++) {
       switch (storageType) {
@@ -589,7 +629,7 @@ public class MFactory {
   }
 
   public static RBLongDoubleMatrix rbLongDoubleMatrix(int numRows, long numCols,
-    StorageType storageType) {
+      StorageType storageType) {
     LongDoubleVector[] rows = new LongDoubleVector[numRows];
     for (int i = 0; i < numRows; i++) {
       switch (storageType) {
@@ -616,17 +656,17 @@ public class MFactory {
   }
 
   public static RBLongFloatMatrix rbLongFloatMatrix(int matrixId, int clock,
-    LongFloatVector[] rows) {
+      LongFloatVector[] rows) {
     return new RBLongFloatMatrix(matrixId, clock, rows);
   }
 
   public static RBLongFloatMatrix rbLongFloatMatrix(int matrixId, int clock, int numRows,
-    long numCols) {
+      long numCols) {
     return new RBLongFloatMatrix(matrixId, clock, numRows, numCols);
   }
 
   public static RBLongFloatMatrix rbLongFloatMatrix(int matrixId, int clock, int numRows,
-    long numCols, StorageType storageType) {
+      long numCols, StorageType storageType) {
     LongFloatVector[] rows = new LongFloatVector[numRows];
     for (int i = 0; i < numRows; i++) {
       switch (storageType) {
@@ -645,7 +685,7 @@ public class MFactory {
   }
 
   public static RBLongFloatMatrix rbLongFloatMatrix(int numRows, long numCols,
-    StorageType storageType) {
+      StorageType storageType) {
     LongFloatVector[] rows = new LongFloatVector[numRows];
     for (int i = 0; i < numRows; i++) {
       switch (storageType) {
@@ -676,12 +716,12 @@ public class MFactory {
   }
 
   public static RBLongLongMatrix rbLongLongMatrix(int matrixId, int clock, int numRows,
-    long numCols) {
+      long numCols) {
     return new RBLongLongMatrix(matrixId, clock, numRows, numCols);
   }
 
   public static RBLongLongMatrix rbLongLongMatrix(int matrixId, int clock, int numRows,
-    long numCols, StorageType storageType) {
+      long numCols, StorageType storageType) {
     LongLongVector[] rows = new LongLongVector[numRows];
     for (int i = 0; i < numRows; i++) {
       switch (storageType) {
@@ -700,7 +740,7 @@ public class MFactory {
   }
 
   public static RBLongLongMatrix rbLongLongMatrix(int numRows, long numCols,
-    StorageType storageType) {
+      StorageType storageType) {
     LongLongVector[] rows = new LongLongVector[numRows];
     for (int i = 0; i < numRows; i++) {
       switch (storageType) {
@@ -731,12 +771,12 @@ public class MFactory {
   }
 
   public static RBLongIntMatrix rbLongIntMatrix(int matrixId, int clock, int numRows,
-    long numCols) {
+      long numCols) {
     return new RBLongIntMatrix(matrixId, clock, numRows, numCols);
   }
 
   public static RBLongIntMatrix rbLongIntMatrix(int matrixId, int clock, int numRows, long numCols,
-    StorageType storageType) {
+      StorageType storageType) {
     LongIntVector[] rows = new LongIntVector[numRows];
     for (int i = 0; i < numRows; i++) {
       switch (storageType) {
@@ -755,7 +795,7 @@ public class MFactory {
   }
 
   public static RBLongIntMatrix rbLongIntMatrix(int numRows, long numCols,
-    StorageType storageType) {
+      StorageType storageType) {
     LongIntVector[] rows = new LongIntVector[numRows];
     for (int i = 0; i < numRows; i++) {
       switch (storageType) {
@@ -784,12 +824,12 @@ public class MFactory {
   //---------------------------------------------------
 
   public static BlasDoubleMatrix denseDoubleMatrix(int matrixId, int clock, int numRows,
-    int numCols, double[] data) {
+      int numCols, double[] data) {
     return new BlasDoubleMatrix(matrixId, clock, numRows, numCols, data);
   }
 
   public static BlasDoubleMatrix denseDoubleMatrix(int matrixId, int clock, int numRows,
-    int numCols) {
+      int numCols) {
     double[] data = new double[numRows * numCols];
     return new BlasDoubleMatrix(matrixId, clock, numRows, numCols, data);
   }
@@ -804,12 +844,12 @@ public class MFactory {
   }
 
   public static BlasFloatMatrix denseFloatMatrix(int matrixId, int clock, int numRows, int numCols,
-    float[] data) {
+      float[] data) {
     return new BlasFloatMatrix(matrixId, clock, numRows, numCols, data);
   }
 
   public static BlasFloatMatrix denseFloatMatrix(int matrixId, int clock, int numRows,
-    int numCols) {
+      int numCols) {
     float[] data = new float[numRows * numCols];
     return new BlasFloatMatrix(matrixId, clock, numRows, numCols, data);
   }
@@ -823,131 +863,161 @@ public class MFactory {
     return new BlasFloatMatrix(numRows, numCols, data);
   }
 
-  public static MapMatrix<IntDoubleVector> intDoubleMapMatrix(int matrixId, int clock, HashMap<Long, IntDoubleVector> mapMatrix){
+  public static MapMatrix<IntDoubleVector> intDoubleMapMatrix(int matrixId, int clock,
+      HashMap<Long, IntDoubleVector> mapMatrix) {
     return new MapMatrix(matrixId, clock, mapMatrix);
   }
 
-  public static MapMatrix<IntFloatVector> intFloatMapMatrix(int matrixId, int clock, HashMap<Long, IntFloatVector> mapMatrix){
+  public static MapMatrix<IntFloatVector> intFloatMapMatrix(int matrixId, int clock,
+      HashMap<Long, IntFloatVector> mapMatrix) {
     return new MapMatrix(matrixId, clock, mapMatrix);
   }
 
-  public static MapMatrix<IntLongVector> intLongMapMatrix(int matrixId, int clock, HashMap<Long, IntLongVector> mapMatrix){
+  public static MapMatrix<IntLongVector> intLongMapMatrix(int matrixId, int clock,
+      HashMap<Long, IntLongVector> mapMatrix) {
     return new MapMatrix(matrixId, clock, mapMatrix);
   }
 
-  public static MapMatrix<IntIntVector> intIntMapMatrix(int matrixId, int clock, HashMap<Long, IntIntVector> mapMatrix){
+  public static MapMatrix<IntIntVector> intIntMapMatrix(int matrixId, int clock,
+      HashMap<Long, IntIntVector> mapMatrix) {
     return new MapMatrix(matrixId, clock, mapMatrix);
   }
 
-  public static MapMatrix<LongDoubleVector> longDoubleMapMatrix(int matrixId, int clock, HashMap<Long, LongDoubleVector> mapMatrix){
+  public static MapMatrix<LongDoubleVector> longDoubleMapMatrix(int matrixId, int clock,
+      HashMap<Long, LongDoubleVector> mapMatrix) {
     return new MapMatrix(matrixId, clock, mapMatrix);
   }
 
-  public static MapMatrix<LongFloatVector> longFloatMapMatrix(int matrixId, int clock, HashMap<Long, LongFloatVector> mapMatrix){
+  public static MapMatrix<LongFloatVector> longFloatMapMatrix(int matrixId, int clock,
+      HashMap<Long, LongFloatVector> mapMatrix) {
     return new MapMatrix(matrixId, clock, mapMatrix);
   }
 
-  public static MapMatrix<LongLongVector> longLongMapMatrix(int matrixId, int clock, HashMap<Long, LongLongVector> mapMatrix){
+  public static MapMatrix<LongLongVector> longLongMapMatrix(int matrixId, int clock,
+      HashMap<Long, LongLongVector> mapMatrix) {
     return new MapMatrix(matrixId, clock, mapMatrix);
   }
 
-  public static MapMatrix<LongIntVector> longIntMapMatrix(int matrixId, int clock, HashMap<Long, LongIntVector> mapMatrix){
+  public static MapMatrix<LongIntVector> longIntMapMatrix(int matrixId, int clock,
+      HashMap<Long, LongIntVector> mapMatrix) {
     return new MapMatrix(matrixId, clock, mapMatrix);
   }
 
-  public static MapMatrix<IntDoubleVector> intDoubleMapMatrix(HashMap<Integer, IntDoubleVector> mapMatrix){
+  public static MapMatrix<IntDoubleVector> intDoubleMapMatrix(
+      HashMap<Integer, IntDoubleVector> mapMatrix) {
     return new MapMatrix(mapMatrix);
   }
 
-  public static MapMatrix<IntFloatVector> intFloatMapMatrix(HashMap<Integer, IntFloatVector> mapMatrix){
+  public static MapMatrix<IntFloatVector> intFloatMapMatrix(
+      HashMap<Integer, IntFloatVector> mapMatrix) {
     return new MapMatrix(mapMatrix);
   }
 
-  public static MapMatrix<IntLongVector> intLongMapMatrix(HashMap<Integer, IntLongVector> mapMatrix){
+  public static MapMatrix<IntLongVector> intLongMapMatrix(
+      HashMap<Integer, IntLongVector> mapMatrix) {
     return new MapMatrix(mapMatrix);
   }
 
-  public static MapMatrix<IntIntVector> intIntMapMatrix(HashMap<Integer, IntIntVector> mapMatrix){
+  public static MapMatrix<IntIntVector> intIntMapMatrix(HashMap<Integer, IntIntVector> mapMatrix) {
     return new MapMatrix(mapMatrix);
   }
 
-  public static MapMatrix<LongDoubleVector> longDoubleMapMatrix(HashMap<Long, LongDoubleVector> mapMatrix){
+  public static MapMatrix<LongDoubleVector> longDoubleMapMatrix(
+      HashMap<Long, LongDoubleVector> mapMatrix) {
     return new MapMatrix(mapMatrix);
   }
 
-  public static MapMatrix<LongFloatVector> longFloatMapMatrix(HashMap<Long, LongFloatVector> mapMatrix){
+  public static MapMatrix<LongFloatVector> longFloatMapMatrix(
+      HashMap<Long, LongFloatVector> mapMatrix) {
     return new MapMatrix(mapMatrix);
   }
 
-  public static MapMatrix<LongLongVector> longLongMapMatrix(HashMap<Long, LongLongVector> mapMatrix){
+  public static MapMatrix<LongLongVector> longLongMapMatrix(
+      HashMap<Long, LongLongVector> mapMatrix) {
     return new MapMatrix(mapMatrix);
   }
 
-  public static MapMatrix<LongIntVector> longIntMapMatrix(HashMap<Long, LongIntVector> mapMatrix){
+  public static MapMatrix<LongIntVector> longIntMapMatrix(HashMap<Long, LongIntVector> mapMatrix) {
     return new MapMatrix(mapMatrix);
   }
 
-  public static MapMatrix<IntDoubleVector> compIntDoubleMapMatrix(int matrixId, int clock, HashMap<Long, CompIntDoubleVector> mapMatrix){
+  public static MapMatrix<IntDoubleVector> compIntDoubleMapMatrix(int matrixId, int clock,
+      HashMap<Long, CompIntDoubleVector> mapMatrix) {
     return new MapMatrix(matrixId, clock, mapMatrix);
   }
 
-  public static MapMatrix<IntFloatVector> compIntFloatMapMatrix(int matrixId, int clock, HashMap<Long, CompIntFloatVector> mapMatrix){
+  public static MapMatrix<IntFloatVector> compIntFloatMapMatrix(int matrixId, int clock,
+      HashMap<Long, CompIntFloatVector> mapMatrix) {
     return new MapMatrix(matrixId, clock, mapMatrix);
   }
 
-  public static MapMatrix<IntLongVector> compIntLongMapMatrix(int matrixId, int clock, HashMap<Long, CompIntLongVector> mapMatrix){
+  public static MapMatrix<IntLongVector> compIntLongMapMatrix(int matrixId, int clock,
+      HashMap<Long, CompIntLongVector> mapMatrix) {
     return new MapMatrix(matrixId, clock, mapMatrix);
   }
 
-  public static MapMatrix<IntIntVector> compIntIntMapMatrix(int matrixId, int clock, HashMap<Long, CompIntIntVector> mapMatrix){
+  public static MapMatrix<IntIntVector> compIntIntMapMatrix(int matrixId, int clock,
+      HashMap<Long, CompIntIntVector> mapMatrix) {
     return new MapMatrix(matrixId, clock, mapMatrix);
   }
 
-  public static MapMatrix<LongDoubleVector> compLongDoubleMapMatrix(int matrixId, int clock, HashMap<Long, CompLongDoubleVector> mapMatrix){
+  public static MapMatrix<LongDoubleVector> compLongDoubleMapMatrix(int matrixId, int clock,
+      HashMap<Long, CompLongDoubleVector> mapMatrix) {
     return new MapMatrix(matrixId, clock, mapMatrix);
   }
 
-  public static MapMatrix<LongFloatVector> compLongFloatMapMatrix(int matrixId, int clock, HashMap<Long, CompLongFloatVector> mapMatrix){
+  public static MapMatrix<LongFloatVector> compLongFloatMapMatrix(int matrixId, int clock,
+      HashMap<Long, CompLongFloatVector> mapMatrix) {
     return new MapMatrix(matrixId, clock, mapMatrix);
   }
 
-  public static MapMatrix<LongLongVector> compLongLongMapMatrix(int matrixId, int clock, HashMap<Long, CompLongLongVector> mapMatrix){
+  public static MapMatrix<LongLongVector> compLongLongMapMatrix(int matrixId, int clock,
+      HashMap<Long, CompLongLongVector> mapMatrix) {
     return new MapMatrix(matrixId, clock, mapMatrix);
   }
 
-  public static MapMatrix<LongIntVector> compLongIntMapMatrix(int matrixId, int clock, HashMap<Long, CompLongIntVector> mapMatrix){
+  public static MapMatrix<LongIntVector> compLongIntMapMatrix(int matrixId, int clock,
+      HashMap<Long, CompLongIntVector> mapMatrix) {
     return new MapMatrix(matrixId, clock, mapMatrix);
   }
 
-  public static MapMatrix<IntDoubleVector> compIntDoubleMapMatrix(HashMap<Integer, CompIntDoubleVector> mapMatrix){
+  public static MapMatrix<IntDoubleVector> compIntDoubleMapMatrix(
+      HashMap<Integer, CompIntDoubleVector> mapMatrix) {
     return new MapMatrix(mapMatrix);
   }
 
-  public static MapMatrix<IntFloatVector> compIntFloatMapMatrix(HashMap<Integer, CompIntFloatVector> mapMatrix){
+  public static MapMatrix<IntFloatVector> compIntFloatMapMatrix(
+      HashMap<Integer, CompIntFloatVector> mapMatrix) {
     return new MapMatrix(mapMatrix);
   }
 
-  public static MapMatrix<IntLongVector> compIntLongMapMatrix(HashMap<Integer, CompIntLongVector> mapMatrix){
+  public static MapMatrix<IntLongVector> compIntLongMapMatrix(
+      HashMap<Integer, CompIntLongVector> mapMatrix) {
     return new MapMatrix(mapMatrix);
   }
 
-  public static MapMatrix<IntIntVector> compIntIntMapMatrix(HashMap<Integer, CompIntIntVector> mapMatrix){
+  public static MapMatrix<IntIntVector> compIntIntMapMatrix(
+      HashMap<Integer, CompIntIntVector> mapMatrix) {
     return new MapMatrix(mapMatrix);
   }
 
-  public static MapMatrix<LongDoubleVector> compLongDoubleMapMatrix(HashMap<Long, CompLongDoubleVector> mapMatrix){
+  public static MapMatrix<LongDoubleVector> compLongDoubleMapMatrix(
+      HashMap<Long, CompLongDoubleVector> mapMatrix) {
     return new MapMatrix(mapMatrix);
   }
 
-  public static MapMatrix<LongFloatVector> compLongFloatMapMatrix(HashMap<Long, CompLongFloatVector> mapMatrix){
+  public static MapMatrix<LongFloatVector> compLongFloatMapMatrix(
+      HashMap<Long, CompLongFloatVector> mapMatrix) {
     return new MapMatrix(mapMatrix);
   }
 
-  public static MapMatrix<LongLongVector> compLongLongMapMatrix(HashMap<Long, CompLongLongVector> mapMatrix){
+  public static MapMatrix<LongLongVector> compLongLongMapMatrix(
+      HashMap<Long, CompLongLongVector> mapMatrix) {
     return new MapMatrix(mapMatrix);
   }
 
-  public static MapMatrix<LongIntVector> compLongIntMapMatrix(HashMap<Long, CompLongIntVector> mapMatrix){
+  public static MapMatrix<LongIntVector> compLongIntMapMatrix(
+      HashMap<Long, CompLongIntVector> mapMatrix) {
     return new MapMatrix(mapMatrix);
   }
 }

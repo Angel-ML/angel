@@ -23,6 +23,10 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.utils.RowTypeUtils
 import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.core.utils.NetUtils
+import com.tencent.angel.ml.math2.utils.Constant
+
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 import org.json4s.JValue
@@ -394,11 +398,11 @@ object SharedConf {
 
     val ir = sc.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
 
-    if (ir == -1) {
-      throw new AngelException("ML_FEATURE_INDEX_RANGE must be set!")
-    } else {
-      ir
+    if (ir < 0) {
+      Constant.setKeepStorage(true)
     }
+
+    ir
   }
 
   def inputDataFormat: String = {

@@ -28,22 +28,21 @@ import java.util.concurrent.ForkJoinTask;
  */
 public class MatrixExecutors {
 
+  public static final String WORKER_NUM_PARAMETER_NAME = "angel.math.matrix.op.parallel.worker.num";
   private static final Log LOG = LogFactory.getLog(MatrixExecutors.class);
   /**
    * Matrix executor instance
    */
   private static MatrixExecutors instance;
 
+  static {
+
+  }
+
   /**
    * Worker pool of the executor
    */
   private final ForkJoinPool pool;
-
-  public static final String WORKER_NUM_PARAMETER_NAME = "angel.math.matrix.op.parallel.worker.num";
-
-  static {
-
-  }
 
   private MatrixExecutors(int poolSize) {
     pool = new ForkJoinPool(poolSize);
@@ -55,7 +54,7 @@ public class MatrixExecutors {
    * @return matrix executor instance
    */
   public synchronized static MatrixExecutors getInstance() {
-    if(instance == null) {
+    if (instance == null) {
       int poolSize;
       int defaultPoolSize = Runtime.getRuntime().availableProcessors();
       String numStr = System.getProperty(WORKER_NUM_PARAMETER_NAME);

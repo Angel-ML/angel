@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -27,11 +27,13 @@ public class GradCrossEntropyLoss extends Binary {
     setKeepStorage(Constant.keepStorage);
   }
 
-  @Override public OpType getOpType() {
+  @Override
+  public OpType getOpType() {
     return OpType.UNION;
   }
 
-  @Override public double apply(double ele1, double ele2) {
+  @Override
+  public double apply(double ele1, double ele2) {
     if (ele2 > 0) {
       return -1.0 / ele1;
     } else {
@@ -39,7 +41,8 @@ public class GradCrossEntropyLoss extends Binary {
     }
   }
 
-  @Override public double apply(double ele1, float ele2) {
+  @Override
+  public double apply(double ele1, float ele2) {
     if (ele2 > 0) {
       return -1.0 / ele1;
     } else {
@@ -47,7 +50,8 @@ public class GradCrossEntropyLoss extends Binary {
     }
   }
 
-  @Override public double apply(double ele1, long ele2) {
+  @Override
+  public double apply(double ele1, long ele2) {
     if (ele2 > 0) {
       return -1.0 / ele1;
     } else {
@@ -55,7 +59,8 @@ public class GradCrossEntropyLoss extends Binary {
     }
   }
 
-  @Override public double apply(double ele1, int ele2) {
+  @Override
+  public double apply(double ele1, int ele2) {
     if (ele2 > 0) {
       return -1.0 / ele1;
     } else {
@@ -63,7 +68,8 @@ public class GradCrossEntropyLoss extends Binary {
     }
   }
 
-  @Override public float apply(float ele1, float ele2) {
+  @Override
+  public float apply(float ele1, float ele2) {
     if (ele2 > 0) {
       return -(float) (1.0 / ele1);
     } else {
@@ -71,7 +77,8 @@ public class GradCrossEntropyLoss extends Binary {
     }
   }
 
-  @Override public float apply(float ele1, long ele2) {
+  @Override
+  public float apply(float ele1, long ele2) {
     if (ele2 > 0) {
       return -(float) (1.0 / ele1);
     } else {
@@ -79,7 +86,8 @@ public class GradCrossEntropyLoss extends Binary {
     }
   }
 
-  @Override public float apply(float ele1, int ele2) {
+  @Override
+  public float apply(float ele1, int ele2) {
     if (ele2 > 0) {
       return -(float) (1.0 / ele1);
     } else {
@@ -87,7 +95,8 @@ public class GradCrossEntropyLoss extends Binary {
     }
   }
 
-  @Override public long apply(long ele1, long ele2) {
+  @Override
+  public long apply(long ele1, long ele2) {
     if (ele2 > 0) {
       return -(long) (1.0 / ele1);
     } else {
@@ -95,7 +104,8 @@ public class GradCrossEntropyLoss extends Binary {
     }
   }
 
-  @Override public long apply(long ele1, int ele2) {
+  @Override
+  public long apply(long ele1, int ele2) {
     if (ele2 > 0) {
       return -(long) (1.0 / ele1);
     } else {
@@ -103,7 +113,8 @@ public class GradCrossEntropyLoss extends Binary {
     }
   }
 
-  @Override public int apply(int ele1, int ele2) {
+  @Override
+  public int apply(int ele1, int ele2) {
     if (ele2 > 0) {
       return -(int) (1.0 / ele1);
     } else {

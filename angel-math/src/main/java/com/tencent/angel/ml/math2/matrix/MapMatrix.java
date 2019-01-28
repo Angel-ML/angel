@@ -1,21 +1,26 @@
 package com.tencent.angel.ml.math2.matrix;
 
 import com.tencent.angel.ml.math2.vector.Vector;
-
 import java.util.HashMap;
 
-public class MapMatrix<Vec extends Vector> extends Matrix{
+public class MapMatrix<Vec extends Vector> extends Matrix {
+
   protected HashMap<Long, Vec> mapMatrix;
 
-  public MapMatrix(){
+  public MapMatrix() {
   }
 
+<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/matrix/MapMatrix.java
   public MapMatrix(int matrixId, int clock, HashMap<Long, Vec> mapMatrix){
+=======
+  public MapMatrix(int matrixId, int clock, HashMap<Long, Vec> mapMatrix) {
+>>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/matrix/MapMatrix.java
     this.matrixId = matrixId;
     this.clock = clock;
     this.mapMatrix = mapMatrix;
   }
 
+<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/matrix/MapMatrix.java
   public MapMatrix(HashMap<Long, Vec> mapMatrix){
     this(0,0, mapMatrix);
   }
@@ -25,57 +30,63 @@ public class MapMatrix<Vec extends Vector> extends Matrix{
   }
 
   public Vector getRow(int idx){
+=======
+  public MapMatrix(HashMap<Long, Vec> mapMatrix) {
+    this(0, 0, mapMatrix);
+  }
+
+  public Vector getRow(int idx) {
+>>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/matrix/MapMatrix.java
     return mapMatrix.get(idx);
   }
 
-  public Vector getRow(long idx){
+  public Vector getRow(long idx) {
     return mapMatrix.get(idx);
   }
 
-  public HashMap<Long, Vec> getRows(int[] idx){
-    HashMap<Long, Vec>  matrix = new HashMap();
-    for (int id : idx){
-      matrix.put((long)id, mapMatrix.get(id));
+  public HashMap<Long, Vec> getRows(int[] idx) {
+    HashMap<Long, Vec> matrix = new HashMap();
+    for (int id : idx) {
+      matrix.put((long) id, mapMatrix.get(id));
     }
     return matrix;
   }
 
-  public HashMap<Long, Vec> getRows(long[] idx){
-    HashMap<Long, Vec>  matrix = new HashMap();
-    for (long id : idx){
+  public HashMap<Long, Vec> getRows(long[] idx) {
+    HashMap<Long, Vec> matrix = new HashMap();
+    for (long id : idx) {
       matrix.put(id, mapMatrix.get(id));
     }
     return matrix;
   }
 
-  public HashMap<Long, Vec> getRows(){
+  public HashMap<Long, Vec> getRows() {
     return mapMatrix;
   }
 
-  public void setRow(int idx, Vec v){
-    mapMatrix.put((long)idx, v);
-  }
-
-  public void setRow(long idx, Vec v){
-    mapMatrix.put(idx, v);
-  }
-
-  public void setRows(int[] idx, Vec[] vectors){
-    for(int i = 0; i< idx.length; i++){
-      mapMatrix.put((long)idx[i], vectors[i]);
-    }
-  }
-
-  public void setRows(long[] idx, Vec[] vectors){
-    for(int i = 0; i< idx.length; i++){
-      mapMatrix.put(idx[i], vectors[i]);
-    }
-  }
-
-  public void setRows(HashMap<Long, Vec> matrix){
+  public void setRows(HashMap<Long, Vec> matrix) {
     mapMatrix.putAll(matrix);
   }
 
+  public void setRow(int idx, Vec v) {
+    mapMatrix.put((long) idx, v);
+  }
+
+  public void setRow(long idx, Vec v) {
+    mapMatrix.put(idx, v);
+  }
+
+  public void setRows(int[] idx, Vec[] vectors) {
+    for (int i = 0; i < idx.length; i++) {
+      mapMatrix.put((long) idx[i], vectors[i]);
+    }
+  }
+
+  public void setRows(long[] idx, Vec[] vectors) {
+    for (int i = 0; i < idx.length; i++) {
+      mapMatrix.put(idx[i], vectors[i]);
+    }
+  }
 
   @Override
   public Vector diag() {

@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -21,11 +21,24 @@ package com.tencent.angel.ml.math2.ufuncs;
 import com.tencent.angel.ml.math2.matrix.Matrix;
 import com.tencent.angel.ml.math2.ufuncs.executor.BinaryExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.matrix.BinaryMatrixExecutor;
+<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/OptFuncs.java
 import com.tencent.angel.ml.math2.ufuncs.expression.*;
+=======
+import com.tencent.angel.ml.math2.ufuncs.expression.AdaDeltaDelta;
+import com.tencent.angel.ml.math2.ufuncs.expression.AdaDeltaHessian;
+import com.tencent.angel.ml.math2.ufuncs.expression.AdaDeltaThreshold;
+import com.tencent.angel.ml.math2.ufuncs.expression.AdaGradDelta;
+import com.tencent.angel.ml.math2.ufuncs.expression.AdaGradThreshold;
+import com.tencent.angel.ml.math2.ufuncs.expression.AdamDelta;
+import com.tencent.angel.ml.math2.ufuncs.expression.ExpSmoothing;
+import com.tencent.angel.ml.math2.ufuncs.expression.ExpSmoothing2;
+import com.tencent.angel.ml.math2.ufuncs.expression.FtrlDelta;
+>>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/OptFuncs.java
 import com.tencent.angel.ml.math2.vector.Vector;
 
 
 public class OptFuncs {
+
   public static Matrix iexpsmoothing(Matrix m1, Matrix m2, double factor) {
     return BinaryMatrixExecutor.apply(m1, false, m2, false, new ExpSmoothing(true, factor));
   }
@@ -64,7 +77,7 @@ public class OptFuncs {
 
   public static Matrix adamdelta(Matrix m1, Matrix m2, double powBeta, double powGamma) {
     return BinaryMatrixExecutor
-      .apply(m1, false, m2, false, new AdamDelta(false, powBeta, powGamma));
+        .apply(m1, false, m2, false, new AdamDelta(false, powBeta, powGamma));
   }
 
   public static Vector iadamdelta(Vector v1, Vector v2, double powBeta, double powGamma) {
@@ -109,19 +122,25 @@ public class OptFuncs {
   }
 
   // -----------------
-  public static Matrix iadagradthredshold(Matrix m1, Matrix m2, double lambda1, double lambda2, double eta) {
-    return BinaryMatrixExecutor.apply(m1, false, m2, false, new AdaGradThreshold(true, lambda1, lambda2, eta));
+  public static Matrix iadagradthredshold(Matrix m1, Matrix m2, double lambda1, double lambda2,
+      double eta) {
+    return BinaryMatrixExecutor
+        .apply(m1, false, m2, false, new AdaGradThreshold(true, lambda1, lambda2, eta));
   }
 
-  public static Matrix adagradthredshold(Matrix m1, Matrix m2, double lambda1, double lambda2, double eta) {
-    return BinaryMatrixExecutor.apply(m1, false, m2, false, new AdaGradThreshold(false, lambda1, lambda2, eta));
+  public static Matrix adagradthredshold(Matrix m1, Matrix m2, double lambda1, double lambda2,
+      double eta) {
+    return BinaryMatrixExecutor
+        .apply(m1, false, m2, false, new AdaGradThreshold(false, lambda1, lambda2, eta));
   }
 
-  public static Vector iadagradthredshold(Vector v1, Vector v2, double lambda1, double lambda2, double eta) {
+  public static Vector iadagradthredshold(Vector v1, Vector v2, double lambda1, double lambda2,
+      double eta) {
     return BinaryExecutor.apply(v1, v2, new AdaGradThreshold(true, lambda1, lambda2, eta));
   }
 
-  public static Vector adagradthredshold(Vector v1, Vector v2, double lambda1, double lambda2, double eta) {
+  public static Vector adagradthredshold(Vector v1, Vector v2, double lambda1, double lambda2,
+      double eta) {
     return BinaryExecutor.apply(v1, v2, new AdaGradThreshold(false, lambda1, lambda2, eta));
   }
 
@@ -161,11 +180,13 @@ public class OptFuncs {
 
   // -----------------
   public static Matrix iadadeltathredshold(Matrix m1, Matrix m2, double lambda1, double lambda2) {
-    return BinaryMatrixExecutor.apply(m1, false, m2, false, new AdaDeltaThreshold(true, lambda1, lambda2));
+    return BinaryMatrixExecutor
+        .apply(m1, false, m2, false, new AdaDeltaThreshold(true, lambda1, lambda2));
   }
 
   public static Matrix adadeltathredshold(Matrix m1, Matrix m2, double lambda1, double lambda2) {
-    return BinaryMatrixExecutor.apply(m1, false, m2, false, new AdaDeltaThreshold(false, lambda1, lambda2));
+    return BinaryMatrixExecutor
+        .apply(m1, false, m2, false, new AdaDeltaThreshold(false, lambda1, lambda2));
   }
 
   public static Vector iadadeltathredshold(Vector v1, Vector v2, double lambda1, double lambda2) {

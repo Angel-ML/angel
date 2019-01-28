@@ -63,7 +63,7 @@ public class LRTest {
       // Model type
       String jsonFile = "./src/test/jsons/logreg.json";
 
-      String modelType = String.valueOf(RowType.T_FLOAT_DENSE);
+      // String modelType = String.valueOf(RowType.T_FLOAT_DENSE);
 
 
       // Learning rate
@@ -92,7 +92,7 @@ public class LRTest {
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
       //set sgd LR algorithm parameters #feature #epoch
-      conf.set(MLConf.ML_MODEL_TYPE(), modelType);
+      // conf.set(MLConf.ML_MODEL_TYPE(), modelType);
       conf.setLong(MLConf.ML_FEATURE_INDEX_RANGE(), featureNum);
       conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
       conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
