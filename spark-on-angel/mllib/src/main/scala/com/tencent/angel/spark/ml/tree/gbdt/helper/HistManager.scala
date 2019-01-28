@@ -149,32 +149,27 @@ class HistManager(param: GBDTParam, featureInfo: FeatureInfo) {
 
     private[gbdt] def acquire: NodeHist = {
       this.synchronized {
-        println(s"Acquire hist, numHist[$numHist] numAcquired[$numAcquired]")
         if (numHist == numAcquired) {
           require(numHist < pool.length)
           pool(numHist) = getOrAllocSync(sync = true)
           numHist += 1
-          println(s"Alloc success, $numHist hists now")
         }
         var i = 0
         while (i < numHist && pool(i) == null) i += 1
         numAcquired += 1
         val nodeHist = pool(i)
         pool(i) = null
-        println(s"Acquire done, numHist[$numHist] numAcquired[$numAcquired]")
         nodeHist
       }
     }
 
     private[gbdt] def release(nodeHist: NodeHist): Unit = {
       this.synchronized {
-        println(s"Release hist, numHist[$numHist] numAcquired[$numAcquired]")
         require(numHist > 0)
         var i = 0
         while (i < numHist && pool(i) != null) i += 1
         pool(i) = nodeHist
         numAcquired -= 1
-        println(s"Release done, numHist[$numHist] numAcquired[$numAcquired]")
       }
     }
 
