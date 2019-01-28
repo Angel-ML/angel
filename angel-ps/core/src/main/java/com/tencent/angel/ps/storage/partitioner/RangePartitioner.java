@@ -78,9 +78,8 @@ public class RangePartitioner implements Partitioner {
     long start = mContext.getIndexStart();
     long end = mContext.getIndexEnd();
 
-    assert (col == end - start);
-
     long validIndexNum = mContext.getValidIndexNum();
+
     if (col > 0 && validIndexNum > col)
       validIndexNum = col;
 
@@ -90,30 +89,33 @@ public class RangePartitioner implements Partitioner {
 
     LOG.info("start to split matrix " + mContext);
 
+    double range = col;
+    // if col == -1, we use the start/end index to calculate range,
+    // we use double to store the range value since two long minus might exceed the
+    // range of long.
+    if (col == -1)
+      range = ((double) end - (double) start);
+
     long partSize = DEFAULT_PARTITION_SIZE;
-    if (validIndexNum > 0) {
-      partSize = (long) (DEFAULT_PARTITION_SIZE * ((double) col / validIndexNum));
-    }
+
+    if (validIndexNum > 0)
+      partSize = (long) (DEFAULT_PARTITION_SIZE * (range / validIndexNum));
 
     if (blockRow < 0) {
-      if (row > serverNum) {
-        blockRow = (int) Math
-                .min(row / serverNum, Math.max(row / maxPartNum, Math.max(1, partSize / col)));
-      } else {
+      if (row > serverNum)
+        blockRow = (int) Math.min(row / serverNum,
+                Math.max(row / maxPartNum, Math.max(1, partSize / range)));
+      else
         blockRow = row;
-      }
     }
 
-    if (blockCol < 0) {
+    if (blockCol < 0)
       blockCol = Math.min(Math.max(100, col / serverNum),
-              Math.max(partSize / blockRow, (long) (row * ((double) col / maxPartNum / blockRow))));
-    }
-
+              Math.max(partSize / blockRow, (long) (row * (range / maxPartNum / blockRow))));
 
     LOG.info("blockRow = " + blockRow + ", blockCol=" + blockCol);
     mContext.setMaxRowNumInBlock(blockRow);
     mContext.setMaxColNumInBlock(blockCol);
-
 
     int startRow;
     int endRow;

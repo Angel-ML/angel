@@ -20,7 +20,6 @@ package com.tencent.angel.spark.ml.online_learning
 
 import java.util
 
-import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
@@ -34,8 +33,10 @@ import com.tencent.angel.ps.storage.partitioner.{ColumnRangePartitioner, Partiti
 import com.tencent.angel.psagent.matrix.MatrixClientFactory
 import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
 import com.tencent.angel.spark.ml.psf.ftrl.ComputeW
+import com.tencent.angel.spark.ml.util.LoadBalancePartitioner
 import com.tencent.angel.spark.models.PSVector
 import com.tencent.angel.spark.models.impl.PSVectorImpl
+import org.apache.spark.rdd.RDD
 
 class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regularSkipFeatIndex: Long = 0) extends Serializable {
 
@@ -44,43 +45,84 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
   var wPS: PSVector = _
   var name = "weights"
 
-  def init(dim: Long, rowType: RowType): Unit = {
+
+  /** Init with `dim` given, the default start index is 0
+    * @param dim
+    */
+  def init(dim: Long): Unit =
+    init(dim, RowType.T_FLOAT_SPARSE_LONGKEY)
+
+  def init(dim: Long, rowType: RowType): Unit =
     init(dim, -1, rowType)
-  }
 
-  def init(dim: Long, nnz: Long, rowType: RowType, partitioner: Partitioner): Unit = {
-    zPS = PSVector.longKeySparse(dim, nnz, 3, rowType,
-      additionalConfiguration = Map(AngelConf.Angel_PS_PARTITION_CLASS -> partitioner.getClass.getName))
-    nPS = PSVector.duplicate(zPS)
-    wPS = PSVector.duplicate(zPS)
-    name = PSContext.instance().getMatrixMeta(zPS.poolId).get.getName
-  }
-
-  def init(dim: Long, nnz: Long, rowType: RowType): Unit = {
+  def init(dim: Long, nnz: Long, rowType: RowType): Unit =
     init(dim, nnz, rowType, new ColumnRangePartitioner())
+
+  /**
+    * Init with dim, nnz, rowType and partitioner
+    * @param dim, the index range is [0, dim) if dim > 0, else [long.min, long.max) is dim=-1
+    * @param nnz, number-of-non-zero elements in model
+    * @param rowType, default is T_FLOAT_SPARSE_LONGKEY
+    * @param partitioner, default is column-range-partitioner
+    */
+  def init(dim: Long, nnz: Long, rowType: RowType, partitioner: Partitioner): Unit = {
+    val ctx = new MatrixContext(name, 3, dim, nnz, -1, -1)
+    ctx.setRowType(rowType)
+    ctx.setPartitionerClass(partitioner.getClass)
+    init(ctx)
   }
 
-  def init(dim: Long): Unit = init(dim, RowType.T_FLOAT_SPARSE_LONGKEY)
-
+  /**
+    * Init with start and end given
+    * @param start, the start index
+    * @param end, the end index range
+    * @param nnz, the number of non-zero element in model
+    * @param rowType, default is T_FLOAT_SPARSE_LONGKEY
+    */
   def init(start: Long, end: Long, nnz: Long, rowType: RowType): Unit = {
     init(start, end, nnz, rowType, new ColumnRangePartitioner())
   }
+
+  def init(start: Long, end: Long): Unit =
+    init(start, end, -1, RowType.T_FLOAT_SPARSE_LONGKEY)
 
   def init(start: Long, end: Long, nnz: Long, rowType: RowType, partitioner: Partitioner): Unit = {
     val ctx = new MatrixContext(name, 3, start, end)
     ctx.setPartitionerClass(partitioner.getClass)
     ctx.setRowType(rowType)
     ctx.setValidIndexNum(nnz)
-    val matId = PSMatrixUtils.createPSMatrix(ctx)
+    init(ctx)
+  }
 
-    zPS = new PSVectorImpl(matId, 0, end, rowType)
-    nPS = new PSVectorImpl(matId, 1, end, rowType)
-    wPS = new PSVectorImpl(matId, 2, end, rowType)
+  /**
+    * Init model with the training data, this method will scan the index distribution in data
+    * and automatically generate partitions with load balance into consideration
+    * @param start, the start index
+    * @param end, the end index
+    * @param rowType, default is T_FLOAT_SPARSE_LONGKEY
+    * @param data, training data
+    * @param partitioner, a load balance partitioner
+    */
+  def init(start: Long, end: Long, rowType: RowType, data: RDD[Vector], partitioner: LoadBalancePartitioner): Unit = {
+    val ctx = new MatrixContext(name, 3, start, end)
+    ctx.setRowType(rowType)
+    partitioner.partitionMatrix(data, ctx)
+    init(ctx)
+  }
+
+  /**
+    * create the model with a matrix-context and init three PSVector
+    * @param ctx
+    */
+  def init(ctx: MatrixContext): Unit = {
+    val matId = PSMatrixUtils.createPSMatrix(ctx)
+    zPS = new PSVectorImpl(matId, 0, ctx.getColNum, ctx.getRowType)
+    nPS = new PSVectorImpl(matId, 1, ctx.getColNum, ctx.getRowType)
+    wPS = new PSVectorImpl(matId, 2, ctx.getColNum, ctx.getRowType)
   }
 
 
   def optimize(batch: Array[LabeledData]): Double = {
-
     var (start, end) = (0L, 0L)
     val indices = batch.flatMap {
       case point =>
