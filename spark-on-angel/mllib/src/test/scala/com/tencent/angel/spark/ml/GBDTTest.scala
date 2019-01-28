@@ -1,15 +1,15 @@
 package com.tencent.angel.spark.ml
 
 import com.tencent.angel.spark.ml.tree.common.TreeConf._
-import com.tencent.angel.spark.ml.tree.gbdt.predictor.FPGBDTPredictor
-import com.tencent.angel.spark.ml.tree.gbdt.trainer.SparkFPGBDTTrainer
+import com.tencent.angel.spark.ml.tree.gbdt.predictor.GBDTPredictor
+import com.tencent.angel.spark.ml.tree.gbdt.trainer.GBDTTrainer
 import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam
 import com.tencent.angel.spark.ml.tree.util.Maths
 import org.apache.hadoop.fs.Path
 
 class GBDTTest extends PSFunSuite with SharedPSContext {
-  private var trainer: SparkFPGBDTTrainer = _
-  private var predictor: FPGBDTPredictor = _
+  private var trainer: GBDTTrainer = _
+  private var predictor: GBDTPredictor = _
   private var trainPath: String = _
   private var testPath: String = _
   private var modelPath: String = _
@@ -61,8 +61,8 @@ class GBDTTest extends PSFunSuite with SharedPSContext {
     param.maxLeafWeight = conf.getDouble(ML_GBDT_MAX_LEAF_WEIGHT, DEFAULT_ML_GBDT_MAX_LEAF_WEIGHT).toFloat
     println(s"Hyper-parameters:\n$param")
 
-    trainer = new SparkFPGBDTTrainer(param)
-    predictor = new FPGBDTPredictor
+    trainer = new GBDTTrainer(param)
+    predictor = new GBDTPredictor
   }
 
   override def afterAll(): Unit = {

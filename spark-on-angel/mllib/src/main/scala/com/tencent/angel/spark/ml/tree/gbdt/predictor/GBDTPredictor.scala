@@ -28,7 +28,7 @@ import org.apache.spark.ml.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 
-class FPGBDTPredictor extends Serializable {
+class GBDTPredictor extends Serializable {
 
   var forest: Seq[GBTTree] = _
 
@@ -37,7 +37,7 @@ class FPGBDTPredictor extends Serializable {
     println(s"Reading model from $modelPath")
   }
 
-  def predict(predictor: FPGBDTPredictor, instances: RDD[Instance]): RDD[(Long, Array[Float])] = {
+  def predict(predictor: GBDTPredictor, instances: RDD[Instance]): RDD[(Long, Array[Float])] = {
     val bcPredictor = instances.sparkContext.broadcast(predictor)
     instances.map { instance =>
       (instance.label.toLong, bcPredictor.value.predictRaw(instance.feature))
@@ -119,9 +119,9 @@ class FPGBDTPredictor extends Serializable {
 
 }
 
-object FPGBDTPredictor {
+object GBDTPredictor {
 
-  def predict(predictor: FPGBDTPredictor, instances: RDD[Vector]): RDD[Array[Float]] = {
+  def predict(predictor: GBDTPredictor, instances: RDD[Vector]): RDD[Array[Float]] = {
     val bcPredictor = instances.sparkContext.broadcast(predictor)
     instances.map(bcPredictor.value.predictRaw)
   }
@@ -134,7 +134,7 @@ object FPGBDTPredictor {
     val validPath = conf.get(ML_VALID_PATH)
     val predictPath = conf.get(ML_PREDICT_PATH)
 
-    val predictor = new FPGBDTPredictor
+    val predictor = new GBDTPredictor
     predictor.loadModel(sc, modelPath)
     predictor.predict(sc, validPath, predictPath)
 

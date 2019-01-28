@@ -40,7 +40,7 @@ import org.apache.spark.{Partitioner, SparkConf, SparkContext, TaskContext}
 import scala.collection.mutable.{ArrayBuilder => AB}
 
 
-object SparkFPGBDTTrainer {
+object GBDTTrainer {
 
   def main(args: Array[String]): Unit = {
     @transient val conf = new SparkConf()
@@ -127,7 +127,7 @@ object SparkFPGBDTTrainer {
     val modelPath = conf.get(ML_MODEL_PATH)
 
     try {
-      val trainer = new SparkFPGBDTTrainer(param)
+      val trainer = new GBDTTrainer(param)
       trainer.initialize(trainPath, validPath)
       val model = trainer.train()
       trainer.save(model, modelPath)
@@ -208,9 +208,9 @@ object SparkFPGBDTTrainer {
   }
 }
 
-import SparkFPGBDTTrainer._
+import GBDTTrainer._
 
-class SparkFPGBDTTrainer(param: GBDTParam) extends Serializable {
+class GBDTTrainer(param: GBDTParam) extends Serializable {
   @transient implicit val sc = SparkContext.getOrCreate()
 
   @transient private[gbdt] var bcFidToGroupId: Broadcast[Array[Int]] = _

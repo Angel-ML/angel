@@ -29,7 +29,7 @@ public class OnlinePredictExample {
     SparkConf conf = new SparkConf().setMaster("local").setAppName("test");
     SparkContext sc = new SparkContext(conf);
     String modelPath = "xxxx";
-    FPGBDTPredictor predictor = new FPGBDTPredictor();
+    GBDTPredictor predictor = new GBDTPredictor();
     predictor.loadModel(sc, modelPath);
     int dim = 47237;
     // predict sparse instance with indices and values
