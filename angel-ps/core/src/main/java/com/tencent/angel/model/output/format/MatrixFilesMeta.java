@@ -21,7 +21,6 @@ package com.tencent.angel.model.output.format;
 import com.tencent.angel.utils.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 import java.io.DataInputStream;
@@ -87,6 +86,9 @@ public class MatrixFilesMeta {
    * Matrix partition meta
    */
   private Map<Integer, MatrixPartitionMeta> partMetas;
+
+  public static final String FEATURE_INDEX_RANGE_START = "feature.index.range.start";
+  public static final String FEATURE_INDEX_RANGE_END = "feature.index.range.start";
 
   /**
    * Create a MatrixFilesMeta
@@ -453,6 +455,46 @@ public class MatrixFilesMeta {
    */
   public MatrixPartitionMeta getPartMeta(int partId) {
     return partMetas.get(partId);
+  }
+
+  /**
+   * Get feature index range start
+   * @return feature index range start
+   */
+  public long getFeatureIndexStart() {
+    if(options.containsKey(FEATURE_INDEX_RANGE_START)) {
+      return Long.valueOf(options.get(FEATURE_INDEX_RANGE_START));
+    } else {
+      return -1;
+    }
+  }
+
+  /**
+   * Get feature index range end
+   * @return feature index range end
+   */
+  public long getFeatureIndexEnd() {
+    if(options.containsKey(FEATURE_INDEX_RANGE_END)) {
+      return Long.valueOf(options.get(FEATURE_INDEX_RANGE_END));
+    } else {
+      return -1;
+    }
+  }
+
+  /**
+   * Set feature index range start
+   * @param start feature index range start
+   */
+  public void setFeatureIndexStart(long start) {
+    options.put(FEATURE_INDEX_RANGE_START, String.valueOf(start));
+  }
+
+  /**
+   * Set feature index range end
+   * @param end feature index range end
+   */
+  public void setFeatureIndexEnd(long end) {
+    options.put(FEATURE_INDEX_RANGE_START, String.valueOf(end));
   }
 
   @Override public String toString() {
