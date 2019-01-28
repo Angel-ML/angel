@@ -1,3 +1,21 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
+
 package com.tencent.angel.spark.ml.tree.gbdt.learner
 
 import com.tencent.angel.spark.ml.tree.data.{Instance, VerticalPartition => VP}
@@ -24,7 +42,7 @@ class SparkFPGBDTTrainer(param: GBDTParam) extends Serializable {
     val valid = DataLoader.loadLibsvmDP(validInput, param.numFeature)
       .repartition(param.numWorker)
       .persist(StorageLevel.MEMORY_AND_DISK)
-    val numTrain = train.map(_.labels.length).reduce(_+_) / param.numWorker
+    val numTrain = train.map(_.labels.length).reduce(_ + _) / param.numWorker
     val numValid = valid.count()
     println(s"load data cost ${System.currentTimeMillis() - loadStart} ms, " +
       s"$numTrain train data, $numValid valid data")
@@ -91,19 +109,19 @@ class SparkFPGBDTTrainer(param: GBDTParam) extends Serializable {
 
     val bcParam = sc.broadcast(param)
     val workers = trainData.zipPartitions(valid)(
-        (trainIter, validIter) => {
-          val learnerId = TaskContext.getPartitionId
-          val valid = validIter.toArray
-          val trainData = trainIter.toArray
-          val trainLabels = bcLabels.value
-          val validData = valid.map(_.feature)
-          val validLabels = valid.map(_.label.toFloat)
-          Instance.ensureLabel(validLabels, bcParam.value.numClass)
-          val worker = new FPGBDTLearner(learnerId, bcParam.value, bcFeatureInfo.value,
-            null, trainLabels, validData, validLabels)
-          Iterator(worker)
-        }
-      ).cache()
+      (trainIter, validIter) => {
+        val learnerId = TaskContext.getPartitionId
+        val valid = validIter.toArray
+        val trainData = trainIter.toArray
+        val trainLabels = bcLabels.value
+        val validData = valid.map(_.feature)
+        val validLabels = valid.map(_.label.toFloat)
+        Instance.ensureLabel(validLabels, bcParam.value.numClass)
+        val worker = new FPGBDTLearner(learnerId, bcParam.value, bcFeatureInfo.value,
+          null, trainLabels, validData, validLabels)
+        Iterator(worker)
+      }
+    ).cache()
     workers.foreach(worker =>
       println(s"Worker[${worker.learnerId}] initialization done. " +
         s"Hyper-parameters:\n$param")

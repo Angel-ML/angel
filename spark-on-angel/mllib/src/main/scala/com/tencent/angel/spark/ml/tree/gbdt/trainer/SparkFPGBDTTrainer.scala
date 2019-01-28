@@ -93,32 +93,32 @@ object SparkFPGBDTTrainer {
     param.maxLeafWeight = conf.getDouble(ML_GBDT_MAX_LEAF_WEIGHT, 0).toFloat
 
     // dataset conf
-//    param.numClass = angelConf.getInt(MLConf.ML_NUM_CLASS, MLConf.DEFAULT_ML_NUM_CLASS)
-//    param.numFeature = angelConf.get(MLConf.ML_FEATURE_INDEX_RANGE).toInt
+    //    param.numClass = angelConf.getInt(MLConf.ML_NUM_CLASS, MLConf.DEFAULT_ML_NUM_CLASS)
+    //    param.numFeature = angelConf.get(MLConf.ML_FEATURE_INDEX_RANGE).toInt
 
     // loss and metric
-//    param.lossFunc = angelConf.get(MLConf.ML_GBDT_LOSS_FUNCTION).toString
-//    param.evalMetrics = angelConf.getString(MLConf.ML_GBDT_EVAL_METRIC, MLConf.DEFAULT_ML_GBDT_EVAL_METRIC).split(",").map(_.trim).filter(_.nonEmpty)
+    //    param.lossFunc = angelConf.get(MLConf.ML_GBDT_LOSS_FUNCTION).toString
+    //    param.evalMetrics = angelConf.getString(MLConf.ML_GBDT_EVAL_METRIC, MLConf.DEFAULT_ML_GBDT_EVAL_METRIC).split(",").map(_.trim).filter(_.nonEmpty)
 
     // major algo conf
-//    param.featSampleRatio = angelConf.getDouble(MLConf.ML_GBDT_FEATURE_SAMPLE_RATIO, MLConf.DEFAULT_ML_GBDT_FEATURE_SAMPLE_RATIO).toFloat
-//    param.learningRate = angelConf.getDouble(MLConf.ML_LEARN_RATE, MLConf.DEFAULT_ML_LEARN_RATE).toFloat
-//    param.numSplit = angelConf.getInt(MLConf.ML_GBDT_SPLIT_NUM, MLConf.DEFAULT_ML_GBDT_SPLIT_NUM)
-//    param.numTree = angelConf.getInt(MLConf.ML_GBDT_TREE_NUM, MLConf.DEFAULT_ML_GBDT_TREE_NUM)
-//    param.maxDepth = angelConf.getInt(MLConf.ML_GBDT_TREE_DEPTH, MLConf.DEFAULT_ML_GBDT_TREE_DEPTH)
-//    val maxNodeNum = Maths.pow(2, param.maxDepth + 1) - 1
-//    param.maxNodeNum = angelConf.getInt(MLConf.ML_GBDT_MAX_NODE_NUM, maxNodeNum) min maxNodeNum
+    //    param.featSampleRatio = angelConf.getDouble(MLConf.ML_GBDT_FEATURE_SAMPLE_RATIO, MLConf.DEFAULT_ML_GBDT_FEATURE_SAMPLE_RATIO).toFloat
+    //    param.learningRate = angelConf.getDouble(MLConf.ML_LEARN_RATE, MLConf.DEFAULT_ML_LEARN_RATE).toFloat
+    //    param.numSplit = angelConf.getInt(MLConf.ML_GBDT_SPLIT_NUM, MLConf.DEFAULT_ML_GBDT_SPLIT_NUM)
+    //    param.numTree = angelConf.getInt(MLConf.ML_GBDT_TREE_NUM, MLConf.DEFAULT_ML_GBDT_TREE_NUM)
+    //    param.maxDepth = angelConf.getInt(MLConf.ML_GBDT_TREE_DEPTH, MLConf.DEFAULT_ML_GBDT_TREE_DEPTH)
+    //    val maxNodeNum = Maths.pow(2, param.maxDepth + 1) - 1
+    //    param.maxNodeNum = angelConf.getInt(MLConf.ML_GBDT_MAX_NODE_NUM, maxNodeNum) min maxNodeNum
 
     // less important algo conf
-//    param.histSubtraction = angelConf.getBoolean(MLConf.ML_GBDT_HIST_SUBTRACTION, MLConf.DEFAULT_ML_GBDT_HIST_SUBTRACTION)
-//    param.lighterChildFirst = angelConf.getBoolean(MLConf.ML_GBDT_LIGHTER_CHILD_FIRST, MLConf.DEFAULT_ML_GBDT_LIGHTER_CHILD_FIRST)
-//    param.fullHessian = angelConf.getBoolean(MLConf.ML_GBDT_FULL_HESSIAN, MLConf.DEFAULT_ML_GBDT_FULL_HESSIAN)
-//    param.minChildWeight = angelConf.getDouble(MLConf.ML_GBDT_MIN_CHILD_WEIGHT, MLConf.DEFAULT_ML_GBDT_MIN_CHILD_WEIGHT).toFloat
-//    param.minNodeInstance = angelConf.getInt(MLConf.ML_GBDT_MIN_NODE_INSTANCE, MLConf.DEFAULT_ML_GBDT_MIN_NODE_INSTANCE)
-//    param.minSplitGain = angelConf.getDouble(MLConf.ML_GBDT_MIN_SPLIT_GAIN, MLConf.DEFAULT_ML_GBDT_MIN_SPLIT_GAIN).toFloat
-//    param.regAlpha = angelConf.getDouble(MLConf.ML_GBDT_REG_ALPHA, MLConf.DEFAULT_ML_GBDT_REG_ALPHA).toFloat
-//    param.regLambda = angelConf.getDouble(MLConf.ML_GBDT_REG_LAMBDA, MLConf.DEFAULT_ML_GBDT_REG_LAMBDA).toFloat max 1.0f
-//    param.maxLeafWeight = angelConf.getDouble(MLConf.ML_GBDT_MAX_LEAF_WEIGHT, MLConf.DEFAULT_ML_GBDT_MAX_LEAF_WEIGHT).toFloat
+    //    param.histSubtraction = angelConf.getBoolean(MLConf.ML_GBDT_HIST_SUBTRACTION, MLConf.DEFAULT_ML_GBDT_HIST_SUBTRACTION)
+    //    param.lighterChildFirst = angelConf.getBoolean(MLConf.ML_GBDT_LIGHTER_CHILD_FIRST, MLConf.DEFAULT_ML_GBDT_LIGHTER_CHILD_FIRST)
+    //    param.fullHessian = angelConf.getBoolean(MLConf.ML_GBDT_FULL_HESSIAN, MLConf.DEFAULT_ML_GBDT_FULL_HESSIAN)
+    //    param.minChildWeight = angelConf.getDouble(MLConf.ML_GBDT_MIN_CHILD_WEIGHT, MLConf.DEFAULT_ML_GBDT_MIN_CHILD_WEIGHT).toFloat
+    //    param.minNodeInstance = angelConf.getInt(MLConf.ML_GBDT_MIN_NODE_INSTANCE, MLConf.DEFAULT_ML_GBDT_MIN_NODE_INSTANCE)
+    //    param.minSplitGain = angelConf.getDouble(MLConf.ML_GBDT_MIN_SPLIT_GAIN, MLConf.DEFAULT_ML_GBDT_MIN_SPLIT_GAIN).toFloat
+    //    param.regAlpha = angelConf.getDouble(MLConf.ML_GBDT_REG_ALPHA, MLConf.DEFAULT_ML_GBDT_REG_ALPHA).toFloat
+    //    param.regLambda = angelConf.getDouble(MLConf.ML_GBDT_REG_LAMBDA, MLConf.DEFAULT_ML_GBDT_REG_LAMBDA).toFloat max 1.0f
+    //    param.maxLeafWeight = angelConf.getDouble(MLConf.ML_GBDT_MAX_LEAF_WEIGHT, MLConf.DEFAULT_ML_GBDT_MAX_LEAF_WEIGHT).toFloat
 
     println(s"Hyper-parameters:\n$param")
 
@@ -209,6 +209,7 @@ object SparkFPGBDTTrainer {
 }
 
 import SparkFPGBDTTrainer._
+
 class SparkFPGBDTTrainer(param: GBDTParam) extends Serializable {
   @transient implicit val sc = SparkContext.getOrCreate()
 

@@ -1,3 +1,21 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
+
 package com.tencent.angel.spark.ml.tree.gbdt.learner
 
 import java.{util => ju}
@@ -176,20 +194,20 @@ class FPGBDTLearner(val learnerId: Int,
           val parNid = Maths.parent(nid)
           val parHist = storedHists(parNid)
           if (curSize < sibSize) {
-            timing{
+            timing {
               storedHists(nid) = histBuilder.buildHistogramsFP(
                 isFeatUsed, featLo, trainData, featureInfo, dataInfo,
                 nid, sumGradPairs(cur), parHist
               )
               storedHists(sibNid) = parHist
-            } {t => buildHistTime(nid) = t}
-//            timing(storedHists(nid) = histBuilder.buildHistogramsFP(
-//              isFeatUsed, featLo, trainData, featureInfo, dataInfo,
-//              nid, sumGradPairs(cur)
-//            )) {t => buildHistTime(nid) = t}
-//            timing(storedHists(sibNid) = histBuilder.histSubtraction(
-//              parHist, storedHists(nid), true
-//            )) {t => histSubtractTime(sibNid) = t}
+            } { t => buildHistTime(nid) = t }
+            //            timing(storedHists(nid) = histBuilder.buildHistogramsFP(
+            //              isFeatUsed, featLo, trainData, featureInfo, dataInfo,
+            //              nid, sumGradPairs(cur)
+            //            )) {t => buildHistTime(nid) = t}
+            //            timing(storedHists(sibNid) = histBuilder.histSubtraction(
+            //              parHist, storedHists(nid), true
+            //            )) {t => histSubtractTime(sibNid) = t}
           } else {
             timing {
               storedHists(sibNid) = histBuilder.buildHistogramsFP(
@@ -197,14 +215,14 @@ class FPGBDTLearner(val learnerId: Int,
                 sibNid, sumGradPairs(cur + 1), parHist
               )
               storedHists(nid) = parHist
-            } {t => buildHistTime(sibNid) = t}
-//            timing(storedHists(sibNid) = histBuilder.buildHistogramsFP(
-//              isFeatUsed, featLo, trainData, featureInfo, dataInfo,
-//              sibNid, sumGradPairs(cur + 1)
-//            )) {t => histSubtractTime(sibNid) = t}
-//            timing(storedHists(nid) = histBuilder.histSubtraction(
-//              parHist, storedHists(sibNid), true
-//            )) {t => buildHistTime(nid) = t}
+            } { t => buildHistTime(sibNid) = t }
+            //            timing(storedHists(sibNid) = histBuilder.buildHistogramsFP(
+            //              isFeatUsed, featLo, trainData, featureInfo, dataInfo,
+            //              sibNid, sumGradPairs(cur + 1)
+            //            )) {t => histSubtractTime(sibNid) = t}
+            //            timing(storedHists(nid) = histBuilder.histSubtraction(
+            //              parHist, storedHists(sibNid), true
+            //            )) {t => buildHistTime(nid) = t}
           }
           storedHists(parNid) = null
         }
@@ -214,7 +232,7 @@ class FPGBDTLearner(val learnerId: Int,
           timing(storedHists(nid) = histBuilder.buildHistogramsFP(
             isFeatUsed, featLo, trainData, featureInfo, dataInfo,
             nid, sumGradPairs(cur), null
-          )) {t => buildHistTime(nid) = t}
+          )) { t => buildHistTime(nid) = t }
         }
         cur += 1
       }
@@ -235,7 +253,7 @@ class FPGBDTLearner(val learnerId: Int,
           (nid, split)
         } else {
           (nid, new GBTSplit)
-        }) {t => findSplitTime(nid) = t}
+        }) { t => findSplitTime(nid) = t }
     }.filter(_._2.isValid(param.minSplitGain))
     println(s"Find splits cost ${System.currentTimeMillis() - findStart} ms")
     res
@@ -247,7 +265,7 @@ class FPGBDTLearner(val learnerId: Int,
     val splitFid = splitEntry.getFid
     if (featLo <= splitFid && splitFid < featHi) {
       val splits = featureInfo.getSplits(splitFid)
-      timing(dataInfo.getSplitResult(nid, splitEntry, splits, trainData)) {t => getSplitResultTime(nid) = t}
+      timing(dataInfo.getSplitResult(nid, splitEntry, splits, trainData)) { t => getSplitResultTime(nid) = t }
     } else {
       null
     }
@@ -255,33 +273,34 @@ class FPGBDTLearner(val learnerId: Int,
 
   def splitNode(nid: Int, splitResult: RangeBitSet, split: GBTSplit = null): Unit = {
     timing {
-    dataInfo.updatePos(nid, splitResult)
-    val tree = forest.last
-    val node = tree.getNode(nid)
-    val leftChild = new GBTNode(2 * nid + 1, node, param.numClass)
-    val rightChild = new GBTNode(2 * nid + 2, node, param.numClass)
-    node.setLeftChild(leftChild)
-    node.setRightChild(rightChild)
-    tree.setNode(2 * nid + 1, leftChild)
-    tree.setNode(2 * nid + 2, rightChild)
-    if (split == null) {
-      val leftSize = dataInfo.getNodeSize(2 * nid + 1)
-      val rightSize = dataInfo.getNodeSize(2 * nid + 2)
-      if (leftSize < rightSize) {
-        val leftSumGradPair = dataInfo.sumGradPair(2 * nid + 1)
-        val rightSumGradPair = node.getSumGradPair.subtract(leftSumGradPair)
-        leftChild.setSumGradPair(leftSumGradPair)
-        rightChild.setSumGradPair(rightSumGradPair)
+      dataInfo.updatePos(nid, splitResult)
+      val tree = forest.last
+      val node = tree.getNode(nid)
+      val leftChild = new GBTNode(2 * nid + 1, node, param.numClass)
+      val rightChild = new GBTNode(2 * nid + 2, node, param.numClass)
+      node.setLeftChild(leftChild)
+      node.setRightChild(rightChild)
+      tree.setNode(2 * nid + 1, leftChild)
+      tree.setNode(2 * nid + 2, rightChild)
+      if (split == null) {
+        val leftSize = dataInfo.getNodeSize(2 * nid + 1)
+        val rightSize = dataInfo.getNodeSize(2 * nid + 2)
+        if (leftSize < rightSize) {
+          val leftSumGradPair = dataInfo.sumGradPair(2 * nid + 1)
+          val rightSumGradPair = node.getSumGradPair.subtract(leftSumGradPair)
+          leftChild.setSumGradPair(leftSumGradPair)
+          rightChild.setSumGradPair(rightSumGradPair)
+        } else {
+          val rightSumGradPair = dataInfo.sumGradPair(2 * nid + 2)
+          val leftSumGradPair = node.getSumGradPair.subtract(rightSumGradPair)
+          leftChild.setSumGradPair(leftSumGradPair)
+          rightChild.setSumGradPair(rightSumGradPair)
+        }
       } else {
-        val rightSumGradPair = dataInfo.sumGradPair(2 * nid + 2)
-        val leftSumGradPair = node.getSumGradPair.subtract(rightSumGradPair)
-        leftChild.setSumGradPair(leftSumGradPair)
-        rightChild.setSumGradPair(rightSumGradPair)
+        leftChild.setSumGradPair(split.getLeftGradPair)
+        rightChild.setSumGradPair(split.getRightGradPair)
       }
-    } else {
-      leftChild.setSumGradPair(split.getLeftGradPair)
-      rightChild.setSumGradPair(split.getRightGradPair)
-    }} {t => splitNodeTime(nid) = t}
+    } { t => splitNodeTime(nid) = t }
   }
 
   def canSplitNode(node: GBTNode): Boolean = {

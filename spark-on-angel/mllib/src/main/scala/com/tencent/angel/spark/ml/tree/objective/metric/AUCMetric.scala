@@ -1,3 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.spark.ml.tree.objective.metric
 
 import com.tencent.angel.spark.ml.tree.exception.GBDTException
@@ -54,7 +71,7 @@ object AUCMetric {
   def main(args: Array[String]): Unit = {
     val num = 10000000
     val labels: Array[Float] = Array.fill(num)(if (Random.nextDouble().toFloat > 0.5) 1 else 0)
-    val preds: Array[Float] = labels.map{ label =>
+    val preds: Array[Float] = labels.map { label =>
       if (Random.nextDouble() > 0.2) label else (1 - label)
     }
     val auc = AUCMetric().eval(preds, labels)

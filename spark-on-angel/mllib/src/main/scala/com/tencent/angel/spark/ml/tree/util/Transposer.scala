@@ -1,3 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.spark.ml.tree.util
 
 import com.tencent.angel.spark.ml.tree.common.TreeConf._
@@ -51,14 +68,14 @@ object Transposer {
     val validRatio = conf.getDouble(ML_VALID_DATA_RATIO, DEFAULT_ML_VALID_DATA_RATIO)
     val oriTrainData = loadData(input, validRatio)
 
-    val numKV = oriTrainData.map(ins => ins.feature.numActives).reduce(_+_)
+    val numKV = oriTrainData.map(ins => ins.feature.numActives).reduce(_ + _)
 
     val res = transpose(oriTrainData)
 
     val numKV2 = res._1.map {
       case Some(row) => row.size
       case None => 0
-    }.reduce(_+_)
+    }.reduce(_ + _)
     println(s"#KV pairs: $numKV vs. $numKV2")
   }
 
@@ -290,7 +307,7 @@ class Transposer {
       Iterator((partId, partLabelsArr))
     }).collect()
     val (numInstances, partInsIdOffset) = {
-      val tmp = partLabels.map(_._2.length).scanLeft(0)(_+_)
+      val tmp = partLabels.map(_._2.length).scanLeft(0)(_ + _)
       (tmp.last, tmp.slice(0, oriNumPart))
     }
     val labels = new Array[Float](numInstances)
@@ -462,7 +479,7 @@ class Transposer {
       }, preservesPartitioning = true)
     // 3.3. collect candidate splits for all features
     val splits = new Array[Array[Float]](numFeature)
-    splitsRdd.collect().foreach{case (fid, fsplits) => splits(fid) = fsplits}
+    splitsRdd.collect().foreach { case (fid, fsplits) => splits(fid) = fsplits }
     // 3.4. feature info
     val featureInfo = FeatureInfo(numFeature, splits)
     val bcFeatureInfo = sc.broadcast(featureInfo)
@@ -488,12 +505,12 @@ class Transposer {
       val mediumFeatRows = new ArrayBuffer[(Int, Option[(Array[Int], Array[Byte])])](numFeature)
       for (fid <- 0 until numFeature) {
         val mediumFeatRow = if (insIdLists(fid).size() > 0) {
-            val featIndices = insIdLists(fid).toIntArray(null)
-            val featBins = binIdLists(fid).toByteArray(null)
-            (fid, Option((featIndices, featBins)))
-          } else {
-            (fid, Option.empty)
-          }
+          val featIndices = insIdLists(fid).toIntArray(null)
+          val featBins = binIdLists(fid).toByteArray(null)
+          (fid, Option((featIndices, featBins)))
+        } else {
+          (fid, Option.empty)
+        }
         mediumFeatRows += mediumFeatRow
       }
       mediumFeatRows.iterator

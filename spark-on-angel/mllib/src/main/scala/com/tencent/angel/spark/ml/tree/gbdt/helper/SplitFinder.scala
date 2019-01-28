@@ -1,3 +1,21 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
+
 package com.tencent.angel.spark.ml.tree.gbdt.helper
 
 import com.tencent.angel.spark.ml.tree.gbdt.histogram.{BinaryGradPair, GradPair, Histogram, MultiGradPair}
@@ -89,7 +107,7 @@ object SplitFinder {
     val numBin = histogram.getNumBin
     for (binId <- 0 until numBin) {
       if (binId != defaultBin) { // skip default bin
-        histogram.put(binId, binGradPair)  // re-use
+        histogram.put(binId, binGradPair) // re-use
         val flowTo = binFlowTo(leftStat, binGradPair)
         if (flowTo == 0) leftStat.plusBy(binGradPair)
         if (firstFlow == -1) {
@@ -103,7 +121,7 @@ object SplitFinder {
       }
     }
     // 3. create split set
-    if (edges.size > 1 || curFlow != 0) {  // whether all bins go the left
+    if (edges.size > 1 || curFlow != 0) { // whether all bins go the left
       val rightStat = sumGradPair.subtract(leftStat)
       if (leftStat.satisfyWeight(param) && rightStat.satisfyWeight(param)) {
         val lossChg = leftStat.calcGain(param) + rightStat.calcGain(param) - nodeGain - param.regLambda

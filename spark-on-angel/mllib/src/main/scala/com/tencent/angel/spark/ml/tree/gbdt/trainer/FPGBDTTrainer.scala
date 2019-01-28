@@ -42,7 +42,7 @@ import scala.util.Random
 class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
                     @transient private[gbdt] val featureInfo: FeatureInfo,
                     @transient private[gbdt] val trainData: Dataset[Int, Int],
-                    @transient private[gbdt] val  labels: Array[Float],
+                    @transient private[gbdt] val labels: Array[Float],
                     @transient private[gbdt] val validData: Array[Vector],
                     @transient private[gbdt] val validLabels: Array[Float]) extends Serializable {
   private[gbdt] val forest = ArrayBuffer[GBTTree]()
@@ -214,7 +214,7 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
       } else {
         histManager.buildHistForNodes(toBuild, trainData, instanceInfo, toSubtract, threadPool)
       }
-    } {t => buildHistTime(nids.min) = t}
+    } { t => buildHistTime(nids.min) = t }
     println(s"Build histograms cost ${System.currentTimeMillis() - buildStart} ms")
 
     val findStart = System.currentTimeMillis()
@@ -225,15 +225,15 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
         val nodeGain = forest.last.getNode(nid).calcGain(param)
         val split = timing {
           splitFinder.findBestSplit(hist, sumGradPair, nodeGain)
-        } {t => findSplitTime(nid) = t}
+        } { t => findSplitTime(nid) = t }
         (nid, if (split.isValid(param.minSplitGain)) split else new GBTSplit())
       case (nid, false) =>
         setAsLeaf(nid)
         (nid, new GBTSplit())
     }.filter(_._2.isValid(param.minSplitGain))
     println(s"Find splits cost ${System.currentTimeMillis() - findStart} ms")
-    res.foreach{ case (nid, split) =>
-        println(s"node[$nid] split ${split.getSplitEntry.toString}")
+    res.foreach { case (nid, split) =>
+      println(s"node[$nid] split ${split.getSplitEntry.toString}")
     }
     res
   }
@@ -260,7 +260,7 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
       tree.setNode(2 * nid + 2, rightChild)
       leftChild.setSumGradPair(childrenGradPairs._1)
       rightChild.setSumGradPair(childrenGradPairs._2)
-    } {t => splitNodeTime(nid) = t}
+    } { t => splitNodeTime(nid) = t }
   }
 
   def canSplitNode(nid: Int): Boolean = {
@@ -289,7 +289,7 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
       val weights = node.calcWeights(param)
       instanceInfo.updatePreds(nid, weights, param.learningRate)
     }
-    if (nid < Maths.pow(2, param.maxDepth) - 1)  // node not on the last level
+    if (nid < Maths.pow(2, param.maxDepth) - 1) // node not on the last level
       histManager.removeNodeHist(nid)
   }
 

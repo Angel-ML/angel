@@ -1,3 +1,21 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
+
 package com.tencent.angel.spark.ml.tree.gbdt
 
 import com.tencent.angel.spark.ml.tree.gbdt.GBDTPhase.GBDTPhase
@@ -237,13 +255,13 @@ class GBDTTrainer(@transient val param: GBDTParam) extends Serializable {
       val mediumFeatRows = new ArrayBuffer[(Int, Option[(Array[Int], Array[Byte])])](numFeature)
       for (fid <- 0 until numFeature) {
         val mediumFeatRow =
-        if (insIdLists(fid).size() > 0) {
-          val featIndices = insIdLists(fid).toIntArray(null)
-          val featBins = binIdLists(fid).toByteArray(null)
-          (fid, Option((featIndices, featBins)))
-        } else {
-           (fid, Option.empty)
-        }
+          if (insIdLists(fid).size() > 0) {
+            val featIndices = insIdLists(fid).toIntArray(null)
+            val featBins = binIdLists(fid).toByteArray(null)
+            (fid, Option((featIndices, featBins)))
+          } else {
+            (fid, Option.empty)
+          }
         mediumFeatRows += mediumFeatRow
       }
       println(s"Truncate cost ${System.currentTimeMillis() - truncateStart} ms")
@@ -622,7 +640,8 @@ class GBDTTrainer(@transient val param: GBDTParam) extends Serializable {
     println("------Find split------")
     val startTime = System.currentTimeMillis()
     // TODO: Two Side One Pass Split Finding
-    toFind.foreach(findSplit); toFind.clear()
+    toFind.foreach(findSplit);
+    toFind.clear()
     phase = GBDTPhase.SPLIT_NODE
     println(s"Find split cost ${System.currentTimeMillis - startTime} ms")
   }
@@ -667,7 +686,9 @@ class GBDTTrainer(@transient val param: GBDTParam) extends Serializable {
         if (res != null) Seq(res).iterator else Seq.empty.iterator
       } else
         Seq(localBest).iterator
-    }).reduce((s1, s2) => {s1.update(s2); s1})
+    }).reduce((s1, s2) => {
+      s1.update(s2); s1
+    })
     println(s"Find best split for node[$nid] cost ${System.currentTimeMillis() - startTime} ms, " +
       s"global best split: ${globalBest.getSplitEntry}")
     toSplit += nid -> globalBest
@@ -695,7 +716,9 @@ class GBDTTrainer(@transient val param: GBDTParam) extends Serializable {
       splitNode(bestNid)
       toSplit -= bestNid
     }
-    leaves.foreach(leaf => { setNodeAsLeaf(leaf); toSplit -= leaf })
+    leaves.foreach(leaf => {
+      setNodeAsLeaf(leaf); toSplit -= leaf
+    })
     phase = GBDTPhase.CHECK_STATUS
     println(s"Split node cost ${System.currentTimeMillis - startTime} ms")
   }
@@ -813,10 +836,14 @@ class GBDTTrainer(@transient val param: GBDTParam) extends Serializable {
 
   def finishTree(): Unit = {
     // 1. set all pending nodes as leaf
-    toBuild.foreach(node => setNodeAsLeaf(node._1)); toBuild.clear()
-    toFind.foreach(node => setNodeAsLeaf(node)); toFind.clear()
-    toSplit.foreach(node => setNodeAsLeaf(node._1)); toSplit.clear()
-    partitions.foreach(partition => GBDTTrainer.nodeHists(partition._1).clear()); storedNodeHists.clear()
+    toBuild.foreach(node => setNodeAsLeaf(node._1));
+    toBuild.clear()
+    toFind.foreach(node => setNodeAsLeaf(node));
+    toFind.clear()
+    toSplit.foreach(node => setNodeAsLeaf(node._1));
+    toSplit.clear()
+    partitions.foreach(partition => GBDTTrainer.nodeHists(partition._1).clear());
+    storedNodeHists.clear()
     storedNodeHists.clear()
     // 2. evaluation on train data
     val bcLabels = this.bcLabels

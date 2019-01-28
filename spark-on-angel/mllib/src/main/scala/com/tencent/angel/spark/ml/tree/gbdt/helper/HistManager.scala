@@ -1,3 +1,21 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
+
 package com.tencent.angel.spark.ml.tree.gbdt.helper
 
 import java.util.concurrent.{Callable, ExecutorService, Future}
@@ -119,7 +137,7 @@ object HistManager {
   }
 
   private def allocNodeHist(param: GBDTParam, featureInfo: FeatureInfo,
-                            isFeatUsed : Array[Boolean]): NodeHist = {
+                            isFeatUsed: Array[Boolean]): NodeHist = {
     val numFeat = featureInfo.numFeature
     val histograms = Array.ofDim[Histogram](numFeat)
     for (fid <- 0 until numFeat) {
@@ -135,8 +153,9 @@ object HistManager {
 }
 
 import HistManager._
+
 class HistManager(param: GBDTParam, featureInfo: FeatureInfo) {
-  private[gbdt] var isFeatUsed : Array[Boolean] = _
+  private[gbdt] var isFeatUsed: Array[Boolean] = _
   private[gbdt] val nodeGradPairs = new Array[GradPair](Maths.pow(2, param.maxDepth + 1) - 1)
   private[gbdt] var nodeHists = new Array[NodeHist](Maths.pow(2, param.maxDepth) - 1)
   private[gbdt] var histStore = new Array[NodeHist](Maths.pow(2, param.maxDepth) - 1)
@@ -264,7 +283,7 @@ class HistManager(param: GBDTParam, featureInfo: FeatureInfo) {
 
   def setNodeHist(nid: Int, nodeHist: NodeHist): Unit = nodeHists(nid) = nodeHist
 
-  def removeNodeHist(nid: Int, sync: Boolean = false): Unit  = {
+  def removeNodeHist(nid: Int, sync: Boolean = false): Unit = {
     val nodeHist = nodeHists(nid)
     if (nodeHist != null) {
       nodeHists(nid) = null
