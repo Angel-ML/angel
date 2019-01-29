@@ -202,11 +202,9 @@ public class MatrixContext implements Serializable {
    * Create a new MatrixContext, this method cannot call by users since colnum/ (start, end)
    * cannot be set simultaneously.
    */
-  private MatrixContext(String name, int rowNum, long colNum, long indexStart, long indexEnd,
+  public MatrixContext(String name, int rowNum, long colNum, long indexStart, long indexEnd,
                         long validIndexNum, int maxRowNumInBlock, long maxColNumInBlock,
                         List<PartContext> parts, RowType rowType) {
-    this.name = name;
-    this.rowNum = rowNum;
 
     // If col == -1 and start/end not set
     if (colNum == -1 && indexEnd <= indexStart) {
@@ -218,23 +216,29 @@ public class MatrixContext implements Serializable {
         indexStart = Long.MIN_VALUE;
         indexEnd = Long.MAX_VALUE;
       }
-    } else if (colNum == -1) {
+    } else if (colNum == -1 && indexEnd > indexStart) {
       // start/end set
       // for dense type, we need to set the colNum to set dim for vectors
       if (rowType.isIntKey())
         colNum = indexEnd - indexStart;
-    } else if (colNum > 0) {
-      // colNum set
+    } else if (colNum > 0 && indexEnd <= indexStart) {
+      // colNum set, start/end not set
       indexStart = 0;
       indexEnd = colNum;
-    } else {
-      throw new AngelException("colNum " + colNum + " is invalid");
+    } else if (colNum > 0 && indexEnd > indexStart) {
+      // both set, check its valid
+      assert (colNum == indexEnd - indexStart);
     }
 
     if (colNum == -1 && rowType.isLongKey() && rowType.isDense())
       throw new AngelException("matrix " + name + " is dense and with longkey, might cost a lot of memory. " +
               "Please considering to configure with sparse row type, like (T_FLOAT_SPARSE_LONGKEY)");
 
+    LOG.info("Matrix context " + name + " row=" + rowNum +
+            " col=" + colNum + " start=" + indexStart + " end=" + indexEnd);
+
+    this.name = name;
+    this.rowNum = rowNum;
     this.colNum = colNum;
     this.indexStart = indexStart;
     this.indexEnd = indexEnd;

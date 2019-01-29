@@ -1,13 +1,14 @@
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.math2.vector.{LongDummyVector, LongFloatVector}
+import com.tencent.angel.ml.math2.vector.LongFloatVector
 import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.core.metric.AUC
 import com.tencent.angel.spark.ml.online_learning.FTRL
-import com.tencent.angel.spark.ml.util.{DataLoader, SparkUtils}
+import com.tencent.angel.spark.ml.util.{DataLoader, LoadBalancePartitioner, SparkUtils}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -53,13 +54,14 @@ object FTRLExample {
 
     val max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.max).max()
     val min = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.min).min()
-    val nnz = data.flatMap(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.distinct).map(f => (f, 1))
-        .reduceByKey(_ + _).count()
 
-    println(s"num examples = ${size} min_index=$min max_index=$max dim=$nnz")
+    println(s"num examples = ${size} min_index=$min max_index=$max")
 
     val opt = new FTRL(lambda1, lambda2, alpha, beta)
-    opt.init(min, max + 1, nnz, RowType.T_FLOAT_SPARSE_LONGKEY)
+//    opt.init(min, max + 1, RowType.T_FLOAT_SPARSE_LONGKEY,
+//      data.map(f => f.getX),
+//      new LoadBalancePartitioner(16, 50))
+    opt.init(min, max+1, -1, RowType.T_FLOAT_SPARSE_LONGKEY, new ColumnRangePartitioner())
 
     if (modelPath.length > 0)
       opt.load(modelPath + "/back")
@@ -76,7 +78,7 @@ object FTRLExample {
       val scores = data.sample(false, 0.01, 42).mapPartitions {
         case iterator =>
           iterator.sliding(batchSize, batchSize)
-              .flatMap(f => opt.predict(f.toArray))
+            .flatMap(f => opt.predict(f.toArray))
       }
       val auc = new AUC().calculate(scores)
 

@@ -42,14 +42,14 @@ object FTRLExample {
     val batchSize = params.getOrElse("batchSize", "100").toInt
     val partNum = params.getOrElse("partNum", "10").toInt
     val numEpoch = params.getOrElse("numEpoch", "3").toInt
-    val modelPath = params.getOrElse("output", "")
+      val modelPath = params.getOrElse("output", "")
 
     val opt = new FTRL(lambda1, lambda2, alpha, beta)
-    opt.init(dim, RowType.T_DOUBLE_SPARSE_LONGKEY)
+    opt.init(dim, RowType.T_FLOAT_SPARSE_LONGKEY)
 
     val sc = SparkContext.getOrCreate()
     val data = sc.textFile(input).repartition(partNum)
-      .map(s => (DataLoader.parseLongDouble(s, dim), DataLoader.parseLabel(s, false)))
+      .map(s => (DataLoader.parseLongFloat(s, dim), DataLoader.parseLabel(s, false)))
       .map {
         f =>
           f._1.setY(f._2)

@@ -33,7 +33,7 @@ import com.tencent.angel.ps.storage.partitioner.{ColumnRangePartitioner, Partiti
 import com.tencent.angel.psagent.matrix.MatrixClientFactory
 import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
 import com.tencent.angel.spark.ml.psf.ftrl.ComputeW
-import com.tencent.angel.spark.ml.util.LoadBalancePartitioner
+import com.tencent.angel.spark.ml.util.AutoPartitioner
 import com.tencent.angel.spark.models.PSVector
 import com.tencent.angel.spark.models.impl.PSVectorImpl
 import org.apache.spark.rdd.RDD
@@ -103,10 +103,10 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     * @param data, training data
     * @param partitioner, a load balance partitioner
     */
-  def init(start: Long, end: Long, rowType: RowType, data: RDD[Vector], partitioner: LoadBalancePartitioner): Unit = {
+  def init(start: Long, end: Long, rowType: RowType, data: RDD[Vector], partitioner: AutoPartitioner): Unit = {
     val ctx = new MatrixContext(name, 3, start, end)
     ctx.setRowType(rowType)
-    partitioner.partitionMatrix(data, ctx)
+    partitioner.partition(data, ctx)
     init(ctx)
   }
 
@@ -153,6 +153,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
 
     val iter = batch.iterator
     var lossSum = 0.0
+
     while (iter.hasNext) {
       val point = iter.next()
       val (feature, label) = (point.getX, point.getY)
@@ -167,20 +168,28 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
           feature.mul(multiplier)
       }
 
-      val featureIndices = feature match {
-        case longV: LongDoubleVector => longV.getStorage.getIndices
-        case longV: LongFloatVector => longV.getStorage.getIndices
-        case dummyV: LongDummyVector => dummyV.getIndices
-      }
-      val indicesValue = featureIndices.map{ _ =>1.0f}
-      val featureN = VFactory.sparseLongKeyFloatVector(dim, featureIndices, indicesValue).mul(localN)
-      val delta = OptFuncs.ftrldelta(featureN, grad, alpha)
+      deltaZ.iadd(grad)
+      Ufuncs.iaxpy2(deltaN, grad, 1)
+      val delta = OptFuncs.ftrldelta(grad, localN, alpha)
+      assert(delta.getSize == grad.getSize)
+      deltaZ.isub(delta.imul(weight))
+
+//      val featureIndices = feature match {
+//        case longKey: LongKeyVector => longKey.getStorage
+//          .asInstanceOf[LongKeyVectorStorage].getIndices
+//        case dummyV: LongDummyVector => dummyV.getIndices
+//      }
+//      val indicesValue = featureIndices.map{ _ =>1.0f}
+//      val featureN = VFactory.sortedLongKeyFloatVector(dim, featureIndices, indicesValue).imul(localN)
+//      val delta = OptFuncs.ftrldelta(featureN, grad, alpha)
+
+      println(s"margin=${margin} multiplier=${multiplier}")
 
       val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
 
       lossSum += loss
-      Ufuncs.iaxpy2(deltaN, grad, 1)
-      deltaZ.iadd(grad.isub(delta.imul(weight)))
+//      Ufuncs.iaxpy2(deltaN, grad, 1)
+//      deltaZ.iadd(grad.isub(delta.imul(weight)))
     }
     end = System.currentTimeMillis()
     val optimTime = end - start
