@@ -25,7 +25,7 @@ import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.storage.LongKeyVectorStorage
 import com.tencent.angel.ml.math2.ufuncs.{OptFuncs, Ufuncs}
-import com.tencent.angel.ml.math2.vector.{LongDoubleVector, LongDummyVector, LongFloatVector, LongKeyVector, Vector}
+import com.tencent.angel.ml.math2.vector.{LongDummyVector, LongKeyVector, Vector}
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.model.output.format.{ColIdValueTextRowFormat, RowIdColIdValueTextRowFormat}
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
@@ -44,6 +44,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
   var nPS: PSVector = _
   var wPS: PSVector = _
   var name = "weights"
+  val p: Float = 0.1f
 
 
   /** Init with `dim` given, the default start index is 0
@@ -161,16 +162,18 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
       val (feature, label) = (point.getX, point.getY)
       val margin = -weight.dot(feature)
       val multiplier = 1.0 / (1.0 + math.exp(margin)) - label
-      val grad = feature match {
-        case x: LongDummyVector =>
-          val values = new Array[Float](x.getIndices.length)
-          util.Arrays.fill(values, multiplier.toFloat)
-          VFactory.sparseLongKeyFloatVector(dim, x.getIndices, values)
-        case _ =>
-          feature.mul(multiplier)
-      }
 
-      assert(grad.getSize == feature.getSize)
+      val possion = Ufuncs.ftrlpossion(feature, localN, p).ifilter(10e-10)
+      val grad = possion.imul(multiplier)
+//      val grad = feature match {
+//        case x: LongDummyVector =>
+//          val values = new Array[Float](x.getIndices.length)
+//          util.Arrays.fill(values, multiplier.toFloat)
+//          VFactory.sparseLongKeyFloatVector(dim, x.getIndices, values)
+//        case _ =>
+//          feature.mul(multiplier)
+//      }
+
       deltaZ.iadd(grad)
       Ufuncs.iaxpy2(deltaN, grad, 1)
       OptFuncs.iftrldetalintersect(grad, localN, alpha)

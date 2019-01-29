@@ -28,6 +28,7 @@ object FTRLExample {
     val numEpoch = params.getOrElse("numEpoch", "3").toInt
     val output = params.getOrElse("output", "")
     val modelPath = params.getOrElse("model", "")
+    val withBalancePartition = params.getOrElse("balance", "false").toBoolean
 
     val conf = new SparkConf()
 
@@ -58,10 +59,14 @@ object FTRLExample {
     println(s"num examples = ${size} min_index=$min max_index=$max")
 
     val opt = new FTRL(lambda1, lambda2, alpha, beta)
-//    opt.init(min, max + 1, RowType.T_FLOAT_SPARSE_LONGKEY,
-//      data.map(f => f.getX),
-//      new LoadBalancePartitioner(16, 50))
-    opt.init(min, max+1, -1, RowType.T_FLOAT_SPARSE_LONGKEY, new ColumnRangePartitioner())
+
+    val rowType = RowType.T_FLOAT_SPARSE_LONGKEY
+
+    if (withBalancePartition)
+      opt.init(min, max + 1, rowType, data.map(f => f.getX),
+        new LoadBalancePartitioner(16, 50))
+    else
+      opt.init(min, max + 1, -1, rowType, new ColumnRangePartitioner())
 
     if (modelPath.length > 0)
       opt.load(modelPath + "/back")

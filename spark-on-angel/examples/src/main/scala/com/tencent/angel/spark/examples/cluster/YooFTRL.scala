@@ -67,15 +67,6 @@ object YooFTRL {
 
     val data = sc.textFile(input).map(f => parseSample(f, dim, black, cross, minFeatureLen)).filter(f => f != null)
 
-//    val size = data.count()
-
-//    val max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.max).max()
-//    val min = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.min).min()
-    //    val nnz = data.flatMap(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.distinct).map(f => (f, 1))
-    //        .reduceByKey(_ + _).count()
-
-//    println(s"num examples = ${size}")
-
     val opt = new FTRL(lambda1, lambda2, alpha, beta)
     opt.init(Long.MinValue, Long.MaxValue,
       RowType.T_FLOAT_SPARSE_LONGKEY, data.map(f => f.getX),
