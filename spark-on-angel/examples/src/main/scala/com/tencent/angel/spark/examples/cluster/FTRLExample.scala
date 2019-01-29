@@ -40,9 +40,9 @@ object FTRLExample {
     PSContext.getOrCreate(sc)
 
     // We use more partitions to achieve dynamic load balance
-    val partNum = (SparkUtils.getNumCores(SparkContext.getOrCreate().getConf) * 6.15).toInt
+//    val partNum = (SparkUtils.getNumCores(SparkContext.getOrCreate().getConf) * 6.15).toInt
 
-    val data = sc.textFile(input).repartition(partNum)
+    val data = sc.textFile(input)
       .map(s => (DataLoader.parseLongFloat(s, dim), DataLoader.parseLabel(s, false)))
       .map {
         f =>
@@ -50,7 +50,7 @@ object FTRLExample {
           f._1
       }
 
-    data.persist(StorageLevel.DISK_ONLY)
+      data.persist(StorageLevel.DISK_ONLY)
     val size = data.count()
 
     val max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.max).max()

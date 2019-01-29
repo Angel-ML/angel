@@ -58,6 +58,7 @@ object YooFTRL {
     val black = params.getOrElse("blackListFeature", "").split(",").toSet
     val cross = params.getOrElse("enableCrossScore", "true").toBoolean
     val minFeatureLen = params.getOrElse("minFeatureLen", "10").toInt
+    val sampleRate = params.getOrElse("sampleRate", "1.0").toFloat
 
     val conf = new SparkConf()
 
@@ -65,7 +66,9 @@ object YooFTRL {
 
     PSContext.getOrCreate(sc)
 
-    val data = sc.textFile(input).map(f => parseSample(f, dim, black, cross, minFeatureLen)).filter(f => f != null)
+    val data = sc.textFile(input).sample(false, sampleRate)
+      .map(f => parseSample(f, dim, black, cross, minFeatureLen))
+      .filter(f => f != null)
 
     val opt = new FTRL(lambda1, lambda2, alpha, beta)
     opt.init(Long.MinValue, Long.MaxValue,

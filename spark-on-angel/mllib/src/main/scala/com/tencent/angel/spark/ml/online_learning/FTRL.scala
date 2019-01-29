@@ -18,8 +18,6 @@
 
 package com.tencent.angel.spark.ml.online_learning
 
-import java.util
-
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
@@ -163,16 +161,8 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
       val margin = -weight.dot(feature)
       val multiplier = 1.0 / (1.0 + math.exp(margin)) - label
 
-      val possion = Ufuncs.ftrlpossion(feature, localN, p).ifilter(10e-10)
+      val possion = Ufuncs.ftrlpossion(localN, feature, p).ifilter(10e-10)
       val grad = possion.imul(multiplier)
-//      val grad = feature match {
-//        case x: LongDummyVector =>
-//          val values = new Array[Float](x.getIndices.length)
-//          util.Arrays.fill(values, multiplier.toFloat)
-//          VFactory.sparseLongKeyFloatVector(dim, x.getIndices, values)
-//        case _ =>
-//          feature.mul(multiplier)
-//      }
 
       deltaZ.iadd(grad)
       Ufuncs.iaxpy2(deltaN, grad, 1)

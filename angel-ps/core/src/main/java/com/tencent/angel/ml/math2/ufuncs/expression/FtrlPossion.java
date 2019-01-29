@@ -25,11 +25,11 @@ public class FtrlPossion extends Binary {
   @Override
   public double apply(double ele1, double ele2) {
     // not the first time
-    if (ele2 > e)
-      return ele1;
+    if (ele1 > e)
+      return ele2;
     // first time and do the sample
-    if (ele2 < e && random.nextFloat() < p)
-      return ele1;
+    if (ele1 < e && random.nextFloat() < p)
+      return ele2;
     // set to zero
     return 0.0;
   }
@@ -37,11 +37,11 @@ public class FtrlPossion extends Binary {
   @Override
   public double apply(double ele1, float ele2) {
     // not the first time
-    if (ele2 > e)
-      return ele1;
+    if (ele1 > e)
+      return ele2;
     // first time and do the sample
-    if (ele2 < e && random.nextFloat() < p)
-      return ele1;
+    if (ele1 < e && random.nextFloat() < p)
+      return ele2;
     // set to zero
     return 0.0;
   }
@@ -49,11 +49,11 @@ public class FtrlPossion extends Binary {
   @Override
   public double apply(double ele1, long ele2) {
     // not the first time
-    if (ele2 > e)
-      return ele1;
+    if (ele1 > e)
+      return ele2;
     // first time and do the sample
-    if (ele2 < e && random.nextFloat() < p)
-      return ele1;
+    if (ele1 < e && random.nextFloat() < p)
+      return ele2;
     // set to zero
     return 0.0;
   }
@@ -61,11 +61,11 @@ public class FtrlPossion extends Binary {
   @Override
   public double apply(double ele1, int ele2) {
     // not the first time
-    if (ele2 > e)
-      return ele1;
+    if (ele1 > e)
+      return ele2;
     // first time and do the sample
-    if (ele2 < e && random.nextFloat() < p)
-      return ele1;
+    if (ele1 < e && random.nextFloat() < p)
+      return ele2;
     // set to zero
     return 0.0;
   }
@@ -73,11 +73,11 @@ public class FtrlPossion extends Binary {
   @Override
   public float apply(float ele1, float ele2) {
     // not the first time
-    if (ele2 > e)
-      return ele1;
+    if (ele1 > e)
+      return ele2;
     // first time and do the sample
-    if (ele2 < e && random.nextFloat() < p)
-      return ele1;
+    if (ele1 < e && random.nextFloat() < p)
+      return ele2;
     // set to zero
     return 0.0f;
   }
@@ -85,11 +85,11 @@ public class FtrlPossion extends Binary {
   @Override
   public float apply(float ele1, long ele2) {
     // not the first time
-    if (ele2 > e)
-      return ele1;
+    if (ele1 > e)
+      return ele2;
     // first time and do the sample
-    if (ele2 < e && random.nextFloat() < p)
-      return ele1;
+    if (ele1 < e && random.nextFloat() < p)
+      return ele2;
     // set to zero
     return 0.0f;
   }
@@ -97,11 +97,11 @@ public class FtrlPossion extends Binary {
   @Override
   public float apply(float ele1, int ele2) {
     // not the first time
-    if (ele2 > e)
-      return ele1;
+    if (ele1 > e)
+      return ele2;
     // first time and do the sample
-    if (ele2 < e && random.nextFloat() < p)
-      return ele1;
+    if (ele1 < e && random.nextFloat() < p)
+      return ele2;
     // set to zero
     return 0.0f;
   }
@@ -109,11 +109,11 @@ public class FtrlPossion extends Binary {
   @Override
   public long apply(long ele1, long ele2) {
     // not the first time
-    if (ele2 > e)
-      return ele1;
+    if (ele1 > e)
+      return ele2;
     // first time and do the sample
-    if (ele2 < e && random.nextFloat() < p)
-      return ele1;
+    if (ele1 < e && random.nextFloat() < p)
+      return ele2;
     // set to zero
     return 0L;
   }
@@ -121,11 +121,11 @@ public class FtrlPossion extends Binary {
   @Override
   public long apply(long ele1, int ele2) {
     // not the first time
-    if (ele2 > e)
-      return ele1;
+    if (ele1 > e)
+      return ele2;
     // first time and do the sample
-    if (ele2 < e && random.nextFloat() < p)
-      return ele1;
+    if (ele1 < e && random.nextFloat() < p)
+      return ele2;
     // set to zero
     return 0L;
   }
@@ -133,11 +133,11 @@ public class FtrlPossion extends Binary {
   @Override
   public int apply(int ele1, int ele2) {
     // not the first time
-    if (ele2 > e)
-      return ele1;
+    if (ele1 > e)
+      return ele2;
     // first time and do the sample
-    if (ele2 < e && random.nextFloat() < p)
-      return ele1;
+    if (ele1 < e && random.nextFloat() < p)
+      return ele2;
     // set to zero
     return 0;
   }

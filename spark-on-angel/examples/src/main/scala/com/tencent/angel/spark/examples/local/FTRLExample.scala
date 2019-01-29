@@ -38,7 +38,7 @@ object FTRLExample {
     val lambda1 = params.getOrElse("lambda1", "0.1").toDouble
     val lambda2 = params.getOrElse("lambda2", "100.0").toDouble
     val dim = params.getOrElse("dim", "149").toLong
-    val input = params.getOrElse("input", "data/census/census_148d_train.libsvm")
+    val input = params.getOrElse("input", "data/census/census_148d_train.dummy")
     val batchSize = params.getOrElse("batchSize", "100").toInt
     val partNum = params.getOrElse("partNum", "10").toInt
     val numEpoch = params.getOrElse("numEpoch", "3").toInt
@@ -49,7 +49,7 @@ object FTRLExample {
 
     val sc = SparkContext.getOrCreate()
     val data = sc.textFile(input).repartition(partNum)
-      .map(s => (DataLoader.parseLongFloat(s, dim), DataLoader.parseLabel(s, false)))
+      .map(s => (DataLoader.parseLongDummy(s, dim), DataLoader.parseLabel(s, false)))
       .map {
         f =>
           f._1.setY(f._2)
