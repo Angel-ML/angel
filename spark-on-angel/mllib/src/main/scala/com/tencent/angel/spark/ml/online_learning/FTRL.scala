@@ -140,6 +140,8 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     val vectors = client.get(Array(0, 1), indices)
     val (localZ, localN) = (vectors(0), vectors(1))
 
+    assert(localN.getSize == indices.length)
+    assert(localZ.getSize == indices.length)
 
     end = System.currentTimeMillis()
     val pullTime = end - start
@@ -168,28 +170,15 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
           feature.mul(multiplier)
       }
 
+      assert(grad.getSize == feature.getSize)
       deltaZ.iadd(grad)
       Ufuncs.iaxpy2(deltaN, grad, 1)
-      val delta = OptFuncs.ftrldelta(grad, localN, alpha)
-      assert(delta.getSize == grad.getSize)
-      deltaZ.isub(delta.imul(weight))
-
-//      val featureIndices = feature match {
-//        case longKey: LongKeyVector => longKey.getStorage
-//          .asInstanceOf[LongKeyVectorStorage].getIndices
-//        case dummyV: LongDummyVector => dummyV.getIndices
-//      }
-//      val indicesValue = featureIndices.map{ _ =>1.0f}
-//      val featureN = VFactory.sortedLongKeyFloatVector(dim, featureIndices, indicesValue).imul(localN)
-//      val delta = OptFuncs.ftrldelta(featureN, grad, alpha)
-
-      println(s"margin=${margin} multiplier=${multiplier}")
+      OptFuncs.iftrldetalintersect(grad, localN, alpha)
+      deltaZ.isub(grad.imul(weight))
 
       val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
 
       lossSum += loss
-//      Ufuncs.iaxpy2(deltaN, grad, 1)
-//      deltaZ.iadd(grad.isub(delta.imul(weight)))
     }
     end = System.currentTimeMillis()
     val optimTime = end - start

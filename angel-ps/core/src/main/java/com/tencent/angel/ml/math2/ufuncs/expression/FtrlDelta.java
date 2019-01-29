@@ -34,7 +34,7 @@ public class FtrlDelta extends Binary {
 
   @Override
   public OpType getOpType() {
-    return OpType.INTERSECTION;
+    return OpType.UNION;
   }
 
   @Override
