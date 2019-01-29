@@ -29,6 +29,9 @@ object FTRLExample {
     val output = params.getOrElse("output", "")
     val modelPath = params.getOrElse("model", "")
     val withBalancePartition = params.getOrElse("balance", "false").toBoolean
+    val possionRate = params.getOrElse("possion", "0.1f").toFloat
+    val bits = params.getOrElse("bits", "20").toInt
+    val numPartitions = params.getOrElse("numPartitions", "100").toInt
 
     val conf = new SparkConf()
 
@@ -38,9 +41,6 @@ object FTRLExample {
     val sc = new SparkContext(conf)
 
     PSContext.getOrCreate(sc)
-
-    // We use more partitions to achieve dynamic load balance
-//    val partNum = (SparkUtils.getNumCores(SparkContext.getOrCreate().getConf) * 6.15).toInt
 
     val data = sc.textFile(input)
       .map(s => (DataLoader.parseLongFloat(s, dim), DataLoader.parseLabel(s, false)))
@@ -64,9 +64,11 @@ object FTRLExample {
 
     if (withBalancePartition)
       opt.init(min, max + 1, rowType, data.map(f => f.getX),
-        new LoadBalancePartitioner(16, 50))
+        new LoadBalancePartitioner(bits, numPartitions))
     else
       opt.init(min, max + 1, -1, rowType, new ColumnRangePartitioner())
+
+    opt.setPossionRate(possionRate)
 
     if (modelPath.length > 0)
       opt.load(modelPath + "/back")

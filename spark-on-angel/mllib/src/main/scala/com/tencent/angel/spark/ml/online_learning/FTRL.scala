@@ -20,7 +20,6 @@ package com.tencent.angel.spark.ml.online_learning
 
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.storage.LongKeyVectorStorage
 import com.tencent.angel.ml.math2.ufuncs.{OptFuncs, Ufuncs}
 import com.tencent.angel.ml.math2.vector.{LongDummyVector, LongKeyVector, Vector}
@@ -28,25 +27,24 @@ import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.model.output.format.{ColIdValueTextRowFormat, RowIdColIdValueTextRowFormat}
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.ps.storage.partitioner.{ColumnRangePartitioner, Partitioner}
-import com.tencent.angel.psagent.matrix.MatrixClientFactory
-import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
+import com.tencent.angel.spark.context.AngelPSContext
 import com.tencent.angel.spark.ml.psf.ftrl.ComputeW
 import com.tencent.angel.spark.ml.util.AutoPartitioner
-import com.tencent.angel.spark.models.PSVector
-import com.tencent.angel.spark.models.impl.PSVectorImpl
+import com.tencent.angel.spark.models.impl.{PSMatrixImpl, PSVectorImpl}
+import com.tencent.angel.spark.models.{PSMatrix, PSVector}
 import org.apache.spark.rdd.RDD
 
-class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regularSkipFeatIndex: Long = 0) extends Serializable {
+class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extends Serializable {
 
-  var zPS: PSVector = _
-  var nPS: PSVector = _
   var wPS: PSVector = _
   var name = "weights"
-  val p: Float = 0.1f
+  var possionRate: Float = 1.0f
+  var matrix: PSMatrix = _
 
 
   /** Init with `dim` given, the default start index is 0
-    * @param dim
+    *
+    * @param dim , [0, dim)
     */
   def init(dim: Long): Unit =
     init(dim, RowType.T_FLOAT_SPARSE_LONGKEY)
@@ -59,10 +57,11 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
 
   /**
     * Init with dim, nnz, rowType and partitioner
-    * @param dim, the index range is [0, dim) if dim > 0, else [long.min, long.max) is dim=-1
-    * @param nnz, number-of-non-zero elements in model
-    * @param rowType, default is T_FLOAT_SPARSE_LONGKEY
-    * @param partitioner, default is column-range-partitioner
+    *
+    * @param dim         , the index range is [0, dim) if dim > 0, else [long.min, long.max) is dim=-1
+    * @param nnz         , number-of-non-zero elements in model
+    * @param rowType     , default is T_FLOAT_SPARSE_LONGKEY
+    * @param partitioner , default is column-range-partitioner
     */
   def init(dim: Long, nnz: Long, rowType: RowType, partitioner: Partitioner): Unit = {
     val ctx = new MatrixContext(name, 3, dim, nnz, -1, -1)
@@ -73,10 +72,11 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
 
   /**
     * Init with start and end given
-    * @param start, the start index
-    * @param end, the end index range
-    * @param nnz, the number of non-zero element in model
-    * @param rowType, default is T_FLOAT_SPARSE_LONGKEY
+    *
+    * @param start   , the start index
+    * @param end     , the end index range
+    * @param nnz     , the number of non-zero element in model
+    * @param rowType , default is T_FLOAT_SPARSE_LONGKEY
     */
   def init(start: Long, end: Long, nnz: Long, rowType: RowType): Unit = {
     init(start, end, nnz, rowType, new ColumnRangePartitioner())
@@ -85,7 +85,8 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
   def init(start: Long, end: Long): Unit =
     init(start, end, -1, RowType.T_FLOAT_SPARSE_LONGKEY)
 
-  def init(start: Long, end: Long, nnz: Long, rowType: RowType, partitioner: Partitioner): Unit = {
+  def init(start: Long, end: Long, nnz: Long, rowType: RowType,
+           partitioner: Partitioner): Unit = {
     val ctx = new MatrixContext(name, 3, start, end)
     ctx.setPartitionerClass(partitioner.getClass)
     ctx.setRowType(rowType)
@@ -96,13 +97,15 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
   /**
     * Init model with the training data, this method will scan the index distribution in data
     * and automatically generate partitions with load balance into consideration
-    * @param start, the start index
-    * @param end, the end index
-    * @param rowType, default is T_FLOAT_SPARSE_LONGKEY
-    * @param data, training data
-    * @param partitioner, a load balance partitioner
+    *
+    * @param start       , the start index
+    * @param end         , the end index
+    * @param rowType     , default is T_FLOAT_SPARSE_LONGKEY
+    * @param data        , training data
+    * @param partitioner , a load balance partitioner
     */
-  def init(start: Long, end: Long, rowType: RowType, data: RDD[Vector], partitioner: AutoPartitioner): Unit = {
+  def init(start: Long, end: Long, rowType: RowType, data: RDD[Vector],
+           partitioner: AutoPartitioner): Unit = {
     val ctx = new MatrixContext(name, 3, start, end)
     ctx.setRowType(rowType)
     partitioner.partition(data, ctx)
@@ -111,18 +114,29 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
 
   /**
     * create the model with a matrix-context and init three PSVector
-    * @param ctx
+    *
+    * @param ctx , matrix context
     */
   def init(ctx: MatrixContext): Unit = {
     val matId = PSMatrixUtils.createPSMatrix(ctx)
-    zPS = new PSVectorImpl(matId, 0, ctx.getColNum, ctx.getRowType)
-    nPS = new PSVectorImpl(matId, 1, ctx.getColNum, ctx.getRowType)
     wPS = new PSVectorImpl(matId, 2, ctx.getColNum, ctx.getRowType)
+    matrix = new PSMatrixImpl(matId, ctx.getRowNum, ctx.getColNum, ctx.getRowType)
   }
 
+  def setPossionRate(possionRate: Float): Unit =
+    this.possionRate = possionRate
 
+
+  /**
+    * Optimize a batch of data with FTRL optimizer
+    *
+    * @param batch , data batch
+    * @return summation of loss for this batch
+    */
   def optimize(batch: Array[LabeledData]): Double = {
     var (start, end) = (0L, 0L)
+
+    // First, distinct the feature indices of this batch
     val indices = batch.flatMap {
       case point =>
         point.getX match {
@@ -134,9 +148,9 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
 
     start = System.currentTimeMillis()
 
-    PSContext.instance()
-    val client = MatrixClientFactory.get(zPS.poolId, PSContext.getTaskId)
-    val vectors = client.get(Array(0, 1), indices)
+    // Fetch the dimensions of n/z
+
+    val vectors = matrix.pull(Array(0, 1), indices)
     val (localZ, localN) = (vectors(0), vectors(1))
 
     assert(localN.getSize == indices.length)
@@ -147,10 +161,17 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
 
 
     start = System.currentTimeMillis()
+
+    // calculate w with FTRL
     val weight = Ufuncs.ftrlthreshold(localZ, localN, alpha, beta, lambda1, lambda2)
     val dim = batch.head.getX.dim()
-    val deltaZ = VFactory.sparseLongKeyFloatVector(dim)
-    val deltaN = VFactory.sparseLongKeyFloatVector(dim)
+
+    // allocate two vectors for delta n/z
+    // TODO: use emptylike instead
+    val deltaZ = localZ.copy()
+    val deltaN = localN.copy()
+    deltaZ.clear()
+    deltaN.clear()
 
     val iter = batch.iterator
     var lossSum = 0.0
@@ -158,34 +179,36 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     while (iter.hasNext) {
       val point = iter.next()
       val (feature, label) = (point.getX, point.getY)
+      // calculate margin
       val margin = -weight.dot(feature)
       val multiplier = 1.0 / (1.0 + math.exp(margin)) - label
 
-      val possion = Ufuncs.ftrlpossion(localN, feature, p).ifilter(10e-10)
+      // sample the feature index with Possion sampling
+      val possion = Ufuncs.ftrlpossion(localN, feature, possionRate).ifilter(10e-10)
       val grad = possion.imul(multiplier)
 
+      // calculate delta z/n
       deltaZ.iadd(grad)
       Ufuncs.iaxpy2(deltaN, grad, 1)
       OptFuncs.iftrldetalintersect(grad, localN, alpha)
       deltaZ.isub(grad.imul(weight))
 
       val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
-
       lossSum += loss
     }
     end = System.currentTimeMillis()
     val optimTime = end - start
 
+    // push delta z/n
     start = System.currentTimeMillis()
-    val update = new Array[Vector](2)
-    update(0) = deltaZ
-    update(1) = deltaN
-    client.increment(Array(0, 1), update, true)
+    matrix.increment(Array(0, 1), Array(deltaZ, deltaN))
     end = System.currentTimeMillis()
     val pushTime = end - start
 
-    println(s"${lossSum / batch.size} pullTime=$pullTime optimTime=$optimTime pushTime=$pushTime")
-
+    println(s"${lossSum / batch.size} " +
+      s"pullTime=$pullTime " +
+      s"optimTime=$optimTime " +
+      s"pushTime=$pushTime")
     lossSum
   }
 
@@ -205,8 +228,9 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
         }
     }.distinct
 
-    val localZ = zPS.pull(indices)
-    val localN = nPS.pull(indices)
+    // Fetch the dimensions of n/z
+    val vectors = matrix.pull(Array(0, 1), indices)
+    val (localZ, localN) = (vectors(0), vectors(1))
     val weight = Ufuncs.ftrlthreshold(localZ, localN, alpha, beta, lambda1, lambda2)
 
     batch.map {
@@ -225,7 +249,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     * @return
     */
   def weight: PSVector = {
-    val func = new ComputeW(wPS.poolId, alpha, beta, lambda1, lambda2)
+    val func = new ComputeW(matrix.id, alpha, beta, lambda1, lambda2)
     wPS.psfUpdate(func).get()
     wPS
   }
@@ -240,7 +264,8 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
 
   /**
     * Save z and n for increment training
-    * @param path
+    *
+    * @param path, output path
     */
   def save(path: String): Unit = {
     val format = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
@@ -253,7 +278,8 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
 
   /**
     * Save w for model serving
-    * @param path
+    *
+    * @param path, output path
     */
   def saveWeight(path: String): Unit = {
     val format = classOf[ColIdValueTextRowFormat].getCanonicalName

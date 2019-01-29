@@ -5,10 +5,20 @@ import com.tencent.angel.ml.matrix.{MatrixContext, PartContext}
 import com.tencent.angel.ml.math2.vector.{LongDummyVector, LongKeyVector, Vector}
 import org.apache.spark.rdd.RDD
 
+/**
+  * Automatically generate model partitions according to the distribution of feature index
+  * @param bits, use how many bits (lower) to generate a bucket
+  * @param numPartitions, the number of model partitions
+  */
 abstract class AutoPartitioner(bits: Int, numPartitions: Int) extends Serializable {
 
   def getBuckets(data: RDD[Vector]): Array[(Long, Long)]
 
+  /**
+    * Generate partitions from data into ctx.
+    * @param data, the training data
+    * @param ctx, the matrix context for the model
+    */
   def partition(data: RDD[Vector], ctx: MatrixContext): Unit = {
     val buckets = getBuckets(data)
     val sorted = buckets.sortBy(f => f._1)
@@ -24,6 +34,7 @@ abstract class AutoPartitioner(bits: Int, numPartitions: Int) extends Serializab
     val limit = ((end.toDouble - start.toDouble) / numPartitions).toLong * 4
     println(limit)
     for (i <- 0 until size) {
+      // keep each partition similar load and limit the range of each partition
       if (current > per || ((sorted(i)._1 << bits - start > limit) && current > per / 2)) {
         val part = new PartContext(0, rowNum, start, sorted(i)._1 << bits, 0)
         println(s"part=${part} load=${current} range=${part.getEndCol - part.getStartCol}")
@@ -41,6 +52,11 @@ abstract class AutoPartitioner(bits: Int, numPartitions: Int) extends Serializab
   }
 }
 
+/**
+  * Generate buckets according to the number of elements for each feature
+  * @param bits, use how many bits (lower) to generate a bucket
+  * @param numPartitions, the number of model partitions
+  */
 class LoadBalancePartitioner(bits: Int, numPartitions: Int)
   extends AutoPartitioner(bits, numPartitions) {
 
@@ -60,6 +76,11 @@ class LoadBalancePartitioner(bits: Int, numPartitions: Int)
   }
 }
 
+/**
+  * Generate buckets according to the number of features
+  * @param bits, use how many bits (lower) to generate a bucket
+  * @param numPartitions, the number of model partitions
+  */
 class StorageBalancePartitioner(bits: Int, numPartitions: Int)
   extends AutoPartitioner(bits, numPartitions) {
   override def getBuckets(data: RDD[Vector]): Array[(Long, Long)] = {
