@@ -21,13 +21,13 @@ package com.tencent.angel.ml.model
 import java.util.{HashMap, Map}
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.predict.PredictResult
+import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 
 import scala.collection.JavaConversions._
+import scala.reflect.ClassTag
 
 /**
   * Model for a Algorithm. One MLModel is composed by one or multi PSModel, each one can be referred directly with Model name
@@ -89,7 +89,7 @@ abstract class MLModel(conf: Configuration, _ctx: TaskContext = null) {
     * @param storage predict data
     * @return predict result
     */
-  def predict(storage: DataBlock[LabeledData]): DataBlock[PredictResult]
+  def predict[T: ClassTag](storage: DataBlock[LabeledData]): DataBlock[T]
 
   /**
     * Set save path for the PSModels

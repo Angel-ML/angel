@@ -18,7 +18,7 @@
 
 package com.tencent.angel.spark.ml.core
 
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.optimizer.loss.{L2Loss, LogLoss}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
@@ -37,9 +37,9 @@ class OfflineLearner {
   val conf = SharedConf.get()
 
   // Some params
-  var numEpoch: Int = conf.getInt(MLConf.ML_EPOCH_NUM)
-  var fraction: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_RATIO)
-  var validationRatio: Double = conf.getDouble(MLConf.ML_VALIDATE_RATIO)
+  var numEpoch: Int = conf.getInt(MLCoreConf.ML_EPOCH_NUM)
+  var fraction: Double = conf.getDouble(MLCoreConf.ML_BATCH_SAMPLE_RATIO)
+  var validationRatio: Double = conf.getDouble(MLCoreConf.ML_VALIDATE_RATIO)
 
   println(s"fraction=$fraction validateRatio=$validationRatio numEpoch=$numEpoch")
 

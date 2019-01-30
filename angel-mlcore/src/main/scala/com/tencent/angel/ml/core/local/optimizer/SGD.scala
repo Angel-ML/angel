@@ -2,19 +2,18 @@ package com.tencent.angel.ml.core.local.optimizer
 
 import java.util.concurrent.Future
 
-import com.tencent.angel.ml.core.local.OptimizerKeys
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.local.variables.{LocalBlasMatVariable, LocalMatVariable, LocalVecVariable}
-import com.tencent.angel.ml.core.network.variable.{Variable, VecVariable}
-import com.tencent.angel.ml.core.optimizer.Optimizer
-import com.tencent.angel.ml.core.utils.JsonUtils.{extract, fieldEqualClassName}
-import com.tencent.angel.ml.core.utils.OptUtils
-import com.tencent.angel.ml.math2.ufuncs.{OptFuncs, Ufuncs}
-import org.json4s.JsonAST.{JField, JObject, JString, JValue}
+import com.tencent.angel.ml.core.optimizer.{Optimizer, OptimizerHelper}
+import com.tencent.angel.ml.core.utils.JsonUtils.fieldEqualClassName
+import com.tencent.angel.ml.core.utils.{OptUtils, OptimizerKeys}
+import com.tencent.angel.ml.core.variable.Variable
+import com.tencent.angel.ml.math2.ufuncs.Ufuncs
+import org.json4s.JsonAST.{JField, JObject, JString}
+
 
 class SGD(override var lr: Double) extends Optimizer {
   override val numSlot: Int = 1
-  override protected var regL1Param: Double = 0.0
-  override protected var regL2Param: Double = 0.0
 
   override def update[T](variable: Variable, epoch: Int, batchSize: Int): Future[T] = {
     variable match {
@@ -67,14 +66,17 @@ class SGD(override var lr: Double) extends Optimizer {
   }
 
   override def toJson: JObject = {
-    JObject(JField("type", JString(s"${this.getClass.getSimpleName}")))
+    JObject(JField(OptimizerKeys.typeKey, JString(s"${this.getClass.getSimpleName}")))
   }
 }
 
 
-object SGD {
+object SGD  {
+  private val conf: SharedConf = SharedConf.get()
+
   def fromJson(jast: JObject): SGD = {
     assert(fieldEqualClassName[SGD](jast, OptimizerKeys.typeKey))
-    new SGD(0.0001)
+    val lr = conf.getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)
+    new SGD(lr)
   }
 }

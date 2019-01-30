@@ -18,21 +18,19 @@
 
 package com.tencent.angel.ml.core.graphsubmit
 
-import com.tencent.angel.RunningMode
+import com.tencent.angel.ml.core.AngelGraph
 import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.network.graph.{AngelGraph, EvnContext, Graph, LocalGraph}
-import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer}
-import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
-import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.ml.core.network.layers.PlaceHolder
+import com.tencent.angel.ml.core.network.{EvnContext, Graph}
 import com.tencent.angel.ml.core.optimizer.loss._
-import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
-import com.tencent.angel.ml.predict.PredictResult
+import com.tencent.angel.ml.core.utils.JsonUtils
+import com.tencent.angel.ml.math2.utils.LabeledData
+import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
-import org.json4s.JValue
+
+import scala.reflect.ClassTag
 
 
 class GraphModel(conf: Configuration, _ctx: TaskContext = null)
@@ -41,29 +39,14 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
   val batchSize: Int = SharedConf.batchSize
   val blockSize: Int = SharedConf.blockSize
   val dataFormat: String = SharedConf.inputDataFormat
-  var jsonAst: JValue = _
 
-  def ensureJsonAst(): Unit = {
-    if (sharedConf.getJson == null) {
-      JsonUtils.init()
-    }
-    jsonAst = sharedConf.getJson
-  }
+  implicit lazy val graph: Graph = new AngelGraph(new PlaceHolder(sharedConf), sharedConf,
+    _ctx.getTotalTaskNum)
 
-  implicit lazy val graph: Graph = SharedConf.runningMode() match {
-    case RunningMode.ANGEL_LOCAL => new LocalGraph(new PlaceHolder(sharedConf), sharedConf)
-    case _ => new AngelGraph(new PlaceHolder(sharedConf), sharedConf)
-
-  }
-
-  def lossFunc: LossFunc = {
-    ensureJsonAst()
-    JsonUtils.getLossFunc(jsonAst).build()
-  }
+  def lossFunc: LossFunc = graph.getLossFunc
 
   def buildNetwork(): Unit = {
-    ensureJsonAst()
-    JsonUtils.fillGraph(jsonAst)
+    JsonUtils.layerFromJson(sharedConf.getJson)
   }
 
   /**
@@ -72,86 +55,27 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
     * @param storage predict data
     * @return predict result
     */
-  override def predict(storage: DataBlock[LabeledData]): DataBlock[PredictResult] = {
-    val resData = new MemoryDataBlock[PredictResult](storage.size())
-    var pullFlag = false
+  override def predict[T: ClassTag](storage: DataBlock[LabeledData]): DataBlock[T] = {
+    val resData = new MemoryDataBlock[T](storage.size())
 
-    val batchData = new Array[LabeledData](batchSize)
-    (0 until storage.size()).foreach { i =>
-      if (i != 0 && i % batchSize == 0) {
-        graph.feedData(batchData)
-        if (!pullFlag) {
-          graph.pullParams(1)
-          pullFlag = true
-        } else {
-          graph.getTrainable.foreach {
-            case layer: Embedding =>
-              layer.pullParams(1)
-            case layer: SimpleInputLayer =>
-              layer.pullParams(1)
-            case _ =>
-          }
-        }
+    var count: Int = 0
+    while (count < storage.size()) {
+      val numSamples = if (count + batchSize <= storage.size()) {
+        batchSize
+      } else {
+        storage.size() - count
+      }
+      val batchData = new Array[LabeledData](numSamples)
 
-
-        val attached = graph.placeHolder.getAttached
-        (graph.predict(), graph.getLossLayer.getLossFunc()) match {
-          case (mat: BlasDoubleMatrix, lossFunc: SoftmaxLoss) if mat.getNumCols == 4 =>
-            (0 until mat.getNumRows).foreach { i =>
-              resData.put(SoftmaxPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
-            }
-          case (mat: BlasFloatMatrix, lossFunc: SoftmaxLoss) if mat.getNumCols == 4 =>
-            (0 until mat.getNumRows).foreach { i =>
-              resData.put(SoftmaxPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
-            }
-          case (mat: BlasDoubleMatrix, _) =>
-            (0 until mat.getNumRows).foreach { i =>
-              resData.put(GraphPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
-            }
-          case (mat: BlasFloatMatrix, _) =>
-            (0 until mat.getNumRows).foreach { i =>
-              resData.put(GraphPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
-            }
-        }
+      (0 until numSamples).foreach {
+        idx => batchData(idx) = storage.loopingRead()
       }
 
-      batchData(i % batchSize) = storage.loopingRead()
+      graph.predict() foreach { res => resData.put(res.asInstanceOf[T]) }
+
+      count += batchSize
     }
 
-    var left = storage.size() % batchSize
-    if (left == 0 && storage.size() > 0) {
-      left = batchSize
-    }
-    if (left != 0) {
-      val leftData = new Array[LabeledData](left)
-      Array.copy(batchData, 0, leftData, 0, left)
-      graph.feedData(leftData)
-      graph.getTrainable.foreach {
-        case layer: Embedding =>
-          layer.pullParams(1)
-        case _ =>
-      }
-
-      val attached = graph.placeHolder.getAttached
-      (graph.predict(), graph.getLossLayer.getLossFunc()) match {
-        case (mat: BlasDoubleMatrix, _: SoftmaxLoss) if mat.getNumCols == 4 =>
-          (0 until mat.getNumRows).foreach { i =>
-            resData.put(SoftmaxPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
-          }
-        case (mat: BlasFloatMatrix, _: SoftmaxLoss) if mat.getNumCols == 4 =>
-          (0 until mat.getNumRows).foreach { i =>
-            resData.put(SoftmaxPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
-          }
-        case (mat: BlasDoubleMatrix, _) =>
-          (0 until mat.getNumRows).foreach { i =>
-            resData.put(GraphPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
-          }
-        case (mat: BlasFloatMatrix, _) =>
-          (0 until mat.getNumRows).foreach { i =>
-            resData.put(GraphPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2)))
-          }
-      }
-    }
     resData
   }
 
@@ -171,7 +95,6 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
     graph.saveModel(envCtx, path)
   }
 }
-
 
 object GraphModel {
   def apply(className: String, conf: Configuration): GraphModel = {

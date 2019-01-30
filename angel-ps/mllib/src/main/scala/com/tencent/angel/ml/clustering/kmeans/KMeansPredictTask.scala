@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.clustering.kmeans
 
 import com.tencent.angel.ml.core.PredictTask
-import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.io.{LongWritable, Text}

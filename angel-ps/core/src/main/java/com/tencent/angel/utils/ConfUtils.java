@@ -77,6 +77,12 @@ public class ConfUtils {
       }
     }
 
+    // load ml conf file for graph based algorithm
+    String mlConfFiles = conf.get(AngelConf.ANGEL_ML_CONF);
+    if (mlConfFiles != null && mlConfFiles.length() != 0) {
+      addResourceFiles(conf, mlConfFiles);
+    }
+
     // load command line parameters
     if (cmdConfMap != null && !cmdConfMap.isEmpty()) {
       for (Map.Entry<String, String> entry : cmdConfMap.entrySet()) {
@@ -88,12 +94,6 @@ public class ConfUtils {
     String userResourceFiles = conf.get(AngelConf.ANGEL_APP_USER_RESOURCE_FILES);
     if (userResourceFiles != null) {
       addResourceFiles(conf, userResourceFiles);
-    }
-
-    // load ml conf file for graph based algorithm
-    String mlConfFiles = conf.get(AngelConf.ANGEL_ML_CONF);
-    if (mlConfFiles != null && mlConfFiles.length() != 0) {
-      addResourceFiles(conf, mlConfFiles);
     }
 
     // load user job jar if it exist

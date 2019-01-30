@@ -19,25 +19,50 @@ package com.tencent.angel.ml.core.optimizer
 
 import java.util.concurrent.Future
 
-import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.core.utils.JsonUtils.{extract, fieldEqualClassName}
+import com.tencent.angel.ml.core.utils.OptimizerKeys
+import com.tencent.angel.ml.core.variable.{PSVariable, Variable}
 import com.tencent.angel.ml.psf.optimizer.AdaDeltaUpdateFunc
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
+import org.json4s.JsonAST._
+import org.json4s.JsonDSL._
 
-class AdaDelta(stepSize: Double, val alpha: Double, val beta: Double) extends Optimizer(stepSize) {
+
+class AdaDelta(override var lr: Double, val alpha: Double, val beta: Double) extends Optimizer {
   private val LOG = LogFactory.getLog(classOf[AdaDelta])
-  override protected var numSlot: Int = 3
 
-  override def update(matrixId: Int, numFactors: Int, epoch: Int): Future[VoidResult] = {
-    update(matrixId, numFactors, epoch, 1)
-  }
+  override val numSlot: Int = 3
 
-  override def update(matrixId: Int, numFactors: Int, epoch: Int, batchSize: Int): Future[VoidResult] = {
-    val func = new AdaDeltaUpdateFunc(matrixId, numFactors, epsilon, alpha, beta, lr, regL1Param, regL2Param, epoch, batchSize)
-    PSAgentContext.get().getUserRequestAdapter.update(func)
+  override def update[T](variable: Variable, epoch: Int, batchSize: Int = 1): Future[T] = {
+    val matrixId = variable.asInstanceOf[PSVariable].getMatrixId
+    val func = new AdaDeltaUpdateFunc(matrixId, variable.asInstanceOf[PSVariable].numFactors,
+      epsilon, alpha, beta, lr, regL1Param, regL2Param, epoch, batchSize)
+    PSAgentContext.get().getUserRequestAdapter.update(func).asInstanceOf[Future[T]]
   }
 
   override def toString: String = {
     s"AdaDelta alpha=$alpha beta=$beta lr=$lr regL2=$regL2Param regL1=$regL1Param epsilon=$epsilon"
+  }
+
+  override def toJson: JObject = {
+    (OptimizerKeys.typeKey -> s"${this.getClass.getSimpleName}") ~
+      (OptimizerKeys.alphaKey -> alpha) ~
+      (OptimizerKeys.betaKey -> beta)
+  }
+}
+
+object AdaDelta {
+  private val conf: SharedConf = SharedConf.get()
+
+  def fromJson(jast: JObject): AdaDelta = {
+    assert(fieldEqualClassName[AdaDelta](jast, OptimizerKeys.typeKey))
+    val alpha = conf.getDouble(MLCoreConf.ML_OPT_ADADELTA_ALPHA, MLCoreConf.DEFAULT_ML_OPT_ADADELTA_ALPHA)
+    val beta = conf.getDouble(MLCoreConf.ML_OPT_ADADELTA_BETA, MLCoreConf.DEFAULT_ML_OPT_ADADELTA_BETA)
+
+    new AdaDelta(1.0, extract[Double](jast, OptimizerKeys.alphaKey, Some(alpha)).get,
+      extract[Double](jast, OptimizerKeys.betaKey, Some(beta)).get
+    )
   }
 }

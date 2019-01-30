@@ -1,12 +1,13 @@
 package com.tencent.angel.ml.core.local
 
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.{Learner, Model}
-import com.tencent.angel.ml.core.data.{DataBlock, DataReader, LabeledData}
+import com.tencent.angel.ml.core.data.{DataBlock, DataReader}
 import com.tencent.angel.ml.core.network.Graph
-import com.tencent.angel.ml.core.network.variable.VoidType
+import com.tencent.angel.ml.core.variable.VoidType
 import com.tencent.angel.ml.core.optimizer.decayer.{StepSizeScheduler, WarmRestarts}
 import com.tencent.angel.ml.core.utils.ValidationUtils
+import com.tencent.angel.ml.math2.utils.LabeledData
 import org.apache.commons.logging.{Log, LogFactory}
 
 class LocalLearner(conf: SharedConf) extends Learner {
@@ -20,8 +21,8 @@ class LocalLearner(conf: SharedConf) extends Learner {
   model.buildNetwork()
 
   // 3. init or load matrices
-  private val modelPath: String = conf.get(MLConf.ML_LOAD_MODEL_PATH)
-  private val actionType: String = conf.get(MLConf.ML_ACTION_TYPE, MLConf.DEFAULT_ML_ACTION_TYPE)
+  private val modelPath: String = conf.get(MLCoreConf.ML_LOAD_MODEL_PATH)
+  private val actionType: String = conf.get(MLCoreConf.ML_ACTION_TYPE, MLCoreConf.DEFAULT_ML_ACTION_TYPE)
   private val env = new LocalEvnContext
   if (actionType.equalsIgnoreCase("train") && modelPath.isEmpty) {
     model.createMatrices(env)
@@ -31,7 +32,7 @@ class LocalLearner(conf: SharedConf) extends Learner {
   }
 
   private val lr0 = SharedConf.learningRate
-  override protected val ssScheduler: StepSizeScheduler = new WarmRestarts(lr0, lr0/100)
+  override protected val ssScheduler: StepSizeScheduler = new WarmRestarts(lr0, lr0/100, 0.001)
 
   override protected def trainOneEpoch(epoch: Int, iter: Iterator[Array[LabeledData]], numBatch: Int): Double = {
     var batchCount: Int = 0

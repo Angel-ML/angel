@@ -2,15 +2,14 @@ package com.tencent.angel.ml.core.network
 
 import com.tencent.angel.ml.core.PredictResult
 import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.data.LabeledData
 import com.tencent.angel.ml.core.network.layers.{Trainable, _}
-import com.tencent.angel.ml.core.network.variable.{Variable, VariableManager, VariableProvider}
+import com.tencent.angel.ml.core.variable.{Variable, VariableManager, VariableProvider}
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
 import com.tencent.angel.ml.core.utils.JsonUtils.{J2Pretty, layer2Json}
 import com.tencent.angel.ml.core.utils.{DataCache, RowTypeUtils, TimeStats}
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.math2.matrix.Matrix
-import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.math2.utils.{LabeledData, RowType}
 import org.apache.commons.logging.{Log, LogFactory}
 import org.json4s.JsonAST.{JField, JObject}
 
@@ -39,7 +38,7 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
   protected var lossLayer: LossLayer = _
   protected val trainableLayer = new ListBuffer[Trainable]()
   private val dataCache = new DataCache()
-  private val variableManager = new VariableManager(this)
+  protected val variableManager: VariableManager
 
   val timeStats = new TimeStats()
 

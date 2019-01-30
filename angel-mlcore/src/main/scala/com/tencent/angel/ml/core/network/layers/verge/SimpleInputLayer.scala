@@ -19,9 +19,10 @@
 package com.tencent.angel.ml.core.network.layers.verge
 
 
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.network.{Graph, TransFunc}
 import com.tencent.angel.ml.core.network.layers._
-import com.tencent.angel.ml.core.network.variable._
+import com.tencent.angel.ml.core.variable._
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.utils.{LayerKeys, MLException, OptUtils}
 import com.tencent.angel.ml.math2.MFactory
@@ -41,10 +42,13 @@ class SimpleInputLayer(name: String,
 
   private val LOG = LogFactory.getLog(classOf[SimpleInputLayer])
 
+  private val formatClassName = SharedConf.get().getString(
+    MLCoreConf.ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT,
+    MLCoreConf.DEFAULT_ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT)
   private val weight: MatVariable = graph.provider.getMatVariable(s"${name}_weight", outputDim,
-    graph.indexRange, optimizer, allowPullWithIndex = true)
+    graph.indexRange, optimizer, formatClassName, allowPullWithIndex = true)
   private val bias: VecVariable = graph.provider.getVecVariable(s"${name}_bias", outputDim,
-    null, allowPullWithIndex = false)
+    null, formatClassName, allowPullWithIndex = false)
 
   override protected def doForward(input: Matrix): Matrix = {
     // the input can be both dense and sparse

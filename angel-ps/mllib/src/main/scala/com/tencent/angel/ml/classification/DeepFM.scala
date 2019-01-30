@@ -19,23 +19,20 @@
 package com.tencent.angel.ml.classification
 
 import com.tencent.angel.ml.core.graphsubmit.GraphModel
-import com.tencent.angel.ml.core.network.layers.Layer
-import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleLossLayer, SimpleInputLayer}
+import com.tencent.angel.ml.core.network.Identity
 import com.tencent.angel.ml.core.network.layers.join.SumPooling
 import com.tencent.angel.ml.core.network.layers.linear.BiInnerSumCross
-import com.tencent.angel.ml.core.network.transfunc._
-import com.tencent.angel.ml.core.optimizer.loss.{LogLoss, LossFunc}
-import com.tencent.angel.ml.core.utils.paramsutils.{EmbeddingParams, JsonUtils}
+import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer}
+import com.tencent.angel.ml.core.network.layers.{Layer, LossLayer}
+import com.tencent.angel.ml.core.optimizer.loss.LogLoss
+import com.tencent.angel.ml.core.utils.JsonUtils
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 
 
 class DeepFM(conf: Configuration, _ctx: TaskContext = null) extends GraphModel(conf, _ctx) {
-  override val lossFunc: LossFunc = new LogLoss()
 
   override def buildNetwork(): Unit = {
-    ensureJsonAst()
-
     val wide = new SimpleInputLayer("input", 1, new Identity(),
       JsonUtils.getOptimizerByLayerType(jsonAst, "SparseInputLayer")
     )
@@ -52,6 +49,6 @@ class DeepFM(conf: Configuration, _ctx: TaskContext = null) extends GraphModel(c
 
     val join = new SumPooling("sumPooling", 1, Array[Layer](wide, innerSumCross, mlpLayer))
 
-    new SimpleLossLayer("simpleLossLayer", join, lossFunc)
+    new LossLayer("simpleLossLayer", join, new LogLoss())
   }
 }

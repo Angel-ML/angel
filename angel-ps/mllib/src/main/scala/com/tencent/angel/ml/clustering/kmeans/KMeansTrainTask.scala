@@ -20,8 +20,7 @@ package com.tencent.angel.ml.clustering.kmeans
 
 import com.tencent.angel.ml.core.TrainTask
 import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.core.utils.DataParser
+import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.worker.storage.{DataBlock, DiskDataBlock, MemoryAndDiskDataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
@@ -35,7 +34,6 @@ class KMeansTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text
   var idxsVector: Vector = _
   val indexRange: Long = SharedConf.indexRange
   private val valiRat = SharedConf.validateRatio
-  override val dataParser = DataParser(SharedConf.get(conf))
 
   // validation data storage
   val validDataBlock: DataBlock[LabeledData] = getDataBlock("memory")

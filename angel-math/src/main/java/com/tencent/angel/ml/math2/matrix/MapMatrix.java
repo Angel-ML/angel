@@ -10,17 +10,12 @@ public class MapMatrix<Vec extends Vector> extends Matrix {
   public MapMatrix() {
   }
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/matrix/MapMatrix.java
   public MapMatrix(int matrixId, int clock, HashMap<Long, Vec> mapMatrix){
-=======
-  public MapMatrix(int matrixId, int clock, HashMap<Long, Vec> mapMatrix) {
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/matrix/MapMatrix.java
     this.matrixId = matrixId;
     this.clock = clock;
     this.mapMatrix = mapMatrix;
   }
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/matrix/MapMatrix.java
   public MapMatrix(HashMap<Long, Vec> mapMatrix){
     this(0,0, mapMatrix);
   }
@@ -29,14 +24,7 @@ public class MapMatrix<Vec extends Vector> extends Matrix {
     return mapMatrix;
   }
 
-  public Vector getRow(int idx){
-=======
-  public MapMatrix(HashMap<Long, Vec> mapMatrix) {
-    this(0, 0, mapMatrix);
-  }
-
   public Vector getRow(int idx) {
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/matrix/MapMatrix.java
     return mapMatrix.get(idx);
   }
 
@@ -45,7 +33,7 @@ public class MapMatrix<Vec extends Vector> extends Matrix {
   }
 
   public HashMap<Long, Vec> getRows(int[] idx) {
-    HashMap<Long, Vec> matrix = new HashMap();
+    HashMap<Long, Vec> matrix = new HashMap<Long, Vec>();
     for (int id : idx) {
       matrix.put((long) id, mapMatrix.get(id));
     }
@@ -53,7 +41,7 @@ public class MapMatrix<Vec extends Vector> extends Matrix {
   }
 
   public HashMap<Long, Vec> getRows(long[] idx) {
-    HashMap<Long, Vec> matrix = new HashMap();
+    HashMap<Long, Vec> matrix = new HashMap<Long, Vec>();
     for (long id : idx) {
       matrix.put(id, mapMatrix.get(id));
     }

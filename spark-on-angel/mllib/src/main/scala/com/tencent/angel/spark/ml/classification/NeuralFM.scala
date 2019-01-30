@@ -1,6 +1,6 @@
 package com.tencent.angel.spark.ml.classification
 
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.Layer
 import com.tencent.angel.ml.core.network.layers.join.SumPooling
 import com.tencent.angel.ml.core.network.layers.linear.BiInteractionCross
@@ -12,7 +12,7 @@ import com.tencent.angel.spark.ml.core.GraphModel
 
 class NeuralFM extends GraphModel {
 
-  val numFields: Int = SharedConf.get().getInt(MLConf.ML_FIELD_NUM, MLConf.DEFAULT_ML_FIELD_NUM)
+  val numFields: Int = SharedConf.get().getInt(MLCoreConf.ML_FIELD_NUM, MLCoreConf.DEFAULT_ML_FIELD_NUM)
 
   override def network(): Unit = {
     ensureJsonAst()

@@ -19,11 +19,12 @@
 package com.tencent.angel.ml.core.network.layers.verge
 
 
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.network.layers._
-import com.tencent.angel.ml.core.network.variable.{EmbedUtils, EmbedVariable, Variable}
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.utils.LayerKeys
+import com.tencent.angel.ml.core.variable.{EmbedUtils, EmbedVariable, Variable}
 import com.tencent.angel.ml.math2.matrix._
 import org.apache.commons.logging.LogFactory
 import org.json4s.JsonAST._
@@ -34,8 +35,11 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
   graph.addTrainableLayer(this)
   private val LOG = LogFactory.getLog(classOf[Embedding])
 
+  private val formatClassName = SharedConf.get().getString(
+    MLCoreConf.ML_EMBEDDING_MATRIX_OUTPUT_FORMAT,
+    MLCoreConf.DEFAULT_ML_EMBEDDING_MATRIX_OUTPUT_FORMAT)
   private val embedding: EmbedVariable = graph.provider.getEmbedVariable(s"${name}_embedding",
-    graph.indexRange.toInt, numFactors, optimizer)
+    graph.indexRange.toInt, numFactors, optimizer, formatClassName)
 
   override protected def doForward(input: Matrix): Matrix = {
     embedding.snapshot()
@@ -58,6 +62,5 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
 
     JField(name, layerJson)
   }
-
 
 }

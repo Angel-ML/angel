@@ -23,7 +23,8 @@ package com.tencent.angel.ml.core
   * Base class for all machine learning algorithm learner.
   */
 
-import com.tencent.angel.ml.feature.LabeledData
+
+import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.ml.metric.GlobalMetrics
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.worker.storage.DataBlock

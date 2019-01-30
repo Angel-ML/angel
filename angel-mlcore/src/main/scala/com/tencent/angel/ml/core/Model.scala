@@ -1,8 +1,9 @@
 package com.tencent.angel.ml.core
 
 import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.data.{DataBlock, LabeledData}
+import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.core.network.{EvnContext, Graph}
+import com.tencent.angel.ml.math2.utils.LabeledData
 
 abstract class Model {
   val graph: Graph

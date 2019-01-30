@@ -23,14 +23,12 @@ import java.io.{BufferedReader, InputStreamReader}
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.conf.AngelConf._
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.core.conf.MLConf
-import com.tencent.angel.ml.core.conf.MLConf._
-import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.core.conf.MLCoreConf
+import com.tencent.angel.ml.core.conf.MLCoreConf._
 import com.tencent.angel.ml.lda.LDAModel._
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.math2.utils.{LabeledData, RowType}
 import com.tencent.angel.ml.model.{MLModel, PSModel}
-import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
@@ -38,6 +36,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 
 import scala.collection.mutable.ArrayBuffer
+import scala.reflect.ClassTag
 
 
 /**
@@ -105,7 +104,7 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
 
   val K = conf.getInt(TOPIC_NUM, 1)
   val M = conf.getInt(DOC_NUM, 1)
-  val epoch = conf.getInt(MLConf.ML_EPOCH_NUM, 10)
+  val epoch = conf.getInt(MLCoreConf.ML_EPOCH_NUM, 10)
   val alpha = conf.getFloat(ALPHA, 50.0F / K)
   val beta = conf.getFloat(BETA, 0.01F)
   var vBeta = 0F
@@ -140,7 +139,7 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
 
   val actType = conf.get(AngelConf.ANGEL_ACTION_TYPE)
   actType match {
-    case MLConf.ANGEL_ML_PREDICT => addPSModel(wtMat)
+    case MLCoreConf.ANGEL_ML_PREDICT => addPSModel(wtMat)
     case _ =>
   }
   addPSModel(tMat)
@@ -149,9 +148,8 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
   //  setSavePath(conf)
   //  setLoadPath(conf)
 
-  override
-  def predict(dataSet: DataBlock[LabeledData]): DataBlock[PredictResult] = {
-    null
+  override def predict[T: ClassTag](dataSet: DataBlock[LabeledData]): DataBlock[T] = {
+    null.asInstanceOf[DataBlock[T]]
   }
 
   def blockNum(V: Int, K: Int): Int = {

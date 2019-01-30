@@ -19,9 +19,10 @@
 package com.tencent.angel.ml.core.network.layers.linear
 
 
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.network.{Graph, TransFunc}
 import com.tencent.angel.ml.core.network.layers._
-import com.tencent.angel.ml.core.network.variable.{MatVariable, Variable, VecVariable}
+import com.tencent.angel.ml.core.variable.{MatVariable, Variable, VecVariable}
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.utils.{LayerKeys, MLException, OptUtils}
 import com.tencent.angel.ml.math2.matrix._
@@ -38,10 +39,13 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
   graph.addTrainableLayer(this)
   private val LOG = LogFactory.getLog(classOf[FCLayer])
 
+  private val formatClassName = SharedConf.get().getString(
+    MLCoreConf.ML_FCLAYER_MATRIX_OUTPUT_FORMAT,
+    MLCoreConf.DEFAULT_ML_FCLAYER_MATRIX_OUTPUT_FORMAT)
   private val weight: MatVariable = graph.provider.getMatVariable(s"${name}_weight", outputDim,
-    inputLayer.outputDim, optimizer, allowPullWithIndex = false)
+    inputLayer.outputDim, optimizer, formatClassName, allowPullWithIndex = false)
   private val bias: VecVariable = graph.provider.getVecVariable(s"${name}_bias", outputDim,
-    null, allowPullWithIndex = false)
+    null, formatClassName, allowPullWithIndex = false)
 
   @transient private var middleCache: Matrix = _
   @transient private var subDim: Int = -1

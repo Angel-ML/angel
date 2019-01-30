@@ -23,6 +23,7 @@ import com.tencent.angel.ml.core.local.variables._
 import com.tencent.angel.ml.core.network.{EvnContext, Graph}
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.utils.{GraphInvalidate, VariableInvalidate}
+import com.tencent.angel.ml.core.variable.VariableManager
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.model.ModelTools
 import org.apache.commons.logging.{Log, LogFactory}
@@ -35,6 +36,7 @@ class LocalGraph(placeHolder: PlaceHolder, conf: SharedConf, override val taskNu
   with Serializable {
 
   val LOG: Log = LogFactory.getLog(classOf[LocalGraph])
+  override protected val variableManager: VariableManager = new VariableManager(this)
 
   // fields
   override val indexRange: Long = SharedConf.indexRange
@@ -46,4 +48,6 @@ class LocalGraph(placeHolder: PlaceHolder, conf: SharedConf, override val taskNu
   override val modelType: RowType = SharedConf.modelType
 
   override def toString: String = super.toString
+
+
 }

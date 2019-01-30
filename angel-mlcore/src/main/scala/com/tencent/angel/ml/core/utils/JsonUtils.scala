@@ -1,5 +1,6 @@
 package com.tencent.angel.ml.core.utils
 
+import java.io.File
 import java.util
 
 import com.tencent.angel.ml.core.conf.SharedConf
@@ -52,10 +53,20 @@ object JsonTopKeys {
   val layers: String = "layers"
 }
 
+object OptimizerKeys {
+  val typeKey: String = "type"
+  val alphaKey: String = "alpha"
+  val betaKey: String = "beta"
+  val gammaKey: String = " gamma"
+  val momentumKey: String = " momentum"
+  val reg1Key: String = "reg1"
+  val reg2Key: String = "reg2"
+}
+
 
 object JsonUtils {
   private implicit val formats: DefaultFormats.type = DefaultFormats
-  private val json2OptimizerProvider = Optimizer.getJson2OptimizerProvider(SharedConf.optJsonProvider())
+  private val optimizerProvider = Optimizer.getOptimizerProvider(SharedConf.optJsonProvider())
 
   def extract[T: Manifest](jast: JValue, key: String, default: Option[T] = None): Option[T] = {
     jast \ key match {
@@ -169,7 +180,7 @@ object JsonUtils {
             val newLayer = new Embedding(name,
               extract[Int](obj, LayerKeys.outputDimKey).get,
               extract[Int](obj, LayerKeys.numFactorsKey).get,
-              json2OptimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
+              optimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
             )
 
             layerMap.put(name, newLayer)
@@ -178,7 +189,7 @@ object JsonUtils {
             val newLayer = new SimpleInputLayer(name,
               extract[Int](obj, LayerKeys.outputDimKey).get,
               TransFunc.fromJson(obj \ LayerKeys.transFuncKey),
-              json2OptimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
+              optimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
             )
 
             layerMap.put(name, newLayer)
@@ -211,7 +222,7 @@ object JsonUtils {
                 extract[Int](obj, LayerKeys.outputDimKey).get,
                 layerMap(inputLayer.get),
                 TransFunc.fromJson(obj \ LayerKeys.transFuncKey),
-                json2OptimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
+                optimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
               )
 
               layerMap.put(name, newLayer)
@@ -286,7 +297,7 @@ object JsonUtils {
     assert(outputDims.size == transFuncs.size)
 
     val optimizer = (obj \ LayerKeys.optimizerKey) match {
-      case JNothing => default_optimizer.getOrElse(json2OptimizerProvider.defaultOptJson())
+      case JNothing => default_optimizer.getOrElse(optimizerProvider.defaultOptJson())
       case opt: JObject => opt
       case opt: JString => opt
       case _ => throw MLException("Json format error!")
@@ -320,7 +331,7 @@ object JsonUtils {
   private def extendSimpleInputLayer(obj: JObject, default_trans: Option[JValue], default_optimizer: Option[JValue]): List[JField] = {
     val name = (obj \ "name").asInstanceOf[JString].values
     val addOpt = (obj \ LayerKeys.optimizerKey) match {
-      case JNothing => obj ~ (LayerKeys.optimizerKey, default_optimizer.getOrElse(json2OptimizerProvider.defaultOptJson()))
+      case JNothing => obj ~ (LayerKeys.optimizerKey, default_optimizer.getOrElse(optimizerProvider.defaultOptJson()))
       case _ => obj
     }
     val addTrans = (obj \ LayerKeys.transFuncKey) match {
@@ -334,7 +345,7 @@ object JsonUtils {
   private def extendEmbeddingLayer(obj: JObject, default_trans: Option[JValue], default_optimizer: Option[JValue]): List[JField] = {
     val name = (obj \ "name").asInstanceOf[JString].values
     val addOpt = (obj \ LayerKeys.optimizerKey) match {
-      case JNothing => obj ~ (LayerKeys.optimizerKey, default_optimizer.getOrElse(json2OptimizerProvider.defaultOptJson()))
+      case JNothing => obj ~ (LayerKeys.optimizerKey, default_optimizer.getOrElse(optimizerProvider.defaultOptJson()))
       case _ => obj
     }
 

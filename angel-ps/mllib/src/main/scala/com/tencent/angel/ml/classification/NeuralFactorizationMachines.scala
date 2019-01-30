@@ -18,26 +18,21 @@
 
 package com.tencent.angel.ml.classification
 
-import com.tencent.angel.ml.core.conf.MLConf
+import com.tencent.angel.ml.core.conf.MLCoreConf
 import com.tencent.angel.ml.core.graphsubmit.GraphModel
 import com.tencent.angel.ml.core.network.layers.Layer
-import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleLossLayer, SimpleInputLayer}
 import com.tencent.angel.ml.core.network.layers.join.SumPooling
 import com.tencent.angel.ml.core.network.layers.linear.BiInteractionCross
-import com.tencent.angel.ml.core.network.transfunc.Identity
-import com.tencent.angel.ml.core.optimizer.loss.{LogLoss, LossFunc}
-import com.tencent.angel.ml.core.utils.paramsutils.{EmbeddingParams, JsonUtils}
+import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer}
+import com.tencent.angel.ml.core.optimizer.loss.LogLoss
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 
-class NeuralFactorizationMachines(conf: Configuration, _ctx: TaskContext = null) extends GraphModel(conf, _ctx) {
-  val numFields: Int = sharedConf.getInt(MLConf.ML_FIELD_NUM, MLConf.DEFAULT_ML_FIELD_NUM)
 
-  override val lossFunc: LossFunc = new LogLoss()
+class NeuralFactorizationMachines(conf: Configuration, _ctx: TaskContext = null) extends GraphModel(conf, _ctx) {
+  val numFields: Int = sharedConf.getInt(MLCoreConf.ML_FIELD_NUM, MLCoreConf.DEFAULT_ML_FIELD_NUM)
 
   override def buildNetwork(): Unit = {
-    ensureJsonAst()
-
     val wide = new SimpleInputLayer("input", 1, new Identity(),
       JsonUtils.getOptimizerByLayerType(jsonAst, "SparseInputLayer"))
 
@@ -52,6 +47,6 @@ class NeuralFactorizationMachines(conf: Configuration, _ctx: TaskContext = null)
 
     val join = new SumPooling("sumPooling", 1, Array[Layer](wide, hiddenLayer))
 
-    new SimpleLossLayer("simpleLossLayer", join, lossFunc)
+    new SimpleLossLayer("simpleLossLayer", join, new LogLoss())
   }
 }

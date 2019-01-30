@@ -18,7 +18,7 @@
 
 package com.tencent.angel.example.quickStart
 
-import com.tencent.angel.ml.core.conf.MLConf
+import com.tencent.angel.ml.core.conf.MLCoreConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.model.{MLModel, PSModel}
@@ -28,7 +28,7 @@ import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 
 class QSLRModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
-  val N: Int = conf.getInt(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
+  val N: Int = conf.getInt(MLCoreConf.ML_FEATURE_INDEX_RANGE, MLCoreConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
 
   val weight = PSModel("qs.lr.weight", 1, N).setRowType(RowType.T_DOUBLE_DENSE).setAverage(true)
   addPSModel(weight)

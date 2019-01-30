@@ -1,9 +1,10 @@
 package com.tencent.angel.ml.core
 
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.core.data.{DataBlock, LabeledData}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.core.local.LocalLearner
 import com.tencent.angel.ml.core.local.data.LocalDataReader
+import com.tencent.angel.ml.math2.utils.LabeledData
 import org.scalatest.{BeforeAndAfter, FunSuite}
 
 class AlgoTest extends FunSuite with BeforeAndAfter {
@@ -35,7 +36,7 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
 
   def init1(jsonFile: String, sourceFile: String): Unit = {
     conf = SharedConf.get()
-    conf.set(MLConf.ML_JSON_CONF_FILE, jsonFile)
+    conf.set(MLCoreConf.ML_JSON_CONF_FILE, jsonFile)
     conf.setJson()
 
     reader = new LocalDataReader(conf)
@@ -49,7 +50,7 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
 
   def init2(jsonFile: String, sourceFile: String): Unit = {
     conf = SharedConf.get()
-    conf.set(MLConf.ML_JSON_CONF_FILE, jsonFile)
+    conf.set(MLCoreConf.ML_JSON_CONF_FILE, jsonFile)
     conf.setJson()
 
     reader = new LocalDataReader(conf)

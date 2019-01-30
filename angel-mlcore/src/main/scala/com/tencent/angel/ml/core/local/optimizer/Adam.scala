@@ -2,11 +2,11 @@ package com.tencent.angel.ml.core.local.optimizer
 
 import java.util.concurrent.Future
 
-import com.tencent.angel.ml.core.local.OptimizerKeys
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.local.variables.{LocalBlasMatVariable, LocalMatVariable, LocalVecVariable}
-import com.tencent.angel.ml.core.network.variable.Variable
-import com.tencent.angel.ml.core.optimizer.Optimizer
-import com.tencent.angel.ml.core.utils.OptUtils
+import com.tencent.angel.ml.core.variable.Variable
+import com.tencent.angel.ml.core.optimizer.{Optimizer, OptimizerHelper}
+import com.tencent.angel.ml.core.utils.{OptUtils, OptimizerKeys}
 import com.tencent.angel.ml.math2.ufuncs.{OptFuncs, Ufuncs}
 import org.json4s.JsonAST.{JObject, JValue}
 import org.json4s.JsonDSL._
@@ -14,8 +14,6 @@ import com.tencent.angel.ml.core.utils.JsonUtils.{extract, fieldEqualClassName}
 
 class Adam(override var lr: Double, beta: Double, gamma: Double) extends Optimizer {
   override val numSlot: Int = 3
-  override protected var regL1Param: Double = _
-  override protected var regL2Param: Double = _
 
   override def update[T](variable: Variable, epoch: Int, batchSize: Int): Future[T] = {
     val powBeta = Math.pow(beta, epoch + 1)
@@ -71,17 +69,22 @@ class Adam(override var lr: Double, beta: Double, gamma: Double) extends Optimiz
   }
 
   override def toJson: JObject = {
-    ("type" -> s"${this.getClass.getSimpleName}") ~
-      ("beta" -> beta) ~
-      ("gamma" -> gamma)
+    (OptimizerKeys.typeKey -> s"${this.getClass.getSimpleName}") ~
+      (OptimizerKeys.betaKey-> beta) ~
+      (OptimizerKeys.gammaKey -> gamma)
   }
 }
 
 object Adam {
+  private val conf: SharedConf = SharedConf.get()
+
   def fromJson(jast: JObject): Adam = {
     assert(fieldEqualClassName[Adam](jast, OptimizerKeys.typeKey))
-    new Adam(0.0001, extract[Double](jast, OptimizerKeys.betaKey, Some(0.9)).get,
-      extract[Double](jast, OptimizerKeys.gammaKey, Some(0.99)).get
+    val beta = conf.getDouble(MLCoreConf.ML_OPT_ADAM_BETA, MLCoreConf.DEFAULT_ML_OPT_ADAM_BETA)
+    val gamma = conf.getDouble(MLCoreConf.ML_OPT_ADAM_GAMMA, MLCoreConf.DEFAULT_ML_OPT_ADAM_GAMMA)
+
+    new Adam(1.0, extract[Double](jast, OptimizerKeys.betaKey, Some(beta)).get,
+      extract[Double](jast, OptimizerKeys.gammaKey, Some(gamma)).get
     )
   }
 }

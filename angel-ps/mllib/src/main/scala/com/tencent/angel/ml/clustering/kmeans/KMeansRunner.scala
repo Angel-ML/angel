@@ -20,7 +20,7 @@ package com.tencent.angel.ml.clustering.kmeans
 
 import com.tencent.angel.client.AngelClientFactory
 import com.tencent.angel.ml.core.MLRunner
-import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.utils.SConfHelper
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 
@@ -30,7 +30,7 @@ object KMeansRunner {
   val KMEANS_OBJ_MAT = "obj"
 }
 
-class KMeansRunner extends MLRunner {
+class KMeansRunner extends MLRunner with SConfHelper{
 
   private val LOG = LogFactory.getLog(classOf[KMeansRunner])
 
@@ -40,7 +40,7 @@ class KMeansRunner extends MLRunner {
   override def train(conf: Configuration): Unit = {
     conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
     val client = AngelClientFactory.get(conf)
-    SharedConf.get(conf)
+    initConf(conf)
     val model = new KMeansModel(conf)
 
     try {
@@ -60,7 +60,7 @@ class KMeansRunner extends MLRunner {
   override def predict(conf: Configuration): Unit = {
     conf.setInt("angel.worker.matrix.transfer.request.timeout.ms", 60000)
     val client = AngelClientFactory.get(conf)
-    SharedConf.get(conf)
+    initConf(conf)
     val model = new KMeansModel(conf)
 
     try {

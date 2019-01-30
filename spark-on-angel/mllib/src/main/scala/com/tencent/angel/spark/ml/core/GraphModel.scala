@@ -19,7 +19,7 @@
 package com.tencent.angel.spark.ml.core
 
 
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.network.graph.AngelGraph
 import com.tencent.angel.ml.core.network.layers.{PlaceHolder, STATUS}
 import com.tencent.angel.ml.core.optimizer.decayer._

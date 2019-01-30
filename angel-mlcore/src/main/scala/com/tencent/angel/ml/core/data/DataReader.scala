@@ -1,6 +1,7 @@
 package com.tencent.angel.ml.core.data
 
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.math2.utils.LabeledData
 import org.apache.commons.logging.LogFactory
 
 
@@ -12,18 +13,18 @@ abstract class DataReader(conf: SharedConf) {
   private val valiRat = SharedConf.validateRatio
 
   private val transLabel: TransLabel = TransLabel.get(
-    conf.getString(MLConf.ML_DATA_LABEL_TRANS, MLConf.DEFAULT_ML_DATA_LABEL_TRANS),
-    conf.getDouble(MLConf.ML_DATA_LABEL_TRANS_THRESHOLD, MLConf.DEFAULT_ML_DATA_LABEL_TRANS_THRESHOLD)
+    conf.getString(MLCoreConf.ML_DATA_LABEL_TRANS, MLCoreConf.DEFAULT_ML_DATA_LABEL_TRANS),
+    conf.getDouble(MLCoreConf.ML_DATA_LABEL_TRANS_THRESHOLD, MLCoreConf.DEFAULT_ML_DATA_LABEL_TRANS_THRESHOLD)
   )
-  private val isTraining: Boolean = conf.getString(MLConf.ML_ACTION_TYPE, MLConf.DEFAULT_ML_ACTION_TYPE).toLowerCase match {
+  private val isTraining: Boolean = conf.getString(MLCoreConf.ML_ACTION_TYPE, MLCoreConf.DEFAULT_ML_ACTION_TYPE).toLowerCase match {
     case "train" | "inctrain" => true
     case _ => false
   }
   private val parser: DataParser = DataParser(
     SharedConf.indexRange, SharedConf.inputDataFormat,
-    conf.getString(MLConf.ML_DATA_SPLITOR, MLConf.DEFAULT_ML_DATA_SPLITOR),
+    conf.getString(MLCoreConf.ML_DATA_SPLITOR, MLCoreConf.DEFAULT_ML_DATA_SPLITOR),
     SharedConf.modelType,
-    conf.getBoolean(MLConf.ML_DATA_HAS_LABEL, MLConf.DEFAULT_ML_DATA_HAS_LABEL),
+    conf.getBoolean(MLCoreConf.ML_DATA_HAS_LABEL, MLCoreConf.DEFAULT_ML_DATA_HAS_LABEL),
     isTraining, transLabel)
 
   def sourceIter(pathName: String): Iterator[String]

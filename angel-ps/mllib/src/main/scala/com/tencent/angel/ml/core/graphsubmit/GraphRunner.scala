@@ -18,16 +18,17 @@
 
 package com.tencent.angel.ml.core.graphsubmit
 
+import java.io.File
+
 import com.tencent.angel.client.AngelClientFactory
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.core.MLRunner
 import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.network.graph.AngelEvnContext
-import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
+import com.tencent.angel.ml.core.utils.SConfHelper
+import com.tencent.angel.ml.core.{AngelEvnContext, MLRunner}
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 
-class GraphRunner extends MLRunner {
+class GraphRunner extends MLRunner with SConfHelper {
 
   private val LOG = LogFactory.getLog(classOf[GraphRunner])
 
@@ -38,29 +39,23 @@ class GraphRunner extends MLRunner {
     */
   override def train(conf: Configuration): Unit = {
     val client = AngelClientFactory.get(conf)
-
-    if (conf.get(AngelConf.ANGEL_ML_CONF) != null) {
-      SharedConf.get(conf)
-      JsonUtils.init()
-    } else
-      SharedConf.get(conf)
-
-    val modelClassName: String = SharedConf.modelClassName
-    val model: GraphModel = GraphModel(modelClassName, conf)
-    val saveModelPath = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH, "")
-    val loadModelPath = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
-
-    model.buildNetwork()
+    val envCtx = AngelEvnContext(client)
+    val sharedConf = initConf(conf)
 
     try {
-      val envCtx = AngelEvnContext(client)
-
       client.startPSServer()
 
-      model.createMatrices(envCtx)
+      val modelClassName: String = SharedConf.modelClassName
+      val model: GraphModel = GraphModel(modelClassName, conf)
+      val saveModelPath = sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH, "")
+      val loadModelPath = sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
 
-      if (!loadModelPath.isEmpty)
+      model.buildNetwork()
+
+      model.createMatrices(envCtx)
+      if (!loadModelPath.isEmpty) {
         model.loadModel(envCtx, loadModelPath)
+      }
 
       client.runTask(classOf[GraphTrainTask])
       client.waitForCompletion()
@@ -80,24 +75,20 @@ class GraphRunner extends MLRunner {
   override def predict(conf: Configuration): Unit = {
     val client = AngelClientFactory.get(conf)
     val envCtx = AngelEvnContext(client)
-
-    if (conf.get(AngelConf.ANGEL_ML_CONF) != null) {
-      SharedConf.get(conf)
-      JsonUtils.init()
-    } else {
-      SharedConf.get(conf)
-    }
-
-    val modelClassName: String = SharedConf.modelClassName
-    val model: GraphModel = GraphModel(modelClassName, conf)
-    model.buildNetwork()
-    val loadModelPath = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
+    val sharedConf = initConf(conf)
 
     try {
       client.startPSServer()
+
+      val modelClassName: String = SharedConf.modelClassName
+      val model: GraphModel = GraphModel(modelClassName, conf)
+      model.buildNetwork()
+
+      val loadModelPath = sharedConf.getString(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
+      assert(!loadModelPath.isEmpty)
+
       model.createMatrices(envCtx)
-      if (!loadModelPath.isEmpty)
-        model.loadModel(envCtx, loadModelPath)
+      model.loadModel(envCtx, loadModelPath)
       client.runTask(classOf[GraphPredictTask])
       client.waitForCompletion()
     } catch {

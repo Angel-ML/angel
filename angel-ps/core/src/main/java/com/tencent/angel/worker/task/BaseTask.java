@@ -30,7 +30,7 @@ import org.apache.hadoop.conf.Configuration;
  * The train data was read fully to {@link DataBlock} at pre-process as default.
  * <ol>
  * <li>
- * Normally communicate with {@link com.tencent.angel.ps.impl.ParameterServer}
+ * Normally communicate with ParameterServer
  * do pull or push data(see more detail {@link com.tencent.angel.psagent.matrix.transport.MatrixTransportClient}).
  * </li>
  * <li>
@@ -64,9 +64,8 @@ public abstract class BaseTask<KEY_IN, VALUE_IN, VALUE_OUT>
     } else {
       taskDataBlock = new DiskDataBlock<VALUE_OUT>(taskContext.getTaskId().getIndex());
     }
+
     conf = taskContext.getConf();
-
-
   }
 
 

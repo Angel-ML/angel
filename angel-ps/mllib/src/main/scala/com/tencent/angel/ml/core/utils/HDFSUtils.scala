@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ml.core.utils
 
-import com.tencent.angel.ml.core.conf.MLConf
+import com.tencent.angel.ml.core.conf.MLCoreConf
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
@@ -41,7 +41,7 @@ object HDFSUtils {
     dim.readLine(line)
     val feaNum = Integer.valueOf(line.toString)
     dim.close()
-    conf.set(MLConf.ML_FEATURE_INDEX_RANGE, String.valueOf(feaNum))
+    conf.set(MLCoreConf.ML_FEATURE_INDEX_RANGE, String.valueOf(feaNum))
     feaNum
   }
 }

@@ -31,6 +31,7 @@ import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.ps.server.data.request.{InitFunc, RandomNormalInitFunc, UpdateOp}
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
 import com.tencent.angel.psagent.PSAgentContext
+import com.tencent.angel.psagent.client.MasterClient
 
 
 object PSMatrixUtils {
@@ -56,9 +57,13 @@ object PSMatrixUtils {
   }
 
   def createPSMatrix(ctx: MatrixContext): Int = {
-    val master = PSAgentContext.get().getMasterClient
-    master.createMatrix(ctx, Long.MaxValue)
-    master.getMatrix(ctx.getName).getId
+    val masterClient = PSAgentContext.get().getMasterClient
+    createPSMatrix(masterClient, ctx)
+  }
+
+  def createPSMatrix(masterClient: MasterClient, ctx: MatrixContext): Int = {
+    masterClient.createMatrix(ctx, Long.MaxValue)
+    masterClient.getMatrix(ctx.getName).getId
   }
 
   def getRow(epoch: Int, matrixId: Int, rowId: Int): Vector = {

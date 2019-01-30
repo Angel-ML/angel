@@ -22,10 +22,9 @@ import java.text.DecimalFormat
 import java.util
 
 import com.tencent.angel.ml.clustering.kmeans.KMeansModel._
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.core.conf.{AngelMLConf, SharedConf}
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.math2.utils.{LabeledData, RowType}
 import com.tencent.angel.ml.math2.vector.{IntFloatVector, Vector}
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
@@ -45,7 +44,7 @@ class KMeansModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
   private val indexRange: Long = SharedConf.indexRange
   // Number of features
   val modelSize: Long = SharedConf.modelSize
-  private val K: Int = conf.getInt(MLConf.KMEANS_CENTER_NUM, MLConf.DEFAULT_KMEANS_CENTER_NUM) // Number of clusters
+  private val K: Int = conf.getInt(AngelMLConf.KMEANS_CENTER_NUM, AngelMLConf.DEFAULT_KMEANS_CENTER_NUM) // Number of clusters
 
   // Centers pulled to local worker
   var lcCenters: util.List[Vector] = new util.ArrayList[Vector]()

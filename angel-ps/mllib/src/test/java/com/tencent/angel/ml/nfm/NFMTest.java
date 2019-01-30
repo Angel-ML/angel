@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.nfm;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.conf.MLCoreConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -72,7 +72,7 @@ public class NFMTest {
       String angelConfFile = "./src/test/jsons/nfm.json";
       conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
 
-      conf.set(MLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "GraphModel");
+      conf.set(MLCoreConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "GraphModel");
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;
@@ -91,7 +91,7 @@ public class NFMTest {
       conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
 
       // Set actionType train
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLCoreConf.ANGEL_ML_TRAIN());
 
       GraphRunner runner = new GraphRunner();
       runner.train(conf);
@@ -116,7 +116,7 @@ public class NFMTest {
       conf.set(AngelConf.ANGEL_PREDICT_PATH, predictPath);
 
       // Set actionType prediction
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLCoreConf.ANGEL_ML_PREDICT());
 
       GraphRunner runner = new GraphRunner();
       runner.predict(conf);

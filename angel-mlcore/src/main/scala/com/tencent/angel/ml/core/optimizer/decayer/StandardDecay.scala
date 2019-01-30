@@ -17,17 +17,17 @@
 
 package com.tencent.angel.ml.core.optimizer.decayer
 
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 
-class StandardDecay(eta: Double) extends StepSizeScheduler {
+class StandardDecay(eta: Double, alpha: Double) extends StepSizeScheduler {
 
   var current: Int = 0
-  val decay: Double = SharedConf.decay
-  val interval: Int = SharedConf.get().getInt(MLConf.ML_DECAY_INTERVALS, 100)
+  val interval: Int = SharedConf.get().getInt(MLCoreConf.ML_OPT_DECAY_INTERVALS,
+    MLCoreConf.DEFAULT_ML_OPT_DECAY_INTERVALS)
 
   override def next(): Double = {
     current += 1
-    eta / math.sqrt(1.0 + decay * current)
+    eta / math.sqrt(1.0 + alpha * current)
   }
 
   override def isIntervalBoundary: Boolean = {
