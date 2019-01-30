@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -22,6 +22,7 @@ import com.tencent.angel.ml.math2.ufuncs.executor.comp.CompReduceExecutor;
 import com.tencent.angel.ml.matrix.RowType;
 
 public class CompIntIntVector extends IntVector implements IntKeyVector, ComponentVector {
+
   private IntIntVector[] partitions;
   private int numPartitions;
   private int dim;
@@ -32,7 +33,7 @@ public class CompIntIntVector extends IntVector implements IntKeyVector, Compone
   }
 
   public CompIntIntVector(int matrixId, int rowId, int clock, int dim, IntIntVector[] partitions,
-    int subDim) {
+      int subDim) {
     setMatrixId(matrixId);
     setRowId(rowId);
     setClock(clock);
@@ -79,12 +80,8 @@ public class CompIntIntVector extends IntVector implements IntKeyVector, Compone
     this(0, 0, 0, dim, subDim);
   }
 
-  public void setPartitions(IntIntVector[] partitions) {
-    assert partitions.length == this.partitions.length;
-    this.partitions = partitions;
-  }
-
-  @Override public int getNumPartitions() {
+  @Override
+  public int getNumPartitions() {
     return numPartitions;
   }
 
@@ -123,7 +120,8 @@ public class CompIntIntVector extends IntVector implements IntKeyVector, Compone
     return partitions[partIdx].get(subIdx);
   }
 
-  @Override public boolean hasKey(int idx) {
+  @Override
+  public boolean hasKey(int idx) {
     int partIdx = (int) (idx / subDim);
     return partitions[partIdx].hasKey(idx);
   }
@@ -136,6 +134,11 @@ public class CompIntIntVector extends IntVector implements IntKeyVector, Compone
 
   public IntIntVector[] getPartitions() {
     return partitions;
+  }
+
+  public void setPartitions(IntIntVector[] partitions) {
+    assert partitions.length == this.partitions.length;
+    this.partitions = partitions;
   }
 
   public int max() {
@@ -162,7 +165,8 @@ public class CompIntIntVector extends IntVector implements IntKeyVector, Compone
     return CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Norm);
   }
 
-  @Override public int numZeros() {
+  @Override
+  public int numZeros() {
     return (int) CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Numzeros);
   }
 
@@ -180,33 +184,38 @@ public class CompIntIntVector extends IntVector implements IntKeyVector, Compone
     }
   }
 
-  @Override public CompIntIntVector clone() {
+  @Override
+  public CompIntIntVector clone() {
     IntIntVector[] newPartitions = new IntIntVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = partitions[i].clone();
     }
     return new CompIntIntVector(getMatrixId(), getRowId(), getClock(), (int) getDim(),
-      newPartitions, subDim);
+        newPartitions, subDim);
   }
 
-  @Override public CompIntIntVector copy() {
+  @Override
+  public CompIntIntVector copy() {
     IntIntVector[] newPartitions = new IntIntVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = partitions[i].copy();
     }
     return new CompIntIntVector(getMatrixId(), getRowId(), getClock(), (int) getDim(),
-      newPartitions, subDim);
+        newPartitions, subDim);
   }
 
-  @Override public int getTypeIndex() {
+  @Override
+  public int getTypeIndex() {
     return 1;
   }
 
-  @Override public RowType getType() {
+  @Override
+  public RowType getType() {
     return RowType.T_INT_SPARSE_COMPONENT;
   }
 
-  @Override public Vector filter(double threshold) {
+  @Override
+  public Vector filter(double threshold) {
     IntIntVector[] newPartitions = new IntIntVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = (IntIntVector) partitions[i].filter(threshold);
@@ -215,7 +224,8 @@ public class CompIntIntVector extends IntVector implements IntKeyVector, Compone
     return new CompIntIntVector(matrixId, rowId, clock, dim, newPartitions, subDim);
   }
 
-  @Override public Vector ifilter(double threshold) {
+  @Override
+  public Vector ifilter(double threshold) {
     IntIntVector[] newPartitions = new IntIntVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = (IntIntVector) partitions[i].ifilter(threshold);
@@ -224,7 +234,8 @@ public class CompIntIntVector extends IntVector implements IntKeyVector, Compone
     return new CompIntIntVector(matrixId, rowId, clock, dim, newPartitions, subDim);
   }
 
-  @Override public Vector filterUp(double threshold) {
+  @Override
+  public Vector filterUp(double threshold) {
     IntIntVector[] newPartitions = new IntIntVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = (IntIntVector) partitions[i].filterUp(threshold);

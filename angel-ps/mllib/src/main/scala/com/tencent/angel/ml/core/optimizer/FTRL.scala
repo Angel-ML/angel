@@ -28,8 +28,7 @@ class FTRL(stepSize: Double, val alpha: Double, val beta: Double) extends Optimi
   override protected var numSlot: Int = 3
 
   override def update(matrixId: Int, numFactors: Int, epoch: Int): Future[VoidResult] = {
-    val func = new FTRLUpdateFunc(matrixId, numFactors, alpha, beta, regL1Param, regL2Param, epoch)
-    PSAgentContext.get().getUserRequestAdapter.update(func)
+    update(matrixId, numFactors, epoch, 1)
   }
 
   override def update(matrixId: Int, numFactors: Int, epoch: Int, batchSize: Int): Future[VoidResult] = {

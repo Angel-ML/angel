@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -22,6 +22,7 @@ import com.tencent.angel.ml.math2.ufuncs.executor.comp.CompReduceExecutor;
 import com.tencent.angel.ml.matrix.RowType;
 
 public class CompIntDoubleVector extends DoubleVector implements IntKeyVector, ComponentVector {
+
   private IntDoubleVector[] partitions;
   private int numPartitions;
   private int dim;
@@ -32,7 +33,7 @@ public class CompIntDoubleVector extends DoubleVector implements IntKeyVector, C
   }
 
   public CompIntDoubleVector(int matrixId, int rowId, int clock, int dim,
-    IntDoubleVector[] partitions, int subDim) {
+      IntDoubleVector[] partitions, int subDim) {
     setMatrixId(matrixId);
     setRowId(rowId);
     setClock(clock);
@@ -55,7 +56,7 @@ public class CompIntDoubleVector extends DoubleVector implements IntKeyVector, C
   }
 
   public CompIntDoubleVector(int matrixId, int rowId, int clock, int dim,
-    IntDoubleVector[] partitions) {
+      IntDoubleVector[] partitions) {
     this(matrixId, rowId, clock, dim, partitions, -1);
   }
 
@@ -80,12 +81,8 @@ public class CompIntDoubleVector extends DoubleVector implements IntKeyVector, C
     this(0, 0, 0, dim, subDim);
   }
 
-  public void setPartitions(IntDoubleVector[] partitions) {
-    assert partitions.length == this.partitions.length;
-    this.partitions = partitions;
-  }
-
-  @Override public int getNumPartitions() {
+  @Override
+  public int getNumPartitions() {
     return numPartitions;
   }
 
@@ -124,7 +121,8 @@ public class CompIntDoubleVector extends DoubleVector implements IntKeyVector, C
     return partitions[partIdx].get(subIdx);
   }
 
-  @Override public boolean hasKey(int idx) {
+  @Override
+  public boolean hasKey(int idx) {
     int partIdx = (int) (idx / subDim);
     return partitions[partIdx].hasKey(idx);
   }
@@ -137,6 +135,11 @@ public class CompIntDoubleVector extends DoubleVector implements IntKeyVector, C
 
   public IntDoubleVector[] getPartitions() {
     return partitions;
+  }
+
+  public void setPartitions(IntDoubleVector[] partitions) {
+    assert partitions.length == this.partitions.length;
+    this.partitions = partitions;
   }
 
   public double max() {
@@ -163,7 +166,8 @@ public class CompIntDoubleVector extends DoubleVector implements IntKeyVector, C
     return CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Norm);
   }
 
-  @Override public int numZeros() {
+  @Override
+  public int numZeros() {
     return (int) CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Numzeros);
   }
 
@@ -181,33 +185,38 @@ public class CompIntDoubleVector extends DoubleVector implements IntKeyVector, C
     }
   }
 
-  @Override public CompIntDoubleVector clone() {
+  @Override
+  public CompIntDoubleVector clone() {
     IntDoubleVector[] newPartitions = new IntDoubleVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = partitions[i].clone();
     }
     return new CompIntDoubleVector(getMatrixId(), getRowId(), getClock(), (int) getDim(),
-      newPartitions, subDim);
+        newPartitions, subDim);
   }
 
-  @Override public CompIntDoubleVector copy() {
+  @Override
+  public CompIntDoubleVector copy() {
     IntDoubleVector[] newPartitions = new IntDoubleVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = partitions[i].copy();
     }
     return new CompIntDoubleVector(getMatrixId(), getRowId(), getClock(), (int) getDim(),
-      newPartitions, subDim);
+        newPartitions, subDim);
   }
 
-  @Override public int getTypeIndex() {
+  @Override
+  public int getTypeIndex() {
     return 4;
   }
 
-  @Override public RowType getType() {
+  @Override
+  public RowType getType() {
     return RowType.T_DOUBLE_SPARSE_COMPONENT;
   }
 
-  @Override public Vector filter(double threshold) {
+  @Override
+  public Vector filter(double threshold) {
     IntDoubleVector[] newPartitions = new IntDoubleVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = (IntDoubleVector) partitions[i].filter(threshold);
@@ -216,7 +225,8 @@ public class CompIntDoubleVector extends DoubleVector implements IntKeyVector, C
     return new CompIntDoubleVector(matrixId, rowId, clock, dim, newPartitions, subDim);
   }
 
-  @Override public Vector ifilter(double threshold) {
+  @Override
+  public Vector ifilter(double threshold) {
     IntDoubleVector[] newPartitions = new IntDoubleVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = (IntDoubleVector) partitions[i].ifilter(threshold);
@@ -225,7 +235,8 @@ public class CompIntDoubleVector extends DoubleVector implements IntKeyVector, C
     return new CompIntDoubleVector(matrixId, rowId, clock, dim, newPartitions, subDim);
   }
 
-  @Override public Vector filterUp(double threshold) {
+  @Override
+  public Vector filterUp(double threshold) {
     IntDoubleVector[] newPartitions = new IntDoubleVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = (IntDoubleVector) partitions[i].filterUp(threshold);

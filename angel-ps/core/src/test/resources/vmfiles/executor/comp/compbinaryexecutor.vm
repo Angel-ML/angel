@@ -37,7 +37,7 @@ public class CompBinaryExecutor {
         if (op.isInplace()) {
             result = v1;
         } else {
-            result = VectorUtils.emptyLike(v1);
+            result = (ComponentVector) VectorUtils.emptyLike((Vector) v1);
         }
 
         CompBinExe task = new CompBinExe(v1, v2, op, result, 0, v1.getNumPartitions()-1);

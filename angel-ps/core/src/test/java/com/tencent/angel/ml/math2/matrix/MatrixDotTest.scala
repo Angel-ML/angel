@@ -211,6 +211,7 @@ class MatrixDotTest extends FunSuite {
     densematrix4 = MFactory.denseFloatMatrix(10, 300, densefloatMatrixValues1)
   }
 
+  /*
   test("rbmatrix dot blasmatrix") {
     init()
     println("rbmatrix dot blasmatrix FF")
@@ -231,6 +232,7 @@ class MatrixDotTest extends FunSuite {
 
   }
 
+
   test("blasmatrix dot rbmatrix") {
     init()
     println("blasmatrix dot rbmatrix FF")
@@ -242,4 +244,5 @@ class MatrixDotTest extends FunSuite {
     println(Ufuncs.dot(densematrix4, true, matrixlist.get(1), false, false).sum())
 
   }
+  */
 }

@@ -122,7 +122,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
             val batchSize = graph.placeHolder.getBatchSize
             (0 until batchSize).foreach { idx =>
               batchData.getRow(idx).getStorage match {
-                case s: IntFloatSortedVectorStorage =>
+                case s: IntDoubleSortedVectorStorage =>
                   val values = s.getValues
                   val index = s.getIndices
                   var i = 0
@@ -133,7 +133,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
                     mergeUpdate(map, key.toLong, update, value)
                     i += 1
                   }
-                case s: LongFloatSortedVectorStorage =>
+                case s: LongDoubleSortedVectorStorage =>
                   val values = s.getValues
                   val index = s.getIndices
                   var i = 0
@@ -144,7 +144,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
                     mergeUpdate(map, key, update, value)
                     i += 1
                   }
-                case s: IntFloatSparseVectorStorage =>
+                case s: IntDoubleSparseVectorStorage =>
                   var i = 0
                   val indices = s.getIndices.sorted
                   while (i < indices.length) {
@@ -154,7 +154,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
                     mergeUpdate(map, key.toLong, update, value)
                     i += 1
                   }
-                case s: LongFloatSparseVectorStorage =>
+                case s: LongDoubleSparseVectorStorage =>
                   var i = 0
                   val indices = s.getIndices.sorted
                   while (i < indices.length) {

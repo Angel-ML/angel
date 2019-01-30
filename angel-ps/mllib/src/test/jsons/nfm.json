@@ -12,11 +12,11 @@
   "train": {
     "epoch": 5,
     "numupdateperepoch": 10,
-    "lr": 1.0,
+    "lr": 0.1,
     "decayclass": "WarmRestarts",
     "decayalpha": 0.05
   },
-  "default_optimizer": "Momentum",
+  "default_optimizer": "Adam",
   "layers": [
     {
       "name": "wide",

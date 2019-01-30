@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,35 +18,23 @@
 
 package com.tencent.angel.ml.math2.vector;
 
-import com.tencent.angel.ml.math2.storage.*;
-import it.unimi.dsi.fastutil.ints.*;
-import it.unimi.dsi.fastutil.doubles.*;
+import com.tencent.angel.ml.math2.storage.IntDoubleSparseVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntDoubleVectorStorage;
+import it.unimi.dsi.fastutil.doubles.DoubleIterator;
+import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.lang.ArrayUtils;
 
-import java.lang.Math;
-
 public class IntDoubleVector extends DoubleVector implements IntKeyVector, SimpleVector {
+
   private int dim;
-
-  public int getDim() {
-    return dim;
-  }
-
-  public long dim() {
-    return (long) getDim();
-  }
-
-  public void setDim(int dim) {
-    this.dim = dim;
-  }
 
   public IntDoubleVector() {
     super();
   }
 
   public IntDoubleVector(int matrixId, int rowId, int clock, int dim,
-    IntDoubleVectorStorage storage) {
+      IntDoubleVectorStorage storage) {
     this.matrixId = matrixId;
     this.rowId = rowId;
     this.clock = clock;
@@ -56,6 +44,18 @@ public class IntDoubleVector extends DoubleVector implements IntKeyVector, Simpl
 
   public IntDoubleVector(int dim, IntDoubleVectorStorage storage) {
     this(0, 0, 0, dim, storage);
+  }
+
+  public int getDim() {
+    return dim;
+  }
+
+  public void setDim(int dim) {
+    this.dim = dim;
+  }
+
+  public long dim() {
+    return (long) getDim();
   }
 
   public double get(int idx) {
@@ -72,8 +72,9 @@ public class IntDoubleVector extends DoubleVector implements IntKeyVector, Simpl
 
   public double max() {
     IntDoubleVectorStorage idstorage = (IntDoubleVectorStorage) storage;
-    if (idstorage.size() == 0)
+    if (idstorage.size() == 0) {
       return 0;
+    }
     double maxval = Double.MIN_VALUE;
     if (idstorage.isSparse()) {
       DoubleIterator iter = idstorage.valueIterator();
@@ -95,8 +96,9 @@ public class IntDoubleVector extends DoubleVector implements IntKeyVector, Simpl
 
   public double min() {
     IntDoubleVectorStorage idstorage = (IntDoubleVectorStorage) storage;
-    if (idstorage.size() == 0)
+    if (idstorage.size() == 0) {
       return 0;
+    }
     double minval = Double.MAX_VALUE;
     if (idstorage.isSparse()) {
       DoubleIterator iter = idstorage.valueIterator();
@@ -118,8 +120,9 @@ public class IntDoubleVector extends DoubleVector implements IntKeyVector, Simpl
 
   public int argmax() {
     IntDoubleVectorStorage idstorage = (IntDoubleVectorStorage) storage;
-    if (idstorage.size() == 0)
+    if (idstorage.size() == 0) {
       return -1;
+    }
     double maxval = Double.MIN_VALUE;
     int maxidx = -1;
     if (idstorage.isDense()) {
@@ -159,8 +162,9 @@ public class IntDoubleVector extends DoubleVector implements IntKeyVector, Simpl
 
   public int argmin() {
     IntDoubleVectorStorage idstorage = (IntDoubleVectorStorage) storage;
-    if (idstorage.size() == 0)
+    if (idstorage.size() == 0) {
       return -1;
+    }
     double minval = Double.MAX_VALUE;
     int minidx = -1;
     if (idstorage.isDense()) {
@@ -200,8 +204,9 @@ public class IntDoubleVector extends DoubleVector implements IntKeyVector, Simpl
 
   public double std() {
     IntDoubleVectorStorage dstorage = (IntDoubleVectorStorage) storage;
-    if (dstorage.size() == 0)
+    if (dstorage.size() == 0) {
       return 0;
+    }
     double sumval = 0.0;
     double sumval2 = 0.0;
     if (dstorage.isSparse()) {
@@ -224,8 +229,9 @@ public class IntDoubleVector extends DoubleVector implements IntKeyVector, Simpl
 
   public double average() {
     IntDoubleVectorStorage dstorage = (IntDoubleVectorStorage) storage;
-    if (dstorage.size() == 0)
+    if (dstorage.size() == 0) {
       return 0;
+    }
     double sumval = 0.0;
     if (dstorage.isSparse()) {
       DoubleIterator iter = dstorage.valueIterator();
@@ -248,8 +254,9 @@ public class IntDoubleVector extends DoubleVector implements IntKeyVector, Simpl
 
   public int numZeros() {
     IntDoubleVectorStorage dstorage = (IntDoubleVectorStorage) storage;
-    if (dstorage.size() == 0)
+    if (dstorage.size() == 0) {
       return (int) dim;
+    }
     int numZero = 0;
     if (dstorage.isSparse()) {
       DoubleIterator iter = dstorage.valueIterator();
@@ -270,23 +277,27 @@ public class IntDoubleVector extends DoubleVector implements IntKeyVector, Simpl
 
   public IntDoubleVector clone() {
     return new IntDoubleVector(matrixId, rowId, clock, dim,
-      ((IntDoubleVectorStorage) storage).clone());
+        ((IntDoubleVectorStorage) storage).clone());
   }
 
-  @Override public IntDoubleVector copy() {
+  @Override
+  public IntDoubleVector copy() {
     return new IntDoubleVector(matrixId, rowId, clock, dim,
-      ((IntDoubleVectorStorage) storage).copy());
+        ((IntDoubleVectorStorage) storage).copy());
   }
 
-  @Override public IntDoubleVectorStorage getStorage() {
+  @Override
+  public IntDoubleVectorStorage getStorage() {
     return (IntDoubleVectorStorage) storage;
   }
 
-  @Override public boolean hasKey(int idx) {
+  @Override
+  public boolean hasKey(int idx) {
     return getStorage().hasKey(idx);
   }
 
-  @Override public Vector filter(double threshold) {
+  @Override
+  public Vector filter(double threshold) {
     IntDoubleSparseVectorStorage newStorage = new IntDoubleSparseVectorStorage(size());
 
     if (storage.isDense()) {
@@ -320,7 +331,8 @@ public class IntDoubleVector extends DoubleVector implements IntKeyVector, Simpl
     return new IntDoubleVector(matrixId, rowId, clock, getDim(), newStorage);
   }
 
-  @Override public Vector ifilter(double threshold) {
+  @Override
+  public Vector ifilter(double threshold) {
 
     if (storage.isDense()) {
       double[] values = ((IntDoubleVectorStorage) storage).getValues();
@@ -354,7 +366,8 @@ public class IntDoubleVector extends DoubleVector implements IntKeyVector, Simpl
     return new IntDoubleVector(matrixId, rowId, clock, getDim(), (IntDoubleVectorStorage) storage);
   }
 
-  @Override public Vector filterUp(double threshold) {
+  @Override
+  public Vector filterUp(double threshold) {
     IntDoubleSparseVectorStorage newStorage = new IntDoubleSparseVectorStorage(size());
 
     if (storage.isDense()) {

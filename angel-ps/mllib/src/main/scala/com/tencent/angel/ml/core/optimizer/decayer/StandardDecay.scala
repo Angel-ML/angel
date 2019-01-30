@@ -22,7 +22,8 @@ import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 class StandardDecay(eta: Double, alpha: Double) extends StepSizeScheduler {
 
   var current: Int = 0
-  val interval: Int = SharedConf.get().getInt(MLConf.ML_OPT_DECAY_INTERVALS, 100)
+  val interval: Int = SharedConf.get().getInt(MLConf.ML_OPT_DECAY_INTERVALS,
+    MLConf.DEFAULT_ML_OPT_DECAY_INTERVALS)
 
   override def next(): Double = {
     current += 1

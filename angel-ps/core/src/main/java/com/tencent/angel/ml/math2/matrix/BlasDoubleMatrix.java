@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -19,13 +19,22 @@
 package com.tencent.angel.ml.math2.matrix;
 
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.math2.storage.*;
-import com.tencent.angel.ml.math2.vector.*;
 import com.tencent.angel.ml.math2.VFactory;
-import it.unimi.dsi.fastutil.ints.*;
+import com.tencent.angel.ml.math2.storage.IntDoubleDenseVectorStorage;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.IntDummyVector;
+import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.ml.math2.vector.IntIntVector;
+import com.tencent.angel.ml.math2.vector.IntLongVector;
+import com.tencent.angel.ml.math2.vector.Vector;
+import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import it.unimi.dsi.fastutil.ints.Int2FloatMap;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2LongMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 public class BlasDoubleMatrix extends BlasMatrix {
+
   private double[] data;
 
   public BlasDoubleMatrix() {
@@ -52,7 +61,8 @@ public class BlasDoubleMatrix extends BlasMatrix {
     this.data = data;
   }
 
-  @Override public double min() {
+  @Override
+  public double min() {
     double minVal = Double.MAX_VALUE;
     for (int k = 0; k < numRows * numCols; k++) {
       if (data[k] < minVal) {
@@ -63,7 +73,8 @@ public class BlasDoubleMatrix extends BlasMatrix {
     return minVal;
   }
 
-  @Override public Vector min(int axis) {
+  @Override
+  public Vector min(int axis) {
     // axis = 0: on rows
     // axis = 1: on cols
     assert (axis == 0 || axis == 1);
@@ -102,7 +113,8 @@ public class BlasDoubleMatrix extends BlasMatrix {
     return VFactory.denseDoubleVector(matrixId, 0, clock, rdVec);
   }
 
-  @Override public double max() {
+  @Override
+  public double max() {
     double maxVal = Double.MIN_VALUE;
     for (int k = 0; k < numRows * numCols; k++) {
       if (data[k] > maxVal) {
@@ -113,7 +125,8 @@ public class BlasDoubleMatrix extends BlasMatrix {
     return maxVal;
   }
 
-  @Override public Vector max(int axis) {
+  @Override
+  public Vector max(int axis) {
     // axis = 0: on rows
     // axis = 1: on cols
     assert (axis == 0 || axis == 1);
@@ -198,7 +211,8 @@ public class BlasDoubleMatrix extends BlasMatrix {
     return VFactory.denseDoubleVector(matrixId, 0, clock, idxVec);
   }
 
-  @Override public double sum() {
+  @Override
+  public double sum() {
     double res = 0.0;
     for (double value : data) {
       res += value;
@@ -206,7 +220,8 @@ public class BlasDoubleMatrix extends BlasMatrix {
     return res;
   }
 
-  @Override public Vector sum(int axis) {
+  @Override
+  public Vector sum(int axis) {
     // axis = 0: on rows
     // axis = 1: on cols
     assert (axis == 0 || axis == 1);
@@ -233,7 +248,8 @@ public class BlasDoubleMatrix extends BlasMatrix {
     return VFactory.denseDoubleVector(matrixId, 0, clock, rdVec);
   }
 
-  @Override public double std() {
+  @Override
+  public double std() {
     double sum1 = 0.0, sum2 = 0.0;
     for (double value : data) {
       sum1 += value;
@@ -245,7 +261,8 @@ public class BlasDoubleMatrix extends BlasMatrix {
     return Math.sqrt(sum2 - sum1 * sum1);
   }
 
-  @Override public Vector std(int axis) {
+  @Override
+  public Vector std(int axis) {
     // axis = 0: on rows
     // axis = 1: on cols
     assert (axis == 0 || axis == 1);
@@ -291,11 +308,13 @@ public class BlasDoubleMatrix extends BlasMatrix {
     return VFactory.denseDoubleVector(matrixId, 0, clock, rdVec);
   }
 
-  @Override public double average() {
+  @Override
+  public double average() {
     return sum() / (numRows * numCols);
   }
 
-  @Override public Vector average(int axis) {
+  @Override
+  public Vector average(int axis) {
     assert (axis == 0 || axis == 1);
     Vector res = null;
     switch (axis) {
@@ -310,7 +329,8 @@ public class BlasDoubleMatrix extends BlasMatrix {
     return res;
   }
 
-  @Override public double norm() {
+  @Override
+  public double norm() {
     double res = 0.0;
     for (double value : data) {
       res += value * value;
@@ -318,7 +338,8 @@ public class BlasDoubleMatrix extends BlasMatrix {
     return Math.sqrt(res);
   }
 
-  @Override public Vector norm(int axis) {
+  @Override
+  public Vector norm(int axis) {
     // axis = 0: on rows
     // axis = 1: on cols
     assert (axis == 0 || axis == 1);
@@ -355,7 +376,8 @@ public class BlasDoubleMatrix extends BlasMatrix {
     return VFactory.denseDoubleVector(matrixId, 0, clock, rdVec);
   }
 
-  @Override public Vector diag() {
+  @Override
+  public Vector diag() {
     int numDiag = Math.min(numRows, numCols);
     double[] resArr = new double[numDiag];
     for (int i = 0; i < numDiag; i++) {
@@ -366,7 +388,8 @@ public class BlasDoubleMatrix extends BlasMatrix {
     return new IntDoubleVector(getMatrixId(), 0, getClock(), resArr.length, storage);
   }
 
-  @Override public void clear() {
+  @Override
+  public void clear() {
     for (int i = 0; i < numCols * numRows; i++) {
       data[i] = 0;
     }
@@ -377,7 +400,8 @@ public class BlasDoubleMatrix extends BlasMatrix {
     numCols = 0;
   }
 
-  @Override public Matrix copy() {
+  @Override
+  public Matrix copy() {
     double[] newData = new double[numCols * numRows];
     System.arraycopy(data, 0, newData, 0, numCols * numRows);
     return new BlasDoubleMatrix(matrixId, clock, numRows, numCols, newData);
@@ -397,7 +421,8 @@ public class BlasDoubleMatrix extends BlasMatrix {
     data[i * numCols + j] = value;
   }
 
-  @Override public Vector getRow(int i) {
+  @Override
+  public Vector getRow(int i) {
     double[] row = new double[numCols];
     System.arraycopy(data, i * numCols, row, 0, numCols);
 
@@ -405,7 +430,8 @@ public class BlasDoubleMatrix extends BlasMatrix {
     return new IntDoubleVector(getMatrixId(), i, getClock(), numCols, storage);
   }
 
-  @Override public Vector getCol(int j) {
+  @Override
+  public Vector getCol(int j) {
     double[] col = new double[numRows];
 
     for (int i = 0; i < numRows; i++) {
@@ -424,7 +450,7 @@ public class BlasDoubleMatrix extends BlasMatrix {
       } else if (v.isSparse()) {
         rowData = new double[numCols];
         ObjectIterator<Int2DoubleMap.Entry> iter =
-          ((IntDoubleVector) v).getStorage().entryIterator();
+            ((IntDoubleVector) v).getStorage().entryIterator();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
           int j = entry.getIntKey();
@@ -547,7 +573,7 @@ public class BlasDoubleMatrix extends BlasMatrix {
       } else if (v.isSparse()) {
         rowData = new double[numRows];
         ObjectIterator<Int2DoubleMap.Entry> iter =
-          ((IntDoubleVector) v).getStorage().entryIterator();
+            ((IntDoubleVector) v).getStorage().entryIterator();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
           int j = entry.getIntKey();

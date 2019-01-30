@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -22,6 +22,7 @@ import com.tencent.angel.ml.math2.ufuncs.executor.comp.CompReduceExecutor;
 import com.tencent.angel.ml.matrix.RowType;
 
 public class CompLongDoubleVector extends DoubleVector implements LongKeyVector, ComponentVector {
+
   private LongDoubleVector[] partitions;
   private int numPartitions;
   private long dim;
@@ -32,7 +33,7 @@ public class CompLongDoubleVector extends DoubleVector implements LongKeyVector,
   }
 
   public CompLongDoubleVector(int matrixId, int rowId, int clock, long dim,
-    LongDoubleVector[] partitions, long subDim) {
+      LongDoubleVector[] partitions, long subDim) {
     setMatrixId(matrixId);
     setRowId(rowId);
     setClock(clock);
@@ -55,7 +56,7 @@ public class CompLongDoubleVector extends DoubleVector implements LongKeyVector,
   }
 
   public CompLongDoubleVector(int matrixId, int rowId, int clock, long dim,
-    LongDoubleVector[] partitions) {
+      LongDoubleVector[] partitions) {
     this(matrixId, rowId, clock, dim, partitions, -1);
   }
 
@@ -80,12 +81,8 @@ public class CompLongDoubleVector extends DoubleVector implements LongKeyVector,
     this(0, 0, 0, dim, subDim);
   }
 
-  public void setPartitions(LongDoubleVector[] partitions) {
-    assert partitions.length == this.partitions.length;
-    this.partitions = partitions;
-  }
-
-  @Override public int getNumPartitions() {
+  @Override
+  public int getNumPartitions() {
     return numPartitions;
   }
 
@@ -124,7 +121,8 @@ public class CompLongDoubleVector extends DoubleVector implements LongKeyVector,
     return partitions[partIdx].get(subIdx);
   }
 
-  @Override public boolean hasKey(long idx) {
+  @Override
+  public boolean hasKey(long idx) {
     int partIdx = (int) (idx / subDim);
     return partitions[partIdx].hasKey(idx);
   }
@@ -137,6 +135,11 @@ public class CompLongDoubleVector extends DoubleVector implements LongKeyVector,
 
   public LongDoubleVector[] getPartitions() {
     return partitions;
+  }
+
+  public void setPartitions(LongDoubleVector[] partitions) {
+    assert partitions.length == this.partitions.length;
+    this.partitions = partitions;
   }
 
   public double max() {
@@ -163,7 +166,8 @@ public class CompLongDoubleVector extends DoubleVector implements LongKeyVector,
     return CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Norm);
   }
 
-  @Override public long numZeros() {
+  @Override
+  public long numZeros() {
     return (long) CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Numzeros);
   }
 
@@ -181,33 +185,38 @@ public class CompLongDoubleVector extends DoubleVector implements LongKeyVector,
     }
   }
 
-  @Override public CompLongDoubleVector clone() {
+  @Override
+  public CompLongDoubleVector clone() {
     LongDoubleVector[] newPartitions = new LongDoubleVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = partitions[i].clone();
     }
     return new CompLongDoubleVector(getMatrixId(), getRowId(), getClock(), (long) getDim(),
-      newPartitions, subDim);
+        newPartitions, subDim);
   }
 
-  @Override public CompLongDoubleVector copy() {
+  @Override
+  public CompLongDoubleVector copy() {
     LongDoubleVector[] newPartitions = new LongDoubleVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = partitions[i].copy();
     }
     return new CompLongDoubleVector(getMatrixId(), getRowId(), getClock(), (long) getDim(),
-      newPartitions, subDim);
+        newPartitions, subDim);
   }
 
-  @Override public int getTypeIndex() {
+  @Override
+  public int getTypeIndex() {
     return 4;
   }
 
-  @Override public RowType getType() {
+  @Override
+  public RowType getType() {
     return RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT;
   }
 
-  @Override public Vector filter(double threshold) {
+  @Override
+  public Vector filter(double threshold) {
     LongDoubleVector[] newPartitions = new LongDoubleVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = (LongDoubleVector) partitions[i].filter(threshold);
@@ -216,7 +225,8 @@ public class CompLongDoubleVector extends DoubleVector implements LongKeyVector,
     return new CompLongDoubleVector(matrixId, rowId, clock, dim, newPartitions, subDim);
   }
 
-  @Override public Vector ifilter(double threshold) {
+  @Override
+  public Vector ifilter(double threshold) {
     LongDoubleVector[] newPartitions = new LongDoubleVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = (LongDoubleVector) partitions[i].ifilter(threshold);
@@ -225,7 +235,8 @@ public class CompLongDoubleVector extends DoubleVector implements LongKeyVector,
     return new CompLongDoubleVector(matrixId, rowId, clock, dim, newPartitions, subDim);
   }
 
-  @Override public Vector filterUp(double threshold) {
+  @Override
+  public Vector filterUp(double threshold) {
     LongDoubleVector[] newPartitions = new LongDoubleVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = (LongDoubleVector) partitions[i].filterUp(threshold);

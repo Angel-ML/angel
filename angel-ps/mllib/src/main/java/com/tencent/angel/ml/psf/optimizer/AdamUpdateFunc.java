@@ -19,10 +19,7 @@
 package com.tencent.angel.ml.psf.optimizer;
 
 import com.tencent.angel.ml.math2.ufuncs.OptFuncs;
-import com.tencent.angel.ml.math2.ufuncs.Ufuncs;
 import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
-import com.tencent.angel.ml.matrix.psf.update.enhance.MMUpdateParam;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import org.apache.commons.logging.Log;
@@ -38,7 +35,7 @@ public class AdamUpdateFunc extends OptMMUpdateFunc {
 
   public AdamUpdateFunc(int matId, int factor, double gamma, double epsilon, double beta, double lr,
       double regParam, int iteration) {
-    super(matId, new int[]{factor}, new double[]{gamma, epsilon, beta, lr, regParam, iteration, 1});
+    this(matId, factor, gamma, epsilon, beta, lr, regParam, iteration, 1);
   }
 
   public AdamUpdateFunc(int matId, int factor, double gamma, double epsilon, double beta, double lr,
