@@ -18,16 +18,15 @@
 
 package com.tencent.angel.ml.core.network.layers.linear
 
+import java.util
+
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.math2.matrix._
-import com.tencent.angel.ml.math2.utils.VectorUtils
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.ml.core.network.layers._
-import com.tencent.angel.ml.core.utils.NetUtils
-import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import org.apache.commons.logging.LogFactory
 
 
@@ -39,6 +38,8 @@ class BiInnerSumCross(name: String, inputLayer: Layer)(
 
   @transient var output: Matrix = _
   @transient var gradOutput: Matrix = _
+  @transient var batchSize: Int = _
+  @transient var sumVectorCache: util.List[Vector] = _
 
   def getInnerSum(vectors: Array[IntDoubleVector]): Double = {
     val values = vectors.map(f => f.getStorage.getValues)
@@ -87,15 +88,17 @@ class BiInnerSumCross(name: String, inputLayer: Layer)(
 
   override def calOutput(): Matrix = {
     val start = System.currentTimeMillis()
-    val batchSize = graph.placeHolder.getBatchSize
+    batchSize = graph.placeHolder.getBatchSize
+    sumVectorCache = new util.ArrayList[Vector](batchSize)
+
     status match {
       case STATUS.Null =>
-        //        println(s"the status in BiInnerSumCross($name)-calOutput is ${status.toString}")
+        // println(s"the status in BiInnerSumCross($name)-calOutput is ${status.toString}")
         output = inputLayer.calOutput() match {
           case mat: RBCompIntDoubleMatrix =>
             val data: Array[Double] = new Array[Double](batchSize)
-            val sumVector = VFactory.denseDoubleVector(mat.getSubDim)
             (0 until batchSize).foreach { row =>
+              val sumVector = VFactory.denseDoubleVector(mat.getSubDim)
               val partitions = mat.getRow(row).getPartitions
               partitions.foreach { vectorOuter =>
                 data(row) -= vectorOuter.dot(vectorOuter)
@@ -103,16 +106,17 @@ class BiInnerSumCross(name: String, inputLayer: Layer)(
               }
               data(row) += sumVector.dot(sumVector)
               data(row) /= 2
-              sumVector.clear()
+
+              sumVectorCache.add(row, sumVector)
 
               // data(row) = getInnerSum(mat.getRow(row).getPartitions)
             }
             MFactory.denseDoubleMatrix(batchSize, 1, data)
           case mat: RBCompIntFloatMatrix =>
             val data: Array[Float] = new Array[Float](batchSize)
-            val sumVector = VFactory.denseFloatVector(mat.getSubDim)
 
             (0 until batchSize).foreach { row =>
+              val sumVector = VFactory.denseFloatVector(mat.getSubDim)
               val partitions = mat.getRow(row).getPartitions
 
               partitions.foreach { vectorOuter =>
@@ -122,7 +126,8 @@ class BiInnerSumCross(name: String, inputLayer: Layer)(
 
               data(row) += sumVector.dot(sumVector).toFloat
               data(row) /= 2
-              sumVector.clear()
+
+              sumVectorCache.add(row, sumVector)
               // data(row) = getInnerSum(mat.getRow(row).getPartitions)
             }
             MFactory.denseFloatMatrix(batchSize, 1, data)
@@ -145,34 +150,27 @@ class BiInnerSumCross(name: String, inputLayer: Layer)(
         gradOutput = modelType match {
           case RowType.T_DOUBLE_DENSE =>
             val inputData = inputLayer.calOutput().asInstanceOf[RBCompIntDoubleMatrix]
-            val sumVector = VFactory.denseDoubleVector(inputData.getSubDim)
             val gradRows = inputData.getRows.zipWithIndex.map { case (compVector, idx) =>
-              compVector.getPartitions.foreach(comp => sumVector.iadd(comp))
-
+              val sumVector = sumVectorCache.get(idx)
               val grad = gradTemp.asInstanceOf[BlasDoubleMatrix].getData()(idx)
-
               val gradRow = VFactory.compIntDoubleVector(compVector.getDim, compVector.getPartitions.map { comp =>
                 sumVector.sub(comp).imul(grad).asInstanceOf[IntDoubleVector]
               })
 
-              sumVector.clear()
               gradRow
             }
 
             MFactory.rbCompIntDoubleMatrix(gradRows)
           case RowType.T_FLOAT_DENSE =>
             val inputData = inputLayer.calOutput().asInstanceOf[RBCompIntFloatMatrix]
-            val sumVector = VFactory.denseFloatVector(inputData.getSubDim)
             val gradRows = inputData.getRows.zipWithIndex.map { case (compVector, idx) =>
-              compVector.getPartitions.foreach(comp => sumVector.iadd(comp))
-
+              val sumVector = sumVectorCache.get(idx)
               val grad = gradTemp.asInstanceOf[BlasFloatMatrix].getData()(idx)
 
               val gradRow = VFactory.compIntFloatVector(compVector.getDim, compVector.getPartitions.map { comp =>
                 sumVector.sub(comp).imul(grad).asInstanceOf[IntFloatVector]
               })
 
-              sumVector.clear()
               gradRow
             }
 

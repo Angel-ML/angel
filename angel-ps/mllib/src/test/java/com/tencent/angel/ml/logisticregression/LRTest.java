@@ -70,7 +70,7 @@ public class LRTest {
       // Regularization coefficient
       double reg = 0.001;
       double posnegRatio = 0.1;
-      String optimizer = "Momentum";
+      String optimizer = "AdaDelta";
 
       // Set local deploy mode
       conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
