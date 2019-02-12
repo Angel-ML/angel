@@ -50,7 +50,7 @@ object FTRLExample {
           f._1
       }
 
-      data.persist(StorageLevel.DISK_ONLY)
+    data.persist(StorageLevel.DISK_ONLY)
     val size = data.count()
 
     val max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.max).max()

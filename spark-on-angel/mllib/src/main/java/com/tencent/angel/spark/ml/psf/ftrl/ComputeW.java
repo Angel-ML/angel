@@ -55,12 +55,12 @@ public class ComputeW extends MultiRowUpdateFunc {
       Vector w = Ufuncs.ftrlthreshold(z, n, alpha, beta, lambda1, lambda2);
       part.getRow(rowIds[2]).setSplit(w.ifilter(1e-11));
 
-      // calculate bias
-      if (param.getPartKey().getStartCol() <= 0 && param.getPartKey().getEndCol() > 0) {
-        double zVal = VectorUtils.getDouble(z, 0);
-        double nVal = VectorUtils.getDouble(n, 0);
-        VectorUtils.setFloat(w, 0, (float) (-1.0 * alpha * zVal / (beta + Math.sqrt(nVal))));
-      }
+//      // calculate bias
+//      if (param.getPartKey().getStartCol() <= 0 && param.getPartKey().getEndCol() > 0) {
+//        double zVal = VectorUtils.getDouble(z, 0);
+//        double nVal = VectorUtils.getDouble(n, 0);
+//        VectorUtils.setFloat(w, 0, (float) (-1.0 * alpha * zVal / (beta + Math.sqrt(nVal))));
+//      }
     }
   }
 
