@@ -53,7 +53,7 @@ class EI(
       // using a RF, std should be never exactly 0.0
       (0.0, Vectors.dense(new Array[Double](X.size)))
     } else {
-      val z = (eta - pred._1 - par) / s
+      val z = (pred._1 - eta - par) / s
       val norm: NormalDistribution  = new NormalDistribution
       val cdf: Double = norm.cumulativeProbability(z)
       val pdf: Double = norm.density(z)

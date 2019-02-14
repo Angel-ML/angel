@@ -18,6 +18,7 @@
 
 package com.tencent.angel.spark.automl.tuner.config
 
+import com.tencent.angel.spark.automl.tuner.math.BreezeOp._
 import com.tencent.angel.spark.automl.tuner.parameter.ParamSpace
 import com.tencent.angel.spark.automl.utils.AutoMLException
 import org.apache.commons.logging.{Log, LogFactory}
@@ -114,4 +115,55 @@ class ConfigurationSpace(
 
   def isValid(vec: Vector): Boolean = !preX.contains(vec)
 
+  def gridSample(): Array[Configuration] = {
+    var configs: ArrayBuffer[Configuration] = new ArrayBuffer[Configuration]
+
+    var tmp: ArrayBuffer[Array[Double]] = new ArrayBuffer[Array[Double]]
+
+    val params = getParams()
+    params.foreach { tmp += _.getValues }
+
+    val paramsArray: Array[Array[Double]] = tmp.toArray
+
+    if (numParams == 1){
+      val paramsGrid : Array[Array[Double]] = paramsArray
+      var tmp: ArrayBuffer[Vector] = new ArrayBuffer[Vector]
+      paramsGrid.foreach { tmp += Vectors.dense(_) }
+      val paramsVec = tmp.toArray
+      paramsVec.filter(isValid).foreach { vec =>
+        configs += new Configuration(param2Idx, param2Doc, vec)
+      }
+      configs.toArray
+    }
+
+    else if (numParams == 2){
+      val paramsGrid: Array[Array[Double]] = cartesian(paramsArray(0), paramsArray(1))
+      var tmp: ArrayBuffer[Vector] = new ArrayBuffer[Vector]
+      paramsGrid.foreach { tmp += Vectors.dense(_) }
+      val paramsVec: Array[Vector] = tmp.toArray
+      paramsVec.filter(isValid).foreach { vec =>
+        configs += new Configuration(param2Idx, param2Doc, vec)
+      }
+      configs.toArray
+    }
+
+    else{
+      var paramsGrid: Array[Array[Double]] = cartesian(paramsArray(0), paramsArray(1))
+
+      paramsArray.foreach { a =>
+        if (!(a sameElements paramsArray(0)) && !(a sameElements paramsArray(1))) {
+          paramsGrid = cartesian(paramsGrid, a)
+        }
+      }
+
+      var tmp: ArrayBuffer[Vector] = new ArrayBuffer[Vector]
+      paramsGrid.foreach{ tmp += Vectors.dense(_) }
+      val paramsVec: Array[Vector] = tmp.toArray
+      paramsVec.filter(isValid).foreach { vec =>
+        configs += new Configuration(param2Idx, param2Doc, vec)
+      }
+      configs.toArray
+    }
+
+  }
 }

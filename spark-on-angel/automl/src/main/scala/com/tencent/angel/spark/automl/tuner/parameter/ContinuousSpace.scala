@@ -18,7 +18,6 @@
 
 package com.tencent.angel.spark.automl.tuner.parameter
 
-
 import com.tencent.angel.spark.automl.utils.{AutoMLException, Distribution}
 
 import scala.collection.mutable.ArrayBuffer
@@ -89,7 +88,6 @@ class ContinuousSpace(
         }
       case _ => println(s"Distribution $distribution not supported")
     }
-
     ret.toArray
   }
 
@@ -121,8 +119,10 @@ class ContinuousSpace(
 object ContinuousSpace {
 
   def main(args: Array[String]): Unit = {
-    val obj = new ContinuousSpace("test", "0,10")
+//    val obj = new ContinuousSpace("test", "0,10")
+    val obj = new ContinuousSpace("param1", 0, 10, 11)
     println(obj.toString)
+    println(obj.getValues(1))
     println(obj.sample(2).mkString(","))
   }
 }
