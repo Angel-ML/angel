@@ -46,7 +46,9 @@ class DiscreteSpace[T <: AnyVal: ClassTag](
     this(name, config, "discrete param")
   }
 
-  def parseConfig(config: String): Array[T] = {
+  def parseConfig(input: String): Array[T] = {
+    assert(input.startsWith("{") && input.endsWith("}"))
+    val config = input.substring(1, input.length - 1)
     val values: Array[T] = config.trim match {
       case _ if config.contains(",") =>
         config.split(',').map(asType)
@@ -115,7 +117,11 @@ class DiscreteSpace[T <: AnyVal: ClassTag](
 }
 
 object DiscreteSpace {
-  
+
+  def apply[T <: AnyVal: ClassTag](name: String, config: String): DiscreteSpace[T] = {
+    new DiscreteSpace[T](name, config)
+  }
+
   def main(args: Array[String]): Unit = {
     val obj = new DiscreteSpace[Int]("test", "1:10:1")
     println(obj.toString)

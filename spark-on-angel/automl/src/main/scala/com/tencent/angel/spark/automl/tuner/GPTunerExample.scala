@@ -29,10 +29,14 @@ object GPTunerExample extends App {
 
   override def main(args: Array[String]): Unit = {
 
-    val param1: ParamSpace[Double] = new ContinuousSpace("param1", "1,10")
-    val param2: ParamSpace[Double] = new ContinuousSpace("param2", "-5,5,10")
-    val param3: ParamSpace[Double] = new DiscreteSpace[Double]("param3", "0.0,1.0,3.0,5.0")
-    val param4: ParamSpace[Int] = new DiscreteSpace[Int]("param4", "-5:5:1")
+    val param1 = ParamSpace.fromConfigString("param1", "[1,10]")
+    val param2 = ParamSpace.fromConfigString("param2", "[-5:5:10]")
+    val param3 = ParamSpace.fromConfigString("param3", "{0.0,1.0,3.0,5.0}")
+    val param4 = ParamSpace.fromConfigString("param4", "{-5:5:1}")
+//    val param1: ParamSpace[Double] = new ContinuousSpace("param1", "[1,10]")
+//    val param2: ParamSpace[Double] = new ContinuousSpace("param2", "[-5:5:10]")
+//    val param3: ParamSpace[Double] = new DiscreteSpace[Double]("param3", "{0.0,1.0,3.0,5.0}")
+//    val param4: ParamSpace[Int] = new DiscreteSpace[Int]("param4", "{-5:5:1}")
     val solver: Solver = Solver(Array(param1, param2, param3, param4), true)
     val trail: Trail = new TestTrail()
     (0 until 100).foreach{ iter =>
