@@ -93,12 +93,15 @@ object DataLoader {
     splits = splits.tail
     val len = splits.length
     val keys = new Array[Long](len)
+    val vals = new Array[Float](len)
+    java.util.Arrays.fill(vals, 1.0F)
 
     splits.zipWithIndex.foreach{ case (value: String, indx2: Int) =>
       keys(indx2) = value.toLong
     }
 
-    val x = VFactory.longDummyVector(dim, keys);
+//    val x = VFactory.longDummyVector(dim, keys)
+    val x = VFactory.sparseLongKeyFloatVector(dim, keys, vals)
     new LabeledData(x, y)
   }
 
