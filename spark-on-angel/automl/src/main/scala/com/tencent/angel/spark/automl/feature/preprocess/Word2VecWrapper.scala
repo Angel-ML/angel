@@ -20,18 +20,15 @@ package com.tencent.angel.spark.automl.feature.preprocess
 
 import com.tencent.angel.spark.automl.feature.InToOutRelation.{InToOutRelation, OneToOne}
 import com.tencent.angel.spark.automl.feature.TransformerWrapper
-import org.apache.spark.ml.Transformer
-import org.apache.spark.ml.feature.Tokenizer
+import org.apache.spark.ml.feature.Word2Vec
 
+class Word2VecWrapper extends TransformerWrapper {
 
-
-class TokenizerWrapper extends TransformerWrapper {
-
-  override val transformer: Transformer = new Tokenizer()
+  override val transformer = new Word2Vec()
   override var parent: TransformerWrapper = _
 
-  override val requiredInputCols: Array[String] = Array("sentence")
-  override val requiredOutputCols: Array[String] = Array("outTokenizer")
+  override val requiredInputCols: Array[String] = Array("sentences")
+  override val requiredOutputCols: Array[String] = Array("outWord2Vec")
 
   override val hasMultiInputs: Boolean = false
   override val hasMultiOutputs: Boolean = false
@@ -40,9 +37,8 @@ class TokenizerWrapper extends TransformerWrapper {
   override val relation: InToOutRelation = OneToOne
 
   override def declareInAndOut(): this.type = {
-    transformer.asInstanceOf[Tokenizer].setInputCol(getInputCols(0))
-    transformer.asInstanceOf[Tokenizer].setOutputCol(getOutputCols(0))
+    transformer.setInputCol(getInputCols(0))
+    transformer.setOutputCol(getOutputCols(0))
     this
   }
-
 }

@@ -31,7 +31,7 @@ abstract class TransformerWrapper {
   val hasMultiInputs: Boolean
   val hasMultiOutputs: Boolean
   val needAncestorInputs: Boolean
-  private val prefix = "out_"
+  private val prefix = "out"
 
   val requiredInputCols: Array[String]
   val requiredOutputCols: Array[String]
@@ -57,7 +57,7 @@ abstract class TransformerWrapper {
 
   def generateInputCols(): Unit = {
     //require(ancestorCols.contains(requiredInputCols), "Missing required input cols.")
-    require(requiredInputCols.forall(ancestorCols.contains), "Missing required input cols.")
+//    require(requiredInputCols.forall(ancestorCols.contains), "Missing required input cols.")
     // if transformer has required input cols, feed required input cols
     // if transformer needs all input cols, feed all input cols
     // if transformer has no required input cols, feed the output cols of the parent transformer
@@ -77,7 +77,7 @@ abstract class TransformerWrapper {
       case InToOutRelation.InPlace =>
         setOutputCols(inputCols)
       case InToOutRelation.OneToOne =>
-        setOutputCols(Array(prefix + inputCols(0)))
+        setOutputCols(Array(prefix + transformer.getClass.getSimpleName))
       case InToOutRelation.MultiToMulti =>
         setOutputCols(inputCols.map(prefix + _))
       case InToOutRelation.MultiToOne =>
