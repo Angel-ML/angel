@@ -24,7 +24,7 @@ class TunerParam {
 object TunerParam {
 
   var batchSize: Int = 1
-  var sampleSize: Int = 1000* batchSize
+  var sampleSize: Int = 10* batchSize
 
   var taskName: String = "com.tencent.angel.spark.automl.tuner.trail.TestRunner"
 

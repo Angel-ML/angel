@@ -23,7 +23,7 @@ import com.tencent.angel.ml.core.optimizer.loss.{L2Loss, LogLoss}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.automl.tuner.config.Configuration
+import com.tencent.angel.spark.automl.tuner.config.{Configuration, ConfigurationSpace}
 import com.tencent.angel.spark.automl.tuner.parameter.ParamSpace
 import com.tencent.angel.spark.automl.tuner.solver.Solver
 import com.tencent.angel.spark.automl.utils.AutoMLException
@@ -37,10 +37,14 @@ import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.Random
 
-class AutoOfflineLearner(tuneIter: Int = 20, minimize: Boolean = true) {
+class AutoOfflineLearner(var tuneIter: Int = 20, minimize: Boolean = true,surrogate: String="GP") {
 
   // Shared configuration with Angel-PS
   val conf = SharedConf.get()
+
+  if(surrogate=="Grid"){
+    tuneIter = 1
+  }
 
   // Some params
   var numEpoch: Int = conf.getInt(MLConf.ML_EPOCH_NUM)
@@ -49,7 +53,9 @@ class AutoOfflineLearner(tuneIter: Int = 20, minimize: Boolean = true) {
 
   println(s"fraction=$fraction validateRatio=$validationRatio numEpoch=$numEpoch")
 
-  val solver: Solver = Solver(minimize)
+
+  val cs: ConfigurationSpace = new ConfigurationSpace("cs")
+  val solver: Solver = Solver(cs, minimize,surrogate)
 
   // param name -> param type (continuous or discrete), value type (int, double,...)
   val paramType: mutable.Map[String, (String, String)] = new mutable.HashMap[String, (String, String)]()
@@ -197,16 +203,18 @@ class AutoOfflineLearner(tuneIter: Int = 20, minimize: Boolean = true) {
 
     (0 until tuneIter).foreach{ iter =>
       println(s"==========Tuner Iteration[$iter]==========")
-      val config: Configuration = solver.suggest()(0)
-      val paramMap: mutable.Map[String, Double] = new mutable.HashMap[String, Double]()
-      for (paramType <- paramType) {
-        setParam(paramType._1, paramType._2._2, config.get(paramType._1))
-        paramMap += (paramType._1 -> config.get(paramType._1))
+      val configs: Array[Configuration] = solver.suggest
+      for (config <- configs) {
+        val paramMap: mutable.Map[String, Double] = new mutable.HashMap[String, Double]()
+        for (paramType <- paramType) {
+          setParam(paramType._1, paramType._2._2, config.get(paramType._1))
+          paramMap += (paramType._1 -> config.get(paramType._1))
+        }
+        resetParam(paramMap)
+        model.resetParam(paramMap).graph.init(0)
+        val result = train(data, model)
+        solver.feed(config, result._1)
       }
-      resetParam(paramMap)
-      model.resetParam(paramMap).graph.init(0)
-      val result = train(data, model)
-      solver.feed(config, result._1)
     }
     val result: (Vector, Double) = solver.optimal
     solver.stop
@@ -215,6 +223,8 @@ class AutoOfflineLearner(tuneIter: Int = 20, minimize: Boolean = true) {
     //if (modelOutput.length > 0) model.save(modelOutput)
 
   }
+
+
 
   def predict(input: String,
               output: String,

@@ -18,7 +18,6 @@
 
 package com.tencent.angel.spark.automl.tuner.trail
 
-
 import com.github.fommil.netlib.{F2jBLAS, BLAS => NetlibBLAS}
 import com.tencent.angel.spark.automl.tuner.config.Configuration
 

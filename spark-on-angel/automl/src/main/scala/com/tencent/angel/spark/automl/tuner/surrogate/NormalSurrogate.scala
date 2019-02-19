@@ -27,9 +27,9 @@ class NormalSurrogate(
                        override val minimize: Boolean = true)extends Surrogate(cs, minimize) {
 
   override def update(X: Array[Vector], Y: Array[Double]): Unit = {
-      preX ++= X
-      preY ++= Y
-    }
+    preX ++= X
+    preY ++= Y
+  }
 
   /**
     * NormalSurrogate is designed for random-search and grid-search
