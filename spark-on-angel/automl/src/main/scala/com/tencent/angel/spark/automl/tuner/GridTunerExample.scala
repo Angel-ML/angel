@@ -27,8 +27,8 @@ import org.apache.spark.ml.linalg.Vector
 object GridTunerExample extends App {
 
   override def main(args: Array[String]): Unit = {
-    val param1: ParamSpace[Double] = new ContinuousSpace("param1", "0,10,11",seed = 10)
-    val param2: ParamSpace[Double] = new ContinuousSpace("param2", "-5,5,11",seed = 20)
+    val param1 = ParamSpace.fromConfigString("param1", "[1:10:10]")
+    val param2 = ParamSpace.fromConfigString("param2", "[-5:5:10]")
     val param3: ParamSpace[Double] = new DiscreteSpace[Double]("param3", Array(0.0, 1.0, 3.0, 5.0))
     val param4: ParamSpace[Double] = new DiscreteSpace[Double]("param4", Array(-5.0, -3.0, 0.0, 3.0, 5.0))
     val cs: ConfigurationSpace = new ConfigurationSpace("cs")

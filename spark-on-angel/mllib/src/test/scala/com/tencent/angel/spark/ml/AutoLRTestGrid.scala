@@ -34,8 +34,8 @@ class AutoLRTestGrid extends PSFunSuite with SharedPSContext {
     SharedConf.get().set(AngelConf.ANGEL_RUNNING_MODE, RunningMode.ANGEL_PS.toString)
 
     learner = new AutoOfflineLearner(minimize = false,surrogate = "Grid")
-    learner.addParam("continuous", "double", MLConf.ML_LEARN_RATE, "0.1,1,5",seed = 10)
-    learner.addParam("continuous", "double", MLConf.ML_LEARN_DECAY, "0.1,1,5",seed = 20)
+    learner.addParam("continuous", "double", MLConf.ML_LEARN_RATE, "[0.1:1:5]",seed = 10)
+    learner.addParam("continuous", "double", MLConf.ML_LEARN_DECAY, "[0.1:1:5]",seed = 20)
   }
 
   override def afterAll(): Unit = {

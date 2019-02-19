@@ -84,7 +84,7 @@ class Solver(
     }
     else {
       if(grid){
-        val configs: Array[Configuration] = cs.grid_sample()
+        val configs: Array[Configuration] = cs.gridSample()
         configs
       }
       else {
