@@ -20,18 +20,15 @@ package com.tencent.angel.spark.automl.feature.preprocess
 
 import com.tencent.angel.spark.automl.feature.InToOutRelation.{InToOutRelation, OneToOne}
 import com.tencent.angel.spark.automl.feature.TransformerWrapper
-import org.apache.spark.ml.Transformer
-import org.apache.spark.ml.feature.Tokenizer
+import org.apache.spark.ml.feature.{StringIndexer, Tokenizer}
 
+class StringIndexerWrapper extends TransformerWrapper{
 
-
-class TokenizerWrapper extends TransformerWrapper {
-
-  override val transformer: Transformer = new Tokenizer()
+  override val transformer = new StringIndexer()
   override var parent: TransformerWrapper = _
 
-  override val requiredInputCols: Array[String] = Array("sentence")
-  override val requiredOutputCols: Array[String] = Array("outTokenizer")
+  override val requiredInputCols: Array[String] = Array("words")
+  override val requiredOutputCols: Array[String] = Array("outStringIndexer")
 
   override val hasMultiInputs: Boolean = false
   override val hasMultiOutputs: Boolean = false
@@ -44,5 +41,4 @@ class TokenizerWrapper extends TransformerWrapper {
     transformer.asInstanceOf[Tokenizer].setOutputCol(getOutputCols(0))
     this
   }
-
 }

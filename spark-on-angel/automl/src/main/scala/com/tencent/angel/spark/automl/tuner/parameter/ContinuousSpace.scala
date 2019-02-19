@@ -74,13 +74,21 @@ class ContinuousSpace(
     }
   }
 
-  def parseConfig(config: String): (Double, Double, Int) = {
+  def parseConfig(input: String): (Double, Double, Int) = {
+    assert(input.startsWith("[") && input.endsWith("]"))
+    val config = input.substring(1, input.length - 1)
     val ret: (Double, Double, Int) = config.trim match {
       case _ if config.contains(",") =>
         val splits = config.split(',')
         splits.length match {
           case 2 => (splits(0).toDouble, splits(1).toDouble, -1)
-          case 3 => (splits(0).toDouble, splits(1).toDouble, splits(2).toInt)
+          case _ => throw new AutoMLException(s"invalid discrete, $helper")
+        }
+      case _ if config.contains(":") =>
+        val splits = config.split(':')
+        splits.length match {
+          case 3 => (splits (0).toDouble, splits (1).toDouble, splits (2).toInt)
+          case _ => throw new AutoMLException(s"invalid discrete, $helper")
         }
       case _ => throw new AutoMLException(s"invalid discrete, $helper")
     }
@@ -133,6 +141,10 @@ class ContinuousSpace(
 }
 
 object ContinuousSpace {
+
+  def apply(name: String, config: String) = {
+    new ContinuousSpace(name, config)
+  }
 
   def main(args: Array[String]): Unit = {
 //    val obj = new ContinuousSpace("test", "0,10")

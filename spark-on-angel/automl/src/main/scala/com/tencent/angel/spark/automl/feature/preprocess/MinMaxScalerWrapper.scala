@@ -1,3 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.spark.automl.feature.preprocess
 
 import com.tencent.angel.spark.automl.feature.InToOutRelation.{InToOutRelation, OneToOne}
@@ -16,7 +33,7 @@ private[feature] class MinMaxScalerWrapper extends TransformerWrapper {
   override val relation: InToOutRelation = OneToOne
 
   override val requiredInputCols: Array[String] = Array("numerical")
-  override val requiredOutputCols: Array[String] = Array("minMaxNumerical")
+  override val requiredOutputCols: Array[String] = Array("outMinMaxScaler")
 
   override def declareInAndOut(): this.type = {
     transformer.asInstanceOf[MinMaxScaler].setInputCol(getInputCols(0))
@@ -24,23 +41,4 @@ private[feature] class MinMaxScalerWrapper extends TransformerWrapper {
     this
   }
 
-//  def fit(dataFrame: DataFrame): Unit = {
-//    transformer = estimator.fit(dataFrame)
-//  }
-
-//  def transform(dataset: Dataset[_]): DataFrame = {
-//
-//    val inputCol = "features"
-//    val OutputCol = "scaledFeatures"
-//
-//    val df = dataset.toDF()
-//
-//    val scaler = new MinMaxScaler().setInputCol("features").setOutputCol("scaledFeatures")
-//
-//    val scalerModel = scaler.fit(df)
-//
-//    val scaledDf = scalerModel.transform(df)
-//
-//    scaledDf.drop("features").withColumnRenamed("scaledFeatures", "features")
-//  }
 }

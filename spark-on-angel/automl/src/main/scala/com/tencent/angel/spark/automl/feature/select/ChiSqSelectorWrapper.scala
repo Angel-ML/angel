@@ -16,22 +16,15 @@
  */
 
 
-package com.tencent.angel.spark.automl.feature.preprocess
+package com.tencent.angel.spark.automl.feature.select
 
 import com.tencent.angel.spark.automl.feature.InToOutRelation.{InToOutRelation, OneToOne}
 import com.tencent.angel.spark.automl.feature.TransformerWrapper
-import org.apache.spark.ml.Transformer
-import org.apache.spark.ml.feature.Tokenizer
+import org.apache.spark.ml.feature.{ChiSqSelector, ChiSqSelectorModel}
 
-
-
-class TokenizerWrapper extends TransformerWrapper {
-
-  override val transformer: Transformer = new Tokenizer()
+class ChiSqSelectorWrapper extends TransformerWrapper {
+  override val transformer = new ChiSqSelector()
   override var parent: TransformerWrapper = _
-
-  override val requiredInputCols: Array[String] = Array("sentence")
-  override val requiredOutputCols: Array[String] = Array("outTokenizer")
 
   override val hasMultiInputs: Boolean = false
   override val hasMultiOutputs: Boolean = false
@@ -39,10 +32,12 @@ class TokenizerWrapper extends TransformerWrapper {
 
   override val relation: InToOutRelation = OneToOne
 
+  override val requiredInputCols: Array[String] = Array("numerical")
+  override val requiredOutputCols: Array[String] = Array("outChiSeSelector")
+
   override def declareInAndOut(): this.type = {
-    transformer.asInstanceOf[Tokenizer].setInputCol(getInputCols(0))
-    transformer.asInstanceOf[Tokenizer].setOutputCol(getOutputCols(0))
+    transformer.setFeaturesCol(getInputCols(0))
+    transformer.setOutputCol(getOutputCols(0))
     this
   }
-
 }

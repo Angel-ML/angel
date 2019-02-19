@@ -18,6 +18,8 @@
 
 package com.tencent.angel.spark.automl.tuner.parameter
 
+import com.tencent.angel.spark.automl.utils.AutoMLException
+
 import scala.reflect.ClassTag
 
 
@@ -34,5 +36,23 @@ abstract class ParamSpace[+T: ClassTag](val name: String,
   def sampleOne(): T
 
   def getValues: Array[Double]
+
+}
+
+object ParamSpace {
+
+  def fromConfigString(name: String, config: String): ParamSpace[Double] = {
+    val vType =
+      if (config.trim.startsWith("[") && config.trim.endsWith("]"))
+        "continuous"
+      else if (config.trim.startsWith("{") && config.trim.endsWith("}"))
+        "discrete"
+      else "none"
+    vType match {
+      case "continuous" => ContinuousSpace(name, config)
+      case "discrete" => DiscreteSpace[Double](name, config)
+      case _ => throw new AutoMLException(s"auto param config is not supported")
+    }
+  }
 
 }
