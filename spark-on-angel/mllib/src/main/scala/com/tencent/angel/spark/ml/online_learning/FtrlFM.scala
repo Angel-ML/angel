@@ -167,7 +167,9 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
 
     batch.map { point =>
       val (feature, label) = (point.getX, point.getY)
-      (label, predict(localW, localV, localV2, feature))
+      val p = predict(localW, localV, localV2, feature)
+      val score = 1 / (1 + math.exp(-p))
+      (label, score)
     }
   }
 
