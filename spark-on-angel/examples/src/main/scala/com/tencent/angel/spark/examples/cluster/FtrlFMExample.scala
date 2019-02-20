@@ -47,6 +47,12 @@ object FtrlFMExample {
       }.filter(f => f != null).filter(f => f.getX.getSize > 0)
 
     data.persist(StorageLevel.DISK_ONLY)
+    val parts = data.randomSplit(Array(0.9, 0.1))
+    val (train, test) = (parts(0), parts(1))
+    train.persist(StorageLevel.DISK_ONLY)
+    train.count()
+
+
     val size = data.count()
 
     val max = data.map(f => f.getX.asInstanceOf[IntFloatVector].getStorage().getIndices.max.toLong).max()
@@ -61,7 +67,7 @@ object FtrlFMExample {
     opt.init(0, max+1, -1, rowType, factor, new ColumnRangePartitioner())
 
     for (epoch <- 1 to numEpoch) {
-      val totalLoss = data.mapPartitions {
+      val totalLoss = train.mapPartitions {
         case iterator =>
           val loss = iterator
             .sliding(batchSize, batchSize)
@@ -70,7 +76,7 @@ object FtrlFMExample {
           Iterator.single(loss)
       }.sum()
 
-      val scores = data.sample(false, 0.01, 42).mapPartitions {
+      val scores = test.mapPartitions {
         case iterator =>
           iterator.sliding(batchSize, batchSize)
             .flatMap(f => opt.predict(f.toArray))
@@ -82,6 +88,7 @@ object FtrlFMExample {
 
     if (output.length > 0) {
       println(s"saving model to path $output")
+      opt.weight()
       opt.saveWeight(output)
     }
 

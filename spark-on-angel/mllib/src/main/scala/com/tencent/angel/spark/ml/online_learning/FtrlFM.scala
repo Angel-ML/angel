@@ -11,6 +11,7 @@ import com.tencent.angel.model.output.format.{ColIdValueTextRowFormat, RowIdColI
 import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
 import com.tencent.angel.ps.storage.partitioner.Partitioner
 import com.tencent.angel.spark.context.AngelPSContext
+import com.tencent.angel.spark.ml.psf.ftrl.ComputeW
 import com.tencent.angel.spark.models.PSMatrix
 import com.tencent.angel.spark.models.impl.PSMatrixImpl
 
@@ -124,6 +125,14 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
 
     println(s"batchId=$index loss=${lossSum/batch.size} pullTime=$pullTime optimTime=$optimTime pushTime=$pushTime")
     lossSum
+  }
+
+  def weight(): Unit = {
+    val func1 = new ComputeW(first.id, alpha, beta, lambda1, lambda2, 1.0)
+    first.psfUpdate(func1).get()
+
+    val func2 = new ComputeW(second.id, alpha, beta, lambda1, lambda2, dim)
+    second.psfUpdate(func2).get()
   }
 
   def delta(grad: Vector, localN: Vector, weight: Vector,
