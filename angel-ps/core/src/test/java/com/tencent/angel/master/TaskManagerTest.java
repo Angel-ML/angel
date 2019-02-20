@@ -31,7 +31,7 @@ import com.tencent.angel.master.worker.WorkerManager;
 import com.tencent.angel.master.worker.attempt.WorkerAttempt;
 import com.tencent.angel.master.worker.worker.AMWorker;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroup;
-import com.tencent.angel.ml.matrix.MatrixContext;
+import com.tencent.angel.matrix.MatrixContext;
 import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.psagent.client.MasterClient;
 import com.tencent.angel.psagent.matrix.PSAgentMatrixMetaManager;

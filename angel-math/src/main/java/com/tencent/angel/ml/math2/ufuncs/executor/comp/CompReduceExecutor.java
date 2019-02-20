@@ -21,23 +21,7 @@ package com.tencent.angel.ml.math2.ufuncs.executor.comp;
 import com.tencent.angel.ml.math2.exceptions.MathException;
 import com.tencent.angel.ml.math2.utils.ForkJoinUtils;
 import com.tencent.angel.ml.math2.utils.UnionEle;
-import com.tencent.angel.ml.math2.vector.CompIntDoubleVector;
-import com.tencent.angel.ml.math2.vector.CompIntFloatVector;
-import com.tencent.angel.ml.math2.vector.CompIntIntVector;
-import com.tencent.angel.ml.math2.vector.CompIntLongVector;
-import com.tencent.angel.ml.math2.vector.CompLongDoubleVector;
-import com.tencent.angel.ml.math2.vector.CompLongFloatVector;
-import com.tencent.angel.ml.math2.vector.CompLongIntVector;
-import com.tencent.angel.ml.math2.vector.CompLongLongVector;
-import com.tencent.angel.ml.math2.vector.ComponentVector;
-import com.tencent.angel.ml.math2.vector.IntDoubleVector;
-import com.tencent.angel.ml.math2.vector.IntFloatVector;
-import com.tencent.angel.ml.math2.vector.IntIntVector;
-import com.tencent.angel.ml.math2.vector.IntLongVector;
-import com.tencent.angel.ml.math2.vector.LongDoubleVector;
-import com.tencent.angel.ml.math2.vector.LongFloatVector;
-import com.tencent.angel.ml.math2.vector.LongIntVector;
-import com.tencent.angel.ml.math2.vector.LongLongVector;
+import com.tencent.angel.ml.math2.vector.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
@@ -73,64 +57,6 @@ public class CompReduceExecutor {
     return Double.NaN;
   }
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/comp/CompReduceExecutor.java
-  private static class CompRedExe extends RecursiveTask<UnionEle> {
-    private ComponentVector v;
-    private ReduceOP op;
-    private int start, end, threshold;
-
-    public CompRedExe(ComponentVector v, ReduceOP op, int start, int end) {
-      assert v != null && op != null;
-      this.v = v;
-      this.op = op;
-      this.start = start;
-      this.end = end;
-      this.threshold = (v.getNumPartitions() + THREADS - 1) / THREADS;
-    }
-
-
-    @Override protected UnionEle compute() {
-      boolean canCompute = (end - start) < threshold;
-
-      if (canCompute) {
-        if (v instanceof CompIntDoubleVector) {
-          return apply((CompIntDoubleVector) v, op, start, end);
-        } else if (v instanceof CompIntFloatVector) {
-          return apply((CompIntFloatVector) v, op, start, end);
-        } else if (v instanceof CompIntLongVector) {
-          return apply((CompIntLongVector) v, op, start, end);
-        } else if (v instanceof CompIntIntVector) {
-          return apply((CompIntIntVector) v, op, start, end);
-        } else if (v instanceof CompLongDoubleVector) {
-          return apply((CompLongDoubleVector) v, op, start, end);
-        } else if (v instanceof CompLongFloatVector) {
-          return apply((CompLongFloatVector) v, op, start, end);
-        } else if (v instanceof CompLongLongVector) {
-          return apply((CompLongLongVector) v, op, start, end);
-        } else if (v instanceof CompLongIntVector) {
-          return apply((CompLongIntVector) v, op, start, end);
-        } else {
-          throw new MathException("");
-        }
-      } else {
-        int middle = (start + end) >> 1;
-
-        CompRedExe left = new CompRedExe(v, op, start, middle);
-        CompRedExe right = new CompRedExe(v, op, middle + 1, end);
-
-        left.fork();
-        right.fork();
-
-        UnionEle resLeft = left.join();
-        UnionEle resRight = right.join();
-
-        return merge(resLeft, resRight, op);
-      }
-    }
-  }
-
-=======
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/comp/CompReduceExecutor.java
   private static UnionEle merge(UnionEle left, UnionEle right, ReduceOP op) {
     UnionEle res = new UnionEle();
     switch (op) {
@@ -668,7 +594,7 @@ public class CompReduceExecutor {
         } else if (v instanceof CompLongIntVector) {
           return apply((CompLongIntVector) v, op, start, end);
         } else {
-          throw new AngelException("");
+          throw new MathException("");
         }
       } else {
         int middle = (start + end) >> 1;

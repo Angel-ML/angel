@@ -20,9 +20,10 @@ package com.tencent.angel.ml.core.graphsubmit
 
 import com.tencent.angel.ml.core.TrainTask
 import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.math2.utils.{LabeledData, RowType}
 import com.tencent.angel.ml.math2.vector.Vector
-import com.tencent.angel.worker.storage.{DataBlock, DiskDataBlock, MemoryAndDiskDataBlock, MemoryDataBlock}
+import com.tencent.angel.worker.storage.{DiskDataBlock, MemoryAndDiskDataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.hadoop.io.{LongWritable, Text}

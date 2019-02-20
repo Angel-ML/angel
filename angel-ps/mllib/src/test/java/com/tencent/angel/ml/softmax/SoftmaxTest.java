@@ -171,7 +171,7 @@ public class SoftmaxTest {
     try {
       String inputPath = "../../data/protein/protein_357d_test.libsvm";
       String loadPath = LOCAL_FS + TMP_PATH + "/SoftMax";
-      String predictPath = LOCAL_FS + TMP_PATH + "/predict";
+      String predictPath = LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict";
 
       // Set trainning data path
       conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);

@@ -81,9 +81,9 @@ class LDAPredictTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, 
     infer.inference(model.epoch)
     // save doc_topic
     if (model.saveDocTopic) infer.saveDocTopic(
-      conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH) + Path.SEPARATOR + "predict", data, model)
+      conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH) + Path.SEPARATOR + "com/tencent/angel/ml/predict", data, model)
     if (model.saveDocTopicDistribution) infer.saveDocTopicDistribution(
-      conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH) + Path.SEPARATOR + "predict", data, model)
+      conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH) + Path.SEPARATOR + "com/tencent/angel/ml/predict", data, model)
   }
 
   def loadModel(model: LDAModel): Unit = {

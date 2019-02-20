@@ -143,7 +143,7 @@ public class KmeansTest {
       conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/Kmeans");
       conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "log/Kmeans/predictLog");
       // Set predict result path
-      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict/Kmeans");
+      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict/Kmeans");
       // Set actionType prediction
       conf.set(AngelConf.ANGEL_ACTION_TYPE, MLCoreConf.ANGEL_ML_PREDICT());
 

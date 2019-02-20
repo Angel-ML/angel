@@ -22,13 +22,13 @@ import java.text.DecimalFormat
 import java.util
 
 import com.tencent.angel.ml.clustering.kmeans.KMeansModel._
+import com.tencent.angel.ml.core.{MLModel, PredictResult}
 import com.tencent.angel.ml.core.conf.{AngelMLConf, SharedConf}
+import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.utils.{LabeledData, RowType}
 import com.tencent.angel.ml.math2.vector.{IntFloatVector, Vector}
-import com.tencent.angel.ml.model.{MLModel, PSModel}
-import com.tencent.angel.ml.predict.PredictResult
-import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
+import com.tencent.angel.worker.storage.MemoryDataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 

@@ -29,7 +29,7 @@ import com.tencent.angel.localcluster.LocalMaster;
 import com.tencent.angel.localcluster.LocalWorker;
 import com.tencent.angel.master.AngelApplicationMaster;
 import com.tencent.angel.master.DummyTask;
-import com.tencent.angel.ml.matrix.MatrixContext;
+import com.tencent.angel.matrix.MatrixContext;
 import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos;

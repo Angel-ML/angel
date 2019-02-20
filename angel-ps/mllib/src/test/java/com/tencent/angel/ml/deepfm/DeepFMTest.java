@@ -125,7 +125,7 @@ public class DeepFMTest {
     try {
       String inputPath = "../../data/census/census_148d_test.dummy";
       String loadPath = LOCAL_FS + TMP_PATH + "/model/deepFM";
-      String predictPath = LOCAL_FS + TMP_PATH + "/predict";
+      String predictPath = LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict";
 
       // Set trainning data path
       conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);

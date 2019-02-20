@@ -2,9 +2,9 @@ package com.tencent.angel.spark.ml.psf.embedding.bad;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage;
-import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
-import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
-import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
+import com.tencent.angel.matrix.psf.update.base.PartitionUpdateParam;
+import com.tencent.angel.matrix.psf.update.base.UpdateFunc;
+import com.tencent.angel.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 
 import java.util.Random;

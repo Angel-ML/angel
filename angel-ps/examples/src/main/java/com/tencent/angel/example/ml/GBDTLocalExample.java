@@ -101,10 +101,10 @@ public class GBDTLocalExample {
       conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, trainInput);
       conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/gbdt");
     } else if (mode == 2) {  // predict mode
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, "predict");
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, "com/tencent/angel/ml/predict");
       conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, predictInput);
       conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/gbdt");
-      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict/gbdt");
+      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict/gbdt");
     }
     conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 

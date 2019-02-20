@@ -30,7 +30,7 @@ import com.tencent.angel.localcluster.LocalClusterContext;
 import com.tencent.angel.master.app.AppState;
 import com.tencent.angel.master.app.InternalErrorEvent;
 import com.tencent.angel.master.ps.ParameterServerManager;
-import com.tencent.angel.ml.matrix.MatrixContext;
+import com.tencent.angel.matrix.MatrixContext;
 import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ps.ParameterServer;
 import com.tencent.angel.ps.clock.ClockVectorManager;

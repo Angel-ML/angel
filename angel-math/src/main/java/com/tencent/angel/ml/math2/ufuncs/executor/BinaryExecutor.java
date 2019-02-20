@@ -18,27 +18,10 @@
 
 package com.tencent.angel.ml.math2.ufuncs.executor;
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/BinaryExecutor.java
 import com.tencent.angel.ml.math2.exceptions.MathException;
 import com.tencent.angel.ml.math2.ufuncs.executor.comp.*;
 import com.tencent.angel.ml.math2.ufuncs.executor.mixed.*;
 import com.tencent.angel.ml.math2.ufuncs.executor.simple.*;
-=======
-import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.math2.ufuncs.executor.comp.CompBinaryExecutor;
-import com.tencent.angel.ml.math2.ufuncs.executor.mixed.MixedBinaryInAllExecutor;
-import com.tencent.angel.ml.math2.ufuncs.executor.mixed.MixedBinaryInNonZAExecutor;
-import com.tencent.angel.ml.math2.ufuncs.executor.mixed.MixedBinaryInZAExecutor;
-import com.tencent.angel.ml.math2.ufuncs.executor.mixed.MixedBinaryOutAllExecutor;
-import com.tencent.angel.ml.math2.ufuncs.executor.mixed.MixedBinaryOutNonZAExecutor;
-import com.tencent.angel.ml.math2.ufuncs.executor.mixed.MixedBinaryOutZAExecutor;
-import com.tencent.angel.ml.math2.ufuncs.executor.simple.SimpleBinaryInAllExecutor;
-import com.tencent.angel.ml.math2.ufuncs.executor.simple.SimpleBinaryInNonZAExecutor;
-import com.tencent.angel.ml.math2.ufuncs.executor.simple.SimpleBinaryInZAExecutor;
-import com.tencent.angel.ml.math2.ufuncs.executor.simple.SimpleBinaryOutAllExecutor;
-import com.tencent.angel.ml.math2.ufuncs.executor.simple.SimpleBinaryOutNonZAExecutor;
-import com.tencent.angel.ml.math2.ufuncs.executor.simple.SimpleBinaryOutZAExecutor;
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/BinaryExecutor.java
 import com.tencent.angel.ml.math2.ufuncs.expression.Binary;
 import com.tencent.angel.ml.math2.vector.ComponentVector;
 import com.tencent.angel.ml.math2.vector.SimpleVector;

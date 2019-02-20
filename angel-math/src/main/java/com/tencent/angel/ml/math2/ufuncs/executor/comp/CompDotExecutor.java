@@ -62,90 +62,6 @@ public class CompDotExecutor {
     return Double.NaN;
   }
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/comp/CompDotExecutor.java
-  private static class CompDotExe extends RecursiveTask<Double> {
-    private int start, end, threshold;
-    private ComponentVector v1, v2;
-
-    public CompDotExe(ComponentVector v1, ComponentVector v2, int start, int end) {
-      assert v1 != null && v2 != null;
-      this.start = start;
-      this.end = end;
-      this.threshold = (v1.getNumPartitions() + THREADS - 1) / THREADS;
-      this.v1 = v1;
-      this.v2 = v2;
-    }
-
-
-    @Override protected Double compute() {
-      double dot = Double.NaN;
-      boolean canCompute = (end - start) < threshold;
-
-      if (canCompute) {
-        if (v1 instanceof CompIntDoubleVector && v2 instanceof CompIntDoubleVector) {
-          dot = apply((CompIntDoubleVector) v1, (CompIntDoubleVector) v2, start, end);
-        } else if (v1 instanceof CompIntDoubleVector && v2 instanceof CompIntFloatVector) {
-          dot = apply((CompIntDoubleVector) v1, (CompIntFloatVector) v2, start, end);
-        } else if (v1 instanceof CompIntDoubleVector && v2 instanceof CompIntLongVector) {
-          dot = apply((CompIntDoubleVector) v1, (CompIntLongVector) v2, start, end);
-        } else if (v1 instanceof CompIntDoubleVector && v2 instanceof CompIntIntVector) {
-          dot = apply((CompIntDoubleVector) v1, (CompIntIntVector) v2, start, end);
-        } else if (v1 instanceof CompIntFloatVector && v2 instanceof CompIntFloatVector) {
-          dot = apply((CompIntFloatVector) v1, (CompIntFloatVector) v2, start, end);
-        } else if (v1 instanceof CompIntFloatVector && v2 instanceof CompIntLongVector) {
-          dot = apply((CompIntFloatVector) v1, (CompIntLongVector) v2, start, end);
-        } else if (v1 instanceof CompIntFloatVector && v2 instanceof CompIntIntVector) {
-          dot = apply((CompIntFloatVector) v1, (CompIntIntVector) v2, start, end);
-        } else if (v1 instanceof CompIntLongVector && v2 instanceof CompIntLongVector) {
-          dot = apply((CompIntLongVector) v1, (CompIntLongVector) v2, start, end);
-        } else if (v1 instanceof CompIntLongVector && v2 instanceof CompIntIntVector) {
-          dot = apply((CompIntLongVector) v1, (CompIntIntVector) v2, start, end);
-        } else if (v1 instanceof CompIntIntVector && v2 instanceof CompIntIntVector) {
-          dot = apply((CompIntIntVector) v1, (CompIntIntVector) v2, start, end);
-        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof CompLongDoubleVector) {
-          dot = apply((CompLongDoubleVector) v1, (CompLongDoubleVector) v2, start, end);
-        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof CompLongFloatVector) {
-          dot = apply((CompLongDoubleVector) v1, (CompLongFloatVector) v2, start, end);
-        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof CompLongLongVector) {
-          dot = apply((CompLongDoubleVector) v1, (CompLongLongVector) v2, start, end);
-        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof CompLongIntVector) {
-          dot = apply((CompLongDoubleVector) v1, (CompLongIntVector) v2, start, end);
-        } else if (v1 instanceof CompLongFloatVector && v2 instanceof CompLongFloatVector) {
-          dot = apply((CompLongFloatVector) v1, (CompLongFloatVector) v2, start, end);
-        } else if (v1 instanceof CompLongFloatVector && v2 instanceof CompLongLongVector) {
-          dot = apply((CompLongFloatVector) v1, (CompLongLongVector) v2, start, end);
-        } else if (v1 instanceof CompLongFloatVector && v2 instanceof CompLongIntVector) {
-          dot = apply((CompLongFloatVector) v1, (CompLongIntVector) v2, start, end);
-        } else if (v1 instanceof CompLongLongVector && v2 instanceof CompLongLongVector) {
-          dot = apply((CompLongLongVector) v1, (CompLongLongVector) v2, start, end);
-        } else if (v1 instanceof CompLongLongVector && v2 instanceof CompLongIntVector) {
-          dot = apply((CompLongLongVector) v1, (CompLongIntVector) v2, start, end);
-        } else if (v1 instanceof CompLongIntVector && v2 instanceof CompLongIntVector) {
-          dot = apply((CompLongIntVector) v1, (CompLongIntVector) v2, start, end);
-        } else {
-          throw new MathException("The operation is not support!");
-        }
-      } else {
-        int middle = (start + end) >> 1;
-
-        CompDotExe left = new CompDotExe(v1, v2, start, middle);
-        CompDotExe right = new CompDotExe(v1, v2, middle + 1, end);
-
-        left.fork();
-        right.fork();
-
-        double leftRes = left.join();
-        double rightRes = right.join();
-
-        dot = leftRes + rightRes;
-      }
-
-      return dot;
-    }
-  }
-
-=======
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/comp/CompDotExecutor.java
   private static double apply(CompIntDoubleVector v1, CompIntDoubleVector v2, int start, int end) {
     double dot = 0.0;
     if (v1.isCompatable(v2)) {
@@ -509,7 +425,7 @@ public class CompDotExecutor {
         } else if (v1 instanceof CompLongIntVector && v2 instanceof CompLongIntVector) {
           dot = apply((CompLongIntVector) v1, (CompLongIntVector) v2, start, end);
         } else {
-          throw new AngelException("The operation is not support!");
+          throw new MathException("The operation is not support!");
         }
       } else {
         int middle = (start + end) >> 1;

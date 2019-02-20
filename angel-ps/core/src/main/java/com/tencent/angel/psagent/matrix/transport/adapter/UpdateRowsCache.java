@@ -18,7 +18,7 @@
 
 package com.tencent.angel.psagent.matrix.transport.adapter;
 
-import com.tencent.angel.ml.matrix.psf.update.base.VoidResult;
+import com.tencent.angel.matrix.psf.update.base.VoidResult;
 
 public class UpdateRowsCache extends PartitionResponseCache<VoidResult> {
   public UpdateRowsCache(int totalRequestNum) {

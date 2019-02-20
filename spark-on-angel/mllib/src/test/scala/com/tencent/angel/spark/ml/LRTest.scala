@@ -72,7 +72,7 @@ object LRTest {
       case "train" =>
         learner.train(input, modelOutput, modelInput, dim, model)
 
-      case "predict" =>
+      case "com/tencent/angel/ml/predict" =>
         learner.predict(input, modelOutput, modelInput, dim, model)
       case _ =>
         throw new AngelException("actionType should be train or predict")

@@ -18,16 +18,8 @@
 
 package com.tencent.angel.ml.math2.ufuncs.executor.matrix;
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/UnaryMatrixExecutor.java
 import com.tencent.angel.ml.math2.exceptions.MathException;
 import com.tencent.angel.ml.math2.matrix.*;
-=======
-import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.math2.matrix.BlasDoubleMatrix;
-import com.tencent.angel.ml.math2.matrix.BlasFloatMatrix;
-import com.tencent.angel.ml.math2.matrix.Matrix;
-import com.tencent.angel.ml.math2.matrix.RowBasedMatrix;
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/UnaryMatrixExecutor.java
 import com.tencent.angel.ml.math2.ufuncs.expression.Unary;
 
 public class UnaryMatrixExecutor {

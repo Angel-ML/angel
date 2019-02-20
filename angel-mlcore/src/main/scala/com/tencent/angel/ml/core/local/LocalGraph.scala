@@ -19,24 +19,25 @@
 package com.tencent.angel.ml.core.local
 
 import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.local.variables._
-import com.tencent.angel.ml.core.network.{EvnContext, Graph}
 import com.tencent.angel.ml.core.network.layers._
-import com.tencent.angel.ml.core.utils.{GraphInvalidate, VariableInvalidate}
+import com.tencent.angel.ml.core.network.{EvnContext, Graph}
 import com.tencent.angel.ml.core.variable.VariableManager
 import com.tencent.angel.ml.math2.utils.RowType
-import com.tencent.angel.model.ModelTools
 import org.apache.commons.logging.{Log, LogFactory}
 
 
 case class LocalEvnContext() extends EvnContext
 
 
-class LocalGraph(placeHolder: PlaceHolder, conf: SharedConf, override val taskNum: Int) extends Graph(placeHolder, SharedConf.variableProvider())
-  with Serializable {
+class LocalGraph(placeHolder: PlaceHolder, conf: SharedConf, override val taskNum: Int)
+  extends Graph(placeHolder, SharedConf.variableProvider()) with Serializable {
 
   val LOG: Log = LogFactory.getLog(classOf[LocalGraph])
-  override protected val variableManager: VariableManager = new VariableManager(this)
+  override val dataFormat: String = SharedConf.inputDataFormat
+  override val modelType: RowType = SharedConf.modelType
+
+  private val isSparseFormat: Boolean = dataFormat == "libsvm" || dataFormat == "dummy"
+  override val variableManager: VariableManager = new VariableManager(isSparseFormat)
 
   // fields
   override val indexRange: Long = SharedConf.indexRange
@@ -44,10 +45,6 @@ class LocalGraph(placeHolder: PlaceHolder, conf: SharedConf, override val taskNu
 
   override def normalFactor: Double = 1.0 / (placeHolder.getBatchSize * taskNum)
 
-  override val dataFormat: String = SharedConf.inputDataFormat
-  override val modelType: RowType = SharedConf.modelType
-
   override def toString: String = super.toString
-
 
 }

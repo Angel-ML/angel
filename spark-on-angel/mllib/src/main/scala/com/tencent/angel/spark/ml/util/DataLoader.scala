@@ -19,9 +19,9 @@
 package com.tencent.angel.spark.ml.util
 
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage
+import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.ml.math2.vector._
 
 import scala.collection.mutable.ArrayBuffer

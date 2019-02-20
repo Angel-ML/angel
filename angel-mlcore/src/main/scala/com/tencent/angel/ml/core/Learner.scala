@@ -11,11 +11,11 @@ import scala.collection.mutable
 trait Learner {
   private val LOG = LogFactory.getLog(classOf[Learner])
 
-  val model: Model
-  val graph: Graph
+//  val model: GraphModel
+//  val graph: Graph
   protected val ssScheduler: StepSizeScheduler
 
-  protected def barrier(graph: Graph): Unit
+  protected def barrier(): Unit
 
   protected val preHook: mutable.ListBuffer[Learner.HookFunc] = new mutable.ListBuffer[Learner.HookFunc]()
   protected val postHook: mutable.ListBuffer[Learner.HookFunc] = new mutable.ListBuffer[Learner.HookFunc]()
@@ -30,13 +30,13 @@ trait Learner {
 
   protected def trainOneEpoch(epoch: Int, iter: Iterator[Array[LabeledData]], numBatch: Int): Double
 
-  def train(trainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData]): Model = {
+  def train(trainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData]): MLModel = {
     train(trainData, null, validationData)
   }
 
   def train(posTrainData: DataBlock[LabeledData],
             negTrainData: DataBlock[LabeledData],
-            validationData: DataBlock[LabeledData]): Model
+            validationData: DataBlock[LabeledData]): MLModel
 
   protected def validate(epoch: Int, valiData: DataBlock[LabeledData]): Unit
 }

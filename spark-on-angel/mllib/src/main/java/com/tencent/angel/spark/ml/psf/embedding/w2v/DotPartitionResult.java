@@ -1,6 +1,6 @@
 package com.tencent.angel.spark.ml.psf.embedding.w2v;
 
-import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
+import com.tencent.angel.matrix.psf.get.base.PartitionGetResult;
 import io.netty.buffer.ByteBuf;
 
 public class DotPartitionResult extends PartitionGetResult {

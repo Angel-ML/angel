@@ -18,26 +18,12 @@
 
 package com.tencent.angel.ml.math2.matrix;
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/matrix/RowBasedMatrix.java
-
 import com.tencent.angel.ml.math2.exceptions.MathException;
 import com.tencent.angel.ml.math2.storage.*;
 import com.tencent.angel.ml.math2.ufuncs.expression.*;
-=======
-import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math2.storage.IntDoubleDenseVectorStorage;
-import com.tencent.angel.ml.math2.ufuncs.expression.Add;
-import com.tencent.angel.ml.math2.ufuncs.expression.Axpy;
-import com.tencent.angel.ml.math2.ufuncs.expression.Binary;
-import com.tencent.angel.ml.math2.ufuncs.expression.Div;
-import com.tencent.angel.ml.math2.ufuncs.expression.Mul;
-import com.tencent.angel.ml.math2.ufuncs.expression.SAdd;
-import com.tencent.angel.ml.math2.ufuncs.expression.SDiv;
-import com.tencent.angel.ml.math2.ufuncs.expression.SMul;
-import com.tencent.angel.ml.math2.ufuncs.expression.SSub;
-import com.tencent.angel.ml.math2.ufuncs.expression.Sub;
-import com.tencent.angel.ml.math2.ufuncs.expression.Unary;
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/matrix/RowBasedMatrix.java
+import com.tencent.angel.ml.math2.ufuncs.expression.*;
+
 import com.tencent.angel.ml.math2.utils.VectorUtils;
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.math2.vector.Vector;
@@ -71,14 +57,8 @@ public abstract class RowBasedMatrix<Vec extends Vector> extends Matrix {
     return rows[idx];
   }
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/matrix/RowBasedMatrix.java
   @Override public Vec getCol(int idx) {
     throw new MathException("RBMatrix is not support to getCol");
-=======
-  @Override
-  public Vec getCol(int idx) {
-    throw new AngelException("RBMatrix is not support to getCol");
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/matrix/RowBasedMatrix.java
   }
 
   @Override

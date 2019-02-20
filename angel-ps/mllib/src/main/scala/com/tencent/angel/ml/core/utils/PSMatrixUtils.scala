@@ -21,13 +21,13 @@ package com.tencent.angel.ml.core.utils
 import java.util.{ArrayList => JArrayList, List => JList}
 
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.matrix.MatrixContext
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.storage._
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
-import com.tencent.angel.ml.matrix.psf.get.getrows.{GetRows, GetRowsParam, GetRowsResult}
-import com.tencent.angel.ml.matrix.MatrixContext
+import com.tencent.angel.matrix.psf.get.getrows.{GetRows, GetRowsParam, GetRowsResult}
 import com.tencent.angel.ps.server.data.request.{InitFunc, RandomNormalInitFunc, UpdateOp}
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
 import com.tencent.angel.psagent.PSAgentContext

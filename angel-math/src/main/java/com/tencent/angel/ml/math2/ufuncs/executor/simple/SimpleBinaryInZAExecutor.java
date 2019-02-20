@@ -18,51 +18,15 @@
 
 package com.tencent.angel.ml.math2.ufuncs.executor.simple;
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/simple/SimpleBinaryInZAExecutor.java
 import com.tencent.angel.ml.math2.exceptions.MathException;
 import com.tencent.angel.ml.math2.storage.*;
-=======
-import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.math2.storage.IntDoubleSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntDoubleVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntFloatSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntFloatVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntIntSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntIntVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntLongSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntLongVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongDoubleSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongDoubleVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongFloatSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongFloatVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongIntSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongIntVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongLongSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongLongVectorStorage;
 import com.tencent.angel.ml.math2.ufuncs.executor.StorageSwitch;
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/simple/SimpleBinaryInZAExecutor.java
 import com.tencent.angel.ml.math2.ufuncs.expression.Binary;
 import com.tencent.angel.ml.math2.utils.ArrayCopy;
 import com.tencent.angel.ml.math2.utils.Constant;
-import com.tencent.angel.ml.math2.vector.IntDoubleVector;
-import com.tencent.angel.ml.math2.vector.IntDummyVector;
-import com.tencent.angel.ml.math2.vector.IntFloatVector;
-import com.tencent.angel.ml.math2.vector.IntIntVector;
-import com.tencent.angel.ml.math2.vector.IntLongVector;
-import com.tencent.angel.ml.math2.vector.LongDoubleVector;
-import com.tencent.angel.ml.math2.vector.LongDummyVector;
-import com.tencent.angel.ml.math2.vector.LongFloatVector;
-import com.tencent.angel.ml.math2.vector.LongIntVector;
-import com.tencent.angel.ml.math2.vector.LongLongVector;
-import com.tencent.angel.ml.math2.vector.Vector;
-import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
-import it.unimi.dsi.fastutil.ints.Int2FloatMap;
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2LongMap;
-import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
-import it.unimi.dsi.fastutil.longs.Long2FloatMap;
-import it.unimi.dsi.fastutil.longs.Long2IntMap;
-import it.unimi.dsi.fastutil.longs.Long2LongMap;
+import com.tencent.angel.ml.math2.vector.*;
+import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.longs.*;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 public class SimpleBinaryInZAExecutor {
@@ -2158,33 +2122,6 @@ public class SimpleBinaryInZAExecutor {
           newValues[idx] = op.apply(entry.getFloatValue(), v2Values[idx]);
         }
       }
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/simple/SimpleBinaryInZAExecutor.java
-    } else {
-      throw new MathException("The operation is not support!");
-    }
-
-    return v1;
-  }
-
-  private static Vector apply(IntFloatVector v1, IntLongVector v2, Binary op) {
-    if (v1.isDense() && v2.isDense()) {
-      float[] v1Values = v1.getStorage().getValues();
-      long[] v2Values = v2.getStorage().getValues();
-      for (int idx = 0; idx < v1Values.length; idx++) {
-        v1Values[idx] = op.apply(v1Values[idx], v2Values[idx]);
-      }
-    } else if (v1.isDense() && v2.isSparse()) {
-      float[] v1Values = v1.getStorage().getValues();
-      if (v2.size() < Constant.sparseDenseStorageThreshold * v2.getDim()
-        || v1.getDim() < Constant.denseStorageThreshold) {
-        // slower but memory efficient, for small vector only
-        IntLongVectorStorage v2storage = v2.getStorage();
-        for (int i = 0; i < v1Values.length; i++) {
-          if (v2storage.hasKey(i)) {
-            v1Values[i] = op.apply(v1Values[i], v2.get(i));
-          } else {
-            v1Values[i] = 0;
-=======
     } else if (v1.isSparse() && v2.isSparse()) {
       if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
           .dim()) {
@@ -2196,7 +2133,6 @@ public class SimpleBinaryInZAExecutor {
           int idx = entry.getIntKey();
           if (v1storage.hasKey(idx)) {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getFloatValue()));
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/simple/SimpleBinaryInZAExecutor.java
           }
         }
       } else if (v1.getSize() <= v2.getSize()
@@ -4524,7 +4460,7 @@ public class SimpleBinaryInZAExecutor {
         }
       }
     } else {
-      throw new AngelException("The operation is not support!");
+      throw new MathException("The operation is not support!");
     }
     v1.setStorage(newStorage);
 
@@ -5010,7 +4946,7 @@ public class SimpleBinaryInZAExecutor {
         }
       }
     } else {
-      throw new AngelException("The operation is not support!");
+      throw new MathException("The operation is not support!");
     }
     v1.setStorage(newStorage);
 
@@ -5413,7 +5349,7 @@ public class SimpleBinaryInZAExecutor {
         }
       }
     } else {
-      throw new AngelException("The operation is not support!");
+      throw new MathException("The operation is not support!");
     }
     v1.setStorage(newStorage);
 
@@ -5816,7 +5752,7 @@ public class SimpleBinaryInZAExecutor {
         }
       }
     } else {
-      throw new AngelException("The operation is not support!");
+      throw new MathException("The operation is not support!");
     }
     v1.setStorage(newStorage);
 
@@ -6315,15 +6251,6 @@ public class SimpleBinaryInZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/simple/SimpleBinaryInZAExecutor.java
-      }
-    } else {
-      throw new MathException("The operation is not support!");
-    }
-
-    return v1;
-  }
-=======
       } else if (v1.getSize() <= v2.getSize()
           && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
@@ -6341,7 +6268,6 @@ public class SimpleBinaryInZAExecutor {
         // preferred dense
         long[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/simple/SimpleBinaryInZAExecutor.java
 
         LongDoubleVectorStorage storage = v1.getStorage();
         long size = v2.size();
@@ -7937,15 +7863,6 @@ public class SimpleBinaryInZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/simple/SimpleBinaryInZAExecutor.java
-      }
-    } else {
-      throw new MathException("The operation is not support!");
-    }
-
-    return v1;
-  }
-=======
       } else if (v1.getSize() <= v2.getSize()
           && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
@@ -7963,7 +7880,6 @@ public class SimpleBinaryInZAExecutor {
         // preferred dense
         long[] v2Indices = v2.getStorage().getIndices();
         long[] v2Values = v2.getStorage().getValues();
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/simple/SimpleBinaryInZAExecutor.java
 
         LongLongVectorStorage storage = v1.getStorage();
         long size = v2.size();
@@ -8350,15 +8266,6 @@ public class SimpleBinaryInZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/simple/SimpleBinaryInZAExecutor.java
-      }
-    } else {
-      throw new MathException("The operation is not support!");
-    }
-
-    return v1;
-  }
-=======
       } else if (v1.getSize() <= v2.getSize()
           && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
@@ -8376,7 +8283,6 @@ public class SimpleBinaryInZAExecutor {
         // preferred dense
         long[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/simple/SimpleBinaryInZAExecutor.java
 
         LongLongVectorStorage storage = v1.getStorage();
         long size = v2.size();

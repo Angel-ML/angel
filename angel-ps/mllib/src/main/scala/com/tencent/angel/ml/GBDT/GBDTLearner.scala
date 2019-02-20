@@ -22,12 +22,11 @@ import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.GBDT.algo.RegTree.RegTDataStore
 import com.tencent.angel.ml.GBDT.algo.{GBDTController, GBDTPhase}
 import com.tencent.angel.ml.GBDT.param.{GBDTParam, RegTParam}
-import com.tencent.angel.ml.core.MLLearner
+import com.tencent.angel.ml.core.{MLLearner, MLModel}
 import com.tencent.angel.ml.core.conf.AngelMLConf
+import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.math2.utils.LabeledData
-import com.tencent.angel.ml.metric.ErrorMetric
-import com.tencent.angel.ml.model.MLModel
-import com.tencent.angel.worker.storage.DataBlock
+import com.tencent.angel.ml.core.metric.ErrorMetric
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 

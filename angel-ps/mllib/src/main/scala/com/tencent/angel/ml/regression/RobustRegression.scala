@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.regression
 
 import com.tencent.angel.ml.core.conf.AngelMLConf
-import com.tencent.angel.ml.core.graphsubmit.GraphModel
+import com.tencent.angel.ml.core.graphsubmit.AngelModel
 import com.tencent.angel.ml.core.network.layers.LossLayer
 import com.tencent.angel.ml.core.network.layers.verge.SimpleInputLayer
 import com.tencent.angel.ml.core.optimizer.loss.HuberLoss
@@ -27,7 +27,7 @@ import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 
 class RobustRegression(conf: Configuration, _ctx: TaskContext = null)
-  extends GraphModel(conf, _ctx) {
+  extends AngelModel(conf, _ctx) {
 
   override def buildNetwork(): Unit = {
     val input = dataFormat match {

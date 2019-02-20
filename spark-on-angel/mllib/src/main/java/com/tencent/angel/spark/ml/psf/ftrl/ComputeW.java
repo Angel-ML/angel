@@ -20,9 +20,9 @@ package com.tencent.angel.spark.ml.psf.ftrl;
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs;
 import com.tencent.angel.ml.math2.utils.VectorUtils;
 import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
-import com.tencent.angel.ml.matrix.psf.update.enhance.MultiRowUpdateFunc;
-import com.tencent.angel.ml.matrix.psf.update.enhance.MultiRowUpdateParam.MultiRowPartitionUpdateParam;
+import com.tencent.angel.matrix.psf.update.base.PartitionUpdateParam;
+import com.tencent.angel.matrix.psf.update.enhance.MultiRowUpdateFunc;
+import com.tencent.angel.matrix.psf.update.enhance.MultiRowUpdateParam.MultiRowPartitionUpdateParam;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 

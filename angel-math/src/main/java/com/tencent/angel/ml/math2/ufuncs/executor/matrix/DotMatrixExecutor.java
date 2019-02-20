@@ -18,49 +18,19 @@
 
 package com.tencent.angel.ml.math2.ufuncs.executor.matrix;
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
-import com.tencent.angel.ml.math2.exceptions.MathException;
-import com.tencent.angel.ml.math2.MFactory;
-import com.tencent.angel.ml.math2.MatrixExecutors;
-import com.tencent.angel.ml.math2.VFactory;
-import com.tencent.angel.ml.math2.matrix.*;
-import com.tencent.angel.ml.math2.storage.*;
-import com.tencent.angel.ml.math2.utils.RowType;
-import com.tencent.angel.ml.math2.vector.*;
-=======
 import com.github.fommil.netlib.BLAS;
-import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math2.MFactory;
 import com.tencent.angel.ml.math2.MatrixExecutors;
-import com.tencent.angel.ml.math2.matrix.BlasDoubleMatrix;
-import com.tencent.angel.ml.math2.matrix.BlasFloatMatrix;
-import com.tencent.angel.ml.math2.matrix.BlasMatrix;
-import com.tencent.angel.ml.math2.matrix.Matrix;
-import com.tencent.angel.ml.math2.matrix.RBIntDoubleMatrix;
-import com.tencent.angel.ml.math2.matrix.RBIntFloatMatrix;
-import com.tencent.angel.ml.math2.matrix.RBLongDoubleMatrix;
-import com.tencent.angel.ml.math2.matrix.RBLongFloatMatrix;
-import com.tencent.angel.ml.math2.matrix.RowBasedMatrix;
+import com.tencent.angel.ml.math2.matrix.*;
 import com.tencent.angel.ml.math2.storage.IntDoubleDenseVectorStorage;
 import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage;
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
 import com.tencent.angel.ml.math2.utils.ArrayCopy;
-import com.tencent.angel.ml.math2.vector.IntDoubleVector;
-import com.tencent.angel.ml.math2.vector.IntDummyVector;
-import com.tencent.angel.ml.math2.vector.IntFloatVector;
-import com.tencent.angel.ml.math2.vector.IntIntVector;
-import com.tencent.angel.ml.math2.vector.IntLongVector;
-import com.tencent.angel.ml.math2.vector.LongDoubleVector;
-import com.tencent.angel.ml.math2.vector.LongFloatVector;
-import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ml.matrix.RowType;
-import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
-import it.unimi.dsi.fastutil.ints.Int2FloatMap;
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2LongMap;
+import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.math2.vector.*;
+import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import java.util.concurrent.RecursiveAction;
-
+import com.tencent.angel.ml.math2.exceptions.MathException;
 
 public class DotMatrixExecutor {
 
@@ -663,28 +633,17 @@ public class DotMatrixExecutor {
           }
           return res;
         } else {
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
           throw new MathException("the operation is not supported!");
         }
       } else {
         throw new MathException("the operation is not supported!");
-=======
-          throw new AngelException("the operation is not supported!");
-        }
-      } else {
-        throw new AngelException("the operation is not supported!");
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
       }
     } else {
       throw new MathException("the operation is not supported!");
     }
   }
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
-  public static Matrix apply(BlasDoubleMatrix mat1, boolean trans1, BlasDoubleMatrix mat2,
-=======
   private static Matrix apply(BlasDoubleMatrix mat1, boolean trans1, BlasDoubleMatrix mat2,
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
       boolean trans2) {
     double alpha = 1.0, beta = 0.0;
     double[] resBlas;
@@ -723,11 +682,7 @@ public class DotMatrixExecutor {
     }
   }
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
-  public static Matrix apply(BlasFloatMatrix mat1, boolean trans1, BlasFloatMatrix mat2,
-=======
   private static Matrix apply(BlasFloatMatrix mat1, boolean trans1, BlasFloatMatrix mat2,
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
       boolean trans2) {
     float alpha = 1.0f, beta = 0.0f;
     float[] resBlas;
@@ -902,48 +857,9 @@ public class DotMatrixExecutor {
     return retMat;
   }
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
-  private static void apply(BlasDoubleMatrix leftMatrix, BlasDoubleMatrix rightMatrix,
-      BlasDoubleMatrix resultMatrix, int[] leftRowOffIndices,
-      int startPos, int endPos, int subM, boolean trans2, double alpha, double beta) {
-    // Get the sub-matrix of left matrix, split by row
-    double[] leftData = leftMatrix.getData();
-    int splitRowNum = subM;
-    if (endPos == leftRowOffIndices.length) {
-      splitRowNum = leftMatrix.getNumRows() - subM * (leftRowOffIndices.length - 1);
-    }
-    double[] splitLeftData = new double[splitRowNum * leftMatrix.getNumCols()];
-    System.arraycopy(leftData, leftRowOffIndices[startPos] * leftMatrix.getNumCols(),
-        splitLeftData, 0, splitLeftData.length);
-
-    double[] resultData = resultMatrix.getData();
-
-    if (trans2) {
-      double[] splitResult = new double[splitRowNum * rightMatrix.getNumRows()];
-      blas.dgemm("T", "N", rightMatrix.getNumRows(), splitRowNum, leftMatrix.getNumCols(),
-          alpha, rightMatrix.getData(), rightMatrix.getNumCols(), splitLeftData,
-          leftMatrix.getNumCols(), beta, splitResult, rightMatrix.getNumRows());
-      System.arraycopy(splitResult, 0, resultData,
-          leftRowOffIndices[startPos] * rightMatrix.getNumRows(), splitResult.length);
-    } else {
-      double[] splitResult = new double[splitRowNum * rightMatrix.getNumCols()];
-      blas.dgemm("N", "N", rightMatrix.getNumCols(), splitRowNum, leftMatrix.getNumCols(),
-          alpha, rightMatrix.getData(), rightMatrix.getNumCols(), splitLeftData,
-          leftMatrix.getNumCols(), beta, splitResult, rightMatrix.getNumCols());
-      System.arraycopy(splitResult, 0, resultData,
-          leftRowOffIndices[startPos] * rightMatrix.getNumCols(), splitResult.length);
-    }
-  }
-
   private static void apply(BlasFloatMatrix leftMatrix, BlasFloatMatrix rightMatrix,
       BlasFloatMatrix resultMatrix, int[] leftRowOffIndices,
       int startPos, int endPos, int subM, boolean trans2, float alpha, float beta) {
-
-=======
-  private static void apply(BlasFloatMatrix leftMatrix, BlasFloatMatrix rightMatrix,
-      BlasFloatMatrix resultMatrix, int[] leftRowOffIndices,
-      int startPos, int endPos, int subM, boolean trans2, float alpha, float beta) {
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
     // Get the sub-matrix of left matrix, split by row
     float[] leftData = leftMatrix.getData();
     int splitRowNum = subM;
@@ -958,24 +874,16 @@ public class DotMatrixExecutor {
 
     if (trans2) {
       float[] splitResult = new float[splitRowNum * rightMatrix.getNumRows()];
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
-      blas.sgemm("T", "N", rightMatrix.getNumRows(), splitRowNum, leftMatrix.getNumCols(),
-=======
       blas.sgemm(
           "T", "N", rightMatrix.getNumRows(), splitRowNum, leftMatrix.getNumCols(),
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
           alpha, rightMatrix.getData(), rightMatrix.getNumCols(), splitLeftData,
           leftMatrix.getNumCols(), beta, splitResult, rightMatrix.getNumRows());
       System.arraycopy(splitResult, 0, resultData,
           leftRowOffIndices[startPos] * rightMatrix.getNumRows(), splitResult.length);
     } else {
       float[] splitResult = new float[splitRowNum * rightMatrix.getNumCols()];
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
-      blas.sgemm("N", "N", rightMatrix.getNumCols(), splitRowNum, leftMatrix.getNumCols(),
-=======
       blas.sgemm(
           "N", "N", rightMatrix.getNumCols(), splitRowNum, leftMatrix.getNumCols(),
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
           alpha, rightMatrix.getData(), rightMatrix.getNumCols(), splitLeftData,
           leftMatrix.getNumCols(), beta, splitResult, rightMatrix.getNumCols());
       System.arraycopy(splitResult, 0, resultData,
@@ -983,71 +891,9 @@ public class DotMatrixExecutor {
     }
   }
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
-  /**
-   * A simple parallel matrix dot operator
-   */
-  public static class DotForkJoinOp extends RecursiveAction {
-
-    private final BlasMatrix leftMatrix;
-    private final BlasMatrix rightMatrix;
-    private final BlasMatrix resultMatrix;
-    private final int[] leftRowOffIndices;
-    private final int startPos;
-    private final int endPos;
-    private final int subM;
-    private final boolean trans2;
-    float alpha = 1.0f, beta = 0.0f;
-
-    public DotForkJoinOp(BlasMatrix leftMatrix, BlasMatrix rightMatrix,
-        BlasMatrix resultMatrix, int[] leftRowOffIndices,
-        int startPos, int endPos, int subM, boolean trans2) {
-      this.leftMatrix = leftMatrix;
-      this.rightMatrix = rightMatrix;
-      this.resultMatrix = resultMatrix;
-      this.leftRowOffIndices = leftRowOffIndices;
-      this.startPos = startPos;
-      this.endPos = endPos;
-      this.subM = subM;
-      this.trans2 = trans2;
-    }
-
-    @Override
-    protected void compute() {
-      if (endPos <= startPos) {
-        return;
-      } else if (endPos - startPos == 1) {
-        if (leftMatrix instanceof BlasDoubleMatrix && rightMatrix instanceof BlasDoubleMatrix) {
-          apply((BlasDoubleMatrix) leftMatrix, (BlasDoubleMatrix) rightMatrix,
-              (BlasDoubleMatrix) resultMatrix,
-              leftRowOffIndices, startPos, endPos, subM, trans2, alpha, beta);
-        } else if (leftMatrix instanceof BlasFloatMatrix
-            && rightMatrix instanceof BlasFloatMatrix) {
-          apply((BlasFloatMatrix) leftMatrix, (BlasFloatMatrix) rightMatrix,
-              (BlasFloatMatrix) resultMatrix,
-              leftRowOffIndices, startPos, endPos, subM, trans2, alpha, beta);
-        } else {
-          throw new MathException("not support");
-        }
-      } else {
-        int middle = (startPos + endPos) / 2;
-        DotForkJoinOp leftOp = new DotForkJoinOp(leftMatrix, rightMatrix, resultMatrix,
-            leftRowOffIndices, startPos, middle, subM, trans2);
-        DotForkJoinOp rightOp = new DotForkJoinOp(leftMatrix, rightMatrix, resultMatrix,
-            leftRowOffIndices, middle, endPos, subM, trans2);
-        invokeAll(leftOp, rightOp);
-      }
-    }
-  }
-
-  private static float[] transform(BlasFloatMatrix matrix) {
-    float[] data = matrix.getData();
-    float[] ret = new float[data.length];
-=======
   private static double[] transform(BlasDoubleMatrix matrix) {
     double[] data = matrix.getData();
     double[] ret = new double[data.length];
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
     int m = matrix.getNumRows();
     int n = matrix.getNumCols();
     for (int i = 0; i < m; i++) {
@@ -1105,11 +951,7 @@ public class DotMatrixExecutor {
       }
       return MFactory.rbIntDoubleMatrix(rows);
     } else {
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
       throw new MathException("the operation is not supported!");
-=======
-      throw new AngelException("the operation is not supported!");
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
     }
   }
 
@@ -1132,11 +974,7 @@ public class DotMatrixExecutor {
       }
       return MFactory.rbLongDoubleMatrix(rows);
     } else {
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
       throw new MathException("the operation is not supported!");
-=======
-      throw new AngelException("the operation is not supported!");
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
     }
   }
 
@@ -1152,16 +990,6 @@ public class DotMatrixExecutor {
       return MFactory.rbIntFloatMatrix(rows);
     } else if (!trans1 && !trans2) {
       int outputRows = mat1.getNumRows();
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
-      LongFloatVector[] rows = new LongFloatVector[outputRows];
-      for (int i = 0; i < outputRows; i++) {
-        Vector row = mat1.getRow(i);
-        rows[i] = (LongFloatVector) mat2.transDot(row);
-      }
-      return MFactory.rbLongFloatMatrix(rows);
-    } else {
-      throw new MathException("the operation is not supported!");
-=======
       IntFloatVector[] rows = new IntFloatVector[outputRows];
       for (int i = 0; i < outputRows; i++) {
         Vector row = mat1.getRow(i);
@@ -1169,8 +997,7 @@ public class DotMatrixExecutor {
       }
       return MFactory.rbIntFloatMatrix(rows);
     } else {
-      throw new AngelException("the operation is not supported!");
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
+      throw new MathException("the operation is not supported!");
     }
   }
 
@@ -1193,11 +1020,7 @@ public class DotMatrixExecutor {
       }
       return MFactory.rbLongFloatMatrix(rows);
     } else {
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
       throw new MathException("the operation is not supported!");
-=======
-      throw new AngelException("the operation is not supported!");
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/DotMatrixExecutor.java
     }
   }
 
@@ -1303,7 +1126,7 @@ public class DotMatrixExecutor {
 
   public static double apply(Matrix mat, Vector v1) {
     if (mat instanceof BlasMatrix) {
-      assert mat.getNumRows() == ((BlasMatrix) mat).getNumCols();
+      assert ((BlasMatrix) mat).getNumRows() == ((BlasMatrix) mat).getNumCols();
       return DotMatrixExecutor.apply(mat, true, v1).dot(v1);
     } else {
       return mat.dot(v1).dot(v1);
@@ -1852,7 +1675,7 @@ public class DotMatrixExecutor {
               (BlasFloatMatrix) resultMatrix,
               leftRowOffIndices, startPos, endPos, subM, trans2, alpha, beta);
         } else {
-          throw new AngelException("not support");
+          throw new MathException("not support");
         }
       } else {
         int middle = (startPos + endPos) / 2;

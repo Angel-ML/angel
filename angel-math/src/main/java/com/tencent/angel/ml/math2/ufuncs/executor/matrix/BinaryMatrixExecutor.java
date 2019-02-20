@@ -18,20 +18,10 @@
 
 package com.tencent.angel.ml.math2.ufuncs.executor.matrix;
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/BinaryMatrixExecutor.java
 import com.tencent.angel.ml.math2.exceptions.MathException;
 import com.tencent.angel.ml.math2.matrix.*;
-=======
 import static com.tencent.angel.ml.math2.ufuncs.expression.OpType.ALL;
 import static com.tencent.angel.ml.math2.ufuncs.expression.OpType.INTERSECTION;
-
-import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.math2.matrix.BlasDoubleMatrix;
-import com.tencent.angel.ml.math2.matrix.BlasFloatMatrix;
-import com.tencent.angel.ml.math2.matrix.BlasMatrix;
-import com.tencent.angel.ml.math2.matrix.Matrix;
-import com.tencent.angel.ml.math2.matrix.RowBasedMatrix;
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/matrix/BinaryMatrixExecutor.java
 import com.tencent.angel.ml.math2.ufuncs.expression.Binary;
 import com.tencent.angel.ml.math2.utils.ArrayCopy;
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;

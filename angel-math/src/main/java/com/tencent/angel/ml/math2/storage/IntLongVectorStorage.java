@@ -18,14 +18,11 @@
 
 package com.tencent.angel.ml.math2.storage;
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/storage/IntLongVectorStorage.java
+import com.tencent.angel.ml.math2.exceptions.MathNotImplementedException;
 import com.tencent.angel.ml.math2.utils.RowType;
 import it.unimi.dsi.fastutil.longs.LongIterator;
-=======
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/storage/IntLongVectorStorage.java
 import it.unimi.dsi.fastutil.ints.Int2LongMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public interface IntLongVectorStorage extends LongVectorStorage, IntKeyVectorStorage {
 
@@ -51,7 +48,7 @@ public interface IntLongVectorStorage extends LongVectorStorage, IntKeyVectorSto
   }
 
   default ObjectIterator<Int2LongMap.Entry> entryIterator() {
-    throw new NotImplementedException();
+    throw new MathNotImplementedException("NotImplemented");
   }
 
   IntLongVectorStorage clone();

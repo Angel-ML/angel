@@ -22,14 +22,14 @@ import java.text.DecimalFormat
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.GBDT.GBDTModel._
+import com.tencent.angel.ml.core.{MLModel, PredictResult}
 import com.tencent.angel.ml.core.conf.AngelMLConf
+import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, IntIntVector}
-import com.tencent.angel.ml.model.{MLModel, PSModel}
-import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.ml.core.utils.Maths
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.utils.{LabeledData, RowType}
-import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
+import com.tencent.angel.worker.storage.MemoryDataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration

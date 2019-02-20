@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.psf.columns;
 
 import com.tencent.angel.ml.math2.vector.*;
-import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
+import com.tencent.angel.matrix.psf.get.base.GetResult;
 
 import java.util.Map;
 

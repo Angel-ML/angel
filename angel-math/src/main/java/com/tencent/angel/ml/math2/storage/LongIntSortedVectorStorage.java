@@ -4,11 +4,6 @@ import java.util.Arrays;
 
 import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ml.math2.utils.ArrayCopy;
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/storage/LongIntSortedVectorStorage.java
-
-=======
-import com.tencent.angel.ml.matrix.RowType;
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/storage/LongIntSortedVectorStorage.java
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;

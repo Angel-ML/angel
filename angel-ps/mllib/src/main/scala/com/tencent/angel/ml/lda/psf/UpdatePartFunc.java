@@ -20,9 +20,9 @@ package com.tencent.angel.ml.lda.psf;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.math2.storage.IntIntDenseVectorStorage;
-import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
-import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
-import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
+import com.tencent.angel.matrix.psf.update.base.PartitionUpdateParam;
+import com.tencent.angel.matrix.psf.update.base.UpdateFunc;
+import com.tencent.angel.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.ps.storage.vector.ServerIntIntRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import io.netty.buffer.ByteBuf;

@@ -18,50 +18,11 @@
 
 package com.tencent.angel.ml.math2;
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/MFactory.java
 import com.tencent.angel.ml.math2.exceptions.MathException;
 import com.tencent.angel.ml.math2.matrix.*;
 import com.tencent.angel.ml.math2.vector.*;
 import com.tencent.angel.ml.math2.utils.RowType;
 
-=======
-import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.math2.matrix.BlasDoubleMatrix;
-import com.tencent.angel.ml.math2.matrix.BlasFloatMatrix;
-import com.tencent.angel.ml.math2.matrix.MapMatrix;
-import com.tencent.angel.ml.math2.matrix.RBCompIntDoubleMatrix;
-import com.tencent.angel.ml.math2.matrix.RBCompIntFloatMatrix;
-import com.tencent.angel.ml.math2.matrix.RBCompIntIntMatrix;
-import com.tencent.angel.ml.math2.matrix.RBCompIntLongMatrix;
-import com.tencent.angel.ml.math2.matrix.RBCompLongDoubleMatrix;
-import com.tencent.angel.ml.math2.matrix.RBCompLongFloatMatrix;
-import com.tencent.angel.ml.math2.matrix.RBCompLongIntMatrix;
-import com.tencent.angel.ml.math2.matrix.RBCompLongLongMatrix;
-import com.tencent.angel.ml.math2.matrix.RBIntDoubleMatrix;
-import com.tencent.angel.ml.math2.matrix.RBIntFloatMatrix;
-import com.tencent.angel.ml.math2.matrix.RBIntIntMatrix;
-import com.tencent.angel.ml.math2.matrix.RBIntLongMatrix;
-import com.tencent.angel.ml.math2.matrix.RBLongDoubleMatrix;
-import com.tencent.angel.ml.math2.matrix.RBLongFloatMatrix;
-import com.tencent.angel.ml.math2.matrix.RBLongIntMatrix;
-import com.tencent.angel.ml.math2.matrix.RBLongLongMatrix;
-import com.tencent.angel.ml.math2.vector.CompIntDoubleVector;
-import com.tencent.angel.ml.math2.vector.CompIntFloatVector;
-import com.tencent.angel.ml.math2.vector.CompIntIntVector;
-import com.tencent.angel.ml.math2.vector.CompIntLongVector;
-import com.tencent.angel.ml.math2.vector.CompLongDoubleVector;
-import com.tencent.angel.ml.math2.vector.CompLongFloatVector;
-import com.tencent.angel.ml.math2.vector.CompLongIntVector;
-import com.tencent.angel.ml.math2.vector.CompLongLongVector;
-import com.tencent.angel.ml.math2.vector.IntDoubleVector;
-import com.tencent.angel.ml.math2.vector.IntFloatVector;
-import com.tencent.angel.ml.math2.vector.IntIntVector;
-import com.tencent.angel.ml.math2.vector.IntLongVector;
-import com.tencent.angel.ml.math2.vector.LongDoubleVector;
-import com.tencent.angel.ml.math2.vector.LongFloatVector;
-import com.tencent.angel.ml.math2.vector.LongIntVector;
-import com.tencent.angel.ml.math2.vector.LongLongVector;
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/MFactory.java
 import java.util.HashMap;
 
 public class MFactory {

@@ -105,7 +105,7 @@ public class PNNTest {
     try {
       String inputPath = "../../data/census/census_148d_test.dummy";
       String loadPath = LOCAL_FS + TMP_PATH + "/model/PNN";
-      String predictPath = LOCAL_FS + TMP_PATH + "/predict";
+      String predictPath = LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict";
 
       // Set training data path
       conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);

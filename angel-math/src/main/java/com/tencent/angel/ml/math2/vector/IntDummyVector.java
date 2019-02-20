@@ -21,15 +21,9 @@ package com.tencent.angel.ml.math2.vector;
 import static java.lang.Math.sqrt;
 
 import com.tencent.angel.ml.math2.utils.ArrayCopy;
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/vector/IntDummyVector.java
 import com.tencent.angel.ml.math2.utils.RowType;
 import org.apache.commons.lang.NotImplementedException;
-
-=======
-import com.tencent.angel.ml.matrix.RowType;
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/vector/IntDummyVector.java
 import java.util.Arrays;
-import org.apache.commons.lang.NotImplementedException;
 
 public class IntDummyVector extends Vector implements IntKeyVector, SimpleVector {
 

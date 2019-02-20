@@ -20,6 +20,7 @@ package com.tencent.angel.worker.task;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.core.data.DataBlock;
 import com.tencent.angel.worker.storage.*;
 import org.apache.hadoop.conf.Configuration;
 
@@ -27,7 +28,7 @@ import org.apache.hadoop.conf.Configuration;
  * Base for task.
  * <p>
  * The realization define at implementation and will invoke by {@link Task}
- * The train data was read fully to {@link DataBlock} at pre-process as default.
+ * The train data was read fully to DataBlock at pre-process as default.
  * <ol>
  * <li>
  * Normally communicate with ParameterServer

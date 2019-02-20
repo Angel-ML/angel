@@ -3,12 +3,12 @@ package com.tencent.angel.ml.core.variable
 import java.util
 
 import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.matrix.MatrixContext
 import com.tencent.angel.ml.core.AngelEvnContext
 import com.tencent.angel.ml.core.conf.{AngelMLConf, SharedConf}
 import com.tencent.angel.ml.core.network.{EvnContext, Graph}
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.math2.utils.RowType
-import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 
 abstract class PSVariable(name: String, rowType: RowType, updater: Updater, formatClassName: String,
@@ -22,7 +22,7 @@ abstract class PSVariable(name: String, rowType: RowType, updater: Updater, form
 
   val numFactors: Int
 
-  protected def getMatrixCtx: MatrixContext
+  def getMatrixCtx: MatrixContext
 
   protected def rowsSaved(withSlot: Boolean = false): Array[Int]
 

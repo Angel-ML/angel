@@ -19,7 +19,7 @@
 package com.tencent.angel.ps.ha;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.PartitionLocation;
+import com.tencent.angel.matrix.PartitionLocation;
 import com.tencent.angel.ps.server.data.request.PartitionRequest;
 import com.tencent.angel.ps.server.data.response.Response;
 import com.tencent.angel.psagent.matrix.transport.FutureResult;

@@ -18,8 +18,8 @@
 
 package com.tencent.angel.ps.clock;
 
-import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.PartitionMeta;
+import com.tencent.angel.matrix.MatrixMeta;
+import com.tencent.angel.matrix.PartitionMeta;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 
 import java.util.Map;

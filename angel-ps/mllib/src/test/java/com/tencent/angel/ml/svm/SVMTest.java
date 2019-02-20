@@ -136,7 +136,7 @@ public class SVMTest {
     try {
       String inputPath = "../../data/w6a/w6a_300d_test.libsvm";
       String loadPath = LOCAL_FS + TMP_PATH + "/SVM";
-      String predictPath = LOCAL_FS + TMP_PATH + "/predict";
+      String predictPath = LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict";
 
       conf.set(MLCoreConf.ML_DATA_INPUT_FORMAT(), "libsvm");
 

@@ -20,10 +20,9 @@ package com.tencent.angel.worker.task;
 
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.exception.InvalidParameterException;
-import com.tencent.angel.exception.TimeOutException;
-import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.metric.Metric;
+import com.tencent.angel.matrix.MatrixContext;
+import com.tencent.angel.matrix.MatrixMeta;
+import com.tencent.angel.ml.core.utils.Metric;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
 import com.tencent.angel.protobuf.generated.MLProtos.TaskIdProto;

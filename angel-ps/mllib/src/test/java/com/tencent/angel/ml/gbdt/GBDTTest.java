@@ -135,7 +135,7 @@ public class GBDTTest {
   private void predictTest() {
     try {
       String loadPath = LOCAL_FS + TMP_PATH + "/model";
-      String predictPath = LOCAL_FS + TMP_PATH + "/predict";
+      String predictPath = LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict";
       String logPath = LOCAL_FS + TMP_PATH + "/GBDTlog";
 
       // Set predict data path
@@ -147,7 +147,7 @@ public class GBDTTest {
       // Set log path
       conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
       // Set actionType prediction
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, "predict");
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, "com/tencent/angel/ml/predict");
 
       GBDTRunner runner = new GBDTRunner();
 

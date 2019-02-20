@@ -22,8 +22,8 @@ import com.tencent.angel.ml.math2.utils.ArrayCopy;
 import com.tencent.angel.ml.math2.vector.IntIntVector;
 import com.tencent.angel.ml.math2.vector.IntLongVector;
 import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
-import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.matrix.psf.get.base.GetParam;
+import com.tencent.angel.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.psagent.PSAgentContext;
 

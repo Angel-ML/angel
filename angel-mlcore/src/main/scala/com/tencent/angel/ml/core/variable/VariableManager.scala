@@ -3,14 +3,15 @@ package com.tencent.angel.ml.core.variable
 import java.util.concurrent
 
 import com.tencent.angel.ml.core.network.{EvnContext, Graph}
+import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.matrix.Matrix
 
 import scala.collection.JavaConversions._
 
 
-class VariableManager(graph: Graph) {
+class VariableManager(isSparseFormat: Boolean) {
   protected val variables = new concurrent.ConcurrentHashMap[String, Variable]()
-  protected val gradients = new concurrent.ConcurrentHashMap[String, Matrix]()
+  protected val slots = new concurrent.ConcurrentHashMap[String, Matrix]()
 
   def addVariable(v: Variable): Unit = {
     variables.put(v.name, v)
@@ -30,22 +31,22 @@ class VariableManager(graph: Graph) {
     variables.contains(varName)
   }
 
-  def putGradient(v: Variable, g: Matrix): Unit = {
-    gradients.put(v.name, g)
+  def putSlot(v: Variable, g: Matrix): Unit = {
+    slots.put(v.name, g)
   }
 
-  def getAllGradients: Map[String, Matrix] = {
-    gradients.map { case (name: String, grad: Matrix) =>
+  def getAllSlots: Map[String, Matrix] = {
+    slots.map { case (name: String, grad: Matrix) =>
       name -> grad
     }.toMap
   }
 
-  def getGradient(name: String): Matrix = {
-    gradients.getOrDefault(name, null.asInstanceOf[Matrix])
+  def getSlot(name: String): Matrix = {
+    slots.getOrDefault(name, null.asInstanceOf[Matrix])
   }
 
-  def hasGradient(gradName: String): Boolean = {
-    gradients.contains(gradName)
+  def hasSlot(gradName: String): Boolean = {
+    slots.contains(gradName)
   }
 
 
@@ -77,24 +78,24 @@ class VariableManager(graph: Graph) {
     }
   }
 
-  def pullALL(epoch: Int): Unit = {
-    val isSparseFormat = graph.dataFormat == "libsvm" || graph.dataFormat == "dummy"
+  def pullALL(epoch: Int, indices: Vector = null): Unit = {
+    // val isSparseFormat = graph.dataFormat == "libsvm" || graph.dataFormat == "dummy"
 
     variables.values().foreach {
       case variable if isSparseFormat && variable.allowPullWithIndex =>
-        variable.pull(epoch, graph.placeHolder.getIndices)
+        variable.pull(epoch, indices)
       case variable => variable.pull(epoch)
     }
   }
 
-  def pull(name: String, epoch: Int = 0): Unit = {
-    val isSparseFormat = graph.dataFormat == "libsvm" || graph.dataFormat == "dummy"
+  def pull(name: String, epoch: Int = 0, indices: Vector = null): Unit = {
+    // val isSparseFormat = graph.dataFormat == "libsvm" || graph.dataFormat == "dummy"
 
     val variable = getVariable(name)
     if (variable != null) {
       variable match {
         case v if isSparseFormat && v.allowPullWithIndex =>
-          v.pull(epoch, graph.placeHolder.getIndices)
+          v.pull(epoch, indices)
         case v => v.pull(epoch)
       }
     }
@@ -104,21 +105,21 @@ class VariableManager(graph: Graph) {
   def pushALL(alpha: Double=1.0): Unit = {
     variables.values().foreach {
       case matVar: MatVariable =>
-        val matGrad = getGradient(matVar.name)
-        if (matGrad != null) {
-          matVar.push(matGrad, alpha)
+        val matSlot = getSlot(matVar.name)
+        if (matSlot != null) {
+          matVar.push(matSlot, alpha)
         }
       case vecVar: VecVariable =>
-        val vecGrad = getGradient(vecVar.name)
-        if (vecGrad != null) {
-          vecVar.push(vecGrad, alpha)
+        val vecSlot = getSlot(vecVar.name)
+        if (vecSlot != null) {
+          vecVar.push(vecSlot, alpha)
         }
     }
   }
 
   def push(name: String, alpha: Double=1.0): Unit = {
     val variable = getVariable(name)
-    val grad = getGradient(name)
+    val grad = getSlot(name)
 
     if (variable != null && grad != null) {
       variable.push(grad, alpha)

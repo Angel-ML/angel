@@ -22,13 +22,12 @@ import java.util
 import java.util.{ArrayList, Random}
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.core.MLLearner
+import com.tencent.angel.ml.core.{MLLearner, MLModel}
 import com.tencent.angel.ml.core.conf.{AngelMLConf, SharedConf}
+import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.ml.math2.vector.Vector
-import com.tencent.angel.ml.metric.LossMetric
-import com.tencent.angel.ml.model.MLModel
-import com.tencent.angel.worker.storage.DataBlock
+import com.tencent.angel.ml.core.metric.LossMetric
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.{Log, LogFactory}
 

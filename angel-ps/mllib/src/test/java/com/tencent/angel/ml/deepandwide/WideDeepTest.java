@@ -103,7 +103,7 @@ public class WideDeepTest {
     try {
       String inputPath = "../../data/census/census_148d_test.dummy";
       String modelPath = LOCAL_FS + TMP_PATH + "/model/wideDeep";
-      String predictPath = LOCAL_FS + TMP_PATH + "/predict";
+      String predictPath = LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict";
 
       // Set trainning data path
       conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);

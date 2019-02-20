@@ -27,24 +27,26 @@ import java.util.concurrent.atomic.AtomicInteger
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.core.MLLearner
+import com.tencent.angel.matrix.psf.aggr.enhance.ScalarAggrResult
+import com.tencent.angel.matrix.psf.get.base.PartitionGetResult
+import com.tencent.angel.matrix.psf.get.getrows.PartitionGetRowsParam
+import com.tencent.angel.matrix.psf.update.base.VoidResult
+import com.tencent.angel.ml.core.{MLLearner, MLModel}
 import com.tencent.angel.ml.core.conf.AngelMLConf
+import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.lda.algo.{CSRTokens, Sampler}
 import com.tencent.angel.ml.lda.psf._
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.ml.math2.vector.IntIntVector
-import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
-import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult
-import com.tencent.angel.ml.matrix.psf.get.getrows.PartitionGetRowsParam
-import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
-import com.tencent.angel.ml.matrix.psf.update.zero.Zero.ZeroParam
-import com.tencent.angel.ml.metric.ObjMetric
-import com.tencent.angel.ml.model.MLModel
+import com.tencent.angel.matrix.psf.get.base.PartitionGetResult
+import com.tencent.angel.matrix.psf.get.getrows.PartitionGetRowsParam
+import com.tencent.angel.matrix.psf.update.base.VoidResult
+import com.tencent.angel.matrix.psf.update.zero.Zero.ZeroParam
+import com.tencent.angel.ml.core.metric.ObjMetric
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex
 import com.tencent.angel.utils.{HdfsUtil, MemoryUtils}
-import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.commons.math.special.Gamma

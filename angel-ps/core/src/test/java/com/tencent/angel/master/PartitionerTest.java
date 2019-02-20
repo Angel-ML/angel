@@ -19,7 +19,7 @@
 package com.tencent.angel.master;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.matrix.MatrixContext;
+import com.tencent.angel.matrix.MatrixContext;
 import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner;
 import org.apache.hadoop.conf.Configuration;

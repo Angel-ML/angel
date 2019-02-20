@@ -18,10 +18,7 @@
 
 package com.tencent.angel.ml.math2.matrix;
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/matrix/RBIntFloatMatrix.java
 import com.tencent.angel.ml.math2.MFactory;
-=======
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/matrix/RBIntFloatMatrix.java
 import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage;
 import com.tencent.angel.ml.math2.storage.IntFloatSparseVectorStorage;

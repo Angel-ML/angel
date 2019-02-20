@@ -22,10 +22,9 @@ import java.io.IOException
 
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.{AngelMLConf, MLCoreConf, SharedConf}
-import com.tencent.angel.ml.core.data.{DataParser, TransLabel}
+import com.tencent.angel.ml.core.data.{DataBlock, DataParser, TransLabel}
 import com.tencent.angel.ml.core.utils.SConfHelper
 import com.tencent.angel.ml.math2.utils.LabeledData
-import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.utils.HdfsUtil
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.{BaseTask, TaskContext}
@@ -44,14 +43,14 @@ abstract class PredictTask[KEYIN, VALUEIN](ctx: TaskContext)
     false, transLabel)
 
   @throws(classOf[AngelException])
-  final def run(taskContext: TaskContext) {
+  final def run(taskContext: TaskContext): Unit = {
     this.predict(taskContext)
   }
 
   def predict(taskContext: TaskContext)
 
   @throws(classOf[IOException])
-  protected final def predict(taskContext: TaskContext, model: MLModel, dataBlock: DataBlock[LabeledData]) {
+  protected final def predict(taskContext: TaskContext, model: MLModel, dataBlock: DataBlock[LabeledData]): Unit = {
     val predictResult = model.predict(dataBlock)
     HdfsUtil.writeStorage(predictResult, taskContext)
   }

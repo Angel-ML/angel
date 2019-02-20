@@ -23,7 +23,7 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.master.app.AMContext;
-import com.tencent.angel.ml.matrix.*;
+import com.tencent.angel.matrix.*;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.model.output.format.MatrixFilesMeta;
 import com.tencent.angel.model.output.format.MatrixPartitionMeta;

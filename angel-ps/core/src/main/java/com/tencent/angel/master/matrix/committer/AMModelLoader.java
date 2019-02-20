@@ -20,8 +20,8 @@ package com.tencent.angel.master.matrix.committer;
 
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.matrixmeta.AMMatrixMetaManager;
-import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.PartitionMeta;
+import com.tencent.angel.matrix.MatrixMeta;
+import com.tencent.angel.matrix.PartitionMeta;
 import com.tencent.angel.model.*;
 import com.tencent.angel.model.io.IOExecutors;
 import com.tencent.angel.model.output.format.MatrixFilesMeta;

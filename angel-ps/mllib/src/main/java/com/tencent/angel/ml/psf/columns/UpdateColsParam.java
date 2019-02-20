@@ -25,14 +25,12 @@ import com.tencent.angel.ml.math2.utils.ArrayCopy;
 import com.tencent.angel.ml.math2.utils.VectorUtils;
 import com.tencent.angel.ml.math2.vector.*;
 import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
-import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
+import com.tencent.angel.matrix.psf.update.base.PartitionUpdateParam;
+import com.tencent.angel.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.psagent.PSAgentContext;
 
 import java.util.*;
-
-import static sun.misc.Version.println;
 
 
 public class UpdateColsParam extends UpdateParam {

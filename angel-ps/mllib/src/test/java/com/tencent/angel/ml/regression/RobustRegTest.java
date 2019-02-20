@@ -165,7 +165,7 @@ public class RobustRegTest {
     try {
       String inputPath = "../../data/abalone/abalone_8d_train.libsvm";
       String logPath = LOCAL_FS + TMP_PATH + "/log/RobustReg/predictLog";
-      String predictPath = LOCAL_FS + TMP_PATH + "/predict/RobustReg";
+      String predictPath = LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict/RobustReg";
 
       // Set trainning data path
       conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);

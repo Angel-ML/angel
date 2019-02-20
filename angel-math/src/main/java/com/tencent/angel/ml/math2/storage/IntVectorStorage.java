@@ -18,16 +18,17 @@
 
 package com.tencent.angel.ml.math2.storage;
 
+import com.tencent.angel.ml.math2.exceptions.MathNotImplementedException;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public interface IntVectorStorage extends VectorStorage {
 
   default int[] getValues() {
-    throw new NotImplementedException();
+    throw new MathNotImplementedException("NotImplemented");
   }
 
   default IntIterator valueIterator() {
-    throw new NotImplementedException();
+    throw new MathNotImplementedException("NotImplemented");
   }
 }

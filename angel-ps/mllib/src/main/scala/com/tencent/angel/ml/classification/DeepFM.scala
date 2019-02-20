@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ml.classification
 
-import com.tencent.angel.ml.core.graphsubmit.GraphModel
+import com.tencent.angel.ml.core.graphsubmit.AngelModel
 import com.tencent.angel.ml.core.network.Identity
 import com.tencent.angel.ml.core.network.layers.join.SumPooling
 import com.tencent.angel.ml.core.network.layers.linear.BiInnerSumCross
@@ -30,7 +30,7 @@ import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 
 
-class DeepFM(conf: Configuration, _ctx: TaskContext = null) extends GraphModel(conf, _ctx) {
+class DeepFM(conf: Configuration, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
 
   override def buildNetwork(): Unit = {
     val wide = new SimpleInputLayer("input", 1, new Identity(),

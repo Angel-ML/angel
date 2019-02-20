@@ -18,7 +18,7 @@
 
 package com.tencent.angel.psagent.matrix.transport.adapter;
 
-import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
+import com.tencent.angel.matrix.psf.update.base.UpdateFunc;
 
 /**
  * Update matrix use udf request.

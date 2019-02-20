@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.classification
 
 import com.tencent.angel.ml.core.conf.MLCoreConf
-import com.tencent.angel.ml.core.graphsubmit.GraphModel
+import com.tencent.angel.ml.core.graphsubmit.AngelModel
 import com.tencent.angel.ml.core.network.Identity
 import com.tencent.angel.ml.core.network.layers.LossLayer
 import com.tencent.angel.ml.core.network.layers.verge.SimpleInputLayer
@@ -34,7 +34,7 @@ import org.apache.hadoop.conf.Configuration
   */
 
 
-class SupportVectorMachine(conf: Configuration, _ctx: TaskContext = null) extends GraphModel(conf, _ctx) {
+class SupportVectorMachine(conf: Configuration, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
   val ipOptName: String = sharedConf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
   val optimizer: Optimizer = OptUtils.getOptimizer(ipOptName)
 

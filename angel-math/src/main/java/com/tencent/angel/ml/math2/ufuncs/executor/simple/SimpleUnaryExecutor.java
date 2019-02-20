@@ -18,34 +18,15 @@
 
 package com.tencent.angel.ml.math2.ufuncs.executor.simple;
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/simple/SimpleUnaryExecutor.java
 import com.tencent.angel.ml.math2.exceptions.MathException;
-import com.tencent.angel.ml.math2.storage.*;
-=======
-import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math2.storage.IntDoubleVectorStorage;
 import com.tencent.angel.ml.math2.storage.IntFloatVectorStorage;
 import com.tencent.angel.ml.math2.storage.IntIntVectorStorage;
 import com.tencent.angel.ml.math2.storage.IntLongVectorStorage;
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/simple/SimpleUnaryExecutor.java
 import com.tencent.angel.ml.math2.ufuncs.expression.Unary;
-import com.tencent.angel.ml.math2.vector.IntDoubleVector;
-import com.tencent.angel.ml.math2.vector.IntFloatVector;
-import com.tencent.angel.ml.math2.vector.IntIntVector;
-import com.tencent.angel.ml.math2.vector.IntLongVector;
-import com.tencent.angel.ml.math2.vector.LongDoubleVector;
-import com.tencent.angel.ml.math2.vector.LongFloatVector;
-import com.tencent.angel.ml.math2.vector.LongIntVector;
-import com.tencent.angel.ml.math2.vector.LongLongVector;
-import com.tencent.angel.ml.math2.vector.Vector;
-import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
-import it.unimi.dsi.fastutil.ints.Int2FloatMap;
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2LongMap;
-import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
-import it.unimi.dsi.fastutil.longs.Long2FloatMap;
-import it.unimi.dsi.fastutil.longs.Long2IntMap;
-import it.unimi.dsi.fastutil.longs.Long2LongMap;
+import com.tencent.angel.ml.math2.vector.*;
+import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.longs.*;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 public class SimpleUnaryExecutor {

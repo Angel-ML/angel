@@ -19,8 +19,8 @@
 package com.tencent.angel.ps.clock;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.PartitionMeta;
+import com.tencent.angel.matrix.MatrixMeta;
+import com.tencent.angel.matrix.PartitionMeta;
 import com.tencent.angel.ps.PSContext;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;

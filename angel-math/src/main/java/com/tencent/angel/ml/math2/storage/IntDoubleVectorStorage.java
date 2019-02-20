@@ -18,9 +18,9 @@
 
 package com.tencent.angel.ml.math2.storage;
 
+import com.tencent.angel.ml.math2.exceptions.MathNotImplementedException;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public interface IntDoubleVectorStorage extends DoubleVectorStorage, IntKeyVectorStorage {
 
@@ -46,7 +46,7 @@ public interface IntDoubleVectorStorage extends DoubleVectorStorage, IntKeyVecto
   }
 
   default ObjectIterator<Int2DoubleMap.Entry> entryIterator() {
-    throw new NotImplementedException();
+    throw new MathNotImplementedException("NotImplemented");
   }
 
   IntDoubleVectorStorage clone();

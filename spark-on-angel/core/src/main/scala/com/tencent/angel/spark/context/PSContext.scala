@@ -19,11 +19,11 @@
 package com.tencent.angel.spark.context
 
 import com.tencent.angel.AngelDeployMode
-import com.tencent.angel.ml.matrix.MatrixMeta
 import org.apache.spark._
 
 import scala.collection.Map
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.matrix.MatrixMeta
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.spark.models.PSVector
 

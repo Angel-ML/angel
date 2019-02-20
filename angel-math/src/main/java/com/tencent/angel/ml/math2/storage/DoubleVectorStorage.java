@@ -18,16 +18,16 @@
 
 package com.tencent.angel.ml.math2.storage;
 
+import com.tencent.angel.ml.math2.exceptions.MathNotImplementedException;
 import it.unimi.dsi.fastutil.doubles.DoubleIterator;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public interface DoubleVectorStorage extends VectorStorage {
 
   default double[] getValues() {
-    throw new NotImplementedException();
+    throw new MathNotImplementedException("NotImplemented");
   }
 
   default DoubleIterator valueIterator() {
-    throw new NotImplementedException();
+    throw new MathNotImplementedException("NotImplemented");
   }
 }

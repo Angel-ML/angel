@@ -22,7 +22,7 @@ import com.tencent.angel.RunningMode;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.exception.InvalidParameterException;
-import com.tencent.angel.ml.matrix.MatrixContext;
+import com.tencent.angel.matrix.MatrixContext;
 import com.tencent.angel.model.ModelLoadContext;
 import com.tencent.angel.model.ModelSaveContext;
 import com.tencent.angel.utils.ConfUtils;

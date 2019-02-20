@@ -18,16 +18,16 @@
 
 package com.tencent.angel.ml.math2.storage;
 
+import com.tencent.angel.ml.math2.exceptions.MathNotImplementedException;
 import it.unimi.dsi.fastutil.longs.LongIterator;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public interface LongVectorStorage extends VectorStorage {
 
   default long[] getValues() {
-    throw new NotImplementedException();
+    throw new MathNotImplementedException("NotImplemented");
   }
 
   default LongIterator valueIterator() {
-    throw new NotImplementedException();
+    throw new MathNotImplementedException("NotImplemented");
   }
 }

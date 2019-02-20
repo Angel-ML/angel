@@ -150,7 +150,7 @@ public class LRTest {
 
       String inputPath = "../../data/a9a/a9a_123d_test." + dataFmt;
       String loadPath = LOCAL_FS + TMP_PATH + "/model";
-      String predictPath = LOCAL_FS + TMP_PATH + "/predict";
+      String predictPath = LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict";
 
 
       // Set data format

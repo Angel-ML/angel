@@ -21,14 +21,21 @@ package com.tencent.angel.spark.util
 import java.util.concurrent.Future
 
 import org.apache.spark.SparkException
-
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.matrix.psf.aggr.enhance.ScalarAggrResult
+import com.tencent.angel.matrix.psf.aggr._
+import com.tencent.angel.matrix.psf.get.base.{GetFunc, GetResult}
+import com.tencent.angel.matrix.psf.update.{Compress, RandomNormal, RandomUniform}
+import com.tencent.angel.matrix.psf.update.base.{UpdateFunc, VoidResult}
+import com.tencent.angel.matrix.psf.update.enhance.map.{Map, MapInPlace, MapWithIndex}
+import com.tencent.angel.matrix.psf.update.enhance.map.func.MapFunc
+import com.tencent.angel.matrix.psf.update.enhance.zip2.func.{Zip2MapFunc, Zip2MapWithIndexFunc}
+import com.tencent.angel.matrix.psf.update.enhance.zip2._
 import com.tencent.angel.ml.matrix.psf.aggr._
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
 import com.tencent.angel.ml.matrix.psf.update.enhance.map._
-import com.tencent.angel.ml.matrix.psf.update.enhance.map.func.MapFunc
 import com.tencent.angel.ml.matrix.psf.update.enhance.zip2._
 import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.func.{Zip2MapFunc, Zip2MapWithIndexFunc}
 import com.tencent.angel.ml.matrix.psf.update.{Compress, RandomNormal, RandomUniform}

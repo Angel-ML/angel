@@ -25,23 +25,8 @@ import com.tencent.angel.ml.math2.storage.VectorStorage;
 import com.tencent.angel.ml.math2.ufuncs.executor.BinaryExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.DotExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.UnaryExecutor;
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/vector/Vector.java
 import com.tencent.angel.ml.math2.ufuncs.expression.*;
 import com.tencent.angel.ml.math2.utils.RowType;
-import org.apache.commons.lang.NotImplementedException;
-
-=======
-import com.tencent.angel.ml.math2.ufuncs.expression.Add;
-import com.tencent.angel.ml.math2.ufuncs.expression.Axpy;
-import com.tencent.angel.ml.math2.ufuncs.expression.Div;
-import com.tencent.angel.ml.math2.ufuncs.expression.Mul;
-import com.tencent.angel.ml.math2.ufuncs.expression.SAdd;
-import com.tencent.angel.ml.math2.ufuncs.expression.SDiv;
-import com.tencent.angel.ml.math2.ufuncs.expression.SMul;
-import com.tencent.angel.ml.math2.ufuncs.expression.SSub;
-import com.tencent.angel.ml.math2.ufuncs.expression.Sub;
-import com.tencent.angel.ml.matrix.RowType;
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/vector/Vector.java
 import java.io.Serializable;
 import org.apache.commons.lang.NotImplementedException;
 

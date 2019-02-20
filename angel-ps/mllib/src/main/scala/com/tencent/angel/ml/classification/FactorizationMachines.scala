@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.classification
 
 import com.tencent.angel.ml.core.conf.MLCoreConf
-import com.tencent.angel.ml.core.graphsubmit.GraphModel
+import com.tencent.angel.ml.core.graphsubmit.AngelModel
 import com.tencent.angel.ml.core.network.Identity
 import com.tencent.angel.ml.core.network.layers.join.SumPooling
 import com.tencent.angel.ml.core.network.layers.linear.BiInnerSumCross
@@ -31,7 +31,7 @@ import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 
 
-class FactorizationMachines(conf: Configuration, _ctx: TaskContext = null) extends GraphModel(conf, _ctx) {
+class FactorizationMachines(conf: Configuration, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
   val numFields: Int = sharedConf.getInt(MLCoreConf.ML_FIELD_NUM, MLCoreConf.DEFAULT_ML_FIELD_NUM)
   val numFactors: Int = sharedConf.getInt(MLCoreConf.ML_RANK_NUM, MLCoreConf.DEFAULT_ML_RANK_NUM)
   val ipOptName: String = sharedConf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)

@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.classification
 
 import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
-import com.tencent.angel.ml.core.graphsubmit.GraphModel
+import com.tencent.angel.ml.core.graphsubmit.AngelModel
 import com.tencent.angel.ml.core.network.layers.verge.SimpleInputLayer
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.optimizer.loss.SoftmaxLoss
@@ -32,7 +32,7 @@ import org.apache.hadoop.conf.Configuration
   */
 
 
-class SoftmaxRegression(conf: Configuration, _ctx: TaskContext = null) extends GraphModel(conf, _ctx) {
+class SoftmaxRegression(conf: Configuration, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
   val numClass: Int = SharedConf.numClass
   val ipOptName: String = sharedConf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
   val optimizer: Optimizer = OptUtils.getOptimizer(ipOptName)

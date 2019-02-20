@@ -18,12 +18,12 @@
 
 package com.tencent.angel.spark.ml.embedding.line
 
+import com.tencent.angel.matrix.psf.get.base.GetFunc
+import com.tencent.angel.matrix.psf.update.base.UpdateFunc
+
 import scala.util.Random
-
 import org.apache.spark.rdd.RDD
-
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc
-import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc
 import com.tencent.angel.spark.ml.embedding.NEModel.NEDataSet
 import com.tencent.angel.spark.ml.embedding.line.LINEModel.{LINEDataSet, buildDataBatches}
 import com.tencent.angel.spark.ml.embedding.{NEModel, Param}

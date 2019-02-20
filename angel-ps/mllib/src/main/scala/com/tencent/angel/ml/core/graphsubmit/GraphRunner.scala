@@ -46,7 +46,7 @@ class GraphRunner extends MLRunner with SConfHelper {
       client.startPSServer()
 
       val modelClassName: String = SharedConf.modelClassName
-      val model: GraphModel = GraphModel(modelClassName, conf)
+      val model: AngelModel = AngelModel(modelClassName, conf)
       val saveModelPath = sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH, "")
       val loadModelPath = sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
 
@@ -81,7 +81,7 @@ class GraphRunner extends MLRunner with SConfHelper {
       client.startPSServer()
 
       val modelClassName: String = SharedConf.modelClassName
-      val model: GraphModel = GraphModel(modelClassName, conf)
+      val model: AngelModel = AngelModel(modelClassName, conf)
       model.buildNetwork()
 
       val loadModelPath = sharedConf.getString(AngelConf.ANGEL_LOAD_MODEL_PATH, "")

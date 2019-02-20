@@ -24,7 +24,7 @@ import com.tencent.angel.ml.core.data.{DataParser, TransLabel}
 import com.tencent.angel.ml.core.utils.SConfHelper
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.utils.LabeledData
-import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, IntKeyVector, LongDoubleVector, LongFloatVector, LongKeyVector, Vector}
+import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.worker.task.{BaseTask, TaskContext}
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet

@@ -18,42 +18,10 @@
 
 package com.tencent.angel.ml.math2.ufuncs.executor.mixed;
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/mixed/MixedDotExecutor.java
 import com.tencent.angel.ml.math2.exceptions.MathException;
 import com.tencent.angel.ml.math2.vector.*;
 import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.fastutil.longs.*;
-=======
-import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.math2.vector.CompIntDoubleVector;
-import com.tencent.angel.ml.math2.vector.CompIntFloatVector;
-import com.tencent.angel.ml.math2.vector.CompIntIntVector;
-import com.tencent.angel.ml.math2.vector.CompIntLongVector;
-import com.tencent.angel.ml.math2.vector.CompLongDoubleVector;
-import com.tencent.angel.ml.math2.vector.CompLongFloatVector;
-import com.tencent.angel.ml.math2.vector.CompLongIntVector;
-import com.tencent.angel.ml.math2.vector.CompLongLongVector;
-import com.tencent.angel.ml.math2.vector.ComponentVector;
-import com.tencent.angel.ml.math2.vector.IntDoubleVector;
-import com.tencent.angel.ml.math2.vector.IntDummyVector;
-import com.tencent.angel.ml.math2.vector.IntFloatVector;
-import com.tencent.angel.ml.math2.vector.IntIntVector;
-import com.tencent.angel.ml.math2.vector.IntLongVector;
-import com.tencent.angel.ml.math2.vector.LongDoubleVector;
-import com.tencent.angel.ml.math2.vector.LongDummyVector;
-import com.tencent.angel.ml.math2.vector.LongFloatVector;
-import com.tencent.angel.ml.math2.vector.LongIntVector;
-import com.tencent.angel.ml.math2.vector.LongLongVector;
-import com.tencent.angel.ml.math2.vector.Vector;
-import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
-import it.unimi.dsi.fastutil.ints.Int2FloatMap;
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2LongMap;
-import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
-import it.unimi.dsi.fastutil.longs.Long2FloatMap;
-import it.unimi.dsi.fastutil.longs.Long2IntMap;
-import it.unimi.dsi.fastutil.longs.Long2LongMap;
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/mixed/MixedDotExecutor.java
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 public class MixedDotExecutor {

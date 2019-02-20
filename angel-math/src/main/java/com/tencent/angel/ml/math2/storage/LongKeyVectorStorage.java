@@ -18,17 +18,17 @@
 
 package com.tencent.angel.ml.math2.storage;
 
+import com.tencent.angel.ml.math2.exceptions.MathNotImplementedException;
 import it.unimi.dsi.fastutil.longs.LongSet;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public interface LongKeyVectorStorage {
 
   default long[] getIndices() {
-    throw new NotImplementedException();
+    throw new MathNotImplementedException("NotImplemented");
   }
 
   default LongSet indexIterator() {
-    throw new NotImplementedException();
+    throw new MathNotImplementedException("NotImplemented");
   }
 
   int size();

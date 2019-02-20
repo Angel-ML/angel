@@ -166,7 +166,7 @@ public class FMTest {
     try {
       String inputPath = "../../data/a9a/a9a_123d_train.libsvm";
       String loadPath = LOCAL_FS + TMP_PATH + "/FMmodel_new";
-      String predictPath = LOCAL_FS + TMP_PATH + "/predict";
+      String predictPath = LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict";
       String logPath = LOCAL_FS + TMP_PATH + "/FMlog";
 
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);

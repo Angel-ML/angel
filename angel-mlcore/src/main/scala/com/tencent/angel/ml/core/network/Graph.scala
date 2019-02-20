@@ -38,7 +38,7 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
   protected var lossLayer: LossLayer = _
   protected val trainableLayer = new ListBuffer[Trainable]()
   private val dataCache = new DataCache()
-  protected val variableManager: VariableManager
+  val variableManager: VariableManager
 
   val timeStats = new TimeStats()
 
@@ -126,6 +126,8 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
     }
   }
 
+  def getLR: Double = this.lr
+
   def feedData(data: Array[LabeledData]): Unit = {
     placeHolder.feedData(data)
   }
@@ -181,70 +183,54 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
 
   def hasVariable(name: String): Boolean = variableManager.hasVariable(name)
 
-  def putGradient(v: Variable, g: Matrix): Unit = variableManager.putGradient(v, g)
+  def putGradient(v: Variable, g: Matrix): Unit = variableManager.putSlot(v, g)
 
-  def getAllGradients: Map[String, Matrix] = variableManager.getAllGradients
+  def getAllGradients: Map[String, Matrix] = variableManager.getAllSlots
 
-  def getGradient(name: String): Matrix = variableManager.getGradient(name)
+  def getGradient(name: String): Matrix = variableManager.getSlot(name)
 
-  def hasGradient(name: String): Boolean = variableManager.hasGradient(name)
+  def hasGradient(name: String): Boolean = variableManager.hasSlot(name)
 
-  //---------------------Training Cycle
-  def createMatrices(envCtx: EvnContext): Unit = {
-    val start = System.currentTimeMillis()
-    variableManager.createALL(envCtx)
-    val end = System.currentTimeMillis()
-
-    timeStats.createTime += end - start
-  }
-
-  def init(taskId: Int = 0): Unit = {
-    val start = System.currentTimeMillis()
-    variableManager.initALL(taskId)
-    val end = System.currentTimeMillis()
-
-    timeStats.initTime += end - start
-  }
-
-  def pullParams(epoch: Int): Unit = {
-    val start = System.currentTimeMillis()
-    variableManager.pullALL(epoch)
-    val end = System.currentTimeMillis()
-
-    timeStats.pullParamsTime += end - start
-  }
-
-  def pushGradient(): Unit = {
-    val start = System.currentTimeMillis()
-    variableManager.pushALL(lr)
-    val end = System.currentTimeMillis()
-
-    timeStats.pushParamsTime += end - start
-  }
-
-  def update[T](epoch: Int, batchSize: Int): Unit = {
-    val start = System.currentTimeMillis()
-    variableManager.updateALL[T](epoch, batchSize)
-    val end = System.currentTimeMillis()
-
-    timeStats.updateTime += end - start
-  }
-
-  def loadModel(envCtx: EvnContext, path: String): Unit = {
-    val start = System.currentTimeMillis()
-    variableManager.loadALL(envCtx, path)
-    val end = System.currentTimeMillis()
-
-    timeStats.loadTime += end - start
-  }
-
-  def saveModel(envCtx: EvnContext, path: String): Unit = {
-    val start = System.currentTimeMillis()
-    variableManager.saveALL(envCtx, path)
-    val end = System.currentTimeMillis()
-
-    timeStats.saveTime += end - start
-  }
+//  //---------------------Training Cycle
+//  def createMatrices(envCtx: EvnContext): Unit = {
+//    val start = System.currentTimeMillis()
+//    variableManager.createALL(envCtx)
+//    val end = System.currentTimeMillis()
+//
+//    timeStats.createTime += end - start
+//  }
+//
+//  def init(taskId: Int = 0): Unit = {
+//    val start = System.currentTimeMillis()
+//    variableManager.initALL(taskId)
+//    val end = System.currentTimeMillis()
+//
+//    timeStats.initTime += end - start
+//  }
+//
+//  def pullParams(epoch: Int): Unit = {
+//    val start = System.currentTimeMillis()
+//    variableManager.pullALL(epoch)
+//    val end = System.currentTimeMillis()
+//
+//    timeStats.pullParamsTime += end - start
+//  }
+//
+//  def pushGradient(): Unit = {
+//    val start = System.currentTimeMillis()
+//    variableManager.pushALL(lr)
+//    val end = System.currentTimeMillis()
+//
+//    timeStats.pushParamsTime += end - start
+//  }
+//
+//  def update[T](epoch: Int, batchSize: Int): Unit = {
+//    val start = System.currentTimeMillis()
+//    variableManager.updateALL[T](epoch, batchSize)
+//    val end = System.currentTimeMillis()
+//
+//    timeStats.updateTime += end - start
+//  }
 
   /** **********************************************************************************
     * Matrix Cache

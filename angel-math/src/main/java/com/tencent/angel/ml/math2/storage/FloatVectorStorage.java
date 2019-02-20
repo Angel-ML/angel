@@ -18,16 +18,16 @@
 
 package com.tencent.angel.ml.math2.storage;
 
+import com.tencent.angel.ml.math2.exceptions.MathNotImplementedException;
 import it.unimi.dsi.fastutil.floats.FloatIterator;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public interface FloatVectorStorage extends VectorStorage {
 
   default float[] getValues() {
-    throw new NotImplementedException();
+    throw new MathNotImplementedException("NotImplemented");
   }
 
   default FloatIterator valueIterator() {
-    throw new NotImplementedException();
+    throw new MathNotImplementedException("NotImplemented");
   }
 }

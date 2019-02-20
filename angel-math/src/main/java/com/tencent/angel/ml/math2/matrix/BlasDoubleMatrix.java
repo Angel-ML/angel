@@ -18,13 +18,9 @@
 
 package com.tencent.angel.ml.math2.matrix;
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/matrix/BlasDoubleMatrix.java
 import com.tencent.angel.ml.math2.exceptions.MathException;
 import com.tencent.angel.ml.math2.storage.*;
 import com.tencent.angel.ml.math2.vector.*;
-=======
-import com.tencent.angel.exception.AngelException;
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/matrix/BlasDoubleMatrix.java
 import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.storage.IntDoubleDenseVectorStorage;
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;

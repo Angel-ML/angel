@@ -27,9 +27,9 @@ import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.master.MasterProtocol;
-import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.model.MLModel;
-import com.tencent.angel.ml.model.PSModel;
+import com.tencent.angel.matrix.MatrixContext;
+import com.tencent.angel.ml.core.MLModel;
+import com.tencent.angel.ml.core.variable.Variable;
 import com.tencent.angel.model.*;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos;
@@ -40,21 +40,23 @@ import com.tencent.angel.utils.UGITools;
 import com.tencent.angel.worker.WorkerGroupId;
 import com.tencent.angel.worker.WorkerId;
 import com.tencent.angel.worker.task.BaseTask;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.security.UserGroupInformation;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.security.PrivilegedExceptionAction;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+// import scala.collection.immutable.List;
+import scala.collection.JavaConversions;
 
 /**
  * Angel application client. It provides the control interfaces for the application.
@@ -220,13 +222,22 @@ public abstract class AngelClient implements AngelClientInterface {
         "parameter servers are not started, you must execute startPSServer first!!");
     }
 
-    Map<String, PSModel> psModels = model.getPSModels();
-    for (Map.Entry<String, PSModel> entry : psModels.entrySet()) {
-      addMatrix(entry.getValue().getContext());
+    Collection<Variable> allVariables = JavaConversions.asJavaCollection(model.getAllVariables());
+    Set<String> varNameSet = new HashSet<>();
+    for (Variable varObj: allVariables) {
+      Class<? extends Variable> cls = varObj.getClass();
+      try {
+        Method getMatrixCtx = cls.getDeclaredMethod("getMatrixCtx");
+        MatrixContext mContext = (MatrixContext) getMatrixCtx.invoke(varObj);
+        varNameSet.add(mContext.getName());
+        addMatrix(mContext);
+      } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+        e.printStackTrace();
+      }
     }
 
     createMatrices();
-    load(psModels.keySet());
+    load(varNameSet);
   }
 
   @SuppressWarnings("rawtypes") @Override public void saveModel(MLModel model)
@@ -236,14 +247,20 @@ public abstract class AngelClient implements AngelClientInterface {
         "parameter servers are not started, you must execute startPSServer first!!");
     }
 
-    Map<String, PSModel> psModels = model.getPSModels();
+    Collection<Variable> allVariables = JavaConversions.asJavaCollection(model.getAllVariables());
     ModelSaveContext saveContext = new ModelSaveContext();
 
-    for (Map.Entry<String, PSModel> entry : psModels.entrySet()) {
-      MatrixContext context = entry.getValue().getContext();
-      String savePath = context.getAttributes().get(MatrixConf.MATRIX_SAVE_PATH);
-      if (savePath != null) {
-        saveContext.addMatrix(new MatrixSaveContext(context.getName()));
+    for (Variable varObj: allVariables) {
+      Class<? extends Variable> cls = varObj.getClass();
+      try {
+        Method getMatrixCtx = cls.getDeclaredMethod("getMatrixCtx");
+        MatrixContext mContext = (MatrixContext) getMatrixCtx.invoke(varObj);
+        String savePath = mContext.getAttributes().get(MatrixConf.MATRIX_SAVE_PATH);
+        if (savePath != null) {
+          saveContext.addMatrix(new MatrixSaveContext(mContext.getName()));
+        }
+      } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+        e.printStackTrace();
       }
     }
     saveContext.setSavePath(conf.get(AngelConf.ANGEL_JOB_OUTPUT_PATH));

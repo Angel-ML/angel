@@ -94,10 +94,10 @@ public class RobustRegLocalExample {
 	  conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/RobustReg");
 	  conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/RobustReg-inc");
 	} else if (mode == 3) {  // predict mode
-	  conf.set(AngelConf.ANGEL_ACTION_TYPE, "predict");
+	  conf.set(AngelConf.ANGEL_ACTION_TYPE, "com/tencent/angel/ml/predict");
 	  conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, predictInput);
 	  conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/RobustReg");
-	  conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict/RobustReg");
+	  conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict/RobustReg");
 	}
 	conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 

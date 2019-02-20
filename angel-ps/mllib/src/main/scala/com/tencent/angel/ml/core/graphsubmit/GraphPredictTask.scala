@@ -28,7 +28,7 @@ class GraphPredictTask(ctx: TaskContext) extends PredictTask[LongWritable, Text]
 
   def predict(ctx: TaskContext): Unit = {
     val modelClassName = SharedConf.modelClassName
-    val model: GraphModel = GraphModel(modelClassName, conf, ctx)
+    val model: AngelModel = AngelModel(modelClassName, conf, ctx)
     model.buildNetwork()
     predict(ctx, model, taskDataBlock)
   }

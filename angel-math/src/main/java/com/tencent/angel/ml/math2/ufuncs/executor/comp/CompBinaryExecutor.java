@@ -65,103 +65,6 @@ public class CompBinaryExecutor {
     return (Vector) result;
   }
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/comp/CompBinaryExecutor.java
-  private static class CompBinExe extends RecursiveAction {
-    private ComponentVector v1, v2, result;
-    private int start, end, threshold;
-    private Binary op;
-
-    public CompBinExe(ComponentVector v1, ComponentVector v2, Binary op, ComponentVector result,
-      int start, int end) {
-      this.v1 = v1;
-      this.v2 = v2;
-      this.result = result;
-      this.start = start;
-      this.end = end;
-      this.threshold = (v1.getNumPartitions() + THREADS - 1) / THREADS;
-      this.op = op;
-    }
-
-    @Override protected void compute() {
-      boolean canCompute = (end - start) < threshold;
-
-      if (canCompute) {
-        if (v1 instanceof CompIntDoubleVector && v2 instanceof CompIntDoubleVector) {
-          apply((CompIntDoubleVector) v1, (CompIntDoubleVector) v2, op,
-            (CompIntDoubleVector) result, start, end);
-        } else if (v1 instanceof CompIntDoubleVector && v2 instanceof CompIntFloatVector) {
-          apply((CompIntDoubleVector) v1, (CompIntFloatVector) v2, op, (CompIntDoubleVector) result,
-            start, end);
-        } else if (v1 instanceof CompIntDoubleVector && v2 instanceof CompIntLongVector) {
-          apply((CompIntDoubleVector) v1, (CompIntLongVector) v2, op, (CompIntDoubleVector) result,
-            start, end);
-        } else if (v1 instanceof CompIntDoubleVector && v2 instanceof CompIntIntVector) {
-          apply((CompIntDoubleVector) v1, (CompIntIntVector) v2, op, (CompIntDoubleVector) result,
-            start, end);
-        } else if (v1 instanceof CompIntFloatVector && v2 instanceof CompIntFloatVector) {
-          apply((CompIntFloatVector) v1, (CompIntFloatVector) v2, op, (CompIntFloatVector) result,
-            start, end);
-        } else if (v1 instanceof CompIntFloatVector && v2 instanceof CompIntLongVector) {
-          apply((CompIntFloatVector) v1, (CompIntLongVector) v2, op, (CompIntFloatVector) result,
-            start, end);
-        } else if (v1 instanceof CompIntFloatVector && v2 instanceof CompIntIntVector) {
-          apply((CompIntFloatVector) v1, (CompIntIntVector) v2, op, (CompIntFloatVector) result,
-            start, end);
-        } else if (v1 instanceof CompIntLongVector && v2 instanceof CompIntLongVector) {
-          apply((CompIntLongVector) v1, (CompIntLongVector) v2, op, (CompIntLongVector) result,
-            start, end);
-        } else if (v1 instanceof CompIntLongVector && v2 instanceof CompIntIntVector) {
-          apply((CompIntLongVector) v1, (CompIntIntVector) v2, op, (CompIntLongVector) result,
-            start, end);
-        } else if (v1 instanceof CompIntIntVector && v2 instanceof CompIntIntVector) {
-          apply((CompIntIntVector) v1, (CompIntIntVector) v2, op, (CompIntIntVector) result, start,
-            end);
-        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof CompLongDoubleVector) {
-          apply((CompLongDoubleVector) v1, (CompLongDoubleVector) v2, op,
-            (CompLongDoubleVector) result, start, end);
-        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof CompLongFloatVector) {
-          apply((CompLongDoubleVector) v1, (CompLongFloatVector) v2, op,
-            (CompLongDoubleVector) result, start, end);
-        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof CompLongLongVector) {
-          apply((CompLongDoubleVector) v1, (CompLongLongVector) v2, op,
-            (CompLongDoubleVector) result, start, end);
-        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof CompLongIntVector) {
-          apply((CompLongDoubleVector) v1, (CompLongIntVector) v2, op,
-            (CompLongDoubleVector) result, start, end);
-        } else if (v1 instanceof CompLongFloatVector && v2 instanceof CompLongFloatVector) {
-          apply((CompLongFloatVector) v1, (CompLongFloatVector) v2, op,
-            (CompLongFloatVector) result, start, end);
-        } else if (v1 instanceof CompLongFloatVector && v2 instanceof CompLongLongVector) {
-          apply((CompLongFloatVector) v1, (CompLongLongVector) v2, op, (CompLongFloatVector) result,
-            start, end);
-        } else if (v1 instanceof CompLongFloatVector && v2 instanceof CompLongIntVector) {
-          apply((CompLongFloatVector) v1, (CompLongIntVector) v2, op, (CompLongFloatVector) result,
-            start, end);
-        } else if (v1 instanceof CompLongLongVector && v2 instanceof CompLongLongVector) {
-          apply((CompLongLongVector) v1, (CompLongLongVector) v2, op, (CompLongLongVector) result,
-            start, end);
-        } else if (v1 instanceof CompLongLongVector && v2 instanceof CompLongIntVector) {
-          apply((CompLongLongVector) v1, (CompLongIntVector) v2, op, (CompLongLongVector) result,
-            start, end);
-        } else if (v1 instanceof CompLongIntVector && v2 instanceof CompLongIntVector) {
-          apply((CompLongIntVector) v1, (CompLongIntVector) v2, op, (CompLongIntVector) result,
-            start, end);
-        } else {
-          throw new MathException("The operation is not support!");
-        }
-      } else {
-        int middle = (start + end) >> 1;
-
-        CompBinExe left = new CompBinExe(v1, v2, op, result, start, middle);
-        CompBinExe right = new CompBinExe(v1, v2, op, result, middle + 1, end);
-
-        invokeAll(left, right);
-      }
-    }
-  }
-
-=======
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/executor/comp/CompBinaryExecutor.java
   private static void apply(CompIntDoubleVector v1, CompIntDoubleVector v2, Binary op,
       CompIntDoubleVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
@@ -645,7 +548,7 @@ public class CompBinaryExecutor {
           apply((CompLongIntVector) v1, (CompLongIntVector) v2, op, (CompLongIntVector) result,
               start, end);
         } else {
-          throw new AngelException("The operation is not support!");
+          throw new MathException("The operation is not support!");
         }
       } else {
         int middle = (start + end) >> 1;

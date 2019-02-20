@@ -18,60 +18,11 @@
 
 package com.tencent.angel.ml.math2;
 
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/VFactory.java
 import com.tencent.angel.ml.math2.exceptions.MathException;
 import com.tencent.angel.ml.math2.storage.*;
 import com.tencent.angel.ml.math2.vector.*;
 import com.tencent.angel.ml.math2.utils.RowType;
-=======
-import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.math2.storage.IntDoubleDenseVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntDoubleSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntDoubleSparseVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntDoubleVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntFloatSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntFloatSparseVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntFloatVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntIntDenseVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntIntSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntIntSparseVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntIntVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntLongDenseVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntLongSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntLongSparseVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntLongVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongDoubleSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongDoubleSparseVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongDoubleVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongFloatSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongFloatSparseVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongFloatVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongIntSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongIntSparseVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongIntVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongLongSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongLongSparseVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongLongVectorStorage;
-import com.tencent.angel.ml.math2.vector.CompIntDoubleVector;
-import com.tencent.angel.ml.math2.vector.CompIntFloatVector;
-import com.tencent.angel.ml.math2.vector.CompIntIntVector;
-import com.tencent.angel.ml.math2.vector.CompIntLongVector;
-import com.tencent.angel.ml.math2.vector.CompLongDoubleVector;
-import com.tencent.angel.ml.math2.vector.CompLongFloatVector;
-import com.tencent.angel.ml.math2.vector.CompLongIntVector;
-import com.tencent.angel.ml.math2.vector.CompLongLongVector;
-import com.tencent.angel.ml.math2.vector.IntDoubleVector;
-import com.tencent.angel.ml.math2.vector.IntDummyVector;
-import com.tencent.angel.ml.math2.vector.IntFloatVector;
-import com.tencent.angel.ml.math2.vector.IntIntVector;
-import com.tencent.angel.ml.math2.vector.IntLongVector;
-import com.tencent.angel.ml.math2.vector.LongDoubleVector;
-import com.tencent.angel.ml.math2.vector.LongDummyVector;
-import com.tencent.angel.ml.math2.vector.LongFloatVector;
-import com.tencent.angel.ml.math2.vector.LongIntVector;
-import com.tencent.angel.ml.math2.vector.LongLongVector;
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/VFactory.java
+
 
 public class VFactory {
 

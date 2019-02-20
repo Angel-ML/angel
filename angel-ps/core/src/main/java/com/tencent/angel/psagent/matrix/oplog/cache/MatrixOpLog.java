@@ -23,7 +23,7 @@ import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ml.math2.matrix.Matrix;
 import com.tencent.angel.ml.math2.matrix.RowBasedMatrix;
 import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ml.matrix.MatrixMeta;
+import com.tencent.angel.matrix.MatrixMeta;
 import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.storage.MatrixStorage;

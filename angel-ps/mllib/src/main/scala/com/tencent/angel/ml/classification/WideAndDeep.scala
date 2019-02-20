@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ml.classification
 
-import com.tencent.angel.ml.core.graphsubmit.GraphModel
+import com.tencent.angel.ml.core.graphsubmit.AngelModel
 import com.tencent.angel.ml.core.network.layers.Layer
 import com.tencent.angel.ml.core.network.layers.join.SumPooling
 import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer}
@@ -26,7 +26,7 @@ import com.tencent.angel.ml.core.optimizer.loss.LogLoss
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 
-class WideAndDeep(conf: Configuration, _ctx: TaskContext = null) extends GraphModel(conf, _ctx) {
+class WideAndDeep(conf: Configuration, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
   override def buildNetwork(): Unit = {
     val wide = new SimpleInputLayer("input", 1, new Identity(),
       JsonUtils.getOptimizerByLayerType(jsonAst, "SparseInputLayer"))

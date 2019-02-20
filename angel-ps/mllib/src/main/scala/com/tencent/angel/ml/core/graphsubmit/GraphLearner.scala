@@ -19,16 +19,14 @@
 package com.tencent.angel.ml.core.graphsubmit
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.core.{MLLearner, PredictResult}
 import com.tencent.angel.ml.core.conf.{AngelMLConf, MLCoreConf, SharedConf}
+import com.tencent.angel.ml.core.data.DataBlock
+import com.tencent.angel.ml.core.metric.LossMetric
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.optimizer.decayer.StepSizeScheduler
 import com.tencent.angel.ml.core.utils.ValidationUtils
+import com.tencent.angel.ml.core.{MLLearner, MLModel}
 import com.tencent.angel.ml.math2.utils.LabeledData
-import com.tencent.angel.ml.metric.LossMetric
-import com.tencent.angel.ml.model.MLModel
-import com.tencent.angel.psagent.PSAgentContext
-import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.{Log, LogFactory}
 
@@ -41,7 +39,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
   val lr0: Double = SharedConf.learningRate
 
   // Init Graph Model
-  val model: GraphModel = GraphModel(modelClassName, conf, ctx)
+  val model: AngelModel = AngelModel(modelClassName, conf, ctx)
   model.buildNetwork()
   val graph: Graph = model.graph
   val ssScheduler: StepSizeScheduler = StepSizeScheduler(SharedConf.stepSizeScheduler, lr0)
@@ -55,7 +53,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
       graph.feedData(iter.next())
 
       // LOG.info("start to pullParams ...")
-      graph.pullParams(epoch)
+      model.pullParams(epoch)
 
       // LOG.info("calculate to forward ...")
       loss = graph.calForward() // forward
@@ -65,23 +63,23 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
       graph.calBackward() // backward
 
       // LOG.info("calculate and push gradient ...")
-      graph.pushGradient() // pushgrad
+      model.pushGradient(graph.getLR) // pushgrad
       // waiting all gradient pushed
 
       // LOG.info("waiting for push barrier ...")
-      PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
+      barrier()
 
       if (decayOnBatch) {
         graph.setLR(ssScheduler.next())
       }
       if (ctx.getTaskId.getIndex == 0) {
         // LOG.info("start to update ...")
-        graph.update(epoch * numBatch + batchCount, 1) // update parameters on PS
+        model.update(epoch * numBatch + batchCount, 1) // update parameters on PS
       }
 
       // waiting all gradient update finished
       // LOG.info("waiting for update barrier ...")
-      PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
+      barrier()
       batchCount += 1
 
       LOG.info(s"epoch $epoch batch $batchCount is finished!")
@@ -118,7 +116,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
       model.init(ctx.getTaskId.getIndex)
     }
 
-    PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
+    barrier()
 
     val numBatch = SharedConf.numUpdatePerEpoch
     val batchSize: Int = (trainDataSize + numBatch - 1) / numBatch
@@ -269,8 +267,8 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
     * @param valiData : validata data storage
     */
   def validate(epoch: Int, valiData: DataBlock[LabeledData]): Unit = {
-    val predDataBlock = model.predict[PredictResult](valiData)
-    val predList = (0 until predDataBlock.size()).toList.map {idx => predDataBlock.get(idx)}
+    val predDataBlock = model.predict(valiData)
+    val predList = (0 until predDataBlock.size()).toList.map { idx => predDataBlock.get(idx) }
     ValidationUtils.calMetrics(epoch, predList, graph.getLossFunc)
   }
 }

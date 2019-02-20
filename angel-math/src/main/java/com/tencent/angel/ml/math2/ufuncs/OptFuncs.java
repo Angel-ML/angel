@@ -21,19 +21,7 @@ package com.tencent.angel.ml.math2.ufuncs;
 import com.tencent.angel.ml.math2.matrix.Matrix;
 import com.tencent.angel.ml.math2.ufuncs.executor.BinaryExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.matrix.BinaryMatrixExecutor;
-<<<<<<< HEAD:angel-math/src/main/java/com/tencent/angel/ml/math2/ufuncs/OptFuncs.java
 import com.tencent.angel.ml.math2.ufuncs.expression.*;
-=======
-import com.tencent.angel.ml.math2.ufuncs.expression.AdaDeltaDelta;
-import com.tencent.angel.ml.math2.ufuncs.expression.AdaDeltaHessian;
-import com.tencent.angel.ml.math2.ufuncs.expression.AdaDeltaThreshold;
-import com.tencent.angel.ml.math2.ufuncs.expression.AdaGradDelta;
-import com.tencent.angel.ml.math2.ufuncs.expression.AdaGradThreshold;
-import com.tencent.angel.ml.math2.ufuncs.expression.AdamDelta;
-import com.tencent.angel.ml.math2.ufuncs.expression.ExpSmoothing;
-import com.tencent.angel.ml.math2.ufuncs.expression.ExpSmoothing2;
-import com.tencent.angel.ml.math2.ufuncs.expression.FtrlDelta;
->>>>>>> hotfix:angel-ps/core/src/main/java/com/tencent/angel/ml/math2/ufuncs/OptFuncs.java
 import com.tencent.angel.ml.math2.vector.Vector;
 
 

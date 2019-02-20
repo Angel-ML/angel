@@ -1,7 +1,7 @@
 package com.tencent.angel.ml.core.local
 
 import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
-import com.tencent.angel.ml.core.{Learner, Model}
+import com.tencent.angel.ml.core.{Learner, GraphModel}
 import com.tencent.angel.ml.core.data.{DataBlock, DataReader}
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.variable.VoidType
@@ -14,8 +14,8 @@ class LocalLearner(conf: SharedConf) extends Learner {
   private val LOG: Log = LogFactory.getLog(classOf[LocalLearner])
 
   // 1. initial model, model can be view as a proxy of graph
-  override val model: LocalModel = new LocalModel(conf)
-  override val graph: Graph = model.graph
+  val model: LocalModel = new LocalModel(conf)
+  val graph: Graph = model.graph
 
   // 2. build network
   model.buildNetwork()
@@ -43,7 +43,11 @@ class LocalLearner(conf: SharedConf) extends Learner {
       graph.feedData(iter.next())
 
       // LOG.info("start to pullParams ...")
-      graph.pullParams(epoch)
+      if (graph.dataFormat == "libsvm" || graph.dataFormat == "dummy") {
+        model.pullParams(epoch, graph.placeHolder.getIndices)
+      } else {
+        model.pullParams(epoch)
+      }
 
       // LOG.info("calculate to forward ...")
       loss = graph.calForward() // forward
@@ -54,14 +58,14 @@ class LocalLearner(conf: SharedConf) extends Learner {
       graph.calBackward() // backward
 
       // LOG.info("calculate and push gradient ...")
-      graph.pushGradient() // pushgrad
+      model.pushGradient(graph.getLR) // pushgrad
       // waiting all gradient pushed
 
       // LOG.info("waiting for push barrier ...")
       // barrier(0, graph)
       graph.setLR(ssScheduler.next())
       // LOG.info("start to update ...")
-      graph.update[VoidType](epoch * numBatch + batchCount, graph.placeHolder.getBatchSize) // update parameters on PS
+      model.update[VoidType](epoch * numBatch + batchCount, graph.placeHolder.getBatchSize) // update parameters on PS
 
       // waiting all gradient update finished
       // LOG.info("waiting for update barrier ...")
@@ -74,7 +78,7 @@ class LocalLearner(conf: SharedConf) extends Learner {
     loss
   }
 
-  override def train(posTrainData: DataBlock[LabeledData], negTrainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData]): Model = {
+  override def train(posTrainData: DataBlock[LabeledData], negTrainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData]): GraphModel = {
     val numBatch: Int = SharedConf.numUpdatePerEpoch
     val batchSize: Int = if (negTrainData == null) {
       (posTrainData.size() + numBatch - 1) / numBatch
@@ -106,5 +110,5 @@ class LocalLearner(conf: SharedConf) extends Learner {
     ValidationUtils.calMetrics(epoch, model.predict(valiData), graph.getLossFunc)
   }
 
-  override protected def barrier(graph: Graph): Unit = {}
+  override protected def barrier(): Unit = ???
 }

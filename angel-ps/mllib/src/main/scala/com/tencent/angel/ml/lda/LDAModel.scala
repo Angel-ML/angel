@@ -23,13 +23,13 @@ import java.io.{BufferedReader, InputStreamReader}
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.conf.AngelConf._
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.ml.core.MLModel
 import com.tencent.angel.ml.core.conf.MLCoreConf
 import com.tencent.angel.ml.core.conf.MLCoreConf._
+import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.lda.LDAModel._
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.utils.{LabeledData, RowType}
-import com.tencent.angel.ml.model.{MLModel, PSModel}
-import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
