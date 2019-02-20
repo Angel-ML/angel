@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 
 import com.tencent.angel.ml.math2.vector.IntIntVector
 
-private class KCoreGraphPartition(val keys: Array[Int], val adjs: Array[Array[Int]]) extends Serializable {
+class KCoreGraphPartition(val keys: Array[Int], val adjs: Array[Array[Int]]) extends Serializable {
   assert(keys.length == adjs.length)
   private val nodes: Array[Int] = adjs.flatten.union(keys).distinct
   private val LOG = LoggerFactory.getLogger(this.getClass)
@@ -63,7 +63,7 @@ private class KCoreGraphPartition(val keys: Array[Int], val adjs: Array[Array[In
 
   def init(model: KCorePSModel): Unit = {
     val withVersionFunc = Coder.withVersion(1)
-    val coresWithVersion = adjs.map{adj => withVersionFunc(adj.length)}
+    val coresWithVersion = adjs.map { adj => withVersionFunc(adj.length) }
     model.updateCoreWithActive(keys, coresWithVersion)
   }
 
@@ -120,26 +120,18 @@ private class KCoreGraphPartition(val keys: Array[Int], val adjs: Array[Array[In
     active
   }
 
-  def save(model: KCorePSModel): Array[(Int, Int)] = {
+  def save(model: KCorePSModel): (Array[Int], Array[Int]) = {
     val keyCopy = new Array[Int](keys.length)
     System.arraycopy(keys, 0, keyCopy, 0, keys.length)
-    keys.zip(model.pull(keyCopy).get(keys)).map{ case (id, coreWithVersion) =>
-      (id, Coder.decodeVersion(coreWithVersion))
-    }
+    (keys, model.pull(keyCopy).get(keys).map(Coder.decodeVersion))
   }
 }
 
-private[kcore] object KCoreGraphPartition {
+object KCoreGraphPartition {
 
 
-  def fromGroup(iter: Iterator[(Int, Iterable[Int])]): KCoreGraphPartition = {
-    val keys = new ArrayBuffer[Int]()
-    val adjs = new ArrayBuffer[Array[Int]]()
-    iter.foreach { case (key, group) =>
-      keys += key
-      adjs += group.toSet.toArray
-    }
-    new KCoreGraphPartition(keys.toArray, adjs.toArray)
+  def apply(keys: Array[Int], values: Array[Array[Int]]): KCoreGraphPartition = {
+    new KCoreGraphPartition(keys, values)
   }
 
   // todo: to be improved
