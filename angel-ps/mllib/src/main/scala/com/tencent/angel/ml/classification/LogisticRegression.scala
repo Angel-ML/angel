@@ -38,5 +38,4 @@ class LogisticRegression(conf: Configuration, _ctx: TaskContext = null) extends 
 
     new LossLayer("simpleLossLayer", input, new LogLoss())
   }
-
 }
