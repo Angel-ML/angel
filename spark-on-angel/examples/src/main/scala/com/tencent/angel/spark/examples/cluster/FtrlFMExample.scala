@@ -27,7 +27,7 @@ object FtrlFMExample {
     val numEpoch = params.getOrElse("numEpoch", "3").toInt
     val output = params.getOrElse("output", "")
     val modelPath = params.getOrElse("model", "")
-    val factor = params.getOrElse("factor", "10").toInt
+    val factor = params.getOrElse("factor", "5").toInt
 
     val conf = new SparkConf()
 
@@ -38,13 +38,13 @@ object FtrlFMExample {
 
     PSContext.getOrCreate(sc)
 
-    val data = sc.textFile(input).repartition((SparkUtils.getNumCores(conf) * 6.15).toInt)
+    val data = sc.textFile(input).filter(f => f.length > 0 && f != null)
       .map(s => (DataLoader.parseIntFloat(s, dim), DataLoader.parseLabel(s, false)))
       .map {
         f =>
           f._1.setY(f._2)
           f._1
-      }
+      }.filter(f => f != null).filter(f => f.getX.getSize > 0)
 
     data.persist(StorageLevel.DISK_ONLY)
     val size = data.count()

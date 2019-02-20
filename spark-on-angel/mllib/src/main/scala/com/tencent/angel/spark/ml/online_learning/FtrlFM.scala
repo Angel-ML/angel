@@ -82,10 +82,10 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
     val localV = (0 until dim).map(idx => Ufuncs.ftrlthresholdinit(seconds(idx), seconds(idx+dim),
       alpha, beta, lambda1, lambda2, 0.0, 0.01)).toArray
 
+    val localV2 = localV.map(v0 => v0.mul(v0))
+
     end = System.currentTimeMillis()
     val pullTime = end - start
-
-//    println(localV(0).asInstanceOf[IntFloatVector].get(indices).mkString(","))
 
 
 
@@ -104,7 +104,7 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
     while (iter.hasNext) {
       val point = iter.next()
       val (feature, label) = (point.getX, point.getY)
-      val (gradW, gradV, loss) = gradient(localW, localV, label, feature)
+      val (gradW, gradV, loss) = gradient(localW, localV, localV2, label, feature)
 
       delta(gradW, localN, localW, deltaZ, deltaN)
       (0 until dim).foreach { idx =>
@@ -116,8 +116,6 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
     }
     end = System.currentTimeMillis()
     val optimTime = end - start
-
-//    println(deltaV(0).asInstanceOf[IntFloatVector].getStorage.get(indices).mkString(","))
 
     start = System.currentTimeMillis()
     first.increment(Array(0, 1), Array(deltaZ, deltaN))
@@ -136,11 +134,12 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
     deltaZ.isub(grad.imul(weight))
   }
 
-  def predict(w: Vector, v: Array[Vector], feature: Vector): Double = {
+  def predict(w: Vector, v: Array[Vector], v2: Array[Vector], feature: Vector): Double = {
     val sumW = w.dot(feature)
-    val sumV = v.map { v0 =>
+    val f2 = feature.mul(feature)
+    val sumV = v.zip(v2).map { case (v0, v2) =>
       val t1 = v0.dot(feature)
-      t1*t1 - v0.mul(v0).dot(feature.mul(feature))
+      t1*t1 - v2.dot(f2)
     }
     return sumW + sumV.sum
   }
@@ -164,49 +163,35 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
     val localV = (0 until dim).map(idx => Ufuncs.ftrlthresholdinit(seconds(idx), seconds(idx+dim),
       alpha, beta, lambda1, lambda2, 0.0, 0.01)).toArray
 
+    val localV2 = localV.map(v => v.mul(v))
+
     batch.map { point =>
       val (feature, label) = (point.getX, point.getY)
-      (label, predict(localW, localV, feature))
+      (label, predict(localW, localV, localV2, feature))
     }
   }
 
-  def gradient(w: Vector, v: Array[Vector],
+  def gradient(w: Vector, v: Array[Vector], v2: Array[Vector],
                label: Double, feature: Vector): (Vector, Array[Vector], Double) = {
 
 
     val marginW = w.dot(feature)
     val vdot = v.map(v0 => v0.dot(feature))
-    val marginV = v.zip(vdot).map { case (v0, dot) =>
-      dot*dot - v0.mul(v0).dot(feature.mul(feature))
+    val f2 = feature.mul(feature)
+    val marginV = v.zip(vdot).zip(v2).map { case ((v0, dot),v2) =>
+      dot*dot - v2.dot(f2)
     }
-
-//    val marginV = v.map { v0 =>
-//      val t1 = v0.dot(feature)
-//      t1*t1 - v0.mul(v0).dot(feature.mul(feature))
-//    }
 
     val margin = -(marginW + marginV.sum)
     val multiplier = 1.0 / (1.0 + math.exp(margin)) - label
     val gradW = feature.mul(multiplier)
 
-//    println(v(0).getStorage.getClass)
 
     val gradV = v.zip(vdot).map { case (v0, dot) =>
       val grad = Ufuncs.fmgrad(feature, v0, dot)
-      //      println(s"grad.size()=${grad.getSize} feature.size=${feature.getSize} dot=$dot")
       grad.imul(multiplier)
       grad
     }
-//
-//    val gradV = v.map { v0 =>
-//      val dot = v0.dot(feature)
-//      val grad = Ufuncs.fmgrad(feature, v0, dot)
-////      println(s"grad.size()=${grad.getSize} feature.size=${feature.getSize} dot=$dot")
-//      grad.imul(multiplier)
-//      grad
-//    }
-
-//    println(s"gradw.size()=${gradW.getSize} gradv.size()=${gradV(0).getSize} v0.size()=${v(0).getSize}")
 
     val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
     (gradW, gradV, loss)
