@@ -2,12 +2,11 @@ package com.tencent.angel.spark.ml.kcore
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
-import org.slf4j.LoggerFactory
 
 
 object KCore {
 
-  private val LOG = LoggerFactory.getLogger(this.getClass)
+  //  private val LOG = LoggerFactory.getLogger(this.getClass)
 
   def process(
       graph: RDD[KCoreGraphPartition],
@@ -23,7 +22,7 @@ object KCore {
 
     // init
     graph.foreach(_.init(model))
-    LOG.info(s"init core sum: ${graph.map(_.sum(model)).sum()}")
+    println(s"init core sum: ${graph.map(_.sum(model)).sum()}")
 
 
     var numMsg = Long.MaxValue
@@ -34,11 +33,11 @@ object KCore {
       iterNum += 1
       version += 1
       numMsg = graph.map(_.process(model, version, numMsg < maxId * switchRate)).reduce(_ + _)
-      LOG.info(s"iter-$iterNum, num node updated: $numMsg")
+      println(s"iter-$iterNum, num node updated: $numMsg")
 
       // reset version
       if (Coder.isMaxVersion(version + 1)) {
-        LOG.info("reset version")
+        println("reset version")
         version = 0
         graph.foreach(_.resetVersion(model))
       }
@@ -46,11 +45,11 @@ object KCore {
       // show sum of cores every 10 iter
       if (iterNum % 10 == 0) {
         val sum = graph.map(_.sum(model)).sum()
-        LOG.info(s"iter-$iterNum, core sum = $sum")
+        println(s"iter-$iterNum, core sum = $sum")
       }
     }
 
-    LOG.info(s"iteration end in $iterNum round, final core sum is ${graph.map(_.sum(model)).sum()}")
+    println(s"iteration end in $iterNum round, final core sum is ${graph.map(_.sum(model)).sum()}")
 
     // save
     graph.map(_.save(model))

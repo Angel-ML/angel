@@ -54,8 +54,10 @@ object KCoreExample {
     val kCore = KCore.process(graph, partitionNum, None, storageLevel, switchRate)
 
     // save
-    kCore.map { case (id, core) =>
-      s"$id\t$core"
+    kCore.flatMap { case (ids, cores) =>
+      ids.zip(cores).map { case (id, core) =>
+        s"$id\t$core"
+      }
     }.saveAsTextFile(output)
 
     stop()

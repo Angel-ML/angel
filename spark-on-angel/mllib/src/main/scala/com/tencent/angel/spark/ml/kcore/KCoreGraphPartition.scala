@@ -5,14 +5,13 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.util.collection.SparkCollectionProxy
-import org.slf4j.LoggerFactory
 
 import com.tencent.angel.ml.math2.vector.IntIntVector
 
 class KCoreGraphPartition(val keys: Array[Int], val adjs: Array[Array[Int]]) extends Serializable {
   assert(keys.length == adjs.length)
   private val nodes: Array[Int] = adjs.flatten.union(keys).distinct
-  private val LOG = LoggerFactory.getLogger(this.getClass)
+  //  private val LOG = LoggerFactory.getLogger(this.getClass)
 
   private val invertAdjs = {
     val tempMap = SparkCollectionProxy.createOpenHashMap[Int, ArrayBuffer[Int]]()
@@ -70,7 +69,7 @@ class KCoreGraphPartition(val keys: Array[Int], val adjs: Array[Array[Int]]) ext
   def process(model: KCorePSModel, version: Int, enable: Boolean = false): Int = {
     val curTime = System.currentTimeMillis()
     val curCoresWithVersion = model.pull(nodes)
-    LOG.info(s"[pull]${nodes.length} nodes, takes ${System.currentTimeMillis() - curTime}ms")
+    println(s"[pull]${nodes.length} nodes, takes ${System.currentTimeMillis() - curTime}ms")
 
     // h-index
     val curTime2 = System.currentTimeMillis()
@@ -83,15 +82,15 @@ class KCoreGraphPartition(val keys: Array[Int], val adjs: Array[Array[Int]]) ext
         newEstimations += newEst
       }
     }
-    LOG.info(s"[estimate cores]${indices.length} update, takes ${System.currentTimeMillis() - curTime2}ms")
+    println(s"[estimate cores]${indices.length} update, takes ${System.currentTimeMillis() - curTime2}ms")
 
     // update
     val curTime3 = System.currentTimeMillis()
     val updateKey = indices.toArray
     val withVersionFunc = Coder.withVersion(version + 1)
     model.updateCoreWithActive(updateKey, newEstimations.map(withVersionFunc)(collection.breakOut))
-    LOG.info(s"[update]takes ${System.currentTimeMillis() - curTime3}ms")
-    LOG.info(s"total = ${System.currentTimeMillis() - curTime}ms")
+    println(s"[update]takes ${System.currentTimeMillis() - curTime3}ms")
+    println(s"total = ${System.currentTimeMillis() - curTime}ms")
     indices.length
   }
 
@@ -116,14 +115,14 @@ class KCoreGraphPartition(val keys: Array[Int], val adjs: Array[Array[Int]]) ext
     } else {
       keys.indices
     }
-    LOG.info(s"${active.size} active, takes ${System.currentTimeMillis() - curTime}ms")
+    println(s"${active.size} active, takes ${System.currentTimeMillis() - curTime}ms")
     active
   }
 
   def save(model: KCorePSModel): (Array[Int], Array[Int]) = {
     val keyCopy = new Array[Int](keys.length)
     System.arraycopy(keys, 0, keyCopy, 0, keys.length)
-    (keys, model.pull(keyCopy).get(keys).map(Coder.decodeVersion))
+    (keys, model.pull(keyCopy).get(keys).map(Coder.decodeCoreNumber))
   }
 }
 

@@ -5,7 +5,6 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
-import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.kcore.{KCore, KCoreGraphPartition, ReIndex}
@@ -16,7 +15,6 @@ object KCoreExample {
     val conf = new SparkConf()
     conf.setMaster(mode)
     conf.setAppName("k-core")
-    conf.set(AngelConf.ANGEL_PSAGENT_UPDATE_SPLIT_ADAPTION_ENABLE, "false")
     val sc = new SparkContext(conf)
     PSContext.getOrCreate(sc)
   }
@@ -75,8 +73,8 @@ object KCoreExample {
       val kCore = KCore.process(graph, partitionNum, Some(numNodes.toInt), storageLevel, switchRate)
 
       // decode
-      val result = kCore.map { case (keys, cores) =>
-        reIndexer.decode(keys).zip(cores).flatMap { case (key, core) =>
+      val result = kCore.flatMap { case (keys, cores) =>
+        reIndexer.decode(keys).zip(cores).map { case (key, core) =>
           s"$key\t$core"
         }
       }
@@ -103,8 +101,10 @@ object KCoreExample {
       val kCore = KCore.process(graph, partitionNum, None, storageLevel, switchRate)
 
       // save
-      kCore.map { case (id, core) =>
-        s"$id\t$core"
+      kCore.flatMap { case (ids, cores) =>
+        ids.zip(cores).map { case (id, core) =>
+          s"$id\t$core"
+        }
       }.saveAsTextFile(output)
     }
 
