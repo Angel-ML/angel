@@ -68,16 +68,6 @@ object AngelMLConf {
   val ML_LOSSFUNCTION_HUBER_DELTA = "ml.lossfunction.huber.delta"
   val DEFAULT_ML_LOSSFUNCTION_HUBER_DELTA = 1.0
 
-  // Embedding params
-  val ML_FIELD_NUM = "ml.fm.field.num"
-  val DEFAULT_ML_FIELD_NUM = -1
-  val ML_RANK_NUM = "ml.fm.rank"
-  val DEFAULT_ML_RANK_NUM = 8
-
-  // (MLP) Layer params
-  val ML_NUM_CLASS = "ml.num.class"
-  val DEFAULT_ML_NUM_CLASS = 2
-
   // MLR parameters
   val ML_MLR_RANK = "ml.mlr.rank"
   val DEFAULT_ML_MLR_RANK = 5

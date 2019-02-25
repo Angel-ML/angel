@@ -8,9 +8,14 @@ import com.tencent.angel.ml.math2.storage._
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.Vector
 
+import java.lang.{Long => JLong}
+import java.util.{HashMap => JHashMap, Map => JMap}
+
+
 class LocalEmbedVariable(name: String, numRows: Int, numCols: Long, updater: Updater,
                          rowType: RowType, formatClassName: String, allowPullWithIndex: Boolean)(implicit graph: Graph)
   extends LocalMatVariable(name, numRows, numCols, updater, rowType, formatClassName, allowPullWithIndex) with EmbedVariable {
+  private val embeddings: JMap[JLong, Vector] = new JHashMap[JLong, Vector]()
 
   protected override def doPull(epoch: Int, indices: Vector = null): Unit = {
     embeddings.clear()

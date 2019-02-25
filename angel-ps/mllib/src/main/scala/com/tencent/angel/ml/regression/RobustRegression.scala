@@ -18,24 +18,23 @@
 
 package com.tencent.angel.ml.regression
 
-import com.tencent.angel.ml.core.conf.AngelMLConf
+import com.tencent.angel.ml.core.PSOptimizerProvider
+import com.tencent.angel.ml.core.conf.{AngelMLConf, MLCoreConf}
 import com.tencent.angel.ml.core.graphsubmit.AngelModel
+import com.tencent.angel.ml.core.network.Identity
 import com.tencent.angel.ml.core.network.layers.LossLayer
 import com.tencent.angel.ml.core.network.layers.verge.SimpleInputLayer
 import com.tencent.angel.ml.core.optimizer.loss.HuberLoss
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 
-class RobustRegression(conf: Configuration, _ctx: TaskContext = null)
-  extends AngelModel(conf, _ctx) {
+class RobustRegression(conf: Configuration, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
+  val optProvider = new PSOptimizerProvider()
 
   override def buildNetwork(): Unit = {
-    val input = dataFormat match {
-      case "dense" | "component_sparse" => new SimpleInputLayer("input", 1, new Identity(),
-        OptUtils.getOptimizer(AngelMLConf.ML_INPUTLAYER_OPTIMIZER))
-      case _ => new SimpleInputLayer("input", 1, new Identity(),
-        OptUtils.getOptimizer(AngelMLConf.ML_INPUTLAYER_OPTIMIZER))
-    }
+    val ipOptName: String = sharedConf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
+
+    val input = new SimpleInputLayer("input", 1, new Identity(), optProvider.getOptimizer(ipOptName))
 
     new LossLayer("simpleLossLayer", input,
       new HuberLoss(conf.getDouble(AngelMLConf.ML_ROBUSTREGRESSION_LOSS_DELTA, 1.0)))

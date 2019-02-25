@@ -8,6 +8,49 @@ import org.json4s.JsonAST.{JDouble, JObject, JString, JValue}
 import org.json4s.JsonDSL._
 
 class PSOptimizerProvider extends OptimizerProvider with OptimizerHelper {
+  def getOptimizer(name: String): Optimizer = {
+    val conf: SharedConf = SharedConf.get()
+    val lr0: Double = conf.getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)
+
+    name match {
+      case s: String if matchClassName[SGD](s) =>
+        new SGD(lr = lr0)
+      case s: String if matchClassName[Adam](s) =>
+        val gamma: Double = conf.getDouble(MLCoreConf.ML_OPT_ADAM_GAMMA,
+          MLCoreConf.DEFAULT_ML_OPT_ADAM_GAMMA)
+        val beta: Double = conf.getDouble(MLCoreConf.ML_OPT_ADAM_BETA, MLCoreConf.DEFAULT_ML_OPT_ADAM_BETA)
+        new Adam(lr0, gamma, beta)
+      case s: String if matchClassName[Momentum](s) =>
+        val momentum: Double = conf.getDouble(MLCoreConf.ML_OPT_MOMENTUM_MOMENTUM,
+          MLCoreConf.DEFAULT_ML_OPT_MOMENTUM_MOMENTUM)
+        new Momentum(lr0, momentum)
+      case s: String if matchClassName[FTRL](s) =>
+        val alpha: Double = conf.getDouble(MLCoreConf.ML_OPT_FTRL_ALPHA,
+          MLCoreConf.DEFAULT_ML_OPT_FTRL_ALPHA)
+        val beta: Double = conf.getDouble(MLCoreConf.ML_OPT_FTRL_BETA,
+          MLCoreConf.DEFAULT_ML_OPT_FTRL_BETA)
+        new FTRL(lr0, alpha, beta)
+      case s: String if matchClassName[AdaGrad](s) =>
+        val beta: Double = conf.getDouble(MLCoreConf.ML_OPT_ADAGRAD_BETA,
+          MLCoreConf.DEFAULT_ML_OPT_ADAGRAD_BETA)
+        new AdaGrad(lr0, beta)
+      case s: String if matchClassName[AdaDelta](s) =>
+        val alpha: Double = conf.getDouble(MLCoreConf.ML_OPT_ADADELTA_ALPHA,
+          MLCoreConf.DEFAULT_ML_OPT_ADADELTA_ALPHA)
+        val beta: Double = conf.getDouble(MLCoreConf.ML_OPT_ADADELTA_BETA,
+          MLCoreConf.DEFAULT_ML_OPT_ADADELTA_BETA)
+        new AdaDelta(lr0, alpha, beta)
+    }
+  }
+
+  def getDefaultOptimizer(): Optimizer = {
+    val conf: SharedConf = SharedConf.get()
+    val lr0: Double = conf.getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)
+    val momentum: Double = conf.getDouble(MLCoreConf.ML_OPT_MOMENTUM_MOMENTUM,
+      MLCoreConf.DEFAULT_ML_OPT_MOMENTUM_MOMENTUM)
+    new Momentum(lr0, momentum)
+  }
+
   override def optFromJson(json: JValue): Optimizer = {
     val conf: SharedConf = SharedConf.get()
     val lr0: Double = conf.getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)
@@ -69,4 +112,5 @@ class PSOptimizerProvider extends OptimizerProvider with OptimizerHelper {
     (OptimizerKeys.typeKey -> s"${classOf[Momentum].getSimpleName}") ~
       (OptimizerKeys.momentumKey -> JDouble(momentum))
   }
+
 }

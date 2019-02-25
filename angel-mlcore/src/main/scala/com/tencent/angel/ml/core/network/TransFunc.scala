@@ -38,6 +38,31 @@ trait TransFunc extends Serializable {
 }
 
 object TransFunc {
+  def fromString(name: String): TransFunc = {
+    name match {
+      case s: String if matchClassName[Identity](s) =>
+        new Identity()
+      case s: String if matchClassName[Sigmoid](s) =>
+        new Sigmoid()
+      case s: String if matchClassName[Relu](s) =>
+        new Relu()
+      case s: String if matchClassName[Softmax](s) =>
+        new Softmax()
+      case s: String if matchClassName[Tanh](s) =>
+        new Tanh()
+      case s: String if matchClassName[SigmoidWithDropout](s) =>
+        new SigmoidWithDropout(0.5, "Train")
+      case s: String if matchClassName[TanhWithDropout](s) =>
+        new TanhWithDropout(0.5, "Train")
+      case s: String if matchClassName[Dropout](s) =>
+        new Dropout(0.5, "Train")
+    }
+  }
+
+  def defaultTransFunc(): TransFunc = {
+    new Relu()
+  }
+
   def fromJson(jast: JValue): TransFunc = {
     jast match {
       case JString(s) if matchClassName[Identity](s) =>

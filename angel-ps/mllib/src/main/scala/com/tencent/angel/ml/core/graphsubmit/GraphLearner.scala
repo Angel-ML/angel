@@ -43,7 +43,8 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
   model.buildNetwork()
   val graph: Graph = model.graph
   val ssScheduler: StepSizeScheduler = StepSizeScheduler(SharedConf.stepSizeScheduler, lr0)
-  val decayOnBatch = conf.getBoolean(MLCoreConf.ML_OPT_DECAY_ON_BATCH, MLCoreConf.DEFAULT_ML_OPT_DECAY_ON_BATCH)
+  val decayOnBatch: Boolean = conf.getBoolean(MLCoreConf.ML_OPT_DECAY_ON_BATCH,
+    MLCoreConf.DEFAULT_ML_OPT_DECAY_ON_BATCH)
 
   def trainOneEpoch(epoch: Int, iter: Iterator[Array[LabeledData]], numBatch: Int): Double = {
     var batchCount: Int = 0
@@ -267,8 +268,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
     * @param valiData : validata data storage
     */
   def validate(epoch: Int, valiData: DataBlock[LabeledData]): Unit = {
-    val predDataBlock = model.predict(valiData)
-    val predList = (0 until predDataBlock.size()).toList.map { idx => predDataBlock.get(idx) }
+    val predList = model.predict(valiData)
     ValidationUtils.calMetrics(epoch, predList, graph.getLossFunc)
   }
 }

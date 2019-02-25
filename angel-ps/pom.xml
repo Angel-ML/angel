@@ -36,7 +36,7 @@
     <module>psf</module>
     <module>tools</module>
     <module>mllib</module>
-    <module>examples</module>
+    <!--module>examples</module-->
   </modules>
 
 
@@ -324,6 +324,11 @@
                         <javacArg>-target</javacArg>
                         <javacArg>${java.version}</javacArg>
                     </javacArgs>
+                    <excludes>
+                        <exclude>**/lda/**</exclude>
+                        <exclude>**/kmeans/**</exclude>
+                        <exclude>**/GBDT/**</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
             <plugin>

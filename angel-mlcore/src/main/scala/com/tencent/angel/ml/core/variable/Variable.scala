@@ -1,9 +1,8 @@
 package com.tencent.angel.ml.core.variable
 
-import java.lang.{Long => JLong}
 import java.util.concurrent.Future
 import java.util.concurrent.locks.ReentrantReadWriteLock
-import java.util.{HashMap => JHashMap, Map => JMap}
+
 
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.{EvnContext, Graph}
@@ -102,9 +101,7 @@ object MatVariable {
 }
 
 
-trait EmbedVariable extends MatVariable {
-  protected val embeddings: JMap[JLong, Vector] = new JHashMap[JLong, Vector]()
-}
+trait EmbedVariable extends MatVariable
 
 object EmbedVariable {
   implicit def toMatrix(v: EmbedVariable): Matrix = v.snapshot()

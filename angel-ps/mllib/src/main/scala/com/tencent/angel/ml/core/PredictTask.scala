@@ -25,8 +25,7 @@ import com.tencent.angel.ml.core.conf.{AngelMLConf, MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.data.{DataBlock, DataParser, TransLabel}
 import com.tencent.angel.ml.core.utils.SConfHelper
 import com.tencent.angel.ml.math2.utils.LabeledData
-import com.tencent.angel.utils.HdfsUtil
-import com.tencent.angel.worker.storage.DataBlock
+import com.tencent.angel.ml.core.utils.HDFSUtils
 import com.tencent.angel.worker.task.{BaseTask, TaskContext}
 
 abstract class PredictTask[KEYIN, VALUEIN](ctx: TaskContext)
@@ -52,6 +51,6 @@ abstract class PredictTask[KEYIN, VALUEIN](ctx: TaskContext)
   @throws(classOf[IOException])
   protected final def predict(taskContext: TaskContext, model: MLModel, dataBlock: DataBlock[LabeledData]): Unit = {
     val predictResult = model.predict(dataBlock)
-    HdfsUtil.writeStorage(predictResult, taskContext)
+    HDFSUtils.writeStorage(predictResult, taskContext)
   }
 }

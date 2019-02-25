@@ -18,16 +18,22 @@
 
 package com.tencent.angel.ml.core.utils
 
+import java.io.IOException
+
+import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.ml.core.PredictResult
 import com.tencent.angel.ml.core.conf.MLCoreConf
+import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.util.LineReader
 
 object HDFSUtils {
 
   val LOG = LogFactory.getLog("HDFSUtils")
+  private val tmpPrefix = "_tmp."
 
   def readFeatureNum(path: String, conf: Configuration): Int = {
     val maxdimPath = new Path(path)
@@ -43,5 +49,37 @@ object HDFSUtils {
     dim.close()
     conf.set(MLCoreConf.ML_FEATURE_INDEX_RANGE, String.valueOf(feaNum))
     feaNum
+  }
+
+  @throws[IOException]
+  def rename(tmpCombinePath: Path, outputPath: Path, fs: FileSystem): Unit = {
+    if (fs.exists(outputPath)) fs.delete(outputPath, true)
+    if (!fs.rename(tmpCombinePath, outputPath)) {
+      throw new IOException("rename from " + tmpCombinePath + " to " + outputPath + " failed")
+    }
+  }
+
+  @throws[IOException]
+  def writeStorage(dataBlock: List[PredictResult], taskContext: TaskContext): Unit = {
+    val outDir = taskContext.getConf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH)
+    val outPath = new Path(outDir, "predict")
+    val fs = outPath.getFileSystem(taskContext.getConf)
+    val outFileName = "task_" + taskContext.getTaskIndex
+    val tmpOutFileName = tmpPrefix + outFileName
+    val outFilePath = new Path(outPath, outFileName)
+    val tmpOutFilePath = new Path(outPath, tmpOutFileName)
+    if (fs.exists(tmpOutFilePath)) fs.delete(tmpOutFilePath, true)
+    val output = fs.create(tmpOutFilePath)
+    LOG.info("tmpOutFilePath=" + tmpOutFilePath)
+
+    dataBlock.foreach{
+      case resultItem: PredictResult if resultItem != null =>
+        output.writeBytes(resultItem.getText + "\n")
+      case _ =>
+    }
+
+    output.close()
+    rename(tmpOutFilePath, outFilePath, fs)
+    LOG.info("rename " + tmpOutFilePath + " to " + outFilePath)
   }
 }

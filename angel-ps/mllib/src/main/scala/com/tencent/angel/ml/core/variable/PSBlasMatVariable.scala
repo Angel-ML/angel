@@ -7,7 +7,6 @@ import com.tencent.angel.ml.core.utils.{PSMatrixUtils, RowTypeUtils}
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.Vector
-import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.psagent.PSAgentContext
 
 

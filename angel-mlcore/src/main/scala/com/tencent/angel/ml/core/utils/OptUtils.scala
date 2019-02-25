@@ -2,9 +2,9 @@ package com.tencent.angel.ml.core.utils
 
 import com.tencent.angel.ml.math2.MFactory
 import com.tencent.angel.ml.math2.matrix.Matrix
-import com.tencent.angel.ml.math2.storage.{IntDoubleDenseVectorStorage, IntFloatDenseVectorStorage}
+import com.tencent.angel.ml.math2.storage._
 import com.tencent.angel.ml.math2.utils.RowType
-import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, LongDoubleVector, LongFloatVector, Vector}
+import com.tencent.angel.ml.math2.vector._
 
 object OptUtils {
 

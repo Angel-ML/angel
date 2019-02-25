@@ -167,6 +167,15 @@ object MLCoreConf {
   val DEFAULT_ML_EMBEDDING_MATRIX_OUTPUT_FORMAT: String = classOf[TextColumnFormat].getCanonicalName
   val ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT = "ml.simpleinputlayer.matrix.output.format"
   val DEFAULT_ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT: String = classOf[ColIdValueTextRowFormat].getCanonicalName
+
+  // Embedding params
+  val ML_RANK_NUM = "ml.fm.rank"
+  val DEFAULT_ML_RANK_NUM = 8
+
+  // (MLP) Layer params
+  val ML_FCLAYER_PARAMS = "ml.fclayer.params"
+  val DEFAULT_ML_FCLAYER_PARAMS = "100:relu:momentum|100::relu:momentum|1:identity:momentum"
+
 }
 
 class MLCoreConf {}

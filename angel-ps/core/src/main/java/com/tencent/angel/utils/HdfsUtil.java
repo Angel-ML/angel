@@ -387,7 +387,7 @@ public class HdfsUtil {
   }
 
   public static void writeStorage(DataBlock<PredictResult> dataBlock, TaskContext taskContext)
-    throws IOException {
+      throws IOException {
     String outDir = taskContext.getConf().get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
     Path outPath = new Path(outDir, "predict");
     FileSystem fs = outPath.getFileSystem(taskContext.getConf());

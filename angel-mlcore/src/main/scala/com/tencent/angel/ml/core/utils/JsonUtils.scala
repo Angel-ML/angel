@@ -268,7 +268,7 @@ object JsonUtils {
 
   // for compatible purpose -----------------------------------------------------------------------------------------
   private def jArray2JObject(jArray: JArray, default_trans: Option[JValue], default_optimizer: Option[JValue]): JObject = {
-    val fields = jArray.arr.collect {
+    val fields = jArray.arr.flatMap {
       case obj: JObject if fieldEqualClassName[FCLayer](obj) =>
         extendFCLayer(obj, default_trans, default_optimizer)
       case obj: JObject if fieldEqualClassName[SimpleInputLayer](obj) =>
@@ -279,7 +279,7 @@ object JsonUtils {
         extendLayer(obj, default_trans, default_optimizer)
     }
 
-    JObject(fields.flatten)
+    JObject(fields)
   }
 
   private def extendFCLayer(obj: JObject, default_trans: Option[JValue], default_optimizer: Option[JValue]): List[JField] = {
@@ -409,5 +409,4 @@ object JsonUtils {
       case _ => throw MLException("Json format error!")
     }
   }
-
 }

@@ -18,10 +18,12 @@
 
 package com.tencent.angel.ml.classification
 
+import com.tencent.angel.ml.core.PSOptimizerProvider
 import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.graphsubmit.AngelModel
+import com.tencent.angel.ml.core.network.Identity
+import com.tencent.angel.ml.core.network.layers.LossLayer
 import com.tencent.angel.ml.core.network.layers.verge.SimpleInputLayer
-import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.optimizer.loss.SoftmaxLoss
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
@@ -34,11 +36,11 @@ import org.apache.hadoop.conf.Configuration
 
 class SoftmaxRegression(conf: Configuration, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
   val numClass: Int = SharedConf.numClass
-  val ipOptName: String = sharedConf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
-  val optimizer: Optimizer = OptUtils.getOptimizer(ipOptName)
+  val optProvider = new PSOptimizerProvider()
 
   override def buildNetwork(): Unit = {
-    val input = new SimpleInputLayer("input", numClass, new Identity(), optimizer)
+    val ipOptName: String = sharedConf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
+    val input = new SimpleInputLayer("input", numClass, new Identity(), optProvider.getOptimizer(ipOptName))
     new LossLayer("softmaxLossLayer", input, new SoftmaxLoss())
   }
 

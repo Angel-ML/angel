@@ -15,14 +15,13 @@ class AngelGraph(placeHolder: PlaceHolder, conf: SharedConf, override val taskNu
     with Serializable {
   override val indexRange: Long = SharedConf.indexRange
   override val validIndexNum: Long = SharedConf.modelSize
-  override protected val variableManager: VariableManager = new VariableManager(this)
-
-  override def normalFactor: Double = 1.0 / (placeHolder.getBatchSize * taskNum)
 
   override val dataFormat: String = SharedConf.inputDataFormat
   override val modelType: RowType = SharedConf.modelType
+  private val isSparseFormat = dataFormat == "libsvm" || dataFormat == "dummy"
+  override val variableManager: VariableManager = new VariableManager(isSparseFormat)
+
+  override def normalFactor: Double = 1.0 / (placeHolder.getBatchSize * taskNum)
 
   override def toString: String = super.toString
-
-
 }

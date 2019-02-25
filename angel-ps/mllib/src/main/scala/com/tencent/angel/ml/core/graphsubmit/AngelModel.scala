@@ -22,11 +22,10 @@ import com.tencent.angel.ml.core.{AngelGraph, GraphModel, PredictResult}
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.core.network.layers.PlaceHolder
-import com.tencent.angel.ml.core.network.{EvnContext, Graph}
+import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.optimizer.loss._
 import com.tencent.angel.ml.core.utils.JsonUtils
 import com.tencent.angel.ml.math2.utils.LabeledData
-import com.tencent.angel.worker.storage.MemoryDataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 
@@ -53,8 +52,9 @@ class AngelModel(conf: Configuration, _ctx: TaskContext = null) extends GraphMod
     * @return predict result
     */
   // def predict(storage: DataBlock[LabeledData]): List[PredictResult]
-  override def predict(storage: DataBlock[LabeledData]): DataBlock[PredictResult] = {
-    val resData = new MemoryDataBlock[PredictResult](storage.size())
+  override def predict(storage: DataBlock[LabeledData]): List[PredictResult] = {
+    val resData = new Array[PredictResult](storage.size())
+      // new MemoryDataBlock[PredictResult](storage.size())
 
     var count: Int = 0
     while (count < storage.size()) {
@@ -64,17 +64,20 @@ class AngelModel(conf: Configuration, _ctx: TaskContext = null) extends GraphMod
         storage.size() - count
       }
       val batchData = new Array[LabeledData](numSamples)
+      graph.feedData(batchData)
 
       (0 until numSamples).foreach {
         idx => batchData(idx) = storage.loopingRead()
       }
 
-      graph.predict() foreach { res => resData.put(res) }
-
-      count += batchSize
+      val predicted = graph.predict()
+      (0 until numSamples).foreach { resIdx =>
+        resData(count) = predicted(resIdx)
+        count += 1
+      }
     }
 
-    resData
+    resData.toList
   }
 }
 

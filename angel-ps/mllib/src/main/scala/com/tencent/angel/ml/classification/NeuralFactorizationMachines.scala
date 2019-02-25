@@ -18,11 +18,13 @@
 
 package com.tencent.angel.ml.classification
 
+import com.tencent.angel.ml.core.PSOptimizerProvider
 import com.tencent.angel.ml.core.conf.MLCoreConf
 import com.tencent.angel.ml.core.graphsubmit.AngelModel
-import com.tencent.angel.ml.core.network.layers.Layer
+import com.tencent.angel.ml.core.network.{Identity, TransFunc}
+import com.tencent.angel.ml.core.network.layers.{Layer, LossLayer}
 import com.tencent.angel.ml.core.network.layers.join.SumPooling
-import com.tencent.angel.ml.core.network.layers.linear.BiInteractionCross
+import com.tencent.angel.ml.core.network.layers.linear.{BiInteractionCross, FCLayer}
 import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer}
 import com.tencent.angel.ml.core.optimizer.loss.LogLoss
 import com.tencent.angel.worker.task.TaskContext
@@ -31,22 +33,37 @@ import org.apache.hadoop.conf.Configuration
 
 class NeuralFactorizationMachines(conf: Configuration, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
   val numFields: Int = sharedConf.getInt(MLCoreConf.ML_FIELD_NUM, MLCoreConf.DEFAULT_ML_FIELD_NUM)
+  val numFactors: Int = sharedConf.getInt(MLCoreConf.ML_RANK_NUM, MLCoreConf.DEFAULT_ML_RANK_NUM)
+  val optProvider = new PSOptimizerProvider()
 
   override def buildNetwork(): Unit = {
-    val wide = new SimpleInputLayer("input", 1, new Identity(),
-      JsonUtils.getOptimizerByLayerType(jsonAst, "SparseInputLayer"))
+    val inputOptName: String = sharedConf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
+    val wide = new SimpleInputLayer("input", 1, new Identity(), optProvider.getOptimizer(inputOptName))
 
-    val embeddingParams = JsonUtils.getLayerParamsByLayerType(jsonAst, "Embedding")
-      .asInstanceOf[EmbeddingParams]
-    val embedding = new Embedding("embedding", embeddingParams.outputDim, embeddingParams.numFactors,
-      embeddingParams.optimizer.build()
-    )
+    val embeddingOptName: String = sharedConf.get(MLCoreConf.ML_EMBEDDING_OPTIMIZER, MLCoreConf.DEFAULT_ML_EMBEDDING_OPTIMIZER)
+    val embedding = new Embedding("embedding", numFields * numFactors, numFactors, optProvider.getOptimizer(embeddingOptName))
 
-    val interactionCross = new BiInteractionCross("BiInteractionCross", embeddingParams.numFactors, embedding)
-    val hiddenLayer = JsonUtils.getFCLayer(jsonAst, interactionCross)
+    val interactionCross = new BiInteractionCross("BiInteractionCross", numFactors, embedding)
 
-    val join = new SumPooling("sumPooling", 1, Array[Layer](wide, hiddenLayer))
+    var fcLayer: Layer = interactionCross
+    val fclayerParams = sharedConf.get(MLCoreConf.ML_FCLAYER_PARAMS, MLCoreConf.DEFAULT_ML_FCLAYER_PARAMS)
+    fclayerParams.split("|").zipWithIndex.foreach{ case (params: String, idx: Int) =>
+      val name = s"fclayer_$idx"
+      params.split(":") match {
+        case Array(outputDim: String, transFunc: String, optimizer: String) =>
+          fcLayer = new FCLayer(name, outputDim.toInt, fcLayer,
+            TransFunc.fromString(transFunc), optProvider.getOptimizer(optimizer))
+        case Array(outputDim: String, transFunc: String) =>
+          fcLayer = new FCLayer(name, outputDim.toInt, fcLayer,
+            TransFunc.fromString(transFunc), optProvider.getDefaultOptimizer())
+        case Array(outputDim: String) =>
+          fcLayer = new FCLayer(name, outputDim.toInt, fcLayer,
+            TransFunc.defaultTransFunc(), optProvider.getDefaultOptimizer())
+      }
+    }
 
-    new SimpleLossLayer("simpleLossLayer", join, new LogLoss())
+    val join = new SumPooling("sumPooling", 1, Array[Layer](wide, fcLayer))
+
+    new LossLayer("simpleLossLayer", join, new LogLoss())
   }
 }

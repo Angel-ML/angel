@@ -18,6 +18,7 @@
 
 package com.tencent.angel.ml.classification
 
+import com.tencent.angel.ml.core.PSOptimizerProvider
 import com.tencent.angel.ml.core.conf.MLCoreConf
 import com.tencent.angel.ml.core.graphsubmit.AngelModel
 import com.tencent.angel.ml.core.network.Identity
@@ -25,7 +26,6 @@ import com.tencent.angel.ml.core.network.layers.join.SumPooling
 import com.tencent.angel.ml.core.network.layers.linear.BiInnerSumCross
 import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer}
 import com.tencent.angel.ml.core.network.layers.{Layer, LossLayer}
-import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.optimizer.loss.LogLoss
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
@@ -34,14 +34,15 @@ import org.apache.hadoop.conf.Configuration
 class FactorizationMachines(conf: Configuration, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
   val numFields: Int = sharedConf.getInt(MLCoreConf.ML_FIELD_NUM, MLCoreConf.DEFAULT_ML_FIELD_NUM)
   val numFactors: Int = sharedConf.getInt(MLCoreConf.ML_RANK_NUM, MLCoreConf.DEFAULT_ML_RANK_NUM)
-  val ipOptName: String = sharedConf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
-  val optimizer: Optimizer = OptUtils.getOptimizer(ipOptName)
+  val optProvider = new PSOptimizerProvider()
 
   override def buildNetwork(): Unit = {
+    val inputOptName: String = sharedConf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
+    val wide = new SimpleInputLayer("input", 1, new Identity(), optProvider.getOptimizer(inputOptName))
 
-    val wide = new SimpleInputLayer("input", 1, new Identity(), optimizer)
-    val embedding = new Embedding("embedding", numFields * numFactors, numFactors,
-      OptUtils.getOptimizer(sharedConf.get(MLCoreConf.ML_EMBEDDING_OPTIMIZER, MLCoreConf.DEFAULT_ML_EMBEDDING_OPTIMIZER)))
+    val embeddingOptName: String = sharedConf.get(MLCoreConf.ML_EMBEDDING_OPTIMIZER, MLCoreConf.DEFAULT_ML_EMBEDDING_OPTIMIZER)
+    val embedding = new Embedding("embedding", numFields * numFactors, numFactors, optProvider.getOptimizer(embeddingOptName))
+
     val innerSumCross = new BiInnerSumCross("innerSumPooling", embedding)
     val join = new SumPooling("sumPooling", 1, Array[Layer](wide, innerSumCross))
 
