@@ -597,7 +597,7 @@ public class MatrixContext implements Serializable {
       // both set, check its valid
       throw new AngelException("matrix " + name
           + " parameter is invalid, column number must = (indexEnd - indexStart), now colNum = "
-          + rowNum
+          + colNum
           + ", indexEnd = " + indexEnd + ", indexStart = " + indexStart);
     }
 
