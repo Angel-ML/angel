@@ -834,6 +834,29 @@ public class UserRequestAdapter {
     return getRowsFlow(result, index, batchSize, -1);
   }
 
+  class IndexRange {
+    long startIndex;
+    long endIndex;
+
+    IndexRange(long startIndex, long endIndex) {
+      this.startIndex = startIndex;
+      this.endIndex = endIndex;
+    }
+  }
+
+  private IndexRange getMatrixIndexRange(int matrixId) {
+    long indexStart = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId).getIndexStart();
+    long indexEnd = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId).getIndexEnd();
+    long colNum = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId).getColNum();
+
+    if(indexEnd <= indexStart) {
+      indexStart = 0;
+      indexEnd = colNum;
+    }
+
+    return new IndexRange(indexStart, indexEnd);
+  }
+
   public Future<VoidResult> update(int matrixId, int rowId, Vector delta, UpdateOp op) {
     checkParams(matrixId, rowId);
     delta.setMatrixId(matrixId);
@@ -854,9 +877,10 @@ public class UserRequestAdapter {
       requests.put(requestId, request);
 
       MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
-      long colNum = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId).getColNum();
+      IndexRange range = getMatrixIndexRange(matrixId);
+
       for (PartitionKey partKey : partitions) {
-        RowsViewUpdateItem item = new RowsViewUpdateItem(partKey, rows, colNum);
+        RowsViewUpdateItem item = new RowsViewUpdateItem(partKey, rows, range.startIndex, range.endIndex);
         matrixClient.update(requestId, request.getMatrixId(), partKey, item, null, -1, false, op);
       }
       return result;
@@ -931,9 +955,10 @@ public class UserRequestAdapter {
       requests.put(requestId, request);
 
       MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
-      long colNum = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId).getColNum();
+      IndexRange range = getMatrixIndexRange(matrixId);
+
       for (PartitionKey partKey : partitions) {
-        RowsViewUpdateItem item = new RowsViewUpdateItem(partKey, rows, colNum);
+        RowsViewUpdateItem item = new RowsViewUpdateItem(partKey, rows, range.startIndex, range.endIndex);
         matrixClient.update(requestId, request.getMatrixId(), partKey, item, null, -1, false, op);
       }
       return result;
@@ -1002,9 +1027,9 @@ public class UserRequestAdapter {
       requests.put(requestId, request);
 
       MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
-      long colNum = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId).getColNum();
+      IndexRange range = getMatrixIndexRange(matrixId);
       for (PartitionKey partKey : partitions) {
-        RowsViewUpdateItem item = new RowsViewUpdateItem(partKey, rows, colNum);
+        RowsViewUpdateItem item = new RowsViewUpdateItem(partKey, rows, range.startIndex, range.endIndex);
         matrixClient.update(requestId, request.getMatrixId(), partKey, item, null, -1, false, op);
       }
       return result;

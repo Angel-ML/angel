@@ -606,6 +606,12 @@ public class MatrixContext implements Serializable {
           "matrix " + name + " is dense and with longkey, might cost a lot of memory. " +
               "Please considering to configure with sparse row type, like (T_FLOAT_SPARSE_LONGKEY)");
     }
+
+    if (indexStart != 0 && (rowType.isDense() || rowType.isComp())) {
+      throw new AngelException("matrix " + name
+          + " parameter is invalid, nonzero index range start can only be use sparse model type now"
+          + ", but model type now is " + rowType + " with index range start value = " + indexStart);
+    }
   }
 
   private void loadMatrixMetaFromFile(String name, String path, Configuration conf)
