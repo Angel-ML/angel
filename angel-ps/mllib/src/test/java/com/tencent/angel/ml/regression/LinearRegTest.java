@@ -19,6 +19,7 @@
 package com.tencent.angel.ml.regression;
 
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.ml.core.PSOptimizerProvider;
 import com.tencent.angel.ml.core.conf.MLCoreConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
 import com.tencent.angel.ml.math2.utils.RowType;
@@ -35,7 +36,7 @@ import org.junit.Test;
 public class LinearRegTest {
   private static final Log LOG = LogFactory.getLog(LinearRegTest.class);
   private static String LOCAL_FS = FileSystem.DEFAULT_FS;
-  private static String CLASSBASE = "com.tencent.angel.ml.regression.";
+  private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.AngelModel";
   private static String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
 
   static {
@@ -82,6 +83,7 @@ public class LinearRegTest {
       conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
       conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
       conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
+      conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
 
       // Set data format
       conf.set(MLCoreConf.ML_DATA_INPUT_FORMAT(), dataFmt);
@@ -102,7 +104,7 @@ public class LinearRegTest {
       conf.set(MLCoreConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
       conf.set(MLCoreConf.ML_REG_L2(), String.valueOf(reg));
       conf.setLong(MLCoreConf.ML_MODEL_SIZE(), 124L);
-      conf.set(MLCoreConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "LinearRegression");
+      conf.set(MLCoreConf.ML_MODEL_CLASS_NAME(), CLASSBASE);
     } catch (Exception e) {
       LOG.error("setup failed ", e);
       throw e;

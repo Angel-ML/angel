@@ -3,7 +3,6 @@ package com.tencent.angel.ml.core.variable
 import java.util.concurrent.Future
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
-
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.{EvnContext, Graph}
 import com.tencent.angel.ml.core.utils.NotInitialException
@@ -52,6 +51,12 @@ trait TrainCycle {
     assert(state == from)
     state = to
   }
+
+  def setState(state: VarState): Unit = {
+    this.state = state
+  }
+
+  def getState: VarState = state
 }
 
 trait MatTrainCycle extends TrainCycle {
@@ -152,7 +157,6 @@ abstract class Variable(val name: String, val rowType: RowType, val updater: Upd
           transSate(VarState.Expired, VarState.Created)
         }
       }
-      doCreate(envCtx)
       assert(state == VarState.Created)
     } finally {
       writeLock.unlock()
@@ -187,15 +191,11 @@ abstract class Variable(val name: String, val rowType: RowType, val updater: Upd
     writeLock.lock()
 
     try {
-      if (state == VarState.New || state == VarState.Expired) {
+      if (state == VarState.Created) {
         doLoad(envCtx, path)
 
         // trans state
-        if (state == VarState.New) {
-          transSate(VarState.New, VarState.Initialized)
-        } else {
-          transSate(VarState.Expired, VarState.Initialized)
-        }
+        transSate(VarState.Created, VarState.Initialized)
       }
 
       assert(state == VarState.Initialized)

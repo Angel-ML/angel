@@ -25,7 +25,7 @@ import com.tencent.angel.ml.core.metric.LossMetric
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.optimizer.decayer.StepSizeScheduler
 import com.tencent.angel.ml.core.utils.ValidationUtils
-import com.tencent.angel.ml.core.{MLLearner, MLModel}
+import com.tencent.angel.ml.core.{AngelEvnContext, MLLearner, MLModel}
 import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.{Log, LogFactory}
@@ -41,6 +41,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
   // Init Graph Model
   val model: AngelModel = AngelModel(modelClassName, conf, ctx)
   model.buildNetwork()
+  model.createMatrices(AngelEvnContext(null))
   val graph: Graph = model.graph
   val ssScheduler: StepSizeScheduler = StepSizeScheduler(SharedConf.stepSizeScheduler, lr0)
   val decayOnBatch: Boolean = conf.getBoolean(MLCoreConf.ML_OPT_DECAY_ON_BATCH,
@@ -54,7 +55,13 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
       graph.feedData(iter.next())
 
       // LOG.info("start to pullParams ...")
-      model.pullParams(epoch)
+      if (graph.dataFormat.equalsIgnoreCase("dummy") ||
+        graph.dataFormat.equalsIgnoreCase("libsvm")) {
+        model.pullParams(epoch, graph.placeHolder.getIndices)
+      } else {
+        model.pullParams(epoch)
+      }
+
 
       // LOG.info("calculate to forward ...")
       loss = graph.calForward() // forward
@@ -149,10 +156,13 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
       globalMetrics.metric(AngelMLConf.TRAIN_LOSS, loss * trainDataSize)
       LOG.info(s"$epoch-th training finished! the trainCost is $trainCost")
 
-      LOG.info(s"Begin to validate in $epoch-th epoch")
       val startValid = System.currentTimeMillis()
-      validate(epoch, validationData)
+      if (validationData != null && validationData.size() > 0) {
+        LOG.info(s"Begin to validate in $epoch-th epoch")
+        validate(epoch, validationData)
+      }
       val validCost = System.currentTimeMillis() - startValid
+
 
       LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch success. " +
         s"epoch cost ${trainCost + validCost} ms." +
@@ -270,5 +280,9 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
   def validate(epoch: Int, valiData: DataBlock[LabeledData]): Unit = {
     val predList = model.predict(valiData)
     ValidationUtils.calMetrics(epoch, predList, graph.getLossFunc)
+
+    // Note: the data has feed in `model.predict(valiData)`
+    globalMetrics.metric(AngelMLConf.VALID_LOSS,
+      graph.getLossLayer.calLoss * valiData.size())
   }
 }

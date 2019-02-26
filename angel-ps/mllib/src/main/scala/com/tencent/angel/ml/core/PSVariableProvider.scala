@@ -8,19 +8,19 @@ import com.tencent.angel.ml.core.variable._
 class PSVariableProvider(implicit graph: Graph) extends VariableProvider {
   private val validIndexNum: Long = SharedConf.modelSize
 
-  override def getEmbedVariable(name: String, numRows: Int, numCols: Long, updater: Updater, formatClassName: String): EmbedVariable = {
-    new PSEmbedVariable(name, numRows, numCols, validIndexNum, updater,
-      RowTypeUtils.getDenseModelType(graph.modelType), formatClassName, true)
+  override def getEmbedVariable(name: String, numRows: Long, numCols: Long, updater: Updater, formatClassName: String): EmbedVariable = {
+    new PSEmbedVariable(name, numCols.toInt, numRows, validIndexNum, updater, graph.modelType,
+      formatClassName, true)
   }
 
-  override def getMatVariable(name: String, numRows: Int, numCols: Long, updater: Updater, formatClassName: String, allowPullWithIndex: Boolean): MatVariable = {
+  override def getMatVariable(name: String, numRows: Long, numCols: Long, updater: Updater, formatClassName: String, allowPullWithIndex: Boolean): MatVariable = {
     (graph.dataFormat, allowPullWithIndex) match {
       case ("dense", true) =>
-        new PSBlasMatVariable(name, numRows, numCols, updater, graph.modelType, formatClassName, allowPullWithIndex)
+        new PSBlasMatVariable(name, numRows.toInt, numCols, updater, graph.modelType, formatClassName, allowPullWithIndex)
       case ("libsvm" | "dummy", true) =>
-        new PSMatVariable(name, numRows, numCols, validIndexNum, updater, graph.modelType, formatClassName, allowPullWithIndex)
+        new PSMatVariable(name, numRows.toInt, numCols, validIndexNum, updater, graph.modelType, formatClassName, allowPullWithIndex)
       case (_, false) =>
-        new PSBlasMatVariable(name, numRows, numCols, updater,
+        new PSBlasMatVariable(name, numRows.toInt, numCols, updater,
           RowTypeUtils.getDenseModelType(graph.modelType), formatClassName, allowPullWithIndex)
       case (_, true) => throw MLException("dataFormat Error!")
     }

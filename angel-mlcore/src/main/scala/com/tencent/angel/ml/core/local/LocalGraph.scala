@@ -30,7 +30,7 @@ case class LocalEvnContext() extends EvnContext
 
 
 class LocalGraph(placeHolder: PlaceHolder, conf: SharedConf, override val taskNum: Int)
-  extends Graph(placeHolder, SharedConf.variableProvider()) with Serializable {
+  extends Graph(placeHolder, classOf[LocalVariableProvider].getName) with Serializable {
 
   val LOG: Log = LogFactory.getLog(classOf[LocalGraph])
   override val dataFormat: String = SharedConf.inputDataFormat

@@ -18,12 +18,11 @@
 
 package com.tencent.angel.ml.core.graphsubmit
 
-import java.io.File
-
 import com.tencent.angel.client.AngelClientFactory
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.utils.SConfHelper
+import com.tencent.angel.ml.core.variable.VarState
 import com.tencent.angel.ml.core.{AngelEvnContext, MLRunner}
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
@@ -42,26 +41,29 @@ class GraphRunner extends MLRunner with SConfHelper {
     val envCtx = AngelEvnContext(client)
     val sharedConf = initConf(conf)
 
+    val saveModelPath = sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH, "")
+    val loadModelPath = sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
+
     try {
       client.startPSServer()
 
       val modelClassName: String = SharedConf.modelClassName
       val model: AngelModel = AngelModel(modelClassName, conf)
-      val saveModelPath = sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH, "")
-      val loadModelPath = sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
-
       model.buildNetwork()
 
       model.createMatrices(envCtx)
       if (!loadModelPath.isEmpty) {
         model.loadModel(envCtx, loadModelPath)
+      } else {
+        model.setState(VarState.Initialized)
       }
 
       client.runTask(classOf[GraphTrainTask])
       client.waitForCompletion()
 
-      if (!saveModelPath.isEmpty)
+      if (!saveModelPath.isEmpty) {
         model.saveModel(envCtx, saveModelPath)
+      }
     } finally {
       client.stop()
     }
@@ -77,15 +79,15 @@ class GraphRunner extends MLRunner with SConfHelper {
     val envCtx = AngelEvnContext(client)
     val sharedConf = initConf(conf)
 
+    val loadModelPath = sharedConf.getString(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
+    assert(!loadModelPath.isEmpty)
+
     try {
       client.startPSServer()
 
       val modelClassName: String = SharedConf.modelClassName
       val model: AngelModel = AngelModel(modelClassName, conf)
       model.buildNetwork()
-
-      val loadModelPath = sharedConf.getString(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
-      assert(!loadModelPath.isEmpty)
 
       model.createMatrices(envCtx)
       model.loadModel(envCtx, loadModelPath)

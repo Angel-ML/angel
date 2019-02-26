@@ -3,6 +3,7 @@ package com.tencent.angel.ml.core.variable
 import java.util.concurrent
 
 import com.tencent.angel.ml.core.network.{EvnContext, Graph}
+import com.tencent.angel.ml.core.variable.VarState.VarState
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.matrix.Matrix
 
@@ -49,6 +50,17 @@ class VariableManager(isSparseFormat: Boolean) {
     slots.contains(gradName)
   }
 
+  def setAllState(state: VarState): Unit = {
+    variables.values().foreach{ variable => variable.setState(state)}
+  }
+
+  def setState(name: String, state: VarState): Unit = {
+    val variable = getVariable(name)
+
+    if (variable != null) {
+      variable.setState(state)
+    }
+  }
 
   /** **********************************************************************************
     * Variable operation

@@ -143,7 +143,9 @@ public class AngelPSClient {
    * @throws AngelException
    */
   public void save(ModelSaveContext saveContext) throws AngelException {
-    client.save(saveContext);
+    Boolean deleteExistsFile = conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
+        AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST);
+    client.save(saveContext, deleteExistsFile);
   }
 
   public void load(ModelLoadContext loadContext) {

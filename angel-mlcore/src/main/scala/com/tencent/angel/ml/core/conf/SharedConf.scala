@@ -379,16 +379,7 @@ object SharedConf {
   def posnegRatio(): Double = {
     get()
 
-    sc.getDouble(MLCoreConf.ML_DATA_POSNEG_RATIO,
-      MLCoreConf.DEFAULT_ML_DATA_POSNEG_RATIO)
-  }
-
-  def variableProvider(): String = {
-    get()
-
-    sc.getString(MLCoreConf.ML_MODEL_VARIABLE_PROVIDER,
-      MLCoreConf.DEFAULT_ML_MODEL_VARIABLE_PROVIDER
-    )
+    sc.getDouble(MLCoreConf.ML_DATA_POSNEG_RATIO, MLCoreConf.DEFAULT_ML_DATA_POSNEG_RATIO)
   }
 
   def optJsonProvider(): String = {
@@ -409,7 +400,7 @@ object SharedConf {
   def stepSizeScheduler: String = {
     get()
 
-    sc.get(MLCoreConf.ML_DATA_STORAGE_LEVEL,
-      MLCoreConf.DEFAULT_ML_DATA_STORAGE_LEVEL)
+    sc.get(MLCoreConf.ML_OPT_DECAY_CLASS_NAME,
+      MLCoreConf.DEFAULT_ML_OPT_DECAY_CLASS_NAME)
   }
 }

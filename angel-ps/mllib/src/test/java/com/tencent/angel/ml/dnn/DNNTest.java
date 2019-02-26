@@ -19,6 +19,7 @@
 package com.tencent.angel.ml.dnn;
 
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.ml.core.PSOptimizerProvider;
 import com.tencent.angel.ml.core.conf.MLCoreConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
 import org.apache.commons.logging.Log;
@@ -36,7 +37,7 @@ public class DNNTest {
   private Configuration conf = new Configuration();
   private static final Log LOG = LogFactory.getLog(DNNTest.class);
   private static String LOCAL_FS = FileSystem.DEFAULT_FS;
-  private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.";
+  private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.AngelModel";
   private static String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
 
   static {
@@ -55,6 +56,7 @@ public class DNNTest {
       conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
       conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
       conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
+      conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
 
       //set angel resource parameters #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
@@ -70,7 +72,7 @@ public class DNNTest {
 
       String angelConfFile = "./src/test/jsons/dnn.json";
       conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
-      conf.set(MLCoreConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "GraphModel");
+      conf.set(MLCoreConf.ML_MODEL_CLASS_NAME(), CLASSBASE);
 
     } catch (Exception x) {
       LOG.error("setup failed ", x);

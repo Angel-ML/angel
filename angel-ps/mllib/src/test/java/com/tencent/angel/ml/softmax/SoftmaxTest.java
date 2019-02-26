@@ -19,6 +19,7 @@
 package com.tencent.angel.ml.softmax;
 
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.ml.core.PSOptimizerProvider;
 import com.tencent.angel.ml.core.conf.MLCoreConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
 import com.tencent.angel.ml.math2.utils.RowType;
@@ -38,7 +39,7 @@ public class SoftmaxTest {
   private Configuration conf = new Configuration();
   private static final Log LOG = LogFactory.getLog(SoftmaxTest.class);
   private static String LOCAL_FS = FileSystem.DEFAULT_FS;
-  private static String CLASSBASE = "com.tencent.angel.ml.classification.";
+  private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.AngelModel";
   private static String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
 
   static {
@@ -80,6 +81,7 @@ public class SoftmaxTest {
       conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
       conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
       conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
+      conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
 
       // Set data format
       conf.set(MLCoreConf.ML_DATA_INPUT_FORMAT(), dataFmt);
@@ -100,7 +102,10 @@ public class SoftmaxTest {
       conf.setLong(MLCoreConf.ML_MODEL_SIZE(), featureNum);
       conf.setInt(MLCoreConf.ML_NUM_CLASS(), classNum);
       conf.setBoolean(MLCoreConf.ML_DATA_USE_SHUFFLE(), true);
-      conf.set(MLCoreConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "SoftmaxRegression");
+      conf.set(MLCoreConf.ML_MODEL_CLASS_NAME(), CLASSBASE);
+
+      String angelConfFile = "./src/test/jsons/softmax.json";
+      conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;

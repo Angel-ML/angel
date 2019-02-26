@@ -83,8 +83,6 @@ object MLCoreConf {
   val DEFAULT_ML_MODEL_TYPE = RowType.T_FLOAT_DENSE.toString
   val ML_MODEL_IS_CLASSIFICATION = "ml.model.is.classification"
   val DEFAULT_ML_MODEL_IS_CLASSIFICATION = true
-  val ML_MODEL_VARIABLE_PROVIDER = "ml.model.variable.provider"
-  val DEFAULT_ML_MODEL_VARIABLE_PROVIDER = classOf[LocalVariableProvider].getCanonicalName
 
   val ML_EPOCH_NUM = "ml.epoch.num"
   val DEFAULT_ML_EPOCH_NUM = 10
@@ -175,6 +173,9 @@ object MLCoreConf {
   // (MLP) Layer params
   val ML_FCLAYER_PARAMS = "ml.fclayer.params"
   val DEFAULT_ML_FCLAYER_PARAMS = "100:relu:momentum|100::relu:momentum|1:identity:momentum"
+
+  val ML_ROBUSTREGRESSION_LOSS_DELTA = "ml.robustregression.loss.delta"
+  val DEFAULT_ML_ROBUSTREGRESSION_LOSS_DELTA = 1.0
 
 }
 

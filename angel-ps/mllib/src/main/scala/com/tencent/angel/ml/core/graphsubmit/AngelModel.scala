@@ -18,6 +18,7 @@
 
 package com.tencent.angel.ml.core.graphsubmit
 
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.{AngelGraph, GraphModel, PredictResult}
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.data.DataBlock
@@ -29,15 +30,22 @@ import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 
+import scala.reflect.runtime.{universe => ru}
 
-class AngelModel(conf: Configuration, _ctx: TaskContext = null) extends GraphModel {
-  val sharedConf: SharedConf = SharedConf.get()
-  val batchSize: Int = SharedConf.batchSize
-  val blockSize: Int = SharedConf.blockSize
-  val dataFormat: String = SharedConf.inputDataFormat
+class AngelModel(conf: Configuration, _ctx: TaskContext) extends GraphModel {
+  lazy val sharedConf: SharedConf = SharedConf.get()
+  lazy val batchSize: Int = SharedConf.batchSize
+  lazy val blockSize: Int = SharedConf.blockSize
+  lazy val dataFormat: String = SharedConf.inputDataFormat
 
-  implicit lazy val graph: Graph = new AngelGraph(new PlaceHolder(sharedConf), sharedConf,
-    _ctx.getTotalTaskNum)
+  implicit lazy val graph: Graph = if (_ctx!= null) {
+    new AngelGraph(new PlaceHolder(sharedConf), sharedConf, _ctx.getTotalTaskNum)
+  } else {
+    val totalTaskNum: Int = sharedConf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER,
+      AngelConf.DEFAULT_ANGEL_WORKERGROUP_NUMBER) * sharedConf.getInt(
+      AngelConf.ANGEL_TASK_ACTUAL_NUM, default = 1)
+    new AngelGraph(new PlaceHolder(sharedConf), sharedConf, totalTaskNum)
+  }
 
   def lossFunc: LossFunc = graph.getLossFunc
 
@@ -53,42 +61,41 @@ class AngelModel(conf: Configuration, _ctx: TaskContext = null) extends GraphMod
     */
   // def predict(storage: DataBlock[LabeledData]): List[PredictResult]
   override def predict(storage: DataBlock[LabeledData]): List[PredictResult] = {
-    val resData = new Array[PredictResult](storage.size())
-      // new MemoryDataBlock[PredictResult](storage.size())
+    // new MemoryDataBlock[PredictResult](storage.size())
 
-    var count: Int = 0
-    while (count < storage.size()) {
-      val numSamples = if (count + batchSize <= storage.size()) {
-        batchSize
-      } else {
-        storage.size() - count
-      }
-      val batchData = new Array[LabeledData](numSamples)
-      graph.feedData(batchData)
+    val numSamples = storage.size()
+    val batchData = new Array[LabeledData](numSamples)
+    (0 until numSamples).foreach{idx => batchData(idx) = storage.loopingRead()}
+    graph.feedData(batchData)
 
-      (0 until numSamples).foreach {
-        idx => batchData(idx) = storage.loopingRead()
-      }
-
-      val predicted = graph.predict()
-      (0 until numSamples).foreach { resIdx =>
-        resData(count) = predicted(resIdx)
-        count += 1
-      }
+    if (graph.asInstanceOf[AngelGraph].isSparseFormat) {
+      pullParams(-1, graph.placeHolder.getIndices)
+    } else {
+      pullParams(-1)
     }
 
-    resData.toList
+    graph.predict()
   }
 }
 
 object AngelModel {
   def apply(className: String, conf: Configuration): AngelModel = {
+//    val rtMirror = ru.runtimeMirror(getClass.getClassLoader)
+//
+//    val clsType = ru.typeOf[AngelModel]
+//    val angelModel  = clsType.typeSymbol.asClass
+//    val clsMirror = rtMirror.reflectClass(angelModel)
+//
+//    val ctor = clsType.decl(ru.termNames.CONSTRUCTOR).asMethod
+//    val ctorm = clsMirror.reflectConstructor(ctor)
+//
+//    ctorm(conf, null).asInstanceOf[AngelModel]
     val cls = Class.forName(className)
     val cstr = cls.getConstructor(classOf[Configuration], classOf[TaskContext])
     cstr.newInstance(conf, null).asInstanceOf[AngelModel]
   }
 
-  def apply(className: String, conf: Configuration, ctx: TaskContext = null): AngelModel = {
+  def apply(className: String, conf: Configuration, ctx: TaskContext): AngelModel = {
     val cls = Class.forName(className)
     val cstr = cls.getConstructor(classOf[Configuration], classOf[TaskContext])
     cstr.newInstance(conf, ctx).asInstanceOf[AngelModel]

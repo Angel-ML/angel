@@ -38,6 +38,7 @@ object GlobalKeys {
   val useShuffle: String = "useshuffle"
   val posnegRatio: String = "posnegratio"
   val transLabel: String = "translabel"
+  val numClass: String = "numclass"
   val loadPath: String = "loadpath"
   val savePath: String = "savepath"
   val modelType: String = "modeltype"
@@ -58,7 +59,8 @@ class DataParams(val path: Option[String],
                  val sampleRatio: Option[Double],
                  val useShuffle: Option[Boolean],
                  val posnegRatio: Option[Double],
-                 val transLabel: Option[String]
+                 val transLabel: Option[String],
+                 val numclass: Option[Int]
                 ) {
   def updateConf(conf: SharedConf): Unit = {
     path.foreach(v => conf.set(MLCoreConf.ML_TRAIN_DATA_PATH, v))
@@ -70,6 +72,7 @@ class DataParams(val path: Option[String],
     useShuffle.foreach(v => conf.setBoolean(MLCoreConf.ML_DATA_USE_SHUFFLE, v))
     posnegRatio.foreach(v => conf.setDouble(MLCoreConf.ML_DATA_POSNEG_RATIO, v))
     transLabel.foreach(v => conf.setString(MLCoreConf.ML_DATA_LABEL_TRANS, v))
+    numclass.foreach(v => conf.setInt(MLCoreConf.ML_NUM_CLASS, v))
   }
 }
 
@@ -78,7 +81,7 @@ object DataParams {
 
   def apply(json: JValue): DataParams = {
     json match {
-      case JNothing => new DataParams(None, None, None, None, None, None, None, None, None)
+      case JNothing => new DataParams(None, None, None, None, None, None, None, None, None, None)
       case jast: JValue =>
         new DataParams(
           extract[String](jast, GlobalKeys.path),
@@ -89,7 +92,8 @@ object DataParams {
           extract[Double](jast, GlobalKeys.sampleRatio),
           extract[Boolean](jast, GlobalKeys.useShuffle),
           extract[Double](jast, GlobalKeys.posnegRatio),
-          extract[String](jast, GlobalKeys.transLabel)
+          extract[String](jast, GlobalKeys.transLabel),
+          extract[Int](jast, GlobalKeys.numClass)
         )
     }
   }

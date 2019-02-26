@@ -3,6 +3,7 @@ package com.tencent.angel.ml.core.variable
 import java.lang.{Long => JLong}
 import java.util.{Map => JMap}
 
+import com.tencent.angel.matrix.psf.update.RandomNormal
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.math2.matrix.{MapMatrix, Matrix}
 import com.tencent.angel.ml.math2.utils.RowType
@@ -20,8 +21,6 @@ class PSEmbedVariable(name: String, numRows: Int, numCols: Long, validIndexNum: 
   private var embeddings: JMap[JLong, Vector] = _
 
   protected override def doPull(epoch: Int, indices: Vector = null): Unit = {
-    embeddings.clear()
-
     // step 1: pull embedding
     val param = if (epoch == 0) {
       val initFunc = new RandomNormalInitFunc(mean, stddev)
@@ -33,6 +32,8 @@ class PSEmbedVariable(name: String, numRows: Int, numCols: Long, validIndexNum: 
     val func = new GetColsFunc(param)
     val result = PSAgentContext.get.getUserRequestAdapter.get(func).asInstanceOf[GetColsResult]
     embeddings = result.results
+
+    matrix = EmbedUtils.geneMatrix(graph, embeddings)
   }
 
   protected override def doPush(grad: Matrix, alpha: Double): Unit = {

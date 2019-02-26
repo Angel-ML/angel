@@ -116,7 +116,7 @@ public interface AngelClientInterface {
    * @param context model save context
    * @throws AngelException
    */
-  void save(ModelSaveContext context) throws AngelException;
+  void save(ModelSaveContext context, Boolean deleteExistFile) throws AngelException;
 
   /**
    * Stop the whole application.

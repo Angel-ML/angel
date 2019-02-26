@@ -19,6 +19,7 @@
 package com.tencent.angel.ml.logisticregression;
 
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.ml.core.PSOptimizerProvider;
 import com.tencent.angel.ml.core.conf.MLCoreConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
 import org.apache.commons.logging.Log;
@@ -37,7 +38,7 @@ public class LRTest {
   private Configuration conf = new Configuration();
   private static final Log LOG = LogFactory.getLog(LRTest.class);
   private static String LOCAL_FS = FileSystem.DEFAULT_FS;
-  private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.";
+  private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.AngelModel";
   private static String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
 
   static {
@@ -84,6 +85,7 @@ public class LRTest {
       conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
       conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
       conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
+      conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
 
       //set angel resource parameters #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
@@ -101,7 +103,7 @@ public class LRTest {
       conf.setLong(MLCoreConf.ML_MODEL_SIZE(), 123);
       conf.set(MLCoreConf.ML_INPUTLAYER_OPTIMIZER(), optimizer);
       // conf.setDouble(MLConf.ML_DATA_POSNEG_RATIO(), posnegRatio);
-      conf.set(MLCoreConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "GraphModel");
+      conf.set(MLCoreConf.ML_MODEL_CLASS_NAME(), CLASSBASE);
       conf.setStrings(AngelConf.ANGEL_ML_CONF, jsonFile);
     } catch (Exception x) {
       LOG.error("setup failed ", x);
@@ -112,7 +114,7 @@ public class LRTest {
   @Test public void testLR() throws Exception {
     setConf();
     trainTest();
-    // predictTest();
+    predictTest();
   }
 
   private void trainTest() throws Exception {

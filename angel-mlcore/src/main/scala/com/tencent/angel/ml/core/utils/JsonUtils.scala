@@ -66,7 +66,7 @@ object OptimizerKeys {
 
 object JsonUtils {
   private implicit val formats: DefaultFormats.type = DefaultFormats
-  private val optimizerProvider = Optimizer.getOptimizerProvider(SharedConf.optJsonProvider())
+  private lazy val optimizerProvider = Optimizer.getOptimizerProvider(SharedConf.optJsonProvider())
 
   def extract[T: Manifest](jast: JValue, key: String, default: Option[T] = None): Option[T] = {
     jast \ key match {

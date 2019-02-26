@@ -2,6 +2,7 @@ package com.tencent.angel.ml.core
 
 import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.core.network.EvnContext
+import com.tencent.angel.ml.core.variable.VarState.VarState
 import com.tencent.angel.ml.core.variable.{Variable, VariableManager}
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.utils.LabeledData
@@ -76,6 +77,10 @@ abstract class MLModel {
 
   def loadModel(envCtx: EvnContext, path: String): Unit = {
     variableManager.loadALL(envCtx, path)
+  }
+
+  def setState(state: VarState): Unit = {
+    variableManager.setAllState(state)
   }
 
   def saveModel(envCtx: EvnContext, path: String): Unit = {

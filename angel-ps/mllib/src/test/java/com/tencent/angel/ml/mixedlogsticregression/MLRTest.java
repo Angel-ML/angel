@@ -19,6 +19,7 @@
 package com.tencent.angel.ml.mixedlogsticregression;
 
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.ml.core.PSOptimizerProvider;
 import com.tencent.angel.ml.core.conf.AngelMLConf;
 import com.tencent.angel.ml.core.conf.MLCoreConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
@@ -39,7 +40,7 @@ public class MLRTest {
   private Configuration conf = new Configuration();
   private static final Log LOG = LogFactory.getLog(MLRTest.class);
   private static String LOCAL_FS = FileSystem.DEFAULT_FS;
-  private static String CLASSBASE = "com.tencent.angel.ml.classification.";
+  private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.AngelModel";
   private static String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
 
   static {
@@ -84,6 +85,7 @@ public class MLRTest {
       conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
       conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
       conf.setInt(AngelMLConf.ML_MLR_RANK(), 3);
+      conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
 
       // Set data format
       conf.set(MLCoreConf.ML_DATA_INPUT_FORMAT(), dataFmt);
@@ -103,7 +105,11 @@ public class MLRTest {
       conf.set(MLCoreConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
       conf.set(MLCoreConf.ML_REG_L2(), String.valueOf(reg));
       conf.setLong(MLCoreConf.ML_MODEL_SIZE(), featureNum);
-      conf.set(MLCoreConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "MixedLogisticRegression");
+      conf.set(MLCoreConf.ML_MODEL_CLASS_NAME(), CLASSBASE);
+
+      String angelConfFile = "./src/test/jsons/mixedlr.json";
+      conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
+
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;
@@ -141,11 +147,11 @@ public class MLRTest {
 
   private void predictTest() throws Exception {
     try {
-      String inputPath = "../../data/a9a/a9a_123d_test.dummy";
+      String inputPath = "../../data/a9a/a9a_123d_test.libsvm";
       String loadPath = LOCAL_FS + TMP_PATH + "/MLR";
       String predictPath = LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict";
 
-      conf.set(MLCoreConf.ML_DATA_INPUT_FORMAT(), "dummy");
+      conf.set(MLCoreConf.ML_DATA_INPUT_FORMAT(), "libsvm");
 
       // Set trainning data path
       conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);

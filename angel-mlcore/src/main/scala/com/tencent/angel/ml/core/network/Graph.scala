@@ -191,47 +191,6 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
 
   def hasGradient(name: String): Boolean = variableManager.hasSlot(name)
 
-//  //---------------------Training Cycle
-//  def createMatrices(envCtx: EvnContext): Unit = {
-//    val start = System.currentTimeMillis()
-//    variableManager.createALL(envCtx)
-//    val end = System.currentTimeMillis()
-//
-//    timeStats.createTime += end - start
-//  }
-//
-//  def init(taskId: Int = 0): Unit = {
-//    val start = System.currentTimeMillis()
-//    variableManager.initALL(taskId)
-//    val end = System.currentTimeMillis()
-//
-//    timeStats.initTime += end - start
-//  }
-//
-//  def pullParams(epoch: Int): Unit = {
-//    val start = System.currentTimeMillis()
-//    variableManager.pullALL(epoch)
-//    val end = System.currentTimeMillis()
-//
-//    timeStats.pullParamsTime += end - start
-//  }
-//
-//  def pushGradient(): Unit = {
-//    val start = System.currentTimeMillis()
-//    variableManager.pushALL(lr)
-//    val end = System.currentTimeMillis()
-//
-//    timeStats.pushParamsTime += end - start
-//  }
-//
-//  def update[T](epoch: Int, batchSize: Int): Unit = {
-//    val start = System.currentTimeMillis()
-//    variableManager.updateALL[T](epoch, batchSize)
-//    val end = System.currentTimeMillis()
-//
-//    timeStats.updateTime += end - start
-//  }
-
   /** **********************************************************************************
     * Matrix Cache
     */

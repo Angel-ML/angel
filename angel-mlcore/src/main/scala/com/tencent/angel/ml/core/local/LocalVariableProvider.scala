@@ -6,19 +6,19 @@ import com.tencent.angel.ml.core.variable._
 import com.tencent.angel.ml.core.utils.{MLException, RowTypeUtils}
 
 class LocalVariableProvider(implicit graph: Graph) extends VariableProvider {
-  override def getEmbedVariable(name: String, numRows: Int, numCols: Long, updater: Updater, formatClassName: String): EmbedVariable = {
-    new LocalEmbedVariable(name, numRows, numCols, updater,
+  override def getEmbedVariable(name: String, numRows: Long, numCols: Long, updater: Updater, formatClassName: String): EmbedVariable = {
+    new LocalEmbedVariable(name, numRows.toInt, numCols, updater,
       RowTypeUtils.getDenseModelType(graph.modelType), formatClassName, true)
   }
 
-  override def getMatVariable(name: String, numRows: Int, numCols: Long, updater: Updater, formatClassName: String, allowPullWithIndex: Boolean): MatVariable = {
+  override def getMatVariable(name: String, numRows: Long, numCols: Long, updater: Updater, formatClassName: String, allowPullWithIndex: Boolean): MatVariable = {
     (graph.dataFormat, allowPullWithIndex) match {
       case ("dense", true) =>
-        new LocalBlasMatVariable(name, numRows, numCols, updater, graph.modelType, formatClassName, allowPullWithIndex)
+        new LocalBlasMatVariable(name, numRows.toInt, numCols, updater, graph.modelType, formatClassName, allowPullWithIndex)
       case ("libsvm"| "dummy", true) =>
-        new LocalMatVariable(name, numRows, numCols, updater, graph.modelType, formatClassName, allowPullWithIndex)
+        new LocalMatVariable(name, numRows.toInt, numCols, updater, graph.modelType, formatClassName, allowPullWithIndex)
       case (_, false) =>
-        new LocalBlasMatVariable(name, numRows, numCols, updater,
+        new LocalBlasMatVariable(name, numRows.toInt, numCols, updater,
           RowTypeUtils.getDenseModelType(graph.modelType), formatClassName, allowPullWithIndex)
       case (_, true) => throw MLException("dataFormat Error!")
     }
