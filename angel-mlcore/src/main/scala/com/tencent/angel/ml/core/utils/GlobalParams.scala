@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ml.core.utils
 
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import org.json4s.DefaultFormats
 import org.json4s.JsonAST.{JNothing, JValue}
 import com.tencent.angel.ml.core.utils.JsonUtils.extract
@@ -38,6 +38,7 @@ object GlobalKeys {
   val useShuffle: String = "useshuffle"
   val posnegRatio: String = "posnegratio"
   val transLabel: String = "translabel"
+  val numClass: String = "numclass"
   val loadPath: String = "loadpath"
   val savePath: String = "savepath"
   val modelType: String = "modeltype"
@@ -58,18 +59,20 @@ class DataParams(val path: Option[String],
                  val sampleRatio: Option[Double],
                  val useShuffle: Option[Boolean],
                  val posnegRatio: Option[Double],
-                 val transLabel: Option[String]
+                 val transLabel: Option[String],
+                 val numclass: Option[Int]
                 ) {
   def updateConf(conf: SharedConf): Unit = {
-    path.foreach(v => conf.set(MLConf.ML_TRAIN_DATA_PATH, v))
-    format.foreach(v => conf.set(MLConf.ML_DATA_INPUT_FORMAT, v))
-    indexRange.foreach(v => conf.setLong(MLConf.ML_FEATURE_INDEX_RANGE, v))
-    numField.foreach(v => conf.setInt(MLConf.ML_FIELD_NUM, v))
-    validateRatio.foreach(v => conf.setDouble(MLConf.ML_VALIDATE_RATIO, v))
-    sampleRatio.foreach(v => conf.setDouble(MLConf.ML_BATCH_SAMPLE_RATIO, v))
-    useShuffle.foreach(v => conf.setBoolean(MLConf.ML_DATA_USE_SHUFFLE, v))
-    posnegRatio.foreach(v => conf.setDouble(MLConf.ML_DATA_POSNEG_RATIO, v))
-    transLabel.foreach(v => conf.setString(MLConf.ML_DATA_LABEL_TRANS, v))
+    path.foreach(v => conf.set(MLCoreConf.ML_TRAIN_DATA_PATH, v))
+    format.foreach(v => conf.set(MLCoreConf.ML_DATA_INPUT_FORMAT, v))
+    indexRange.foreach(v => conf.setLong(MLCoreConf.ML_FEATURE_INDEX_RANGE, v))
+    numField.foreach(v => conf.setInt(MLCoreConf.ML_FIELD_NUM, v))
+    validateRatio.foreach(v => conf.setDouble(MLCoreConf.ML_VALIDATE_RATIO, v))
+    sampleRatio.foreach(v => conf.setDouble(MLCoreConf.ML_BATCH_SAMPLE_RATIO, v))
+    useShuffle.foreach(v => conf.setBoolean(MLCoreConf.ML_DATA_USE_SHUFFLE, v))
+    posnegRatio.foreach(v => conf.setDouble(MLCoreConf.ML_DATA_POSNEG_RATIO, v))
+    transLabel.foreach(v => conf.setString(MLCoreConf.ML_DATA_LABEL_TRANS, v))
+    numclass.foreach(v => conf.setInt(MLCoreConf.ML_NUM_CLASS, v))
   }
 }
 
@@ -78,7 +81,7 @@ object DataParams {
 
   def apply(json: JValue): DataParams = {
     json match {
-      case JNothing => new DataParams(None, None, None, None, None, None, None, None, None)
+      case JNothing => new DataParams(None, None, None, None, None, None, None, None, None, None)
       case jast: JValue =>
         new DataParams(
           extract[String](jast, GlobalKeys.path),
@@ -89,7 +92,8 @@ object DataParams {
           extract[Double](jast, GlobalKeys.sampleRatio),
           extract[Boolean](jast, GlobalKeys.useShuffle),
           extract[Double](jast, GlobalKeys.posnegRatio),
-          extract[String](jast, GlobalKeys.transLabel)
+          extract[String](jast, GlobalKeys.transLabel),
+          extract[Int](jast, GlobalKeys.numClass)
         )
     }
   }
@@ -101,11 +105,11 @@ class TrainParams(val epoch: Option[Int],
                   val lr: Option[Double],
                   val decay: Option[Double]) {
   def updateConf(conf: SharedConf): Unit = {
-    epoch.foreach(v => conf.setInt(MLConf.ML_EPOCH_NUM, v))
-    numUpdatePerEpoch.foreach(v => conf.setInt(MLConf.ML_NUM_UPDATE_PER_EPOCH, v))
-    batchSize.foreach(v => conf.setInt(MLConf.ML_MINIBATCH_SIZE, v))
-    lr.foreach(v => conf.setDouble(MLConf.ML_LEARN_RATE, v))
-    decay.foreach(v => conf.setDouble(MLConf.ML_LEARN_DECAY, v))
+    epoch.foreach(v => conf.setInt(MLCoreConf.ML_EPOCH_NUM, v))
+    numUpdatePerEpoch.foreach(v => conf.setInt(MLCoreConf.ML_NUM_UPDATE_PER_EPOCH, v))
+    batchSize.foreach(v => conf.setInt(MLCoreConf.ML_MINIBATCH_SIZE, v))
+    lr.foreach(v => conf.setDouble(MLCoreConf.ML_LEARN_RATE, v))
+    decay.foreach(v => conf.setDouble(MLCoreConf.ML_LEARN_DECAY, v))
   }
 }
 
@@ -133,11 +137,11 @@ class ModelParams(val loadPath: Option[String],
                   val modelSize: Option[Long],
                   val blockSize: Option[Int]) {
   def updateConf(conf: SharedConf): Unit = {
-    loadPath.foreach(v => conf.set(MLConf.ML_LOAD_MODEL_PATH, v))
-    savePath.foreach(v => conf.set(MLConf.ML_SAVE_MODEL_PATH, v))
-    modelType.foreach(v => conf.set(MLConf.ML_MODEL_TYPE, v))
-    modelSize.foreach(v => conf.setLong(MLConf.ML_MODEL_SIZE, v))
-    blockSize.foreach(v => conf.setInt(MLConf.ML_BLOCK_SIZE, v))
+    loadPath.foreach(v => conf.set(MLCoreConf.ML_LOAD_MODEL_PATH, v))
+    savePath.foreach(v => conf.set(MLCoreConf.ML_SAVE_MODEL_PATH, v))
+    modelType.foreach(v => conf.set(MLCoreConf.ML_MODEL_TYPE, v))
+    modelSize.foreach(v => conf.setLong(MLCoreConf.ML_MODEL_SIZE, v))
+    blockSize.foreach(v => conf.setInt(MLCoreConf.ML_BLOCK_SIZE, v))
   }
 }
 

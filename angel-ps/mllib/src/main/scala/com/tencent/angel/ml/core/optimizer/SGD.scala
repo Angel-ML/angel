@@ -20,26 +20,44 @@ package com.tencent.angel.ml.core.optimizer
 
 import java.util.concurrent.Future
 
-import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
-import com.tencent.angel.ml.psf.optimizer.{PGDUpdateFunc, SGDUpdateFunc}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.core.utils.JsonUtils.fieldEqualClassName
+import com.tencent.angel.ml.core.utils.OptimizerKeys
+import com.tencent.angel.ml.core.variable.{PSVariable, Variable}
+import com.tencent.angel.ml.psf.optimizer.PGDUpdateFunc
 import com.tencent.angel.psagent.PSAgentContext
+import org.apache.commons.logging.LogFactory
+import org.json4s.JsonAST.{JField, JObject, JString}
 
-class SGD(override val stepSize: Double) extends GradientDescent(stepSize) {
+class SGD(override var lr: Double) extends Optimizer {
+  private val LOG = LogFactory.getLog(classOf[SGD])
 
-  override def update(matrixId: Int, numFactors: Int, epoch: Int = 0) : Future[VoidResult] = {
+  override val numSlot: Int = 0
 
-    if (regL1Param == 0.0) {
-      // l2 regularization
-      val func = new SGDUpdateFunc(matrixId, numFactors, lr, regL2Param)
-      PSAgentContext.get().getUserRequestAdapter.update(func)
-    } else {
-      // l1 regularization
-      val func = new PGDUpdateFunc(matrixId, numFactors, lr, regL1Param, regL2Param)
-      PSAgentContext.get().getUserRequestAdapter.update(func)
-    }
+  override def update[T](variable: Variable, epoch: Int, batchSize: Int = 1): Future[T] = {
+    val matrixId = variable.asInstanceOf[PSVariable].getMatrixId
+    val func = new PGDUpdateFunc(matrixId, variable.asInstanceOf[PSVariable].numFactors,
+      lr, regL1Param, regL2Param, batchSize)
+    PSAgentContext.get().getUserRequestAdapter.update(func).asInstanceOf[Future[T]]
   }
 
   override def toString: String = {
     s"SGD lr=$lr regL2=$regL2Param regL1=$regL1Param"
+  }
+
+  override def toJson: JObject = {
+    JObject(JField(OptimizerKeys.typeKey, JString(s"${this.getClass.getSimpleName}")))
+  }
+}
+
+
+object SGD {
+  private val conf: SharedConf = SharedConf.get()
+
+  def fromJson(jast: JObject): SGD = {
+    assert(fieldEqualClassName[SGD](jast, OptimizerKeys.typeKey))
+
+    val lr = conf.getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)
+    new SGD(lr)
   }
 }

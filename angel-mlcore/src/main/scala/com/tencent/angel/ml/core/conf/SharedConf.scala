@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.core.conf
 
 
-import com.tencent.angel.ml.core.utils.{JsonUtils, MLException, RowTypeUtils}
+import com.tencent.angel.ml.core.utils.{MLException, RowTypeUtils}
 import com.tencent.angel.ml.math2.utils.RowType
 import org.apache.commons.logging.LogFactory
 import org.json4s.JsonAST.JObject
@@ -31,7 +31,7 @@ class SharedConf private() extends Serializable {
   private val dataMap: mutable.HashMap[String, String] = mutable.HashMap[String, String]()
   private var graphJson: JObject = _
 
-  def apply(key: String): String = {
+  def apply(key: String): String = synchronized {
     if (dataMap.contains(key)) {
       dataMap(key)
     } else {
@@ -39,20 +39,20 @@ class SharedConf private() extends Serializable {
     }
   }
 
-  def update(key: String, value: String): SharedConf = {
+  def update(key: String, value: String): SharedConf = synchronized {
     dataMap(key) = value
     this
   }
 
-  def hasKey(key: String): Boolean = {
+  def hasKey(key: String): Boolean = synchronized {
     dataMap.contains(key)
   }
 
-  def allKeys(): List[String] = {
+  def allKeys(): List[String] = synchronized {
     dataMap.keys.toList
   }
 
-  def get(key: String): String = {
+  def get(key: String): String = synchronized {
     if (dataMap.contains(key)) {
       dataMap(key)
     } else {
@@ -60,7 +60,7 @@ class SharedConf private() extends Serializable {
     }
   }
 
-  def get(key: String, default: String): String = {
+  def get(key: String, default: String): String = synchronized {
     if (dataMap.contains(key)) {
       dataMap(key)
     } else {
@@ -68,7 +68,7 @@ class SharedConf private() extends Serializable {
     }
   }
 
-  def getBoolean(key: String, default: Boolean): Boolean = {
+  def getBoolean(key: String, default: Boolean): Boolean = synchronized {
     if (dataMap.contains(key)) {
       dataMap(key).toBoolean
     } else {
@@ -77,7 +77,7 @@ class SharedConf private() extends Serializable {
     }
   }
 
-  def getInt(key: String, default: Int): Int = {
+  def getInt(key: String, default: Int): Int = synchronized {
     if (dataMap.contains(key)) {
       dataMap(key).toInt
     } else {
@@ -86,7 +86,7 @@ class SharedConf private() extends Serializable {
     }
   }
 
-  def getLong(key: String, default: Long): Long = {
+  def getLong(key: String, default: Long): Long = synchronized {
     if (dataMap.contains(key)) {
       dataMap(key).toLong
     } else {
@@ -95,7 +95,7 @@ class SharedConf private() extends Serializable {
     }
   }
 
-  def getFloat(key: String, default: Float): Float = {
+  def getFloat(key: String, default: Float): Float = synchronized {
     if (dataMap.contains(key)) {
       dataMap(key).toFloat
     } else {
@@ -104,7 +104,7 @@ class SharedConf private() extends Serializable {
     }
   }
 
-  def getDouble(key: String, default: Double): Double = {
+  def getDouble(key: String, default: Double): Double = synchronized {
     if (dataMap.contains(key)) {
       dataMap(key).toDouble
     } else {
@@ -113,7 +113,7 @@ class SharedConf private() extends Serializable {
     }
   }
 
-  def getString(key: String, default: String): String = {
+  def getString(key: String, default: String): String = synchronized {
     if (dataMap.contains(key)) {
       dataMap(key)
     } else {
@@ -122,7 +122,7 @@ class SharedConf private() extends Serializable {
     }
   }
 
-  def getBoolean(key: String): Boolean = {
+  def getBoolean(key: String): Boolean = synchronized {
     if (dataMap.contains(key)) {
       dataMap(key).toBoolean
     } else {
@@ -130,7 +130,7 @@ class SharedConf private() extends Serializable {
     }
   }
 
-  def getInt(key: String): Int = {
+  def getInt(key: String): Int = synchronized {
     if (dataMap.contains(key)) {
       dataMap(key).toInt
     } else {
@@ -138,7 +138,7 @@ class SharedConf private() extends Serializable {
     }
   }
 
-  def getLong(key: String): Long = {
+  def getLong(key: String): Long = synchronized {
     if (dataMap.contains(key)) {
       dataMap(key).toLong
     } else {
@@ -146,7 +146,7 @@ class SharedConf private() extends Serializable {
     }
   }
 
-  def getFloat(key: String): Float = {
+  def getFloat(key: String): Float = synchronized {
     if (dataMap.contains(key)) {
       dataMap(key).toFloat
     } else {
@@ -154,7 +154,7 @@ class SharedConf private() extends Serializable {
     }
   }
 
-  def getDouble(key: String): Double = {
+  def getDouble(key: String): Double = synchronized {
     if (dataMap.contains(key)) {
       dataMap(key).toDouble
     } else {
@@ -162,7 +162,7 @@ class SharedConf private() extends Serializable {
     }
   }
 
-  def getString(key: String): String = {
+  def getString(key: String): String = synchronized {
     if (dataMap.contains(key)) {
       dataMap(key)
     } else {
@@ -170,53 +170,46 @@ class SharedConf private() extends Serializable {
     }
   }
 
-  def set(key: String, value: String): SharedConf = {
+  def set(key: String, value: String): SharedConf = synchronized {
     dataMap(key) = value
     this
   }
 
-  def setBoolean(key: String, value: Boolean): SharedConf = {
+  def setBoolean(key: String, value: Boolean): SharedConf = synchronized {
     dataMap(key) = value.toString
     this
   }
 
-  def setInt(key: String, value: Int): SharedConf = {
+  def setInt(key: String, value: Int): SharedConf = synchronized {
     dataMap(key) = value.toString
     this
   }
 
-  def setLong(key: String, value: Long): SharedConf = {
+  def setLong(key: String, value: Long): SharedConf = synchronized {
     dataMap(key) = value.toString
     this
   }
 
-  def setFloat(key: String, value: Float): SharedConf = {
+  def setFloat(key: String, value: Float): SharedConf = synchronized {
     dataMap(key) = value.toString
     this
   }
 
-  def setDouble(key: String, value: Double): SharedConf = {
+  def setDouble(key: String, value: Double): SharedConf = synchronized {
     dataMap(key) = value.toString
     this
   }
 
-  def setString(key: String, value: String): SharedConf = {
+  def setString(key: String, value: String): SharedConf = synchronized {
     dataMap(key) = value
     this
   }
 
-  def setJson(jast: JObject=null): Unit = {
-    if (jast == null) {
-      val jfile = dataMap(MLConf.ML_JSON_CONF_FILE)
-      if (jfile.nonEmpty) {
-        graphJson = JsonUtils.parseAndUpdateJson(jfile, this)
-      }
-    } else {
-      graphJson = jast
-    }
+  def setJson(jast: JObject = null): Unit = synchronized {
+    graphJson = jast
   }
 
-  def getJson: JObject = {
+  def getJson: JObject = synchronized {
     graphJson
   }
 }
@@ -226,37 +219,12 @@ object SharedConf {
 
   private var sc: SharedConf = _
 
-  def get(): SharedConf = {
+  def get(): SharedConf = synchronized {
     if (sc == null) {
       sc = new SharedConf
-      addMLConf()
-      val jfile = sc.getString(MLConf.ML_JSON_CONF_FILE)
-      if (jfile.nonEmpty) {
-        sc.setJson(JsonUtils.parseAndUpdateJson(jfile, sc))
-      }
     }
 
     sc
-  }
-
-  private def addMLConf(): Unit = {
-    val constructor = classOf[MLConf].getConstructor()
-    val obj = constructor.newInstance()
-    val cls = classOf[MLConf]
-    cls.getDeclaredMethods.foreach { method =>
-      if (!method.getName.startsWith("DEFAULT_")) {
-        val key: String = method.invoke(obj).toString
-        try {
-          val valueMethod = cls.getMethod(s"DEFAULT_${method.getName}")
-          val value: String = valueMethod.invoke(obj).toString
-          sc(key) = value
-        } catch {
-          case _: NoSuchMethodException =>
-            val key: String = method.invoke(obj).toString
-            LOG.info(s"$key does not have default value!")
-        }
-      }
-    }
   }
 
   def addMap(map: Map[String, String]): Unit = {
@@ -278,86 +246,94 @@ object SharedConf {
   def keyType(): String = {
     get()
 
-    RowTypeUtils.keyType(RowType.valueOf(sc.get(MLConf.ML_MODEL_TYPE)))
+    RowTypeUtils.keyType(RowType.valueOf(
+      sc.get(MLCoreConf.ML_MODEL_TYPE, MLCoreConf.DEFAULT_ML_MODEL_TYPE)
+    ))
   }
 
   def valueType(): String = {
     get()
 
-    RowTypeUtils.valueType(RowType.valueOf(sc.get(MLConf.ML_MODEL_TYPE)))
+    RowTypeUtils.valueType(RowType.valueOf(
+      sc.get(MLCoreConf.ML_MODEL_TYPE, MLCoreConf.DEFAULT_ML_MODEL_TYPE)
+    ))
   }
 
   def storageType: String = {
     get()
 
-    RowTypeUtils.storageType(RowType.valueOf(sc.get(MLConf.ML_MODEL_TYPE)))
+    RowTypeUtils.storageType(RowType.valueOf(
+      sc.get(MLCoreConf.ML_MODEL_TYPE, MLCoreConf.DEFAULT_ML_MODEL_TYPE)
+    ))
   }
 
   def denseModelType: RowType = {
     get()
 
-    RowTypeUtils.getDenseModelType(RowType.valueOf(sc.get(MLConf.ML_MODEL_TYPE)))
+    RowTypeUtils.getDenseModelType(RowType.valueOf(
+      sc.get(MLCoreConf.ML_MODEL_TYPE, MLCoreConf.DEFAULT_ML_MODEL_TYPE)
+    ))
   }
 
   def numClass: Int = {
     get()
 
-    sc.getInt(MLConf.ML_NUM_CLASS)
+    sc.getInt(MLCoreConf.ML_NUM_CLASS, MLCoreConf.DEFAULT_ML_NUM_CLASS)
   }
 
   def modelType: RowType = {
     get()
 
-    RowType.valueOf(sc.get(MLConf.ML_MODEL_TYPE))
+    RowType.valueOf(sc.get(MLCoreConf.ML_MODEL_TYPE, MLCoreConf.DEFAULT_ML_MODEL_TYPE))
   }
 
   def indexRange: Long = {
     get()
 
-    val ir = sc.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
+    val ir = sc.getLong(MLCoreConf.ML_FEATURE_INDEX_RANGE, MLCoreConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
 
-//    if (ir == -1) {
-//      throw MLException("ML_FEATURE_INDEX_RANGE must be set!")
-//    } else {
-//      ir
-//    }
+    //    if (ir == -1) {
+    //      throw MLException("ML_FEATURE_INDEX_RANGE must be set!")
+    //    } else {
+    //      ir
+    //    }
     ir
   }
 
   def inputDataFormat: String = {
     get()
 
-    sc.getString(MLConf.ML_DATA_INPUT_FORMAT, MLConf.DEFAULT_ML_DATA_INPUT_FORMAT)
+    sc.getString(MLCoreConf.ML_DATA_INPUT_FORMAT, MLCoreConf.DEFAULT_ML_DATA_INPUT_FORMAT)
   }
 
   def batchSize: Int = {
     get()
 
-    sc.getInt(MLConf.ML_MINIBATCH_SIZE, MLConf.DEFAULT_ML_MINIBATCH_SIZE)
+    sc.getInt(MLCoreConf.ML_MINIBATCH_SIZE, MLCoreConf.DEFAULT_ML_MINIBATCH_SIZE)
   }
 
   def numUpdatePerEpoch: Int = {
     get()
 
-    sc.getInt(MLConf.ML_NUM_UPDATE_PER_EPOCH, MLConf.DEFAULT_ML_NUM_UPDATE_PER_EPOCH)
+    sc.getInt(MLCoreConf.ML_NUM_UPDATE_PER_EPOCH, MLCoreConf.DEFAULT_ML_NUM_UPDATE_PER_EPOCH)
   }
 
   def blockSize: Int = {
     get()
 
-    sc.getInt(MLConf.ML_BLOCK_SIZE, MLConf.DEFAULT_ML_BLOCK_SIZE)
+    sc.getInt(MLCoreConf.ML_BLOCK_SIZE, MLCoreConf.DEFAULT_ML_BLOCK_SIZE)
   }
 
   def epochNum: Int = {
     get()
 
-    sc.getInt(MLConf.ML_EPOCH_NUM, MLConf.DEFAULT_ML_EPOCH_NUM)
+    sc.getInt(MLCoreConf.ML_EPOCH_NUM, MLCoreConf.DEFAULT_ML_EPOCH_NUM)
   }
 
   def modelSize: Long = {
     get()
 
-    val ms = sc.getLong(MLConf.ML_MODEL_SIZE)
+    val ms = sc.getLong(MLCoreConf.ML_MODEL_SIZE, MLCoreConf.DEFAULT_ML_MODEL_SIZE)
     if (ms == -1) {
       indexRange
     } else {
@@ -368,25 +344,25 @@ object SharedConf {
   def validateRatio: Double = {
     get()
 
-    sc.getDouble(MLConf.ML_VALIDATE_RATIO, MLConf.DEFAULT_ML_VALIDATE_RATIO)
+    sc.getDouble(MLCoreConf.ML_VALIDATE_RATIO, MLCoreConf.DEFAULT_ML_VALIDATE_RATIO)
   }
 
   def decay: Double = {
     get()
 
-    sc.getDouble(MLConf.ML_LEARN_DECAY, MLConf.DEFAULT_ML_LEARN_DECAY)
+    sc.getDouble(MLCoreConf.ML_LEARN_DECAY, MLCoreConf.DEFAULT_ML_LEARN_DECAY)
   }
 
   def learningRate: Double = {
     get()
 
-    sc.getDouble(MLConf.ML_LEARN_RATE, MLConf.DEFAULT_ML_LEARN_RATE)
+    sc.getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)
   }
 
   def modelClassName: String = {
     get()
 
-    val modelClass = sc.getString(MLConf.ML_MODEL_CLASS_NAME, MLConf.DEFAULT_ML_MODEL_CLASS_NAME)
+    val modelClass = sc.getString(MLCoreConf.ML_MODEL_CLASS_NAME, MLCoreConf.DEFAULT_ML_MODEL_CLASS_NAME)
     if (modelClass == "") {
       throw MLException("ml.model.class.name must be set for graph based algorithms!")
     } else {
@@ -397,36 +373,34 @@ object SharedConf {
   def useShuffle: Boolean = {
     get()
 
-    sc.getBoolean(MLConf.ML_DATA_USE_SHUFFLE, MLConf.DEFAULT_ML_DATA_USE_SHUFFLE)
+    sc.getBoolean(MLCoreConf.ML_DATA_USE_SHUFFLE, MLCoreConf.DEFAULT_ML_DATA_USE_SHUFFLE)
   }
 
   def posnegRatio(): Double = {
     get()
 
-    sc.getDouble(MLConf.ML_DATA_POSNEG_RATIO,
-      MLConf.DEFAULT_ML_DATA_POSNEG_RATIO)
-  }
-
-  def variableProvider(): String = {
-    get()
-
-    sc.getString(MLConf.ML_MODEL_VARIABLE_PROVIDER,
-      MLConf.DEFAULT_ML_MODEL_VARIABLE_PROVIDER
-    )
+    sc.getDouble(MLCoreConf.ML_DATA_POSNEG_RATIO, MLCoreConf.DEFAULT_ML_DATA_POSNEG_RATIO)
   }
 
   def optJsonProvider(): String = {
     get()
 
-    sc.getString(MLConf.ML_OPTIMIZER_JSON_PROVIDER,
-      MLConf.DEFAULT_ML_OPTIMIZER_JSON_PROVIDER
+    sc.getString(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER,
+      MLCoreConf.DEFAULT_ML_OPTIMIZER_JSON_PROVIDER
     )
   }
 
   def storageLevel: String = {
     get()
 
-    sc.get(MLConf.ML_DATA_STORAGE_LEVEL,
-      MLConf.DEFAULT_ML_DATA_STORAGE_LEVEL)
+    sc.get(MLCoreConf.ML_DATA_STORAGE_LEVEL,
+      MLCoreConf.DEFAULT_ML_DATA_STORAGE_LEVEL)
+  }
+
+  def stepSizeScheduler: String = {
+    get()
+
+    sc.get(MLCoreConf.ML_OPT_DECAY_CLASS_NAME,
+      MLCoreConf.DEFAULT_ML_OPT_DECAY_CLASS_NAME)
   }
 }

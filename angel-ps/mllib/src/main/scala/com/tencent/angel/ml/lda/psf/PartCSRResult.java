@@ -20,17 +20,15 @@ package com.tencent.angel.ml.lda.psf;
 
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math2.storage.IntIntDenseVectorStorage;
-import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
+import com.tencent.angel.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.storage.vector.ServerIntIntRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.nio.IntBuffer;
 import java.util.Arrays;
 import java.util.List;
 

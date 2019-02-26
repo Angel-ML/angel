@@ -1,9 +1,10 @@
 package com.tencent.angel.ml.core
 
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.core.data.{DataBlock, LabeledData}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.core.local.LocalLearner
 import com.tencent.angel.ml.core.local.data.LocalDataReader
+import com.tencent.angel.ml.math2.utils.LabeledData
 import org.scalatest.{BeforeAndAfter, FunSuite}
 
 class AlgoTest extends FunSuite with BeforeAndAfter {
@@ -14,9 +15,28 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
   var negDataBlock: DataBlock[LabeledData] = _
   var validDataBlock: DataBlock[LabeledData] = _
 
+  def getJson(name: String): String = {
+    s"E:\\github\\fitzwang\\angel\\angel-mlcore\\src\\test\\jsons\\$name.json"
+  }
+
+  def getDataFile(name: String, format: String = "libsvm", aType: String = "train"): String = {
+    val dim: Int = name match {
+      case "a9a" => 123
+      case "abalone" => 8
+      case "agaricus" => 127
+      case "protein" => 357
+      case "census" => 148
+      case "usps" => 256
+      case "w6a" => 300
+      case _ => throw new Exception("Cannot find data set!")
+    }
+
+    s"E:\\github\\fitzwang\\angel\\data\\$name\\${name}_${dim}d_$aType.$format"
+  }
+
   def init1(jsonFile: String, sourceFile: String): Unit = {
     conf = SharedConf.get()
-    conf.set(MLConf.ML_JSON_CONF_FILE, jsonFile)
+    conf.set(MLCoreConf.ML_JSON_CONF_FILE, jsonFile)
     conf.setJson()
 
     reader = new LocalDataReader(conf)
@@ -30,7 +50,7 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
 
   def init2(jsonFile: String, sourceFile: String): Unit = {
     conf = SharedConf.get()
-    conf.set(MLConf.ML_JSON_CONF_FILE, jsonFile)
+    conf.set(MLCoreConf.ML_JSON_CONF_FILE, jsonFile)
     conf.setJson()
 
     reader = new LocalDataReader(conf)
@@ -53,35 +73,63 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
     learner.train(posDataBlock, negDataBlock, validDataBlock)
   }
 
-  test("LR") {
-    val jsonFile = "E:\\github\\fitzwang\\angel\\angel-mlcore\\src\\test\\jsons\\logreg.json"
-    val sourceFile = "E:\\github\\fitzwang\\angel\\data\\a9a\\a9a_123d_train.dummy"
-
-    init1(jsonFile, sourceFile)
-    train1()
+  test("DAW") {
+    init2(getJson("daw"), getDataFile("census", "dense"))
+    train2()
   }
 
-  test("Softmax") {
-    val jsonFile = "E:\\github\\fitzwang\\angel\\angel-mlcore\\src\\test\\jsons\\softmax.json"
-    val sourceFile = "E:\\github\\fitzwang\\angel\\data\\protein\\protein_357d_train.libsvm"
-
-    init1(jsonFile, sourceFile)
-    train1()
+  test("DeepFM") {
+    init2(getJson("deepfm"), getDataFile("census", "dummy"))
+    train2()
   }
 
   test("DNN") {
-    val jsonFile = "E:\\github\\fitzwang\\angel\\angel-mlcore\\src\\test\\jsons\\dnn.json"
-    val sourceFile = "E:\\github\\fitzwang\\angel\\data\\census\\census_148d_train.libsvm"
-
-    init1(jsonFile, sourceFile)
-    train1()
+    init2(getJson("dnn"), getDataFile("census"))
+    train2()
   }
 
-  test("DAW") {
-    val jsonFile = "E:\\github\\fitzwang\\angel\\angel-mlcore\\src\\test\\jsons\\daw.json"
-    val sourceFile = "E:\\github\\fitzwang\\angel\\data\\census\\census_148d_train.dummy"
+  test("FM") {
+    init2(getJson("fm"), getDataFile("census", "dummy"))
+    train2()
+  }
 
-    init1(jsonFile, sourceFile)
-    train1()
+  test("LinReg") {
+    init2(getJson("linreg"), getDataFile("a9a"))
+    train2()
+  }
+
+  test("LogReg") {
+    init2(getJson("logreg"), getDataFile("a9a"))
+    train2()
+  }
+
+  test("MixedLR") {
+    init2(getJson("mixedlr"), getDataFile("a9a"))
+    train2()
+  }
+
+  test("NFM") {
+    init2(getJson("nfm"), getDataFile("census", "dummy"))
+    train2()
+  }
+
+  test("PNN") {
+    init2(getJson("pnn"), getDataFile("census", "dummy"))
+    train2()
+  }
+
+  test("RobustReg") {
+    init2(getJson("robustreg"), getDataFile("a9a"))
+    train2()
+  }
+
+  test("Softmax") {
+    init2(getJson("softmax"), getDataFile("protein"))
+    train2()
+  }
+
+  test("SVM") {
+    init2(getJson("svm"), getDataFile("a9a", "dummy"))
+    train2()
   }
 }

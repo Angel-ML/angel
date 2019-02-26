@@ -1,7 +1,7 @@
 {
   "data": {
     "format": "libsvm",
-    "indexrange": 123,
+    "indexrange": -1,
     "validateratio": 0.1,
     "sampleratio": 1.0
   },
@@ -10,11 +10,12 @@
     "lr": 0.5
   },
   "model": {
-    "modeltype": "T_FLOAT_DENSE"
+    "modeltype": "T_FLOAT_SPARSE"
   },
   "default_optimizer": {
-    "type": "adam",
-    "reg2": 0.01
+    "type": "momentum",
+    "momentum": 0.9,
+    "reg2": 0.001
   },
   "layers": [
     {
@@ -25,7 +26,7 @@
     },
     {
       "name": "simplelosslayer",
-      "type": "simplelosslayer",
+      "type": "losslayer",
       "lossfunc": "logloss",
       "inputlayer": "wide"
     }

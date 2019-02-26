@@ -12,7 +12,8 @@
   "train": {
     "epoch": 5,
     "lr": 0.1,
-    "decay": 0.001
+    "decayclass": "WarmRestarts",
+    "decayalpha": 0.05
   },
   "default_optimizer": "momentum",
   "layers": [
@@ -37,7 +38,7 @@
     },
     {
       "name": "simplelosslayer",
-      "type": "simplelosslayer",
+      "type": "losslayer",
       "lossfunc": "logloss",
       "inputlayer": "fclayer"
     }

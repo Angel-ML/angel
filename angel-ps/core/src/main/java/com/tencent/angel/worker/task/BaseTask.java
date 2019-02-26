@@ -20,6 +20,7 @@ package com.tencent.angel.worker.task;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.core.data.DataBlock;
 import com.tencent.angel.worker.storage.*;
 import org.apache.hadoop.conf.Configuration;
 
@@ -27,10 +28,10 @@ import org.apache.hadoop.conf.Configuration;
  * Base for task.
  * <p>
  * The realization define at implementation and will invoke by {@link Task}
- * The train data was read fully to {@link DataBlock} at pre-process as default.
+ * The train data was read fully to DataBlock at pre-process as default.
  * <ol>
  * <li>
- * Normally communicate with {@link com.tencent.angel.ps.impl.ParameterServer}
+ * Normally communicate with ParameterServer
  * do pull or push data(see more detail {@link com.tencent.angel.psagent.matrix.transport.MatrixTransportClient}).
  * </li>
  * <li>
@@ -64,9 +65,8 @@ public abstract class BaseTask<KEY_IN, VALUE_IN, VALUE_OUT>
     } else {
       taskDataBlock = new DiskDataBlock<VALUE_OUT>(taskContext.getTaskId().getIndex());
     }
+
     conf = taskContext.getConf();
-
-
   }
 
 

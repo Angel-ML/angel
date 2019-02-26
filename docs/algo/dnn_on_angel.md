@@ -12,7 +12,7 @@ Angel提供了用Json配置算法的功能, 同时也提供了用Json定义算�
 ```json
 {
     "name": "denseinputlayer",
-    "type": "denseinputlayer",
+    "type": "simpleinputlayer",
     "outputdim": 500,
     "transfunc": "relu",
     "optimizer": "ftrl"
@@ -98,14 +98,19 @@ Angel提供了用Json配置算法的功能, 同时也提供了用Json定义算�
 ```json
   "train": {
     "epoch": 30,
+    "numupdateperepoch": 10,
     "lr": 0.1,
-    "decay": 0.001
+    "decayclass": "WarmRestarts",
+    "decaybeta": 0.001
   },
 ```
 详细参数的意义请参考[Json的定义](../basic/json_conf.md). 这里只列出几个参数:
 - epoch: 训练轮数
 - lr: 学习率
-- decay: 学习率的衰减因子
+- decayclass: 学习率衰减系类
+- decayalpha: 学习率衰减参数
+- decaybeta: 学习率衰减参数
+
 
 ## 5. 将所有配置放在一起
 ```json
@@ -123,13 +128,14 @@ Angel提供了用Json配置算法的功能, 同时也提供了用Json定义算�
   "train": {
     "epoch": 30,
     "lr": 0.1,
-    "decay": 0.001
+    "decayclass": "WarmRestarts",
+    "decaybeta": 0.001
   },
   "default_optimizer": "momentum",
   "layers": [
     {
-      "name": "denseinputlayer",
-      "type": "denseinputlayer",
+      "name": "simpleinputlayer",
+      "type": "simpleinputlayer",
       "outputdim": 500,
       "transfunc": "relu"
     },

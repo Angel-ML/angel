@@ -19,12 +19,15 @@ package com.tencent.angel.spark.models.impl
 import java.util.concurrent.Future
 
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.matrix.psf.get.base.{GetFunc, GetResult}
+import com.tencent.angel.matrix.psf.update.{Fill, Reset}
+import com.tencent.angel.matrix.psf.update.base.{UpdateFunc, VoidResult}
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
-import com.tencent.angel.ml.matrix.psf.update.{Fill, Reset}
+import com.tencent.angel.ml.matrix.psf.update.Reset
 import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.models.PSMatrix

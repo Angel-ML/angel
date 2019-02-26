@@ -19,7 +19,8 @@
 package com.tencent.angel.ml.svm;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.PSOptimizerProvider;
+import com.tencent.angel.ml.core.conf.MLCoreConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
 import com.tencent.angel.ml.math2.utils.RowType;
 import org.apache.commons.logging.Log;
@@ -38,6 +39,7 @@ public class SVMTest {
   private Configuration conf = new Configuration();
   private static final Log LOG = LogFactory.getLog(SVMTest.class);
   private static String LOCAL_FS = FileSystem.DEFAULT_FS;
+  private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.AngelModel";
   private static String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
 
   static {
@@ -78,9 +80,10 @@ public class SVMTest {
       conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
       conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
       conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
+      conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
 
       // Set data format
-      conf.set(MLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
+      conf.set(MLCoreConf.ML_DATA_INPUT_FORMAT(), dataFmt);
 
       //set angel resource parameters #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
@@ -88,16 +91,18 @@ public class SVMTest {
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
       //set sgd LR algorithm parameters #feature #epoch
-      conf.set(MLConf.ML_MODEL_TYPE(), modelType);
-      conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
-      conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
-      conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
-      conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
-      conf.set(MLConf.ML_LEARN_DECAY(), String.valueOf(decay));
-      conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
-      conf.setLong(MLConf.ML_MODEL_SIZE(), featureNum);
-      conf.set(MLConf.ML_MODEL_CLASS_NAME(),
-        "com.tencent.angel.ml.classification.SupportVectorMachine");
+      conf.set(MLCoreConf.ML_MODEL_TYPE(), modelType);
+      conf.set(MLCoreConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
+      conf.set(MLCoreConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
+      conf.set(MLCoreConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
+      conf.set(MLCoreConf.ML_LEARN_RATE(), String.valueOf(learnRate));
+      conf.set(MLCoreConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
+      conf.set(MLCoreConf.ML_REG_L2(), String.valueOf(reg));
+      conf.setLong(MLCoreConf.ML_MODEL_SIZE(), featureNum);
+      conf.set(MLCoreConf.ML_MODEL_CLASS_NAME(), CLASSBASE);
+
+      String angelConfFile = "./src/test/jsons/svm.json";
+      conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;
@@ -122,7 +127,7 @@ public class SVMTest {
       // Set log path
       conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
       // Set actionType train
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLCoreConf.ANGEL_ML_TRAIN());
 
       GraphRunner runner = new GraphRunner();
       runner.train(conf);
@@ -136,9 +141,9 @@ public class SVMTest {
     try {
       String inputPath = "../../data/w6a/w6a_300d_test.libsvm";
       String loadPath = LOCAL_FS + TMP_PATH + "/SVM";
-      String predictPath = LOCAL_FS + TMP_PATH + "/predict";
+      String predictPath = LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict";
 
-      conf.set(MLConf.ML_DATA_INPUT_FORMAT(), "libsvm");
+      conf.set(MLCoreConf.ML_DATA_INPUT_FORMAT(), "libsvm");
 
       // Set trainning data path
       conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);
@@ -149,7 +154,7 @@ public class SVMTest {
       // Set predict result path
       conf.set(AngelConf.ANGEL_PREDICT_PATH, predictPath);
 
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLCoreConf.ANGEL_ML_PREDICT());
 
 
       GraphRunner runner = new GraphRunner();

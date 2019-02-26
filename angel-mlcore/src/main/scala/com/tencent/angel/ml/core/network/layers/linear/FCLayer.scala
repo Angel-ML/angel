@@ -19,18 +19,16 @@
 package com.tencent.angel.ml.core.network.layers.linear
 
 
-import com.tencent.angel.ml.core.network.TransFunc
-import com.tencent.angel.ml.core.network.Graph
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.core.network.{Graph, TransFunc}
+import com.tencent.angel.ml.core.network.layers._
+import com.tencent.angel.ml.core.variable.{MatVariable, Variable, VecVariable}
+import com.tencent.angel.ml.core.optimizer.Optimizer
+import com.tencent.angel.ml.core.utils.{LayerKeys, MLException, OptUtils}
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
-import com.tencent.angel.ml.math2.utils.{MatrixUtils, RowType}
-import com.tencent.angel.ml.core.network.layers._
-import com.tencent.angel.ml.core.network.layers.verge.Embedding
-import com.tencent.angel.ml.core.network.variable.{MatVariable, VecVariable}
-import com.tencent.angel.ml.core.optimizer.Optimizer
-import com.tencent.angel.ml.core.utils.{Callback, LayerKeys, MLException}
+import com.tencent.angel.ml.math2.utils.MatrixUtils
 import org.apache.commons.logging.LogFactory
-import org.json4s.JsonAST
 import org.json4s.JsonAST.{JField, JString}
 import org.json4s.JsonDSL._
 
@@ -38,128 +36,78 @@ import scala.language.implicitConversions
 
 class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransFunc, override val optimizer: Optimizer
              )(implicit graph: Graph) extends LinearLayer(name, outputDim, inputLayer) with Trainable {
+  graph.addTrainableLayer(this)
   private val LOG = LogFactory.getLog(classOf[FCLayer])
 
-  graph.addTrainable(this)
-
+  private val formatClassName = SharedConf.get().getString(
+    MLCoreConf.ML_FCLAYER_MATRIX_OUTPUT_FORMAT,
+    MLCoreConf.DEFAULT_ML_FCLAYER_MATRIX_OUTPUT_FORMAT)
   private val weight: MatVariable = graph.provider.getMatVariable(s"${name}_weight", outputDim,
-    inputLayer.outputDim, optimizer.numSlot, inIPLayer = false)
+    inputLayer.outputDim, optimizer, formatClassName, allowPullWithIndex = false)
   private val bias: VecVariable = graph.provider.getVecVariable(s"${name}_bias", outputDim,
-    1, inIPLayer = false)
+    null, formatClassName, allowPullWithIndex = false)
 
-  @transient var forward: Matrix = _
-  @transient var backward: Matrix = _
-  @transient var output: Matrix = _
-  @transient var gradOutput: Matrix = _
-  @transient var ipOutputCache: Matrix = _
+  @transient private var middleCache: Matrix = _
+  @transient private var subDim: Int = -1
 
-  override def calOutput(): Matrix = {
-    val start = System.currentTimeMillis()
-    status match {
-      case STATUS.Null =>
-        val lastOutput = inputLayer match {
-          case ipLayer: Embedding => // from embedding layer
-            ipOutputCache = ipLayer.calOutput() match {
-              case mat: RBCompIntDoubleMatrix =>
-                MatrixUtils.rbCompDense2Blas(mat)
-              case mat: RBCompIntFloatMatrix =>
-                MatrixUtils.rbCompDense2Blas(mat)
-            }
-            ipOutputCache
-          case ipLayer => // from other dense layer
-            ipLayer.calOutput()
-        }
-
-        forward = Ufuncs.dot(lastOutput, false, weight, true).add(bias)
-        output = transFunc(forward)
-        status = STATUS.Forward
-      case _ =>
+  override protected def doForward(input: Matrix): Matrix = {
+    val inputNew = input match {
+      case mat: RBCompIntDoubleMatrix =>
+        // for Double embedding layer
+        middleCache = MatrixUtils.rbCompDense2Blas(mat)
+        subDim = mat.getSubDim
+        middleCache
+      case mat: RBCompIntFloatMatrix =>
+        // for Double embedding layer
+        middleCache = MatrixUtils.rbCompDense2Blas(mat)
+        subDim = mat.getSubDim
+        middleCache
+      case mat: BlasMatrix =>
+        // other layers, but the input layer, their out put is Blas
+        mat
+      case _ => throw MLException("Only BlasMatrix is allowed!")
     }
 
-    val end = System.currentTimeMillis()
-    // println(s"FCLayer($name) calOutput = ${end - start} ms")
-    output
+    // both inputNew and weight are Blas
+    val net = Ufuncs.dot(inputNew, false, weight, true).add(bias)
+    transFunc(net)
   }
 
-  def calGradOutput(): Matrix = {
-    val start = System.currentTimeMillis()
-    status match {
-      case STATUS.Forward =>
-        // println(s"the status in FCLayer($name)-calGradOutput is ${status.toString}")
-        val gradTemp = gatherGrad()
-        backward = transFunc.calGrad(output, gradTemp)
+  override protected def doBackward(input: Matrix, gradInput: Matrix): Matrix = {
+    // 1. calculate backward
+    val transBack = transFunc.calGrad(forward(), gradInput)
+    // both transBack and weight are Blas
+    val backwardTemp: Matrix = Ufuncs.dot(transBack, false, weight, false)
 
-        val dataGrad = Ufuncs.dot(backward, false, weight, false)
-        gradOutput = inputLayer match {
-          case ipLayer: Embedding =>
-            if (graph.modelType.isDouble) {
-              MatrixUtils.blas2RBCompDense(dataGrad.asInstanceOf[BlasDoubleMatrix], ipLayer.numFactors)
-            } else if (graph.modelType.isFloat) {
-              MatrixUtils.blas2RBCompDense(dataGrad.asInstanceOf[BlasFloatMatrix], ipLayer.numFactors)
-            } else {
-              throw MLException("Only Double/Float are Support!")
-            }
-          case _ => dataGrad
-        }
-
-        status = STATUS.Backward
-      case _ =>
+    // 2. calculate gradient
+    val (backwardValue, lastOutput) = if (middleCache != null) {
+      val backwardValue: Matrix = backwardTemp match {
+        case mat: BlasDoubleMatrix => MatrixUtils.blas2RBCompDense(mat, subDim)
+        case mat: BlasFloatMatrix => MatrixUtils.blas2RBCompDense(mat, subDim)
+      }
+      backwardValue -> middleCache
+    } else {
+      backwardTemp -> input
     }
-    val end = System.currentTimeMillis()
-    // println(s"FCLayer($name) calGradOutput = ${end - start} ms")
-    gradOutput
+
+    graph.put2Cache(backwardKey, backwardValue)
+
+    // both transBack and lastOutput are Blas
+    val gradWeight = Ufuncs.dot(transBack, true, lastOutput, false)
+      .imul(graph.normalFactor)
+    graph.putGradient(weight.asInstanceOf[Variable], gradWeight)
+
+    val gradBias = OptUtils.wrapVector2Matrix(transBack.sum(0).imul(graph.normalFactor))
+    graph.putGradient(bias.asInstanceOf[Variable], gradBias)
+
+    backwardValue
   }
-
-  override def pullParams(epoch: Int): Unit = {
-    weight.pullParams(epoch)
-    bias.pullParams(epoch)
-  }
-
-  override def pushGradient(): Unit = {
-    status match {
-      case STATUS.Backward =>
-        val lastOutput = inputLayer match {
-          case _: Embedding => ipOutputCache
-          case _ => inputLayer.calOutput()
-        }
-
-        weight.pushGrads(lastOutput, backward)
-        bias.pushGrads(backward)
-        status = STATUS.Gradient
-      case _ =>
-    }
-  }
-
-  override def update[T](epoch: Int, batchSize: Int)(callback: Callback[T]): Callback[T] = {
-    status match {
-      case STATUS.Gradient =>
-        val future = weight.update[T](optimizer, epoch, batchSize)
-        callback.setFuture(future)
-        bias.update[T](optimizer, epoch, batchSize)
-        status = STATUS.Update
-
-        callback
-      case _ => throw MLException("STATUS Error, please calculate Gradient frist!")
-    }
-  }
-
-  override def init(taskFlag: Int): Unit = {
-    weight.init(taskFlag, mean = 0.0, stddev = 0.000001)
-    bias.init(taskFlag, mean = 0.0, stddev = 0.000001)
-  }
-
-  override def load(): Unit = {
-    weight.load()
-    bias.load()
-  }
-
-  override def save(): Unit = ???
 
   override def toString: String = {
     s"FCLayer name=$name outputDim=$outputDim optimizer=$optimizer transFunc=${transFunc.getClass.getSimpleName}"
   }
 
-  override def toJson(): JField = {
+  override def toJson: JField = {
     val layerJson = (LayerKeys.typeKey -> s"${this.getClass.getSimpleName}") ~
       (LayerKeys.outputDimKey -> outputDim) ~
       (LayerKeys.inputLayerKey, JString(inputLayer.name)) ~

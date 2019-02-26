@@ -15,7 +15,7 @@ class LINEModelSuite extends PSFunSuite with SharedPSContext {
   val numPartition = 4
   val lr = 0.025f
   val dim = 32
-  val batchSize = 128
+  val batchSize = 1024
   val numPSPart = 2
   val numEpoch = 2
   val negative = 5

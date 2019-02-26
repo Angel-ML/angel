@@ -18,10 +18,10 @@
 
 package com.tencent.angel.spark.ml.psf.embedding
 
+import com.tencent.angel.matrix.psf.get.base._
+
 import scala.collection.JavaConversions._
-
 import io.netty.buffer.ByteBuf
-
 import com.tencent.angel.ml.matrix.psf.get.base._
 import com.tencent.angel.ps.storage.matrix.ServerPartition
 import com.tencent.angel.spark.ml.psf.embedding.NEDot.{DotPartitionResult, NEDotResult}

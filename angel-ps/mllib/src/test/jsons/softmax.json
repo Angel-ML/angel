@@ -1,4 +1,21 @@
 {
+  "data": {
+    "format": "libsvm",
+    "indexrange": 357,
+    "validateratio": 0.2,
+    "posnegratio": 0.1,
+    "numclass": 3
+  },
+  "model": {
+    "modeltype": "T_DOUBLE_SPARSE",
+    "modelsize": 357
+  },
+  "train": {
+    "epoch": 5,
+    "lr": 0.1,
+    "decayclass": "WarmRestarts",
+    "decayalpha": 0.05
+  },
   "default_optimizer": {
     "type": "momentum",
     "momentum": 0.9,
@@ -8,13 +25,13 @@
     {
       "name": "wide",
       "type": "simpleinputlayer",
-      "outputdim": 2,
+      "outputdim": 3,
       "transfunc": "identity"
     },
     {
       "name": "softmaxlosslayer",
-      "type": "simplelosslayer",
-      "lossfunc": "softmax",
+      "type": "losslayer",
+      "lossfunc": "softmaxloss",
       "inputlayer": "wide"
     }
   ]

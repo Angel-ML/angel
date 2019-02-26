@@ -21,7 +21,7 @@ package com.tencent.angel.ps.io.save;
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.matrix.MatrixMeta;
+import com.tencent.angel.matrix.MatrixMeta;
 import com.tencent.angel.model.PSMatricesSaveContext;
 import com.tencent.angel.model.PSMatrixSaveContext;
 import com.tencent.angel.model.output.format.ModelFilesConstent;

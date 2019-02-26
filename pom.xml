@@ -17,31 +17,32 @@
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <groupId>com.tencent.angel</groupId>
-    <artifactId>angel</artifactId>
-    <packaging>pom</packaging>
-    <version>2.0.0</version>
-    <name>angel</name>
-    <properties>
-        <hadoop-version>2.2.0</hadoop-version>
-        <protobuf.version>2.5.0</protobuf.version>
-        <java.version>1.8</java.version>
-        <scala.binary.version>2.11</scala.binary.version>
-        <scala.version>2.11.8</scala.version>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <dist.deps.scope>provided</dist.deps.scope>
-        <scalatest.version>2.2.6</scalatest.version>
-        <main.basedir>${project.basedir}</main.basedir>
-    </properties>
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.tencent.angel</groupId>
+	<artifactId>angel</artifactId>
+	<packaging>pom</packaging>
+	<version>2.0.1</version>
+	<name>angel</name>
+	<properties>
+		<hadoop-version>2.2.0</hadoop-version>
+		<protobuf.version>2.5.0</protobuf.version>
+		<java.version>1.8</java.version>
+		<scala.binary.version>2.11</scala.binary.version>
+		<scala.version>2.11.8</scala.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<dist.deps.scope>provided</dist.deps.scope>
+		<scalatest.version>2.2.6</scalatest.version>
+    <main.basedir>${project.basedir}</main.basedir>
+	</properties>
+
 
     <modules>
         <module>angel-math</module>
         <module>angel-format</module>
         <module>angel-mlcore</module>
         <module>angel-ps</module>
-        <module>spark-on-angel</module>
+        <!--module>spark-on-angel</module-->
         <module>dist</module>
     </modules>
 

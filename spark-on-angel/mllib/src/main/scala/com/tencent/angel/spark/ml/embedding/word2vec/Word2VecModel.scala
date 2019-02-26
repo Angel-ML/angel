@@ -19,13 +19,15 @@
 package com.tencent.angel.spark.ml.embedding.word2vec
 
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.matrix.psf.get.base.GetFunc
+import com.tencent.angel.matrix.psf.update.base.UpdateFunc
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc
-import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc
 import com.tencent.angel.spark.ml.embedding.NEModel.NEDataSet
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel.{W2VDataSet, buildDataBatches}
 import com.tencent.angel.spark.ml.embedding.{FastSigmoid, NEModel, Param}
 import com.tencent.angel.spark.ml.psf.embedding.w2v._
 import org.apache.spark.rdd.RDD
+
 import scala.util.Random
 
 

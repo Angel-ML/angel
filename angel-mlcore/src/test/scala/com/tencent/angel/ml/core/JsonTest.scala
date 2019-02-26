@@ -7,7 +7,7 @@ import com.tencent.angel.ml.core.network._
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.layers.join.SumPooling
 import com.tencent.angel.ml.core.network.layers.linear.FCLayer
-import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer, SimpleLossLayer}
+import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer}
 import com.tencent.angel.ml.core.optimizer.loss._
 import com.tencent.angel.ml.core.utils.JsonUtils
 import org.scalatest.FunSuite
@@ -102,7 +102,7 @@ class JsonTest extends FunSuite{
 
   test("Layers") {
     val conf = SharedConf.get()
-    implicit val graph: Graph = new LocalGraph(new PlaceHolder(), conf)
+    implicit val graph: Graph = new LocalGraph(new PlaceHolder(), conf, 1)
     val opt = new Adam(0.01, 0.9, 0.99)
     // 20: field, 10 output
     val ipLayer = new SimpleInputLayer("inputLayer", 10, new Identity, opt)
@@ -111,7 +111,7 @@ class JsonTest extends FunSuite{
     val fc2 = new FCLayer("fc2", 200, fc1, new Relu, opt)
     val fc3 = new FCLayer("fc3", 10, fc2, new Identity, opt)
     val combine = new SumPooling("sum", 10, Array(ipLayer, fc3))
-    val loss = new SimpleLossLayer("loss", combine, new SoftmaxLoss)
+    val loss = new LossLayer("loss", combine, new SoftmaxLoss)
 
     // println(JsonUtils.layer2JsonPretty(loss))
     val jsonStr = """
@@ -163,7 +163,7 @@ class JsonTest extends FunSuite{
       |    }
       |  },
       |  "loss":{
-      |    "type":"SimpleLossLayer",
+      |    "type":"LossLayer",
       |    "outputdim":-1,
       |    "lossfunc":"SoftmaxLoss",
       |    "inputlayer":"sum"
@@ -178,10 +178,10 @@ class JsonTest extends FunSuite{
   test("ReadJson"){
     val conf = SharedConf.get()
     val json = "deepfm"
-    val jsonPath = s"E:\\github\\fitzwang\\angel\\mlcore\\src\\test\\jsons\\$json.json"
+    val jsonPath = s"E:\\github\\fitzwang\\angel\\angel-mlcore\\src\\test\\jsons\\$json.json"
     val layers = JsonUtils.parseAndUpdateJson(jsonPath, conf)
 
-    implicit val graph: Graph = new LocalGraph(new PlaceHolder(), conf)
+    implicit val graph: Graph = new LocalGraph(new PlaceHolder(), conf, 1)
     JsonUtils.layerFromJson(layers)
 
     val topLayer = graph.getLossLayer

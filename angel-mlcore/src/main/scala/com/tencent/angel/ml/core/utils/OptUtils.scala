@@ -2,9 +2,9 @@ package com.tencent.angel.ml.core.utils
 
 import com.tencent.angel.ml.math2.MFactory
 import com.tencent.angel.ml.math2.matrix.Matrix
-import com.tencent.angel.ml.math2.storage.{IntDoubleDenseVectorStorage, IntFloatDenseVectorStorage}
+import com.tencent.angel.ml.math2.storage._
 import com.tencent.angel.ml.math2.utils.RowType
-import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, LongDoubleVector, LongFloatVector}
+import com.tencent.angel.ml.math2.vector._
 
 object OptUtils {
 
@@ -39,6 +39,16 @@ object OptUtils {
       case s: IntFloatDenseVectorStorage =>
         MFactory.denseFloatMatrix(numRows, numCol, s.getValues)
       case _ => throw ValueNotAllowed("Value Not Allowed, Only Float/Double Are Allowed!")
+    }
+  }
+
+  def wrapVector2Matrix(vec: Vector): Matrix = {
+    vec match {
+      case v: IntDoubleVector =>
+        MFactory.rbIntDoubleMatrix(Array[IntDoubleVector](v))
+      case v: IntFloatVector =>
+        MFactory.rbIntFloatMatrix(Array[IntFloatVector](v))
+      case _ => throw MLException("Vector type is not support!")
     }
   }
 }

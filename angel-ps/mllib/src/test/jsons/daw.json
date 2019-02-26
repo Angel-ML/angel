@@ -10,16 +10,13 @@
     "modelsize": 148
   },
   "train": {
-    "epoch": 5,
+    "epoch": 10,
     "numupdateperepoch": 10,
     "lr": 0.1,
-    "decay": 0.8
+    "decayclass": "WarmRestarts",
+    "decayalpha": 0.05
   },
-  "default_optimizer": {
-    "type": "momentum",
-    "momentum": 0.9,
-    "reg2": 0.01
-  },
+  "default_optimizer": "Adam",
   "layers": [
     {
       "name": "wide",
@@ -59,7 +56,7 @@
     },
     {
       "name": "simplelosslayer",
-      "type": "simplelosslayer",
+      "type": "losslayer",
       "lossfunc": "logloss",
       "inputlayer": "sumPooling"
     }

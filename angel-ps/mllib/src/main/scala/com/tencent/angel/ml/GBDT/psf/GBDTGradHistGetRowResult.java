@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.GBDT.psf;
 
 import com.tencent.angel.ml.GBDT.algo.tree.SplitEntry;
-import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
+import com.tencent.angel.matrix.psf.get.base.GetResult;
 import com.tencent.angel.psagent.matrix.ResponseType;
 
 

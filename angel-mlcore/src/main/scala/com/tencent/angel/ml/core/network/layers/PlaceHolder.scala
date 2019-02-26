@@ -19,10 +19,10 @@
 package com.tencent.angel.ml.core.network.layers
 
 import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.data.LabeledData
 import com.tencent.angel.ml.core.utils.MLException
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.storage._
+import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet
@@ -45,7 +45,7 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
   private val keyType: String = SharedConf.keyType()
   private val inputDataFormat: String = SharedConf.inputDataFormat
 
-  var isFeed: Boolean = false
+  // var isFeed: Boolean = false
 
   def feedData(data: Array[LabeledData]): Unit = {
     feats = null

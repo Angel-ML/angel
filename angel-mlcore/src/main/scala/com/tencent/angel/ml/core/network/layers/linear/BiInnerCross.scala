@@ -15,113 +15,90 @@
  *
  */
 
-
 package com.tencent.angel.ml.core.network.layers.linear
 
-import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.utils.MLException
-import com.tencent.angel.ml.math2.utils.RowType
 import org.apache.commons.logging.LogFactory
 
 
-class BiInnerCross(name: String, outputDim: Int, inputLayer: Layer)(
-  implicit graph: Graph) extends LinearLayer(name, outputDim, inputLayer) {
+class BiInnerCross(name: String, outputDim: Int, inputLayer: Layer)(implicit graph: Graph)
+  extends LinearLayer(name, outputDim, inputLayer) {
   val LOG = LogFactory.getLog(classOf[BiInnerCross])
-  val modelType: RowType = SharedConf.denseModelType
 
-  @transient var output: Matrix = _
-  @transient var gradOutput: Matrix = _
-
-  override def calOutput(): Matrix = {
+  override protected def doForward(input: Matrix): Matrix = {
     val batchSize = graph.placeHolder.getBatchSize
-    status match {
-      case STATUS.Null =>
-        output = inputLayer.calOutput() match {
-          case mat: RBCompIntDoubleMatrix =>
-            val data: Array[Double] = new Array[Double](batchSize * outputDim)
-            (0 until batchSize).foreach { row =>
-              val partitions = mat.getRow(row).getPartitions
-              var opIdx = 0
-              partitions.zipWithIndex.foreach { case (vector_outter, cidx_outter) =>
-                if (cidx_outter != partitions.length - 1) {
-                  ((cidx_outter + 1) until partitions.length).foreach { cidx_inner =>
-                    data(row * outputDim + opIdx) = vector_outter.dot(partitions(cidx_inner))
-                    opIdx += 1
-                  }
-                }
+    input match {
+      case mat: RBCompIntDoubleMatrix =>
+        val data: Array[Double] = new Array[Double](batchSize * outputDim)
+        (0 until batchSize).foreach { row =>
+          val partitions = mat.getRow(row).getPartitions
+          var opIdx = 0
+          partitions.zipWithIndex.foreach { case (vector_outter, cidx_outter) =>
+            if (cidx_outter != partitions.length - 1) {
+              ((cidx_outter + 1) until partitions.length).foreach { cidx_inner =>
+                data(row * outputDim + opIdx) = vector_outter.dot(partitions(cidx_inner))
+                opIdx += 1
               }
             }
-            MFactory.denseDoubleMatrix(batchSize, outputDim, data)
-          case mat: RBCompIntFloatMatrix =>
-            val data: Array[Float] = new Array[Float](batchSize * outputDim)
-            (0 until batchSize).foreach { row =>
-              val partitions = mat.getRow(row).getPartitions
-              var opIdx = 0
-              partitions.zipWithIndex.foreach { case (vector_outter, cidx_outter) =>
-                if (cidx_outter != partitions.length - 1) {
-                  ((cidx_outter + 1) until partitions.length).foreach { cidx_inner =>
-                    data(row * outputDim + opIdx) = vector_outter.dot(partitions(cidx_inner)).toFloat
-                    opIdx += 1
-                  }
-                }
-              }
-            }
-            MFactory.denseFloatMatrix(batchSize, outputDim, data)
-          case _ => throw MLException("The matrix type is not supported!")
+          }
         }
-        status = STATUS.Forward
-      case _ =>
+        MFactory.denseDoubleMatrix(batchSize, outputDim, data)
+      case mat: RBCompIntFloatMatrix =>
+        val data: Array[Float] = new Array[Float](batchSize * outputDim)
+        (0 until batchSize).foreach { row =>
+          val partitions = mat.getRow(row).getPartitions
+          var opIdx = 0
+          partitions.zipWithIndex.foreach { case (vector_outter, cidx_outter) =>
+            if (cidx_outter != partitions.length - 1) {
+              ((cidx_outter + 1) until partitions.length).foreach { cidx_inner =>
+                data(row * outputDim + opIdx) = vector_outter.dot(partitions(cidx_inner)).toFloat
+                opIdx += 1
+              }
+            }
+          }
+        }
+        MFactory.denseFloatMatrix(batchSize, outputDim, data)
+      case _ => throw MLException("ERROR! Only Comp Matrix is supported!")
     }
-    output
   }
 
-  override def calGradOutput(): Matrix = {
-    status match {
-      case STATUS.Forward =>
-        val gradTemp = gatherGrad()
+  override protected def doBackward(input: Matrix, gradInput: Matrix): Matrix = {
+    graph.valueType match {
+      case "double" =>
+        val inputData = input.asInstanceOf[RBCompIntDoubleMatrix]
 
-        gradOutput = modelType match {
-          case RowType.T_DOUBLE_DENSE =>
-            val inputData = inputLayer.calOutput().asInstanceOf[RBCompIntDoubleMatrix]
-
-            val gradRows = inputData.getRows.zipWithIndex.map { case (compVector, row) =>
-              val rowGrad = gradTemp.getRow(row)
-              val partGrad = (0 until compVector.getNumPartitions).toArray.map { i =>
-                val grad = getValidateGrad(rowGrad.asInstanceOf[IntKeyVector], i)
-                val mat = getMatrixFromCompVector(compVector, i)
-                mat.transDot(grad).asInstanceOf[IntDoubleVector]
-              }
-              VFactory.compIntDoubleVector(compVector.getDim, partGrad)
-            }
-
-            MFactory.rbCompIntDoubleMatrix(gradRows)
-          case RowType.T_FLOAT_DENSE =>
-            val inputData = inputLayer.calOutput().asInstanceOf[RBCompIntFloatMatrix]
-
-            val gradRows = inputData.getRows.zipWithIndex.map { case (compVector, row) =>
-              val rowGrad = gradTemp.getRow(row)
-              val partGrad = (0 until compVector.getNumPartitions).toArray.map { i =>
-                val grad = getValidateGrad(rowGrad.asInstanceOf[IntKeyVector], i)
-                val mat = getMatrixFromCompVector(compVector, i)
-                mat.transDot(grad).asInstanceOf[IntFloatVector]
-              }
-              VFactory.compIntFloatVector(compVector.getDim, partGrad)
-            }
-
-            MFactory.rbCompIntFloatMatrix(gradRows)
-          case _ => throw MLException("Only Double and Float are support!")
+        val gradRows = inputData.getRows.zipWithIndex.map { case (compVector, row) =>
+          val rowGrad = gradInput.getRow(row)
+          val partGrad = (0 until compVector.getNumPartitions).toArray.map { i =>
+            val grad = getValidateGrad(rowGrad.asInstanceOf[IntKeyVector], i)
+            val mat = getMatrixFromCompVector(compVector, i)
+            mat.transDot(grad).asInstanceOf[IntDoubleVector]
+          }
+          VFactory.compIntDoubleVector(compVector.getDim, partGrad)
         }
 
-        status = STATUS.Backward
-      case _ =>
-    }
+        MFactory.rbCompIntDoubleMatrix(gradRows)
+      case "float" =>
+        val inputData = input.asInstanceOf[RBCompIntFloatMatrix]
 
-    gradOutput
+        val gradRows = inputData.getRows.zipWithIndex.map { case (compVector, row) =>
+          val rowGrad = gradInput.getRow(row)
+          val partGrad = (0 until compVector.getNumPartitions).toArray.map { i =>
+            val grad = getValidateGrad(rowGrad.asInstanceOf[IntKeyVector], i)
+            val mat = getMatrixFromCompVector(compVector, i)
+            mat.transDot(grad).asInstanceOf[IntFloatVector]
+          }
+          VFactory.compIntFloatVector(compVector.getDim, partGrad)
+        }
+
+        MFactory.rbCompIntFloatMatrix(gradRows)
+      case _ => throw MLException("Only Double and Float are support!")
+    }
   }
 
   private def getValidateGrad(row: IntKeyVector, idx: Int): Vector = {

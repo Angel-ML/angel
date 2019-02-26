@@ -19,8 +19,8 @@
 package com.tencent.angel.ps.storage.matrix;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.PartitionMeta;
+import com.tencent.angel.matrix.MatrixMeta;
+import com.tencent.angel.matrix.PartitionMeta;
 import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import org.apache.commons.logging.Log;

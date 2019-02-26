@@ -32,81 +32,74 @@ class DotPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implic
   extends JoinLayer(name, outputDim, inputLayers) {
   private val LOG = LogFactory.getLog(classOf[DotPooling])
 
-  @transient var output: Matrix = _
-  @transient var opTemp: Matrix = _
-  @transient var gradOutput: Array[Matrix] = _
+  @transient private var opTemp: Matrix = _
 
-  override def calOutput(): Matrix = {
-    status match {
-      case STATUS.Null | STATUS.Update =>
-        if (inputLayers.length == 2) {
-          opTemp = Ufuncs.mul(inputLayers(0).calOutput(), inputLayers(1).calOutput())
-          opTemp.sum(1).getStorage match {
-            case s: IntDoubleDenseVectorStorage =>
-              output = MFactory.denseDoubleMatrix(opTemp.getNumRows, 1, s.getValues)
-            case s: IntFloatDenseVectorStorage =>
-              output = MFactory.denseFloatMatrix(opTemp.getNumRows, 1, s.getValues)
-          }
-        } else if (inputLayers.length > 2) {
-          opTemp = Ufuncs.mul(inputLayers(0).calOutput(), inputLayers(1).calOutput())
-          inputLayers.tail.tail.foreach(layer => opTemp.imul(layer.calOutput()))
+  override protected def doForward(inputs: Map[String, Matrix]): Matrix = {
+    val mats = inputs.values.toList
 
-          opTemp.sum(1).getStorage match {
-            case s: IntDoubleDenseVectorStorage =>
-              output = MFactory.denseDoubleMatrix(opTemp.getNumRows, 1, s.getValues)
-            case s: IntFloatDenseVectorStorage =>
-              output = MFactory.denseFloatMatrix(opTemp.getNumRows, 1, s.getValues)
-          }
-        } else {
-          throw MLException("At least two layers are required as input!")
-        }
-        status = STATUS.Forward
-      case _ =>
+    if (inputLayers.length == 2) {
+      opTemp = Ufuncs.mul(mats.head, mats(1))
+      opTemp.sum(1).getStorage match {
+        case s: IntDoubleDenseVectorStorage =>
+          MFactory.denseDoubleMatrix(opTemp.getNumRows, 1, s.getValues)
+        case s: IntFloatDenseVectorStorage =>
+          MFactory.denseFloatMatrix(opTemp.getNumRows, 1, s.getValues)
+      }
+    } else if (inputLayers.length > 2) {
+      val opTemp = Ufuncs.mul(mats.head, mats(1))
+      mats.tail.tail.foreach(mat => opTemp.imul(mat))
+
+      opTemp.sum(1).getStorage match {
+        case s: IntDoubleDenseVectorStorage =>
+          MFactory.denseDoubleMatrix(opTemp.getNumRows, 1, s.getValues)
+        case s: IntFloatDenseVectorStorage =>
+          MFactory.denseFloatMatrix(opTemp.getNumRows, 1, s.getValues)
+      }
+    } else {
+      throw MLException("At least two layers are required as input!")
     }
-
-    output
   }
 
-  override def calGradOutput(idx: Int): Matrix = {
-    status match {
-      case STATUS.Forward =>
-        val gradTemp = gatherGrad()
+  override protected def doBackward(inputs: Map[String, Matrix], gradInput: Matrix): Map[String, Matrix] = {
 
-        if (inputLayers.length == 2) {
-          gradOutput = inputLayers.indices.toArray.map { i =>
-            val otherOutput = inputLayers((i + 1) % inputLayers.length).calOutput()
-            gradTemp match {
-              case grad: BlasDoubleMatrix =>
-                val gradVector = VFactory.denseDoubleVector(grad.getData)
-                Ufuncs.mul(otherOutput, gradVector, true)
-              case grad: BlasFloatMatrix =>
-                val gradVector = VFactory.denseFloatVector(grad.getData)
-                Ufuncs.mul(otherOutput, gradVector, true)
-            }
-          }
-        } else if (inputLayers.length > 2) {
-          gradOutput = inputLayers.map { layer =>
-            val otherOutput = opTemp.div(layer.calOutput())
-            gradTemp match {
-              case grad: BlasDoubleMatrix =>
-                val gradVector = VFactory.denseDoubleVector(grad.getData)
-                Ufuncs.mul(otherOutput, gradVector, true)
-              case grad: BlasFloatMatrix =>
-                val gradVector = VFactory.denseFloatVector(grad.getData)
-                Ufuncs.mul(otherOutput, gradVector, true)
-            }
-          }
-        } else {
-          throw MLException("At least two layers are required as input!")
+    if (inputLayers.length == 2) {
+      inputs.map { case (layerName, _: Matrix) =>
+        val otherOutput = inputs.collect{
+          case (otherName, otherMat: Matrix) if otherName != layerName => otherMat
+        }.head
+
+        val gradOutput = gradInput match {
+          case grad: BlasDoubleMatrix =>
+            val gradVector = VFactory.denseDoubleVector(grad.getData)
+            Ufuncs.mul(otherOutput, gradVector, true)
+          case grad: BlasFloatMatrix =>
+            val gradVector = VFactory.denseFloatVector(grad.getData)
+            Ufuncs.mul(otherOutput, gradVector, true)
         }
 
-        status = STATUS.Backward
-      case _ =>
+        layerName -> gradOutput
+      }
+    } else if (inputLayers.length > 2) {
+      inputs.map { case (layerName: String, mat: Matrix) =>
+        val otherOutput = opTemp.div(mat)
+        val gradOutput = gradInput match {
+          case grad: BlasDoubleMatrix =>
+            val gradVector = VFactory.denseDoubleVector(grad.getData)
+            Ufuncs.mul(otherOutput, gradVector, true)
+          case grad: BlasFloatMatrix =>
+            val gradVector = VFactory.denseFloatVector(grad.getData)
+            Ufuncs.mul(otherOutput, gradVector, true)
+        }
+
+        layerName -> gradOutput
+      }
+    } else {
+      throw MLException("At least two layers are required as input!")
     }
-    gradOutput(idx)
   }
 
   override def toString: String = {
     s"DotPooling name=$name outputDim=$outputDim"
   }
+
 }

@@ -17,10 +17,42 @@
 
 package com.tencent.angel.ml.core.optimizer.decayer
 
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
+
+import scala.reflect.ClassTag
+
 trait StepSizeScheduler extends Serializable {
 
   def next(): Double
 
   def isIntervalBoundary: Boolean = false
 
+}
+
+object StepSizeScheduler {
+
+  private def matchName[T: ClassTag](name: String): Boolean = {
+    val cls = implicitly[ClassTag[T]].runtimeClass
+    cls.getSimpleName.equalsIgnoreCase(name)
+  }
+
+  def apply(name: String, eta: Double): StepSizeScheduler = {
+    val conf = SharedConf.get()
+    name match {
+      case clsName if matchName[StandardDecay](clsName) =>
+        val alpha = conf.getDouble(MLCoreConf.ML_LEARN_DECAY,
+          conf.getDouble(MLCoreConf.ML_OPT_DECAY_ALPHA, MLCoreConf.DEFAULT_ML_LEARN_DECAY))
+        new StandardDecay(eta, alpha)
+      case clsName if matchName[WarmRestarts](clsName) =>
+        val etaMin = eta / 10
+        val alpha = conf.getDouble(MLCoreConf.ML_OPT_DECAY_ALPHA, MLCoreConf.DEFAULT_ML_OPT_DECAY_ALPHA)
+        new WarmRestarts(eta, etaMin, alpha)
+      case clsName if matchName[CorrectionDecay](clsName) =>
+        val alpha = conf.getDouble(MLCoreConf.ML_OPT_DECAY_ALPHA, MLCoreConf.DEFAULT_ML_OPT_DECAY_ALPHA)
+        val beta = conf.getDouble(MLCoreConf.ML_OPT_DECAY_BETA, MLCoreConf.DEFAULT_ML_OPT_DECAY_BETA)
+        new CorrectionDecay(eta, alpha, beta)
+      case clsName if matchName[ConstantLearningRate](clsName) =>
+        new ConstantLearningRate(eta)
+    }
+  }
 }

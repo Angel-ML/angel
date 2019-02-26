@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -21,6 +21,7 @@ package com.tencent.angel.ml.math2.ufuncs.expression;
 import com.tencent.angel.ml.math2.utils.Constant;
 
 public class FTRLThreshold extends Binary {
+
   private double alpha, beta, lambda1, lambda2;
 
   public FTRLThreshold(boolean inplace, double alpha, double beta, double lambda1, double lambda2) {
@@ -32,24 +33,27 @@ public class FTRLThreshold extends Binary {
     this.lambda2 = lambda2;
   }
 
-  @Override public OpType getOpType() {
+  @Override
+  public OpType getOpType() {
     return OpType.UNION;
   }
 
-  @Override public double apply(double zVal, double nVal) {
+  @Override
+  public double apply(double zVal, double nVal) {
     double result = 0.0;
     if (Math.abs(zVal) > lambda1) {
       result = (-1) * (1.0 / (lambda2 + (beta + Math.sqrt(nVal)) / alpha)) * (zVal
-        - Math.signum(zVal) * lambda1);
+          - Math.signum(zVal) * lambda1);
     }
     return result;
   }
 
-  @Override public double apply(double zVal, float nVal) {
+  @Override
+  public double apply(double zVal, float nVal) {
     double result = 0.0;
     if (Math.abs(zVal) > lambda1) {
       result = (-1) * (1.0 / (lambda2 + (beta + Math.sqrt(nVal)) / alpha)) * (zVal
-        - Math.signum(zVal) * lambda1);
+          - Math.signum(zVal) * lambda1);
     }
     return result;
   }
@@ -59,7 +63,7 @@ public class FTRLThreshold extends Binary {
     double result = 0.0;
     if (Math.abs(zVal) > lambda1) {
       result = (-1) * (1.0 / (lambda2 + (beta + Math.sqrt(nVal)) / alpha)) * (zVal
-        - Math.signum(zVal) * lambda1);
+          - Math.signum(zVal) * lambda1);
     }
     return result;
   }
@@ -68,7 +72,7 @@ public class FTRLThreshold extends Binary {
     double result = 0.0;
     if (Math.abs(zVal) > lambda1) {
       result = (-1) * (1.0 / (lambda2 + (beta + Math.sqrt(nVal)) / alpha)) * (zVal
-        - Math.signum(zVal) * lambda1);
+          - Math.signum(zVal) * lambda1);
     }
     return result;
   }
@@ -77,7 +81,7 @@ public class FTRLThreshold extends Binary {
     double result = 0.0;
     if (Math.abs(zVal) > lambda1) {
       result = (-1) * (1.0 / (lambda2 + (beta + Math.sqrt(nVal)) / alpha)) * (zVal
-        - Math.signum(zVal) * lambda1);
+          - Math.signum(zVal) * lambda1);
     }
     return (float) result;
   }
@@ -86,7 +90,7 @@ public class FTRLThreshold extends Binary {
     double result = 0.0;
     if (Math.abs(zVal) > lambda1) {
       result = (-1) * (1.0 / (lambda2 + (beta + Math.sqrt(nVal)) / alpha)) * (zVal
-        - Math.signum(zVal) * lambda1);
+          - Math.signum(zVal) * lambda1);
     }
     return (float) result;
   }
@@ -95,7 +99,7 @@ public class FTRLThreshold extends Binary {
     double result = 0.0;
     if (Math.abs(zVal) > lambda1) {
       result = (-1) * (1.0 / (lambda2 + (beta + Math.sqrt(nVal)) / alpha)) * (zVal
-        - Math.signum(zVal) * lambda1);
+          - Math.signum(zVal) * lambda1);
     }
     return (float) result;
   }
@@ -104,7 +108,7 @@ public class FTRLThreshold extends Binary {
     double result = 0.0;
     if (Math.abs(zVal) > lambda1) {
       result = (-1) * (1.0 / (lambda2 + (beta + Math.sqrt(nVal)) / alpha)) * (zVal
-        - Math.signum(zVal) * lambda1);
+          - Math.signum(zVal) * lambda1);
     }
     return (long) result;
   }
@@ -113,7 +117,7 @@ public class FTRLThreshold extends Binary {
     double result = 0.0;
     if (Math.abs(zVal) > lambda1) {
       result = (-1) * (1.0 / (lambda2 + (beta + Math.sqrt(nVal)) / alpha)) * (zVal
-        - Math.signum(zVal) * lambda1);
+          - Math.signum(zVal) * lambda1);
     }
     return (long) result;
   }
@@ -122,7 +126,7 @@ public class FTRLThreshold extends Binary {
     double result = 0.0;
     if (Math.abs(zVal) > lambda1) {
       result = (-1) * (1.0 / (lambda2 + (beta + Math.sqrt(nVal)) / alpha)) * (zVal
-        - Math.signum(zVal) * lambda1);
+          - Math.signum(zVal) * lambda1);
     }
     return (int) result;
   }

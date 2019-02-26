@@ -19,8 +19,8 @@
 package com.tencent.angel.ps.storage.partitioner;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.matrix.PartitionMeta;
+import com.tencent.angel.matrix.MatrixContext;
+import com.tencent.angel.matrix.PartitionMeta;
 import com.tencent.angel.ml.math2.utils.RowType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

@@ -26,15 +26,11 @@ import com.tencent.angel.ml.math2.utils.RowType
 import org.apache.commons.logging.LogFactory
 
 
-class BiOutterCross(name: String, outputDim: Int, inputLayer: Layer)(
-  implicit graph: Graph) extends LinearLayer(name, outputDim, inputLayer) {
+class BiOutterCross(name: String, outputDim: Int, inputLayer: Layer)(implicit graph: Graph)
+  extends LinearLayer(name, outputDim, inputLayer) {
   val LOG = LogFactory.getLog(classOf[BiOutterCross])
-  val modelType: RowType = SharedConf.denseModelType
 
-  @transient var output: Matrix = _
-  @transient var gradOutput: Matrix = _
+  override protected def doForward(input: Matrix): Matrix = ???
 
-  override def calOutput(): Matrix = ???
-
-  override def calGradOutput(): Matrix = ???
+  override protected def doBackward(input: Matrix, gradInput: Matrix): Matrix = ???
 }

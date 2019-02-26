@@ -1,7 +1,7 @@
 package com.tencent.angel.spark.ml.psf.embedding;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
+import com.tencent.angel.matrix.psf.update.base.PartitionUpdateParam;
 import io.netty.buffer.ByteBuf;
 
 public class InitPartitionParam extends PartitionUpdateParam {

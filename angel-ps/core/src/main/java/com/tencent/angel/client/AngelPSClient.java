@@ -22,7 +22,7 @@ import com.tencent.angel.RunningMode;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.exception.InvalidParameterException;
-import com.tencent.angel.ml.matrix.MatrixContext;
+import com.tencent.angel.matrix.MatrixContext;
 import com.tencent.angel.model.ModelLoadContext;
 import com.tencent.angel.model.ModelSaveContext;
 import com.tencent.angel.utils.ConfUtils;
@@ -143,7 +143,9 @@ public class AngelPSClient {
    * @throws AngelException
    */
   public void save(ModelSaveContext saveContext) throws AngelException {
-    client.save(saveContext);
+    Boolean deleteExistsFile = conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
+        AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST);
+    client.save(saveContext, deleteExistsFile);
   }
 
   public void load(ModelLoadContext loadContext) {

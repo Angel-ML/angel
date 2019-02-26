@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -22,17 +22,15 @@ import com.tencent.angel.ml.math2.exceptions.MathException;
 import com.tencent.angel.ml.math2.utils.ForkJoinUtils;
 import com.tencent.angel.ml.math2.utils.UnionEle;
 import com.tencent.angel.ml.math2.vector.*;
-
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
+import java.util.concurrent.RecursiveTask;
 
 public class CompReduceExecutor {
-  private static ForkJoinPool pool = ForkJoinUtils.getPool();
+
   private static final int THREADS = ForkJoinUtils.getNCores();
-
-
-  public enum ReduceOP {
-    Sum, Avg, Std, Norm, Min, Max, Size, Numzeros
-  }
+  private static ForkJoinPool pool = ForkJoinUtils.getPool();
 
   public static double apply(ComponentVector vector, ReduceOP op) {
     CompRedExe task = new CompRedExe(vector, op, 0, vector.getNumPartitions() - 1);
@@ -57,61 +55,6 @@ public class CompReduceExecutor {
     }
 
     return Double.NaN;
-  }
-
-  private static class CompRedExe extends RecursiveTask<UnionEle> {
-    private ComponentVector v;
-    private ReduceOP op;
-    private int start, end, threshold;
-
-    public CompRedExe(ComponentVector v, ReduceOP op, int start, int end) {
-      assert v != null && op != null;
-      this.v = v;
-      this.op = op;
-      this.start = start;
-      this.end = end;
-      this.threshold = (v.getNumPartitions() + THREADS - 1) / THREADS;
-    }
-
-
-    @Override protected UnionEle compute() {
-      boolean canCompute = (end - start) < threshold;
-
-      if (canCompute) {
-        if (v instanceof CompIntDoubleVector) {
-          return apply((CompIntDoubleVector) v, op, start, end);
-        } else if (v instanceof CompIntFloatVector) {
-          return apply((CompIntFloatVector) v, op, start, end);
-        } else if (v instanceof CompIntLongVector) {
-          return apply((CompIntLongVector) v, op, start, end);
-        } else if (v instanceof CompIntIntVector) {
-          return apply((CompIntIntVector) v, op, start, end);
-        } else if (v instanceof CompLongDoubleVector) {
-          return apply((CompLongDoubleVector) v, op, start, end);
-        } else if (v instanceof CompLongFloatVector) {
-          return apply((CompLongFloatVector) v, op, start, end);
-        } else if (v instanceof CompLongLongVector) {
-          return apply((CompLongLongVector) v, op, start, end);
-        } else if (v instanceof CompLongIntVector) {
-          return apply((CompLongIntVector) v, op, start, end);
-        } else {
-          throw new MathException("");
-        }
-      } else {
-        int middle = (start + end) >> 1;
-
-        CompRedExe left = new CompRedExe(v, op, start, middle);
-        CompRedExe right = new CompRedExe(v, op, middle + 1, end);
-
-        left.fork();
-        right.fork();
-
-        UnionEle resLeft = left.join();
-        UnionEle resRight = right.join();
-
-        return merge(resLeft, resRight, op);
-      }
-    }
   }
 
   private static UnionEle merge(UnionEle left, UnionEle right, ReduceOP op) {
@@ -607,6 +550,67 @@ public class CompReduceExecutor {
     }
 
     return res;
+  }
+
+  public enum ReduceOP {
+    Sum, Avg, Std, Norm, Min, Max, Size, Numzeros
+  }
+
+  private static class CompRedExe extends RecursiveTask<UnionEle> {
+
+    private ComponentVector v;
+    private ReduceOP op;
+    private int start, end, threshold;
+
+    public CompRedExe(ComponentVector v, ReduceOP op, int start, int end) {
+      assert v != null && op != null;
+      this.v = v;
+      this.op = op;
+      this.start = start;
+      this.end = end;
+      this.threshold = (v.getNumPartitions() + THREADS - 1) / THREADS;
+    }
+
+
+    @Override
+    protected UnionEle compute() {
+      boolean canCompute = (end - start) < threshold;
+
+      if (canCompute) {
+        if (v instanceof CompIntDoubleVector) {
+          return apply((CompIntDoubleVector) v, op, start, end);
+        } else if (v instanceof CompIntFloatVector) {
+          return apply((CompIntFloatVector) v, op, start, end);
+        } else if (v instanceof CompIntLongVector) {
+          return apply((CompIntLongVector) v, op, start, end);
+        } else if (v instanceof CompIntIntVector) {
+          return apply((CompIntIntVector) v, op, start, end);
+        } else if (v instanceof CompLongDoubleVector) {
+          return apply((CompLongDoubleVector) v, op, start, end);
+        } else if (v instanceof CompLongFloatVector) {
+          return apply((CompLongFloatVector) v, op, start, end);
+        } else if (v instanceof CompLongLongVector) {
+          return apply((CompLongLongVector) v, op, start, end);
+        } else if (v instanceof CompLongIntVector) {
+          return apply((CompLongIntVector) v, op, start, end);
+        } else {
+          throw new MathException("");
+        }
+      } else {
+        int middle = (start + end) >> 1;
+
+        CompRedExe left = new CompRedExe(v, op, start, middle);
+        CompRedExe right = new CompRedExe(v, op, middle + 1, end);
+
+        left.fork();
+        right.fork();
+
+        UnionEle resLeft = left.join();
+        UnionEle resRight = right.join();
+
+        return merge(resLeft, resRight, op);
+      }
+    }
   }
 
 

@@ -22,11 +22,11 @@ import com.google.protobuf.ServiceException;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.WaitLockTimeOutException;
-import com.tencent.angel.ml.matrix.PartitionLocation;
+import com.tencent.angel.matrix.PartitionLocation;
 import com.tencent.angel.ml.math2.utils.RowType;
-import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
-import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
-import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
+import com.tencent.angel.matrix.psf.get.base.GetFunc;
+import com.tencent.angel.matrix.psf.get.base.PartitionGetResult;
+import com.tencent.angel.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.server.data.request.*;
 import com.tencent.angel.ps.server.data.response.*;
@@ -487,11 +487,13 @@ public class WorkerPool {
   }
 
   private ByteBuf handleIndexGetRow(int clientId, int seqId, ByteBuf in) throws Throwable {
+
     ServerState state = runningContext.getState();
     IndexPartGetRowResponse result;
     if (state == ServerState.BUSY) {
       result =
         new IndexPartGetRowResponse(ResponseType.SERVER_IS_BUSY, "server is busy now, retry later");
+      result.setState(ServerState.BUSY);
     } else {
       IndexPartGetRowRequest request = new IndexPartGetRowRequest();
       request.deserialize(in);
@@ -542,7 +544,7 @@ public class WorkerPool {
           row.endWrite();
         }
         return resultBuf;
-      } catch (WaitLockTimeOutException x) {
+      } catch (WaitLockTimeOutException  | OutOfMemoryError x) {
         LOG.error("handle request " + TransportMethod.INDEX_GET_ROW + " failed ", x);
         resultBuf.release();
 
@@ -573,6 +575,7 @@ public class WorkerPool {
     if (state == ServerState.BUSY) {
       result = new IndexPartGetRowsResponse(ResponseType.SERVER_IS_BUSY,
         "server is busy now, retry later");
+      result.setState(ServerState.BUSY);
     } else {
       IndexPartGetRowsRequest request = new IndexPartGetRowsRequest();
       request.deserialize(in);
@@ -634,7 +637,7 @@ public class WorkerPool {
           }
         }
         return resultBuf;
-      } catch (WaitLockTimeOutException x) {
+      } catch (WaitLockTimeOutException | OutOfMemoryError x) {
         LOG.error("handle request " + TransportMethod.INDEX_GET_ROWS + " failed ", x);
         resultBuf.release();
 
@@ -880,10 +883,14 @@ public class WorkerPool {
       func.setPsContext(context);
       PartitionGetResult partResult = func.partitionGet(request.getPartParam());
       return new GetUDFResponse(ResponseType.SUCCESS, partResult);
+    } catch (WaitLockTimeOutException | OutOfMemoryError e) {
+      String log = "get udf request " + request + " failed " + StringUtils.stringifyException(e);
+      LOG.error(log, e);
+      return new GetUDFResponse(ResponseType.SERVER_IS_BUSY, log);
     } catch (Throwable e) {
-      LOG.fatal("get udf request " + request + " failed ", e);
-      return new GetUDFResponse(ResponseType.SERVER_HANDLE_FATAL,
-        "get udf request failed " + e.getMessage());
+      String log = "get udf request " + request + " failed " + StringUtils.stringifyException(e);
+      LOG.fatal(log, e);
+      return new GetUDFResponse(ResponseType.SERVER_HANDLE_FATAL, log);
     }
   }
 
@@ -1004,11 +1011,12 @@ public class WorkerPool {
           // context.getPS2PSPusher().put(request, in, partLoc);
         }
         return new UpdaterResponse(ResponseType.SUCCESS);
-      } catch (WaitLockTimeOutException wx) {
-        LOG.error("wait lock timeout ", wx);
-        return new UpdaterResponse(ResponseType.SERVER_IS_BUSY);
+      } catch (WaitLockTimeOutException | OutOfMemoryError e) {
+        String log = "update " + request + " failed " + StringUtils.stringifyException(e);
+        LOG.error(log, e);
+        return new UpdaterResponse(ResponseType.SERVER_IS_BUSY, log);
       } catch (Throwable e) {
-        String log = "update " + request + " failed " + e.getMessage();
+        String log = "update " + request + " failed " + StringUtils.stringifyException(e);
         LOG.fatal(log, e);
         return new UpdaterResponse(ResponseType.SERVER_HANDLE_FATAL, log);
       }
@@ -1038,23 +1046,33 @@ public class WorkerPool {
     }
 
     PartitionKey partKey = request.getPartKey();
-    if (!isClockReady(partKey, request.getClock())) {
-      return new GetRowsSplitResponse(ResponseType.CLOCK_NOTREADY, "clock not ready");
-    } else {
-      List<ServerRow> rows = new ArrayList<ServerRow>();
-      List<Integer> rowIndexes = request.getRowIndexes();
-      if (rowIndexes != null) {
-        int size = rowIndexes.size();
-        for (int i = 0; i < size; i++) {
-          ServerRow row = context.getMatrixStorageManager()
-            .getRow(partKey.getMatrixId(), rowIndexes.get(i), partKey.getPartitionId());
-          if (row != null) {
-            rows.add(row);
+    try {
+      if (!isClockReady(partKey, request.getClock())) {
+        return new GetRowsSplitResponse(ResponseType.CLOCK_NOTREADY, "clock not ready");
+      } else {
+        List<ServerRow> rows = new ArrayList<ServerRow>();
+        List<Integer> rowIndexes = request.getRowIndexes();
+        if (rowIndexes != null) {
+          int size = rowIndexes.size();
+          for (int i = 0; i < size; i++) {
+            ServerRow row = context.getMatrixStorageManager()
+                .getRow(partKey.getMatrixId(), rowIndexes.get(i), partKey.getPartitionId());
+            if (row != null) {
+              rows.add(row);
+            }
           }
         }
-      }
 
-      return new GetRowsSplitResponse(ResponseType.SUCCESS, rows);
+        return new GetRowsSplitResponse(ResponseType.SUCCESS, rows);
+      }
+    } catch (WaitLockTimeOutException | OutOfMemoryError e) {
+      String log = "get rows " + request + " failed " + StringUtils.stringifyException(e);
+      LOG.error(log, e);
+      return new GetRowsSplitResponse(ResponseType.SERVER_IS_BUSY, log);
+    } catch (Throwable e) {
+      String log = "get rows " + request + " failed " + StringUtils.stringifyException(e);
+      LOG.fatal(log, e);
+      return new GetRowsSplitResponse(ResponseType.SERVER_HANDLE_FATAL, log);
     }
   }
 
@@ -1069,12 +1087,23 @@ public class WorkerPool {
       LOG.debug("get partition request=" + request);
     }
     PartitionKey partKey = request.getPartKey();
-    if (!isClockReady(partKey, request.getClock())) {
-      return new GetPartitionResponse(ResponseType.CLOCK_NOTREADY, "clock not ready");
-    } else {
-      ServerPartition partition =
-        context.getMatrixStorageManager().getPart(partKey.getMatrixId(), partKey.getPartitionId());
-      return new GetPartitionResponse(ResponseType.SUCCESS, partition);
+
+    try {
+      if (!isClockReady(partKey, request.getClock())) {
+        return new GetPartitionResponse(ResponseType.CLOCK_NOTREADY, "clock not ready");
+      } else {
+        ServerPartition partition =
+            context.getMatrixStorageManager().getPart(partKey.getMatrixId(), partKey.getPartitionId());
+        return new GetPartitionResponse(ResponseType.SUCCESS, partition);
+      }
+    } catch (WaitLockTimeOutException | OutOfMemoryError e) {
+      String log = "get partition " + request + " failed " + StringUtils.stringifyException(e);
+      LOG.error(log, e);
+      return new GetPartitionResponse(ResponseType.SERVER_IS_BUSY, log);
+    } catch (Throwable e) {
+      String log = "get partition " + request + " failed " + StringUtils.stringifyException(e);
+      LOG.fatal(log, e);
+      return new GetPartitionResponse(ResponseType.SERVER_HANDLE_FATAL, log);
     }
   }
 
@@ -1090,17 +1119,27 @@ public class WorkerPool {
     }
 
     PartitionKey partKey = request.getPartKey();
-    GetRowSplitResponse response = new GetRowSplitResponse();
-    if (!isClockReady(partKey, request.getClock())) {
-      return new GetRowSplitResponse(ResponseType.CLOCK_NOTREADY, "clock not ready");
-    } else {
-      ServerRow row = context.getMatrixStorageManager()
-        .getRow(partKey.getMatrixId(), request.getRowIndex(), partKey.getPartitionId());
-      row.setClock(context.getClockVectorManager()
-        .getPartClock(partKey.getMatrixId(), partKey.getPartitionId()));
-      response.setResponseType(ResponseType.SUCCESS);
-      response.setRowSplit(row);
-      return new GetRowSplitResponse(ResponseType.SUCCESS, row);
+    try {
+      GetRowSplitResponse response = new GetRowSplitResponse();
+      if (!isClockReady(partKey, request.getClock())) {
+        return new GetRowSplitResponse(ResponseType.CLOCK_NOTREADY, "clock not ready");
+      } else {
+        ServerRow row = context.getMatrixStorageManager()
+            .getRow(partKey.getMatrixId(), request.getRowIndex(), partKey.getPartitionId());
+        row.setClock(context.getClockVectorManager()
+            .getPartClock(partKey.getMatrixId(), partKey.getPartitionId()));
+        response.setResponseType(ResponseType.SUCCESS);
+        response.setRowSplit(row);
+        return new GetRowSplitResponse(ResponseType.SUCCESS, row);
+      }
+    } catch (WaitLockTimeOutException | OutOfMemoryError e) {
+      String log = "get row " + request + " failed " + StringUtils.stringifyException(e);
+      LOG.error(log, e);
+      return new GetRowSplitResponse(ResponseType.SERVER_IS_BUSY, log);
+    } catch (Throwable e) {
+      String log = "get row " + request + " failed " + StringUtils.stringifyException(e);
+      LOG.fatal(log, e);
+      return new GetRowSplitResponse(ResponseType.SERVER_HANDLE_FATAL, log);
     }
   }
 
@@ -1207,12 +1246,13 @@ public class WorkerPool {
           }
         }*/
         return new UpdateResponse(ResponseType.SUCCESS);
-      } catch (WaitLockTimeOutException wx) {
-        LOG.error("wait lock timeout ", wx);
-        return new UpdateResponse(ResponseType.SERVER_IS_BUSY);
-      } catch (Throwable x) {
-        String log = "update " + request + " failed " + x.getMessage();
-        LOG.fatal(log, x);
+      } catch (WaitLockTimeOutException | OutOfMemoryError e) {
+        String log = "update " + request + " failed " + StringUtils.stringifyException(e);
+        LOG.error(log, e);
+        return new UpdateResponse(ResponseType.SERVER_IS_BUSY, log);
+      } catch (Throwable e) {
+        String log = "update " + request + " failed " + StringUtils.stringifyException(e);
+        LOG.fatal(log, e);
         return new UpdateResponse(ResponseType.SERVER_HANDLE_FATAL, log);
       }
     }

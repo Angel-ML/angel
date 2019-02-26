@@ -5,7 +5,7 @@ Deep and Wide算法是将Embedding的结果直接输入DNN进一步提取高阶�
 ![DNN](../img/DAW.PNG)
 
 ### 1.1 Deep and Wide中的层
-- SparseInputLayer: 稀疏数据输入层, 对稀疏高维数据做了特别优化, 本质上是一个FCLayer
+- SimpleInputLayer: 稀疏数据输入层, 对稀疏高维数据做了特别优化, 本质上是一个FCLayer
 - Embedding: 隐式嵌入层, 如果特征非one-hot, 则乘以特征值
 - FCLayer: DNN中最常见的层, 线性变换后接传递函数
 - SumPooling: 将多个输入的数据做element-wise的加和, 要求输入具本相同的shape
@@ -14,7 +14,7 @@ Deep and Wide算法是将Embedding的结果直接输入DNN进一步提取高阶�
 ### 1.3 网络构建
 ```scala
   override def buildNetwork(): Unit = {
-    val wide = new SparseInputLayer("input", 1, new Identity(),
+    val wide = new SimpleInputLayer("input", 1, new Identity(),
       JsonUtils.getOptimizerByLayerType(jsonAst, "SparseInputLayer"))
 
     val embeddingParams = JsonUtils.getLayerParamsByLayerType(jsonAst, "Embedding")
@@ -60,7 +60,7 @@ Deep and wide的参数较多, 需要用Json配置文件的方式指定(关于Jso
   "layers": [
     {
       "name": "wide",
-      "type": "sparseinputlayer",
+      "type": "simpleinputlayer",
       "outputdim": 1,
       "transfunc": "identity"
     },

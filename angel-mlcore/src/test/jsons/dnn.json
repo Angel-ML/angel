@@ -10,11 +10,11 @@
     "modelsize": 148
   },
   "train": {
-    "epoch": 6,
-    "lr": 0.5,
+    "epoch": 20,
+    "lr": 10,
     "decay": 0.001
   },
-  "default_optimizer": "sgd",
+  "default_optimizer": "momentum",
   "layers": [
     {
       "name": "denseinputlayer",
@@ -37,7 +37,7 @@
     },
     {
       "name": "simplelosslayer",
-      "type": "simplelosslayer",
+      "type": "losslayer",
       "lossfunc": "logloss",
       "inputlayer": "fclayer"
     }

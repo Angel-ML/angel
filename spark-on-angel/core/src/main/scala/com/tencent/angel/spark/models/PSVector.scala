@@ -20,13 +20,15 @@ package com.tencent.angel.spark.models
 
 import java.util.concurrent.Future
 
+import com.tencent.angel.matrix.psf.get.base.{GetFunc, GetResult}
+import com.tencent.angel.matrix.psf.update.base.{UpdateFunc, VoidResult}
 import com.tencent.angel.ml.math2.utils.RowType
 
 import scala.collection.Map
 import org.apache.spark.SparkException
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
-import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
+import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc
 import com.tencent.angel.spark.context.PSContext
 
 /**

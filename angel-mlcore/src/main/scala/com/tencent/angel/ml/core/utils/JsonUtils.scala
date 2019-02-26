@@ -1,5 +1,6 @@
 package com.tencent.angel.ml.core.utils
 
+import java.io.File
 import java.util
 
 import com.tencent.angel.ml.core.conf.SharedConf
@@ -7,7 +8,7 @@ import com.tencent.angel.ml.core.network.{Graph, TransFunc}
 import com.tencent.angel.ml.core.network.layers.join._
 import com.tencent.angel.ml.core.network.layers.linear._
 import com.tencent.angel.ml.core.network.layers.verge._
-import com.tencent.angel.ml.core.network.layers.{InputLayer, JoinLayer, Layer, LinearLayer}
+import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
 import org.json4s.DefaultFormats
@@ -52,10 +53,20 @@ object JsonTopKeys {
   val layers: String = "layers"
 }
 
+object OptimizerKeys {
+  val typeKey: String = "type"
+  val alphaKey: String = "alpha"
+  val betaKey: String = "beta"
+  val gammaKey: String = " gamma"
+  val momentumKey: String = " momentum"
+  val reg1Key: String = "reg1"
+  val reg2Key: String = "reg2"
+}
+
 
 object JsonUtils {
   private implicit val formats: DefaultFormats.type = DefaultFormats
-  private val json2OptimizerProvider = Optimizer.getJson2OptimizerProvider(SharedConf.optJsonProvider())
+  private lazy val optimizerProvider = Optimizer.getOptimizerProvider(SharedConf.optJsonProvider())
 
   def extract[T: Manifest](jast: JValue, key: String, default: Option[T] = None): Option[T] = {
     jast \ key match {
@@ -87,18 +98,22 @@ object JsonUtils {
     topLayer match {
       case l: InputLayer =>
         if (!jMap.contains(l.name)) {
-          jMap.put(l.name, l.toJson())
+          jMap.put(l.name, l.toJson)
         }
       case l: LinearLayer =>
         if (!jMap.contains(l.name)) {
-          jMap.put(l.name, l.toJson())
+          jMap.put(l.name, l.toJson)
         }
         layer2Json(l.inputLayer)(jMap)
       case l: JoinLayer =>
         if (!jMap.contains(l.name)) {
-          jMap.put(l.name, l.toJson())
+          jMap.put(l.name, l.toJson)
         }
         l.inputLayers.foreach(layer => layer2Json(layer)(jMap))
+      case l: LossLayer =>
+        if (!jMap.contains(l.name)) {
+          jMap.put(l.name, l.toJson)
+        }
     }
   }
 
@@ -165,7 +180,7 @@ object JsonUtils {
             val newLayer = new Embedding(name,
               extract[Int](obj, LayerKeys.outputDimKey).get,
               extract[Int](obj, LayerKeys.numFactorsKey).get,
-              json2OptimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
+              optimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
             )
 
             layerMap.put(name, newLayer)
@@ -174,15 +189,15 @@ object JsonUtils {
             val newLayer = new SimpleInputLayer(name,
               extract[Int](obj, LayerKeys.outputDimKey).get,
               TransFunc.fromJson(obj \ LayerKeys.transFuncKey),
-              json2OptimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
+              optimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
             )
 
             layerMap.put(name, newLayer)
             iter.remove()
-          case JString(value) if matchClassName[SimpleLossLayer](value) =>
+          case JString(value) if matchClassName[LossLayer](value) =>
             val inputLayer = extract[String](obj, LayerKeys.inputLayerKey)
             if (inputLayer.nonEmpty && layerMap.contains(inputLayer.get)) {
-              val newLayer = new SimpleLossLayer(name,
+              val newLayer = new LossLayer(name,
                 layerMap(inputLayer.get),
                 LossFunc.fromJson(obj \ LayerKeys.lossFuncKey)
               )
@@ -207,7 +222,7 @@ object JsonUtils {
                 extract[Int](obj, LayerKeys.outputDimKey).get,
                 layerMap(inputLayer.get),
                 TransFunc.fromJson(obj \ LayerKeys.transFuncKey),
-                json2OptimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
+                optimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
               )
 
               layerMap.put(name, newLayer)
@@ -253,7 +268,7 @@ object JsonUtils {
 
   // for compatible purpose -----------------------------------------------------------------------------------------
   private def jArray2JObject(jArray: JArray, default_trans: Option[JValue], default_optimizer: Option[JValue]): JObject = {
-    val fields = jArray.arr.collect {
+    val fields = jArray.arr.flatMap {
       case obj: JObject if fieldEqualClassName[FCLayer](obj) =>
         extendFCLayer(obj, default_trans, default_optimizer)
       case obj: JObject if fieldEqualClassName[SimpleInputLayer](obj) =>
@@ -264,7 +279,7 @@ object JsonUtils {
         extendLayer(obj, default_trans, default_optimizer)
     }
 
-    JObject(fields.flatten)
+    JObject(fields)
   }
 
   private def extendFCLayer(obj: JObject, default_trans: Option[JValue], default_optimizer: Option[JValue]): List[JField] = {
@@ -282,7 +297,7 @@ object JsonUtils {
     assert(outputDims.size == transFuncs.size)
 
     val optimizer = (obj \ LayerKeys.optimizerKey) match {
-      case JNothing => default_optimizer.getOrElse(json2OptimizerProvider.defaultOptJson())
+      case JNothing => default_optimizer.getOrElse(optimizerProvider.defaultOptJson())
       case opt: JObject => opt
       case opt: JString => opt
       case _ => throw MLException("Json format error!")
@@ -316,7 +331,7 @@ object JsonUtils {
   private def extendSimpleInputLayer(obj: JObject, default_trans: Option[JValue], default_optimizer: Option[JValue]): List[JField] = {
     val name = (obj \ "name").asInstanceOf[JString].values
     val addOpt = (obj \ LayerKeys.optimizerKey) match {
-      case JNothing => obj ~ (LayerKeys.optimizerKey, default_optimizer.getOrElse(json2OptimizerProvider.defaultOptJson()))
+      case JNothing => obj ~ (LayerKeys.optimizerKey, default_optimizer.getOrElse(optimizerProvider.defaultOptJson()))
       case _ => obj
     }
     val addTrans = (obj \ LayerKeys.transFuncKey) match {
@@ -330,7 +345,7 @@ object JsonUtils {
   private def extendEmbeddingLayer(obj: JObject, default_trans: Option[JValue], default_optimizer: Option[JValue]): List[JField] = {
     val name = (obj \ "name").asInstanceOf[JString].values
     val addOpt = (obj \ LayerKeys.optimizerKey) match {
-      case JNothing => obj ~ (LayerKeys.optimizerKey, default_optimizer.getOrElse(json2OptimizerProvider.defaultOptJson()))
+      case JNothing => obj ~ (LayerKeys.optimizerKey, default_optimizer.getOrElse(optimizerProvider.defaultOptJson()))
       case _ => obj
     }
 
@@ -394,5 +409,4 @@ object JsonUtils {
       case _ => throw MLException("Json format error!")
     }
   }
-
 }

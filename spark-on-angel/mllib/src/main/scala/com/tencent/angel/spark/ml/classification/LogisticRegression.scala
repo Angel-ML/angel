@@ -18,7 +18,7 @@
 
 package com.tencent.angel.spark.ml.classification
 
-import com.tencent.angel.ml.core.conf.MLConf
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.verge.{SimpleInputLayer, SimpleLossLayer}
 import com.tencent.angel.ml.core.network.transfunc.Identity
 import com.tencent.angel.ml.core.optimizer.Adam
@@ -27,11 +27,14 @@ import com.tencent.angel.spark.ml.core.GraphModel
 
 class LogisticRegression extends GraphModel {
 
-  val lr = conf.getDouble(MLConf.ML_LEARN_RATE)
+  val lr = conf.getDouble(MLCoreConf.ML_LEARN_RATE)
+  val gamma: Double = SharedConf.get().getDouble(MLCoreConf.ML_OPT_ADAM_GAMMA)
+  val beta: Double = SharedConf.get().getDouble(MLCoreConf.ML_OPT_ADAM_BETA)
 
   override
   def network(): Unit = {
-    val input = new SimpleInputLayer("input", 1, new Identity(), new Adam(lr))
+    val optimizer = new Adam(lr, gamma, beta)
+    val input = new SimpleInputLayer("input", 1, new Identity(), optimizer)
     new SimpleLossLayer("simpleLossLayer", input, new LogLoss)
   }
 }

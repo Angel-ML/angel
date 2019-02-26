@@ -1,7 +1,7 @@
 package com.tencent.angel.spark.ml.psf.embedding.bad;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.matrix.psf.get.base.PartitionGetParam;
 import io.netty.buffer.ByteBuf;
 
 public class W2VPullParatitionParam extends PartitionGetParam {

@@ -13,7 +13,7 @@
     },
     {
       "name": "simplelosslayer",
-      "type": "simplelosslayer",
+      "type": "losslayer",
       "lossfunc": "l2loss",
       "inputlayer": "wide"
     }

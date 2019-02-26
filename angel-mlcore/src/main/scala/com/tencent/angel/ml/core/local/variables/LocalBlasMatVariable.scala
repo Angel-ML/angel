@@ -1,44 +1,34 @@
 package com.tencent.angel.ml.core.local.variables
 
 import java.util.Random
-import java.util.concurrent.Future
 
-import com.tencent.angel.ml.core.network.Graph
-import com.tencent.angel.ml.core.network.variable.BlasMatVariable
-import com.tencent.angel.ml.core.optimizer.Optimizer
+import com.tencent.angel.ml.core.network.{EvnContext, Graph}
 import com.tencent.angel.ml.core.utils.{OptUtils, ValueNotAllowed}
+import com.tencent.angel.ml.core.variable.{BlasMatVariable, Updater}
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.storage.{IntDoubleDenseVectorStorage, IntFloatDenseVectorStorage}
-import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.utils.RowType
-import com.tencent.angel.ml.math2.{MFactory, StorageType, vector}
+import com.tencent.angel.ml.math2.vector.Vector
+import com.tencent.angel.ml.math2.{MFactory, StorageType}
 
 
-class LocalBlasMatVariable(name: String, val numRows: Int, val numCols: Long, val numSlot: Int, rowType: RowType)(
-  implicit graph: Graph) extends LocalVariable(name, rowType) with BlasMatVariable {
+class LocalBlasMatVariable(name: String, val numRows: Int, val numCols: Long, updater: Updater,
+                           rowType: RowType, formatClassName:String, allowPullWithIndex: Boolean)(implicit graph: Graph)
+  extends LocalVariable(name, rowType, updater, formatClassName, allowPullWithIndex) with BlasMatVariable {
   override protected var matrix: Matrix = _
 
-  override def create(): Unit = {
-    if (storage == null) {
-      storage = graph.valueType match {
-        case "float" =>
-          val sto = MFactory.rbIntFloatMatrix(numSlot + 1, (numRows * numCols).toInt, StorageType.DENSE)
-          val values = sto.getRow(0).getStorage.asInstanceOf[IntFloatDenseVectorStorage].getValues
-          matrix = MFactory.denseFloatMatrix(numRows, numCols.toInt, values)
-          sto
-        case "double" =>
-          val sto = MFactory.rbIntDoubleMatrix(numSlot + 1, (numRows * numCols).toInt, StorageType.DENSE)
-          val values = sto.getRow(0).getStorage.asInstanceOf[IntDoubleDenseVectorStorage].getValues
-          matrix = MFactory.denseDoubleMatrix(numRows, numCols.toInt, values)
-          sto
-        case _ => throw ValueNotAllowed("Value Not Allowed, Only Float/Double Are Allowed!")
-      }
+  protected override def doCreate(envCtx: EvnContext): Unit = {
+    storage = graph.valueType match {
+      case "float" =>
+        MFactory.rbIntFloatMatrix(numSlot + 1, (numRows * numCols).toInt, StorageType.DENSE)
+      case "double" =>
+        MFactory.rbIntDoubleMatrix(numSlot + 1, (numRows * numCols).toInt, StorageType.DENSE)
+      case _ => throw ValueNotAllowed("Value Not Allowed, Only Float/Double Are Allowed!")
     }
   }
 
-  override def init(taskFlag: Int, mean: Double, stddev: Double): Unit = {
-
-    if (taskFlag == 0) {
+  protected override def doInit(taskFlag: Int): Unit = {
+    if (taskFlag == 0 && rowType.isDense) {
       val random = new Random()
       storage.getRow(0).getStorage match {
         case s: IntDoubleDenseVectorStorage =>
@@ -56,29 +46,23 @@ class LocalBlasMatVariable(name: String, val numRows: Int, val numCols: Long, va
     }
   }
 
-  override def pullParams(epoch: Int, indices: vector.Vector = null): Unit = {
-    assert(indices == null)
+  protected override def doPull(epoch: Int, indices: Vector = null): Unit = {
     if (matrix == null) {
-      storage.getRow(0).getStorage match {
+      matrix = storage.getRow(0).getStorage match {
         case s: IntDoubleDenseVectorStorage =>
-          matrix = MFactory.denseDoubleMatrix(numRows, numCols.toInt, s.getValues)
+          MFactory.denseDoubleMatrix(numRows, numCols.toInt, s.getValues)
         case s: IntFloatDenseVectorStorage =>
-          matrix = MFactory.denseFloatMatrix(numRows, numCols.toInt, s.getValues)
+          MFactory.denseFloatMatrix(numRows, numCols.toInt, s.getValues)
         case _ => throw ValueNotAllowed("Value Not Allowed, Only Float/Double Are Allowed!")
       }
     }
   }
 
-  override def pushGrads(features: Matrix, backward: Matrix): Unit = {
-    val grad: Matrix = Ufuncs.dot(backward, true, features, false).imul(graph.normalFactor)
-    OptUtils.getRowAsMatrix(storage, numSlot, numRows, numCols.toInt).iadd(grad)
-  }
-
-  override def pushGrads(grad: Matrix): Unit = {
-    OptUtils.getRowAsMatrix(storage, numSlot, numRows, numCols.toInt).iadd(grad)
-  }
-
-  override def update[T](optimizer: Optimizer, epoch: Int, batchSize: Int): Future[T] = {
-    optimizer.update[T](this, epoch)
+  protected override def doPush(grad: Matrix, alpha: Double): Unit = {
+    if (numSlot == 0) {
+      OptUtils.getRowAsMatrix(storage, numSlot, numRows, numCols.toInt).isub(grad.imul(alpha))
+    } else {
+      OptUtils.getRowAsMatrix(storage, numSlot, numRows, numCols.toInt).iadd(grad)
+    }
   }
 }

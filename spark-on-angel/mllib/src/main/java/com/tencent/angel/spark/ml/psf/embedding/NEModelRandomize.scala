@@ -22,8 +22,9 @@ import scala.collection.JavaConversions._
 import scala.util.Random
 import io.netty.buffer.ByteBuf
 import com.tencent.angel.PartitionKey
+import com.tencent.angel.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc, UpdateParam}
 import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage
-import com.tencent.angel.ml.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc, UpdateParam}
+import com.tencent.angel.ml.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc}
 import com.tencent.angel.ps.storage.matrix.ServerPartition
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.spark.ml.psf.embedding.NEModelRandomize.{RandomizePartitionUpdateParam, RandomizeUpdateParam}

@@ -1,8 +1,12 @@
 package com.tencent.angel.spark.ml.psf.embedding.bad;
 
 import com.tencent.angel.PartitionKey;
+import com.tencent.angel.matrix.psf.get.base.GetFunc;
+import com.tencent.angel.matrix.psf.get.base.GetParam;
+import com.tencent.angel.matrix.psf.get.base.GetResult;
+import com.tencent.angel.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage;
-import com.tencent.angel.ml.matrix.psf.get.base.*;
 
 import java.util.List;
 

@@ -1,7 +1,7 @@
 package com.tencent.angel.spark.ml.psf.embedding;
 
-import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
-import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
+import com.tencent.angel.matrix.psf.update.base.PartitionUpdateParam;
+import com.tencent.angel.matrix.psf.update.base.UpdateFunc;
 
 public class Init extends UpdateFunc {
 

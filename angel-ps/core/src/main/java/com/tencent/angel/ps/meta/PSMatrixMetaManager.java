@@ -20,10 +20,10 @@ package com.tencent.angel.ps.meta;
 
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.MatrixMetaManager;
-import com.tencent.angel.ml.matrix.PartitionLocation;
-import com.tencent.angel.ml.matrix.PartitionMeta;
+import com.tencent.angel.matrix.MatrixMeta;
+import com.tencent.angel.matrix.MatrixMetaManager;
+import com.tencent.angel.matrix.PartitionLocation;
+import com.tencent.angel.matrix.PartitionMeta;
 import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.server.data.PSLocation;

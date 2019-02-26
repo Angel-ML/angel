@@ -20,30 +20,50 @@ package com.tencent.angel.ml.core.optimizer
 
 import java.util.concurrent.Future
 
-import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.core.utils.JsonUtils.{extract, fieldEqualClassName}
+import com.tencent.angel.ml.core.utils.OptimizerKeys
+import com.tencent.angel.ml.core.variable.{PSVariable, Variable}
 import com.tencent.angel.ml.psf.optimizer.AdamUpdateFunc
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
+import org.json4s.JsonAST._
+import org.json4s.JsonDSL._
 
-class Adam(override val stepSize: Double,
-           val gamma: Double = 0.99,
-           val beta: Double = 0.9,
-           val epsilon: Double = 1e-7) extends GradientDescent(stepSize) {
 
-  val LOG = LogFactory.getLog(classOf[Adam])
+class Adam(override var lr: Double, val beta: Double, val gamma: Double) extends Optimizer {
+  private val LOG = LogFactory.getLog(classOf[Adam])
 
-  override def update(matrixId: Int, numFactors: Int, epoch: Int): Future[VoidResult] = {
+  override val numSlot: Int = 3
 
-    val func = new AdamUpdateFunc(matrixId, numFactors, gamma, epsilon, beta, lr, regL2Param, epoch)
-    PSAgentContext.get().getUserRequestAdapter.update(func)
-  }
-
-  override def update(matrixId: Int, numFactors: Int, epoch: Int, sampleNum: Int): Future[VoidResult] = {
-    val func = new AdamUpdateFunc(matrixId, numFactors, gamma, epsilon, beta, lr, regL2Param, epoch, sampleNum)
-    PSAgentContext.get().getUserRequestAdapter.update(func)
+  override def update[T](variable: Variable, epoch: Int, batchSize: Int = 1): Future[T] =  {
+    val matrixId = variable.asInstanceOf[PSVariable].getMatrixId
+    val func = new AdamUpdateFunc(matrixId, variable.asInstanceOf[PSVariable].numFactors,
+      gamma, epsilon, beta, lr, regL2Param, epoch, batchSize)
+    PSAgentContext.get().getUserRequestAdapter.update(func).asInstanceOf[Future[T]]
   }
 
   override def toString: String = {
-    s"Adam gamma=$gamma beta=$beta epsilon=$epsilon"
+    s"Adam gamma=$gamma beta=$beta lr=$lr regL2=$regL2Param epsilon=$epsilon"
+  }
+
+  override def toJson: JObject = {
+    (OptimizerKeys.typeKey -> s"${this.getClass.getSimpleName}") ~
+      (OptimizerKeys.betaKey-> beta) ~
+      (OptimizerKeys.gammaKey -> gamma)
+  }
+}
+
+object Adam {
+  private val conf: SharedConf = SharedConf.get()
+
+  def fromJson(jast: JObject): Adam = {
+    assert(fieldEqualClassName[Adam](jast, OptimizerKeys.typeKey))
+    val beta = conf.getDouble(MLCoreConf.ML_OPT_ADAM_BETA, MLCoreConf.DEFAULT_ML_OPT_ADAM_BETA)
+    val gamma = conf.getDouble(MLCoreConf.ML_OPT_ADAM_GAMMA, MLCoreConf.DEFAULT_ML_OPT_ADAM_GAMMA)
+
+    new Adam(1.0, extract[Double](jast, OptimizerKeys.betaKey, Some(beta)).get,
+      extract[Double](jast, OptimizerKeys.gammaKey, Some(gamma)).get
+    )
   }
 }

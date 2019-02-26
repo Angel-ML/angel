@@ -20,7 +20,7 @@ package com.tencent.angel.ml.gbdt;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.GBDT.GBDTRunner;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.conf.MLCoreConf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -81,8 +81,8 @@ public class GBDTTest {
       conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
 
       // Set data format
-      conf.set(MLConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
-      conf.set(MLConf.ML_MODEL_TYPE(), MLConf.DEFAULT_ML_MODEL_TYPE());
+      conf.set(MLCoreConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
+      conf.set(MLCoreConf.ML_MODEL_TYPE(), MLCoreConf.DEFAULT_ML_MODEL_TYPE());
 
       // Set angel resource, #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
@@ -90,13 +90,13 @@ public class GBDTTest {
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
       // Set GBDT algorithm parameters
-      conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
-      conf.set(MLConf.ML_GBDT_TREE_NUM(), String.valueOf(treeNum));
-      conf.set(MLConf.ML_GBDT_TREE_DEPTH(), String.valueOf(treeDepth));
-      conf.set(MLConf.ML_GBDT_SPLIT_NUM(), String.valueOf(splitNum));
-      conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(validateRatio));
-      conf.set(MLConf.ML_GBDT_SAMPLE_RATIO(), String.valueOf(sampleRatio));
-      conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
+      conf.set(MLCoreConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
+      conf.set(MLCoreConf.ML_GBDT_TREE_NUM(), String.valueOf(treeNum));
+      conf.set(MLCoreConf.ML_GBDT_TREE_DEPTH(), String.valueOf(treeDepth));
+      conf.set(MLCoreConf.ML_GBDT_SPLIT_NUM(), String.valueOf(splitNum));
+      conf.set(MLCoreConf.ML_VALIDATE_RATIO(), String.valueOf(validateRatio));
+      conf.set(MLCoreConf.ML_GBDT_SAMPLE_RATIO(), String.valueOf(sampleRatio));
+      conf.set(MLCoreConf.ML_LEARN_RATE(), String.valueOf(learnRate));
 
     } catch (Exception x) {
       LOG.error("setup failed ", x);
@@ -135,7 +135,7 @@ public class GBDTTest {
   private void predictTest() {
     try {
       String loadPath = LOCAL_FS + TMP_PATH + "/model";
-      String predictPath = LOCAL_FS + TMP_PATH + "/predict";
+      String predictPath = LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict";
       String logPath = LOCAL_FS + TMP_PATH + "/GBDTlog";
 
       // Set predict data path
@@ -147,7 +147,7 @@ public class GBDTTest {
       // Set log path
       conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
       // Set actionType prediction
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, "predict");
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, "com/tencent/angel/ml/predict");
 
       GBDTRunner runner = new GBDTRunner();
 

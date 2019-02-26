@@ -19,7 +19,7 @@
 package com.tencent.angel.example.ml;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.conf.MLCoreConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -88,10 +88,10 @@ public class WideAndDeepLocalExample {
       conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/WideDeep");
       conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/WideDeep-inc");
     } else if (mode == 3) {  // predict mode
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, "predict");
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, "com/tencent/angel/ml/predict");
       conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, predictInput);
       conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/WideDeep");
-      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict/WideDeep");
+      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict/WideDeep");
     }
     conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 
@@ -110,7 +110,7 @@ public class WideAndDeepLocalExample {
     conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
 
     // Set model class
-    conf.set(MLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "WideAndDeep");
+    conf.set(MLCoreConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "WideAndDeep");
   }
 
   public void train() {

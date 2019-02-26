@@ -19,7 +19,8 @@
 package com.tencent.angel.ml.deepandwide;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.PSOptimizerProvider;
+import com.tencent.angel.ml.core.conf.MLCoreConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -36,7 +37,7 @@ public class WideDeepTest {
   private Configuration conf = new Configuration();
   private static final Log LOG = LogFactory.getLog(WideDeepTest.class);
   private static String LOCAL_FS = FileSystem.DEFAULT_FS;
-  private static String CLASSBASE = "com.tencent.angel.ml.classification.";
+  private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.AngelModel";
   private static String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
 
   static {
@@ -55,6 +56,7 @@ public class WideDeepTest {
       conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
       conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
       conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
+      conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
 
       //set angel resource parameters #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
@@ -62,6 +64,7 @@ public class WideDeepTest {
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
       String savePath = LOCAL_FS + TMP_PATH + "/model/wideDeep";
+      System.out.println("savePath:\t" + savePath);
       String logPath = LOCAL_FS + TMP_PATH + "/wideDeeplog";
       // Set save model path
       conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, savePath);
@@ -70,7 +73,7 @@ public class WideDeepTest {
 
       String angelConfFile = "./src/test/jsons/daw.json";
       conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
-      conf.set(MLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "WideAndDeep");
+      conf.set(MLCoreConf.ML_MODEL_CLASS_NAME(), CLASSBASE);
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;
@@ -89,7 +92,7 @@ public class WideDeepTest {
       conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
 
       // Set actionType train
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLCoreConf.ANGEL_ML_TRAIN());
 
       GraphRunner runner = new GraphRunner();
       runner.train(conf);
@@ -103,7 +106,7 @@ public class WideDeepTest {
     try {
       String inputPath = "../../data/census/census_148d_test.dummy";
       String modelPath = LOCAL_FS + TMP_PATH + "/model/wideDeep";
-      String predictPath = LOCAL_FS + TMP_PATH + "/predict";
+      String predictPath = LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict";
 
       // Set trainning data path
       conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);
@@ -114,7 +117,7 @@ public class WideDeepTest {
       conf.set(AngelConf.ANGEL_PREDICT_PATH, predictPath);
 
       // Set actionType prediction
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLCoreConf.ANGEL_ML_PREDICT());
 
       GraphRunner runner = new GraphRunner();
       runner.predict(conf);

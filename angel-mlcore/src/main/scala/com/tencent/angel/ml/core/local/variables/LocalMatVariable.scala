@@ -1,88 +1,62 @@
 package com.tencent.angel.ml.core.local.variables
 
 import java.util.Random
-import java.util.concurrent.Future
 
-import com.tencent.angel.ml.core.network.Graph
-import com.tencent.angel.ml.core.network.variable.MatVariable
-import com.tencent.angel.ml.core.optimizer.Optimizer
+import com.tencent.angel.ml.core.network.{EvnContext, Graph}
 import com.tencent.angel.ml.core.utils.{OptUtils, ValueNotAllowed}
-import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, Matrix}
+import com.tencent.angel.ml.core.variable.{MatVariable, Updater}
+import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.storage._
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.{MFactory, StorageType}
 
 
-class LocalMatVariable(name: String, val numRows: Int, val numCols: Long, val numSlot: Int, rowType: RowType)(implicit graph: Graph)
-  extends LocalVariable(name, rowType) with MatVariable {
+class LocalMatVariable(name: String, val numRows: Int, val numCols: Long, updater: Updater,
+                       rowType: RowType, formatClassName: String, allowPullWithIndex: Boolean)(implicit graph: Graph)
+  extends LocalVariable(name, rowType, updater, formatClassName, allowPullWithIndex) with MatVariable {
   override protected var matrix: Matrix = _
 
-  protected var mean: Double = 0
-  protected var stddev: Double = 0.000001
+  protected override def doCreate(envCtx: EvnContext): Unit = {
+    storage = rowType match {
+      case RowType.T_DOUBLE_DENSE =>
+        MFactory.rbIntDoubleMatrix((numSlot + 1) * numRows, numCols.toInt, StorageType.DENSE)
+      case RowType.T_DOUBLE_SPARSE =>
+        MFactory.rbIntDoubleMatrix((numSlot + 1) * numRows, numCols.toInt, StorageType.SPARSE)
+      case RowType.T_DOUBLE_SPARSE_LONGKEY =>
+        MFactory.rbLongDoubleMatrix((numSlot + 1) * numRows, numCols, StorageType.SPARSE)
+      case RowType.T_FLOAT_DENSE =>
+        MFactory.rbIntFloatMatrix((numSlot + 1) * numRows, numCols.toInt, StorageType.DENSE)
+      case RowType.T_FLOAT_SPARSE =>
+        MFactory.rbIntFloatMatrix((numSlot + 1) * numRows, numCols.toInt, StorageType.SPARSE)
+      case RowType.T_FLOAT_SPARSE_LONGKEY =>
+        MFactory.rbLongFloatMatrix((numSlot + 1) * numRows, numCols, StorageType.SPARSE)
+      case _ => throw ValueNotAllowed("Value Not Allowed, Only Float/Double Are Allowed!")
+    }
+  }
 
-  override def create(): Unit = {
-    if (storage == null) {
-      storage = rowType match {
-        case RowType.T_DOUBLE_DENSE =>
-          val sto = MFactory.rbIntDoubleMatrix((numSlot + 1) * numRows, numCols.toInt, StorageType.DENSE)
-          val rows = (0 until numRows).toArray.map { rId => sto.getRow(rId) }
-          matrix = MFactory.rbIntDoubleMatrix(rows)
-          sto
-        case RowType.T_DOUBLE_SPARSE =>
-          val sto = MFactory.rbIntDoubleMatrix((numSlot + 1) * numRows, numCols.toInt, StorageType.SPARSE)
-          val rows = (0 until numRows).toArray.map { rId => sto.getRow(rId) }
-          matrix = MFactory.rbIntDoubleMatrix(rows)
-          sto
-        case RowType.T_DOUBLE_SPARSE_LONGKEY =>
-          val sto = MFactory.rbLongDoubleMatrix((numSlot + 1) * numRows, numCols, StorageType.SPARSE)
-          val rows = (0 until numRows).toArray.map { rId => sto.getRow(rId) }
-          matrix = MFactory.rbLongDoubleMatrix(rows)
-          sto
-        case RowType.T_FLOAT_DENSE =>
-          val sto = MFactory.rbIntFloatMatrix((numSlot + 1) * numRows, numCols.toInt, StorageType.DENSE)
-          val rows = (0 until numRows).toArray.map { rId => sto.getRow(rId) }
-          matrix = MFactory.rbIntFloatMatrix(rows)
-          sto
-        case RowType.T_FLOAT_SPARSE =>
-          val sto = MFactory.rbIntFloatMatrix((numSlot + 1) * numRows, numCols.toInt, StorageType.SPARSE)
-          val rows = (0 until numRows).toArray.map { rId => sto.getRow(rId) }
-          matrix = MFactory.rbIntFloatMatrix(rows)
-          sto
-        case RowType.T_FLOAT_SPARSE_LONGKEY =>
-          val sto = MFactory.rbLongFloatMatrix((numSlot + 1) * numRows, numCols, StorageType.SPARSE)
-          val rows = (0 until numRows).toArray.map { rId => sto.getRow(rId) }
-          matrix = MFactory.rbLongFloatMatrix(rows)
-          sto
-        case _ => throw ValueNotAllowed("Value Not Allowed, Only Float/Double Are Allowed!")
+  protected override def doInit(taskFlag: Int): Unit = {
+    if (taskFlag == 0 && rowType.isDense) {
+      val random = new Random()
+      (0 until numRows).foreach { rId =>
+        storage.getRow(rId).getStorage match {
+          case storage: IntDoubleDenseVectorStorage =>
+            val values = storage.getValues
+            values.indices.foreach { idx =>
+              values(idx) = random.nextDouble() * stddev + mean
+            }
+          case storage: IntFloatDenseVectorStorage =>
+            val values = storage.getValues
+            values.indices.foreach { idx =>
+              values(idx) = (random.nextDouble() * stddev + mean).toFloat
+            }
+          case _ =>
+        }
       }
     }
   }
 
-  override def init(taskFlag: Int, mean: Double, stddev: Double): Unit = {
-    this.mean = mean
-    this.stddev = stddev
-
-    val random = new Random()
-
-    (0 until numRows).foreach { rId =>
-      matrix.getRow(rId).getStorage match {
-        case storage: IntDoubleDenseVectorStorage =>
-          val values = storage.getValues
-          values.indices.foreach { idx =>
-            values(idx) = random.nextDouble() * stddev + mean
-          }
-        case storage: IntFloatDenseVectorStorage =>
-          val values = storage.getValues
-          values.indices.foreach { idx =>
-            values(idx) = (random.nextDouble() * stddev + mean).toFloat
-          }
-        case _ =>
-      }
-    }
-  }
-
-  override def pullParams(epoch: Int, indices: Vector = null): Unit = {
+  protected override def doPull(epoch: Int, indices: Vector = null): Unit = {
     if (matrix == null) {
       matrix = rowType match {
         case RowType.T_DOUBLE_DENSE =>
@@ -106,58 +80,13 @@ class LocalMatVariable(name: String, val numRows: Int, val numCols: Long, val nu
         case _ => throw ValueNotAllowed("Value Not Allowed, Only Float/Double Are Allowed!")
       }
     }
+  }
 
-
-    if (epoch == 0 && indices != null && rowType.isSparse) {
-      val random = new Random()
-      (0 until numRows).foreach { rId =>
-        matrix.getRow(rId).getStorage match {
-          case storage: IntDoubleSparseVectorStorage =>
-            val idxs = indices.getStorage.asInstanceOf[IntIntDenseVectorStorage].getValues
-            idxs.foreach { i =>
-              if (!storage.hasKey(i)) {
-                storage.set(i, random.nextDouble() * stddev + mean)
-              }
-            }
-          case storage: LongDoubleSparseVectorStorage =>
-            val idxs = indices.getStorage.asInstanceOf[IntLongDenseVectorStorage].getValues
-            idxs.foreach { i =>
-              if (!storage.hasKey(i)) {
-                storage.set(i, random.nextDouble() * stddev + mean)
-              }
-            }
-          case storage: IntFloatSparseVectorStorage =>
-            val idxs = indices.getStorage.asInstanceOf[IntIntDenseVectorStorage].getValues
-            idxs.foreach { i =>
-              if (!storage.hasKey(i)) {
-                storage.set(i, (random.nextDouble() * stddev + mean).toFloat)
-              }
-            }
-          case storage: LongFloatSparseVectorStorage =>
-            val idxs = indices.getStorage.asInstanceOf[IntLongDenseVectorStorage].getValues
-            idxs.foreach { i =>
-              if (!storage.hasKey(i)) {
-                storage.set(i, (random.nextDouble() * stddev + mean).toFloat)
-              }
-            }
-          case _ =>
-        }
-      }
+  protected override def doPush(grad: Matrix, alpha: Double): Unit = {
+    if (numSlot == 0) {
+      OptUtils.getRowsAsMatrix(storage, 0, numRows).isub(grad.imul(alpha))
+    } else {
+      OptUtils.getRowsAsMatrix(storage, numRows * numSlot, numRows * (numSlot + 1)).iadd(grad)
     }
-  }
-
-  override def pushGrads(features: Matrix, backward: Matrix): Unit = {
-    (0 until numRows).toArray.foreach { colId =>
-      val grad = features.transDot(backward.getCol(colId)).imul(graph.normalFactor)
-      storage.getRow(numSlot * numRows + colId).iadd(grad)
-    }
-  }
-
-  override def pushGrads(grad: Matrix): Unit = {
-    OptUtils.getRowsAsMatrix(storage, numRows * numSlot, numRows * (numSlot+1)).iadd(grad)
-  }
-
-  override def update[T](optimizer: Optimizer, epoch: Int, batchSize: Int): Future[T] = {
-    optimizer.update[T](this, epoch)
   }
 }

@@ -21,7 +21,7 @@ package com.tencent.angel.utils;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.tencent.angel.ml.metric.Metric;
+import com.tencent.angel.ml.core.utils.Metric;
 import de.javakaffee.kryoserializers.KryoReflectionFactorySupport;
 
 import java.io.ByteArrayInputStream;

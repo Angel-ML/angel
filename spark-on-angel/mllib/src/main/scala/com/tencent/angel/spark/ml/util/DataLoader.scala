@@ -18,8 +18,11 @@
 
 package com.tencent.angel.spark.ml.util
 
-import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math2.VFactory
+import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage
+import com.tencent.angel.ml.math2.utils.LabeledData
+import com.tencent.angel.ml.math2.vector._
 
 import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.ml.linalg.{Vector, Vectors}
@@ -93,6 +96,25 @@ object DataLoader {
     new LabeledData(x, y)
   }
 
+  def parseLongDummy(text: String, dim: Long): LabeledData = {
+    if (null == text) return null
+    var splits = text.trim.split(" ")
+    if (splits.length < 1) return null
+    var y = splits(0).toDouble
+    if (y == 0.0) y = -1.0
+
+    splits = splits.tail
+    val len = splits.length
+    val keys = new Array[Long](len)
+
+    splits.zipWithIndex.foreach{ case (value: String, indx2: Int) =>
+      keys(indx2) = value.toLong
+    }
+
+    val x = VFactory.longDummyVector(dim, keys);
+    new LabeledData(x, y)
+  }
+
   def parseLongDouble(text: String, dim: Long): LabeledData = {
     if (null == text) return null
 
@@ -155,6 +177,19 @@ object DataLoader {
   def parseLabel(text: String): String = {
     if (null == text) return null
     return text.trim.split(" ")(0)
+  }
+
+  def appendBias(point: LabeledData): LabeledData = {
+    point.getX match {
+      case x: LongDoubleVector => x.set(0L, 1.0)
+      case x: IntDoubleVector => x.set(0, 1.0)
+      case x: IntFloatVector => x.set(0, 1.0f)
+      case x: LongFloatVector => x.set(0, 1.0f)
+      case _: LongDummyVector =>
+        throw new AngelException("cannot append bias for Dummy vector")
+    }
+
+    point
   }
 
   // transform data to sparse type

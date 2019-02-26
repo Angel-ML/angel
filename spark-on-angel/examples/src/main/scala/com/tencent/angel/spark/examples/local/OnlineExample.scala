@@ -18,7 +18,7 @@
 
 package com.tencent.angel.spark.examples.local
 
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.utils.DataParser
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OnlineLearner}
@@ -34,24 +34,24 @@ object OnlineExample {
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
     val input = params.getOrElse("input", "data/fm/census.train")
-    val dataType = params.getOrElse(MLConf.ML_DATA_INPUT_FORMAT, "dummy")
-    val features = params.getOrElse(MLConf.ML_FEATURE_INDEX_RANGE, "148").toInt
-    val numField = params.getOrElse(MLConf.ML_FIELD_NUM, "13").toInt
-    val numRank = params.getOrElse(MLConf.ML_RANK_NUM, "8").toInt
-    val numEpoch = params.getOrElse(MLConf.ML_EPOCH_NUM, "200").toInt
-    val fraction = params.getOrElse(MLConf.ML_BATCH_SAMPLE_RATIO, "0.1").toDouble
-    val lr = params.getOrElse(MLConf.ML_LEARN_RATE, "0.02").toDouble
+    val dataType = params.getOrElse(MLCoreConf.ML_DATA_INPUT_FORMAT, "dummy")
+    val features = params.getOrElse(MLCoreConf.ML_FEATURE_INDEX_RANGE, "148").toInt
+    val numField = params.getOrElse(MLCoreConf.ML_FIELD_NUM, "13").toInt
+    val numRank = params.getOrElse(MLCoreConf.ML_RANK_NUM, "8").toInt
+    val numEpoch = params.getOrElse(MLCoreConf.ML_EPOCH_NUM, "200").toInt
+    val fraction = params.getOrElse(MLCoreConf.ML_BATCH_SAMPLE_RATIO, "0.1").toDouble
+    val lr = params.getOrElse(MLCoreConf.ML_LEARN_RATE, "0.02").toDouble
 
     val network = params.getOrElse("network", "LogisticRegression")
 
     SharedConf.addMap(params)
-    SharedConf.get().set(MLConf.ML_DATA_INPUT_FORMAT, dataType)
-    SharedConf.get().setInt(MLConf.ML_FEATURE_INDEX_RANGE, features)
-    SharedConf.get().setInt(MLConf.ML_FIELD_NUM, numField)
-    SharedConf.get().setInt(MLConf.ML_RANK_NUM, numRank)
-    SharedConf.get().setInt(MLConf.ML_EPOCH_NUM, numEpoch)
-    SharedConf.get().setDouble(MLConf.ML_BATCH_SAMPLE_RATIO, fraction)
-    SharedConf.get().setDouble(MLConf.ML_LEARN_RATE, lr)
+    SharedConf.get().set(MLCoreConf.ML_DATA_INPUT_FORMAT, dataType)
+    SharedConf.get().setInt(MLCoreConf.ML_FEATURE_INDEX_RANGE, features)
+    SharedConf.get().setInt(MLCoreConf.ML_FIELD_NUM, numField)
+    SharedConf.get().setInt(MLCoreConf.ML_RANK_NUM, numRank)
+    SharedConf.get().setInt(MLCoreConf.ML_EPOCH_NUM, numEpoch)
+    SharedConf.get().setDouble(MLCoreConf.ML_BATCH_SAMPLE_RATIO, fraction)
+    SharedConf.get().setDouble(MLCoreConf.ML_LEARN_RATE, lr)
 
 
     val conf = new SparkConf()

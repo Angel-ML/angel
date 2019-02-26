@@ -1,7 +1,7 @@
 package com.tencent.angel.example.ml;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.conf.MLCoreConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
 import com.tencent.angel.ml.math2.utils.RowType;
 import org.apache.commons.logging.Log;
@@ -81,7 +81,7 @@ public class SoftmaxRegLocalExample {
 
 	// Use local deploy mode and data format
 	conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
-	conf.set(MLConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
+	conf.set(MLCoreConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
 
 	// Set data path
 	conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
@@ -95,10 +95,10 @@ public class SoftmaxRegLocalExample {
 	  conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/SoftmaxReg");
 	  conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/SoftmaxReg-inc");
 	} else if (mode == 3) {  // predict mode
-	  conf.set(AngelConf.ANGEL_ACTION_TYPE, "predict");
+	  conf.set(AngelConf.ANGEL_ACTION_TYPE, "com/tencent/angel/ml/predict");
 	  conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, predictInput);
 	  conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/SoftmaxReg");
-	  conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict/SoftmaxReg");
+	  conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict/SoftmaxReg");
 	}
 	conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 
@@ -108,21 +108,20 @@ public class SoftmaxRegLocalExample {
 	conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
 	// Set Softmax algorithm parameters
-	conf.set(MLConf.ML_MODEL_TYPE(), modelType);
-	conf.setInt(MLConf.ML_NUM_CLASS(), classNum);
-	conf.set(MLConf.ML_DATA_LABEL_TRANS(), "SubOneTrans");
-	conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
-	conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
-	conf.set(MLConf.ML_BATCH_SAMPLE_RATIO(), String.valueOf(spRatio));
-	conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
-	conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
-	conf.set(MLConf.ML_LEARN_DECAY(), String.valueOf(decay));
-	conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
-	conf.setLong(MLConf.ML_MODEL_SIZE(), 124L);
-	conf.setLong(MLConf.ML_MINIBATCH_SIZE(), 1024);
+	conf.set(MLCoreConf.ML_MODEL_TYPE(), modelType);
+	conf.setInt(MLCoreConf.ML_NUM_CLASS(), classNum);
+	conf.set(MLCoreConf.ML_DATA_LABEL_TRANS(), "SubOneTrans");
+	conf.set(MLCoreConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
+	conf.set(MLCoreConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
+	conf.set(MLCoreConf.ML_BATCH_SAMPLE_RATIO(), String.valueOf(spRatio));
+	conf.set(MLCoreConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
+	conf.set(MLCoreConf.ML_LEARN_RATE(), String.valueOf(learnRate));
+	conf.set(MLCoreConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
+	conf.set(MLCoreConf.ML_REG_L2(), String.valueOf(reg));
+	conf.setLong(MLCoreConf.ML_MODEL_SIZE(), 124L);
 
 	// Set model class
-	conf.set(MLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "SoftmaxRegression");
+	conf.set(MLCoreConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "SoftmaxRegression");
 
   }
 

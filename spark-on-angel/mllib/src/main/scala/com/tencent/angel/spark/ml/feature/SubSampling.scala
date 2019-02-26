@@ -35,7 +35,12 @@ import scala.util.Random
   */
 object SubSampling {
 
-  def sampling(data: RDD[Array[Int]]): RDD[Array[Int]] = {
+  /**
+    * return (maxWordId, dataset)
+    * @param data
+    * @return
+    */
+  def sampling(data: RDD[Array[Int]]): (Long, RDD[Array[Int]]) = {
     // First, calculate z(w) for each word
     val numTokens = data.map(sentence => sentence.length).sum()
     val denseDim  = data.flatMap(sentence => sentence).max() + 1
@@ -128,7 +133,7 @@ object SubSampling {
         freqMatrixId),
       true)
 
-    samples.filter(s => s.nonEmpty).filter(s => s.length > 1)
+    (denseDim, samples.filter(s => s.nonEmpty).filter(s => s.length > 1))
   }
 
 }

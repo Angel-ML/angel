@@ -1,8 +1,8 @@
 package com.tencent.angel.spark.ml.psf.embedding;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
-import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
+import com.tencent.angel.matrix.psf.update.base.PartitionUpdateParam;
+import com.tencent.angel.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.psagent.PSAgentContext;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 

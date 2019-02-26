@@ -18,17 +18,19 @@
 
 package com.tencent.angel.ml.core.optimizer
 
-import java.util.concurrent.Future
-import com.tencent.angel.ml.core.network.variable.Variable
-import org.json4s.JsonAST.{JObject, JValue}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.core.utils.OptimizerKeys
+import com.tencent.angel.ml.core.variable.Updater
+import org.json4s.JsonAST.{JDouble, JObject, JValue}
 
 
-trait Optimizer extends Serializable {
-  val numSlot: Int
+trait Optimizer extends Updater with Serializable {
   var lr: Double
+  val epsilon: Double = 1e-10
+  val conf: SharedConf = SharedConf.get()
 
-  protected var regL1Param: Double
-  protected var regL2Param: Double
+  protected var regL1Param: Double = conf.getDouble(MLCoreConf.ML_REG_L1, MLCoreConf.DEFAULT_ML_REG_L1)
+  protected var regL2Param: Double = conf.getDouble(MLCoreConf.ML_REG_L2, MLCoreConf.DEFAULT_ML_REG_L2)
 
   def setLR(lr: Double): this.type = {
     this.lr = lr
@@ -51,31 +53,40 @@ trait Optimizer extends Serializable {
 
   def getRegL2Param: Double = this.regL2Param
 
-  def update[T](variable: Variable, epoch: Int): Future[T]
-
   def toJson: JObject
 }
 
-
 object Optimizer {
-
-  abstract class Json2OptimizerProvider {
-    def optFromJson(json: JValue): Optimizer
-
-    def defaultOptJson(): JObject
-  }
-
-  def getJson2OptimizerProvider(className: String): Json2OptimizerProvider = {
+  def getOptimizerProvider(className: String): OptimizerProvider = {
     val cls = Class.forName(className)
-    cls.newInstance().asInstanceOf[Json2OptimizerProvider]
+    cls.newInstance().asInstanceOf[OptimizerProvider]
   }
 
-  def getJson2OptimizerProvider(cls: Class[_<: Json2OptimizerProvider]): Json2OptimizerProvider = {
+  def getOptimizerProvider(cls: Class[_<: OptimizerProvider]): OptimizerProvider = {
     cls.newInstance()
   }
 }
 
+trait OptimizerHelper {
+  val conf: SharedConf = SharedConf.get()
 
-abstract class GradientDescent(val lr: Double = 0.1) extends Optimizer {
-  setLR(lr)
+  def setRegParams[T <: Optimizer](opt: T, jast: JValue): T = {
+    jast \ OptimizerKeys.reg1Key match {
+      case JDouble(num) => opt.setRegL1Param(num)
+      case _ => opt.setRegL1Param(conf.getDouble(MLCoreConf.ML_REG_L1, MLCoreConf.DEFAULT_ML_REG_L1))
+    }
+
+    jast \ OptimizerKeys.reg2Key match {
+      case JDouble(num) => opt.setRegL2Param(num)
+      case _ => opt.setRegL1Param(conf.getDouble(MLCoreConf.ML_REG_L2, MLCoreConf.DEFAULT_ML_REG_L2))
+    }
+
+    opt
+  }
+}
+
+trait OptimizerProvider {
+  def optFromJson(json: JValue): Optimizer
+
+  def defaultOptJson(): JObject
 }

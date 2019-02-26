@@ -20,13 +20,17 @@ package com.tencent.angel.spark.models
 
 import java.util.concurrent.Future
 
+import com.tencent.angel.matrix.psf.get.base.{GetFunc, GetResult}
+import com.tencent.angel.matrix.psf.update.base.{UpdateFunc, VoidResult}
+import com.tencent.angel.matrix.psf.update.{Diag, Eye, FullFill, Random}
+
 import scala.collection.Map
 import org.apache.commons.logging.LogFactory
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
-import com.tencent.angel.ml.matrix.psf.update.{Diag, Eye, FullFill, Random}
+import com.tencent.angel.ml.matrix.psf.update.{Diag, Eye, Random}
 import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.models.impl.PSMatrixImpl
@@ -130,7 +134,7 @@ object PSMatrix{
     new PSMatrixImpl(matrixMeta.getId, rows, cols, rowType)
   }
 
-  @deprecated("use dense directly", "2.0.0")
+  @deprecated("use dense directly", "2.0.1")
   def zero(rows: Int, cols: Long): PSMatrix = {
     dense(rows, cols)
   }

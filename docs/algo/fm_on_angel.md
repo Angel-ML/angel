@@ -53,7 +53,11 @@ FM算法的模型由两部分组成，分别是wide和embedding，其中wide就�
     * ml.data.validate.ratio：验证集采样率
     * ml.data.type：数据类型，分“libsvm”和“dummy”两种
     * ml.learn.rate：学习率
-    * ml.learn.decay：学习率衰减系数
+    * ml.opt.decay.class.name：学习率衰减系类
+    * ml.opt.decay.on.batch: 是否对每个mini batch衰减
+    * ml.opt.decay.alpha: 学习率衰减参数alpha
+    * ml.opt.decay.beta: 学习率衰减参数beta
+    * ml.opt.decay.intervals: 学习率衰减参数intervals
     * ml.reg.l2:l2正则项系数
     * action.type：任务类型，训练用"train",预测用"predict"
     * ml.fm.field.num:输入数据领域(field)的个数
@@ -75,7 +79,6 @@ FM算法的模型由两部分组成，分别是wide和embedding，其中wide就�
     -Dml.data.validate.ratio=0.1 \ 
     -Dml.data.type=libsvm \
     -Dml.learn.rate=0.1 \
-    -Dml.learn.decay=0.5 \
     -Dml.reg.l2=0.03 \
     -Daction.type=train \
     -Dml.fm.field.num=11 \

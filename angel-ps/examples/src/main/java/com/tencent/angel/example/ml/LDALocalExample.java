@@ -19,7 +19,7 @@
 package com.tencent.angel.example.ml;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.conf.MLCoreConf;
 import com.tencent.angel.ml.lda.LDAModel;
 import com.tencent.angel.ml.lda.LDARunner;
 import org.apache.commons.logging.Log;
@@ -80,7 +80,7 @@ public class LDALocalExample {
 
     // Use local deploy mode and data format
     conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
-    conf.set(MLConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
+    conf.set(MLCoreConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
 
     // Set data path
     conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
@@ -89,10 +89,10 @@ public class LDALocalExample {
       conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, trainInput);
       conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/LDA");
     } else if (mode == 2) {  // predict mode
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, "predict");
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, "com/tencent/angel/ml/predict");
       conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, predictInput);
       conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/LDA");
-      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict/LDA");
+      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict/LDA");
     }
     conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 
@@ -104,7 +104,7 @@ public class LDALocalExample {
     // Set LDA algorithm parameters
     conf.setInt(LDAModel.WORD_NUM(), V);
     conf.setInt(LDAModel.TOPIC_NUM(), K);
-    conf.setInt(MLConf.ML_EPOCH_NUM(), 10);
+    conf.setInt(MLCoreConf.ML_EPOCH_NUM(), 10);
     conf.setBoolean(LDAModel.SAVE_DOC_TOPIC(), true);
     conf.setBoolean(LDAModel.SAVE_WORD_TOPIC(), true);
 

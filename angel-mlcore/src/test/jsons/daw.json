@@ -1,14 +1,13 @@
 {
   "data": {
-    "format": "dummy",
+    "format": "dense",
     "indexrange": 148,
     "numfield": 13,
     "validateratio": 0.1
   },
   "model": {
-    "modeltype": "T_FLOAT_SPARSE",
-    "modelsize": 148,
-    "loadpath": "E:\\github\\fitzwang\\angel\\angel-mlcore\\src\\test\\models\\lr"
+    "modeltype": "T_DOUBLE_DENSE",
+    "modelsize": 148
   },
   "train": {
     "epoch": 5,
@@ -60,7 +59,7 @@
     },
     {
       "name": "simplelosslayer",
-      "type": "simplelosslayer",
+      "type": "losslayer",
       "lossfunc": "logloss",
       "inputlayer": "sumPooling"
     }

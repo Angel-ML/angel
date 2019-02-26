@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,11 +18,12 @@
 
 package com.tencent.angel.ml.math2.storage;
 
+import com.tencent.angel.ml.math2.exceptions.MathNotImplementedException;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public interface IntFloatVectorStorage extends FloatVectorStorage, IntKeyVectorStorage {
+
   float get(int idx);
 
   default float[] get(int[] idxs) {
@@ -45,7 +46,7 @@ public interface IntFloatVectorStorage extends FloatVectorStorage, IntKeyVectorS
   }
 
   default ObjectIterator<Int2FloatMap.Entry> entryIterator() {
-    throw new NotImplementedException();
+    throw new MathNotImplementedException("NotImplemented");
   }
 
   IntFloatVectorStorage clone();

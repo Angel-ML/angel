@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -24,13 +24,14 @@ import com.tencent.angel.ml.math2.ufuncs.expression.Unary;
 import com.tencent.angel.ml.math2.utils.ForkJoinUtils;
 import com.tencent.angel.ml.math2.utils.VectorUtils;
 import com.tencent.angel.ml.math2.vector.*;
-
-import java.util.concurrent.*;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveAction;
 
 
 public class CompUnaryExecutor {
-  private static ForkJoinPool pool = ForkJoinUtils.getPool();
+
   private static final int THREADS = ForkJoinUtils.getNCores();
+  private static ForkJoinPool pool = ForkJoinUtils.getPool();
 
   public static Vector apply(ComponentVector v1, Unary op) {
     ComponentVector result;
@@ -47,6 +48,7 @@ public class CompUnaryExecutor {
 
     return (Vector) result;
   }
+
 
   private static class CompUnaExe extends RecursiveAction {
     int start, end, threshold;
@@ -99,7 +101,7 @@ public class CompUnaryExecutor {
   }
 
   private static void apply(CompIntDoubleVector v, Unary op, CompIntDoubleVector result, int start,
-    int end) {
+      int end) {
     IntDoubleVector[] v1Parts = v.getPartitions();
 
     if (op.isInplace()) {
@@ -115,7 +117,7 @@ public class CompUnaryExecutor {
   }
 
   private static void apply(CompIntFloatVector v, Unary op, CompIntFloatVector result, int start,
-    int end) {
+      int end) {
     IntFloatVector[] v1Parts = v.getPartitions();
 
     if (op.isInplace()) {
@@ -131,7 +133,7 @@ public class CompUnaryExecutor {
   }
 
   private static void apply(CompIntLongVector v, Unary op, CompIntLongVector result, int start,
-    int end) {
+      int end) {
     IntLongVector[] v1Parts = v.getPartitions();
 
     if (op.isInplace()) {
@@ -147,7 +149,7 @@ public class CompUnaryExecutor {
   }
 
   private static void apply(CompIntIntVector v, Unary op, CompIntIntVector result, int start,
-    int end) {
+      int end) {
     IntIntVector[] v1Parts = v.getPartitions();
 
     if (op.isInplace()) {
@@ -163,7 +165,7 @@ public class CompUnaryExecutor {
   }
 
   private static void apply(CompLongDoubleVector v, Unary op, CompLongDoubleVector result,
-    int start, int end) {
+      int start, int end) {
     LongDoubleVector[] v1Parts = v.getPartitions();
 
     if (op.isInplace()) {
@@ -179,7 +181,7 @@ public class CompUnaryExecutor {
   }
 
   private static void apply(CompLongFloatVector v, Unary op, CompLongFloatVector result, int start,
-    int end) {
+      int end) {
     LongFloatVector[] v1Parts = v.getPartitions();
 
     if (op.isInplace()) {
@@ -195,7 +197,7 @@ public class CompUnaryExecutor {
   }
 
   private static void apply(CompLongLongVector v, Unary op, CompLongLongVector result, int start,
-    int end) {
+      int end) {
     LongLongVector[] v1Parts = v.getPartitions();
 
     if (op.isInplace()) {
@@ -211,7 +213,7 @@ public class CompUnaryExecutor {
   }
 
   private static void apply(CompLongIntVector v, Unary op, CompLongIntVector result, int start,
-    int end) {
+      int end) {
     LongIntVector[] v1Parts = v.getPartitions();
 
     if (op.isInplace()) {
@@ -225,6 +227,5 @@ public class CompUnaryExecutor {
       }
     }
   }
-
 
 }

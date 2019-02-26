@@ -18,24 +18,27 @@
 
 package com.tencent.angel.ml.clustering.kmeans
 
+import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.TrainTask
 import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.core.utils.DataParser
-import com.tencent.angel.ml.math2.vector.Vector
-import com.tencent.angel.worker.storage.{DataBlock, DiskDataBlock, MemoryAndDiskDataBlock, MemoryDataBlock}
+import com.tencent.angel.ml.core.data.DataBlock
+import com.tencent.angel.ml.math2.VFactory
+import com.tencent.angel.ml.math2.utils.LabeledData
+import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, IntKeyVector, LongDoubleVector, LongFloatVector, LongKeyVector, Vector}
+import com.tencent.angel.worker.storage.{DiskDataBlock, MemoryAndDiskDataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.io.{LongWritable, Text}
 
+import scala.util.Sorting.quickSort
+
 class KMeansTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
   private val LOG = LogFactory.getLog(classOf[KMeansTrainTask])
   var idxsVector: Vector = _
   val indexRange: Long = SharedConf.indexRange
   private val valiRat = SharedConf.validateRatio
-  override val dataParser = DataParser(SharedConf.get(conf))
 
   // validation data storage
   val validDataBlock: DataBlock[LabeledData] = getDataBlock("memory")
@@ -141,5 +144,50 @@ class KMeansTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text
     } else {
       new DiskDataBlock[LabeledData](ctx.getTaskId.getIndex)
     }
+  }
+
+  protected def needIndexs: Boolean = {
+    val inputFormat = SharedConf.inputDataFormat
+    val modelType = SharedConf.storageType
+    (inputFormat, modelType) match {
+      case ("libsvm" | "dummy", "sparse" | "component_sparse") => false // true
+      case ("dense", "libsvm" | "component_sparse") =>
+        throw new AngelException("The input data is dense, but the model is sparse!")
+      case _ => false
+    }
+  }
+
+  protected def addIndexs(vector: Vector, idxs: IntOpenHashSet): Unit = {
+    vector match {
+      case v: IntDoubleVector if !v.isDense =>
+        v.getStorage.getIndices.foreach { i => idxs.add(i) }
+      case v: IntFloatVector if !v.isDense =>
+        v.getStorage.getIndices.foreach { i => idxs.add(i) }
+      case v: IntKeyVector if v.isDense =>
+        (0 until v.getDim).foreach { i => idxs.add(i) }
+    }
+  }
+
+  protected def addIndexs(vector: Vector, idxs: LongOpenHashSet): Unit = {
+    vector match {
+      case v: LongDoubleVector if !v.isDense =>
+        v.getStorage.getIndices.foreach { i => idxs.add(i) }
+      case v: LongFloatVector if !v.isDense =>
+        v.getStorage.getIndices.foreach { i => idxs.add(i) }
+      case v: LongKeyVector if v.isDense =>
+        (0L until v.getDim).foreach { i => idxs.add(i) }
+    }
+  }
+
+  protected def set2Vector(idxs: LongOpenHashSet): Vector = {
+    val temp = idxs.toLongArray
+    quickSort(temp)
+    VFactory.denseLongVector(temp)
+  }
+
+  protected def set2Vector(idxs: IntOpenHashSet): Vector = {
+    val temp = idxs.toIntArray
+    quickSort(temp)
+    VFactory.denseIntVector(temp)
   }
 }

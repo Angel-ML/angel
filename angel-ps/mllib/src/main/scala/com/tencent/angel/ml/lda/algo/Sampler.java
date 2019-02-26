@@ -26,7 +26,7 @@ import com.tencent.angel.ml.lda.algo.structures.*;
 import com.tencent.angel.ml.lda.psf.CSRPartUpdateParam;
 import com.tencent.angel.ml.lda.psf.PartCSRResult;
 import com.tencent.angel.ml.lda.psf.UpdatePartFunc;
-import com.tencent.angel.ml.matrix.psf.update.base.VoidResult;
+import com.tencent.angel.matrix.psf.update.base.VoidResult;
 import com.tencent.angel.psagent.PSAgentContext;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import org.apache.commons.logging.Log;

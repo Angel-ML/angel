@@ -20,7 +20,7 @@ package com.tencent.angel.example.ml;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.clustering.kmeans.KMeansRunner;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.conf.MLCoreConf;
 import com.tencent.angel.ml.math2.utils.RowType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -90,7 +90,7 @@ public class KMeansLocalExample {
 
     // Use local deploy mode and data format
     conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
-    conf.set(MLConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
+    conf.set(MLCoreConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
 
     // Set data path
     conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
@@ -104,10 +104,10 @@ public class KMeansLocalExample {
       conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/kmeans");
       conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/kmeans-inc");
     } else if (mode == 3) {  // predict mode
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, "predict");
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, "com/tencent/angel/ml/predict");
       conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, predictInput);
       conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/kmeans");
-      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict/kmeans");
+      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict/kmeans");
     }
     conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 
@@ -117,12 +117,11 @@ public class KMeansLocalExample {
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
     //set Kmeans algorithm parameters #cluster #feature #epoch
-    conf.set(MLConf.ML_MODEL_TYPE(), modelType);
-    conf.set(MLConf.KMEANS_CENTER_NUM(), String.valueOf(centerNum));
-    conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
-    conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
-    conf.set(MLConf.KMEANS_SAMPLE_RATIO_PERBATCH(), String.valueOf(spratio));
-    conf.set(MLConf.KMEANS_C(), String.valueOf(c));
+    conf.set(MLCoreConf.ML_MODEL_TYPE(), modelType);
+    conf.set(MLCoreConf.KMEANS_CENTER_NUM(), String.valueOf(centerNum));
+    conf.set(MLCoreConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
+    conf.set(MLCoreConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
+    conf.set(MLCoreConf.KMEANS_C(), String.valueOf(c));
 
   }
 

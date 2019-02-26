@@ -20,19 +20,20 @@ package com.tencent.angel.psagent.matrix.transport.adapter;
 
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.client.local.AngelLocalClient;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.matrix.psf.get.base.GetFunc;
+import com.tencent.angel.matrix.psf.get.base.GetParam;
+import com.tencent.angel.matrix.psf.get.base.GetResult;
+import com.tencent.angel.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.math2.matrix.Matrix;
-import com.tencent.angel.ml.math2.matrix.RowBasedMatrix;
 import com.tencent.angel.ml.math2.vector.ComponentVector;
 import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.psf.get.base.*;
-import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
-import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
-import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
-import com.tencent.angel.ml.matrix.psf.update.base.VoidResult;
+import com.tencent.angel.matrix.MatrixMeta;
+import com.tencent.angel.matrix.psf.update.base.PartitionUpdateParam;
+import com.tencent.angel.matrix.psf.update.base.UpdateFunc;
+import com.tencent.angel.matrix.psf.update.base.UpdateParam;
+import com.tencent.angel.matrix.psf.update.base.VoidResult;
 import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.ServerRow;
@@ -754,6 +755,22 @@ public class UserRequestAdapter {
     }
   }
 
+  public void notifySubTaskFailed(int requestId, int subTaskId, String errorLog) {
+    PartitionResponseCache cache = requestIdToSubresponsMap.get(requestId);
+    FutureResult result = requestIdToResultMap.get(requestId);
+    if (cache == null || result == null) {
+      return;
+    }
+
+    try {
+      cache.lock.lock();
+      clear(requestId);
+      result.setExecuteError("Sub-Task " + subTaskId + " execution failed, failed message=" + errorLog);
+    } finally {
+      cache.lock.unlock();
+    }
+  }
+
   private void clear(int requestId) {
     requests.remove(requestId);
     requestIdToSubresponsMap.remove(requestId);
@@ -781,8 +798,7 @@ public class UserRequestAdapter {
       if (row instanceof ComponentVector || row.isDense()) {
         return true;
       }
-      int partNum =
-        PSAgentContext.get().getMatrixMetaManager().getRowPartitionSize(matrixId, rowId);
+      int partNum = PSAgentContext.get().getMatrixMetaManager().getRowPartitionSize(matrixId, rowId);
       if (partNum > partNumThreshold && row.getSize() < colNumThreshold) {
         return false;
       } else {
@@ -790,8 +806,8 @@ public class UserRequestAdapter {
       }
     } else {
       return PSAgentContext.get().getConf()
-        .getBoolean(AngelConf.ANGEL_PSAGENT_UPDATE_SPLIT_VIEW_ENABLE,
-          AngelConf.DEFAULT_ANGEL_PSAGENT_UPDATE_SPLIT_VIEW_ENABLE);
+              .getBoolean(AngelConf.ANGEL_PSAGENT_UPDATE_SPLIT_VIEW_ENABLE,
+                      AngelConf.DEFAULT_ANGEL_PSAGENT_UPDATE_SPLIT_VIEW_ENABLE);
     }
   }
 

@@ -21,16 +21,17 @@ package com.tencent.angel.ml.core.utils
 import java.util.{ArrayList => JArrayList, List => JList}
 
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.matrix.MatrixContext
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.storage._
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
-import com.tencent.angel.ml.matrix.psf.get.getrows.{GetRows, GetRowsParam, GetRowsResult}
-import com.tencent.angel.ml.matrix.MatrixContext
+import com.tencent.angel.matrix.psf.get.getrows.{GetRows, GetRowsParam, GetRowsResult}
 import com.tencent.angel.ps.server.data.request.{InitFunc, RandomNormalInitFunc, UpdateOp}
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
 import com.tencent.angel.psagent.PSAgentContext
+import com.tencent.angel.psagent.client.MasterClient
 
 
 object PSMatrixUtils {
@@ -56,9 +57,13 @@ object PSMatrixUtils {
   }
 
   def createPSMatrix(ctx: MatrixContext): Int = {
-    val master = PSAgentContext.get().getMasterClient
-    master.createMatrix(ctx, Long.MaxValue)
-    master.getMatrix(ctx.getName).getId
+    val masterClient = PSAgentContext.get().getMasterClient
+    createPSMatrix(masterClient, ctx)
+  }
+
+  def createPSMatrix(masterClient: MasterClient, ctx: MatrixContext): Int = {
+    masterClient.createMatrix(ctx, Long.MaxValue)
+    masterClient.getMatrix(ctx.getName).getId
   }
 
   def getRow(epoch: Int, matrixId: Int, rowId: Int): Vector = {

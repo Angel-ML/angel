@@ -22,7 +22,7 @@ import com.tencent.angel.client.AngelClientFactory
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.data.inputformat.BalanceInputFormat
 import com.tencent.angel.ml.core.MLRunner
-import com.tencent.angel.ml.core.conf.MLConf
+import com.tencent.angel.ml.core.conf.MLCoreConf
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 
@@ -40,7 +40,7 @@ class LDARunner extends MLRunner {
     val numTopics = conf.getInt(LDAModel.TOPIC_NUM, 10)
     val numWorkers = conf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 10)
     val numServers = conf.getInt(AngelConf.ANGEL_PS_NUMBER, 10)
-    val numThreads = conf.getInt(MLConf.ANGEL_WORKER_THREAD_NUM, 2)
+    val numThreads = conf.getInt(MLCoreConf.ANGEL_WORKER_THREAD_NUM, 2)
     val alpha = conf.getFloat(LDAModel.ALPHA, 50.0F / numTopics)
     val beta = conf.getFloat(LDAModel.BETA, 0.01F)
 
@@ -122,7 +122,20 @@ class LDARunner extends MLRunner {
     val client = AngelClientFactory.get(conf)
 
     client.startPSServer()
-    client.loadModel(new LDAModel(conf))
+    val model = new LDAModel(conf)
+
+    val path = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH)
+
+    val iter = model.getPSModels.entrySet().iterator()
+    while (iter.hasNext) {
+      val entry = iter.next()
+      client.addMatrix(entry.getValue.getContext)
+    }
+
+    conf.unset(AngelConf.ANGEL_LOAD_MODEL_PATH)
+    client.createMatrices()
+
+    conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, path)
     client.runTask(classOf[LDAPredictTask])
     client.waitForCompletion()
     client.stop()

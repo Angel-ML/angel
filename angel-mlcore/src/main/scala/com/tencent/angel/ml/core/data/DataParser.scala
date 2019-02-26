@@ -20,7 +20,7 @@ package com.tencent.angel.ml.core.data
 
 import com.tencent.angel.ml.core.utils.{MLException, RowTypeUtils}
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.math2.utils.{LabeledData, RowType}
 
 
 abstract class DataParser(val splitter: String) {

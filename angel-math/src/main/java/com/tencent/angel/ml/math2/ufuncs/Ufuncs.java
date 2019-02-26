@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,15 +18,39 @@
 
 package com.tencent.angel.ml.math2.ufuncs;
 
-import com.tencent.angel.ml.math2.matrix.*;
-import com.tencent.angel.ml.math2.ufuncs.executor.*;
+import com.tencent.angel.ml.math2.matrix.Matrix;
+import com.tencent.angel.ml.math2.ufuncs.executor.BinaryExecutor;
+import com.tencent.angel.ml.math2.ufuncs.executor.DotExecutor;
+import com.tencent.angel.ml.math2.ufuncs.executor.UnaryExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.matrix.BinaryMatrixExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.matrix.DotMatrixExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.matrix.UnaryMatrixExecutor;
-import com.tencent.angel.ml.math2.ufuncs.expression.*;
+import com.tencent.angel.ml.math2.ufuncs.expression.Abs;
+import com.tencent.angel.ml.math2.ufuncs.expression.Add;
+import com.tencent.angel.ml.math2.ufuncs.expression.Axpy;
+import com.tencent.angel.ml.math2.ufuncs.expression.Axpy2;
+import com.tencent.angel.ml.math2.ufuncs.expression.Div;
+import com.tencent.angel.ml.math2.ufuncs.expression.Exp;
+import com.tencent.angel.ml.math2.ufuncs.expression.FTRLThreshold;
+import com.tencent.angel.ml.math2.ufuncs.expression.Log;
+import com.tencent.angel.ml.math2.ufuncs.expression.Log1p;
+import com.tencent.angel.ml.math2.ufuncs.expression.Max;
+import com.tencent.angel.ml.math2.ufuncs.expression.Min;
+import com.tencent.angel.ml.math2.ufuncs.expression.Mul;
+import com.tencent.angel.ml.math2.ufuncs.expression.Not;
+import com.tencent.angel.ml.math2.ufuncs.expression.Pow;
+import com.tencent.angel.ml.math2.ufuncs.expression.Replace;
+import com.tencent.angel.ml.math2.ufuncs.expression.SAdd;
+import com.tencent.angel.ml.math2.ufuncs.expression.SDiv;
+import com.tencent.angel.ml.math2.ufuncs.expression.SMul;
+import com.tencent.angel.ml.math2.ufuncs.expression.SSub;
+import com.tencent.angel.ml.math2.ufuncs.expression.SoftThreshold;
+import com.tencent.angel.ml.math2.ufuncs.expression.Sqrt;
+import com.tencent.angel.ml.math2.ufuncs.expression.Sub;
 import com.tencent.angel.ml.math2.vector.Vector;
 
 public class Ufuncs {
+
   /*
   Computes v1 + v2
   */
@@ -222,7 +246,7 @@ public class Ufuncs {
   }
 
   public static Vector ftrlthreshold(Vector zv, Vector nv, double alpha, double beta,
-    double lambda1, double lambda2) {
+      double lambda1, double lambda2) {
     return BinaryExecutor.apply(zv, nv, new FTRLThreshold(false, alpha, beta, lambda1, lambda2));
   }
 
@@ -741,9 +765,9 @@ public class Ufuncs {
   }
 
   public static Matrix ftrlthreshold(Matrix zm, Matrix nm, double alpha, double beta,
-    double lambda1, double lambda2) {
+      double lambda1, double lambda2) {
     return BinaryMatrixExecutor
-      .apply(zm, false, nm, false, new FTRLThreshold(false, alpha, beta, lambda1, lambda2));
+        .apply(zm, false, nm, false, new FTRLThreshold(false, alpha, beta, lambda1, lambda2));
   }
 
   /*
@@ -785,8 +809,8 @@ public class Ufuncs {
   /*
   Computes m1 .* m2
   */
-  public static Matrix dot(Matrix m1, Matrix m2) {
-    return DotMatrixExecutor.apply(m1, false, m2, false);
+  public static Matrix dot(Matrix m1, Matrix m2, Boolean parallel) {
+    return DotMatrixExecutor.apply(m1, false, m2, false, parallel);
   }
 
   /*
@@ -796,7 +820,21 @@ public class Ufuncs {
            m1.T .* m2.T; (trans1: true, trans2: true)
   */
   public static Matrix dot(Matrix m1, boolean trans1, Matrix m2, boolean trans2) {
-    return DotMatrixExecutor.apply(m1, trans1, m2, trans2);
+    return DotMatrixExecutor.apply(m1, trans1, m2, trans2, true);
+  }
+
+  public static Matrix dot(Matrix m1, Matrix m2) {
+    return DotMatrixExecutor.apply(m1, false, m2, false, true);
+  }
+
+  /*
+  Computes m1 .* m2; (trans1: false, trans2: false)
+           m1.T .* m2; (trans1: true, trans2: false)
+           m1 .* m2.T; (trans1: false, trans2: true)
+           m1.T .* m2.T; (trans1: true, trans2: true)
+  */
+  public static Matrix dot(Matrix m1, boolean trans1, Matrix m2, boolean trans2, Boolean parallel) {
+    return DotMatrixExecutor.apply(m1, trans1, m2, trans2, parallel);
   }
 
   /*

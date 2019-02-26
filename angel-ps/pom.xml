@@ -22,7 +22,7 @@
     <parent>
         <groupId>com.tencent.angel</groupId>
         <artifactId>angel</artifactId>
-        <version>2.0.0</version>
+        <version>2.0.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -36,7 +36,7 @@
     <module>psf</module>
     <module>tools</module>
     <module>mllib</module>
-    <module>examples</module>
+    <!--module>examples</module-->
   </modules>
 
 
@@ -133,12 +133,12 @@
         <dependency>
         <groupId>com.tencent.angel</groupId>
         <artifactId>angel-math</artifactId>
-        <version>2.0.0</version>
+        <version>2.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.tencent.angel</groupId>
             <artifactId>angel-format</artifactId>
-            <version>2.0.0</version>
+            <version>2.0.1</version>
         </dependency>
         <dependency>
             <groupId>net.agkn</groupId>
@@ -324,6 +324,11 @@
                         <javacArg>-target</javacArg>
                         <javacArg>${java.version}</javacArg>
                     </javacArgs>
+                    <excludes>
+                        <exclude>**/lda/**</exclude>
+                        <exclude>**/kmeans/**</exclude>
+                        <exclude>**/GBDT/**</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
             <plugin>

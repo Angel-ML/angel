@@ -1,7 +1,7 @@
 package com.tencent.angel.spark.ml
 
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.utils.DataParser
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.spark.context.PSContext
@@ -23,15 +23,15 @@ object SoftmaxRegressionTest {
     // build SharedConf with params
     SharedConf.get()
     SharedConf.addMap(params)
-    SharedConf.get().set(MLConf.ML_MODEL_TYPE, RowType.T_FLOAT_DENSE.toString)
-    SharedConf.get().setInt(MLConf.ML_FEATURE_INDEX_RANGE, 357)
-    SharedConf.get().setDouble(MLConf.ML_LEARN_RATE, 0.5)
-    SharedConf.get().set(MLConf.ML_DATA_INPUT_FORMAT, "libsvm")
-    SharedConf.get().setInt(MLConf.ML_EPOCH_NUM, 10)
-    SharedConf.get().setDouble(MLConf.ML_VALIDATE_RATIO, 0.0)
-    SharedConf.get().setDouble(MLConf.ML_REG_L2, 0.002)
-    SharedConf.get().setDouble(MLConf.ML_BATCH_SAMPLE_RATIO, 0.2)
-    SharedConf.get().setInt(MLConf.ML_NUM_CLASS, 3)
+    SharedConf.get().set(MLCoreConf.ML_MODEL_TYPE, RowType.T_FLOAT_DENSE.toString)
+    SharedConf.get().setInt(MLCoreConf.ML_FEATURE_INDEX_RANGE, 357)
+    SharedConf.get().setDouble(MLCoreConf.ML_LEARN_RATE, 0.5)
+    SharedConf.get().set(MLCoreConf.ML_DATA_INPUT_FORMAT, "libsvm")
+    SharedConf.get().setInt(MLCoreConf.ML_EPOCH_NUM, 10)
+    SharedConf.get().setDouble(MLCoreConf.ML_VALIDATE_RATIO, 0.0)
+    SharedConf.get().setDouble(MLCoreConf.ML_REG_L2, 0.002)
+    SharedConf.get().setDouble(MLCoreConf.ML_BATCH_SAMPLE_RATIO, 0.2)
+    SharedConf.get().setInt(MLCoreConf.ML_NUM_CLASS, 3)
 
     val className = "com.tencent.angel.spark.ml.classification.SoftmaxRegression"
     val model = GraphModel(className)
@@ -57,7 +57,7 @@ object SoftmaxRegressionTest {
       case "train" =>
         learner.train(input, modelOutput, modelInput, dim, model)
 
-      case "predict" =>
+      case "com/tencent/angel/ml/predict" =>
         learner.predict(input, modelOutput, modelInput, dim, model)
       case _ =>
         throw new AngelException("actionType should be train or predict")

@@ -1,27 +1,28 @@
 package com.tencent.angel.ml.core.local
 
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.core.{Learner, Model}
-import com.tencent.angel.ml.core.data.{DataBlock, DataReader, LabeledData}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.core.{Learner, GraphModel}
+import com.tencent.angel.ml.core.data.{DataBlock, DataReader}
 import com.tencent.angel.ml.core.network.Graph
+import com.tencent.angel.ml.core.variable.VoidType
 import com.tencent.angel.ml.core.optimizer.decayer.{StepSizeScheduler, WarmRestarts}
-import com.tencent.angel.ml.core.utils.Callback.VoidType
 import com.tencent.angel.ml.core.utils.ValidationUtils
+import com.tencent.angel.ml.math2.utils.LabeledData
 import org.apache.commons.logging.{Log, LogFactory}
 
 class LocalLearner(conf: SharedConf) extends Learner {
   private val LOG: Log = LogFactory.getLog(classOf[LocalLearner])
 
   // 1. initial model, model can be view as a proxy of graph
-  override val model: LocalModel = new LocalModel(conf)
-  override val graph: Graph = model.graph
+  val model: LocalModel = new LocalModel(conf)
+  val graph: Graph = model.graph
 
   // 2. build network
   model.buildNetwork()
 
   // 3. init or load matrices
-  private val modelPath: String = conf.get(MLConf.ML_LOAD_MODEL_PATH)
-  private val actionType: String = conf.get(MLConf.ML_ACTION_TYPE, MLConf.DEFAULT_ML_ACTION_TYPE)
+  private val modelPath: String = conf.get(MLCoreConf.ML_LOAD_MODEL_PATH)
+  private val actionType: String = conf.get(MLCoreConf.ML_ACTION_TYPE, MLCoreConf.DEFAULT_ML_ACTION_TYPE)
   private val env = new LocalEvnContext
   if (actionType.equalsIgnoreCase("train") && modelPath.isEmpty) {
     model.createMatrices(env)
@@ -31,7 +32,7 @@ class LocalLearner(conf: SharedConf) extends Learner {
   }
 
   private val lr0 = SharedConf.learningRate
-  override protected val ssScheduler: StepSizeScheduler = new WarmRestarts(lr0, lr0/100)
+  override protected val ssScheduler: StepSizeScheduler = new WarmRestarts(lr0, lr0/100, 0.001)
 
   override protected def trainOneEpoch(epoch: Int, iter: Iterator[Array[LabeledData]], numBatch: Int): Double = {
     var batchCount: Int = 0
@@ -42,10 +43,14 @@ class LocalLearner(conf: SharedConf) extends Learner {
       graph.feedData(iter.next())
 
       // LOG.info("start to pullParams ...")
-      graph.pullParams(epoch)
+      if (graph.dataFormat == "libsvm" || graph.dataFormat == "dummy") {
+        model.pullParams(epoch, graph.placeHolder.getIndices)
+      } else {
+        model.pullParams(epoch)
+      }
 
       // LOG.info("calculate to forward ...")
-      loss = graph.calLoss() // forward
+      loss = graph.calForward() // forward
       println(s"The training los of epoch $epoch batch $batchCount is $loss")
       LOG.info(s"The training los of epoch $epoch batch $batchCount is $loss")
 
@@ -53,15 +58,14 @@ class LocalLearner(conf: SharedConf) extends Learner {
       graph.calBackward() // backward
 
       // LOG.info("calculate and push gradient ...")
-      graph.pushGradient() // pushgrad
+      model.pushGradient(graph.getLR) // pushgrad
       // waiting all gradient pushed
 
       // LOG.info("waiting for push barrier ...")
       // barrier(0, graph)
       graph.setLR(ssScheduler.next())
       // LOG.info("start to update ...")
-      graph.update[VoidType](epoch * numBatch + batchCount, graph.placeHolder.getBatchSize) // update parameters on PS
-
+      model.update[VoidType](epoch * numBatch + batchCount, graph.placeHolder.getBatchSize) // update parameters on PS
 
       // waiting all gradient update finished
       // LOG.info("waiting for update barrier ...")
@@ -74,7 +78,7 @@ class LocalLearner(conf: SharedConf) extends Learner {
     loss
   }
 
-  override def train(posTrainData: DataBlock[LabeledData], negTrainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData]): Model = {
+  override def train(posTrainData: DataBlock[LabeledData], negTrainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData]): GraphModel = {
     val numBatch: Int = SharedConf.numUpdatePerEpoch
     val batchSize: Int = if (negTrainData == null) {
       (posTrainData.size() + numBatch - 1) / numBatch
@@ -103,8 +107,8 @@ class LocalLearner(conf: SharedConf) extends Learner {
   }
 
   override protected def validate(epoch: Int, valiData: DataBlock[LabeledData]): Unit = {
-    ValidationUtils.calMetrics(epoch, model.predict(valiData), graph.getLossLayer.getLossFunc)
+    ValidationUtils.calMetrics(epoch, model.predict(valiData), graph.getLossFunc)
   }
 
-  override protected def barrier(graph: Graph): Unit = {}
+  override protected def barrier(): Unit = ???
 }

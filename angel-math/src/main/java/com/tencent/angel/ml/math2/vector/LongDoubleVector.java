@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,35 +18,23 @@
 
 package com.tencent.angel.ml.math2.vector;
 
-import com.tencent.angel.ml.math2.storage.*;
-import it.unimi.dsi.fastutil.longs.*;
-import it.unimi.dsi.fastutil.doubles.*;
+import com.tencent.angel.ml.math2.storage.LongDoubleSparseVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongDoubleVectorStorage;
+import it.unimi.dsi.fastutil.doubles.DoubleIterator;
+import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.lang.ArrayUtils;
 
-import java.lang.Math;
-
 public class LongDoubleVector extends DoubleVector implements LongKeyVector, SimpleVector {
+
   private long dim;
-
-  public long getDim() {
-    return dim;
-  }
-
-  public long dim() {
-    return (long) getDim();
-  }
-
-  public void setDim(long dim) {
-    this.dim = dim;
-  }
 
   public LongDoubleVector() {
     super();
   }
 
   public LongDoubleVector(int matrixId, int rowId, int clock, long dim,
-    LongDoubleVectorStorage storage) {
+      LongDoubleVectorStorage storage) {
     this.matrixId = matrixId;
     this.rowId = rowId;
     this.clock = clock;
@@ -56,6 +44,18 @@ public class LongDoubleVector extends DoubleVector implements LongKeyVector, Sim
 
   public LongDoubleVector(long dim, LongDoubleVectorStorage storage) {
     this(0, 0, 0, dim, storage);
+  }
+
+  public long getDim() {
+    return dim;
+  }
+
+  public void setDim(long dim) {
+    this.dim = dim;
+  }
+
+  public long dim() {
+    return (long) getDim();
   }
 
   public double get(long idx) {
@@ -72,8 +72,9 @@ public class LongDoubleVector extends DoubleVector implements LongKeyVector, Sim
 
   public double max() {
     LongDoubleVectorStorage idstorage = (LongDoubleVectorStorage) storage;
-    if (idstorage.size() == 0)
+    if (idstorage.size() == 0) {
       return 0;
+    }
     double maxval = Double.MIN_VALUE;
     if (idstorage.isSparse()) {
       DoubleIterator iter = idstorage.valueIterator();
@@ -95,8 +96,9 @@ public class LongDoubleVector extends DoubleVector implements LongKeyVector, Sim
 
   public double min() {
     LongDoubleVectorStorage idstorage = (LongDoubleVectorStorage) storage;
-    if (idstorage.size() == 0)
+    if (idstorage.size() == 0) {
       return 0;
+    }
     double minval = Double.MAX_VALUE;
     if (idstorage.isSparse()) {
       DoubleIterator iter = idstorage.valueIterator();
@@ -118,8 +120,9 @@ public class LongDoubleVector extends DoubleVector implements LongKeyVector, Sim
 
   public long argmax() {
     LongDoubleVectorStorage idstorage = (LongDoubleVectorStorage) storage;
-    if (idstorage.size() == 0)
+    if (idstorage.size() == 0) {
       return -1;
+    }
     double maxval = Double.MIN_VALUE;
     long maxidx = -1;
     if (idstorage.isSparse()) {
@@ -150,8 +153,9 @@ public class LongDoubleVector extends DoubleVector implements LongKeyVector, Sim
 
   public long argmin() {
     LongDoubleVectorStorage idstorage = (LongDoubleVectorStorage) storage;
-    if (idstorage.size() == 0)
+    if (idstorage.size() == 0) {
       return -1;
+    }
     double minval = Double.MAX_VALUE;
     long minidx = -1;
     if (idstorage.isSparse()) {
@@ -182,8 +186,9 @@ public class LongDoubleVector extends DoubleVector implements LongKeyVector, Sim
 
   public double std() {
     LongDoubleVectorStorage dstorage = (LongDoubleVectorStorage) storage;
-    if (dstorage.size() == 0)
+    if (dstorage.size() == 0) {
       return 0;
+    }
     double sumval = 0.0;
     double sumval2 = 0.0;
     if (dstorage.isSparse()) {
@@ -206,8 +211,9 @@ public class LongDoubleVector extends DoubleVector implements LongKeyVector, Sim
 
   public double average() {
     LongDoubleVectorStorage dstorage = (LongDoubleVectorStorage) storage;
-    if (dstorage.size() == 0)
+    if (dstorage.size() == 0) {
       return 0;
+    }
     double sumval = 0.0;
     if (dstorage.isSparse()) {
       DoubleIterator iter = dstorage.valueIterator();
@@ -230,8 +236,9 @@ public class LongDoubleVector extends DoubleVector implements LongKeyVector, Sim
 
   public long numZeros() {
     LongDoubleVectorStorage dstorage = (LongDoubleVectorStorage) storage;
-    if (dstorage.size() == 0)
+    if (dstorage.size() == 0) {
       return (long) dim;
+    }
     long numZero = 0;
     if (dstorage.isSparse()) {
       DoubleIterator iter = dstorage.valueIterator();
@@ -252,23 +259,27 @@ public class LongDoubleVector extends DoubleVector implements LongKeyVector, Sim
 
   public LongDoubleVector clone() {
     return new LongDoubleVector(matrixId, rowId, clock, dim,
-      ((LongDoubleVectorStorage) storage).clone());
+        ((LongDoubleVectorStorage) storage).clone());
   }
 
-  @Override public LongDoubleVector copy() {
+  @Override
+  public LongDoubleVector copy() {
     return new LongDoubleVector(matrixId, rowId, clock, dim,
-      ((LongDoubleVectorStorage) storage).copy());
+        ((LongDoubleVectorStorage) storage).copy());
   }
 
-  @Override public LongDoubleVectorStorage getStorage() {
+  @Override
+  public LongDoubleVectorStorage getStorage() {
     return (LongDoubleVectorStorage) storage;
   }
 
-  @Override public boolean hasKey(long idx) {
+  @Override
+  public boolean hasKey(long idx) {
     return getStorage().hasKey(idx);
   }
 
-  @Override public Vector filter(double threshold) {
+  @Override
+  public Vector filter(double threshold) {
     LongDoubleSparseVectorStorage newStorage = new LongDoubleSparseVectorStorage(size());
 
     if (storage.isDense()) {
@@ -280,7 +291,7 @@ public class LongDoubleVector extends DoubleVector implements LongKeyVector, Sim
       }
     } else if (storage.isSparse()) {
       ObjectIterator<Long2DoubleMap.Entry> iter =
-        ((LongDoubleVectorStorage) storage).entryIterator();
+          ((LongDoubleVectorStorage) storage).entryIterator();
       while (iter.hasNext()) {
         Long2DoubleMap.Entry entry = iter.next();
         double value = entry.getDoubleValue();
@@ -303,7 +314,8 @@ public class LongDoubleVector extends DoubleVector implements LongKeyVector, Sim
     return new LongDoubleVector(matrixId, rowId, clock, getDim(), newStorage);
   }
 
-  @Override public Vector ifilter(double threshold) {
+  @Override
+  public Vector ifilter(double threshold) {
 
     if (storage.isDense()) {
       double[] values = ((LongDoubleVectorStorage) storage).getValues();
@@ -314,7 +326,7 @@ public class LongDoubleVector extends DoubleVector implements LongKeyVector, Sim
       }
     } else if (storage.isSparse()) {
       ObjectIterator<Long2DoubleMap.Entry> iter =
-        ((LongDoubleVectorStorage) storage).entryIterator();
+          ((LongDoubleVectorStorage) storage).entryIterator();
       while (iter.hasNext()) {
         Long2DoubleMap.Entry entry = iter.next();
         double value = entry.getDoubleValue();
@@ -336,10 +348,11 @@ public class LongDoubleVector extends DoubleVector implements LongKeyVector, Sim
     }
 
     return new LongDoubleVector(matrixId, rowId, clock, getDim(),
-      (LongDoubleVectorStorage) storage);
+        (LongDoubleVectorStorage) storage);
   }
 
-  @Override public Vector filterUp(double threshold) {
+  @Override
+  public Vector filterUp(double threshold) {
     LongDoubleSparseVectorStorage newStorage = new LongDoubleSparseVectorStorage(size());
 
     if (storage.isDense()) {
@@ -351,7 +364,7 @@ public class LongDoubleVector extends DoubleVector implements LongKeyVector, Sim
       }
     } else if (storage.isSparse()) {
       ObjectIterator<Long2DoubleMap.Entry> iter =
-        ((LongDoubleVectorStorage) storage).entryIterator();
+          ((LongDoubleVectorStorage) storage).entryIterator();
       while (iter.hasNext()) {
         Long2DoubleMap.Entry entry = iter.next();
         double value = entry.getDoubleValue();

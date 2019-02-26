@@ -22,7 +22,7 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.*;
 import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ml.matrix.MatrixMeta;
+import com.tencent.angel.matrix.MatrixMeta;
 import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ps.storage.vector.*;
 import com.tencent.angel.psagent.PSAgentContext;

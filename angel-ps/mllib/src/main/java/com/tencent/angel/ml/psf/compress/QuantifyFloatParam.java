@@ -20,8 +20,8 @@ package com.tencent.angel.ml.psf.compress;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.core.utils.JCompressUtils;
-import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
-import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
+import com.tencent.angel.matrix.psf.update.base.PartitionUpdateParam;
+import com.tencent.angel.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.psagent.PSAgentContext;
 import io.netty.buffer.ByteBuf;
 

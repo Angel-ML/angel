@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ps.storage.partitioner;
 
-import com.tencent.angel.ml.matrix.PartitionMeta;
+import com.tencent.angel.matrix.PartitionMeta;
 
 import java.util.List;
 

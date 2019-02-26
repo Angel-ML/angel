@@ -20,7 +20,7 @@ package com.tencent.angel.ml.kmeans;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.clustering.kmeans.KMeansRunner;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.conf.MLCoreConf;
 import com.tencent.angel.ml.math2.utils.RowType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -75,15 +75,14 @@ public class KmeansTest {
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
       //set Kmeans algorithm parameters #cluster #feature #epoch
-      conf.set(MLConf.KMEANS_CENTER_NUM(), String.valueOf(centerNum));
-      conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
-      conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
-      conf.set(MLConf.KMEANS_SAMPLE_RATIO_PERBATCH(), String.valueOf(spratio));
-      conf.set(MLConf.KMEANS_C(), String.valueOf(c));
+      conf.set(MLCoreConf.KMEANS_CENTER_NUM(), String.valueOf(centerNum));
+      conf.set(MLCoreConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
+      conf.set(MLCoreConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
+      conf.set(MLCoreConf.KMEANS_C(), String.valueOf(c));
 
       // Set data format
-      conf.set(MLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
-      conf.set(MLConf.ML_MODEL_TYPE(), modelType);
+      conf.set(MLCoreConf.ML_DATA_INPUT_FORMAT(), dataFmt);
+      conf.set(MLCoreConf.ML_MODEL_TYPE(), modelType);
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;
@@ -99,7 +98,7 @@ public class KmeansTest {
       // Set log save path
       conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log/Kmeans/trainLog");
       // Set actionType train
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLCoreConf.ANGEL_ML_TRAIN());
 
       KMeansRunner runner = new KMeansRunner();
       runner.train(conf);
@@ -123,7 +122,7 @@ public class KmeansTest {
       // Set save model path
       conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, newPath);
       // Set actionType incremental train
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_INC_TRAIN());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLCoreConf.ANGEL_ML_INC_TRAIN());
       // Set log path
       conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
 
@@ -144,9 +143,9 @@ public class KmeansTest {
       conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/Kmeans");
       conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "log/Kmeans/predictLog");
       // Set predict result path
-      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict/Kmeans");
+      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict/Kmeans");
       // Set actionType prediction
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLCoreConf.ANGEL_ML_PREDICT());
 
       KMeansRunner runner = new KMeansRunner();
       runner.predict(conf);

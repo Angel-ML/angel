@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -101,8 +101,8 @@ public class GradStats {
    * accumulate statistics, more complicated version.
    *
    * @param gpairs the list storing the gradient statistics
-   * @param info   the additional information
-   * @param ridx   instances index of this instances
+   * @param info the additional information
+   * @param ridx instances index of this instances
    */
   public void add(List<GradPair> gpairs, RegTDataStore info, int ridx) {
     GradPair b = gpairs.get(ridx);
@@ -169,7 +169,7 @@ public class GradStats {
    * set leaf vector value based on statistics .
    *
    * @param param the reg tree param
-   * @param vec   the leaf vector
+   * @param vec the leaf vector
    */
   public void setLeafVec(RegTParam param, float[] vec) {
   }
