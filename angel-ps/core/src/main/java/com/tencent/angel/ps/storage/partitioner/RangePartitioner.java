@@ -93,7 +93,7 @@ public class RangePartitioner implements Partitioner {
     // if col == -1, we use the start/end index to calculate range,
     // we use double to store the range value since two long minus might exceed the
     // range of long.
-    if (col == -1)
+    if (col <= 0)
       range = ((double) end - (double) start);
 
     long partSize = DEFAULT_PARTITION_SIZE;

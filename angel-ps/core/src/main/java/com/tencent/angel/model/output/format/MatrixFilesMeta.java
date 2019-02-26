@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -36,6 +36,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * Model meta file, it includes matrix properties and partition meta
  */
 public class MatrixFilesMeta {
+
   private static final Log LOG = LogFactory.getLog(MatrixFilesMeta.class);
   /**
    * Matrix id
@@ -88,24 +89,25 @@ public class MatrixFilesMeta {
   private Map<Integer, MatrixPartitionMeta> partMetas;
 
   public static final String FEATURE_INDEX_RANGE_START = "feature.index.range.start";
-  public static final String FEATURE_INDEX_RANGE_END = "feature.index.range.start";
+  public static final String FEATURE_INDEX_RANGE_END = "feature.index.range.end";
 
   /**
    * Create a MatrixFilesMeta
    *
-   * @param matrixId   matrix id
+   * @param matrixId matrix id
    * @param matrixName matrix name
-   * @param rowType    row type
-   * @param row        row number
-   * @param col        cloumn number
-   * @param blockRow   row number in a block
-   * @param blockCol   column number in a block
-   * @param options    other matrix parameters
-   * @param partMetas  partition meta
+   * @param rowType row type
+   * @param row row number
+   * @param col cloumn number
+   * @param blockRow row number in a block
+   * @param blockCol column number in a block
+   * @param options other matrix parameters
+   * @param partMetas partition meta
    */
   public MatrixFilesMeta(int matrixId, String matrixName, String formatClassName, int rowType,
-    int row, long col, int blockRow, long blockCol, Map<String, String> options,
-    Map<Integer, MatrixPartitionMeta> partMetas) {
+      int row, long col, int blockRow, long blockCol,
+      Map<String, String> options,
+      Map<Integer, MatrixPartitionMeta> partMetas) {
     this.matrixId = matrixId;
     this.matrixName = matrixName;
     this.formatClassName = formatClassName;
@@ -121,19 +123,20 @@ public class MatrixFilesMeta {
   /**
    * Create a MatrixFilesMeta
    *
-   * @param matrixId   matrix id
+   * @param matrixId matrix id
    * @param matrixName matrix name
-   * @param rowType    row type
-   * @param row        row number
-   * @param col        cloumn number
-   * @param blockRow   row number in a block
-   * @param blockCol   column number in a block
-   * @param options    other matrix parameters
+   * @param rowType row type
+   * @param row row number
+   * @param col cloumn number
+   * @param blockRow row number in a block
+   * @param blockCol column number in a block
+   * @param options other matrix parameters
    */
   public MatrixFilesMeta(int matrixId, String matrixName, String formatClassName, int rowType,
-    int row, long col, int blockRow, long blockCol, Map<String, String> options) {
-    this(matrixId, matrixName, formatClassName, rowType, row, col, blockRow, blockCol, options,
-      new ConcurrentSkipListMap<>());
+      int row, long col, int blockRow, long blockCol, Map<String, String> options) {
+    this(matrixId, matrixName, formatClassName, rowType, row, col, blockRow, blockCol,
+        options,
+        new ConcurrentSkipListMap<>());
   }
 
   /**
@@ -459,10 +462,11 @@ public class MatrixFilesMeta {
 
   /**
    * Get feature index range start
+   *
    * @return feature index range start
    */
   public long getFeatureIndexStart() {
-    if(options.containsKey(FEATURE_INDEX_RANGE_START)) {
+    if (options.containsKey(FEATURE_INDEX_RANGE_START)) {
       return Long.valueOf(options.get(FEATURE_INDEX_RANGE_START));
     } else {
       return -1;
@@ -471,10 +475,11 @@ public class MatrixFilesMeta {
 
   /**
    * Get feature index range end
+   *
    * @return feature index range end
    */
   public long getFeatureIndexEnd() {
-    if(options.containsKey(FEATURE_INDEX_RANGE_END)) {
+    if (options.containsKey(FEATURE_INDEX_RANGE_END)) {
       return Long.valueOf(options.get(FEATURE_INDEX_RANGE_END));
     } else {
       return -1;
@@ -483,6 +488,7 @@ public class MatrixFilesMeta {
 
   /**
    * Set feature index range start
+   *
    * @param start feature index range start
    */
   public void setFeatureIndexStart(long start) {
@@ -491,17 +497,19 @@ public class MatrixFilesMeta {
 
   /**
    * Set feature index range end
+   *
    * @param end feature index range end
    */
   public void setFeatureIndexEnd(long end) {
-    options.put(FEATURE_INDEX_RANGE_START, String.valueOf(end));
+    options.put(FEATURE_INDEX_RANGE_END, String.valueOf(end));
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     return "MatrixFilesMeta{" + "matrixId=" + matrixId + ", rowType=" + rowType + ", row=" + row
-      + ", blockRow=" + blockRow + ", col=" + col + ", blockCol=" + blockCol + ", matrixName='"
-      + matrixName + '\'' + ", options=[" + StringUtils.join(";", options) + "], partMetas=["
-      + partMetasString() + "]}";
+        + ", blockRow=" + blockRow + ", col=" + col + ", blockCol=" + blockCol + ", matrixName='"
+        + matrixName + '\'' + ", options=[" + StringUtils.join(";", options) + "], partMetas=["
+        + partMetasString() + "]}";
   }
 
   private String partMetasString() {
@@ -512,9 +520,9 @@ public class MatrixFilesMeta {
     StringBuilder sb = new StringBuilder();
     boolean first = true;
     for (Map.Entry<Integer, MatrixPartitionMeta> entry : partMetas.entrySet()) {
-      if (first)
+      if (first) {
         first = false;
-      else {
+      } else {
         sb.append(";");
       }
       sb.append("" + entry.getKey() + ":" + entry.getValue());
