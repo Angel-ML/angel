@@ -39,16 +39,18 @@ import java.util.List;
 public class RowsViewUpdateItem extends UpdateItem {
   private final Vector[] rows;
   private final PartitionKey partKey;
-  private final long column;
+  private final long start;
+  private final long end;
 
-  public RowsViewUpdateItem(PartitionKey partKey, Vector[] rows, long column) {
+  public RowsViewUpdateItem(PartitionKey partKey, Vector[] rows, long start, long end) {
     this.partKey = partKey;
     this.rows = rows;
-    this.column = column;
+    this.start = start;
+    this.end = end;
   }
 
   public RowsViewUpdateItem() {
-    this(null, null, 0);
+    this(null, null, 0, 0);
   }
 
   public PartitionKey getPartKey() {
@@ -57,10 +59,6 @@ public class RowsViewUpdateItem extends UpdateItem {
 
   public Vector[] getRows() {
     return rows;
-  }
-
-  public long getColumn() {
-    return column;
   }
 
   @Override public void serialize(ByteBuf buf) {
@@ -88,14 +86,14 @@ public class RowsViewUpdateItem extends UpdateItem {
     int len = 4;
     for (int i = 0; i < rows.length; i++) {
       if (rowInPart(rows[i].getRowId(), partKey)) {
-        len += bufferLen(rows[i], partKey, column);
+        len += bufferLen(rows[i], partKey, start, end);
       }
     }
     return len;
   }
 
-  private int bufferLen(Vector row, PartitionKey partKey, long column) {
-    final boolean needCheck = (column != (partKey.getEndCol() - partKey.getStartCol()));
+  private int bufferLen(Vector row, PartitionKey partKey, long start, long end) {
+    final boolean needCheck = ((end - start) != (partKey.getEndCol() - partKey.getStartCol()));
     int len = 4;
     switch (row.getType()) {
       case T_DOUBLE_DENSE:
@@ -198,7 +196,7 @@ public class RowsViewUpdateItem extends UpdateItem {
     if (row.isDense()) {
       return 8 + 8 * ((int) (partKey.getEndCol() - partKey.getStartCol()));
     } else if (row.isSparse()) {
-      if (needCheck) {
+      if (!needCheck) {
         return 8 + 12 * row.size();
       } else {
         int num = 0;
@@ -206,7 +204,7 @@ public class RowsViewUpdateItem extends UpdateItem {
         Int2DoubleMap.Entry entry;
         while (iter.hasNext()) {
           entry = iter.next();
-          if (!needCheck || colInPart(entry.getIntKey(), partKey)) {
+          if (colInPart(entry.getIntKey(), partKey)) {
             num++;
           }
         }
@@ -222,7 +220,7 @@ public class RowsViewUpdateItem extends UpdateItem {
     if (row.isDense()) {
       return 8 + 4 * ((int) (partKey.getEndCol() - partKey.getStartCol()));
     } else if (row.isSparse()) {
-      if (needCheck) {
+      if (!needCheck) {
         return 8 + 8 * row.size();
       } else {
         int num = 0;
@@ -230,7 +228,7 @@ public class RowsViewUpdateItem extends UpdateItem {
         Int2FloatMap.Entry entry;
         while (iter.hasNext()) {
           entry = iter.next();
-          if (!needCheck || colInPart(entry.getIntKey(), partKey)) {
+          if (colInPart(entry.getIntKey(), partKey)) {
             num++;
           }
         }
@@ -246,7 +244,7 @@ public class RowsViewUpdateItem extends UpdateItem {
     if (row.isDense()) {
       return 8 + 4 * ((int) (partKey.getEndCol() - partKey.getStartCol()));
     } else if (row.isSparse()) {
-      if (needCheck) {
+      if (!needCheck) {
         return 8 + 8 * row.size();
       } else {
         int num = 0;
@@ -254,7 +252,7 @@ public class RowsViewUpdateItem extends UpdateItem {
         Int2IntMap.Entry entry;
         while (iter.hasNext()) {
           entry = iter.next();
-          if (!needCheck || colInPart(entry.getIntKey(), partKey)) {
+          if (colInPart(entry.getIntKey(), partKey)) {
             num++;
           }
         }
@@ -270,7 +268,7 @@ public class RowsViewUpdateItem extends UpdateItem {
     if (row.isDense()) {
       return 8 + 4 * ((int) (partKey.getEndCol() - partKey.getStartCol()));
     } else if (row.isSparse()) {
-      if (needCheck) {
+      if (!needCheck) {
         return 8 + 8 * row.size();
       } else {
         int num = 0;
@@ -278,7 +276,7 @@ public class RowsViewUpdateItem extends UpdateItem {
         Int2LongMap.Entry entry;
         while (iter.hasNext()) {
           entry = iter.next();
-          if (!needCheck || colInPart(entry.getIntKey(), partKey)) {
+          if (colInPart(entry.getIntKey(), partKey)) {
             num++;
           }
         }
@@ -292,7 +290,7 @@ public class RowsViewUpdateItem extends UpdateItem {
 
   private int bufferLen(LongDoubleVector row, PartitionKey partKey, boolean needCheck) {
     if (row.isSparse()) {
-      if (needCheck) {
+      if (!needCheck) {
         return (int) (8 + 16 * row.size());
       } else {
         int num = 0;
@@ -300,7 +298,7 @@ public class RowsViewUpdateItem extends UpdateItem {
         Long2DoubleMap.Entry entry;
         while (iter.hasNext()) {
           entry = iter.next();
-          if (!needCheck || colInPart(entry.getLongKey(), partKey)) {
+          if (colInPart(entry.getLongKey(), partKey)) {
             num++;
           }
         }
@@ -314,7 +312,7 @@ public class RowsViewUpdateItem extends UpdateItem {
 
   private int bufferLen(LongFloatVector row, PartitionKey partKey, boolean needCheck) {
     if (row.isSparse()) {
-      if (needCheck) {
+      if (!needCheck) {
         return (int) (8 + 12 * row.size());
       } else {
         int num = 0;
@@ -322,7 +320,7 @@ public class RowsViewUpdateItem extends UpdateItem {
         Long2FloatMap.Entry entry;
         while (iter.hasNext()) {
           entry = iter.next();
-          if (!needCheck || colInPart(entry.getLongKey(), partKey)) {
+          if (colInPart(entry.getLongKey(), partKey)) {
             num++;
           }
         }
@@ -336,7 +334,7 @@ public class RowsViewUpdateItem extends UpdateItem {
 
   private int bufferLen(LongIntVector row, PartitionKey partKey, boolean needCheck) {
     if (row.isSparse()) {
-      if (needCheck) {
+      if (!needCheck) {
         return (int) (8 + 12 * row.size());
       } else {
         int num = 0;
@@ -344,7 +342,7 @@ public class RowsViewUpdateItem extends UpdateItem {
         Long2IntMap.Entry entry;
         while (iter.hasNext()) {
           entry = iter.next();
-          if (!needCheck || colInPart(entry.getLongKey(), partKey)) {
+          if (colInPart(entry.getLongKey(), partKey)) {
             num++;
           }
         }
@@ -358,7 +356,7 @@ public class RowsViewUpdateItem extends UpdateItem {
 
   private int bufferLen(LongLongVector row, PartitionKey partKey, boolean needCheck) {
     if (row.isSparse()) {
-      if (needCheck) {
+      if (!needCheck) {
         return (int) (8 + 16 * row.size());
       } else {
         int num = 0;
@@ -366,7 +364,7 @@ public class RowsViewUpdateItem extends UpdateItem {
         Long2LongMap.Entry entry;
         while (iter.hasNext()) {
           entry = iter.next();
-          if (!needCheck || colInPart(entry.getLongKey(), partKey)) {
+          if (colInPart(entry.getLongKey(), partKey)) {
             num++;
           }
         }
@@ -493,7 +491,7 @@ public class RowsViewUpdateItem extends UpdateItem {
   }
 
   private void serializeRow(ByteBuf buf, Vector row) {
-    final boolean needCheck = (column != (partKey.getEndCol() - partKey.getStartCol()));
+    final boolean needCheck = ((end - start) != (partKey.getEndCol() - partKey.getStartCol()));
     buf.writeInt(row.getRowId());
     switch (row.getType()) {
       case T_DOUBLE_DENSE:
@@ -818,8 +816,10 @@ public class RowsViewUpdateItem extends UpdateItem {
       buf.writeInt(RowType.T_DOUBLE_DENSE.getNumber());
       double[] values = row.getStorage().getValues();
       buf.writeInt(endCol - startCol);
+
+      int startInt = isComp ? 0 : (int) start;
       for (int i = startCol; i < endCol; i++) {
-        buf.writeDouble(values[i]);
+        buf.writeDouble(values[i - startInt]);
       }
     } else if (row.isSparse()) {
       buf.writeInt(RowType.T_DOUBLE_SPARSE.getNumber());
@@ -878,8 +878,10 @@ public class RowsViewUpdateItem extends UpdateItem {
       buf.writeInt(RowType.T_FLOAT_DENSE.getNumber());
       float[] values = row.getStorage().getValues();
       buf.writeInt(endCol - startCol);
+
+      int startInt = isComp ? 0 : (int) start;
       for (int i = startCol; i < endCol; i++) {
-        buf.writeFloat(values[i]);
+        buf.writeFloat(values[i - startInt]);
       }
     } else if (row.isSparse()) {
       buf.writeInt(RowType.T_FLOAT_SPARSE.getNumber());
@@ -930,8 +932,10 @@ public class RowsViewUpdateItem extends UpdateItem {
       buf.writeInt(RowType.T_INT_DENSE.getNumber());
       int[] values = row.getStorage().getValues();
       buf.writeInt(endCol - startCol);
+
+      int startInt = isComp ? 0 : (int) start;
       for (int i = startCol; i < endCol; i++) {
-        buf.writeInt(values[i]);
+        buf.writeInt(values[i - startInt]);
       }
     } else if (row.isSparse()) {
       buf.writeInt(RowType.T_INT_SPARSE.getNumber());
@@ -982,8 +986,10 @@ public class RowsViewUpdateItem extends UpdateItem {
       buf.writeInt(RowType.T_LONG_DENSE.getNumber());
       long[] values = row.getStorage().getValues();
       buf.writeInt(endCol - startCol);
+
+      int startInt = isComp ? 0 : (int) start;
       for (int i = startCol; i < endCol; i++) {
-        buf.writeLong(values[i]);
+        buf.writeLong(values[i - startInt]);
       }
     } else if (row.isSparse()) {
       buf.writeInt(RowType.T_LONG_SPARSE.getNumber());

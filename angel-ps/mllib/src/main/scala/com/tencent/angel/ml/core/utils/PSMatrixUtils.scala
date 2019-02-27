@@ -152,7 +152,7 @@ object PSMatrixUtils {
             val dim = vec.asInstanceOf[CompIntDoubleVector].getDim
 
             if (data == null) {
-              data = Array[Double](dim * vectors.length)
+              data = new Array[Double](dim * vectors.length)
             }
 
             vec.asInstanceOf[CompIntDoubleVector].getPartitions.zipWithIndex.foreach { case (part, idx) =>
@@ -173,7 +173,7 @@ object PSMatrixUtils {
             val dim = vec.asInstanceOf[CompIntDoubleVector].getDim
 
             if (data == null) {
-              data = Array[Float](dim * vectors.length)
+              data = new Array[Float](dim * vectors.length)
             }
 
             vec.asInstanceOf[CompIntFloatVector].getPartitions.zipWithIndex.foreach { case (part, idx) =>
@@ -197,7 +197,7 @@ object PSMatrixUtils {
           vectors.zipWithIndex.foreach { case (vec, row) =>
             val valArr = vec.asInstanceOf[IntDoubleVector].getStorage.getValues
             if (data == null) {
-              data = Array[Double](valArr.length * vectors.length)
+              data = new Array[Double](valArr.length * vectors.length)
             }
 
             Array.copy(valArr, 0, data, row * valArr.length, valArr.length)
@@ -214,7 +214,7 @@ object PSMatrixUtils {
           vectors.zipWithIndex.foreach { case (vec, row) =>
             val valArr = vec.asInstanceOf[IntFloatVector].getStorage.getValues
             if (data == null) {
-              data = Array[Float](valArr.length * vectors.length)
+              data = new Array[Float](valArr.length * vectors.length)
             }
 
             Array.copy(valArr, 0, data, row * valArr.length, valArr.length)

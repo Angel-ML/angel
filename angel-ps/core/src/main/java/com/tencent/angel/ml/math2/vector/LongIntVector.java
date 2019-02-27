@@ -26,7 +26,6 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.lang.ArrayUtils;
 
 public class LongIntVector extends IntVector implements LongKeyVector, SimpleVector {
-
   private long dim;
 
   public LongIntVector() {
@@ -71,9 +70,7 @@ public class LongIntVector extends IntVector implements LongKeyVector, SimpleVec
 
   public int max() {
     LongIntVectorStorage idstorage = (LongIntVectorStorage) storage;
-    if (idstorage.size() == 0) {
-      return 0;
-    }
+    if (idstorage.size() == 0) return 0;
     int maxval = Integer.MIN_VALUE;
     if (idstorage.isSparse()) {
       IntIterator iter = idstorage.valueIterator();
@@ -95,9 +92,7 @@ public class LongIntVector extends IntVector implements LongKeyVector, SimpleVec
 
   public int min() {
     LongIntVectorStorage idstorage = (LongIntVectorStorage) storage;
-    if (idstorage.size() == 0) {
-      return 0;
-    }
+    if (idstorage.size() == 0) return 0;
     int minval = Integer.MAX_VALUE;
     if (idstorage.isSparse()) {
       IntIterator iter = idstorage.valueIterator();
@@ -119,9 +114,7 @@ public class LongIntVector extends IntVector implements LongKeyVector, SimpleVec
 
   public long argmax() {
     LongIntVectorStorage idstorage = (LongIntVectorStorage) storage;
-    if (idstorage.size() == 0) {
-      return -1;
-    }
+    if (idstorage.size() == 0) return -1;
     int maxval = Integer.MIN_VALUE;
     long maxidx = -1;
     if (idstorage.isSparse()) {
@@ -152,9 +145,7 @@ public class LongIntVector extends IntVector implements LongKeyVector, SimpleVec
 
   public long argmin() {
     LongIntVectorStorage idstorage = (LongIntVectorStorage) storage;
-    if (idstorage.size() == 0) {
-      return -1;
-    }
+    if (idstorage.size() == 0) return -1;
     int minval = Integer.MAX_VALUE;
     long minidx = -1;
     if (idstorage.isSparse()) {
@@ -185,9 +176,7 @@ public class LongIntVector extends IntVector implements LongKeyVector, SimpleVec
 
   public double std() {
     LongIntVectorStorage dstorage = (LongIntVectorStorage) storage;
-    if (dstorage.size() == 0) {
-      return 0;
-    }
+    if (dstorage.size() == 0) return 0;
     double sumval = 0.0;
     double sumval2 = 0.0;
     if (dstorage.isSparse()) {
@@ -210,9 +199,7 @@ public class LongIntVector extends IntVector implements LongKeyVector, SimpleVec
 
   public double average() {
     LongIntVectorStorage dstorage = (LongIntVectorStorage) storage;
-    if (dstorage.size() == 0) {
-      return 0;
-    }
+    if (dstorage.size() == 0) return 0;
     double sumval = 0.0;
     if (dstorage.isSparse()) {
       IntIterator iter = dstorage.valueIterator();
@@ -235,9 +222,7 @@ public class LongIntVector extends IntVector implements LongKeyVector, SimpleVec
 
   public long numZeros() {
     LongIntVectorStorage dstorage = (LongIntVectorStorage) storage;
-    if (dstorage.size() == 0) {
-      return (long) dim;
-    }
+    if (dstorage.size() == 0) return (long) dim;
     long numZero = 0;
     if (dstorage.isSparse()) {
       IntIterator iter = dstorage.valueIterator();
@@ -257,12 +242,25 @@ public class LongIntVector extends IntVector implements LongKeyVector, SimpleVec
   }
 
   public LongIntVector clone() {
-    return new LongIntVector(matrixId, rowId, clock, dim, ((LongIntVectorStorage) storage).clone());
+    return new LongIntVector(matrixId, rowId, clock, dim,
+        ((LongIntVectorStorage) storage).clone());
   }
 
   @Override
   public LongIntVector copy() {
-    return new LongIntVector(matrixId, rowId, clock, dim, ((LongIntVectorStorage) storage).copy());
+    return new LongIntVector(matrixId, rowId, clock, dim,
+        ((LongIntVectorStorage) storage).copy());
+  }
+
+  @Override
+  public LongIntVector emptyLike() {
+    if (storage.isSparse()) {
+      return new LongIntVector(matrixId, rowId, clock, dim,
+          ((LongIntVectorStorage) storage).emptySparse());
+    } else {
+      return new LongIntVector(matrixId, rowId, clock, dim,
+          ((LongIntVectorStorage) storage).emptySorted());
+    }
   }
 
   @Override

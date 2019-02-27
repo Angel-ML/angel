@@ -22,7 +22,6 @@ import com.tencent.angel.ml.math2.ufuncs.executor.comp.CompReduceExecutor;
 import com.tencent.angel.ml.matrix.RowType;
 
 public class CompIntDoubleVector extends DoubleVector implements IntKeyVector, ComponentVector {
-
   private IntDoubleVector[] partitions;
   private int numPartitions;
   private int dim;
@@ -32,8 +31,7 @@ public class CompIntDoubleVector extends DoubleVector implements IntKeyVector, C
     super();
   }
 
-  public CompIntDoubleVector(int matrixId, int rowId, int clock, int dim,
-      IntDoubleVector[] partitions, int subDim) {
+  public CompIntDoubleVector(int matrixId, int rowId, int clock, int dim, IntDoubleVector[] partitions, int subDim) {
     setMatrixId(matrixId);
     setRowId(rowId);
     setClock(clock);
@@ -55,8 +53,7 @@ public class CompIntDoubleVector extends DoubleVector implements IntKeyVector, C
     this(0, 0, 0, dim, partitions, subDim);
   }
 
-  public CompIntDoubleVector(int matrixId, int rowId, int clock, int dim,
-      IntDoubleVector[] partitions) {
+  public CompIntDoubleVector(int matrixId, int rowId, int clock, int dim, IntDoubleVector[] partitions) {
     this(matrixId, rowId, clock, dim, partitions, -1);
   }
 
@@ -191,8 +188,7 @@ public class CompIntDoubleVector extends DoubleVector implements IntKeyVector, C
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = partitions[i].clone();
     }
-    return new CompIntDoubleVector(getMatrixId(), getRowId(), getClock(), (int) getDim(),
-        newPartitions, subDim);
+    return new CompIntDoubleVector(getMatrixId(), getRowId(), getClock(), (int) getDim(), newPartitions, subDim);
   }
 
   @Override
@@ -200,6 +196,15 @@ public class CompIntDoubleVector extends DoubleVector implements IntKeyVector, C
     IntDoubleVector[] newPartitions = new IntDoubleVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = partitions[i].copy();
+    }
+    return new CompIntDoubleVector(getMatrixId(), getRowId(), getClock(), (int) getDim(), newPartitions, subDim);
+  }
+
+  @Override
+  public CompIntDoubleVector emptyLike() {
+    IntDoubleVector[] newPartitions = new IntDoubleVector[partitions.length];
+    for (int i = 0; i < partitions.length; i++) {
+      newPartitions[i] = partitions[i].emptyLike();
     }
     return new CompIntDoubleVector(getMatrixId(), getRowId(), getClock(), (int) getDim(),
         newPartitions, subDim);

@@ -183,7 +183,7 @@ object MLConf {
   val DEFAULT_ML_GBDT_TREE_DEPTH = 5
   val ML_GBDT_MAX_NODE_NUM = "ml.gbdt.max.node.num"
   val ML_GBDT_SPLIT_NUM = "ml.gbdt.split.num"
-  val DEFAULT_ML_GBDT_SPLIT_NUM = 5
+  val DEFAULT_ML_GBDT_SPLIT_NUM = 10
   val ML_GBDT_ROW_SAMPLE_RATIO = "ml.gbdt.row.sample.ratio"
   val DEFAULT_ML_GBDT_ROW_SAMPLE_RATIO = 1
   val ML_GBDT_SAMPLE_RATIO = "ml.gbdt.sample.ratio"
@@ -202,6 +202,28 @@ object MLConf {
   val DEFAULT_ML_GBDT_SERVER_SPLIT = false
   val ML_GBDT_CATE_FEAT = "ml.gbdt.cate.feat"
   val DEFAULT_ML_GBDT_CATE_FEAT = "none"
+
+  val ML_GBDT_LOSS_FUNCTION: String = "ml.gbdt.loss.func"
+  val ML_GBDT_EVAL_METRIC = "ml.gbdt.eval.metric"
+  val DEFAULT_ML_GBDT_EVAL_METRIC = "error"
+  val ML_GBDT_FEATURE_SAMPLE_RATIO = "ml.gbdt.feature.sample.ratio"
+  val DEFAULT_ML_GBDT_FEATURE_SAMPLE_RATIO = 1.0
+
+  val ML_GBDT_HIST_SUBTRACTION = "ml.gbdt.hist.subtraction"
+  val DEFAULT_ML_GBDT_HIST_SUBTRACTION = true
+  val ML_GBDT_LIGHTER_CHILD_FIRST = "ml.gbdt.lighter.child.first"
+  val DEFAULT_ML_GBDT_LIGHTER_CHILD_FIRST = true
+  val ML_GBDT_FULL_HESSIAN = "ml.gbdt.full.hessian"
+  val DEFAULT_ML_GBDT_FULL_HESSIAN = false
+
+  val ML_GBDT_MIN_NODE_INSTANCE = "ml.gbdt.min.node.instance"
+  val DEFAULT_ML_GBDT_MIN_NODE_INSTANCE = 1024
+  val ML_GBDT_MIN_SPLIT_GAIN = "ml.gbdt.min.split.gain"
+  val DEFAULT_ML_GBDT_MIN_SPLIT_GAIN = 0.0
+
+  val ML_GBDT_MAX_LEAF_WEIGHT = "ml.gbdt.max.leaf.weight"
+  val DEFAULT_ML_GBDT_MAX_LEAF_WEIGHT = 0.0
+
 
   /** The loss sum of all samples */
   val TRAIN_LOSS = "train.loss"

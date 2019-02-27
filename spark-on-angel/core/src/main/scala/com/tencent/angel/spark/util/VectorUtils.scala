@@ -152,10 +152,10 @@ object VectorUtils {
   /**
    * Count the number of non-zero element in `vector`
    */
-  def nnz(vector: PSVector): Int = {
+  def nnz(vector: PSVector): Long = {
     vector.assertValid()
     psfGet(vector.poolId, new Nnz(vector.poolId, vector.id))
-      .asInstanceOf[ScalarAggrResult].getResult.toInt
+      .asInstanceOf[ScalarAggrResult].getResult.toLong
   }
 
   /**
