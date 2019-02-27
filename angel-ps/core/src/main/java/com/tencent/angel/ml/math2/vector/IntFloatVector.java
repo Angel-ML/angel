@@ -26,15 +26,13 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.lang.ArrayUtils;
 
 public class IntFloatVector extends FloatVector implements IntKeyVector, SimpleVector {
-
   private int dim;
 
   public IntFloatVector() {
     super();
   }
 
-  public IntFloatVector(int matrixId, int rowId, int clock, int dim,
-      IntFloatVectorStorage storage) {
+  public IntFloatVector(int matrixId, int rowId, int clock, int dim, IntFloatVectorStorage storage) {
     this.matrixId = matrixId;
     this.rowId = rowId;
     this.clock = clock;
@@ -72,9 +70,7 @@ public class IntFloatVector extends FloatVector implements IntKeyVector, SimpleV
 
   public float max() {
     IntFloatVectorStorage idstorage = (IntFloatVectorStorage) storage;
-    if (idstorage.size() == 0) {
-      return 0;
-    }
+    if (idstorage.size() == 0) return 0;
     float maxval = Float.MIN_VALUE;
     if (idstorage.isSparse()) {
       FloatIterator iter = idstorage.valueIterator();
@@ -96,9 +92,7 @@ public class IntFloatVector extends FloatVector implements IntKeyVector, SimpleV
 
   public float min() {
     IntFloatVectorStorage idstorage = (IntFloatVectorStorage) storage;
-    if (idstorage.size() == 0) {
-      return 0;
-    }
+    if (idstorage.size() == 0) return 0;
     float minval = Float.MAX_VALUE;
     if (idstorage.isSparse()) {
       FloatIterator iter = idstorage.valueIterator();
@@ -120,9 +114,7 @@ public class IntFloatVector extends FloatVector implements IntKeyVector, SimpleV
 
   public int argmax() {
     IntFloatVectorStorage idstorage = (IntFloatVectorStorage) storage;
-    if (idstorage.size() == 0) {
-      return -1;
-    }
+    if (idstorage.size() == 0) return -1;
     float maxval = Float.MIN_VALUE;
     int maxidx = -1;
     if (idstorage.isDense()) {
@@ -162,9 +154,7 @@ public class IntFloatVector extends FloatVector implements IntKeyVector, SimpleV
 
   public int argmin() {
     IntFloatVectorStorage idstorage = (IntFloatVectorStorage) storage;
-    if (idstorage.size() == 0) {
-      return -1;
-    }
+    if (idstorage.size() == 0) return -1;
     float minval = Float.MAX_VALUE;
     int minidx = -1;
     if (idstorage.isDense()) {
@@ -204,9 +194,7 @@ public class IntFloatVector extends FloatVector implements IntKeyVector, SimpleV
 
   public double std() {
     IntFloatVectorStorage dstorage = (IntFloatVectorStorage) storage;
-    if (dstorage.size() == 0) {
-      return 0;
-    }
+    if (dstorage.size() == 0) return 0;
     double sumval = 0.0;
     double sumval2 = 0.0;
     if (dstorage.isSparse()) {
@@ -229,9 +217,7 @@ public class IntFloatVector extends FloatVector implements IntKeyVector, SimpleV
 
   public double average() {
     IntFloatVectorStorage dstorage = (IntFloatVectorStorage) storage;
-    if (dstorage.size() == 0) {
-      return 0;
-    }
+    if (dstorage.size() == 0) return 0;
     double sumval = 0.0;
     if (dstorage.isSparse()) {
       FloatIterator iter = dstorage.valueIterator();
@@ -254,9 +240,7 @@ public class IntFloatVector extends FloatVector implements IntKeyVector, SimpleV
 
   public int numZeros() {
     IntFloatVectorStorage dstorage = (IntFloatVectorStorage) storage;
-    if (dstorage.size() == 0) {
-      return (int) dim;
-    }
+    if (dstorage.size() == 0) return (int) dim;
     int numZero = 0;
     if (dstorage.isSparse()) {
       FloatIterator iter = dstorage.valueIterator();
@@ -284,6 +268,20 @@ public class IntFloatVector extends FloatVector implements IntKeyVector, SimpleV
   public IntFloatVector copy() {
     return new IntFloatVector(matrixId, rowId, clock, dim,
         ((IntFloatVectorStorage) storage).copy());
+  }
+
+  @Override
+  public IntFloatVector emptyLike() {
+    if (storage.isDense()) {
+      return new IntFloatVector(matrixId, rowId, clock, dim,
+          ((IntFloatVectorStorage) storage).emptyDense());
+    } else if (storage.isSparse()) {
+      return new IntFloatVector(matrixId, rowId, clock, dim,
+          ((IntFloatVectorStorage) storage).emptySparse());
+    } else {
+      return new IntFloatVector(matrixId, rowId, clock, dim,
+          ((IntFloatVectorStorage) storage).emptySorted());
+    }
   }
 
   @Override
