@@ -2,15 +2,15 @@ package com.tencent.angel.ml.core.variable
 
 import java.util.concurrent
 
-import com.tencent.angel.ml.core.network.{EvnContext, Graph}
+import com.tencent.angel.ml.core.network.EvnContext
 import com.tencent.angel.ml.core.variable.VarState.VarState
-import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.matrix.Matrix
+import com.tencent.angel.ml.math2.vector._
 
 import scala.collection.JavaConversions._
+import scala.reflect.runtime.{universe => ru}
 
-
-class VariableManager(isSparseFormat: Boolean) {
+abstract class VariableManager {
   protected val variables = new concurrent.ConcurrentHashMap[String, Variable]()
   protected val slots = new concurrent.ConcurrentHashMap[String, Matrix]()
 
@@ -51,7 +51,7 @@ class VariableManager(isSparseFormat: Boolean) {
   }
 
   def setAllState(state: VarState): Unit = {
-    variables.values().foreach{ variable => variable.setState(state)}
+    variables.values().foreach { variable => variable.setState(state) }
   }
 
   def setState(name: String, state: VarState): Unit = {
@@ -66,9 +66,7 @@ class VariableManager(isSparseFormat: Boolean) {
     * Variable operation
     */
 
-  def createALL(envCtx: EvnContext): Unit = {
-    variables.values().foreach { variable => variable.create(envCtx) }
-  }
+  def createALL(envCtx: EvnContext): Unit
 
   def create(envCtx: EvnContext, name: String): Unit = {
     val variable = getVariable(name)
@@ -90,31 +88,11 @@ class VariableManager(isSparseFormat: Boolean) {
     }
   }
 
-  def pullALL(epoch: Int, indices: Vector = null): Unit = {
-    // val isSparseFormat = graph.dataFormat == "libsvm" || graph.dataFormat == "dummy"
+  def pullALL(epoch: Int, indices: Vector = null): Unit
 
-    variables.values().foreach {
-      case variable if isSparseFormat && variable.allowPullWithIndex =>
-        variable.pull(epoch, indices)
-      case variable => variable.pull(epoch)
-    }
-  }
+  def pull(name: String, epoch: Int = 0, indices: Vector = null): Unit
 
-  def pull(name: String, epoch: Int = 0, indices: Vector = null): Unit = {
-    // val isSparseFormat = graph.dataFormat == "libsvm" || graph.dataFormat == "dummy"
-
-    val variable = getVariable(name)
-    if (variable != null) {
-      variable match {
-        case v if isSparseFormat && v.allowPullWithIndex =>
-          v.pull(epoch, indices)
-        case v => v.pull(epoch)
-      }
-    }
-
-  }
-
-  def pushALL(alpha: Double=1.0): Unit = {
+  def pushALL(alpha: Double = 1.0): Unit = {
     variables.values().foreach {
       case matVar: MatVariable =>
         val matSlot = getSlot(matVar.name)
@@ -129,7 +107,7 @@ class VariableManager(isSparseFormat: Boolean) {
     }
   }
 
-  def push(name: String, alpha: Double=1.0): Unit = {
+  def push(name: String, alpha: Double = 1.0): Unit = {
     val variable = getVariable(name)
     val grad = getSlot(name)
 
@@ -161,9 +139,7 @@ class VariableManager(isSparseFormat: Boolean) {
     }
   }
 
-  def loadALL(envCtx: EvnContext, path: String): Unit = {
-    variables.values().foreach { variable => variable.load(envCtx, path) }
-  }
+  def loadALL(envCtx: EvnContext, path: String): Unit
 
   def load(name: String, envCtx: EvnContext, path: String): Unit = {
     val variable = getVariable(name)
@@ -173,9 +149,7 @@ class VariableManager(isSparseFormat: Boolean) {
     }
   }
 
-  def saveALL(envCtx: EvnContext, path: String): Unit = {
-    variables.values().foreach { variable => variable.save(envCtx, path) }
-  }
+  def saveALL(envCtx: EvnContext, path: String): Unit
 
   def save(name: String, envCtx: EvnContext, path: String): Unit = {
     val variable = getVariable(name)
@@ -183,5 +157,29 @@ class VariableManager(isSparseFormat: Boolean) {
     if (variable != null) {
       variable.save(envCtx, path)
     }
+  }
+}
+
+
+object VariableManager {
+  private var vm: VariableManager = _
+
+  def get(name: String, isSparseFormat: Boolean): VariableManager = synchronized {
+    if (vm == null) {
+      val rtMirror = ru.runtimeMirror(getClass.getClassLoader)
+      val objModuleSymbol = rtMirror.staticModule(name)
+      val objModuleMirror = rtMirror.reflectModule(objModuleSymbol)
+      val method = objModuleMirror.symbol.typeSignature.member(ru.TermName("get")).asMethod
+      val objMirror = rtMirror.reflect(objModuleMirror.instance)
+      val result = objMirror.reflectMethod(method)(isSparseFormat)
+      vm = result.asInstanceOf[VariableManager]
+    }
+
+    vm
+  }
+
+  def addVariable(v: Variable): Unit = {
+    assert(vm != null)
+    vm.addVariable(v)
   }
 }

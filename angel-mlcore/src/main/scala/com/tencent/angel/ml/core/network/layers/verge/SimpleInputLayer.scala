@@ -20,12 +20,11 @@ package com.tencent.angel.ml.core.network.layers.verge
 
 
 import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
-import com.tencent.angel.ml.core.network.{Graph, TransFunc}
 import com.tencent.angel.ml.core.network.layers._
-import com.tencent.angel.ml.core.variable._
+import com.tencent.angel.ml.core.network.{Graph, TransFunc}
 import com.tencent.angel.ml.core.optimizer.Optimizer
-import com.tencent.angel.ml.core.utils.{LayerKeys, MLException, OptUtils}
-import com.tencent.angel.ml.math2.MFactory
+import com.tencent.angel.ml.core.utils.{LayerKeys, OptUtils}
+import com.tencent.angel.ml.core.variable._
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import org.apache.commons.logging.LogFactory
@@ -46,7 +45,7 @@ class SimpleInputLayer(name: String,
     MLCoreConf.ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT,
     MLCoreConf.DEFAULT_ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT)
   private val weight: MatVariable = graph.provider.getMatVariable(s"${name}_weight", outputDim,
-    graph.indexRange, optimizer, formatClassName, allowPullWithIndex = true)
+    SharedConf.indexRange, optimizer, formatClassName, allowPullWithIndex = true)
   private val bias: VecVariable = graph.provider.getVecVariable(s"${name}_bias", outputDim,
     null, formatClassName, allowPullWithIndex = false)
 
@@ -63,10 +62,10 @@ class SimpleInputLayer(name: String,
     // the input can be both dense and sparse, but transBack is dense
     val gradWeight: Matrix = Ufuncs.dot(transBack, true, input, false)
       .imul(graph.normalFactor)
-    graph.putGradient(weight.asInstanceOf[Variable], gradWeight)
+    variableManager.putSlot(weight.asInstanceOf[Variable], gradWeight)
 
     val gradBias = OptUtils.wrapVector2Matrix(transBack.sum(0).imul(graph.normalFactor))
-    graph.putGradient(bias.asInstanceOf[Variable], gradBias)
+    variableManager.putSlot(bias.asInstanceOf[Variable], gradBias)
   }
 
   override def toString: String = {

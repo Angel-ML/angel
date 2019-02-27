@@ -11,8 +11,7 @@ import java.util.{HashMap => JHashMap, Map => JMap}
 import com.tencent.angel.ml.core.utils.MLException
 
 object EmbedUtils {
-  def geneMatrix(graph: Graph, embeddings: JMap[JLong, Vector]): Matrix = {
-    val features: Matrix = graph.placeHolder.getFeats
+  def geneMatrix(features: Matrix, embeddings: JMap[JLong, Vector]): Matrix = {
     val rows = (0 until features.getNumRows).toArray.map { rId =>
       val row = features.getRow(rId)
       val partitions = row.getStorage match {

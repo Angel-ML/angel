@@ -1,8 +1,8 @@
 package com.tencent.angel.ml.core
 
 import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.local.LocalGraph
 import com.tencent.angel.ml.core.local.optimizer.{Adam, Momentum, SGD}
+import com.tencent.angel.ml.core.local.{LocalVariableManager, LocalVariableProvider}
 import com.tencent.angel.ml.core.network._
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.layers.join.SumPooling
@@ -10,14 +10,13 @@ import com.tencent.angel.ml.core.network.layers.linear.FCLayer
 import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer}
 import com.tencent.angel.ml.core.optimizer.loss._
 import com.tencent.angel.ml.core.utils.JsonUtils
-import org.scalatest.FunSuite
+import com.tencent.angel.ml.core.variable.{VariableManager, VariableProvider}
 import org.json4s._
-import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods._
+import org.scalatest.FunSuite
 
 
-
-class JsonTest extends FunSuite{
+class JsonTest extends FunSuite {
   test("Adam") {
     val adma = new Adam(0.001, 0.9, 0.99)
 
@@ -70,10 +69,10 @@ class JsonTest extends FunSuite{
 
     val transFuncs = List(identity, relu, softmax, tanh, sigmoid, sigmoidWithDropout, tanhWithDropout, dropout)
 
-    transFuncs.foreach( trans => println(compact(render(trans.toJson))))
-    val jsonStrs = transFuncs.map( trans => compact(render(trans.toJson)))
+    transFuncs.foreach(trans => println(compact(render(trans.toJson))))
+    val jsonStrs = transFuncs.map(trans => compact(render(trans.toJson)))
     println()
-    jsonStrs.foreach{ jsonStr =>
+    jsonStrs.foreach { jsonStr =>
       val json = parse(jsonStr).asInstanceOf[JObject]
       println(json.obj.head)
       TransFunc.fromJson(json)
@@ -90,10 +89,10 @@ class JsonTest extends FunSuite{
 
     val transFuncs = List(logLoss, l2Loss, huberLoss, hingeLoss, crossEntropyLoss, softmaxLoss)
 
-    transFuncs.foreach( trans => println(compact(render(trans.toJson))))
-    val jsonStrs = transFuncs.map( trans => compact(render(trans.toJson)))
+    transFuncs.foreach(trans => println(compact(render(trans.toJson))))
+    val jsonStrs = transFuncs.map(trans => compact(render(trans.toJson)))
     println()
-    jsonStrs.foreach{ jsonStr =>
+    jsonStrs.foreach { jsonStr =>
       val json = parse(jsonStr).asInstanceOf[JObject]
       println(json.obj.head)
       LossFunc.fromJson(json)
@@ -102,7 +101,12 @@ class JsonTest extends FunSuite{
 
   test("Layers") {
     val conf = SharedConf.get()
-    implicit val graph: Graph = new LocalGraph(new PlaceHolder(), conf, 1)
+    val dataFormat = "libsvm"
+    val modelType = SharedConf.modelType
+    val placeHolder: PlaceHolder = new PlaceHolder(conf)
+    implicit val variableManager: VariableManager = LocalVariableManager.get(true)
+    val variableProvider: VariableProvider = new LocalVariableProvider(dataFormat, modelType, placeHolder)
+    implicit val graph: Graph = new Graph(variableProvider, placeHolder, conf, 1)
     val opt = new Adam(0.01, 0.9, 0.99)
     // 20: field, 10 output
     val ipLayer = new SimpleInputLayer("inputLayer", 10, new Identity, opt)
@@ -114,74 +118,79 @@ class JsonTest extends FunSuite{
     val loss = new LossLayer("loss", combine, new SoftmaxLoss)
 
     // println(JsonUtils.layer2JsonPretty(loss))
-    val jsonStr = """
-      |{
-      |  "fc3":{
-      |    "type":"FCLayer",
-      |    "outputdim":10,
-      |    "inputlayer":"fc2",
-      |    "transfunc":"Identity"
-      |  },
-      |  "fc2":{
-      |    "type":"FCLayer",
-      |    "outputdim":200,
-      |    "inputlayer":"fc1",
-      |    "optimizer":{
-      |      "type":"Adam",
-      |      "beta":0.9
-      |    }
-      |  },
-      |  "embedding":{
-      |    "type":"Embedding",
-      |    "outputdim":160,
-      |    "numfactors":8,
-      |    "optimizer":{
-      |      "type":"Adam",
-      |      "beta":0.9,
-      |      "gamma":0.99
-      |    }
-      |  },
-      |  "inputLayer":{
-      |    "type":"SimpleInputLayer",
-      |    "outputdim":10
-      |  },
-      |  "sum":{
-      |    "type":"SumPooling",
-      |    "outputdim":10,
-      |    "inputlayers":["inputLayer","fc3"]
-      |  },
-      |  "fc1":{
-      |    "type":"FCLayer",
-      |    "outputdim":200,
-      |    "inputlayer":"embedding",
-      |    "transfunc":{
-      |      "type":"Relu"
-      |    },
-      |    "optimizer":{
-      |      "type":"Adam",
-      |      "gamma":0.99
-      |    }
-      |  },
-      |  "loss":{
-      |    "type":"LossLayer",
-      |    "outputdim":-1,
-      |    "lossfunc":"SoftmaxLoss",
-      |    "inputlayer":"sum"
-      |  }
-      |}
-    """.stripMargin
+    val jsonStr =
+      """
+        |{
+        |  "fc3":{
+        |    "type":"FCLayer",
+        |    "outputdim":10,
+        |    "inputlayer":"fc2",
+        |    "transfunc":"Identity"
+        |  },
+        |  "fc2":{
+        |    "type":"FCLayer",
+        |    "outputdim":200,
+        |    "inputlayer":"fc1",
+        |    "optimizer":{
+        |      "type":"Adam",
+        |      "beta":0.9
+        |    }
+        |  },
+        |  "embedding":{
+        |    "type":"Embedding",
+        |    "outputdim":160,
+        |    "numfactors":8,
+        |    "optimizer":{
+        |      "type":"Adam",
+        |      "beta":0.9,
+        |      "gamma":0.99
+        |    }
+        |  },
+        |  "inputLayer":{
+        |    "type":"SimpleInputLayer",
+        |    "outputdim":10
+        |  },
+        |  "sum":{
+        |    "type":"SumPooling",
+        |    "outputdim":10,
+        |    "inputlayers":["inputLayer","fc3"]
+        |  },
+        |  "fc1":{
+        |    "type":"FCLayer",
+        |    "outputdim":200,
+        |    "inputlayer":"embedding",
+        |    "transfunc":{
+        |      "type":"Relu"
+        |    },
+        |    "optimizer":{
+        |      "type":"Adam",
+        |      "gamma":0.99
+        |    }
+        |  },
+        |  "loss":{
+        |    "type":"LossLayer",
+        |    "outputdim":-1,
+        |    "lossfunc":"SoftmaxLoss",
+        |    "inputlayer":"sum"
+        |  }
+        |}
+      """.stripMargin
 
     JsonUtils.layerFromJson(parse(jsonStr).asInstanceOf[JObject])
     println(JsonUtils.layer2JsonPretty(graph.getLossLayer.asInstanceOf[Layer]))
   }
 
-  test("ReadJson"){
+  test("ReadJson") {
     val conf = SharedConf.get()
     val json = "deepfm"
     val jsonPath = s"E:\\github\\fitzwang\\angel\\angel-mlcore\\src\\test\\jsons\\$json.json"
     val layers = JsonUtils.parseAndUpdateJson(jsonPath, conf)
-
-    implicit val graph: Graph = new LocalGraph(new PlaceHolder(), conf, 1)
+    val dataFormat = "libsvm"
+    val modelType = SharedConf.modelType
+    val placeHolder: PlaceHolder = new PlaceHolder(conf)
+    implicit val variableManager: VariableManager = LocalVariableManager.get(true)
+    val variableProvider: VariableProvider = new LocalVariableProvider(dataFormat, modelType, placeHolder)
+    implicit val graph: Graph = new Graph(variableProvider, placeHolder, conf, 1)
     JsonUtils.layerFromJson(layers)
 
     val topLayer = graph.getLossLayer

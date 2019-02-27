@@ -110,7 +110,7 @@ public class SVMTest {
   }
 
   @Test public void testSVM() throws Exception {
-    trainTest();
+    //trainTest();
     predictTest();
   }
 

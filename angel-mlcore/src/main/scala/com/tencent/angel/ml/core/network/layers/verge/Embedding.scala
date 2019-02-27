@@ -39,7 +39,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
     MLCoreConf.ML_EMBEDDING_MATRIX_OUTPUT_FORMAT,
     MLCoreConf.DEFAULT_ML_EMBEDDING_MATRIX_OUTPUT_FORMAT)
   private val embedding: EmbedVariable = graph.provider.getEmbedVariable(s"${name}_embedding",
-    graph.indexRange.toInt, numFactors, optimizer, formatClassName)
+    SharedConf.indexRange.toInt, numFactors, optimizer, formatClassName, graph.taskNum)
 
   override protected def doForward(input: Matrix): Matrix = {
     embedding.snapshot()
@@ -47,7 +47,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
 
   override protected def doBackward(input: Matrix, gradInput: Matrix): Unit = {
     val gradValue = EmbedUtils.calGradient(input, gradInput)
-    graph.putGradient(embedding.asInstanceOf[Variable], gradValue)
+    variableManager.putSlot(embedding.asInstanceOf[Variable], gradValue)
   }
 
   override def toString: String = {

@@ -4,6 +4,7 @@ import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.core.local.LocalLearner
 import com.tencent.angel.ml.core.local.data.LocalDataReader
+import com.tencent.angel.ml.core.utils.JsonUtils
 import com.tencent.angel.ml.math2.utils.LabeledData
 import org.scalatest.{BeforeAndAfter, FunSuite}
 
@@ -20,6 +21,7 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
   }
 
   def getDataFile(name: String, format: String = "libsvm", aType: String = "train"): String = {
+    SharedConf.get().set(MLCoreConf.ML_DATA_INPUT_FORMAT, format)
     val dim: Int = name match {
       case "a9a" => 123
       case "abalone" => 8
@@ -37,7 +39,8 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
   def init1(jsonFile: String, sourceFile: String): Unit = {
     conf = SharedConf.get()
     conf.set(MLCoreConf.ML_JSON_CONF_FILE, jsonFile)
-    conf.setJson()
+    val json = JsonUtils.parseAndUpdateJson(jsonFile, conf)
+    conf.setJson(json)
 
     reader = new LocalDataReader(conf)
     val iter = reader.sourceIter(sourceFile)
@@ -51,7 +54,8 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
   def init2(jsonFile: String, sourceFile: String): Unit = {
     conf = SharedConf.get()
     conf.set(MLCoreConf.ML_JSON_CONF_FILE, jsonFile)
-    conf.setJson()
+    val json = JsonUtils.parseAndUpdateJson(jsonFile, conf)
+    conf.setJson(json)
 
     reader = new LocalDataReader(conf)
     val iter = reader.sourceIter(sourceFile)
@@ -74,7 +78,7 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
   }
 
   test("DAW") {
-    init2(getJson("daw"), getDataFile("census", "dense"))
+    init2(getJson("daw"), getDataFile("census"))
     train2()
   }
 
@@ -84,6 +88,7 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
   }
 
   test("DNN") {
+    SharedConf.get().set(MLCoreConf.ML_LEARN_RATE, "0.001")
     init2(getJson("dnn"), getDataFile("census"))
     train2()
   }

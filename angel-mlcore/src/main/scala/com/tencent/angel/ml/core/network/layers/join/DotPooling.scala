@@ -19,12 +19,12 @@
 package com.tencent.angel.ml.core.network.layers.join
 
 import com.tencent.angel.ml.core.network.Graph
+import com.tencent.angel.ml.core.network.layers._
+import com.tencent.angel.ml.core.utils.MLException
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, Matrix}
 import com.tencent.angel.ml.math2.storage.{IntDoubleDenseVectorStorage, IntFloatDenseVectorStorage}
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
-import com.tencent.angel.ml.core.network.layers._
-import com.tencent.angel.ml.core.utils.MLException
 import org.apache.commons.logging.LogFactory
 
 
@@ -64,7 +64,7 @@ class DotPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implic
 
     if (inputLayers.length == 2) {
       inputs.map { case (layerName, _: Matrix) =>
-        val otherOutput = inputs.collect{
+        val otherOutput = inputs.collect {
           case (otherName, otherMat: Matrix) if otherName != layerName => otherMat
         }.head
 

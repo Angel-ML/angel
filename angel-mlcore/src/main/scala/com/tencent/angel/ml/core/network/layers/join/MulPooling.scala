@@ -19,10 +19,10 @@
 package com.tencent.angel.ml.core.network.layers.join
 
 import com.tencent.angel.ml.core.network.Graph
-import com.tencent.angel.ml.math2.matrix.Matrix
-import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.utils.MLException
+import com.tencent.angel.ml.math2.matrix.Matrix
+import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import org.apache.commons.logging.LogFactory
 
 

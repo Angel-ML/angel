@@ -2,9 +2,9 @@ package com.tencent.angel.ml.core.local.variables
 
 import java.util.Random
 
-import com.tencent.angel.ml.core.network.{EvnContext, Graph}
+import com.tencent.angel.ml.core.network.EvnContext
 import com.tencent.angel.ml.core.utils.{OptUtils, ValueNotAllowed}
-import com.tencent.angel.ml.core.variable.{MatVariable, Updater}
+import com.tencent.angel.ml.core.variable.{MatVariable, Updater, VariableManager}
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.storage._
 import com.tencent.angel.ml.math2.utils.RowType
@@ -12,8 +12,14 @@ import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.{MFactory, StorageType}
 
 
-class LocalMatVariable(name: String, val numRows: Int, val numCols: Long, updater: Updater,
-                       rowType: RowType, formatClassName: String, allowPullWithIndex: Boolean)(implicit graph: Graph)
+class LocalMatVariable(name: String,
+                       val numRows: Int,
+                       val numCols: Long,
+                       updater: Updater,
+                       rowType: RowType,
+                       formatClassName: String,
+                       allowPullWithIndex: Boolean)
+                      (implicit variableManager: VariableManager)
   extends LocalVariable(name, rowType, updater, formatClassName, allowPullWithIndex) with MatVariable {
   override protected var matrix: Matrix = _
 
