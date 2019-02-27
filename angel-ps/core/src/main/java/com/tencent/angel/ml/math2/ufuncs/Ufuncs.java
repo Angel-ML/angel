@@ -233,6 +233,16 @@ public class Ufuncs {
     return BinaryExecutor.apply(zv, nv, new FTRLThreshold(false, alpha, beta, lambda1, lambda2));
   }
 
+  public static Vector ftrlthresholdinit(Vector zv, Vector nv, double alpha, double beta,
+                                         double lambda1, double lambda2, double mean, double stdev) {
+    return BinaryExecutor.apply(zv, nv, new FTRLThresholdInit(false, alpha, beta, lambda1, lambda2,
+      mean, stdev));
+  }
+
+  public static Vector fmgrad(Vector x, Vector v, double dot) {
+    return BinaryExecutor.apply(x, v, new FMGrad(false, dot));
+  }
+
   /*
   Computes abs(v1)
   */

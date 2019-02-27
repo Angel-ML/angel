@@ -249,7 +249,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extend
     * @return
     */
   def weight: PSVector = {
-    val func = new ComputeW(matrix.id, alpha, beta, lambda1, lambda2)
+    val func = new ComputeW(matrix.id, alpha, beta, lambda1, lambda2, 1.0)
     wPS.psfUpdate(func).get()
     wPS
   }
