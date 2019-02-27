@@ -2,9 +2,9 @@ package com.tencent.angel.ml.core.local.variables
 
 import java.util.Random
 
-import com.tencent.angel.ml.core.network.{EvnContext, Graph}
+import com.tencent.angel.ml.core.network.EvnContext
 import com.tencent.angel.ml.core.utils.ValueNotAllowed
-import com.tencent.angel.ml.core.variable.{Updater, VarState, VecVariable}
+import com.tencent.angel.ml.core.variable.{Updater, VarState, VariableManager, VecVariable}
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.storage._
 import com.tencent.angel.ml.math2.utils.RowType
@@ -12,42 +12,31 @@ import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.math2.{MFactory, StorageType}
 
 
-class LocalVecVariable(name: String, val length: Long, updater: Updater,
-                       rowType: RowType, formatClassName: String, allowPullWithIndex: Boolean)(implicit graph: Graph)
+class LocalVecVariable(name: String,
+                       val length: Long,
+                       updater: Updater,
+                       rowType: RowType,
+                       formatClassName: String,
+                       allowPullWithIndex: Boolean)
+                      (implicit variableManager: VariableManager)
   extends LocalVariable(name, rowType, updater, formatClassName, allowPullWithIndex) with VecVariable {
   override protected var vector: Vector = _
 
   protected override def doCreate(envCtx: EvnContext): Unit = {
-    writeLock.lock()
-    try {
-      if (state == VarState.New || state == VarState.Expired) {
-        storage = rowType match {
-          case RowType.T_DOUBLE_DENSE =>
-            MFactory.rbIntDoubleMatrix(numSlot + 1, length.toInt, StorageType.DENSE)
-          case RowType.T_DOUBLE_SPARSE =>
-            MFactory.rbIntDoubleMatrix(numSlot + 1, length.toInt, StorageType.SPARSE)
-          case RowType.T_DOUBLE_SPARSE_LONGKEY =>
-            MFactory.rbLongDoubleMatrix(numSlot + 1, length, StorageType.SPARSE)
-          case RowType.T_FLOAT_DENSE =>
-            MFactory.rbIntFloatMatrix(numSlot + 1, length.toInt, StorageType.DENSE)
-          case RowType.T_FLOAT_SPARSE =>
-            MFactory.rbIntFloatMatrix(numSlot + 1, length.toInt, StorageType.SPARSE)
-          case RowType.T_FLOAT_SPARSE_LONGKEY =>
-            MFactory.rbLongFloatMatrix(numSlot + 1, length, StorageType.SPARSE)
-          case _ => throw ValueNotAllowed("Value Not Allowed, Only Float/Double Are Allowed!")
-        }
-
-        // trans state
-        if (state == VarState.New) {
-          transSate(VarState.New, VarState.Created)
-        } else {
-          transSate(VarState.Expired, VarState.Created)
-        }
-      }
-
-      assert(state == VarState.Created)
-    } finally {
-      writeLock.unlock()
+    storage = rowType match {
+      case RowType.T_DOUBLE_DENSE =>
+        MFactory.rbIntDoubleMatrix(numSlot + 1, length.toInt, StorageType.DENSE)
+      case RowType.T_DOUBLE_SPARSE =>
+        MFactory.rbIntDoubleMatrix(numSlot + 1, length.toInt, StorageType.SPARSE)
+      case RowType.T_DOUBLE_SPARSE_LONGKEY =>
+        MFactory.rbLongDoubleMatrix(numSlot + 1, length, StorageType.SPARSE)
+      case RowType.T_FLOAT_DENSE =>
+        MFactory.rbIntFloatMatrix(numSlot + 1, length.toInt, StorageType.DENSE)
+      case RowType.T_FLOAT_SPARSE =>
+        MFactory.rbIntFloatMatrix(numSlot + 1, length.toInt, StorageType.SPARSE)
+      case RowType.T_FLOAT_SPARSE_LONGKEY =>
+        MFactory.rbLongFloatMatrix(numSlot + 1, length, StorageType.SPARSE)
+      case _ => throw ValueNotAllowed("Value Not Allowed, Only Float/Double Are Allowed!")
     }
   }
 

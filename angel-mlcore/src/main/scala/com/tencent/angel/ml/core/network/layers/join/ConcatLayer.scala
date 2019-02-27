@@ -18,6 +18,7 @@
 
 package com.tencent.angel.ml.core.network.layers.join
 
+import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.utils.MLException
@@ -26,7 +27,6 @@ import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.utils.MatrixUtils
 import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector}
 import org.apache.commons.logging.LogFactory
-import org.json4s.JValue
 
 
 class ConcatLayer(name: String, outputDim: Int, inputLayers: Array[Layer])(implicit graph: Graph)
@@ -38,7 +38,7 @@ class ConcatLayer(name: String, outputDim: Int, inputLayers: Array[Layer])(impli
     var start = 0
     val batchSize = graph.placeHolder.getBatchSize
 
-    graph.valueType match {
+    SharedConf.valueType() match {
       case "double" =>
         val outTemp = MFactory.denseDoubleMatrix(batchSize, outputDim)
         val outData = outTemp.getData
@@ -103,7 +103,7 @@ class ConcatLayer(name: String, outputDim: Int, inputLayers: Array[Layer])(impli
     val batchSize = graph.placeHolder.getBatchSize
     val gradOutput = inputs.map { case (layerName, mat) => layerName -> MatrixUtils.emptyLike(mat) }
 
-    graph.valueType match {
+    SharedConf.valueType() match {
       case "double" =>
         val grad = gradInput.asInstanceOf[BlasDoubleMatrix].getData
         (0 until batchSize).foreach { row =>

@@ -21,7 +21,7 @@ class LocalLearner(conf: SharedConf) extends Learner {
   model.buildNetwork()
 
   // 3. init or load matrices
-  private val modelPath: String = conf.get(MLCoreConf.ML_LOAD_MODEL_PATH)
+  private val modelPath: String = conf.get(MLCoreConf.ML_LOAD_MODEL_PATH, MLCoreConf.DEFAULT_ML_LOAD_MODEL_PATH)
   private val actionType: String = conf.get(MLCoreConf.ML_ACTION_TYPE, MLCoreConf.DEFAULT_ML_ACTION_TYPE)
   private val env = new LocalEvnContext
   if (actionType.equalsIgnoreCase("train") && modelPath.isEmpty) {
@@ -43,7 +43,7 @@ class LocalLearner(conf: SharedConf) extends Learner {
       graph.feedData(iter.next())
 
       // LOG.info("start to pullParams ...")
-      if (graph.dataFormat == "libsvm" || graph.dataFormat == "dummy") {
+      if (model.isSparseFormat) {
         model.pullParams(epoch, graph.placeHolder.getIndices)
       } else {
         model.pullParams(epoch)

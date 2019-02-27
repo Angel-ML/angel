@@ -20,7 +20,7 @@
       "name": "denseinputlayer",
       "type": "simpleinputlayer",
       "outputdim": 100,
-      "transfunc": "relu"
+      "transfunc": "sigmoid"
     },
     {
       "name": "fclayer",
@@ -30,7 +30,7 @@
         1
       ],
       "transfuncs": [
-        "relu",
+        "sigmoid",
         "identity"
       ],
       "inputlayer": "denseinputlayer"

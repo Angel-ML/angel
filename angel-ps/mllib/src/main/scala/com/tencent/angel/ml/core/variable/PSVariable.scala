@@ -7,13 +7,18 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.matrix.MatrixContext
 import com.tencent.angel.ml.core.AngelEvnContext
 import com.tencent.angel.ml.core.conf.{AngelMLConf, SharedConf}
-import com.tencent.angel.ml.core.network.{EvnContext, Graph}
+import com.tencent.angel.ml.core.network.EvnContext
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.math2.utils.RowType
-import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
+import com.tencent.angel.model._
 
-abstract class PSVariable(name: String, rowType: RowType, updater: Updater, formatClassName: String,
-                          allowPullWithIndex: Boolean)(implicit graph: Graph)
+
+abstract class PSVariable(name: String,
+                          rowType: RowType,
+                          updater: Updater,
+                          formatClassName: String,
+                          allowPullWithIndex: Boolean)
+                         (implicit variableManager: VariableManager)
   extends Variable(name, rowType, updater, formatClassName, allowPullWithIndex) {
 
   protected var matrixId: Int = -1

@@ -19,39 +19,39 @@
 package com.tencent.angel.ml.core.graphsubmit
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.core.{AngelGraph, GraphModel, PredictResult}
+import com.tencent.angel.ml.core._
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.data.DataBlock
-import com.tencent.angel.ml.core.network.layers.PlaceHolder
 import com.tencent.angel.ml.core.network.Graph
-import com.tencent.angel.ml.core.optimizer.loss._
+import com.tencent.angel.ml.core.network.layers.PlaceHolder
 import com.tencent.angel.ml.core.utils.JsonUtils
+import com.tencent.angel.ml.core.variable.{VariableManager, VariableProvider}
 import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
-
-import scala.reflect.runtime.{universe => ru}
 
 class AngelModel(conf: Configuration, _ctx: TaskContext) extends GraphModel {
   lazy val sharedConf: SharedConf = SharedConf.get()
   lazy val batchSize: Int = SharedConf.batchSize
   lazy val blockSize: Int = SharedConf.blockSize
-  lazy val dataFormat: String = SharedConf.inputDataFormat
 
-  implicit lazy val graph: Graph = if (_ctx!= null) {
-    new AngelGraph(new PlaceHolder(sharedConf), sharedConf, _ctx.getTotalTaskNum)
+  override protected val placeHolder: PlaceHolder = new PlaceHolder(sharedConf)
+  override protected implicit val variableManager: VariableManager = PSVariableManager.get(isSparseFormat)
+  override protected val variableProvider: VariableProvider = new PSVariableProvider(dataFormat, modelType, placeHolder)
+
+  implicit lazy val graph: Graph = if (_ctx != null) {
+    new Graph(variableProvider, placeHolder, sharedConf, _ctx.getTotalTaskNum)
   } else {
     val totalTaskNum: Int = sharedConf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER,
       AngelConf.DEFAULT_ANGEL_WORKERGROUP_NUMBER) * sharedConf.getInt(
       AngelConf.ANGEL_TASK_ACTUAL_NUM, default = 1)
-    new AngelGraph(new PlaceHolder(sharedConf), sharedConf, totalTaskNum)
+    new Graph(variableProvider, placeHolder, sharedConf, totalTaskNum)
   }
 
-  def lossFunc: LossFunc = graph.getLossFunc
-
-  def buildNetwork(): Unit = {
+  override def buildNetwork(): Unit = {
     JsonUtils.layerFromJson(sharedConf.getJson)
   }
+
 
   /**
     * Predict use the PSModels and predict data
@@ -65,31 +65,23 @@ class AngelModel(conf: Configuration, _ctx: TaskContext) extends GraphModel {
 
     val numSamples = storage.size()
     val batchData = new Array[LabeledData](numSamples)
-    (0 until numSamples).foreach{idx => batchData(idx) = storage.loopingRead()}
+    (0 until numSamples).foreach { idx => batchData(idx) = storage.loopingRead() }
     graph.feedData(batchData)
 
-    if (graph.asInstanceOf[AngelGraph].isSparseFormat) {
-      pullParams(-1, graph.placeHolder.getIndices)
+    if (isSparseFormat) {
+      pullParams(-1, placeHolder.getIndices)
     } else {
       pullParams(-1)
     }
 
     graph.predict()
   }
+
+  override def predict(storage: LabeledData): PredictResult = ???
 }
 
 object AngelModel {
   def apply(className: String, conf: Configuration): AngelModel = {
-//    val rtMirror = ru.runtimeMirror(getClass.getClassLoader)
-//
-//    val clsType = ru.typeOf[AngelModel]
-//    val angelModel  = clsType.typeSymbol.asClass
-//    val clsMirror = rtMirror.reflectClass(angelModel)
-//
-//    val ctor = clsType.decl(ru.termNames.CONSTRUCTOR).asMethod
-//    val ctorm = clsMirror.reflectConstructor(ctor)
-//
-//    ctorm(conf, null).asInstanceOf[AngelModel]
     val cls = Class.forName(className)
     val cstr = cls.getConstructor(classOf[Configuration], classOf[TaskContext])
     cstr.newInstance(conf, null).asInstanceOf[AngelModel]

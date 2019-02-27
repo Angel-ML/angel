@@ -20,11 +20,11 @@ package com.tencent.angel.ml.core.network.layers.linear
 
 
 import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
-import com.tencent.angel.ml.core.network.{Graph, TransFunc}
 import com.tencent.angel.ml.core.network.layers._
-import com.tencent.angel.ml.core.variable.{MatVariable, Variable, VecVariable}
+import com.tencent.angel.ml.core.network.{Graph, TransFunc}
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.utils.{LayerKeys, MLException, OptUtils}
+import com.tencent.angel.ml.core.variable.{MatVariable, Variable, VecVariable}
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.utils.MatrixUtils
@@ -95,10 +95,10 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
     // both transBack and lastOutput are Blas
     val gradWeight = Ufuncs.dot(transBack, true, lastOutput, false)
       .imul(graph.normalFactor)
-    graph.putGradient(weight.asInstanceOf[Variable], gradWeight)
+    variableManager.putSlot(weight.asInstanceOf[Variable], gradWeight)
 
     val gradBias = OptUtils.wrapVector2Matrix(transBack.sum(0).imul(graph.normalFactor))
-    graph.putGradient(bias.asInstanceOf[Variable], gradBias)
+    variableManager.putSlot(bias.asInstanceOf[Variable], gradBias)
 
     backwardValue
   }

@@ -1,19 +1,26 @@
 package com.tencent.angel.ml.core.local.variables
 
-import com.tencent.angel.ml.core.network.Graph
+import java.lang.{Long => JLong}
+import java.util.{HashMap => JHashMap, Map => JMap}
+
+import com.tencent.angel.ml.core.network.layers.PlaceHolder
 import com.tencent.angel.ml.core.utils.ValueNotAllowed
-import com.tencent.angel.ml.core.variable.{EmbedUtils, EmbedVariable, Updater}
+import com.tencent.angel.ml.core.variable.{EmbedUtils, EmbedVariable, Updater, VariableManager}
 import com.tencent.angel.ml.math2.matrix.{MapMatrix, Matrix}
 import com.tencent.angel.ml.math2.storage._
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.Vector
 
-import java.lang.{Long => JLong}
-import java.util.{HashMap => JHashMap, Map => JMap}
 
-
-class LocalEmbedVariable(name: String, numRows: Int, numCols: Long, updater: Updater,
-                         rowType: RowType, formatClassName: String, allowPullWithIndex: Boolean)(implicit graph: Graph)
+class LocalEmbedVariable(name: String,
+                         numRows: Int,
+                         numCols: Long,
+                         updater: Updater,
+                         rowType: RowType,
+                         formatClassName: String,
+                         allowPullWithIndex: Boolean,
+                         placeHolder: PlaceHolder)
+                        (implicit variableManager: VariableManager)
   extends LocalMatVariable(name, numRows, numCols, updater, rowType, formatClassName, allowPullWithIndex) with EmbedVariable {
   private val embeddings: JMap[JLong, Vector] = new JHashMap[JLong, Vector]()
 
@@ -33,7 +40,7 @@ class LocalEmbedVariable(name: String, numRows: Int, numCols: Long, updater: Upd
       }
     }
 
-    matrix = EmbedUtils.geneMatrix(graph, embeddings)
+    matrix = EmbedUtils.geneMatrix(placeHolder.getFeats, embeddings)
   }
 
   protected override def doPush(grad: Matrix, alpha: Double): Unit = {

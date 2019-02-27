@@ -3,13 +3,13 @@ package com.tencent.angel.ml.core.network
 import com.tencent.angel.ml.core.PredictResult
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.layers.{Trainable, _}
-import com.tencent.angel.ml.core.variable.{Variable, VariableManager, VariableProvider}
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
 import com.tencent.angel.ml.core.utils.JsonUtils.{J2Pretty, layer2Json}
-import com.tencent.angel.ml.core.utils.{DataCache, RowTypeUtils, TimeStats}
-import com.tencent.angel.ml.math2.vector.Vector
+import com.tencent.angel.ml.core.utils.{DataCache, TimeStats}
+import com.tencent.angel.ml.core.variable.{VariableManager, VariableProvider}
 import com.tencent.angel.ml.math2.matrix.Matrix
-import com.tencent.angel.ml.math2.utils.{LabeledData, RowType}
+import com.tencent.angel.ml.math2.utils.LabeledData
+import com.tencent.angel.ml.math2.vector.Vector
 import org.apache.commons.logging.{Log, LogFactory}
 import org.json4s.JsonAST.{JField, JObject}
 
@@ -20,45 +20,17 @@ import scala.collection.mutable.ListBuffer
 trait EvnContext
 
 
-trait KVSType {
-  val modelType: RowType
-
-  def keyType: String = RowTypeUtils.keyType(modelType)
-
-  def valueType: String = RowTypeUtils.valueType(modelType)
-
-  def storageType: String = RowTypeUtils.storageType(modelType)
-}
-
-
-abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) extends KVSType {
+class Graph(val provider: VariableProvider, val placeHolder: PlaceHolder, val conf: SharedConf, val taskNum: Int) {
   private val LOG: Log = LogFactory.getLog(classOf[Graph])
 
   protected val inputLayers = new ListBuffer[InputLayer]()
   protected var lossLayer: LossLayer = _
   protected val trainableLayer = new ListBuffer[Trainable]()
   private val dataCache = new DataCache()
-  val variableManager: VariableManager
 
   val timeStats = new TimeStats()
 
-  lazy val provider: VariableProvider = {
-    val cls = Class.forName(providerName)
-    val constructor = cls.getConstructor(classOf[Graph])
-    val instance = constructor.newInstance(this)
-
-    instance.asInstanceOf[VariableProvider]
-  }
-
-  val taskNum: Int
-
-  val indexRange: Long
-
-  val validIndexNum: Long
-
-  def normalFactor: Double
-
-  val dataFormat: String
+  def normalFactor: Double = 1.0 / (placeHolder.getBatchSize * taskNum)
 
   protected var lr: Double = SharedConf.learningRate
 
@@ -167,29 +139,6 @@ abstract class Graph(val placeHolder: PlaceHolder, val providerName: String) ext
 
     res
   }
-
-
-  /** **********************************************************************************
-    * Variable operation
-    */
-
-  def addVariable(v: Variable): Unit = variableManager.addVariable(v)
-
-  def getALLVariables: List[Variable] = variableManager.getALLVariables
-
-  def getVariable(name: String): Variable = variableManager.getVariable(name)
-
-  def hasVariable(v: Variable): Boolean = variableManager.hasVariable(v)
-
-  def hasVariable(name: String): Boolean = variableManager.hasVariable(name)
-
-  def putGradient(v: Variable, g: Matrix): Unit = variableManager.putSlot(v, g)
-
-  def getAllGradients: Map[String, Matrix] = variableManager.getAllSlots
-
-  def getGradient(name: String): Matrix = variableManager.getSlot(name)
-
-  def hasGradient(name: String): Boolean = variableManager.hasSlot(name)
 
   /** **********************************************************************************
     * Matrix Cache

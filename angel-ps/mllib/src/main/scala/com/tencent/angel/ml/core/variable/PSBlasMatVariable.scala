@@ -2,7 +2,6 @@ package com.tencent.angel.ml.core.variable
 
 import com.tencent.angel.matrix.MatrixContext
 import com.tencent.angel.matrix.psf.update.RandomNormal
-import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.utils.{PSMatrixUtils, RowTypeUtils}
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.utils.RowType
@@ -10,11 +9,15 @@ import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.psagent.PSAgentContext
 
 
-class PSBlasMatVariable(name: String, val numRows: Int, val numCols: Long, updater: Updater,
-                        rowType: RowType, formatClassName: String, allowPullWithIndex: Boolean)
-                       (implicit graph: Graph)
-  extends PSVariable(name, rowType, updater, formatClassName, allowPullWithIndex)
-    with BlasMatVariable {
+class PSBlasMatVariable(name: String,
+                        val numRows: Int,
+                        val numCols: Long,
+                        updater: Updater,
+                        rowType: RowType,
+                        formatClassName: String,
+                        allowPullWithIndex: Boolean)
+                       (implicit variableManager: VariableManager)
+  extends PSVariable(name, rowType, updater, formatClassName, allowPullWithIndex) with BlasMatVariable {
   override val numFactors: Int = 1
   override protected var matrix: Matrix = _
 

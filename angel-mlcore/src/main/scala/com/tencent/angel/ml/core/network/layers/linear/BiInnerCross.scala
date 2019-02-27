@@ -17,12 +17,13 @@
 
 package com.tencent.angel.ml.core.network.layers.linear
 
+import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.Graph
+import com.tencent.angel.ml.core.network.layers._
+import com.tencent.angel.ml.core.utils.MLException
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
-import com.tencent.angel.ml.core.network.layers._
-import com.tencent.angel.ml.core.utils.MLException
 import org.apache.commons.logging.LogFactory
 
 
@@ -68,7 +69,7 @@ class BiInnerCross(name: String, outputDim: Int, inputLayer: Layer)(implicit gra
   }
 
   override protected def doBackward(input: Matrix, gradInput: Matrix): Matrix = {
-    graph.valueType match {
+    SharedConf.valueType() match {
       case "double" =>
         val inputData = input.asInstanceOf[RBCompIntDoubleMatrix]
 

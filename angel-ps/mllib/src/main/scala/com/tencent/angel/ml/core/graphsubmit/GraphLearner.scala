@@ -55,8 +55,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
       graph.feedData(iter.next())
 
       // LOG.info("start to pullParams ...")
-      if (graph.dataFormat.equalsIgnoreCase("dummy") ||
-        graph.dataFormat.equalsIgnoreCase("libsvm")) {
+      if (model.isSparseFormat) {
         model.pullParams(epoch, graph.placeHolder.getIndices)
       } else {
         model.pullParams(epoch)

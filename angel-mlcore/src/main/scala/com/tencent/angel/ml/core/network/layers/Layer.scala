@@ -19,12 +19,13 @@ package com.tencent.angel.ml.core.network.layers
 
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.optimizer.Optimizer
-import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.core.utils.LayerKeys
+import com.tencent.angel.ml.core.variable.VariableManager
+import com.tencent.angel.ml.math2.matrix.Matrix
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
-import org.json4s.{Formats, ShortTypeHints}
 import org.json4s.native.Serialization
+import org.json4s.{Formats, ShortTypeHints}
 
 import scala.collection.mutable
 
@@ -35,6 +36,8 @@ trait Trainable {
 abstract class Layer(val name: String, val outputDim: Int)(implicit val graph: Graph) extends Serializable {
   private val inputs = new mutable.HashMap[String, Layer]()
   private val consumer = new mutable.HashMap[String, Layer]()
+
+  protected val variableManager: VariableManager = graph.provider.variableManager
 
   protected val forwardKey: String = s"$name/forward"
   protected val backwardKey: String = s"$name/backward"

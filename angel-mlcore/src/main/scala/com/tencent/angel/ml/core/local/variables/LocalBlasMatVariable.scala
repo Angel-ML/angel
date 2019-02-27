@@ -2,9 +2,10 @@ package com.tencent.angel.ml.core.local.variables
 
 import java.util.Random
 
-import com.tencent.angel.ml.core.network.{EvnContext, Graph}
+import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.network.EvnContext
 import com.tencent.angel.ml.core.utils.{OptUtils, ValueNotAllowed}
-import com.tencent.angel.ml.core.variable.{BlasMatVariable, Updater}
+import com.tencent.angel.ml.core.variable.{BlasMatVariable, Updater, VariableManager}
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.storage.{IntDoubleDenseVectorStorage, IntFloatDenseVectorStorage}
 import com.tencent.angel.ml.math2.utils.RowType
@@ -12,13 +13,19 @@ import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.math2.{MFactory, StorageType}
 
 
-class LocalBlasMatVariable(name: String, val numRows: Int, val numCols: Long, updater: Updater,
-                           rowType: RowType, formatClassName:String, allowPullWithIndex: Boolean)(implicit graph: Graph)
+class LocalBlasMatVariable(name: String,
+                           val numRows: Int,
+                           val numCols: Long,
+                           updater: Updater,
+                           rowType: RowType,
+                           formatClassName: String,
+                           allowPullWithIndex: Boolean)
+                          (implicit variableManager: VariableManager)
   extends LocalVariable(name, rowType, updater, formatClassName, allowPullWithIndex) with BlasMatVariable {
   override protected var matrix: Matrix = _
 
   protected override def doCreate(envCtx: EvnContext): Unit = {
-    storage = graph.valueType match {
+    storage = SharedConf.valueType() match {
       case "float" =>
         MFactory.rbIntFloatMatrix(numSlot + 1, (numRows * numCols).toInt, StorageType.DENSE)
       case "double" =>

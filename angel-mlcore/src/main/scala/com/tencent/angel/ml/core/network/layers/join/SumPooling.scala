@@ -19,8 +19,8 @@
 package com.tencent.angel.ml.core.network.layers.join
 
 import com.tencent.angel.ml.core.network.Graph
-import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.core.network.layers._
+import com.tencent.angel.ml.math2.matrix.Matrix
 import org.apache.commons.logging.LogFactory
 
 
@@ -31,18 +31,18 @@ class SumPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implic
   override protected def doForward(inputs: Map[String, Matrix]): Matrix = {
     var output: Matrix = null
 
-    inputs.foreach{ case (_, mat: Matrix) =>
-        if (output == null) {
-          output = mat.copy()
-        } else {
-          output.iadd(mat)
-        }
+    inputs.foreach { case (_, mat: Matrix) =>
+      if (output == null) {
+        output = mat.copy()
+      } else {
+        output.iadd(mat)
+      }
     }
     output
   }
 
   override protected def doBackward(inputs: Map[String, Matrix], gradInput: Matrix): Map[String, Matrix] = {
-    inputs.map{ case (layerName: String, _) => layerName -> gradInput }
+    inputs.map { case (layerName: String, _) => layerName -> gradInput }
   }
 
   override def toString: String = {

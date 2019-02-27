@@ -4,7 +4,7 @@ import java.util.concurrent.Future
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
 import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.network.{EvnContext, Graph}
+import com.tencent.angel.ml.core.network.EvnContext
 import com.tencent.angel.ml.core.utils.NotInitialException
 import com.tencent.angel.ml.core.variable.VarState.VarState
 import com.tencent.angel.ml.math2.matrix.Matrix
@@ -127,14 +127,17 @@ object VecVariable {
 }
 
 
-abstract class Variable(val name: String, val rowType: RowType, val updater: Updater,
-                        val formatClassName: String, val allowPullWithIndex: Boolean)(implicit val graph: Graph)
+abstract class Variable(val name: String,
+                        val rowType: RowType,
+                        val updater: Updater,
+                        val formatClassName: String,
+                        val allowPullWithIndex: Boolean)
+                       (implicit variableManager: VariableManager)
   extends TrainCycle {
-  graph.addVariable(this)
+  variableManager.addVariable(this)
   protected var mean: Double = 0.0
   protected var stddev: Double = 0.000001
   protected val conf: SharedConf = SharedConf.get()
-  protected lazy val normal: Double = graph.normalFactor
 
   protected val numSlot: Int = if (updater == null) {
     0
