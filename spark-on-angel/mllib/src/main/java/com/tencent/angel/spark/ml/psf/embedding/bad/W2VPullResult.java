@@ -1,6 +1,6 @@
 package com.tencent.angel.spark.ml.psf.embedding.bad;
 
-import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
+import com.tencent.angel.matrix.psf.get.base.GetResult;
 
 public class W2VPullResult extends GetResult {
   public int[] indices;

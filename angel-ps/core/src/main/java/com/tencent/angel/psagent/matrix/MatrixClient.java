@@ -19,7 +19,7 @@
 package com.tencent.angel.psagent.matrix;
 
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.matrix.psf.update.zero.Zero;
+import com.tencent.angel.matrix.psf.update.zero.Zero;
 import com.tencent.angel.psagent.task.TaskContext;
 
 import java.util.concurrent.ExecutionException;

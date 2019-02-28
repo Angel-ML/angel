@@ -19,13 +19,12 @@
 package com.tencent.angel.spark.ml.core
 
 
-import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.network.layers.{AngelGraph, PlaceHolder, STATUS}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.core.network.layers.{PlaceHolder, STATUS}
 import com.tencent.angel.ml.core.optimizer.decayer._
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
-import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
-import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.Matrix
+import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.spark.context.AngelPSContext
 import org.json4s.JsonAST.JValue
@@ -70,7 +69,7 @@ class GraphModel extends Serializable {
   }
 
   def getLossFunc(): LossFunc = {
-    graph.getOutputLayer.getLossFunc
+    graph.getOutputLayer.getLossFunc()
   }
 
   def backward(): Unit = {
@@ -88,13 +87,13 @@ class GraphModel extends Serializable {
 
   def save(path: String): Unit = {
     val context = new ModelSaveContext(path)
-    graph.getTrainable.map(layer => layer.saveParams(context))
+    graph.getTrainable.foreach(layer => layer.saveParams(context))
     AngelPSContext.save(context)
   }
 
   def load(path: String): Unit = {
     val context = new ModelLoadContext(path)
-    graph.getTrainable.map(layer => layer.loadParams(context))
+    graph.getTrainable.foreach(layer => layer.loadParams(context))
     AngelPSContext.load(context)
   }
 

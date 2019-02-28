@@ -16,7 +16,7 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.tencent.angel</groupId>
 	<artifactId>angel</artifactId>
@@ -36,111 +36,116 @@
     <main.basedir>${project.basedir}</main.basedir>
 	</properties>
 
-	<modules>
-		<module>angel-ps</module>
-		<module>spark-on-angel</module>
-		<module>dist</module>
+
+    <modules>
+        <module>angel-math</module>
+        <module>angel-format</module>
+        <module>angel-mlcore</module>
+        <module>angel-ps</module>
+        <!--module>spark-on-angel</module-->
+        <module>dist</module>
     </modules>
 
-  <description>A Flexible and Powerful Parameter Server for large-scale machine learning</description>
-  <url>https://github.com/Tencent/angel</url>
 
-  <licenses>
-    <license>
-      <name>Apache License, Version 2.0 </name>
-      <url>https://github.com/Tencent/angel/blob/master/LICENSE.TXT</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-
-  <scm>
-    <connection>scm:git:git@github.com:Tencent/angel.git</connection>
-    <developerConnection>scm:git:https://github.com/Tencent/angel.git</developerConnection>
+    <description>A Flexible and Powerful Parameter Server for large-scale machine learning</description>
     <url>https://github.com/Tencent/angel</url>
-  </scm>
 
-  <developers>
-    <developer>
-      <name>angel</name>
-      <email>angel@tencent.com</email>
-      <organization>Tencent</organization>
-      <organizationUrl>https://www.tencent.com</organizationUrl>
-    </developer>
-  </developers>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://github.com/Tencent/angel/blob/master/LICENSE.TXT</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
-  <distributionManagement>
-    <snapshotRepository>
-      <id>tx_angel</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-    <repository>
-      <id>tx_angel</id>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-  </distributionManagement>
+    <scm>
+        <connection>scm:git:git@github.com:Tencent/angel.git</connection>
+        <developerConnection>scm:git:https://github.com/Tencent/angel.git</developerConnection>
+        <url>https://github.com/Tencent/angel</url>
+    </scm>
 
-  <profiles>
-    <profile>
-      <id>release</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-source-plugin</artifactId>
-            <version>2.4</version>
-            <executions>
-              <execution>
-                <id>attach-sources</id>
-                <goals>
-                  <goal>jar-no-fork</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <!-- Sub modules will generate scala style docs with scala-maven-plugin -->
-          <!--plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <version>2.10.3</version>
-            <executions>
-              <execution>
-                <id>attach-javadocs</id>
-                <configuration>
-                  <additionalparam>-Xdoclint:none</additionalparam>
-                </configuration>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin-->
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.5</version>
-            <executions>
-              <execution>
-                <id>sign-artifacts</id>
-                <phase>install</phase>
-                <goals>
-                  <goal>sign</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>1.6.7</version>
-            <extensions>true</extensions>
-            <configuration>
-              <serverId>tx_angel</serverId>
-              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-              <autoReleaseAfterClose>true</autoReleaseAfterClose>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
+    <developers>
+        <developer>
+            <name>angel</name>
+            <email>angel@tencent.com</email>
+            <organization>Tencent</organization>
+            <organizationUrl>https://www.tencent.com</organizationUrl>
+        </developer>
+    </developers>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>tx_angel</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>tx_angel</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>2.4</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- Sub modules will generate scala style docs with scala-maven-plugin -->
+                    <!--plugin>
+                      <groupId>org.apache.maven.plugins</groupId>
+                      <artifactId>maven-javadoc-plugin</artifactId>
+                      <version>2.10.3</version>
+                      <executions>
+                        <execution>
+                          <id>attach-javadocs</id>
+                          <configuration>
+                            <additionalparam>-Xdoclint:none</additionalparam>
+                          </configuration>
+                          <goals>
+                            <goal>jar</goal>
+                          </goals>
+                        </execution>
+                      </executions>
+                    </plugin-->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.5</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.7</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>tx_angel</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

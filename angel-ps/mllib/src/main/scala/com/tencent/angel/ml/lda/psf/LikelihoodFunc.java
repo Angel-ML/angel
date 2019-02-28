@@ -21,22 +21,20 @@ package com.tencent.angel.ml.lda.psf;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math2.storage.IntIntDenseVectorStorage;
-import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult;
-import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarPartitionAggrResult;
-import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
-import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
-import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
-import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
+import com.tencent.angel.matrix.psf.aggr.enhance.ScalarAggrResult;
+import com.tencent.angel.matrix.psf.aggr.enhance.ScalarPartitionAggrResult;
+import com.tencent.angel.matrix.psf.get.base.GetFunc;
+import com.tencent.angel.matrix.psf.get.base.GetResult;
+import com.tencent.angel.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.storage.vector.ServerIntIntRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math.special.Gamma;
 
-import java.nio.IntBuffer;
 import java.util.List;
 
 public class LikelihoodFunc extends GetFunc {

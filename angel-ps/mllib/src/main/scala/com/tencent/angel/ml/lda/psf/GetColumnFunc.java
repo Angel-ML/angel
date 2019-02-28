@@ -19,8 +19,12 @@
 package com.tencent.angel.ml.lda.psf;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.psf.get.base.*;
-import com.tencent.angel.ml.matrix.psf.get.getrows.PartitionGetRowsParam;
+import com.tencent.angel.matrix.psf.get.base.GetFunc;
+import com.tencent.angel.matrix.psf.get.base.GetParam;
+import com.tencent.angel.matrix.psf.get.base.GetResult;
+import com.tencent.angel.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.matrix.psf.get.base.PartitionGetResult;
+import com.tencent.angel.matrix.psf.get.getrows.PartitionGetRowsParam;
 import com.tencent.angel.ps.storage.MatrixStorageManager;
 import com.tencent.angel.ps.storage.vector.ServerIntIntRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;

@@ -20,7 +20,7 @@ package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.RunningMode
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
 import org.apache.spark.{SparkConf, SparkContext}
@@ -63,8 +63,8 @@ object OfflineRunner {
     val learner = new OfflineLearner
 
     actionType match {
-      case MLConf.ANGEL_ML_TRAIN => learner.train(input, output, modelPath, dim, model)
-      case MLConf.ANGEL_ML_PREDICT => learner.predict(input, output, modelPath, dim, model)
+      case MLCoreConf.ANGEL_ML_TRAIN => learner.train(input, output, modelPath, dim, model)
+      case MLCoreConf.ANGEL_ML_PREDICT => learner.predict(input, output, modelPath, dim, model)
     }
   }
 }

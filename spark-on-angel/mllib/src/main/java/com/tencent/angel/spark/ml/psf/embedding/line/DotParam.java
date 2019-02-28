@@ -1,8 +1,8 @@
 package com.tencent.angel.spark.ml.psf.embedding.line;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
-import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.matrix.psf.get.base.GetParam;
+import com.tencent.angel.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.psagent.PSAgentContext;
 
 import java.nio.ByteBuffer;

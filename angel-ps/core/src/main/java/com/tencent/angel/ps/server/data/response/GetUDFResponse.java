@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ps.server.data.response;
 
-import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
+import com.tencent.angel.matrix.psf.get.base.PartitionGetResult;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

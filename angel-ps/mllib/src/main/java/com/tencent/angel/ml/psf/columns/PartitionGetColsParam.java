@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.psf.columns;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ps.server.data.request.InitFunc;
 import io.netty.buffer.ByteBuf;
 

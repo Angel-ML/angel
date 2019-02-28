@@ -19,9 +19,8 @@
 package com.tencent.angel.ml.GBDT
 
 import com.tencent.angel.ml.core.TrainTask
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.core.utils.DataParser
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.worker.storage.MemoryDataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
@@ -30,13 +29,10 @@ import org.apache.hadoop.io.{LongWritable, Text}
 class GBDTTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
   private val LOG = LogFactory.getLog(classOf[GBDTTrainTask])
 
-  private val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
-  private val validRatio = conf.getDouble(MLConf.ML_VALIDATE_RATIO, MLConf.DEFAULT_ML_VALIDATE_RATIO)
+   private val validRatio = conf.getDouble(MLCoreConf.ML_VALIDATE_RATIO, MLCoreConf.DEFAULT_ML_VALIDATE_RATIO)
 
   // validation data storage
   var validDataStorage = new MemoryDataBlock[LabeledData](-1)
-  val sharedConf = SharedConf.get(conf)
-  override val dataParser = DataParser(sharedConf)
 
   /**
     * @param ctx : task context

@@ -19,9 +19,9 @@
 package com.tencent.angel.ml.lda.psf;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
-import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
-import com.tencent.angel.ml.matrix.psf.get.getrows.PartitionGetRowsParam;
+import com.tencent.angel.matrix.psf.get.base.GetParam;
+import com.tencent.angel.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.matrix.psf.get.getrows.PartitionGetRowsParam;
 import com.tencent.angel.psagent.PSAgentContext;
 
 import java.util.ArrayList;

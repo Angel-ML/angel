@@ -21,14 +21,17 @@ package com.tencent.angel.spark.models.impl
 import java.util.concurrent.Future
 
 import org.apache.spark.SparkException
-
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.matrix.psf.get.base.{GetFunc, GetResult}
+import com.tencent.angel.matrix.psf.update.Reset
+import com.tencent.angel.matrix.psf.update.base.{UpdateFunc, VoidResult}
+import com.tencent.angel.matrix.psf.update.enhance.map.MapInPlace
+import com.tencent.angel.matrix.psf.update.enhance.map.func.Set
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.Vector
-import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.update._
 import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
-import com.tencent.angel.ml.matrix.psf.update.enhance.map.MapInPlace
 import com.tencent.angel.ml.matrix.psf.update.enhance.map.func.{Set => SetFunc}
 import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory, ResponseType, Result}
 import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
@@ -120,7 +123,7 @@ class PSVectorImpl(val poolId: Int, val id: Int, val dimension: Long, val rowTyp
    */
   override def fill(value: Double): this.type = {
     assertValid()
-    psfUpdate(new MapInPlace(poolId, id, new SetFunc(value))).get()
+    psfUpdate(new MapInPlace(poolId, id, new Set(value))).get()
     this
   }
 

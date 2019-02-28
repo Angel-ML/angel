@@ -1,10 +1,8 @@
 package com.tencent.angel.spark.ml.feature
 
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
-import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.LongIntVector
-import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.context.PSContext
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet
 import org.apache.spark.rdd.RDD
@@ -13,6 +11,8 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.Map
 import java.util.{HashMap => JHashMap}
 import java.util.{HashSet => JHashSet}
+
+import com.tencent.angel.ml.math2.utils.{LabeledData, RowType}
 
 /**
   * This class provide some feature pre-processing utils for input data.
@@ -169,8 +169,8 @@ object Features {
       }
 
       val pullIndex = VFactory.denseLongVector(set.toLongArray())
-      val sparseToDenseIndex = PSMatrixUtils.getRowWithIndex(1, sparseToDenseMatrixId, 0, pullIndex)
-        .asInstanceOf[LongIntVector]
+      val sparseToDenseIndex = PSMatrixUtils.getRowWithIndex(1, sparseToDenseMatrixId, 0, pullIndex)(
+        mean = 0.0, stddev = 0.00001).asInstanceOf[LongIntVector]
 
       val size = corpus.size
       var i = 0
@@ -200,8 +200,8 @@ object Features {
         i += 1
       }
 
-      val sparseToDenseIndex = PSMatrixUtils.getRowWithIndex(1, sparseToDenseMatrixId, 0, VFactory.denseLongVector(indices))
-          .asInstanceOf[LongIntVector]
+      val sparseToDenseIndex = PSMatrixUtils.getRowWithIndex(1, sparseToDenseMatrixId, 0,
+        VFactory.denseLongVector(indices))(mean = 0.0, stddev = 0.00001).asInstanceOf[LongIntVector]
       stringsWithInts.map(f => (sparseToDenseIndex.get(f._2), f._1)).iterator
     }
 

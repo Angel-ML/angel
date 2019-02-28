@@ -1,0 +1,33 @@
+{
+  "data": {
+    "format": "libsvm",
+    "indexrange": 123,
+    "validateratio": 0.1
+  },
+  "train": {
+    "epoch": 10,
+    "lr": 1.0
+  },
+  "model": {
+    "modeltype": "T_FLOAT_SPARSE"
+  },
+  "default_optimizer": {
+    "type": "momentum",
+    "momentum": 0.9,
+    "reg2": 0.01
+  },
+  "layers": [
+    {
+      "name": "wide",
+      "type": "simpleinputlayer",
+      "outputdim": 1,
+      "transfunc": "identity"
+    },
+    {
+      "name": "simplelosslayer",
+      "type": "losslayer",
+      "lossfunc": "huberloss",
+      "inputlayer": "wide"
+    }
+  ]
+}

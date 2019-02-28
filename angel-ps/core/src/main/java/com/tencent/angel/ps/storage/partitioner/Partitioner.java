@@ -18,8 +18,8 @@
 
 package com.tencent.angel.ps.storage.partitioner;
 
-import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.matrix.PartitionMeta;
+import com.tencent.angel.matrix.MatrixContext;
+import com.tencent.angel.matrix.PartitionMeta;
 import org.apache.hadoop.conf.Configuration;
 
 import java.util.List;

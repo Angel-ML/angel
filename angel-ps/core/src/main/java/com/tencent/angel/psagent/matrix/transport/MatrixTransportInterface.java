@@ -19,12 +19,12 @@
 package com.tencent.angel.psagent.matrix.transport;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
-import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
-import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
-import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
-import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
-import com.tencent.angel.ml.matrix.psf.update.base.VoidResult;
+import com.tencent.angel.matrix.psf.get.base.GetFunc;
+import com.tencent.angel.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.matrix.psf.get.base.PartitionGetResult;
+import com.tencent.angel.matrix.psf.update.base.PartitionUpdateParam;
+import com.tencent.angel.matrix.psf.update.base.UpdateFunc;
+import com.tencent.angel.matrix.psf.update.base.VoidResult;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateItem;
@@ -32,7 +32,6 @@ import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.server.data.response.GetClocksResponse;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
-import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplit;
 import com.tencent.angel.psagent.matrix.transport.adapter.*;
 import com.tencent.angel.psagent.task.TaskContext;
 

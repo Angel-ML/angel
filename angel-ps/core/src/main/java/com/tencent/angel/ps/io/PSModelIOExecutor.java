@@ -3,15 +3,13 @@ package com.tencent.angel.ps.io;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.model.*;
 import com.tencent.angel.model.io.IOExecutors;
+import com.tencent.angel.model.io.PSMatrixLoaderSaver;
 import com.tencent.angel.model.output.format.*;
 import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.storage.matrix.ServerMatrix;
 import com.tencent.angel.utils.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 
 import java.io.IOException;
 import java.util.*;
@@ -158,8 +156,9 @@ public class PSModelIOExecutor {
 
     ServerMatrix matrix = context.getMatrixStorageManager().getMatrix(loadContext.getMatrixId());
     if (matrix != null) {
-      MatrixFormat format = ModelFilesUtils.initFormat(loadContext.getFormatClassName(), context.getConf());
-      format.load(matrix, loadContext, context.getConf());
+      Format format = ModelFilesUtils.initFormat(loadContext.getFormatClassName(), context.getConf());
+      PSMatrixLoaderSaver loaderSaver = PSMatrixFilesUtils.initLoaderSaver(format, context.getConf());
+      loaderSaver.load(matrix, loadContext, context.getConf());
     }
   }
 
@@ -167,8 +166,9 @@ public class PSModelIOExecutor {
     saveContext.setWorkers(workers);
     ServerMatrix matrix = context.getMatrixStorageManager().getMatrix(saveContext.getMatrixId());
     if (matrix != null) {
-      MatrixFormat format = ModelFilesUtils.initFormat(saveContext.getFormatClassName(), context.getConf());
-      format.save(matrix, saveContext, context.getConf());
+      Format format = ModelFilesUtils.initFormat(saveContext.getFormatClassName(), context.getConf());
+      PSMatrixLoaderSaver loaderSaver = PSMatrixFilesUtils.initLoaderSaver(format, context.getConf());
+      loaderSaver.save(matrix, saveContext, context.getConf());
     }
   }
 }

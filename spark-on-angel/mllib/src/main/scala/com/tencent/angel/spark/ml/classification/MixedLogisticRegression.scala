@@ -17,7 +17,7 @@
 
 package com.tencent.angel.spark.ml.classification
 
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.Layer
 import com.tencent.angel.ml.core.network.layers.join.DotPooling
 import com.tencent.angel.ml.core.network.layers.verge.{SimpleInputLayer, SimpleLossLayer}
@@ -28,14 +28,14 @@ import com.tencent.angel.spark.ml.core.GraphModel
 
 class MixedLogisticRegression extends GraphModel {
 
-  val rank: Int = SharedConf.get().getInt(MLConf.ML_MLR_RANK)
+  val rank: Int = SharedConf.get().getInt(MLCoreConf.ML_MLR_RANK)
   val dataFormat: String = SharedConf.inputDataFormat
 
   override def network(): Unit = {
     val sigmoid = new SimpleInputLayer("sigmoid_layer", rank, new Sigmoid(),
-      OptUtils.getOptimizer(SharedConf.get().get(MLConf.ML_INPUTLAYER_OPTIMIZER, MLConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)))
+      OptUtils.getOptimizer(SharedConf.get().get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)))
     val softmax = new SimpleInputLayer("softmax_layer", rank, new Softmax(),
-      OptUtils.getOptimizer(SharedConf.get().get(MLConf.ML_INPUTLAYER_OPTIMIZER, MLConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)))
+      OptUtils.getOptimizer(SharedConf.get().get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)))
     val combined = new DotPooling("dotpooling_layer", 1, Array[Layer](sigmoid, softmax))
 
     new SimpleLossLayer("simpleLossLayer", combined, new CrossEntropyLoss)

@@ -17,7 +17,7 @@
 
 package com.tencent.angel.spark.ml.classification
 
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.Layer
 import com.tencent.angel.ml.core.network.layers.join.SumPooling
 import com.tencent.angel.ml.core.network.layers.linear.FCLayer
@@ -29,11 +29,11 @@ import com.tencent.angel.spark.ml.core.GraphModel
 
 class WideAndDeep extends GraphModel {
 
-  val numFields: Int = SharedConf.get().getInt(MLConf.ML_FIELD_NUM)
-  val numFactors: Int = SharedConf.get().getInt(MLConf.ML_RANK_NUM)
-  val lr: Double = SharedConf.get().getDouble(MLConf.ML_LEARN_RATE)
-  val gamma: Double = SharedConf.get().getDouble(MLConf.ML_OPT_ADAM_GAMMA)
-  val beta: Double = SharedConf.get().getDouble(MLConf.ML_OPT_ADAM_BETA)
+  val numFields: Int = SharedConf.get().getInt(MLCoreConf.ML_FIELD_NUM)
+  val numFactors: Int = SharedConf.get().getInt(MLCoreConf.ML_RANK_NUM)
+  val lr: Double = SharedConf.get().getDouble(MLCoreConf.ML_LEARN_RATE)
+  val gamma: Double = SharedConf.get().getDouble(MLCoreConf.ML_OPT_ADAM_GAMMA)
+  val beta: Double = SharedConf.get().getDouble(MLCoreConf.ML_OPT_ADAM_BETA)
 
 
   override def network(): Unit = {

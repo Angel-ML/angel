@@ -1,7 +1,7 @@
 package com.tencent.angel.spark.ml.psf.ftrl;
 
-import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.matrix.PartitionMeta;
+import com.tencent.angel.matrix.MatrixContext;
+import com.tencent.angel.matrix.PartitionMeta;
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner;
 
 import java.util.List;

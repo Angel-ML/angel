@@ -21,8 +21,8 @@ package com.tencent.angel.psagent.matrix.oplog.cache;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.math2.matrix.Matrix;
 import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.psf.update.base.VoidResult;
+import com.tencent.angel.matrix.MatrixMeta;
+import com.tencent.angel.matrix.psf.update.base.VoidResult;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.ResponseType;
 import com.tencent.angel.psagent.matrix.transport.FutureResult;
@@ -41,8 +41,6 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import com.tencent.angel.ml.matrix.RowType;
 
 /**
  * Matrix oplog(updates) cache.

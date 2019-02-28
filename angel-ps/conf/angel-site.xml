@@ -22,6 +22,11 @@
   </property>
 
   <property>
+    <name>angel.variable.get.matrix.context.method.name</name>
+    <value>getMatrixCtx</value>
+  </property>
+
+  <property>
     <name>mapred.mapper.new-api</name>
     <value>true</value>
   </property>

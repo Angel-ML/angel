@@ -1,4 +1,17 @@
 {
+  "data": {
+    "format": "libsvm",
+    "indexrange": -1,
+    "validateratio": 0.1,
+    "sampleratio": 1.0
+  },
+  "train": {
+    "epoch": 10,
+    "lr": 0.5
+  },
+  "model": {
+    "modeltype": "T_FLOAT_SPARSE"
+  },
   "default_optimizer": {
     "type": "momentum",
     "momentum": 0.9,
@@ -18,8 +31,8 @@
       "transfunc": "softmax"
     },
     {
-      "name": "dotpolling",
-      "type": "dotpolling",
+      "name": "dotpooling",
+      "type": "dotpooling",
       "outputdim": 1,
       "inputlayers": [
         "sigmoid",
@@ -28,7 +41,7 @@
     },
     {
       "name": "simplelosslayer",
-      "type": "simplelosslayer",
+      "type": "losslayer",
       "lossfunc": "CrossEntropyLoss",
       "inputlayer": "dotpolling"
     }

@@ -18,7 +18,7 @@
 
 package com.tencent.angel.spark.ml.psf;
 
-import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.func.Zip2MapWithIndexFunc;
+import com.tencent.angel.matrix.psf.update.enhance.zip2.func.Zip2MapWithIndexFunc;
 import io.netty.buffer.ByteBuf;
 
 public class FTRLWUpdater implements Zip2MapWithIndexFunc {

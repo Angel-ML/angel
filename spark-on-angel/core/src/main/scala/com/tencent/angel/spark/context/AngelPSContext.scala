@@ -27,7 +27,9 @@ import com.tencent.angel.common.location.Location
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.conf.AngelConf._
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.matrix.{MatrixContext, MatrixMeta, RowType}
+import com.tencent.angel.matrix.{MatrixContext, MatrixMeta}
+import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.matrix.MatrixMeta
 import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.ps.ParameterServer
 import com.tencent.angel.psagent.PSAgent
@@ -38,12 +40,11 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.util.ShutdownHookManager
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv, TaskContext}
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{Map, mutable}
-
 import org.apache.commons.httpclient.URI
-
 import com.tencent.angel.ps.storage.partitioner.Partitioner
 
 /**

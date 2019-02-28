@@ -19,8 +19,8 @@
 package com.tencent.angel.client;
 
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.model.MLModel;
+import com.tencent.angel.matrix.MatrixContext;
+import com.tencent.angel.ml.core.MLModel;
 import com.tencent.angel.model.ModelLoadContext;
 import com.tencent.angel.model.ModelSaveContext;
 import com.tencent.angel.worker.task.BaseTask;
@@ -116,7 +116,7 @@ public interface AngelClientInterface {
    * @param context model save context
    * @throws AngelException
    */
-  void save(ModelSaveContext context) throws AngelException;
+  void save(ModelSaveContext context, Boolean deleteExistFile) throws AngelException;
 
   /**
    * Stop the whole application.

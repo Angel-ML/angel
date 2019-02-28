@@ -18,7 +18,7 @@
 
 package com.tencent.angel.spark.examples.local
 
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
@@ -62,8 +62,8 @@ object JsonExample {
     println(s"dim=$dim")
 
     actionType match {
-      case MLConf.ANGEL_ML_TRAIN => learner.train(input, output, modelPath, dim, model)
-      case MLConf.ANGEL_ML_PREDICT => learner.train(input, output, modelPath, dim, model)
+      case MLCoreConf.ANGEL_ML_TRAIN => learner.train(input, output, modelPath, dim, model)
+      case MLCoreConf.ANGEL_ML_PREDICT => learner.train(input, output, modelPath, dim, model)
     }
 
     PSContext.stop()

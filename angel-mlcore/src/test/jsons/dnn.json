@@ -1,0 +1,45 @@
+{
+  "data": {
+    "format": "libsvm",
+    "indexrange": 148,
+    "validateratio": 0.1,
+    "posnegratio": 0.8
+  },
+  "model": {
+    "modeltype": "T_DOUBLE_SPARSE",
+    "modelsize": 148
+  },
+  "train": {
+    "epoch": 20,
+    "lr": 10,
+    "decay": 0.001
+  },
+  "default_optimizer": "momentum",
+  "layers": [
+    {
+      "name": "denseinputlayer",
+      "type": "simpleinputlayer",
+      "outputdim": 100,
+      "transfunc": "sigmoid"
+    },
+    {
+      "name": "fclayer",
+      "type": "FCLayer",
+      "outputdims": [
+        100,
+        1
+      ],
+      "transfuncs": [
+        "sigmoid",
+        "identity"
+      ],
+      "inputlayer": "denseinputlayer"
+    },
+    {
+      "name": "simplelosslayer",
+      "type": "losslayer",
+      "lossfunc": "logloss",
+      "inputlayer": "fclayer"
+    }
+  ]
+}

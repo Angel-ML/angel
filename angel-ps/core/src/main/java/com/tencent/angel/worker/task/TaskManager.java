@@ -20,7 +20,7 @@ package com.tencent.angel.worker.task;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.matrix.MatrixMeta;
+import com.tencent.angel.matrix.MatrixMeta;
 import com.tencent.angel.worker.WorkerContext;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;

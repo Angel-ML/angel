@@ -1,0 +1,32 @@
+{
+  "data": {
+    "format": "libsvm",
+    "indexrange": 357,
+    "validateratio": 0.1
+  },
+  "train": {
+    "epoch": 10,
+    "lr": 1.0
+  },
+  "model": {
+    "modeltype": "T_DOUBLE_DENSE"
+  },
+  "default_optimizer": {
+    "type": "momentum",
+    "momentum": 0.9
+  },
+  "layers": [
+    {
+      "name": "wide",
+      "type": "simpleinputlayer",
+      "outputdim": 3,
+      "transfunc": "identity"
+    },
+    {
+      "name": "softmaxlosslayer",
+      "type": "losslayer",
+      "lossfunc": "softmaxloss",
+      "inputlayer": "wide"
+    }
+  ]
+}

@@ -18,7 +18,7 @@
 
 package com.tencent.angel.psagent.matrix.transport.adapter;
 
-import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
+import com.tencent.angel.matrix.psf.get.base.GetFunc;
 
 /**
  * Get PSF Request

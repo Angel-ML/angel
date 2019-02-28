@@ -19,8 +19,8 @@
 package com.tencent.angel.utils;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.predict.PredictResult;
-import com.tencent.angel.worker.storage.DataBlock;
+import com.tencent.angel.ml.core.PredictResult;
+import com.tencent.angel.ml.core.data.DataBlock;
 import com.tencent.angel.worker.task.TaskContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -387,7 +387,7 @@ public class HdfsUtil {
   }
 
   public static void writeStorage(DataBlock<PredictResult> dataBlock, TaskContext taskContext)
-    throws IOException {
+      throws IOException {
     String outDir = taskContext.getConf().get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
     Path outPath = new Path(outDir, "predict");
     FileSystem fs = outPath.getFileSystem(taskContext.getConf());

@@ -17,7 +17,7 @@
 
 package com.tencent.angel.spark.ml.classification
 
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.verge.{SimpleInputLayer, SimpleLossLayer}
 import com.tencent.angel.ml.core.network.transfunc.Identity
 import com.tencent.angel.ml.core.optimizer.OptUtils
@@ -32,7 +32,7 @@ class SoftmaxRegression extends GraphModel {
   override def network(): Unit = {
 
     val input = new SimpleInputLayer("input", numClass, new Identity(),
-      OptUtils.getOptimizer(SharedConf.get().get(MLConf.ML_INPUTLAYER_OPTIMIZER, MLConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)))
+      OptUtils.getOptimizer(SharedConf.get().get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)))
     new SimpleLossLayer("softmaxLossLayer", input, new SoftmaxLoss)
   }
 

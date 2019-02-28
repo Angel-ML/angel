@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -24,6 +24,7 @@ import java.util.List;
  * PS matrices load context, it contains all need load matrices partitions stored in the PS
  */
 public class PSMatricesLoadContext {
+
   /**
    * Global load request id
    */
@@ -42,12 +43,12 @@ public class PSMatricesLoadContext {
   /**
    * Create a PSMatricesLoadContext
    *
-   * @param requestId          global load request id
-   * @param subRequestId       sub-load request id
+   * @param requestId global load request id
+   * @param subRequestId sub-load request id
    * @param matrixLoadContexts matrix load contexts
    */
   public PSMatricesLoadContext(int requestId, int subRequestId,
-    List<PSMatrixLoadContext> matrixLoadContexts) {
+      List<PSMatrixLoadContext> matrixLoadContexts) {
     this.requestId = requestId;
     this.subRequestId = subRequestId;
     this.matrixLoadContexts = matrixLoadContexts;

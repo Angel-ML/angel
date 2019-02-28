@@ -19,7 +19,7 @@
 package com.tencent.angel.master.metrics;
 
 import com.tencent.angel.master.app.AMContext;
-import com.tencent.angel.ml.metric.Metric;
+import com.tencent.angel.ml.core.utils.Metric;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;

@@ -20,7 +20,7 @@ package com.tencent.angel.psagent.matrix.oplog.cache;
 
 import com.tencent.angel.ml.math2.storage.*;
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;

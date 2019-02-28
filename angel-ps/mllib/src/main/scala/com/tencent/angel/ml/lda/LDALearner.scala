@@ -27,24 +27,26 @@ import java.util.concurrent.atomic.AtomicInteger
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.core.MLLearner
-import com.tencent.angel.ml.core.conf.MLConf._
-import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.matrix.psf.aggr.enhance.ScalarAggrResult
+import com.tencent.angel.matrix.psf.get.base.PartitionGetResult
+import com.tencent.angel.matrix.psf.get.getrows.PartitionGetRowsParam
+import com.tencent.angel.matrix.psf.update.base.VoidResult
+import com.tencent.angel.ml.core.{MLLearner, MLModel}
+import com.tencent.angel.ml.core.conf.AngelMLConf
+import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.lda.algo.{CSRTokens, Sampler}
 import com.tencent.angel.ml.lda.psf._
 import com.tencent.angel.ml.math2.VFactory
+import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.ml.math2.vector.IntIntVector
-import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
-import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult
-import com.tencent.angel.ml.matrix.psf.get.getrows.PartitionGetRowsParam
-import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
-import com.tencent.angel.ml.matrix.psf.update.zero.Zero.ZeroParam
-import com.tencent.angel.ml.metric.ObjMetric
-import com.tencent.angel.ml.model.MLModel
+import com.tencent.angel.matrix.psf.get.base.PartitionGetResult
+import com.tencent.angel.matrix.psf.get.getrows.PartitionGetRowsParam
+import com.tencent.angel.matrix.psf.update.base.VoidResult
+import com.tencent.angel.matrix.psf.update.zero.Zero.ZeroParam
+import com.tencent.angel.ml.core.metric.ObjMetric
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex
 import com.tencent.angel.utils.{HdfsUtil, MemoryUtils}
-import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.commons.math.special.Gamma
@@ -86,7 +88,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
 
   val nk = new Array[Int](model.K)
 
-  globalMetrics.addMetric(LOG_LIKELIHOOD, new ObjMetric())
+  globalMetrics.addMetric(AngelMLConf.LOG_LIKELIHOOD, new ObjMetric())
 
 
   /**
@@ -108,7 +110,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
 
     val ll = likelihood
     LOG.info(s"ll=${ll}")
-    globalMetrics.metric(LOG_LIKELIHOOD, ll)
+    globalMetrics.metric(AngelMLConf.LOG_LIKELIHOOD, ll)
     ctx.incEpoch()
   }
 
@@ -133,7 +135,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
       LOG.info(s"epoch=$epoch local likelihood=$ll")
 
       // submit to client
-      globalMetrics.metric(LOG_LIKELIHOOD, ll)
+      globalMetrics.metric(AngelMLConf.LOG_LIKELIHOOD, ll)
 
       // Reset word-topic matrix every four epoches for one reason:
       // If one server is failed (very pervasive), Angel would reallocate a new one.
@@ -386,7 +388,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
       sampleForInference()
       val ll = docLLH(data.n_docs)
       LOG.info(s"doc ll = ${ll}")
-      globalMetrics.metric(LOG_LIKELIHOOD, ll)
+      globalMetrics.metric(AngelMLConf.LOG_LIKELIHOOD, ll)
       ctx.incEpoch()
     }
   }

@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ml.lda.psf;
 
-import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
+import com.tencent.angel.matrix.psf.get.base.GetResult;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 
 import java.util.Map;

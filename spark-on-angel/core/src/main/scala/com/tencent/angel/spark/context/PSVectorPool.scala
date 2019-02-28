@@ -18,10 +18,9 @@
 
 package com.tencent.angel.spark.context
 
+import com.tencent.angel.ml.math2.utils.RowType
 import org.apache.spark.SparkException
 import sun.misc.Cleaner
-
-import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.models.PSVector
 import com.tencent.angel.spark.models.impl.PSVectorImpl
 

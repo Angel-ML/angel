@@ -19,7 +19,7 @@
 package com.tencent.angel.ps.server.data.request;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ps.server.data.TransportMethod;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;

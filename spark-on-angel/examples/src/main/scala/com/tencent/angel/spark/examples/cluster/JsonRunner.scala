@@ -20,7 +20,7 @@ package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.RunningMode
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.utils.DataParser
 import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
 import com.tencent.angel.spark.context.PSContext
@@ -60,10 +60,10 @@ object JsonRunner {
     val dim = SharedConf.indexRange.toInt
 
     actionType match {
-      case MLConf.ANGEL_ML_TRAIN =>
+      case MLCoreConf.ANGEL_ML_TRAIN =>
           learner.train(input, output, modelPath, dim, model)
 
-      case MLConf.ANGEL_ML_PREDICT =>
+      case MLCoreConf.ANGEL_ML_PREDICT =>
           learner.predict(input, output, modelPath, dim, model)
     }
   }

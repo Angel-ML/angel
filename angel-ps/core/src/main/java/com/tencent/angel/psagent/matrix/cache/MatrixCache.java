@@ -20,8 +20,7 @@ package com.tencent.angel.psagent.matrix.cache;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ps.storage.matrix.PartitionSourceMap;
+import com.tencent.angel.matrix.MatrixMeta;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.psagent.PSAgentContext;

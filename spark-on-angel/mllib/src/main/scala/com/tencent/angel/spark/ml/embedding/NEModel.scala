@@ -26,9 +26,11 @@ import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.matrix.psf.get.base.{GetFunc, GetResult}
+import com.tencent.angel.matrix.psf.update.base.{UpdateFunc, VoidResult}
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
-import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
+import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc
 import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.embedding.NEModel.NEDataSet

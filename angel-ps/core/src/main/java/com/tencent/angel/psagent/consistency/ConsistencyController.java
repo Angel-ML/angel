@@ -21,12 +21,18 @@ package com.tencent.angel.psagent.consistency;
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
+import com.tencent.angel.matrix.psf.get.getrow.GetRow;
+import com.tencent.angel.matrix.psf.get.getrow.GetRowParam;
+import com.tencent.angel.matrix.psf.get.getrow.GetRowResult;
+import com.tencent.angel.matrix.psf.get.getrows.GetRows;
+import com.tencent.angel.matrix.psf.get.getrows.GetRowsParam;
+import com.tencent.angel.matrix.psf.get.indexed.IndexGet;
+import com.tencent.angel.matrix.psf.get.indexed.IndexGetParam;
+import com.tencent.angel.matrix.psf.get.indexed.LongIndexGet;
+import com.tencent.angel.matrix.psf.get.indexed.LongIndexGetParam;
 import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.psf.get.getrow.*;
-import com.tencent.angel.ml.matrix.psf.get.getrows.*;
-import com.tencent.angel.ml.matrix.psf.get.indexed.*;
-import com.tencent.angel.ml.matrix.psf.update.base.VoidResult;
+import com.tencent.angel.matrix.MatrixMeta;
+import com.tencent.angel.matrix.psf.update.base.VoidResult;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.clock.ClockCache;
 import com.tencent.angel.psagent.matrix.ResponseType;
@@ -39,8 +45,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
@@ -155,8 +159,8 @@ public class ConsistencyController {
       //For ASYNC, just get rows from pss.
       IntOpenHashSet rowIdSet = rowIndex.getRowIds();
       GetRows func = new GetRows(new GetRowsParam(rowIndex.getMatrixId(), rowIdSet.toIntArray()));
-      com.tencent.angel.ml.matrix.psf.get.getrows.GetRowsResult funcResult =
-        ((com.tencent.angel.ml.matrix.psf.get.getrows.GetRowsResult) PSAgentContext.get()
+      com.tencent.angel.matrix.psf.get.getrows.GetRowsResult funcResult =
+        ((com.tencent.angel.matrix.psf.get.getrows.GetRowsResult) PSAgentContext.get()
           .getUserRequestAdapter().get(func));
 
       if (funcResult.getResponseType() == ResponseType.FAILED) {

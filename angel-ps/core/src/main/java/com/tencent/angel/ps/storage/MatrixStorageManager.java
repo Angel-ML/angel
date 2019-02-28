@@ -19,7 +19,7 @@
 package com.tencent.angel.ps.storage;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.MatrixMeta;
+import com.tencent.angel.matrix.MatrixMeta;
 import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.io.load.SnapshotRecover;
 import com.tencent.angel.ps.storage.matrix.ServerMatrix;

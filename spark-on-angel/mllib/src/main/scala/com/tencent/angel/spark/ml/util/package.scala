@@ -50,14 +50,14 @@ package object util {
   object DFStruct {
     val FEATURE = "feature"
     val LABEL = "label"
-    val PREDICT = "predict"
+    val PREDICT = "com/tencent/angel/ml/predict"
     val PROB = "prob"
     val ID = "id"
   }
 
   object ActionType {
     val TRAIN = "train"
-    val PREDICT = "predict"
+    val PREDICT = "com/tencent/angel/ml/predict"
     val SERVING = "serving"
   }
 

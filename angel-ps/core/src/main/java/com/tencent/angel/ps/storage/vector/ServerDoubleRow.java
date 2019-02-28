@@ -18,7 +18,7 @@
 package com.tencent.angel.ps.storage.vector;
 
 import com.tencent.angel.ml.math2.vector.DoubleVector;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ps.storage.vector.func.DoubleElemUpdateFunc;
 
 public abstract class ServerDoubleRow extends ServerRow {

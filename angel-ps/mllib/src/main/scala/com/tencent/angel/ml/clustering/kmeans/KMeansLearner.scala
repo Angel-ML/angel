@@ -22,13 +22,12 @@ import java.util
 import java.util.{ArrayList, Random}
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.core.MLLearner
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.core.{MLLearner, MLModel}
+import com.tencent.angel.ml.core.conf.{AngelMLConf, SharedConf}
+import com.tencent.angel.ml.core.data.DataBlock
+import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.ml.math2.vector.Vector
-import com.tencent.angel.ml.metric.LossMetric
-import com.tencent.angel.ml.model.MLModel
-import com.tencent.angel.worker.storage.DataBlock
+import com.tencent.angel.ml.core.metric.LossMetric
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.{Log, LogFactory}
 
@@ -41,9 +40,9 @@ class KMeansLearner(ctx: TaskContext) extends MLLearner(ctx) {
   // Number of epoch
   val epochNum: Int = SharedConf.epochNum
   // Number of clusters
-  val K: Int = conf.getInt(MLConf.KMEANS_CENTER_NUM, MLConf.DEFAULT_KMEANS_CENTER_NUM)
+  val K: Int = conf.getInt(AngelMLConf.KMEANS_CENTER_NUM, AngelMLConf.DEFAULT_KMEANS_CENTER_NUM)
   // Adaptive learning rate parameter
-  val C: Double = conf.getDouble(MLConf.KMEANS_C, MLConf.DEFAULT_KMEANS_C)
+  val C: Double = conf.getDouble(AngelMLConf.KMEANS_C, AngelMLConf.DEFAULT_KMEANS_C)
 
   LOG.info(s"Task[${ctx.getTaskIndex}] Start KMeans learner, K=$K, C=$C, #Feature=$indexRange, " +
     s"#Iteration=$epochNum")
@@ -73,8 +72,8 @@ class KMeansLearner(ctx: TaskContext) extends MLLearner(ctx) {
       kmeansModel.centers.syncClock()
     }
 
-    globalMetrics.addMetric(MLConf.TRAIN_LOSS, LossMetric(trainData.size))
-    globalMetrics.addMetric(MLConf.VALID_LOSS, LossMetric(valiData.size))
+    globalMetrics.addMetric(AngelMLConf.TRAIN_LOSS, LossMetric(trainData.size))
+    globalMetrics.addMetric(AngelMLConf.VALID_LOSS, LossMetric(valiData.size))
     // Learn KMeans Model iteratively, apply a mini-batch update in each iteration
     while (ctx.getEpoch < epochNum) {
       val startEpoch = System.currentTimeMillis()
@@ -91,8 +90,8 @@ class KMeansLearner(ctx: TaskContext) extends MLLearner(ctx) {
         + s"totalloss=$localObj. mini-batch cost $epochTime ms, compute " +
         s"obj cost $objTime ms")
 
-      globalMetrics.metric(MLConf.TRAIN_LOSS, localObj)
-      globalMetrics.metric(MLConf.VALID_LOSS, valiObj)
+      globalMetrics.metric(AngelMLConf.TRAIN_LOSS, localObj)
+      globalMetrics.metric(AngelMLConf.VALID_LOSS, valiObj)
       ctx.incEpoch()
     }
 
