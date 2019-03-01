@@ -47,8 +47,6 @@ object GBDTTrainer {
 
     @transient val conf = new SparkConf()
 
-    @transient implicit val sc = SparkContext.getOrCreate(conf)
-
     val param = new GBDTParam
 
     // spark conf
@@ -110,6 +108,8 @@ object GBDTTrainer {
     val trainPath = params.getOrElse(AngelConf.ANGEL_TRAIN_DATA_PATH, "xxx")
     val validPath = params.getOrElse(AngelConf.ANGEL_VALIDATE_DATA_PATH, "xxx")
     val modelPath = params.getOrElse(AngelConf.ANGEL_SAVE_MODEL_PATH, "xxx")
+
+    @transient implicit val sc = new SparkContext(conf)
 
     try {
       val trainer = new GBDTTrainer(param)
