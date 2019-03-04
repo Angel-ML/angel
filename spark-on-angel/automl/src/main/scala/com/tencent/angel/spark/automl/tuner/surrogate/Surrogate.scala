@@ -75,10 +75,12 @@ abstract class Surrogate(
     * @param Y
     */
   def update(X: Array[Vector], Y: Array[Double]): Unit = {
-    X.zip(Y).foreach( tuple => print(tuple._1, tuple._2) )
-    preX ++= X
-    preY ++= Y
-    train
+    if (!X.isEmpty && !Y.isEmpty) {
+      X.zip(Y).foreach(tuple => print(tuple._1, tuple._2))
+      preX ++= X
+      preY ++= Y
+      train
+    }
   }
 
   def print(X: Vector, y: Double): Unit = {
