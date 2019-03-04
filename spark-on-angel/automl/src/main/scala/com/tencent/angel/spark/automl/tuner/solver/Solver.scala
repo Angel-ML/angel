@@ -86,10 +86,15 @@ class Solver(
     */
   def feed(configs: Array[Configuration], Y: Array[Double]): Unit = {
     //println(s"feed ${configs.size} configurations")
-    if (surrogate.minimize)
-      surrogate.update(configs.map(_.getVector), Y.map(-_))
-    else
-      surrogate.update(configs.map(_.getVector), Y)
+    if (!configs.isEmpty && !Y.isEmpty) {
+      if (surrogate.minimize) {
+        surrogate.update(configs.map(_.getVector), Y.map(-_))
+      }
+      else {
+        surrogate.update(configs.map(_.getVector), Y)
+      }
+    }
+    cs.addHistories(configs.map(_.getVector))
   }
 
   def feed(config: Configuration, y: Double): Unit = {

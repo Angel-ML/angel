@@ -82,6 +82,7 @@ class ConfigurationSpace(
     var configs: ArrayBuffer[Configuration] = new ArrayBuffer[Configuration]
 
     var missing: Int = 0
+    var isEmpty: Boolean = false
     do {
       missing = size - configs.length
       //println(s"num of params: $numParams")
@@ -95,10 +96,16 @@ class ConfigurationSpace(
           case None => LOG.info(s"Cannot find $paramName.")
         }
       }
-      vectors.filter(isValid).foreach{ vec =>
-        configs += new Configuration(param2Idx, param2Doc, vec)
+      val validVectors = vectors.filter(isValid)
+      // check is there is no valid config
+      if (validVectors.isEmpty) {
+        isEmpty = true
+      } else {
+        validVectors.foreach { vec =>
+          configs += new Configuration(param2Idx, param2Doc, vec)
+        }
       }
-    } while(configs.length < size)
+    } while(configs.length < size && !isEmpty)
 
     configs.toArray
   }
