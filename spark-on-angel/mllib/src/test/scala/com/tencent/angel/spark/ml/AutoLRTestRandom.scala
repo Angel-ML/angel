@@ -7,7 +7,7 @@ import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.ml.classification.LogisticRegression
 import com.tencent.angel.spark.ml.core.AutoOfflineLearner
 
-class AutoLRTest extends PSFunSuite with SharedPSContext {
+class AutoLRTestRandom extends PSFunSuite with SharedPSContext {
   private var learner: AutoOfflineLearner = _
   private var input: String = _
   private var dim: Int = _
@@ -15,7 +15,7 @@ class AutoLRTest extends PSFunSuite with SharedPSContext {
   override def beforeAll(): Unit = {
     super.beforeAll()
 
-    input = "../../data/census/census_148d_train.libsvm"
+    input = "../data/census/census_148d_train.libsvm"
 
     // build SharedConf with params
     SharedConf.get()
@@ -33,8 +33,9 @@ class AutoLRTest extends PSFunSuite with SharedPSContext {
 
     SharedConf.get().set(AngelConf.ANGEL_RUNNING_MODE, RunningMode.ANGEL_PS.toString)
 
-    learner = new AutoOfflineLearner(5,false)
-    learner.addParam("continuous", "double", MLConf.ML_LEARN_RATE, "0.1,1,100")
+    learner = new AutoOfflineLearner(2,false,"Random")
+    learner.addParam("continuous", "double", MLConf.ML_LEARN_RATE, "[0.1:1:100]",seed = 10)
+    learner.addParam("continuous", "double", MLConf.ML_LEARN_DECAY, "[0.1:1:100]",seed = 20)
   }
 
   override def afterAll(): Unit = {

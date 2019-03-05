@@ -20,8 +20,9 @@ package com.tencent.angel.spark.automl.tuner
 
 import com.tencent.angel.spark.automl.tuner.config.{Configuration, ConfigurationSpace}
 import com.tencent.angel.spark.automl.tuner.parameter.{ContinuousSpace, DiscreteSpace, ParamSpace}
-import com.tencent.angel.spark.automl.tuner.surrogate.{NormalSurrogate, Surrogate}
+import com.tencent.angel.spark.automl.tuner.solver.Solver
 import com.tencent.angel.spark.automl.tuner.trail.{TestTrail, Trail}
+import org.apache.spark.ml.linalg.Vector
 
 object RandomTunerExample extends App {
 
@@ -35,16 +36,16 @@ object RandomTunerExample extends App {
     cs.addParam(param2)
     cs.addParam(param3)
     cs.addParam(param4)
-    val sur: NormalSurrogate = new NormalSurrogate(cs, true)
+    val solver: Solver = Solver(cs, surrogate = "Random")
     val trail: Trail = new TestTrail()
-    (0 until 100).foreach{ iter =>
+    (0 until 25).foreach{ iter =>
       println(s"------iteration $iter starts------")
-      val configs: Array[Configuration] = cs.sample(TunerParam.sampleSize)
+      val configs: Array[Configuration] = solver.suggest()
       val results: Array[Double] = trail.evaluate(configs)
-      sur.update(configs.map(_.getVector), results.map(-_))
-      val result = sur.curBest
-      println()
-      println(s"Best configuration ${result._1.toArray.mkString(",")}, best performance: ${result._2}")
+      solver.feed(configs, results)
     }
+    val result: (Vector, Double) = solver.optimal
+    solver.stop
+    println(s"Best configuration ${result._1.toArray.mkString(",")}, best performance: ${result._2}")
   }
 }

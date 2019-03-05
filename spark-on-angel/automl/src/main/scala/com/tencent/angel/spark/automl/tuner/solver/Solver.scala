@@ -18,13 +18,12 @@
 
 package com.tencent.angel.spark.automl.tuner.solver
 
-
 import com.tencent.angel.spark.automl.tuner.TunerParam
 import com.tencent.angel.spark.automl.tuner.acquisition.{Acquisition, EI}
 import com.tencent.angel.spark.automl.tuner.acquisition.optimizer.{AcqOptimizer, RandomSearch}
 import com.tencent.angel.spark.automl.tuner.config.{Configuration, ConfigurationSpace}
 import com.tencent.angel.spark.automl.tuner.parameter.{ContinuousSpace, DiscreteSpace, ParamSpace}
-import com.tencent.angel.spark.automl.tuner.surrogate.{GPSurrogate, Surrogate}
+import com.tencent.angel.spark.automl.tuner.surrogate.{GPSurrogate, NormalSurrogate, Surrogate}
 import com.tencent.angel.spark.automl.utils.AutoMLException
 import org.apache.spark.ml.linalg.Vector
 import org.apache.commons.logging.{Log, LogFactory}
@@ -33,11 +32,15 @@ class Solver(
               val cs: ConfigurationSpace,
               val surrogate: Surrogate,
               val acqFuc: Acquisition,
-              val optimizer: AcqOptimizer) {
+              val optimizer: AcqOptimizer,
+              val train: Boolean = true,
+              val grid:Boolean = false) {
 
   val LOG: Log = LogFactory.getLog(classOf[Solver])
 
   val PARAM_TYPES: Array[String] = Array("discrete", "continuous")
+
+
 
   def getHistory(): (Array[Vector], Array[Double]) = (surrogate.preX.toArray, surrogate.preY.toArray)
 
@@ -47,19 +50,19 @@ class Solver(
     cs.addParam(param)
   }
 
-  def addParam(pType: String, vType: String, name: String, config: String): Unit = {
+  def addParam(pType: String, vType: String, name: String, config: String, seed:Int = 100): Unit = {
     pType.toLowerCase match {
       case "discrete" =>
         vType.toLowerCase match {
-          case "float" => addParam(new DiscreteSpace[Float](name, config))
-          case "double" => addParam(new DiscreteSpace[Double](name, config))
-          case "int" => addParam(new DiscreteSpace[Int](name, config))
-          case "long" => addParam(new DiscreteSpace[Long](name, config))
+          case "float" => addParam(new DiscreteSpace[Float](name, config, seed = seed))
+          case "double" => addParam(new DiscreteSpace[Double](name, config, seed = seed))
+          case "int" => addParam(new DiscreteSpace[Int](name, config, seed = seed))
+          case "long" => addParam(new DiscreteSpace[Long](name, config, seed = seed))
           case _ => throw new AutoMLException(s"unsupported value type $vType")
         }
       case "continuous" =>
         vType.toLowerCase match {
-          case "double" => addParam(new ContinuousSpace(name, config))
+          case "double" => addParam(new ContinuousSpace(name, config, seed = seed))
           case _ => throw new AutoMLException(s"unsupported value type $vType")
         }
       case _ => throw new AutoMLException(s"unsupported param type $pType, should be ${PARAM_TYPES.mkString(",")}")
@@ -70,13 +73,25 @@ class Solver(
     * Suggests configurations to evaluate.
     */
   def suggest(): Array[Configuration] = {
-    val acqAndConfig = optimizer.maximize(TunerParam.batchSize)
-    println(s"suggest configurations:")
-    acqAndConfig.foreach{ case (acq, config) =>
-      println(s"config[${config.getVector.toArray.mkString("(", ",", ")")}], " +
-        s"acquisition[$acq]")
+    if (train){
+      val acqAndConfig = optimizer.maximize(TunerParam.batchSize)
+      println(s"suggest configurations:")
+      acqAndConfig.foreach{ case (acq, config) =>
+        println(s"config[${config.getVector.toArray.mkString("(", ",", ")")}], " +
+          s"acquisition[$acq]")
+      }
+      acqAndConfig.map(_._2)
     }
-    acqAndConfig.map(_._2)
+    else {
+      if(grid){
+        val configs: Array[Configuration] = cs.gridSample()
+        configs
+      }
+      else {
+        val configs: Array[Configuration] = cs.sample(TunerParam.sampleSize)
+        configs
+      }
+    }
   }
 
   /**
@@ -124,13 +139,51 @@ object Solver {
     new Solver(cs, sur, acq, opt)
   }
 
-  def apply[T <: AnyVal](array: Array[ParamSpace[T]], minimize: Boolean): Solver = {
+  def apply(cs: ConfigurationSpace,  minimize: Boolean = true,surrogate: String): Solver = {
+    var sur: Surrogate = new GPSurrogate(cs, minimize)
+    var acq: Acquisition = new EI(sur, 0.1f)
+    var opt: AcqOptimizer = new RandomSearch(acq, cs)
+    var train:Boolean = true
+    var grid:Boolean = false
+    if(surrogate=="Grid"){
+      sur= new NormalSurrogate(cs, minimize)
+      acq = new EI(sur, 0.1f)
+      opt = new RandomSearch(acq, cs)
+      train = false
+      grid = true
+    }else if(surrogate=="Random"){
+      sur = new NormalSurrogate(cs, minimize)
+      acq = new EI(sur, 0.1f)
+      opt = new RandomSearch(acq, cs)
+      train = false
+      grid = false
+    }
+    new Solver(cs, sur, acq, opt,train,grid)
+  }
+
+  def apply[T <: AnyVal](array: Array[ParamSpace[T]], minimize: Boolean, surrogate: String): Solver = {
     val cs: ConfigurationSpace = new ConfigurationSpace("cs")
     array.foreach(cs.addParam)
-    val sur: Surrogate = new GPSurrogate(cs, minimize)
-    val acq: Acquisition = new EI(sur, 0.1f)
-    val opt: AcqOptimizer = new RandomSearch(acq, cs)
-    new Solver(cs, sur, acq, opt)
+    var sur: Surrogate = new GPSurrogate(cs, minimize)
+    var acq: Acquisition = new EI(sur, 0.1f)
+    var opt: AcqOptimizer = new RandomSearch(acq, cs)
+    var train:Boolean = true
+    var grid:Boolean = false
+    if(surrogate=="Grid"){
+      sur= new NormalSurrogate(cs, minimize)
+      acq = new EI(sur, 0.1f)
+      opt = new RandomSearch(acq, cs)
+      train = false
+      grid = true
+    }else if(surrogate=="Random"){
+      sur = new NormalSurrogate(cs, minimize)
+      acq = new EI(sur, 0.1f)
+      opt = new RandomSearch(acq, cs)
+      train = false
+      grid = false
+    }
+    println(grid)
+    new Solver(cs, sur, acq, opt,train,grid)
   }
 
   def apply(minimize: Boolean): Solver = {

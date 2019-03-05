@@ -19,58 +19,34 @@
 package com.tencent.angel.spark.automl.tuner.surrogate
 
 import com.tencent.angel.spark.automl.tuner.config.ConfigurationSpace
-import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.spark.ml.linalg.Vector
-import org.apache.spark.sql.types.{DataTypes, StructField, StructType}
-
-import scala.collection.mutable.ArrayBuffer
 
 
 class NormalSurrogate(
-                   val cs: ConfigurationSpace,
-                   val minimize: Boolean = true) {
+                       override val cs: ConfigurationSpace,
+                       override val minimize: Boolean = true)extends Surrogate(cs, minimize) {
 
-  var fields: ArrayBuffer[StructField] = new ArrayBuffer[StructField]()
-  fields += DataTypes.createStructField("label", DataTypes.DoubleType, false)
-  fields += DataTypes.createStructField("features", DataTypes.createArrayType(DataTypes.DoubleType), false)
-
-  val schema: StructType = StructType(
-    StructField("label", DataTypes.DoubleType, nullable = false) ::
-      StructField("features",  DataTypes.createArrayType(DataTypes.DoubleType), false) ::
-      Nil)
-
-  val LOG: Log = LogFactory.getLog(classOf[Surrogate])
-
-  // Previous input data points, (N, D)
-  var preX: ArrayBuffer[Vector] = new ArrayBuffer[Vector]()
-  // previous target value, (N, )
-  var preY: ArrayBuffer[Double] = new ArrayBuffer[Double]()
-
-  def update(X: Array[Vector], Y: Array[Double]): Unit = {
+  override def update(X: Array[Vector], Y: Array[Double]): Unit = {
     preX ++= X
     preY ++= Y
   }
 
-  def curBest: (Vector, Double) = {
-    if (minimize) curMin else curMax
+  /**
+    * NormalSurrogate is designed for random-search and grid-search
+    *
+    * Thus it doesn't need train and predict function
+    */
+  override def train(): Unit = {
+
   }
 
-  def curMin: (Vector, Double) = {
-    if (preY.isEmpty)
-      (null, Double.MaxValue)
-    else {
-      val maxIdx: Int = preY.zipWithIndex.max._2
-      (preX(maxIdx), -preY(maxIdx))
-    }
+
+  def predict(X: Vector): (Double, Double)={
+    (0.0,0.0)
   }
 
-  def curMax: (Vector, Double) = {
-    if (preY.isEmpty)
-      (null, Double.MinValue)
-    else {
-      val maxIdx: Int = preY.zipWithIndex.max._2
-      (preX(maxIdx), preY(maxIdx))
-    }
+  override def stop(): Unit = {
+
   }
 
 }
