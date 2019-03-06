@@ -23,6 +23,7 @@ import com.tencent.angel.ml.core.conf.{AngelMLConf, MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.core.metric.LossMetric
 import com.tencent.angel.ml.core.network.Graph
+import com.tencent.angel.ml.core.network.layers.verge.KmeansInputLayer
 import com.tencent.angel.ml.core.optimizer.decayer.StepSizeScheduler
 import com.tencent.angel.ml.core.utils.ValidationUtils
 import com.tencent.angel.ml.core.{AngelEvnContext, MLLearner, MLModel}
@@ -134,6 +135,16 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
       if (negTrainData != null) {
         negTrainData.shuffle()
       }
+    }
+
+    // Init cluster centers randomly
+    if (graph.getInputLayer("input").isInstanceOf[KmeansInputLayer]
+      && ctx.getTaskId.getIndex == 0 && conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH, "").isEmpty) {
+      model.pullParams(0)
+      val K = SharedConf.numClass
+      val layer = graph.getInputLayer("input").asInstanceOf[KmeansInputLayer]
+      layer.initKCentersRandomly(ctx.getTotalTaskNum, posTrainData, K)
+      model.pushGradient(graph.getLR)
     }
 
     while (ctx.getEpoch < epochNum) {

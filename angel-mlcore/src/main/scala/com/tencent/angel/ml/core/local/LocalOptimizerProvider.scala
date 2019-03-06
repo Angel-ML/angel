@@ -1,6 +1,6 @@
 package com.tencent.angel.ml.core.local
 
-import com.tencent.angel.ml.core.local.optimizer.{Adam, Momentum, SGD}
+import com.tencent.angel.ml.core.local.optimizer.{Adam, KmeansOptimizer, Momentum, SGD}
 import com.tencent.angel.ml.core.optimizer.{Optimizer, OptimizerHelper, OptimizerProvider}
 import com.tencent.angel.ml.core.utils.JsonUtils.{fieldEqualClassName, matchClassName}
 import org.json4s.JsonAST.{JDouble, JObject, JString, JValue}
@@ -16,12 +16,16 @@ class LocalOptimizerProvider extends OptimizerProvider with OptimizerHelper {
         new Adam(lr = 0.0001, beta = 0.9, gamma = 0.99)
       case JString(s) if matchClassName[Momentum](s) =>
         new Momentum(lr = 0.0001, momentum = 0.9)
+      case JString(s) if matchClassName[KmeansOptimizer](s) =>
+        new KmeansOptimizer()
       case obj: JObject if fieldEqualClassName[SGD](obj) =>
         SGD.fromJson(obj)
       case obj: JObject if fieldEqualClassName[Adam](obj) =>
         Adam.fromJson(obj)
       case obj: JObject if fieldEqualClassName[Momentum](obj) =>
         Momentum.fromJson(obj)
+      case obj: JObject if fieldEqualClassName[KmeansOptimizer](obj) =>
+        KmeansOptimizer.fromJson(obj)
       case _ => new Momentum(lr = 0.0001, momentum = 0.9)
     }
 

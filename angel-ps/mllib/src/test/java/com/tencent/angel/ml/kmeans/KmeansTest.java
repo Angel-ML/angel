@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -19,7 +19,8 @@
 package com.tencent.angel.ml.kmeans;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.clustering.kmeans.KMeansRunner;
+import com.tencent.angel.ml.core.PSOptimizerProvider;
+import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
 import com.tencent.angel.ml.core.conf.MLCoreConf;
 import com.tencent.angel.ml.math2.utils.RowType;
 import org.apache.commons.logging.Log;
@@ -35,6 +36,7 @@ public class KmeansTest {
   private static final Log LOG = LogFactory.getLog(KmeansTest.class);
   private Configuration conf = new Configuration();
   private static final String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
+  private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.AngelModel";
   private static final String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
   private static final String TrainInputPath = "../../data/usps/usps_256d_train.libsvm";
   private static final String PredictInputPath = "../../data/usps/usps_256d_test.libsvm";
@@ -57,6 +59,10 @@ public class KmeansTest {
       double spratio = 1.0;
       // C
       double c = 0.5;
+      String optimizer = "KmeansOptimizer";
+
+      // Model type
+      String jsonFile = "./src/test/jsons/kmeans.json";
 
       // Set local deploy mode
       conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
@@ -68,6 +74,7 @@ public class KmeansTest {
       conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
       conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
       conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
+      conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
 
       //set angel resource parameters #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
@@ -80,6 +87,11 @@ public class KmeansTest {
       conf.set(MLCoreConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
       conf.set(MLCoreConf.KMEANS_C(), String.valueOf(c));
 
+      conf.setLong(MLCoreConf.ML_MODEL_SIZE(), 256);
+      conf.set(MLCoreConf.ML_INPUTLAYER_OPTIMIZER(), optimizer);
+      // conf.setDouble(MLConf.ML_DATA_POSNEG_RATIO(), posnegRatio);
+      conf.set(MLCoreConf.ML_MODEL_CLASS_NAME(), CLASSBASE);
+      conf.setStrings(AngelConf.ANGEL_ML_CONF, jsonFile);
       // Set data format
       conf.set(MLCoreConf.ML_DATA_INPUT_FORMAT(), dataFmt);
       conf.set(MLCoreConf.ML_MODEL_TYPE(), modelType);
@@ -100,7 +112,7 @@ public class KmeansTest {
       // Set actionType train
       conf.set(AngelConf.ANGEL_ACTION_TYPE, MLCoreConf.ANGEL_ML_TRAIN());
 
-      KMeansRunner runner = new KMeansRunner();
+      GraphRunner runner = new GraphRunner();
       runner.train(conf);
     } catch (Exception x) {
       LOG.error("run trainOnLocalClusterTest failed ", x);
@@ -127,7 +139,7 @@ public class KmeansTest {
       conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
 
 
-      KMeansRunner runner = new KMeansRunner();
+      GraphRunner runner = new GraphRunner();
       runner.train(conf);
     } catch (Exception e) {
       LOG.error("run incTrainTest failed", e);
@@ -147,7 +159,7 @@ public class KmeansTest {
       // Set actionType prediction
       conf.set(AngelConf.ANGEL_ACTION_TYPE, MLCoreConf.ANGEL_ML_PREDICT());
 
-      KMeansRunner runner = new KMeansRunner();
+      GraphRunner runner = new GraphRunner();
       runner.predict(conf);
     } catch (Exception x) {
       LOG.error("run predictOnLocalClusterTest failed ", x);

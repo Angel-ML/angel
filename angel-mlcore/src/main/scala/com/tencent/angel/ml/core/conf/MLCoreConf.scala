@@ -177,6 +177,12 @@ object MLCoreConf {
   val ML_ROBUSTREGRESSION_LOSS_DELTA = "ml.robustregression.loss.delta"
   val DEFAULT_ML_ROBUSTREGRESSION_LOSS_DELTA = 1.0
 
+  // Kmeans params
+  val KMEANS_CENTER_NUM = "ml.kmeans.center.num"
+  val DEFAULT_KMEANS_CENTER_NUM = 5
+  val KMEANS_C = "ml.kmeans.c"
+  val DEFAULT_KMEANS_C = 0.5
+
 }
 
 class MLCoreConf {}

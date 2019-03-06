@@ -40,6 +40,8 @@ class PSOptimizerProvider extends OptimizerProvider with OptimizerHelper {
         val beta: Double = conf.getDouble(MLCoreConf.ML_OPT_ADADELTA_BETA,
           MLCoreConf.DEFAULT_ML_OPT_ADADELTA_BETA)
         new AdaDelta(lr0, alpha, beta)
+      case s: String if matchClassName[KmeansOptimizer](s) =>
+        new KmeansOptimizer()
     }
   }
 
@@ -83,6 +85,8 @@ class PSOptimizerProvider extends OptimizerProvider with OptimizerHelper {
         val beta: Double = conf.getDouble(MLCoreConf.ML_OPT_ADADELTA_BETA,
           MLCoreConf.DEFAULT_ML_OPT_ADADELTA_BETA)
         new AdaDelta(lr0, alpha, beta)
+      case JString(s) if matchClassName[KmeansOptimizer](s) =>
+        new KmeansOptimizer()
       case obj: JObject if fieldEqualClassName[SGD](obj) =>
         SGD.fromJson(obj)
       case obj: JObject if fieldEqualClassName[Adam](obj) =>
@@ -95,6 +99,8 @@ class PSOptimizerProvider extends OptimizerProvider with OptimizerHelper {
         AdaGrad.fromJson(obj)
       case obj: JObject if fieldEqualClassName[AdaDelta](obj) =>
         AdaDelta.fromJson(obj)
+      case obj: JObject if fieldEqualClassName[KmeansOptimizer](obj) =>
+        KmeansOptimizer.fromJson(obj)
       case _ =>
         val momentum: Double = conf.getDouble(MLCoreConf.ML_OPT_MOMENTUM_MOMENTUM,
           MLCoreConf.DEFAULT_ML_OPT_MOMENTUM_MOMENTUM)

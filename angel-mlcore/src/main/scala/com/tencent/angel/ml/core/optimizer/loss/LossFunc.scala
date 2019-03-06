@@ -20,7 +20,7 @@ package com.tencent.angel.ml.core.optimizer.loss
 
 import com.tencent.angel.ml.core.PredictResult
 import com.tencent.angel.ml.math2.vector.IntDoubleVector
-import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, BlasMatrix, Matrix}
+import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.ufuncs.{LossFuncs, Ufuncs}
 import com.tencent.angel.ml.core.network.Graph
 import org.json4s.JsonAST.{JField, JObject, JString, JValue}
@@ -28,6 +28,7 @@ import org.json4s.JsonDSL._
 import com.tencent.angel.ml.core.utils.JsonUtils.extract
 import com.tencent.angel.ml.core.utils.LossFuncKeys
 import com.tencent.angel.ml.core.utils.JsonUtils.{fieldEqualClassName, matchClassName}
+import com.tencent.angel.ml.math2.MFactory
 
 import scala.collection.mutable
 
@@ -61,6 +62,8 @@ object LossFunc {
         new SoftmaxLoss()
       case JString(s) if matchClassName[HuberLoss](s) =>
         new HuberLoss(extract[Double](jast, LossFuncKeys.deltaKey, Some(0.5)).get)
+      case JString(s) if matchClassName[KmeansLoss](s) =>
+        new KmeansLoss()
       case obj: JObject if fieldEqualClassName[L2Loss](obj) =>
         new L2Loss()
       case obj: JObject if fieldEqualClassName[LogLoss](obj) =>
@@ -73,6 +76,8 @@ object LossFunc {
         new SoftmaxLoss()
       case obj: JObject if fieldEqualClassName[HuberLoss](obj) =>
         new HuberLoss(extract[Double](obj, LossFuncKeys.deltaKey, Some(0.5)).get)
+      case obj: JObject if fieldEqualClassName[KmeansLoss](obj) =>
+        new KmeansLoss()
       case _ => new LogLoss()
     }
   }
@@ -495,5 +500,69 @@ class HuberLoss(delta: Double) extends LossFunc {
 
   override def toJson: JObject = {
     (LossFuncKeys.typeKey -> JString(s"${this.getClass.getSimpleName}")) ~ ("delta" -> delta)
+  }
+}
+
+class KmeansLoss extends LossFunc {
+  override def calLoss(modelOut: Matrix, graph: Graph): Double = {
+    val rowNum = modelOut.getNumRows
+    val colNum = modelOut.getRow(0).dim().toInt - 1
+    val center = MFactory.denseDoubleMatrix(rowNum, colNum)
+    for (i <- 0 until colNum) {
+      center.setCol(i, modelOut.getCol(i + 1))
+    }
+    Ufuncs.sqrt(center.mul(center).sum(1)).sum() / rowNum
+  }
+
+  override def loss(pred: Double, label: Double): Double = {
+    math.sqrt(pred - label * label)
+  }
+
+  override def calGrad(modelOut: Matrix, graph: Graph): Matrix = {
+    modelOut
+  }
+
+  override def predict(modelOut: Matrix, graph: Graph): List[PredictResult] = {
+    val result = new mutable.ListBuffer[PredictResult]()
+
+    val data = graph.placeHolder.data
+    modelOut match {
+      case m: BlasDoubleMatrix =>
+        (0 until m.getNumRows).foreach { idx =>
+          val labeledData = data(idx)
+          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
+            s"$idx"
+          } else {
+            labeledData.getAttach
+          }
+          val cid = m.get(idx, 0)
+          val pred = m.getRow(idx).dot(m.getRow(idx))
+          val proba = Double.NaN
+          val predLabel = cid
+          val trueLabel = labeledData.getY
+          val attached = Double.NaN
+
+          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+        }
+      case m: BlasFloatMatrix =>
+        (0 until m.getNumRows).foreach { idx =>
+          val labeledData = data(idx)
+          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
+            s"$idx"
+          } else {
+            labeledData.getAttach
+          }
+          val cid = m.get(idx, 0)
+          val pred = m.getRow(idx).dot(m.getRow(idx))
+          val proba = Float.NaN
+          val predLabel = cid
+          val trueLabel = labeledData.getY
+          val attached = Float.NaN
+
+          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+        }
+    }
+
+    result.toList
   }
 }

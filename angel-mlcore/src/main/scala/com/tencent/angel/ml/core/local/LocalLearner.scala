@@ -1,9 +1,10 @@
 package com.tencent.angel.ml.core.local
 
 import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
-import com.tencent.angel.ml.core.{Learner, GraphModel}
+import com.tencent.angel.ml.core.{GraphModel, Learner}
 import com.tencent.angel.ml.core.data.{DataBlock, DataReader}
 import com.tencent.angel.ml.core.network.Graph
+import com.tencent.angel.ml.core.network.layers.verge.KmeansInputLayer
 import com.tencent.angel.ml.core.variable.VoidType
 import com.tencent.angel.ml.core.optimizer.decayer.{StepSizeScheduler, WarmRestarts}
 import com.tencent.angel.ml.core.utils.ValidationUtils
@@ -87,6 +88,15 @@ class LocalLearner(conf: SharedConf) extends Learner {
     }
     val numEpoch: Int = SharedConf.epochNum
     val batchData: Array[LabeledData] = new Array[LabeledData](batchSize)
+
+    if (graph.getInputLayer("input").isInstanceOf[KmeansInputLayer]) {
+      model.pullParams(0)
+      // Init cluster centers randomly
+      val K = SharedConf.numClass
+      val layer = graph.getInputLayer("input").asInstanceOf[KmeansInputLayer]
+      layer.initKCentersRandomly(1, posTrainData, K)
+      model.pushGradient(graph.getLR)
+    }
 
     var loss: Double = 0.0
     (0 until numEpoch).foreach { epoch =>

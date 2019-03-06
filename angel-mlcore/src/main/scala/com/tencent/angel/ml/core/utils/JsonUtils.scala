@@ -194,6 +194,15 @@ object JsonUtils {
 
             layerMap.put(name, newLayer)
             iter.remove()
+          case JString(value) if matchClassName[KmeansInputLayer](value) =>
+            val newLayer = new KmeansInputLayer(name,
+              extract[Int](obj, LayerKeys.outputDimKey).get,
+              TransFunc.fromJson(obj \ LayerKeys.transFuncKey),
+              optimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
+            )
+
+            layerMap.put(name, newLayer)
+            iter.remove()
           case JString(value) if matchClassName[LossLayer](value) =>
             val inputLayer = extract[String](obj, LayerKeys.inputLayerKey)
             if (inputLayer.nonEmpty && layerMap.contains(inputLayer.get)) {

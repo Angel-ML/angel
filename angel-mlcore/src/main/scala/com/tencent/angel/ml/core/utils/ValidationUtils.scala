@@ -29,6 +29,8 @@ object ValidationUtils {
         calRegressionMetrics(epoch, result, lfunc)
       case lfunc: SoftmaxLoss =>
         calMultiClassMetrics(epoch, result, lfunc)
+      case lfunc: KmeansLoss =>
+        calKmeansMetrics(epoch, result, lossFunc)
       case _ =>
         calClassifyMetrics(epoch, result, lossFunc)
     }
@@ -104,5 +106,18 @@ object ValidationUtils {
 
     println(f"epoch=$epoch, loss=$loss%.2f, sse=$sse%.2f")
     LOG.info(f"epoch=$epoch, loss=$loss%.2f, sse=$sse%.2f")
+  }
+
+  private def calKmeansMetrics(epoch: Int, result: List[PredictResult], lossFunc: LossFunc): Unit = {
+    var loss: Double = 0.0
+
+    result.foreach { pr =>
+      loss += lossFunc.loss(pr.pred, pr.predLabel)
+    }
+
+    loss /= result.size
+
+    println(f"epoch=$epoch, loss=$loss%.2f")
+    LOG.info(f"epoch=$epoch, loss=$loss%.2f")
   }
 }

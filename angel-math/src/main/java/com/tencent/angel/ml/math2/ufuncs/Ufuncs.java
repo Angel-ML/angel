@@ -25,28 +25,7 @@ import com.tencent.angel.ml.math2.ufuncs.executor.UnaryExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.matrix.BinaryMatrixExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.matrix.DotMatrixExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.matrix.UnaryMatrixExecutor;
-import com.tencent.angel.ml.math2.ufuncs.expression.Abs;
-import com.tencent.angel.ml.math2.ufuncs.expression.Add;
-import com.tencent.angel.ml.math2.ufuncs.expression.Axpy;
-import com.tencent.angel.ml.math2.ufuncs.expression.Axpy2;
-import com.tencent.angel.ml.math2.ufuncs.expression.Div;
-import com.tencent.angel.ml.math2.ufuncs.expression.Exp;
-import com.tencent.angel.ml.math2.ufuncs.expression.FTRLThreshold;
-import com.tencent.angel.ml.math2.ufuncs.expression.Log;
-import com.tencent.angel.ml.math2.ufuncs.expression.Log1p;
-import com.tencent.angel.ml.math2.ufuncs.expression.Max;
-import com.tencent.angel.ml.math2.ufuncs.expression.Min;
-import com.tencent.angel.ml.math2.ufuncs.expression.Mul;
-import com.tencent.angel.ml.math2.ufuncs.expression.Not;
-import com.tencent.angel.ml.math2.ufuncs.expression.Pow;
-import com.tencent.angel.ml.math2.ufuncs.expression.Replace;
-import com.tencent.angel.ml.math2.ufuncs.expression.SAdd;
-import com.tencent.angel.ml.math2.ufuncs.expression.SDiv;
-import com.tencent.angel.ml.math2.ufuncs.expression.SMul;
-import com.tencent.angel.ml.math2.ufuncs.expression.SSub;
-import com.tencent.angel.ml.math2.ufuncs.expression.SoftThreshold;
-import com.tencent.angel.ml.math2.ufuncs.expression.Sqrt;
-import com.tencent.angel.ml.math2.ufuncs.expression.Sub;
+import com.tencent.angel.ml.math2.ufuncs.expression.*;
 import com.tencent.angel.ml.math2.vector.Vector;
 
 public class Ufuncs {
@@ -579,6 +558,19 @@ public class Ufuncs {
   */
   public static Matrix idiv(Matrix m, Vector v, boolean trans) {
     return BinaryMatrixExecutor.apply(m, v, trans, new Div(true));
+  }
+
+  /*
+ Computes m = m / v; (trans: false, add on rows)
+          m = m / v.T; (trans: true, add on cols)
+          only compute nonzero value, if v is zero return zero
+ */
+  public static Matrix divnonzero(Matrix m, Vector v, boolean trans) {
+    return BinaryMatrixExecutor.apply(m, v, trans, new DivNonZero(false));
+  }
+
+  public static Matrix idivnonzero(Matrix m, Vector v, boolean trans) {
+    return BinaryMatrixExecutor.apply(m, v, trans, new DivNonZero(true));
   }
 
   /*
