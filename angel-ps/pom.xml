@@ -372,6 +372,7 @@
           <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
           <junitxml>.</junitxml>
           <filereports>WDF TestSuite.txt</filereports>
+          <skipTests>true</skipTests>
         </configuration>
         <executions>
           <execution>

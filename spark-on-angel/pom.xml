@@ -197,6 +197,7 @@
 					<reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
 					<junitxml>.</junitxml>
 					<filereports>sparkOnAngel.txt</filereports>
+					<skipTests>true</skipTests>
 					<argLine>-ea -Xmx3g -XX:MaxPermSize=${MaxPermGen} -XX:ReservedCodeCacheSize=${CodeCacheSize}</argLine>
 					<stderr/>
 				</configuration>
