@@ -19,7 +19,7 @@ package com.tencent.angel.spark.automl.feature.examples
 
 import com.tencent.angel.spark.automl.feature.FeatureUtils
 import com.tencent.angel.spark.automl.feature.cross.FeatureCrossMeta
-import org.apache.spark.SparkConf
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.ml.classification.{BinaryLogisticRegressionSummary, LogisticRegression}
 import org.apache.spark.ml.feature.{ChiSqSelector, VectorAssembler}
@@ -32,9 +32,9 @@ object TwoOrderCross {
 
     val conf = new SparkConf()
 
-    val spark = SparkSession.builder().config(conf).getOrCreate()
+    val input = conf.get("spark.input.path").toString
 
-    val input = conf.get("input").toString
+    val spark = SparkSession.builder().config(conf).getOrCreate()
 
     val data = spark.read.format("libsvm")
       .option("numFeatures", "123")
