@@ -87,7 +87,8 @@
 * [使用OpenBlas给算法加速](./docs/deploy/blas_for_densematrix.md)
 
 ## Community
-* Mailing list & resource
+* Mailing list: angel-tsc@lists.deeplearningfoundation.org
+* Angel homepage in Linux FD: https://lists.deeplearningfoundation.org/g/angel-main
 * [TSC members & Committers](./Community.md)
 * [Contributing to Angel](./Community.md)
 * [Roadmap](https://github.com/Angel-ML/angel/wiki/Roadmap)
