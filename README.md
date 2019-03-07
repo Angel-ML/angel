@@ -75,6 +75,7 @@
 		* [Logistic Regression(LR)](./docs/algo/sona/lr_sona.md)
 		* [Word2Vec](./docs/algo/sona/word2vec_sona.md)
 		* [LINE](./docs/algo/sona/line_sona.md)
+		* [GBDT](./docs/algo/sona/feature_gbdt_sona.md)
 
 
 ## Deployment
