@@ -74,20 +74,20 @@ GBDT的训练方法中，核心是一种叫梯度直方图的数据结构，需�
 使用spark提交任务
 
   ./spark-submit \
-        --master yarn-cluster \ 
-        --conf spark.ps.jars=$SONA_ANGEL_JARS \  
-        --jars $SONA_SPARK_JARS  \  
-        --name "LR Adam on Spark-on-Angel" \  
-        --driver-memory 5g \  
-        --num-executors 10 \  
-        --executor-cores 1 \  
-        --executor-memory 10g \ 
-        --class com.tencent.angel.spark.ml.tree.gbdt.trainer.GBDTTrainer \  
-        spark-on-angel-mllib-${ANGEL_VERSION}.jar \ 
-        angel.train.data.path:XXX angel.validate.data.path:XXX angel.save.model.path:XXX \  
-        ml.gbdt.loss.func:binary:logistic ml.gbdt.eval.metric:error,log-loss \  
-        ml.learn.rate:0.1 ml.gbdt.split.num:10  ml.gbdt.tree.num:20 ml.gbdt.tree.depth:7 ml.class.num:2 \ 
-        ml.feature.index.range:47237 ml.gbdt.feature.sample.ratio:1.0
+    --master yarn-cluster \   
+    --conf spark.ps.jars=$SONA_ANGEL_JARS \  
+    --jars $SONA_SPARK_JARS  \  
+    --name "LR Adam on Spark-on-Angel" \  
+    --driver-memory 5g \  
+    --num-executors 10 \  
+    --executor-cores 1 \  
+    --executor-memory 10g \   
+    --class com.tencent.angel.spark.ml.tree.gbdt.trainer.GBDTTrainer \  
+    spark-on-angel-mllib-${ANGEL_VERSION}.jar \   
+    angel.train.data.path:XXX angel.validate.data.path:XXX angel.save.model.path:XXX \  
+    ml.gbdt.loss.func:binary:logistic ml.gbdt.eval.metric:error,log-loss \  
+    ml.learn.rate:0.1 ml.gbdt.split.num:10  ml.gbdt.tree.num:20 ml.gbdt.tree.depth:7 ml.class.num:2 \ 
+    ml.feature.index.range:47237 ml.gbdt.feature.sample.ratio:1.0
         
  
 
