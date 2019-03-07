@@ -66,6 +66,10 @@ object FtrlFMExample {
 
     opt.init(0, max+1, -1, rowType, factor, new ColumnRangePartitioner())
 
+    if (modelPath.length > 0) {
+      opt.load(modelPath + "/back")
+    }
+
     for (epoch <- 1 to numEpoch) {
       val totalLoss = train.mapPartitions {
         case iterator =>
@@ -89,7 +93,8 @@ object FtrlFMExample {
     if (output.length > 0) {
       println(s"saving model to path $output")
       opt.weight()
-      opt.saveWeight(output)
+      opt.save(modelPath + "/back")
+      opt.saveWeight(modelPath)
     }
 
     PSContext.stop()
