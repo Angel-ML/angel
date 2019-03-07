@@ -57,12 +57,12 @@ GBDT的训练方法中，核心是一种叫梯度直方图的数据结构，需�
 * **算法参数**
   * ml.num.class：分裂数量
   * ml.gbdt.loss.func：代价函数，支持二分类（binary:logistic）、多分类（multi:logistic）和均方根误差（rmse）
-	* ml.gbdt.eval.metric：模型指标，支持rmse、error、log-loss、cross-entropy、precision和auc
-	* ml.gbdt.feature.sample.ratio：特征采样比例（0到1之间）
-	* ml.gbdt.tree.num：树的数量	
-	* ml.gbdt.tree.depth：树的最大高度
-	* ml.gbdt.split.num：每个特征的分裂点的数量
-	* ml.learn.rate：学习速率
+  * ml.gbdt.eval.metric：模型指标，支持rmse、error、log-loss、cross-entropy、precision和auc
+  * ml.gbdt.feature.sample.ratio：特征采样比例（0到1之间）
+  * ml.gbdt.tree.num：树的数量	
+  * ml.gbdt.tree.depth：树的最大高度
+  * ml.gbdt.split.num：每个特征的分裂点的数量
+  * ml.learn.rate：学习速率
 
 * **输入输出参数**
 	* angel.train.data.path：训练数据的输入路径
@@ -81,7 +81,7 @@ GBDT的训练方法中，核心是一种叫梯度直方图的数据结构，需�
 
 使用spark提交任务
 
-spark-submit \
+./spark-submit \
         --master yarn-cluster \
         --conf spark.ps.jars=$SONA_ANGEL_JARS \  
         --jars $SONA_SPARK_JARS  \
@@ -114,11 +114,11 @@ spark-submit \
 * **实验环境**
 
 	实验所使用的集群是腾讯的线上Gaia集群(Yarn)，单台机器的配置是：
-
-	* CPU: 2680 * 2
-	* 内存：256 GB
-	* 网络：10G * 2
-	* 磁盘：4T * 12 (SATA)
+    *
+	  * CPU: 2680 * 2
+	  * 内存：256 GB
+	  * 网络：10G * 2
+	  * 磁盘：4T * 12 (SATA)
 
 * **参数配置**
 
@@ -135,5 +135,5 @@ spark-submit \
 
 	| 系统   | 数据集      | 每棵树时间| 测试集误差 |
 	|:------:|:-----------:|:--------:|:----------:|
-	| XGBoost| UserGender |   438s    |  0.155008  |
-	| Angel  | UserGender |  79s    |  0.154160  |
+	| XGBoost| UserGender |   438s    |  0.15  |
+	| Angel  | UserGender |  79s    |  0.15  |
