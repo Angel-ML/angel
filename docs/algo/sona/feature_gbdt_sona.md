@@ -68,15 +68,6 @@ GBDT的训练方法中，核心是一种叫梯度直方图的数据结构，需�
 	* angel.train.data.path：训练数据的输入路径
 	* angel.validate.data.path：验证数据的输入路径
 	* angel.save.model.path：训练完成后，模型的保存路径
-	* angel.log.path：日志文件的保存路径
-
-* **资源参数**
-	* angel.workergroup.number：Worker个数
-	* angel.worker.memory.gb：Worker申请内存大小 (单位为GB)
-	* angel.worker.task.number：每个Worker上的task的个数，默认为1
-	* angel.ps.number：PS个数
-	* angel.ps.memory.gb：PS申请内存大小 (单位为GB)
-
 
 ### 训练任务启动命令示例
 
