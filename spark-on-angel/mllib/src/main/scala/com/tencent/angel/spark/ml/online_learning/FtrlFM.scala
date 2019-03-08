@@ -2,10 +2,9 @@ package com.tencent.angel.spark.ml.online_learning
 
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math2.storage.{IntKeyVectorStorage, LongKeyVectorStorage}
+import com.tencent.angel.ml.math2.storage.{IntKeyVectorStorage}
 import com.tencent.angel.ml.math2.ufuncs.{OptFuncs, Ufuncs}
 import com.tencent.angel.ml.math2.vector.{IntDummyVector, IntKeyVector, Vector}
-import com.tencent.angel.ml.matrix.psf.update.RandomNormal
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.model.output.format.RowIdColIdValueTextRowFormat
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
@@ -36,11 +35,11 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
   }
 
   /**
-    * Init with dim, nnz, rowType and partitioner
+    * Init with dim, nnz, rowType, factor and partitioner
     *
-    * @param dim         , the index range is [0, dim) if dim > 0, else [long.min, long.max) is dim=-1
+    * @param dim        , the index range is [0, dim) if dim>0, else [int.min, int.max) if dim=-1 and rowType is sparse
     * @param nnz         , number-of-non-zero elements in model
-    * @param rowType     , default is T_FLOAT_SPARSE_LONGKEY
+    * @param rowType     , default is T_FLOAT_SPARSE
     * @param factor      , num of factors
     * @param partitioner , default is column-range-partitioner
     */
@@ -60,7 +59,7 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
   }
 
   def init(start: Long, end: Long, factor: Int): Unit = {
-    init(start, end, -1, RowType.T_FLOAT_SPARSE_LONGKEY, factor)
+    init(start, end, -1, RowType.T_FLOAT_SPARSE, factor)
   }
 
   def init(start: Long, end: Long, nnz: Long, rowType: RowType, factor: Int): Unit = {
