@@ -28,6 +28,10 @@ import java.lang.Math;
 public class ${itype}${dtype}Vector extends ${dtype}Vector implements ${itype}KeyVector, SimpleVector {
     private $itype.toLowerCase() dim;
 
+    public ${itype}${dtype}Vector(){
+    	super();
+    }
+
     public $itype.toLowerCase() getDim() {
         return dim;
     }
@@ -289,6 +293,24 @@ public class ${itype}${dtype}Vector extends ${dtype}Vector implements ${itype}Ke
         return new ${itype}${dtype}Vector(matrixId, rowId, clock, dim,
                 ((${itype}${dtype}VectorStorage)storage).copy());
     }
+
+	@Override
+	public ${itype}${dtype}Vector emptyLike() {
+	#if ( ${itype} == "Int" )
+         if (storage.isDense()){
+			return new ${itype}${dtype}Vector(matrixId, rowId, clock, dim,
+				   ((${itype}${dtype}VectorStorage) storage).emptyDense());
+		 }else if (storage.isSparse()){
+    #else
+         if (storage.isSparse()){
+    #end
+          	return new ${itype}${dtype}Vector(matrixId, rowId, clock, dim,
+                  ((${itype}${dtype}VectorStorage) storage).emptySparse());
+        }else {
+          	return new ${itype}${dtype}Vector(matrixId, rowId, clock, dim,
+                  ((${itype}${dtype}VectorStorage) storage).emptySorted());
+        }
+	}
 
     @Override
     public ${itype}${dtype}VectorStorage getStorage(){

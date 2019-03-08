@@ -35,7 +35,7 @@ val sumVector = VFactory.denseDoubleVector(mat.getSubDim)
 ```
 
 ### 1.2 其它层说明
-- SparseInputLayer: 稀疏数据输入层, 对稀疏高维数据做了特别优化, 本质上是一个FCLayer
+- SimpleInputLayer: 稀疏数据输入层, 对稀疏高维数据做了特别优化, 本质上是一个FCLayer
 - FCLayer: DNN中最常见的层, 线性变换后接传递函数
 - SumPooling: 将多个输入的数据做element-wise的加和, 要求输入具本相同的shape
 - SimpleLossLayer: 损失层, 可以指定不同的损失函数
@@ -45,7 +45,7 @@ val sumVector = VFactory.denseDoubleVector(mat.getSubDim)
   override def buildNetwork(): Unit = {
     ensureJsonAst()
 
-    val wide = new SparseInputLayer("input", 1, new Identity(),
+    val wide = new SimpleInputLayer("input", 1, new Identity(),
       JsonUtils.getOptimizerByLayerType(jsonAst, "SparseInputLayer")
     )
 
@@ -85,13 +85,14 @@ DeepFM的参数较多, 需要用Json配置文件的方式指定(关于Json配置
     "epoch": 10,
     "numupdateperepoch": 10,
     "lr": 0.5,
-    "decay": 0.01
+    "decayclass": "StandardDecay",
+    "decaybeta": 0.01
   },
   "default_optimizer": "Momentum",
   "layers": [
     {
       "name": "wide",
-      "type": "sparseinputlayer",
+      "type": "simpleinputlayer",
       "outputdim": 1,
       "transfunc": "identity"
     },

@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -23,14 +23,31 @@ import com.tencent.angel.ml.math2.ufuncs.executor.BinaryExecutor;
 import com.tencent.angel.ml.math2.ufuncs.expression.Binary;
 import com.tencent.angel.ml.math2.utils.ForkJoinUtils;
 import com.tencent.angel.ml.math2.utils.VectorUtils;
-import com.tencent.angel.ml.math2.vector.*;
-
+import com.tencent.angel.ml.math2.vector.CompIntDoubleVector;
+import com.tencent.angel.ml.math2.vector.CompIntFloatVector;
+import com.tencent.angel.ml.math2.vector.CompIntIntVector;
+import com.tencent.angel.ml.math2.vector.CompIntLongVector;
+import com.tencent.angel.ml.math2.vector.CompLongDoubleVector;
+import com.tencent.angel.ml.math2.vector.CompLongFloatVector;
+import com.tencent.angel.ml.math2.vector.CompLongIntVector;
+import com.tencent.angel.ml.math2.vector.CompLongLongVector;
+import com.tencent.angel.ml.math2.vector.ComponentVector;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.ml.math2.vector.IntIntVector;
+import com.tencent.angel.ml.math2.vector.IntLongVector;
+import com.tencent.angel.ml.math2.vector.LongDoubleVector;
+import com.tencent.angel.ml.math2.vector.LongFloatVector;
+import com.tencent.angel.ml.math2.vector.LongIntVector;
+import com.tencent.angel.ml.math2.vector.LongLongVector;
+import com.tencent.angel.ml.math2.vector.Vector;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
 
 public class CompBinaryExecutor {
-  private static ForkJoinPool pool = ForkJoinUtils.getPool();
+
   private static final int THREADS = ForkJoinUtils.getNCores();
+  private static ForkJoinPool pool = ForkJoinUtils.getPool();
 
   public static Vector apply(ComponentVector v1, ComponentVector v2, Binary op) {
     ComponentVector result;
@@ -48,102 +65,8 @@ public class CompBinaryExecutor {
     return (Vector) result;
   }
 
-  private static class CompBinExe extends RecursiveAction {
-    private ComponentVector v1, v2, result;
-    private int start, end, threshold;
-    private Binary op;
-
-    public CompBinExe(ComponentVector v1, ComponentVector v2, Binary op, ComponentVector result,
-      int start, int end) {
-      this.v1 = v1;
-      this.v2 = v2;
-      this.result = result;
-      this.start = start;
-      this.end = end;
-      this.threshold = (v1.getNumPartitions() + THREADS - 1) / THREADS;
-      this.op = op;
-    }
-
-    @Override protected void compute() {
-      boolean canCompute = (end - start) < threshold;
-
-      if (canCompute) {
-        if (v1 instanceof CompIntDoubleVector && v2 instanceof CompIntDoubleVector) {
-          apply((CompIntDoubleVector) v1, (CompIntDoubleVector) v2, op,
-            (CompIntDoubleVector) result, start, end);
-        } else if (v1 instanceof CompIntDoubleVector && v2 instanceof CompIntFloatVector) {
-          apply((CompIntDoubleVector) v1, (CompIntFloatVector) v2, op, (CompIntDoubleVector) result,
-            start, end);
-        } else if (v1 instanceof CompIntDoubleVector && v2 instanceof CompIntLongVector) {
-          apply((CompIntDoubleVector) v1, (CompIntLongVector) v2, op, (CompIntDoubleVector) result,
-            start, end);
-        } else if (v1 instanceof CompIntDoubleVector && v2 instanceof CompIntIntVector) {
-          apply((CompIntDoubleVector) v1, (CompIntIntVector) v2, op, (CompIntDoubleVector) result,
-            start, end);
-        } else if (v1 instanceof CompIntFloatVector && v2 instanceof CompIntFloatVector) {
-          apply((CompIntFloatVector) v1, (CompIntFloatVector) v2, op, (CompIntFloatVector) result,
-            start, end);
-        } else if (v1 instanceof CompIntFloatVector && v2 instanceof CompIntLongVector) {
-          apply((CompIntFloatVector) v1, (CompIntLongVector) v2, op, (CompIntFloatVector) result,
-            start, end);
-        } else if (v1 instanceof CompIntFloatVector && v2 instanceof CompIntIntVector) {
-          apply((CompIntFloatVector) v1, (CompIntIntVector) v2, op, (CompIntFloatVector) result,
-            start, end);
-        } else if (v1 instanceof CompIntLongVector && v2 instanceof CompIntLongVector) {
-          apply((CompIntLongVector) v1, (CompIntLongVector) v2, op, (CompIntLongVector) result,
-            start, end);
-        } else if (v1 instanceof CompIntLongVector && v2 instanceof CompIntIntVector) {
-          apply((CompIntLongVector) v1, (CompIntIntVector) v2, op, (CompIntLongVector) result,
-            start, end);
-        } else if (v1 instanceof CompIntIntVector && v2 instanceof CompIntIntVector) {
-          apply((CompIntIntVector) v1, (CompIntIntVector) v2, op, (CompIntIntVector) result, start,
-            end);
-        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof CompLongDoubleVector) {
-          apply((CompLongDoubleVector) v1, (CompLongDoubleVector) v2, op,
-            (CompLongDoubleVector) result, start, end);
-        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof CompLongFloatVector) {
-          apply((CompLongDoubleVector) v1, (CompLongFloatVector) v2, op,
-            (CompLongDoubleVector) result, start, end);
-        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof CompLongLongVector) {
-          apply((CompLongDoubleVector) v1, (CompLongLongVector) v2, op,
-            (CompLongDoubleVector) result, start, end);
-        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof CompLongIntVector) {
-          apply((CompLongDoubleVector) v1, (CompLongIntVector) v2, op,
-            (CompLongDoubleVector) result, start, end);
-        } else if (v1 instanceof CompLongFloatVector && v2 instanceof CompLongFloatVector) {
-          apply((CompLongFloatVector) v1, (CompLongFloatVector) v2, op,
-            (CompLongFloatVector) result, start, end);
-        } else if (v1 instanceof CompLongFloatVector && v2 instanceof CompLongLongVector) {
-          apply((CompLongFloatVector) v1, (CompLongLongVector) v2, op, (CompLongFloatVector) result,
-            start, end);
-        } else if (v1 instanceof CompLongFloatVector && v2 instanceof CompLongIntVector) {
-          apply((CompLongFloatVector) v1, (CompLongIntVector) v2, op, (CompLongFloatVector) result,
-            start, end);
-        } else if (v1 instanceof CompLongLongVector && v2 instanceof CompLongLongVector) {
-          apply((CompLongLongVector) v1, (CompLongLongVector) v2, op, (CompLongLongVector) result,
-            start, end);
-        } else if (v1 instanceof CompLongLongVector && v2 instanceof CompLongIntVector) {
-          apply((CompLongLongVector) v1, (CompLongIntVector) v2, op, (CompLongLongVector) result,
-            start, end);
-        } else if (v1 instanceof CompLongIntVector && v2 instanceof CompLongIntVector) {
-          apply((CompLongIntVector) v1, (CompLongIntVector) v2, op, (CompLongIntVector) result,
-            start, end);
-        } else {
-          throw new AngelException("The operation is not support!");
-        }
-      } else {
-        int middle = (start + end) >> 1;
-
-        CompBinExe left = new CompBinExe(v1, v2, op, result, start, middle);
-        CompBinExe right = new CompBinExe(v1, v2, op, result, middle + 1, end);
-
-        invokeAll(left, right);
-      }
-    }
-  }
-
   private static void apply(CompIntDoubleVector v1, CompIntDoubleVector v2, Binary op,
-    CompIntDoubleVector result, int start, int end) {
+      CompIntDoubleVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
       IntDoubleVector[] v1Parts = v1.getPartitions();
       IntDoubleVector[] v2Parts = v2.getPartitions();
@@ -163,7 +86,7 @@ public class CompBinaryExecutor {
   }
 
   private static void apply(CompIntDoubleVector v1, CompIntFloatVector v2, Binary op,
-    CompIntDoubleVector result, int start, int end) {
+      CompIntDoubleVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
       IntDoubleVector[] v1Parts = v1.getPartitions();
       IntFloatVector[] v2Parts = v2.getPartitions();
@@ -183,7 +106,7 @@ public class CompBinaryExecutor {
   }
 
   private static void apply(CompIntDoubleVector v1, CompIntLongVector v2, Binary op,
-    CompIntDoubleVector result, int start, int end) {
+      CompIntDoubleVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
       IntDoubleVector[] v1Parts = v1.getPartitions();
       IntLongVector[] v2Parts = v2.getPartitions();
@@ -203,7 +126,7 @@ public class CompBinaryExecutor {
   }
 
   private static void apply(CompIntDoubleVector v1, CompIntIntVector v2, Binary op,
-    CompIntDoubleVector result, int start, int end) {
+      CompIntDoubleVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
       IntDoubleVector[] v1Parts = v1.getPartitions();
       IntIntVector[] v2Parts = v2.getPartitions();
@@ -223,7 +146,7 @@ public class CompBinaryExecutor {
   }
 
   private static void apply(CompIntFloatVector v1, CompIntFloatVector v2, Binary op,
-    CompIntFloatVector result, int start, int end) {
+      CompIntFloatVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
       IntFloatVector[] v1Parts = v1.getPartitions();
       IntFloatVector[] v2Parts = v2.getPartitions();
@@ -243,7 +166,7 @@ public class CompBinaryExecutor {
   }
 
   private static void apply(CompIntFloatVector v1, CompIntLongVector v2, Binary op,
-    CompIntFloatVector result, int start, int end) {
+      CompIntFloatVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
       IntFloatVector[] v1Parts = v1.getPartitions();
       IntLongVector[] v2Parts = v2.getPartitions();
@@ -263,7 +186,7 @@ public class CompBinaryExecutor {
   }
 
   private static void apply(CompIntFloatVector v1, CompIntIntVector v2, Binary op,
-    CompIntFloatVector result, int start, int end) {
+      CompIntFloatVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
       IntFloatVector[] v1Parts = v1.getPartitions();
       IntIntVector[] v2Parts = v2.getPartitions();
@@ -283,7 +206,7 @@ public class CompBinaryExecutor {
   }
 
   private static void apply(CompIntLongVector v1, CompIntLongVector v2, Binary op,
-    CompIntLongVector result, int start, int end) {
+      CompIntLongVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
       IntLongVector[] v1Parts = v1.getPartitions();
       IntLongVector[] v2Parts = v2.getPartitions();
@@ -303,7 +226,7 @@ public class CompBinaryExecutor {
   }
 
   private static void apply(CompIntLongVector v1, CompIntIntVector v2, Binary op,
-    CompIntLongVector result, int start, int end) {
+      CompIntLongVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
       IntLongVector[] v1Parts = v1.getPartitions();
       IntIntVector[] v2Parts = v2.getPartitions();
@@ -323,7 +246,7 @@ public class CompBinaryExecutor {
   }
 
   private static void apply(CompIntIntVector v1, CompIntIntVector v2, Binary op,
-    CompIntIntVector result, int start, int end) {
+      CompIntIntVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
       IntIntVector[] v1Parts = v1.getPartitions();
       IntIntVector[] v2Parts = v2.getPartitions();
@@ -343,7 +266,7 @@ public class CompBinaryExecutor {
   }
 
   private static void apply(CompLongDoubleVector v1, CompLongDoubleVector v2, Binary op,
-    CompLongDoubleVector result, int start, int end) {
+      CompLongDoubleVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
       LongDoubleVector[] v1Parts = v1.getPartitions();
       LongDoubleVector[] v2Parts = v2.getPartitions();
@@ -363,7 +286,7 @@ public class CompBinaryExecutor {
   }
 
   private static void apply(CompLongDoubleVector v1, CompLongFloatVector v2, Binary op,
-    CompLongDoubleVector result, int start, int end) {
+      CompLongDoubleVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
       LongDoubleVector[] v1Parts = v1.getPartitions();
       LongFloatVector[] v2Parts = v2.getPartitions();
@@ -383,7 +306,7 @@ public class CompBinaryExecutor {
   }
 
   private static void apply(CompLongDoubleVector v1, CompLongLongVector v2, Binary op,
-    CompLongDoubleVector result, int start, int end) {
+      CompLongDoubleVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
       LongDoubleVector[] v1Parts = v1.getPartitions();
       LongLongVector[] v2Parts = v2.getPartitions();
@@ -403,7 +326,7 @@ public class CompBinaryExecutor {
   }
 
   private static void apply(CompLongDoubleVector v1, CompLongIntVector v2, Binary op,
-    CompLongDoubleVector result, int start, int end) {
+      CompLongDoubleVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
       LongDoubleVector[] v1Parts = v1.getPartitions();
       LongIntVector[] v2Parts = v2.getPartitions();
@@ -423,7 +346,7 @@ public class CompBinaryExecutor {
   }
 
   private static void apply(CompLongFloatVector v1, CompLongFloatVector v2, Binary op,
-    CompLongFloatVector result, int start, int end) {
+      CompLongFloatVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
       LongFloatVector[] v1Parts = v1.getPartitions();
       LongFloatVector[] v2Parts = v2.getPartitions();
@@ -443,7 +366,7 @@ public class CompBinaryExecutor {
   }
 
   private static void apply(CompLongFloatVector v1, CompLongLongVector v2, Binary op,
-    CompLongFloatVector result, int start, int end) {
+      CompLongFloatVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
       LongFloatVector[] v1Parts = v1.getPartitions();
       LongLongVector[] v2Parts = v2.getPartitions();
@@ -463,7 +386,7 @@ public class CompBinaryExecutor {
   }
 
   private static void apply(CompLongFloatVector v1, CompLongIntVector v2, Binary op,
-    CompLongFloatVector result, int start, int end) {
+      CompLongFloatVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
       LongFloatVector[] v1Parts = v1.getPartitions();
       LongIntVector[] v2Parts = v2.getPartitions();
@@ -483,7 +406,7 @@ public class CompBinaryExecutor {
   }
 
   private static void apply(CompLongLongVector v1, CompLongLongVector v2, Binary op,
-    CompLongLongVector result, int start, int end) {
+      CompLongLongVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
       LongLongVector[] v1Parts = v1.getPartitions();
       LongLongVector[] v2Parts = v2.getPartitions();
@@ -503,7 +426,7 @@ public class CompBinaryExecutor {
   }
 
   private static void apply(CompLongLongVector v1, CompLongIntVector v2, Binary op,
-    CompLongLongVector result, int start, int end) {
+      CompLongLongVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
       LongLongVector[] v1Parts = v1.getPartitions();
       LongIntVector[] v2Parts = v2.getPartitions();
@@ -523,7 +446,7 @@ public class CompBinaryExecutor {
   }
 
   private static void apply(CompLongIntVector v1, CompLongIntVector v2, Binary op,
-    CompLongIntVector result, int start, int end) {
+      CompLongIntVector result, int start, int end) {
     if (v1.isCompatable(v2)) {
       LongIntVector[] v1Parts = v1.getPartitions();
       LongIntVector[] v2Parts = v2.getPartitions();
@@ -539,6 +462,102 @@ public class CompBinaryExecutor {
       }
     } else {
       throw new AngelException("Operation is not support!");
+    }
+  }
+
+  private static class CompBinExe extends RecursiveAction {
+
+    private ComponentVector v1, v2, result;
+    private int start, end, threshold;
+    private Binary op;
+
+    public CompBinExe(ComponentVector v1, ComponentVector v2, Binary op, ComponentVector result,
+        int start, int end) {
+      this.v1 = v1;
+      this.v2 = v2;
+      this.result = result;
+      this.start = start;
+      this.end = end;
+      this.threshold = (v1.getNumPartitions() + THREADS - 1) / THREADS;
+      this.op = op;
+    }
+
+    @Override
+    protected void compute() {
+      boolean canCompute = (end - start) < threshold;
+
+      if (canCompute) {
+        if (v1 instanceof CompIntDoubleVector && v2 instanceof CompIntDoubleVector) {
+          apply((CompIntDoubleVector) v1, (CompIntDoubleVector) v2, op,
+              (CompIntDoubleVector) result, start, end);
+        } else if (v1 instanceof CompIntDoubleVector && v2 instanceof CompIntFloatVector) {
+          apply((CompIntDoubleVector) v1, (CompIntFloatVector) v2, op, (CompIntDoubleVector) result,
+              start, end);
+        } else if (v1 instanceof CompIntDoubleVector && v2 instanceof CompIntLongVector) {
+          apply((CompIntDoubleVector) v1, (CompIntLongVector) v2, op, (CompIntDoubleVector) result,
+              start, end);
+        } else if (v1 instanceof CompIntDoubleVector && v2 instanceof CompIntIntVector) {
+          apply((CompIntDoubleVector) v1, (CompIntIntVector) v2, op, (CompIntDoubleVector) result,
+              start, end);
+        } else if (v1 instanceof CompIntFloatVector && v2 instanceof CompIntFloatVector) {
+          apply((CompIntFloatVector) v1, (CompIntFloatVector) v2, op, (CompIntFloatVector) result,
+              start, end);
+        } else if (v1 instanceof CompIntFloatVector && v2 instanceof CompIntLongVector) {
+          apply((CompIntFloatVector) v1, (CompIntLongVector) v2, op, (CompIntFloatVector) result,
+              start, end);
+        } else if (v1 instanceof CompIntFloatVector && v2 instanceof CompIntIntVector) {
+          apply((CompIntFloatVector) v1, (CompIntIntVector) v2, op, (CompIntFloatVector) result,
+              start, end);
+        } else if (v1 instanceof CompIntLongVector && v2 instanceof CompIntLongVector) {
+          apply((CompIntLongVector) v1, (CompIntLongVector) v2, op, (CompIntLongVector) result,
+              start, end);
+        } else if (v1 instanceof CompIntLongVector && v2 instanceof CompIntIntVector) {
+          apply((CompIntLongVector) v1, (CompIntIntVector) v2, op, (CompIntLongVector) result,
+              start, end);
+        } else if (v1 instanceof CompIntIntVector && v2 instanceof CompIntIntVector) {
+          apply((CompIntIntVector) v1, (CompIntIntVector) v2, op, (CompIntIntVector) result, start,
+              end);
+        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof CompLongDoubleVector) {
+          apply((CompLongDoubleVector) v1, (CompLongDoubleVector) v2, op,
+              (CompLongDoubleVector) result, start, end);
+        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof CompLongFloatVector) {
+          apply((CompLongDoubleVector) v1, (CompLongFloatVector) v2, op,
+              (CompLongDoubleVector) result, start, end);
+        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof CompLongLongVector) {
+          apply((CompLongDoubleVector) v1, (CompLongLongVector) v2, op,
+              (CompLongDoubleVector) result, start, end);
+        } else if (v1 instanceof CompLongDoubleVector && v2 instanceof CompLongIntVector) {
+          apply((CompLongDoubleVector) v1, (CompLongIntVector) v2, op,
+              (CompLongDoubleVector) result, start, end);
+        } else if (v1 instanceof CompLongFloatVector && v2 instanceof CompLongFloatVector) {
+          apply((CompLongFloatVector) v1, (CompLongFloatVector) v2, op,
+              (CompLongFloatVector) result, start, end);
+        } else if (v1 instanceof CompLongFloatVector && v2 instanceof CompLongLongVector) {
+          apply((CompLongFloatVector) v1, (CompLongLongVector) v2, op, (CompLongFloatVector) result,
+              start, end);
+        } else if (v1 instanceof CompLongFloatVector && v2 instanceof CompLongIntVector) {
+          apply((CompLongFloatVector) v1, (CompLongIntVector) v2, op, (CompLongFloatVector) result,
+              start, end);
+        } else if (v1 instanceof CompLongLongVector && v2 instanceof CompLongLongVector) {
+          apply((CompLongLongVector) v1, (CompLongLongVector) v2, op, (CompLongLongVector) result,
+              start, end);
+        } else if (v1 instanceof CompLongLongVector && v2 instanceof CompLongIntVector) {
+          apply((CompLongLongVector) v1, (CompLongIntVector) v2, op, (CompLongLongVector) result,
+              start, end);
+        } else if (v1 instanceof CompLongIntVector && v2 instanceof CompLongIntVector) {
+          apply((CompLongIntVector) v1, (CompLongIntVector) v2, op, (CompLongIntVector) result,
+              start, end);
+        } else {
+          throw new AngelException("The operation is not support!");
+        }
+      } else {
+        int middle = (start + end) >> 1;
+
+        CompBinExe left = new CompBinExe(v1, v2, op, result, start, middle);
+        CompBinExe right = new CompBinExe(v1, v2, op, result, middle + 1, end);
+
+        invokeAll(left, right);
+      }
     }
   }
 

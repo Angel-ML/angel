@@ -1,3 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.spark.ml
 
 import com.tencent.angel.RunningMode
@@ -14,7 +31,6 @@ class WideAndDeepTest extends PSFunSuite with SharedPSContext {
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    learner = new OfflineLearner
 
     input = "../../data/census/census_148d_train.libsvm"
 
@@ -24,13 +40,15 @@ class WideAndDeepTest extends PSFunSuite with SharedPSContext {
     SharedConf.get().setInt(MLConf.ML_FEATURE_INDEX_RANGE, 149)
     SharedConf.get().setDouble(MLConf.ML_LEARN_RATE, 0.5)
     SharedConf.get().set(MLConf.ML_DATA_INPUT_FORMAT, "libsvm")
-    SharedConf.get().setInt(MLConf.ML_EPOCH_NUM, 20)
+    SharedConf.get().setInt(MLConf.ML_EPOCH_NUM, 5)
     SharedConf.get().setDouble(MLConf.ML_VALIDATE_RATIO, 0.1)
     SharedConf.get().setDouble(MLConf.ML_REG_L2, 0.0)
     SharedConf.get().setDouble(MLConf.ML_BATCH_SAMPLE_RATIO, 0.2)
     dim = SharedConf.indexRange.toInt
 
     SharedConf.get().set(AngelConf.ANGEL_RUNNING_MODE, RunningMode.ANGEL_PS.toString)
+    learner = new OfflineLearner
+
   }
 
   override def afterAll(): Unit = {

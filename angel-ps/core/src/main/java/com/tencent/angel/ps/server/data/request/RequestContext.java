@@ -23,6 +23,7 @@ import com.tencent.angel.common.transport.NettyChannel;
 import com.tencent.angel.ps.ParameterServerId;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.pool.impl.GenericObjectPool;
 
 /**
@@ -78,6 +79,16 @@ public class RequestContext {
   private volatile ByteBuf serializedData;
 
   private volatile long nextRetryTs = -1L;
+
+  /**
+   * RPC try counter
+   */
+  private final AtomicInteger tryCounter = new AtomicInteger(0);
+
+  /**
+   * RPC failed log
+   */
+  private volatile String errorLogs;
 
   /**
    * Create a new RequestContext.
@@ -285,5 +296,35 @@ public class RequestContext {
    */
   public long getNextRetryTs() {
     return nextRetryTs;
+  }
+
+  /**
+   * Get try counter value
+   */
+  public int getTryCounter() {
+    return tryCounter.get();
+  }
+
+  /**
+   * Increase the try counter
+   */
+  public void addTryCounter() {
+    tryCounter.incrementAndGet();
+  }
+
+  /**
+   * Get error log
+   * @return error log
+   */
+  public String getErrorLog() {
+    return errorLogs;
+  }
+
+  /**
+   * Set error log
+   * @param log error log
+   */
+  public void setErrorLog(String log) {
+    errorLogs = log;
   }
 }

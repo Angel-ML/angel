@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -73,7 +73,7 @@ public class TYahooSketchSplit {
   }
 
   public static float[][] getSplitValue(RegTDataStore dataStore, int splitNum,
-    List<Integer> cateFeat) {
+      List<Integer> cateFeat) {
 
     int numFeature = dataStore.featureMeta.numFeature;
 
@@ -116,8 +116,9 @@ public class TYahooSketchSplit {
     // continuous features
     for (int fid = 0; fid < numFeature; fid++) {
 
-      if (cateFeat.contains(fid))
+      if (cateFeat.contains(fid)) {
         continue;
+      }
 
       // left child <= split value; right child > split value
       if (sketches[fid].getQuantile(0) > 0) {

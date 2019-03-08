@@ -56,7 +56,23 @@ public class PartitionMeta {
    */
   public PartitionMeta(int matrixId, int partId, int startRow, int endRow, long startCol,
     long endCol) {
-    this(matrixId, partId, startRow, endRow, startCol, endCol, new ArrayList<>());
+    this(matrixId, partId, startRow, endRow, startCol, endCol, -1, new ArrayList<>());
+  }
+
+  /**
+   * Create a PartitionMeta
+   *
+   * @param matrixId matrix id
+   * @param partId   partition id
+   * @param startRow start row index
+   * @param endRow   end row index
+   * @param startCol start column index
+   * @param endCol   end column index
+   * @param indexNum  valid index number in the column range
+   */
+  public PartitionMeta(int matrixId, int partId, int startRow, int endRow, long startCol,
+      long endCol, int indexNum) {
+    this(matrixId, partId, startRow, endRow, startCol, endCol, indexNum, new ArrayList<>());
   }
 
   /**
@@ -92,8 +108,8 @@ public class PartitionMeta {
    * @param storedPs the ParameterServers this partition is stored
    */
   public PartitionMeta(int matrixId, int partId, int startRow, int endRow, long startCol,
-    long endCol, List<ParameterServerId> storedPs) {
-    this.partitionKey = new PartitionKey(partId, matrixId, startRow, startCol, endRow, endCol);
+    long endCol, int indexNum, List<ParameterServerId> storedPs) {
+    this.partitionKey = new PartitionKey(partId, matrixId, startRow, startCol, endRow, endCol, indexNum);
     this.storedPs = storedPs;
     this.lock = new ReentrantReadWriteLock();
   }
@@ -205,6 +221,18 @@ public class PartitionMeta {
   public long getEndCol() {
     return partitionKey.getEndCol();
   }
+
+  /**
+   * Get index number
+   * @return index number
+   */
+  public int getIndexNum() { return partitionKey.getIndexNum(); }
+
+  /**
+   * Set index number
+   * @param indexNum index number
+   */
+  public void setIndexNum(int indexNum) { partitionKey.setIndexNum(indexNum);}
 
   /**
    * Get the stored ParameterServers

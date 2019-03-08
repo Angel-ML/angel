@@ -9,7 +9,8 @@
   "train": {
     "epoch": 5,
     "lr": 0.8,
-    "decay": 0.2
+    "decayclass": "WarmRestarts",
+    "decayalpha": 0.05
   },
   "model": {
     "modeltype": "T_FLOAT_DENSE",

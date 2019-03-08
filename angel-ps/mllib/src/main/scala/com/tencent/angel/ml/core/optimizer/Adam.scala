@@ -25,25 +25,21 @@ import com.tencent.angel.ml.psf.optimizer.AdamUpdateFunc
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
 
-class Adam(override val stepSize: Double,
-           val gamma: Double = 0.99,
-           val beta: Double = 0.9,
-           val epsilon: Double = 1e-7) extends GradientDescent(stepSize) {
+class Adam(stepSize: Double, val gamma: Double, val beta: Double) extends Optimizer(stepSize) {
+  private val LOG = LogFactory.getLog(classOf[Adam])
 
-  val LOG = LogFactory.getLog(classOf[Adam])
+  override protected var numSlot: Int = 3
 
   override def update(matrixId: Int, numFactors: Int, epoch: Int): Future[VoidResult] = {
-
-    val func = new AdamUpdateFunc(matrixId, numFactors, gamma, epsilon, beta, lr, regL2Param, epoch)
-    PSAgentContext.get().getUserRequestAdapter.update(func)
+    update(matrixId, numFactors, epoch, 1)
   }
 
-  override def update(matrixId: Int, numFactors: Int, epoch: Int, sampleNum: Int): Future[VoidResult] = {
-    val func = new AdamUpdateFunc(matrixId, numFactors, gamma, epsilon, beta, lr, regL2Param, epoch, sampleNum)
+  override def update(matrixId: Int, numFactors: Int, epoch: Int, batchSize: Int): Future[VoidResult] = {
+    val func = new AdamUpdateFunc(matrixId, numFactors, gamma, epsilon, beta, lr, regL2Param, epoch, batchSize)
     PSAgentContext.get().getUserRequestAdapter.update(func)
   }
 
   override def toString: String = {
-    s"Adam gamma=$gamma beta=$beta epsilon=$epsilon"
+    s"Adam gamma=$gamma beta=$beta lr=$lr regL2=$regL2Param epsilon=$epsilon"
   }
 }
