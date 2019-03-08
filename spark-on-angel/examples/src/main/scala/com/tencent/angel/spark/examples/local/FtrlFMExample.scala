@@ -80,9 +80,11 @@ object FtrlFMExample {
       println(s"epoch=$epoch loss=${totalLoss / size} auc=$auc")
     }
 
-    opt.saveWeight(modelPath)
-
-
+    if (modelPath.length > 0) {
+      opt.weight
+      opt.save(modelPath + "/back")
+      opt.saveWeight(modelPath)
+    }
     stop()
   }
 }
