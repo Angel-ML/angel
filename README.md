@@ -77,6 +77,7 @@
 	* [LINE](./docs/algo/sona/line_sona.md)
 	* [KCORE](./docs/algo/sona/kcore_sona.md)
 	* [FTRLFM](./docs/algo/ftrl_fm_spark_en.md)
+  * [GBDT](./docs/algo/sona/feature_gbdt_sona.md)
 
 
 ## Deployment
