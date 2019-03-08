@@ -76,6 +76,7 @@
 	* [Word2Vec](./docs/algo/sona/word2vec_sona.md)
 	* [LINE](./docs/algo/sona/line_sona.md)
 	* [KCORE](./docs/algo/sona/kcore_sona.md)
+	* [FTRLFM](./docs/algo/ftrl_fm_spark_en.md)
 
 
 ## Deployment

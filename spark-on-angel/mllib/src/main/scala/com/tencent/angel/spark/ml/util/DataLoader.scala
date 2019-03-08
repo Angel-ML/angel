@@ -105,6 +105,27 @@ object DataLoader {
     new LabeledData(x, y)
   }
 
+  def parseIntDummy(text: String, dim: Int): LabeledData = {
+    if (null == text) return null
+    var splits = text.trim.split(" ")
+    if (splits.length < 1) return null
+    var y = splits(0).toDouble
+    if (y == 0.0) y = -1.0
+
+    splits = splits.tail
+    val len = splits.length
+    val keys = new Array[Int](len)
+    val vals = new Array[Float](len)
+    java.util.Arrays.fill(vals, 1.0F)
+
+    splits.zipWithIndex.foreach{ case (value: String, indx2: Int) =>
+      keys(indx2) = value.toInt
+    }
+
+    val x = VFactory.sparseFloatVector(dim, keys, vals)
+    new LabeledData(x, y)
+  }
+
   def parseLongDouble(text: String, dim: Long): LabeledData = {
     if (null == text) return null
 
