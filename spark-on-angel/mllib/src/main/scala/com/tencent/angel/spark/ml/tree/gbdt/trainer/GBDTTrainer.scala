@@ -75,6 +75,7 @@ object GBDTTrainer {
     param.lossFunc = params.getOrElse(MLConf.ML_GBDT_LOSS_FUNCTION, "binary:logistic")
     param.evalMetrics = params.getOrElse(MLConf.ML_GBDT_EVAL_METRIC, "error").split(",").map(_.trim).filter(_.nonEmpty)
     SharedConf.get().set(MLConf.ML_GBDT_LOSS_FUNCTION, param.lossFunc)
+    param.multiStrategy = params.getOrElse("ml.gbdt.multi.class.strategy", "one-tree")
 
     // major algo conf
     param.featSampleRatio = params.getOrElse(MLConf.ML_GBDT_FEATURE_SAMPLE_RATIO, "1.0").toFloat
@@ -84,6 +85,7 @@ object GBDTTrainer {
     param.numSplit = params.getOrElse(MLConf.ML_GBDT_SPLIT_NUM, "10").toInt
     SharedConf.get().setInt(MLConf.ML_GBDT_SPLIT_NUM, param.numSplit)
     param.numTree = params.getOrElse(MLConf.ML_GBDT_TREE_NUM, "20").toInt
+    if (param.isMultiClassMultiTree) param.numTree *= param.numClass
     SharedConf.get().setInt(MLConf.ML_GBDT_TREE_NUM, param.numTree)
     param.maxDepth = params.getOrElse(MLConf.ML_GBDT_TREE_DEPTH, "7").toInt
     SharedConf.get().setInt(MLConf.ML_GBDT_TREE_DEPTH, param.maxDepth)
@@ -406,6 +408,7 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
 
     val loss = ObjectiveFactory.getLoss(param.lossFunc)
     val evalMetrics = ObjectiveFactory.getEvalMetricsOrDefault(param.evalMetrics, loss)
+    val multiStrategy = ObjectiveFactory.getMultiStrategy(param.multiStrategy)
 
     for (treeId <- 0 until param.numTree) {
       println(s"Start to train tree ${treeId + 1}")

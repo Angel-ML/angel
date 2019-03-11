@@ -27,7 +27,7 @@ import com.tencent.angel.spark.ml.tree.gbdt.histogram.{BinaryGradPair, GradPair,
 import com.tencent.angel.spark.ml.tree.gbdt.metadata.{FeatureInfo, InstanceInfo}
 import com.tencent.angel.spark.ml.tree.gbdt.tree.{GBTNode, GBTSplit, GBTTree}
 import com.tencent.angel.spark.ml.tree.objective.ObjectiveFactory
-import com.tencent.angel.spark.ml.tree.objective.loss.Loss
+import com.tencent.angel.spark.ml.tree.objective.loss.{Loss, MultiStrategy}
 import com.tencent.angel.spark.ml.tree.objective.metric.EvalMetric
 import com.tencent.angel.spark.ml.tree.objective.metric.EvalMetric.Kind
 import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam
@@ -129,7 +129,12 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
     instanceInfo.resetPosInfo()
     // 4. calc grads
     val loss = getLoss
-    val sumGradPair = instanceInfo.calcGradPairs(labels, loss, param, threadPool)
+    val sumGradPair =
+      if (param.isMultiClassMultiTree) {
+        instanceInfo.calcGradPairsForMultiClassMultiTree(labels, loss, param, forest.size, threadPool)
+      } else {
+        instanceInfo.calcGradPairs(labels, loss, param, threadPool)
+      }
     tree.getRoot.setSumGradPair(sumGradPair)
     histManager.setGradPair(0, sumGradPair)
     // 5. set root status
@@ -287,12 +292,19 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
   def setAsLeaf(nid: Int, node: GBTNode): Unit = {
     node.chgToLeaf()
     // TODO: update predictions of all training instance together
-    if (param.numClass == 2) {
+    // If not multi-class multi-tree
+    if (param.isMultiClassMultiTree) {
       val weight = node.calcWeight(param)
-      instanceInfo.updatePreds(nid, weight, param.learningRate)
+      val curClass = (forest.size - 1) % param.numClass
+      instanceInfo.updatePredsForMultiClassMultiTree(nid, curClass, weight, param.learningRate)
     } else {
-      val weights = node.calcWeights(param)
-      instanceInfo.updatePreds(nid, weights, param.learningRate)
+      if (param.numClass == 2) {
+        val weight = node.calcWeight(param)
+        instanceInfo.updatePreds(nid, weight, param.learningRate)
+      } else {
+        val weights = node.calcWeights(param)
+        instanceInfo.updatePreds(nid, weights, param.learningRate)
+      }
     }
     if (nid < Maths.pow(2, param.maxDepth) - 1) // node not on the last level
       histManager.removeNodeHist(nid)
@@ -318,9 +330,14 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
       if (param.numClass == 2) {
         validPreds(i) += node.getWeight * param.learningRate
       } else {
-        val weights = node.getWeights
-        for (k <- 0 until param.numClass)
-          validPreds(i * param.numClass + k) += weights(k) * param.learningRate
+        if (param.isMultiClassMultiTree) {
+          val curClass = (forest.size - 1) % param.numClass
+          validPreds(i * param.numClass + curClass) += node.getWeight * param.learningRate
+        } else {
+          val weights = node.getWeights
+          for (k <- 0 until param.numClass)
+            validPreds(i * param.numClass + k) += weights(k) * param.learningRate
+        }
       }
     }
 

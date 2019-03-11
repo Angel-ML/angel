@@ -193,6 +193,8 @@ object MLConf {
   val ML_GBDT_LOSS_FUNCTION: String = "ml.gbdt.loss.func"
   val ML_GBDT_EVAL_METRIC = "ml.gbdt.eval.metric"
   val DEFAULT_ML_GBDT_EVAL_METRIC = "error"
+  val ML_GBDT_MULTI_CLASS_STRATEGY = "ml.gbdt.multi.class.strategy"
+
   val ML_GBDT_FEATURE_SAMPLE_RATIO = "ml.gbdt.feature.sample.ratio"
   val DEFAULT_ML_GBDT_FEATURE_SAMPLE_RATIO = 1.0
 

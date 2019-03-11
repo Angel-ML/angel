@@ -20,7 +20,7 @@ package com.tencent.angel.spark.ml.tree.gbdt.metadata
 
 import com.tencent.angel.spark.ml.tree.gbdt.dataset.Dataset
 import com.tencent.angel.spark.ml.tree.gbdt.histogram.{BinaryGradPair, GradPair, MultiGradPair}
-import com.tencent.angel.spark.ml.tree.objective.loss.{BinaryLoss, Loss, MultiLoss}
+import com.tencent.angel.spark.ml.tree.objective.loss.{BinaryLoss, Loss, MultiLoss, MultiStrategy}
 import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam
 import com.tencent.angel.spark.ml.tree.tree.split.SplitEntry
 import com.tencent.angel.spark.ml.tree.util.{ConcurrentUtil, Maths, RangeBitSet}
@@ -30,20 +30,24 @@ import java.util.concurrent.ExecutorService
 object InstanceInfo {
 
   def apply(param: GBDTParam, numData: Int): InstanceInfo = {
-    val size = if (param.numClass == 2) numData else param.numClass * numData
-    val predictions = new Array[Float](size)
+    val predSize = if (param.numClass == 2) numData else param.numClass * numData
+    val gradSize = if (param.numClass == 2 || param.isMultiClassMultiTree) numData else predSize
+    // 2 class: preds of each instance
+    // multi-class one-tree: probs_ins_1, probs_ins_2, ...
+    // multi-class multi-tree: probs_ins_1, probs_ins_2, ...
+    val predictions = new Array[Float](predSize)
     val weights = Array.fill[Float](numData)(1.0f)
-    val gradients = new Array[Double](size)
-    val hessians = new Array[Double](size)
+    val gradients = new Array[Double](gradSize)
+    val hessians = new Array[Double](gradSize)
     val maxNodeNum = Maths.pow(2, param.maxDepth + 1) - 1
     val nodePosStart = new Array[Int](maxNodeNum)
     val nodePosEnd = new Array[Int](maxNodeNum)
     val nodeToIns = new Array[Int](numData)
-    InstanceInfo(predictions, weights, gradients, hessians, nodePosStart, nodePosEnd, nodeToIns)
+    InstanceInfo(param, predictions, weights, gradients, hessians, nodePosStart, nodePosEnd, nodeToIns)
   }
 }
 
-case class InstanceInfo(predictions: Array[Float], weights: Array[Float], gradients: Array[Double], hessians: Array[Double],
+case class InstanceInfo(param: GBDTParam, predictions: Array[Float], weights: Array[Float], gradients: Array[Double], hessians: Array[Double],
                         nodePosStart: Array[Int], nodePosEnd: Array[Int], nodeToIns: Array[Int]) {
 
   def resetPosInfo(): Unit = {
@@ -102,6 +106,38 @@ case class InstanceInfo(predictions: Array[Float], weights: Array[Float], gradie
       calcGP(0, numIns)
     } else {
       ConcurrentUtil.rangeParallel(calcGP, 0, numIns, threadPool)
+        .map(_.get())
+        .reduceLeft((gp1, gp2) => {
+          gp1.plusBy(gp2); gp1
+        })
+    }
+  }
+
+  def calcGradPairsForMultiClassMultiTree(labels: Array[Float], loss: Loss, param: GBDTParam, curTree: Int,
+                                          threadPool: ExecutorService = null): GradPair = {
+    def calcGPForMultiClassMultiTree(start: Int, end: Int): GradPair = {
+      val numClass = param.numClass
+      val curClass = (curTree - 1) % numClass   // class starts from 0
+      val binaryLoss = loss.asInstanceOf[BinaryLoss]
+      var sumGrad = 0.0
+      var sumHess = 0.0
+      for (insId <- start until end) {
+        val predInd = numClass * insId + curClass
+        val grad = binaryLoss.firOrderGrad(predictions(predInd), if (labels(insId) == curClass) labels(insId) else 0)
+        val hess = binaryLoss.secOrderGrad(predictions(predInd), if (labels(insId) == curClass) labels(insId) else 0, grad)
+        gradients(insId) = grad
+        hessians(insId) = hess
+        sumGrad += grad
+        sumHess += hess
+      }
+      new BinaryGradPair(sumGrad, sumHess)
+    }
+
+    val numIns = labels.length
+    if (param.numThread == 1) {
+      calcGPForMultiClassMultiTree(0, numIns)
+    } else {
+      ConcurrentUtil.rangeParallel(calcGPForMultiClassMultiTree, 0, numIns, threadPool)
         .map(_.get())
         .reduceLeft((gp1, gp2) => {
           gp1.plusBy(gp2); gp1
@@ -173,6 +209,17 @@ case class InstanceInfo(predictions: Array[Float], weights: Array[Float], gradie
     for (i <- nodeStart to nodeEnd) {
       val insId = nodeToIns(i)
       predictions(insId) += update_
+    }
+  }
+
+  def updatePredsForMultiClassMultiTree(nid: Int, curClass: Int, update: Float, learningRate: Float): Unit = {
+    val update_ = update * learningRate
+    val nodeStart = nodePosStart(nid)
+    val nodeEnd = nodePosEnd(nid)
+    for (i <- nodeStart to nodeEnd) {
+      val insId = nodeToIns(i)
+      val predInd = param.numClass * insId + curClass
+      predictions(predInd) += update_
     }
   }
 
