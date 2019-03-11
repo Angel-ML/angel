@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -69,7 +69,7 @@ public class RegTree {
   /**
    * get the leaf index of an instances.
    *
-   * @param feat   the feature vector of an instances
+   * @param feat the feature vector of an instances
    * @param rootId the start node id
    * @return the leaf index
    */
@@ -80,7 +80,7 @@ public class RegTree {
   /**
    * get the prediction of regression tree.
    *
-   * @param feat   the feature vector of an instances
+   * @param feat the feature vector of an instances
    * @param rootId the start node id
    * @return the weight of leaf
    */

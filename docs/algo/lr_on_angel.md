@@ -59,7 +59,11 @@ LR on Angel支持“dense”、“libsvm”、“dummy”三种数据格式。�
     * ml.data.validate.ratio：验证集采样率
     * ml.data.type：数据类型，分“libsvm”和“dummy”两种
     * ml.learn.rate：学习率
-    * ml.learn.decay：学习率衰减系数
+    * ml.opt.decay.class.name：学习率衰减系类
+    * ml.opt.decay.on.batch: 是否对每个mini batch衰减
+    * ml.opt.decay.alpha: 学习率衰减参数alpha
+    * ml.opt.decay.beta: 学习率衰减参数beta
+    * ml.opt.decay.intervals: 学习率衰减参数intervals
     * ml.reg.l2: l2正则项系数
     * action.type：任务类型，训练用"train",预测用"predict"
     * ml.inputlayer.optimizer：优化器类型，可选"adam","ftrl"和"momentum"
@@ -79,7 +83,6 @@ LR on Angel支持“dense”、“libsvm”、“dummy”三种数据格式。�
     -Dml.data.validate.ratio=0.1 \ 
     -Dml.data.type=libsvm \
     -Dml.learn.rate=0.1 \
-    -Dml.learn.decay=0.5 \
     -Dml.reg.l2=0.03 \
     -Daction.type=train \
     -Dml.inputlayer.optimizer=ftrl \

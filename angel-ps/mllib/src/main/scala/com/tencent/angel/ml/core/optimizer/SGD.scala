@@ -21,22 +21,19 @@ package com.tencent.angel.ml.core.optimizer
 import java.util.concurrent.Future
 
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
-import com.tencent.angel.ml.psf.optimizer.{PGDUpdateFunc, SGDUpdateFunc}
+import com.tencent.angel.ml.psf.optimizer.PGDUpdateFunc
 import com.tencent.angel.psagent.PSAgentContext
 
-class SGD(override val stepSize: Double) extends GradientDescent(stepSize) {
+class SGD(stepSize: Double) extends Optimizer(stepSize) {
+  override protected var numSlot: Int = 1
 
-  override def update(matrixId: Int, numFactors: Int, epoch: Int = 0) : Future[VoidResult] = {
+  override def update(matrixId: Int, numFactors: Int, epoch: Int): Future[VoidResult] = {
+    update(matrixId, numFactors, epoch, 1)
+  }
 
-    if (regL1Param == 0.0) {
-      // l2 regularization
-      val func = new SGDUpdateFunc(matrixId, numFactors, lr, regL2Param)
-      PSAgentContext.get().getUserRequestAdapter.update(func)
-    } else {
-      // l1 regularization
-      val func = new PGDUpdateFunc(matrixId, numFactors, lr, regL1Param, regL2Param)
-      PSAgentContext.get().getUserRequestAdapter.update(func)
-    }
+  override def update(matrixId: Int, numFactors: Int, epoch: Int, batchSize: Int): Future[VoidResult] = {
+    val func = new PGDUpdateFunc(matrixId, numFactors, lr, regL1Param, regL2Param, batchSize)
+    PSAgentContext.get().getUserRequestAdapter.update(func)
   }
 
   override def toString: String = {

@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,28 +18,15 @@
 
 package com.tencent.angel.ml.math2.vector;
 
-import com.tencent.angel.ml.math2.storage.*;
-import it.unimi.dsi.fastutil.ints.*;
-import it.unimi.dsi.fastutil.longs.*;
+import com.tencent.angel.ml.math2.storage.IntLongSparseVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntLongVectorStorage;
+import it.unimi.dsi.fastutil.ints.Int2LongMap;
+import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.lang.ArrayUtils;
 
-import java.lang.Math;
-
 public class IntLongVector extends LongVector implements IntKeyVector, SimpleVector {
   private int dim;
-
-  public int getDim() {
-    return dim;
-  }
-
-  public long dim() {
-    return (long) getDim();
-  }
-
-  public void setDim(int dim) {
-    this.dim = dim;
-  }
 
   public IntLongVector() {
     super();
@@ -57,6 +44,18 @@ public class IntLongVector extends LongVector implements IntKeyVector, SimpleVec
     this(0, 0, 0, dim, storage);
   }
 
+  public int getDim() {
+    return dim;
+  }
+
+  public void setDim(int dim) {
+    this.dim = dim;
+  }
+
+  public long dim() {
+    return (long) getDim();
+  }
+
   public long get(int idx) {
     return ((IntLongVectorStorage) storage).get(idx);
   }
@@ -71,8 +70,7 @@ public class IntLongVector extends LongVector implements IntKeyVector, SimpleVec
 
   public long max() {
     IntLongVectorStorage idstorage = (IntLongVectorStorage) storage;
-    if (idstorage.size() == 0)
-      return 0;
+    if (idstorage.size() == 0) return 0;
     long maxval = Long.MIN_VALUE;
     if (idstorage.isSparse()) {
       LongIterator iter = idstorage.valueIterator();
@@ -94,8 +92,7 @@ public class IntLongVector extends LongVector implements IntKeyVector, SimpleVec
 
   public long min() {
     IntLongVectorStorage idstorage = (IntLongVectorStorage) storage;
-    if (idstorage.size() == 0)
-      return 0;
+    if (idstorage.size() == 0) return 0;
     long minval = Long.MAX_VALUE;
     if (idstorage.isSparse()) {
       LongIterator iter = idstorage.valueIterator();
@@ -117,8 +114,7 @@ public class IntLongVector extends LongVector implements IntKeyVector, SimpleVec
 
   public int argmax() {
     IntLongVectorStorage idstorage = (IntLongVectorStorage) storage;
-    if (idstorage.size() == 0)
-      return -1;
+    if (idstorage.size() == 0) return -1;
     long maxval = Long.MIN_VALUE;
     int maxidx = -1;
     if (idstorage.isDense()) {
@@ -158,8 +154,7 @@ public class IntLongVector extends LongVector implements IntKeyVector, SimpleVec
 
   public int argmin() {
     IntLongVectorStorage idstorage = (IntLongVectorStorage) storage;
-    if (idstorage.size() == 0)
-      return -1;
+    if (idstorage.size() == 0) return -1;
     long minval = Long.MAX_VALUE;
     int minidx = -1;
     if (idstorage.isDense()) {
@@ -199,8 +194,7 @@ public class IntLongVector extends LongVector implements IntKeyVector, SimpleVec
 
   public double std() {
     IntLongVectorStorage dstorage = (IntLongVectorStorage) storage;
-    if (dstorage.size() == 0)
-      return 0;
+    if (dstorage.size() == 0) return 0;
     double sumval = 0.0;
     double sumval2 = 0.0;
     if (dstorage.isSparse()) {
@@ -223,8 +217,7 @@ public class IntLongVector extends LongVector implements IntKeyVector, SimpleVec
 
   public double average() {
     IntLongVectorStorage dstorage = (IntLongVectorStorage) storage;
-    if (dstorage.size() == 0)
-      return 0;
+    if (dstorage.size() == 0) return 0;
     double sumval = 0.0;
     if (dstorage.isSparse()) {
       LongIterator iter = dstorage.valueIterator();
@@ -247,8 +240,7 @@ public class IntLongVector extends LongVector implements IntKeyVector, SimpleVec
 
   public int numZeros() {
     IntLongVectorStorage dstorage = (IntLongVectorStorage) storage;
-    if (dstorage.size() == 0)
-      return (int) dim;
+    if (dstorage.size() == 0) return (int) dim;
     int numZero = 0;
     if (dstorage.isSparse()) {
       LongIterator iter = dstorage.valueIterator();
@@ -268,22 +260,42 @@ public class IntLongVector extends LongVector implements IntKeyVector, SimpleVec
   }
 
   public IntLongVector clone() {
-    return new IntLongVector(matrixId, rowId, clock, dim, ((IntLongVectorStorage) storage).clone());
+    return new IntLongVector(matrixId, rowId, clock, dim,
+        ((IntLongVectorStorage) storage).clone());
   }
 
-  @Override public IntLongVector copy() {
-    return new IntLongVector(matrixId, rowId, clock, dim, ((IntLongVectorStorage) storage).copy());
+  @Override
+  public IntLongVector copy() {
+    return new IntLongVector(matrixId, rowId, clock, dim,
+        ((IntLongVectorStorage) storage).copy());
   }
 
-  @Override public IntLongVectorStorage getStorage() {
+  @Override
+  public IntLongVector emptyLike() {
+    if (storage.isDense()) {
+      return new IntLongVector(matrixId, rowId, clock, dim,
+          ((IntLongVectorStorage) storage).emptyDense());
+    } else if (storage.isSparse()) {
+      return new IntLongVector(matrixId, rowId, clock, dim,
+          ((IntLongVectorStorage) storage).emptySparse());
+    } else {
+      return new IntLongVector(matrixId, rowId, clock, dim,
+          ((IntLongVectorStorage) storage).emptySorted());
+    }
+  }
+
+  @Override
+  public IntLongVectorStorage getStorage() {
     return (IntLongVectorStorage) storage;
   }
 
-  @Override public boolean hasKey(int idx) {
+  @Override
+  public boolean hasKey(int idx) {
     return getStorage().hasKey(idx);
   }
 
-  @Override public Vector filter(double threshold) {
+  @Override
+  public Vector filter(double threshold) {
     IntLongSparseVectorStorage newStorage = new IntLongSparseVectorStorage(size());
 
     if (storage.isDense()) {
@@ -317,7 +329,8 @@ public class IntLongVector extends LongVector implements IntKeyVector, SimpleVec
     return new IntLongVector(matrixId, rowId, clock, getDim(), newStorage);
   }
 
-  @Override public Vector ifilter(double threshold) {
+  @Override
+  public Vector ifilter(double threshold) {
 
     if (storage.isDense()) {
       long[] values = ((IntLongVectorStorage) storage).getValues();
@@ -351,7 +364,8 @@ public class IntLongVector extends LongVector implements IntKeyVector, SimpleVec
     return new IntLongVector(matrixId, rowId, clock, getDim(), (IntLongVectorStorage) storage);
   }
 
-  @Override public Vector filterUp(double threshold) {
+  @Override
+  public Vector filterUp(double threshold) {
     IntLongSparseVectorStorage newStorage = new IntLongSparseVectorStorage(size());
 
     if (storage.isDense()) {

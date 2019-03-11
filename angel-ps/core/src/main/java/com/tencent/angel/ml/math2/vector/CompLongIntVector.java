@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -31,8 +31,7 @@ public class CompLongIntVector extends IntVector implements LongKeyVector, Compo
     super();
   }
 
-  public CompLongIntVector(int matrixId, int rowId, int clock, long dim, LongIntVector[] partitions,
-    long subDim) {
+  public CompLongIntVector(int matrixId, int rowId, int clock, long dim, LongIntVector[] partitions, long subDim) {
     setMatrixId(matrixId);
     setRowId(rowId);
     setClock(clock);
@@ -54,8 +53,7 @@ public class CompLongIntVector extends IntVector implements LongKeyVector, Compo
     this(0, 0, 0, dim, partitions, subDim);
   }
 
-  public CompLongIntVector(int matrixId, int rowId, int clock, long dim,
-    LongIntVector[] partitions) {
+  public CompLongIntVector(int matrixId, int rowId, int clock, long dim, LongIntVector[] partitions) {
     this(matrixId, rowId, clock, dim, partitions, -1);
   }
 
@@ -80,12 +78,8 @@ public class CompLongIntVector extends IntVector implements LongKeyVector, Compo
     this(0, 0, 0, dim, subDim);
   }
 
-  public void setPartitions(LongIntVector[] partitions) {
-    assert partitions.length == this.partitions.length;
-    this.partitions = partitions;
-  }
-
-  @Override public int getNumPartitions() {
+  @Override
+  public int getNumPartitions() {
     return numPartitions;
   }
 
@@ -124,7 +118,8 @@ public class CompLongIntVector extends IntVector implements LongKeyVector, Compo
     return partitions[partIdx].get(subIdx);
   }
 
-  @Override public boolean hasKey(long idx) {
+  @Override
+  public boolean hasKey(long idx) {
     int partIdx = (int) (idx / subDim);
     return partitions[partIdx].hasKey(idx);
   }
@@ -137,6 +132,11 @@ public class CompLongIntVector extends IntVector implements LongKeyVector, Compo
 
   public LongIntVector[] getPartitions() {
     return partitions;
+  }
+
+  public void setPartitions(LongIntVector[] partitions) {
+    assert partitions.length == this.partitions.length;
+    this.partitions = partitions;
   }
 
   public int max() {
@@ -163,7 +163,8 @@ public class CompLongIntVector extends IntVector implements LongKeyVector, Compo
     return CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Norm);
   }
 
-  @Override public long numZeros() {
+  @Override
+  public long numZeros() {
     return (long) CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Numzeros);
   }
 
@@ -181,33 +182,46 @@ public class CompLongIntVector extends IntVector implements LongKeyVector, Compo
     }
   }
 
-  @Override public CompLongIntVector clone() {
+  @Override
+  public CompLongIntVector clone() {
     LongIntVector[] newPartitions = new LongIntVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = partitions[i].clone();
     }
-    return new CompLongIntVector(getMatrixId(), getRowId(), getClock(), (long) getDim(),
-      newPartitions, subDim);
+    return new CompLongIntVector(getMatrixId(), getRowId(), getClock(), (long) getDim(), newPartitions, subDim);
   }
 
-  @Override public CompLongIntVector copy() {
+  @Override
+  public CompLongIntVector copy() {
     LongIntVector[] newPartitions = new LongIntVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = partitions[i].copy();
     }
-    return new CompLongIntVector(getMatrixId(), getRowId(), getClock(), (long) getDim(),
-      newPartitions, subDim);
+    return new CompLongIntVector(getMatrixId(), getRowId(), getClock(), (long) getDim(), newPartitions, subDim);
   }
 
-  @Override public int getTypeIndex() {
+  @Override
+  public CompLongIntVector emptyLike() {
+    LongIntVector[] newPartitions = new LongIntVector[partitions.length];
+    for (int i = 0; i < partitions.length; i++) {
+      newPartitions[i] = partitions[i].emptyLike();
+    }
+    return new CompLongIntVector(getMatrixId(), getRowId(), getClock(), (int) getDim(),
+        newPartitions, subDim);
+  }
+
+  @Override
+  public int getTypeIndex() {
     return 1;
   }
 
-  @Override public RowType getType() {
+  @Override
+  public RowType getType() {
     return RowType.T_INT_SPARSE_LONGKEY_COMPONENT;
   }
 
-  @Override public Vector filter(double threshold) {
+  @Override
+  public Vector filter(double threshold) {
     LongIntVector[] newPartitions = new LongIntVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = (LongIntVector) partitions[i].filter(threshold);
@@ -216,7 +230,8 @@ public class CompLongIntVector extends IntVector implements LongKeyVector, Compo
     return new CompLongIntVector(matrixId, rowId, clock, dim, newPartitions, subDim);
   }
 
-  @Override public Vector ifilter(double threshold) {
+  @Override
+  public Vector ifilter(double threshold) {
     LongIntVector[] newPartitions = new LongIntVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = (LongIntVector) partitions[i].ifilter(threshold);
@@ -225,7 +240,8 @@ public class CompLongIntVector extends IntVector implements LongKeyVector, Compo
     return new CompLongIntVector(matrixId, rowId, clock, dim, newPartitions, subDim);
   }
 
-  @Override public Vector filterUp(double threshold) {
+  @Override
+  public Vector filterUp(double threshold) {
     LongIntVector[] newPartitions = new LongIntVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = (LongIntVector) partitions[i].filterUp(threshold);

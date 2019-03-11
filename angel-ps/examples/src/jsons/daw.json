@@ -13,7 +13,8 @@
     "epoch": 10,
     "numupdateperepoch": 10,
     "lr": 0.1,
-    "decay": 0.8
+    "decayclass": "WarmRestarts",
+    "decayalpha": 0.05
   },
   "default_optimizer": {
     "type": "momentum",

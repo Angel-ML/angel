@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -22,10 +22,22 @@ import com.tencent.angel.ml.math2.matrix.Matrix;
 import com.tencent.angel.ml.math2.ufuncs.executor.UnaryExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.matrix.BinaryMatrixExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.matrix.UnaryMatrixExecutor;
-import com.tencent.angel.ml.math2.ufuncs.expression.*;
+import com.tencent.angel.ml.math2.ufuncs.expression.Dropout;
+import com.tencent.angel.ml.math2.ufuncs.expression.GradDropout;
+import com.tencent.angel.ml.math2.ufuncs.expression.GradRelu;
+import com.tencent.angel.ml.math2.ufuncs.expression.GradSigmoid;
+import com.tencent.angel.ml.math2.ufuncs.expression.GradSigmoidWithDropout;
+import com.tencent.angel.ml.math2.ufuncs.expression.GradTanh;
+import com.tencent.angel.ml.math2.ufuncs.expression.GradTanhWithDropout;
+import com.tencent.angel.ml.math2.ufuncs.expression.Relu;
+import com.tencent.angel.ml.math2.ufuncs.expression.Sigmoid;
+import com.tencent.angel.ml.math2.ufuncs.expression.SigmoidWithDropout;
+import com.tencent.angel.ml.math2.ufuncs.expression.Tanh;
+import com.tencent.angel.ml.math2.ufuncs.expression.TanhWithDropout;
 import com.tencent.angel.ml.math2.vector.Vector;
 
 public class TransFuncs {
+
   public static Vector sigmoid(Vector v1) {
     return UnaryExecutor.apply(v1, new Sigmoid(false));
   }

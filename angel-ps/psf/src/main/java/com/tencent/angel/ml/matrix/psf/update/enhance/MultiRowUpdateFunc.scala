@@ -40,8 +40,8 @@ abstract class MultiRowUpdateFunc(param: MultiRowUpdateParam) extends UpdateFunc
       val mf = partParam.asInstanceOf[MultiRowUpdateParam.MultiRowPartitionUpdateParam]
       val rowIds = mf.getRowIds
       val values = mf.getValues
-      for(i <- rowIds.indices){
-        if(Utils.withinPart(partParam.getPartKey, Array(rowIds(i))))
+      for (i <- rowIds.indices){
+        if (Utils.withinPart(partParam.getPartKey, Array(rowIds(i))))
           update(part.getRow(i), values(i))
       }
     }

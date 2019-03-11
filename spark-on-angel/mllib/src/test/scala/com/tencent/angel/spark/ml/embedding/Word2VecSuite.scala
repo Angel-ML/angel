@@ -38,7 +38,7 @@ class Word2VecSuite extends PSFunSuite with SharedPSContext {
 
   test("trainWithWorkerPull&Push") {
     val numNode = 100
-    val dimension = 100
+    val dimension = 10
     val numNodePerRow = 10
     val modelType = "cbow"
     val numPart = 5

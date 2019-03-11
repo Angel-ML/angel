@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -19,6 +19,7 @@
 package com.tencent.angel.ml.math2.ufuncs.expression;
 
 public class TanhWithDropout extends Unary {
+
   private double threshold = Math.log(Double.MAX_VALUE);
   private double proba;
 
@@ -28,11 +29,13 @@ public class TanhWithDropout extends Unary {
     setInplace(inplace);
   }
 
-  @Override public boolean isOrigin() {
+  @Override
+  public boolean isOrigin() {
     return true;
   }
 
-  @Override public double apply(double elem) {
+  @Override
+  public double apply(double elem) {
     if (proba == 1) {
       return 0;
     } else if (Math.random() < 1 - proba) {
@@ -50,7 +53,8 @@ public class TanhWithDropout extends Unary {
     }
   }
 
-  @Override public float apply(float elem) {
+  @Override
+  public float apply(float elem) {
     if (proba == 1) {
       return 0;
     } else if (Math.random() < 1 - proba) {
@@ -68,7 +72,8 @@ public class TanhWithDropout extends Unary {
     }
   }
 
-  @Override public long apply(long elem) {
+  @Override
+  public long apply(long elem) {
     if (proba == 1) {
       return 0;
     } else if (Math.random() < 1 - proba) {
@@ -86,7 +91,8 @@ public class TanhWithDropout extends Unary {
     }
   }
 
-  @Override public int apply(int elem) {
+  @Override
+  public int apply(int elem) {
     if (proba == 1) {
       return 0;
     } else if (Math.random() < 1 - proba) {

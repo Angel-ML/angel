@@ -33,15 +33,18 @@ class DeepFM extends GraphModel {
   val numFields: Int = SharedConf.get().getInt(MLConf.ML_FIELD_NUM)
   val numFactors: Int = SharedConf.get().getInt(MLConf.ML_RANK_NUM)
   val lr: Double = SharedConf.get().getDouble(MLConf.ML_LEARN_RATE)
+  val gamma: Double = SharedConf.get().getDouble(MLConf.ML_OPT_ADAM_GAMMA)
+  val beta: Double = SharedConf.get().getDouble(MLConf.ML_OPT_ADAM_BETA)
 
   override
   def network(): Unit = {
-    val wide = new SimpleInputLayer("wide", 1, new Identity(), new Adam(lr))
-    val embedding = new Embedding("embedding", numFields * numFactors, numFactors, new Adam(lr))
+    val optimizer = new Adam(lr, gamma, beta)
+    val wide = new SimpleInputLayer("wide", 1, new Identity(), optimizer)
+    val embedding = new Embedding("embedding", numFields * numFactors, numFactors, optimizer)
     val innerSumCross = new BiInnerSumCross("innerSumPooling", embedding)
-    val hidden1 = new FCLayer("hidden1", 80, embedding, new Relu, new Adam(lr))
-    val hidden2 = new FCLayer("hidden2", 50, hidden1, new Relu, new Adam(lr))
-    val mlpLayer = new FCLayer("hidden3", 1, hidden2, new Identity, new Adam(lr))
+    val hidden1 = new FCLayer("hidden1", 80, embedding, new Relu, optimizer)
+    val hidden2 = new FCLayer("hidden2", 50, hidden1, new Relu, optimizer)
+    val mlpLayer = new FCLayer("hidden3", 1, hidden2, new Identity, optimizer)
     val join = new SumPooling("sumPooling", 1, Array[Layer](wide, innerSumCross, mlpLayer))
     new SimpleLossLayer("simpleLossLayer", join, new LogLoss)
   }

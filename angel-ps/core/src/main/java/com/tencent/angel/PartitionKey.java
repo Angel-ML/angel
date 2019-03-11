@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -21,10 +21,6 @@ package com.tencent.angel;
 import com.tencent.angel.common.Serialize;
 import io.netty.buffer.ByteBuf;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-
 
 /**
  * The type Partition key,represent a part of matrix
@@ -38,16 +34,22 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
    * Elements in this partition row number are in [startRow, endRow) and column number are in
    * [StartCol, endCol);
    */
-  int startRow = 0;
-  long startCol = 0;
-  int endRow = 0;
-  long endCol = 0;
+  int startRow = -1;
+  long startCol = -1;
+  int endRow = -1;
+  long endCol = -1;
+  int indexNum = -1;
 
   public PartitionKey() {
   }
 
   public PartitionKey(int partitionId, int matrixId, int startRow, long startCol, int endRow,
-    long endCol) {
+      long endCol) {
+    this(partitionId, matrixId, startRow, startCol, endRow, endCol, -1);
+  }
+
+  public PartitionKey(int partitionId, int matrixId, int startRow, long startCol, int endRow,
+      long endCol, int indexNum) {
     super();
     this.partitionId = partitionId;
     this.matrixId = matrixId;
@@ -55,13 +57,15 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
     this.startCol = startCol;
     this.endRow = endRow;
     this.endCol = endCol;
+    this.indexNum = indexNum;
   }
 
   public PartitionKey(int matrixId, int partId) {
     this(partId, matrixId, -1, -1, -1, -1);
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     StringBuilder builder = new StringBuilder();
     builder.append("PartitionKey(");
     builder.append("matrixId=").append(matrixId).append(", ");
@@ -70,6 +74,7 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
     builder.append("startCol=").append(startCol).append(", ");
     builder.append("endRow=").append(endRow).append(", ");
     builder.append("endCol=").append(endCol).append(")");
+    builder.append("indexNum=").append(indexNum).append(")");
     return builder.toString();
   }
 
@@ -109,18 +114,20 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
     this.endCol = endCol;
   }
 
-  public void write(DataOutputStream out) throws IOException {
-    out.writeInt(startRow);
-    out.writeLong(startCol);
-    out.writeInt(endRow);
-    out.writeLong(endCol);
+  public void setStartCol(long startCol) {
+    this.startCol = startCol;
   }
 
-  public void read(DataInputStream input) throws IOException {
-    startRow = input.readInt();
-    startCol = input.readLong();
-    endRow = input.readInt();
-    endCol = input.readLong();
+  public void setEndCol(long endCol) {
+    this.endCol = endCol;
+  }
+
+  public int getIndexNum() {
+    return indexNum;
+  }
+
+  public void setIndexNum(int indexNum) {
+    this.indexNum = indexNum;
   }
 
   public void setPartitionId(int partitionId) {
@@ -135,7 +142,8 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
     this.endRow = endRow;
   }
 
-  @Override public int compareTo(PartitionKey other) {
+  @Override
+  public int compareTo(PartitionKey other) {
     if (this.startRow > other.startRow) {
       return 1;
     }
@@ -155,29 +163,35 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
     return 0;
   }
 
-  @Override public void serialize(ByteBuf buf) {
+  @Override
+  public void serialize(ByteBuf buf) {
     buf.writeInt(matrixId);
     buf.writeInt(partitionId);
     buf.writeInt(startRow);
     buf.writeInt(endRow);
     buf.writeLong(startCol);
     buf.writeLong(endCol);
+    buf.writeInt(indexNum);
   }
 
-  @Override public void deserialize(ByteBuf buf) {
+  @Override
+  public void deserialize(ByteBuf buf) {
     matrixId = buf.readInt();
     partitionId = buf.readInt();
     startRow = buf.readInt();
     endRow = buf.readInt();
     startCol = buf.readLong();
     endCol = buf.readLong();
+    indexNum = buf.readInt();
   }
 
-  @Override public int bufferLen() {
+  @Override
+  public int bufferLen() {
     return 8;
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     final int prime = 31;
     int result = 1;
     result = prime * result + matrixId;
@@ -185,16 +199,21 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
     return result;
   }
 
-  @Override public boolean equals(Object obj) {
-    if (this == obj)
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
       return true;
-    if (obj == null)
+    }
+    if (obj == null) {
       return false;
-    if (getClass() != obj.getClass())
+    }
+    if (getClass() != obj.getClass()) {
       return false;
+    }
     PartitionKey other = (PartitionKey) obj;
-    if (matrixId != other.matrixId)
+    if (matrixId != other.matrixId) {
       return false;
+    }
     return partitionId == other.partitionId;
   }
 }
