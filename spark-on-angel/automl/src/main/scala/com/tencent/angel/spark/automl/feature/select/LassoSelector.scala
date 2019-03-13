@@ -23,11 +23,13 @@ import org.apache.spark.ml.{Estimator, Model}
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.util.Identifiable
 import org.apache.spark.ml.linalg.{Vector, Vectors}
+import org.apache.spark.ml.linalg.{DenseVector, SparseVector}
 import org.apache.spark.sql.{DataFrame, Dataset}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.functions._
 import breeze.linalg.argsort
-import breeze.linalg.DenseVector
+import breeze.linalg.{DenseVector => BDV}
+import Math.abs
 
 
 class LassoSelectorWrapper {
@@ -71,9 +73,9 @@ class LassoSelector(override val uid: String) extends Estimator[LassoSelectorMod
 
     val lrModel = lr.fit(dataset)
 
-    val cofficients: Array[Double] = lrModel.coefficients.toArray
+    val cofficients: Array[Double] = lrModel.coefficients.toArray.map(i => abs(i))
 
-    val sortedIndices: Array[Int] = argsort.argsortDenseVector_Double(DenseVector(cofficients)).toArray.reverse
+    val sortedIndices: Array[Int] = argsort.argsortDenseVector_Double(BDV(cofficients)).toArray.reverse
 
     new LassoSelectorModel(uid, sortedIndices).setInputCol(featuresCol).setOutputCol(outputCol)
 
@@ -115,9 +117,24 @@ class LassoSelectorModel(override val uid: String,
     println()
     // select function, select the top features order by lasso cofficients
     val select = udf { vector: Vector =>
+
       val orginalValues: Array[Double] = vector.toArray
-      val values: Array[Double] = sortedIndices.take(numTopFeatures) map orginalValues
-      Vectors.dense(values)
+      vector match {
+        // for DenseVector, just select top features
+        case v1: DenseVector =>
+          val values: Array[Double] = sortedIndices.take(numTopFeatures) map orginalValues
+          Vectors.dense(values)
+        case v2: SparseVector =>
+          val nonZeroIndices = vector.asInstanceOf[SparseVector].indices.filter(_ < numTopFeatures)
+          val values: Array[Double] = sortedIndices.take(numTopFeatures).sorted map orginalValues
+          val nonZeroValues: Array[Double] = nonZeroIndices map values
+          Vectors.sparse(numTopFeatures, nonZeroIndices, nonZeroValues)
+
+        case _ =>
+          throw new IllegalArgumentException("Require DenseVector or SparseVector in spark.ml.linalg, but "
+            + vector.getClass.getSimpleName + " is given.")
+      }
+
     }
     dataset.withColumn(outputCol, select(col(inputCol)))
   }
