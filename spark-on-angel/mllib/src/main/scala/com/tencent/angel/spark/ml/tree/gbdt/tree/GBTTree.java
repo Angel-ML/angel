@@ -18,8 +18,8 @@
 
 package com.tencent.angel.spark.ml.tree.gbdt.tree;
 
-import com.tencent.angel.spark.ml.tree.tree.basic.Tree;
-import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam;
+import com.tencent.angel.spark.ml.tree.basic.Tree;
+import com.tencent.angel.spark.ml.tree.param.GBDTParam;
 
 public class GBTTree extends Tree<GBDTParam, GBTNode> {
 
