@@ -60,7 +60,7 @@ object FPreprocess {
 
     if (sampleRate > 0 & sampleRate < 1.0)
       Components.addSampler(components,
-      "features", sampleRate)
+        "features", sampleRate)
 
     if (hasTokenizer)
       Components.addTokenizer(components,

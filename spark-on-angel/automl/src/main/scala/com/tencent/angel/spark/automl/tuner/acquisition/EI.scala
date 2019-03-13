@@ -26,10 +26,11 @@ import com.tencent.angel.spark.automl.tuner.surrogate.Surrogate
 
 /**
   * Expected improvement.
+  *
   * @param surrogate
   * @param par : Controls the balance between exploration and exploitation of the acquisition function, default=0.0
   *
- */
+  */
 class EI(
           override val surrogate: Surrogate,
           val par: Double)
@@ -54,7 +55,7 @@ class EI(
       (0.0, Vectors.dense(new Array[Double](X.size)))
     } else {
       val z = (pred._1 - eta - par) / s
-      val norm: NormalDistribution  = new NormalDistribution
+      val norm: NormalDistribution = new NormalDistribution
       val cdf: Double = norm.cumulativeProbability(z)
       val pdf: Double = norm.density(z)
       val ei = s * (z * cdf + pdf)

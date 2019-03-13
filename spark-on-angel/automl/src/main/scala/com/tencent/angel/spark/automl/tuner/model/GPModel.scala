@@ -39,8 +39,8 @@ class GPModel(val covFunc: Covariance,
           newy: BDV[Double]): this.type = {
     require(newX.rows == newy.length, "incompatible size of the input X and y")
 
-    if ( (X == null && y == null) ||
-      (newX.rows > X.rows && newy.length > y.length) ) {
+    if ((X == null && y == null) ||
+      (newX.rows > X.rows && newy.length > y.length)) {
       X = newX
       y = newy
     }
@@ -84,7 +84,7 @@ class GPModel(val covFunc: Covariance,
       val meanNewX = meanFunc(newX)
 
       val predMean = meanNewX + KXZ.t * (invKXX * (y - meanX))
-      val predVar = diag(KZZ - KXZ.t * invKXX * KXZ).map{ v =>
+      val predVar = diag(KZZ - KXZ.t * invKXX * KXZ).map { v =>
         if (v < -1e-12 | v.isNaN | v.isInfinite) 0 else v
       }
 

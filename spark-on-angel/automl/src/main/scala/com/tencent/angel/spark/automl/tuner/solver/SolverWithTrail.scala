@@ -35,7 +35,7 @@ class SolverWithTrail(val solver: Solver, val trail: Trail) {
   def run(numIter: Int, X: Array[Configuration] = null, Y: Array[Double] = null): (Vector, Double) = {
     if (X != null && Y != null && X.size == Y.size)
       solver.feed(X, Y)
-    (0 until numIter).foreach{ iter =>
+    (0 until numIter).foreach { iter =>
       println(s"------iteration $iter starts------")
       val configs: Array[Configuration] = solver.suggest()
       val results: Array[Double] = trail.evaluate(configs)

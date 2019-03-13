@@ -72,7 +72,7 @@ class RFSurrogate(
       return (0.0, 0.0)
     }
 
-    val preds = model.trees.map{ tree: DecisionTreeRegressionModel =>
+    val preds = model.trees.map { tree: DecisionTreeRegressionModel =>
       val pred = tree.transform(DataUtils.parse(ss, schema, X))
       pred.select("prediction").first().getDouble(0)
     }

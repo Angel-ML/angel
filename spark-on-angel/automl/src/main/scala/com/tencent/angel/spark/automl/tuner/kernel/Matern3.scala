@@ -52,7 +52,7 @@ case class Matern3() extends Covariance {
     val r = sqrt(distMat)
 
     val vPart = sqrt(3) * r / l + 1.0
-    val expPart = exp( -sqrt(3) * r / l )
+    val expPart = exp(-sqrt(3) * r / l)
     val covMatrix = vPart *:* expPart
 
     covMatrix
@@ -79,10 +79,10 @@ case class Matern3() extends Covariance {
     val r = sqrt(distMat)
 
     val vPart = sqrt(3) * r / l + 1.0
-    val expPart = exp( -sqrt(3) * r / l )
+    val expPart = exp(-sqrt(3) * r / l)
 
-    val vPartGrad = -( sqrt(3) * r / pow(l, 2) ) *:* expPart
-    val expPartGrad = vPart *:* expPart *:* ( sqrt(3) * r / pow(l, 2) )
+    val vPartGrad = -(sqrt(3) * r / pow(l, 2)) *:* expPart
+    val expPartGrad = vPart *:* expPart *:* (sqrt(3) * r / pow(l, 2))
 
     val gradL = vPartGrad + expPartGrad
 

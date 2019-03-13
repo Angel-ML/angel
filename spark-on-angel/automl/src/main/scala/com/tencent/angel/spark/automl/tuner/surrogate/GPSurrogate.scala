@@ -34,7 +34,7 @@ class GPSurrogate(
   override val LOG: Log = LogFactory.getLog(classOf[RFSurrogate])
 
   val covFunc = Matern5Iso()
-  val initCovParams = BDV(1.0,1.0)
+  val initCovParams = BDV(1.0, 1.0)
   val initNoiseStdDev = 0.1
   val gpModel: GPModel = GPModel(covFunc, initCovParams, initNoiseStdDev)
 

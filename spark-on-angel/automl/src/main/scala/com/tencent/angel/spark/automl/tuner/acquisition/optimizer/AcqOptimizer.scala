@@ -19,10 +19,11 @@
 package com.tencent.angel.spark.automl.tuner.acquisition.optimizer
 
 import com.tencent.angel.spark.automl.tuner.acquisition.Acquisition
-import com.tencent.angel.spark.automl.tuner.config.{Configuration,ConfigurationSpace}
+import com.tencent.angel.spark.automl.tuner.config.{Configuration, ConfigurationSpace}
 
 /**
   * Abstract base class for acquisition maximization.
+  *
   * @param acqFunc     : The acquisition function which will be maximized
   * @param configSpace : Configuration space of parameters
   */

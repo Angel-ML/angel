@@ -37,6 +37,7 @@ class Sampler(fraction: Double,
 
   /**
     * Param for input column name.
+    *
     * @group param
     */
   final val inputCol: Param[String] = new Param[String](this, "inputCol", "input column name")
@@ -54,7 +55,9 @@ class Sampler(fraction: Double,
     dataset.sample(false, fraction, seed).toDF
   }
 
-  override def transformSchema(schema: StructType): StructType = { schema }
+  override def transformSchema(schema: StructType): StructType = {
+    schema
+  }
 
   override def copy(extra: ParamMap): Sampler = defaultCopy(extra)
 }
@@ -85,12 +88,12 @@ object Sampler {
       .load("/Users/jiangjiawei/dev-tools/spark-2.2.0/data/mllib/sample_libsvm_data.txt")
 
     model.transform(test).select("*")
-        .collect()
-        .foreach { case Row(label: Double, vector: Vector) =>
-          println(s"($label, " +
-            s"${vector.toSparse.indices.mkString("[", ",", "]")}, " +
-            s"${vector.toSparse.values.mkString("[", ",", "]")}")
-        }
+      .collect()
+      .foreach { case Row(label: Double, vector: Vector) =>
+        println(s"($label, " +
+          s"${vector.toSparse.indices.mkString("[", ",", "]")}, " +
+          s"${vector.toSparse.values.mkString("[", ",", "]")}")
+      }
 
     ss.stop()
   }

@@ -26,14 +26,14 @@ import scala.util.Random
 /**
   * Search space with discrete values
   *
-  * @param name: Name of the parameter
-  * @param values: List of all possible values
+  * @param name   : Name of the parameter
+  * @param values : List of all possible values
   */
-class DiscreteSpace[T <: AnyVal: ClassTag](
-                                 override val name: String,
-                                 var values: Array[T],
-                                 override val doc: String = "discrete param",
-                                 var seed: Int = 100) extends ParamSpace[T](name, doc) {
+class DiscreteSpace[T <: AnyVal : ClassTag](
+                                             override val name: String,
+                                             var values: Array[T],
+                                             override val doc: String = "discrete param",
+                                             var seed: Int = 100) extends ParamSpace[T](name, doc) {
 
   private val helper: String = "supported format of discrete parameter: [0.1,0.2,0.3,0.4] or [0.1:1:0.1]"
 
@@ -121,18 +121,18 @@ class DiscreteSpace[T <: AnyVal: ClassTag](
 
   def sampleOne(): T = values(rd.nextInt(numValues))
 
-  override def toString: String = s"DiscreteSpace[$name]: (${values mkString(",")})"
+  override def toString: String = s"DiscreteSpace[$name]: (${values mkString (",")})"
 
 }
 
 object DiscreteSpace {
 
-  def apply[T <: AnyVal: ClassTag](name: String, config: String): DiscreteSpace[T] = {
+  def apply[T <: AnyVal : ClassTag](name: String, config: String): DiscreteSpace[T] = {
     new DiscreteSpace[T](name, config)
   }
 
   def main(args: Array[String]): Unit = {
-    val obj = new DiscreteSpace[Int]("test", "1:10:1",seed = 10)
+    val obj = new DiscreteSpace[Int]("test", "1:10:1", seed = 10)
     println(obj.toString)
     println(obj.getValues(1))
     println(obj.sample(2).toString())

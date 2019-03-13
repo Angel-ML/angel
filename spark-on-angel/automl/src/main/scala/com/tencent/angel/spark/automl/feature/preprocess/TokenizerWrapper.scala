@@ -24,7 +24,6 @@ import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.feature.Tokenizer
 
 
-
 class TokenizerWrapper extends TransformerWrapper {
 
   override val transformer: Transformer = new Tokenizer()

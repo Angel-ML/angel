@@ -24,7 +24,7 @@ import org.apache.spark.ml.util.DefaultParamsWritable
 import org.apache.spark.sql.{DataFrame, Dataset}
 import org.apache.spark.sql.types.StructType
 
-class TPreprocess (override val uid: String)
+class TPreprocess(override val uid: String)
   extends Transformer with DefaultParamsWritable {
 
   override def transform(dataset: Dataset[_]): DataFrame = ???

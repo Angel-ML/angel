@@ -31,7 +31,7 @@ case class SquareExpIso() extends Covariance {
 
     val distMat = SquareDist(x1, x2)
 
-    val covMatrix = pow(theta,2) * exp(-0.5 * distMat/ pow(l, 2))
+    val covMatrix = pow(theta, 2) * exp(-0.5 * distMat / pow(l, 2))
 
     covMatrix
   }

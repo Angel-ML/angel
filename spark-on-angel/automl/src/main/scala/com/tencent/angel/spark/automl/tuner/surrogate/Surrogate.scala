@@ -27,6 +27,7 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 /**
   * Abstract base class for surrogate model.
+  *
   * @param numParams : Number of parameters in a configuration
   */
 abstract class Surrogate(
@@ -39,7 +40,7 @@ abstract class Surrogate(
 
   val schema: StructType = StructType(
     StructField("label", DataTypes.DoubleType, nullable = false) ::
-      StructField("features",  DataTypes.createArrayType(DataTypes.DoubleType), false) ::
+      StructField("features", DataTypes.createArrayType(DataTypes.DoubleType), false) ::
       Nil)
 
   val LOG: Log = LogFactory.getLog(classOf[Surrogate])

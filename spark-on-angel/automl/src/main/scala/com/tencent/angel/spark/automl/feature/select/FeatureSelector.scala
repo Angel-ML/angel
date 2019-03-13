@@ -24,7 +24,7 @@ import org.apache.spark.ml.util.DefaultParamsWritable
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, Dataset}
 
-class FeatureSelector (override val uid: String)
+class FeatureSelector(override val uid: String)
   extends Transformer with DefaultParamsWritable {
 
   override def transform(dataset: Dataset[_]): DataFrame = ???

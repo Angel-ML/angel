@@ -39,7 +39,7 @@ object TwoOrderCross {
     val data = spark.read.format("libsvm")
       .option("numFeatures", "123")
       .load(input)
-//      .load("data/a9a/a9a_123d_train_trans.libsvm")
+    //      .load("data/a9a/a9a_123d_train_trans.libsvm")
 
     data.persist()
 
@@ -60,11 +60,11 @@ object TwoOrderCross {
       .setInputCol("cartesian_features_1")
       .setOutputCol("filter_features_1")
 
-//    val selector_1 = new ChiSqSelector()
-//      .setNumTopFeatures(maxDim * maxDim / 100)
-//      .setFeaturesCol("cartesian_features_1")
-//      .setLabelCol("label")
-//      .setOutputCol("selected_features_1")
+    //    val selector_1 = new ChiSqSelector()
+    //      .setNumTopFeatures(maxDim * maxDim / 100)
+    //      .setFeaturesCol("cartesian_features_1")
+    //      .setLabelCol("label")
+    //      .setOutputCol("selected_features_1")
 
     val assembler1 = new VectorAssembler()
       .setInputCols(Array("features", "filter_features_1"))
@@ -78,11 +78,11 @@ object TwoOrderCross {
       .setInputCol("cartesian_features_2")
       .setOutputCol("filter_features_2")
 
-//    val selector_2 = new ChiSqSelector()
-//      .setNumTopFeatures(10 * maxDim)
-//      .setFeaturesCol("cartesian_features_2")
-//      .setLabelCol("label")
-//      .setOutputCol("selected_features_2")
+    //    val selector_2 = new ChiSqSelector()
+    //      .setNumTopFeatures(10 * maxDim)
+    //      .setFeaturesCol("cartesian_features_2")
+    //      .setLabelCol("label")
+    //      .setOutputCol("selected_features_2")
 
     val assembler_2 = new VectorAssembler()
       .setInputCols(Array("assemble_features_1", "filter_features_2"))
@@ -105,8 +105,8 @@ object TwoOrderCross {
     println(crossDF.schema)
     crossDF.show(1)
 
-//    println("non zero features in cartesian features")
-//    println(FeatureUtils.countNonZero(crossDF, "cartesian_features_1").size)
+    //    println("non zero features in cartesian features")
+    //    println(FeatureUtils.countNonZero(crossDF, "cartesian_features_1").size)
 
     // original features
     val lr_orig = new LogisticRegression()

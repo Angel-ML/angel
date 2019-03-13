@@ -44,4 +44,5 @@ object SquareDist extends UFunc {
       t2(::, *) + sum(x1.t *:* x1.t, Axis._0).t
     }
   }
+
 }

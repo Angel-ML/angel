@@ -24,7 +24,7 @@ import org.apache.spark.ml.PipelineStage
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class IncompatibleFiledExecption(msg: String) extends SparkException(msg) { }
+class IncompatibleFiledExecption(msg: String) extends SparkException(msg) {}
 
 object PipelineBuilder {
 

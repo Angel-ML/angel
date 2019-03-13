@@ -22,6 +22,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 
 abstract class DataLoader(ss: SparkSession) {
   def load(input: String, separator: String): DataFrame
+
   def load(input: String): DataFrame = load(input, " ")
 }
 
@@ -45,22 +46,22 @@ case class JSONDataLoader(ss: SparkSession) extends DataLoader(ss) {
 
 case class DocumentDataLoader(ss: SparkSession) extends DataLoader(ss) {
   override def load(input: String, separator: String): DataFrame = {
-   ss.createDataFrame(
-     ss.sparkContext.textFile(input).map(Tuple1.apply)
-   ).toDF("sentence")
+    ss.createDataFrame(
+      ss.sparkContext.textFile(input).map(Tuple1.apply)
+    ).toDF("sentence")
   }
 }
 
 case class LabeledDocumentDataLoader(ss: SparkSession) extends DataLoader(ss) {
   override def load(input: String, separator: String): DataFrame = {
     require(separator.equals(","),
-    "the label and sentence should be separated by comma")
+      "the label and sentence should be separated by comma")
     ss.createDataFrame(
       ss.sparkContext.textFile(input)
-      .map{ line =>
-        val splits = line.split(separator)
-        (splits(0), splits(1))
-      })
+        .map { line =>
+          val splits = line.split(separator)
+          (splits(0), splits(1))
+        })
       .toDF("label", "sentence")
   }
 
@@ -80,9 +81,9 @@ case class LabeledSimpleDataLoader(ss: SparkSession) extends DataLoader(ss) {
   override def load(input: String, separator: String): DataFrame = {
     ss.createDataFrame(
       ss.sparkContext.textFile(input)
-        .map{ line =>
-        val splits = line.split(separator)
-        (splits.head, splits.tail)
+        .map { line =>
+          val splits = line.split(separator)
+          (splits.head, splits.tail)
         }
     ).toDF("label", "features")
   }

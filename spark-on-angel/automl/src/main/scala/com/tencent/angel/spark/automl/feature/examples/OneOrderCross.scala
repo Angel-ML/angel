@@ -79,9 +79,9 @@ object OneOrderCross {
 
     // original features
     val lr_orig = new LogisticRegression()
-        .setFeaturesCol("features")
-        .setMaxIter(10)
-        .setRegParam(0.01)
+      .setFeaturesCol("features")
+      .setMaxIter(10)
+      .setRegParam(0.01)
     val auc_orig = lr_orig.fit(trainDF).evaluate(testDF).asInstanceOf[BinaryLogisticRegressionSummary].areaUnderROC
     println(s"original feature: auc = $auc_orig")
 

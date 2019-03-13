@@ -22,7 +22,7 @@ import java.util.concurrent.Callable
 
 import com.tencent.angel.spark.automl.tuner.config.Configuration
 
-abstract class TrailRunner(var config: Configuration) extends Callable[Double]{
+abstract class TrailRunner(var config: Configuration) extends Callable[Double] {
 
   override def call(): Double
 

@@ -54,7 +54,7 @@ object LassoSelector {
 
     println(s"nonzero items in weight vector:")
     println(lrModel.coefficients.toDense.values.zipWithIndex
-      .filter{ case (v: Double, i: Int) => math.abs(v) > 1e-10 }.take(100).mkString(","))
+      .filter { case (v: Double, i: Int) => math.abs(v) > 1e-10 }.take(100).mkString(","))
   }
 
 }

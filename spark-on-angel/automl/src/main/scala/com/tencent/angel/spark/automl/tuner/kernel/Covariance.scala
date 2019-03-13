@@ -27,6 +27,7 @@ trait Covariance {
 
   /**
     * the covariance function
+    *
     * @param x1
     * @param x2
     * @param params
@@ -38,6 +39,7 @@ trait Covariance {
 
   /**
     * the derivative of covariance function against kernel hyper-parameters
+    *
     * @param x1
     * @param x2
     * @param params

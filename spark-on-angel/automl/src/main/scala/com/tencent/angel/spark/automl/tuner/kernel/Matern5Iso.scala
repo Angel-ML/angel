@@ -27,7 +27,7 @@ import com.tencent.angel.spark.automl.tuner.math.SquareDist
   * theta^2 * (1 + sqrt(5)*r/l + 5r^2/(3l^2)) * exp(-sqrt(5)*r/l)
   * Here r is the distance |x1-x2| of two points
   * Hyper-parameter: theta is the signal variance, l is the length scale
-  */
+  **/
 case class Matern5Iso() extends Covariance {
 
   /**
@@ -52,7 +52,7 @@ case class Matern5Iso() extends Covariance {
     val r = sqrt(distMat)
 
     val vPart = (sqrt(5) * r) / l + distMat / pow(l, 2) * 5.0 / 3.0 + 1.0
-    val expPart = exp( -sqrt(5) * r / l )
+    val expPart = exp(-sqrt(5) * r / l)
     val covMatrix = pow(theta, 2) * vPart *:* expPart
     //    println(covMatrix)
     covMatrix
@@ -80,10 +80,10 @@ case class Matern5Iso() extends Covariance {
     val r = sqrt(distMat)
 
     val vPart = sqrt(5) * r / l + 5.0 / 3.0 * distMat / pow(l, 2) + 1.0
-    val expPart = exp( -sqrt(5) * r / l )
+    val expPart = exp(-sqrt(5) * r / l)
 
-    val vPartGrad = -( sqrt(5) * r / pow(l, 2) + 10.0 * distMat / (3.0 * pow(l, 3)) ) *:* expPart * pow(theta, 2)
-    val expPartGrad = vPart *:* expPart *:* ( sqrt(5) * r / pow(l, 2) ) * pow(theta, 2)
+    val vPartGrad = -(sqrt(5) * r / pow(l, 2) + 10.0 * distMat / (3.0 * pow(l, 3))) *:* expPart * pow(theta, 2)
+    val expPartGrad = vPart *:* expPart *:* (sqrt(5) * r / pow(l, 2)) * pow(theta, 2)
 
     val gradL = vPartGrad + expPartGrad
     val gradTheta = vPart *:* expPart * 2.0 * theta

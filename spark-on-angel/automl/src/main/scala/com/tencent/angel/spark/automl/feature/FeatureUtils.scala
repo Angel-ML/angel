@@ -23,8 +23,8 @@ import org.apache.spark.sql.{Dataset, Row}
 object FeatureUtils {
 
   def maxDim(dataset: Dataset[Row], col: String = "features"): Int = {
-    dataset.select(col).rdd.mapPartitions{ rows: Iterator[Row] =>
-      val dim = rows.map{ case Row(v: Vector) =>
+    dataset.select(col).rdd.mapPartitions { rows: Iterator[Row] =>
+      val dim = rows.map { case Row(v: Vector) =>
         v match {
           case sv: SparseVector => sv.indices.last
           case dv: DenseVector => dv.size
@@ -36,7 +36,7 @@ object FeatureUtils {
 
   def countNonZero(dataset: Dataset[Row], col: String = "features"): Array[Int] = {
     dataset.select(col).rdd.mapPartitions { rows: Iterator[Row] =>
-      val mergeIndices = rows.map{ case Row(v: Vector) =>
+      val mergeIndices = rows.map { case Row(v: Vector) =>
         v match {
           case sv: SparseVector =>
             sv.indices.toList

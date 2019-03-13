@@ -34,12 +34,11 @@ class Solver(
               val acqFuc: Acquisition,
               val optimizer: AcqOptimizer,
               val train: Boolean = true,
-              val grid:Boolean = false) {
+              val grid: Boolean = false) {
 
   val LOG: Log = LogFactory.getLog(classOf[Solver])
 
   val PARAM_TYPES: Array[String] = Array("discrete", "continuous")
-
 
 
   def getHistory(): (Array[Vector], Array[Double]) = (surrogate.preX.toArray, surrogate.preY.toArray)
@@ -50,7 +49,7 @@ class Solver(
     cs.addParam(param)
   }
 
-  def addParam(pType: String, vType: String, name: String, config: String, seed:Int = 100): Unit = {
+  def addParam(pType: String, vType: String, name: String, config: String, seed: Int = 100): Unit = {
     pType.toLowerCase match {
       case "discrete" =>
         vType.toLowerCase match {
@@ -73,17 +72,16 @@ class Solver(
     * Suggests configurations to evaluate.
     */
   def suggest(): Array[Configuration] = {
-    if (train){
+    if (train) {
       val acqAndConfig = optimizer.maximize(TunerParam.batchSize)
       println(s"suggest configurations:")
-      acqAndConfig.foreach{ case (acq, config) =>
+      acqAndConfig.foreach { case (acq, config) =>
         println(s"config[${config.getVector.toArray.mkString("(", ",", ")")}], " +
           s"acquisition[$acq]")
       }
       acqAndConfig.map(_._2)
-    }
-    else {
-      if(grid){
+    } else {
+      if (grid) {
         val configs: Array[Configuration] = cs.gridSample()
         configs
       }
@@ -96,8 +94,9 @@ class Solver(
 
   /**
     * Feed evaluation result to the model
-    * @param configs: More evaluated configurations
-    * @param Y: More evaluation result
+    *
+    * @param configs : More evaluated configurations
+    * @param Y       : More evaluation result
     */
   def feed(configs: Array[Configuration], Y: Array[Double]): Unit = {
     //println(s"feed ${configs.size} configurations")
@@ -139,26 +138,26 @@ object Solver {
     new Solver(cs, sur, acq, opt)
   }
 
-  def apply(cs: ConfigurationSpace,  minimize: Boolean = true,surrogate: String): Solver = {
+  def apply(cs: ConfigurationSpace, minimize: Boolean = true, surrogate: String): Solver = {
     var sur: Surrogate = new GPSurrogate(cs, minimize)
     var acq: Acquisition = new EI(sur, 0.1f)
     var opt: AcqOptimizer = new RandomSearch(acq, cs)
-    var train:Boolean = true
-    var grid:Boolean = false
-    if(surrogate=="Grid"){
-      sur= new NormalSurrogate(cs, minimize)
+    var train: Boolean = true
+    var grid: Boolean = false
+    if (surrogate == "Grid") {
+      sur = new NormalSurrogate(cs, minimize)
       acq = new EI(sur, 0.1f)
       opt = new RandomSearch(acq, cs)
       train = false
       grid = true
-    }else if(surrogate=="Random"){
+    } else if (surrogate == "Random") {
       sur = new NormalSurrogate(cs, minimize)
       acq = new EI(sur, 0.1f)
       opt = new RandomSearch(acq, cs)
       train = false
       grid = false
     }
-    new Solver(cs, sur, acq, opt,train,grid)
+    new Solver(cs, sur, acq, opt, train, grid)
   }
 
   def apply[T <: AnyVal](array: Array[ParamSpace[T]], minimize: Boolean, surrogate: String): Solver = {
@@ -167,23 +166,22 @@ object Solver {
     var sur: Surrogate = new GPSurrogate(cs, minimize)
     var acq: Acquisition = new EI(sur, 0.1f)
     var opt: AcqOptimizer = new RandomSearch(acq, cs)
-    var train:Boolean = true
-    var grid:Boolean = false
-    if(surrogate=="Grid"){
-      sur= new NormalSurrogate(cs, minimize)
+    var train: Boolean = true
+    var grid: Boolean = false
+    if (surrogate == "Grid") {
+      sur = new NormalSurrogate(cs, minimize)
       acq = new EI(sur, 0.1f)
       opt = new RandomSearch(acq, cs)
       train = false
       grid = true
-    }else if(surrogate=="Random"){
+    } else if (surrogate == "Random") {
       sur = new NormalSurrogate(cs, minimize)
       acq = new EI(sur, 0.1f)
       opt = new RandomSearch(acq, cs)
       train = false
       grid = false
     }
-    println(grid)
-    new Solver(cs, sur, acq, opt,train,grid)
+    new Solver(cs, sur, acq, opt, train, grid)
   }
 
   def apply(minimize: Boolean): Solver = {

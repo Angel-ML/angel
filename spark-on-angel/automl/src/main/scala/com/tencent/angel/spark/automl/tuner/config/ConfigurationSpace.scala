@@ -105,7 +105,7 @@ class ConfigurationSpace(
           configs += new Configuration(param2Idx, param2Doc, vec)
         }
       }
-    } while(configs.length < size && !isEmpty)
+    } while (configs.length < size && !isEmpty)
 
     configs.toArray
   }
@@ -128,14 +128,18 @@ class ConfigurationSpace(
     var tmp: ArrayBuffer[Array[Double]] = new ArrayBuffer[Array[Double]]
 
     val params = getParams()
-    params.foreach { tmp += _.getValues }
+    params.foreach {
+      tmp += _.getValues
+    }
 
     val paramsArray: Array[Array[Double]] = tmp.toArray
 
-    if (numParams == 1){
-      val paramsGrid : Array[Array[Double]] = paramsArray
+    if (numParams == 1) {
+      val paramsGrid: Array[Array[Double]] = paramsArray
       var tmp: ArrayBuffer[Vector] = new ArrayBuffer[Vector]
-      paramsGrid.foreach { tmp += Vectors.dense(_) }
+      paramsGrid.foreach {
+        tmp += Vectors.dense(_)
+      }
       val paramsVec = tmp.toArray
       paramsVec.filter(isValid).foreach { vec =>
         configs += new Configuration(param2Idx, param2Doc, vec)
@@ -143,10 +147,12 @@ class ConfigurationSpace(
       configs.toArray
     }
 
-    else if (numParams == 2){
+    else if (numParams == 2) {
       val paramsGrid: Array[Array[Double]] = cartesian(paramsArray(0), paramsArray(1))
       var tmp: ArrayBuffer[Vector] = new ArrayBuffer[Vector]
-      paramsGrid.foreach { tmp += Vectors.dense(_) }
+      paramsGrid.foreach {
+        tmp += Vectors.dense(_)
+      }
       val paramsVec: Array[Vector] = tmp.toArray
       paramsVec.filter(isValid).foreach { vec =>
         configs += new Configuration(param2Idx, param2Doc, vec)
@@ -154,7 +160,7 @@ class ConfigurationSpace(
       configs.toArray
     }
 
-    else{
+    else {
       var paramsGrid: Array[Array[Double]] = cartesian(paramsArray(0), paramsArray(1))
 
       paramsArray.foreach { a =>
@@ -164,7 +170,9 @@ class ConfigurationSpace(
       }
 
       var tmp: ArrayBuffer[Vector] = new ArrayBuffer[Vector]
-      paramsGrid.foreach{ tmp += Vectors.dense(_) }
+      paramsGrid.foreach {
+        tmp += Vectors.dense(_)
+      }
       val paramsVec: Array[Vector] = tmp.toArray
       paramsVec.filter(isValid).foreach { vec =>
         configs += new Configuration(param2Idx, param2Doc, vec)

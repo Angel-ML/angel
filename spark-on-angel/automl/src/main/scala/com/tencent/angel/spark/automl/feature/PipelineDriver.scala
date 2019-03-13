@@ -12,12 +12,12 @@ object PipelineDriver {
 
     val spark = SparkSession.builder().master("local").getOrCreate()
 
-//    val inputDF = spark.createDataFrame(Seq(
-//      (0L, "a b c d e spark", 1.0),
-//      (1L, "b d", 0.0),
-//      (2L, "spark f g h", 1.0),
-//      (3L, "hadoop mapreduce", 0.0)
-//    )).toDF("id", "text", "label")
+    //    val inputDF = spark.createDataFrame(Seq(
+    //      (0L, "a b c d e spark", 1.0),
+    //      (1L, "b d", 0.0),
+    //      (2L, "spark f g h", 1.0),
+    //      (3L, "hadoop mapreduce", 0.0)
+    //    )).toDF("id", "text", "label")
 
     val inputDF = spark.createDataFrame(Seq(
       (0, Vectors.dense(1.0, 0.1, -1.0)),

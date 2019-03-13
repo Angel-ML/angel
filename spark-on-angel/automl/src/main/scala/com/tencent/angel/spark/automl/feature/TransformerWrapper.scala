@@ -57,7 +57,7 @@ abstract class TransformerWrapper {
 
   def generateInputCols(): Unit = {
     //require(ancestorCols.contains(requiredInputCols), "Missing required input cols.")
-//    require(requiredInputCols.forall(ancestorCols.contains), "Missing required input cols.")
+    //    require(requiredInputCols.forall(ancestorCols.contains), "Missing required input cols.")
     // if transformer has required input cols, feed required input cols
     // if transformer needs all input cols, feed all input cols
     // if transformer has no required input cols, feed the output cols of the parent transformer

@@ -23,7 +23,7 @@ import com.tencent.angel.spark.automl.feature.TransformerWrapper
 
 import org.apache.spark.ml.feature.Bucketizer
 
-class BuckerizerWrapper extends TransformerWrapper{
+class BuckerizerWrapper extends TransformerWrapper {
 
   override val transformer = new Bucketizer()
   override var parent: TransformerWrapper = _

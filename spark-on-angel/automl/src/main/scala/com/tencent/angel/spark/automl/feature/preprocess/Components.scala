@@ -27,7 +27,7 @@ import scala.collection.mutable.ArrayBuffer
 object Components {
 
   def sample(data: DataFrame,
-                 fraction: Double): DataFrame = {
+             fraction: Double): DataFrame = {
     data.sample(false, fraction)
   }
 

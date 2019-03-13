@@ -22,7 +22,7 @@ import com.tencent.angel.spark.automl.feature.InToOutRelation.{InToOutRelation, 
 import com.tencent.angel.spark.automl.feature.TransformerWrapper
 import org.apache.spark.ml.feature.{StringIndexer, Tokenizer}
 
-class StringIndexerWrapper extends TransformerWrapper{
+class StringIndexerWrapper extends TransformerWrapper {
 
   override val transformer = new StringIndexer()
   override var parent: TransformerWrapper = _

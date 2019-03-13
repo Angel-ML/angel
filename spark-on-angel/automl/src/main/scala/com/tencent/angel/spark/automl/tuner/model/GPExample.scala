@@ -25,10 +25,10 @@ object GPExample {
 
   def main(args: Array[String]): Unit = {
 
-    val X = DenseMatrix((1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0)).t
-    val y = 2.0 * DenseVector(1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0)
-    val z = DenseMatrix((2.5,4.5,6.5,8.5,10.0,12.0)).t
-    val truePredZ = 2.0 * DenseVector(2.5,4.5,6.5,8.5,10.0,12.0)
+    val X = DenseMatrix((1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0)).t
+    val y = 2.0 * DenseVector(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0)
+    val z = DenseMatrix((2.5, 4.5, 6.5, 8.5, 10.0, 12.0)).t
+    val truePredZ = 2.0 * DenseVector(2.5, 4.5, 6.5, 8.5, 10.0, 12.0)
 
     //  //2.Test no_linear(y=cos(x)+1)
     //  val X = DenseMatrix((1.0,2.0, 3.0,4.0,5.0,6.0,7.0,8.0,9.0)).t
@@ -44,7 +44,7 @@ object GPExample {
 
     //val covFunc = SquareExpIso()
     val covFunc = Matern5Iso()
-    val initCovParams = DenseVector(1.0,1.0)
+    val initCovParams = DenseVector(1.0, 1.0)
     val initNoiseStdDev = 0.01
 
     val gpModel = GPModel(covFunc, initCovParams, initNoiseStdDev)

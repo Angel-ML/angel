@@ -24,22 +24,22 @@ class StandardScalerWrapper extends TransformerWrapper {
     this
   }
 
-//  def fit(df: DataFrame): Transformer = {
-//    estimator.fit(df)
-//  }
-//
-//  def transform(dataset: Dataset[_]): DataFrame = {
-//    val df = dataset.toDF()
-//
-//    val scaler = new StandardScaler()
-//      .setInputCol("features")
-//      .setOutputCol("scaledFeatures")
-//      .setWithStd(true)
-//      .setWithMean(true)
-//    val scalerModel = scaler.fit(df)
-//
-//    val scaledDf = scalerModel.transform(df)
-//
-//    scaledDf.drop("features").withColumnRenamed("scaledFeatures", "features")
-//  }
+  //  def fit(df: DataFrame): Transformer = {
+  //    estimator.fit(df)
+  //  }
+  //
+  //  def transform(dataset: Dataset[_]): DataFrame = {
+  //    val df = dataset.toDF()
+  //
+  //    val scaler = new StandardScaler()
+  //      .setInputCol("features")
+  //      .setOutputCol("scaledFeatures")
+  //      .setWithStd(true)
+  //      .setWithMean(true)
+  //    val scalerModel = scaler.fit(df)
+  //
+  //    val scaledDf = scalerModel.transform(df)
+  //
+  //    scaledDf.drop("features").withColumnRenamed("scaledFeatures", "features")
+  //  }
 }
