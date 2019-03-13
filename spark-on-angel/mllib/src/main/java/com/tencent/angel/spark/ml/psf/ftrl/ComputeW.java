@@ -32,8 +32,8 @@ public class ComputeW extends MultiRowUpdateFunc {
     super(matrixId, rowIds, values);
   }
 
-  public ComputeW(int matrixId, double alpha, double beta, double lambda1, double lambda2) {
-    this(matrixId, new int[]{0, 1, 2}, new double[][]{{alpha, beta, lambda1, lambda2}});
+  public ComputeW(int matrixId, double alpha, double beta, double lambda1, double lambda2, double offset) {
+    this(matrixId, new int[]{0, 1, 2}, new double[][]{{alpha, beta, lambda1, lambda2}, {offset}});
   }
 
   public ComputeW() {}
@@ -49,18 +49,21 @@ public class ComputeW extends MultiRowUpdateFunc {
       double lambda1 = values[0][2];
       double lambda2 = values[0][3];
 
-      ServerPartition part = psContext.getMatrixStorageManager().getPart(param.getPartKey());
-      Vector z = part.getRow(rowIds[0]).getSplit();
-      Vector n = part.getRow(rowIds[1]).getSplit();
-      Vector w = Ufuncs.ftrlthreshold(z, n, alpha, beta, lambda1, lambda2);
-      part.getRow(rowIds[2]).setSplit(w.filter(1e-11));
+      int offset = (int) values[1][0];
 
-      // calculate bias
-      if (param.getPartKey().getStartCol() <= 0 && param.getPartKey().getEndCol() > 0) {
-        double zVal = VectorUtils.getDouble(z, 0);
-        double nVal = VectorUtils.getDouble(n, 0);
-        VectorUtils.setFloat(w, 0, (float) (-1.0 * alpha * zVal / (beta + Math.sqrt(nVal))));
+      ServerPartition part = psContext.getMatrixStorageManager().getPart(param.getPartKey());
+      for (int i = 0; i < offset; i++) {
+        Vector z = part.getRow(rowIds[0]*offset + i).getSplit();
+        Vector n = part.getRow(rowIds[1]*offset + i).getSplit();
+        Vector w = Ufuncs.ftrlthreshold(z, n, alpha, beta, lambda1, lambda2);
+        part.getRow(rowIds[2]*offset + i).setSplit(w.ifilter(1e-11));
       }
+//      // calculate bias
+//      if (param.getPartKey().getStartCol() <= 0 && param.getPartKey().getEndCol() > 0) {
+//        double zVal = VectorUtils.getDouble(z, 0);
+//        double nVal = VectorUtils.getDouble(n, 0);
+//        VectorUtils.setFloat(w, 0, (float) (-1.0 * alpha * zVal / (beta + Math.sqrt(nVal))));
+//      }
     }
   }
 

@@ -25,18 +25,11 @@ import com.tencent.angel.ml.math2.storage.VectorStorage;
 import com.tencent.angel.ml.math2.ufuncs.executor.BinaryExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.DotExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.UnaryExecutor;
-import com.tencent.angel.ml.math2.ufuncs.expression.Add;
-import com.tencent.angel.ml.math2.ufuncs.expression.Axpy;
-import com.tencent.angel.ml.math2.ufuncs.expression.Div;
-import com.tencent.angel.ml.math2.ufuncs.expression.Mul;
-import com.tencent.angel.ml.math2.ufuncs.expression.SAdd;
-import com.tencent.angel.ml.math2.ufuncs.expression.SDiv;
-import com.tencent.angel.ml.math2.ufuncs.expression.SMul;
-import com.tencent.angel.ml.math2.ufuncs.expression.SSub;
-import com.tencent.angel.ml.math2.ufuncs.expression.Sub;
+import com.tencent.angel.ml.math2.ufuncs.expression.*;
 import com.tencent.angel.ml.matrix.RowType;
-import java.io.Serializable;
 import org.apache.commons.lang.NotImplementedException;
+
+import java.io.Serializable;
 
 public abstract class Vector extends MathObject implements Serializable {
 
@@ -181,6 +174,8 @@ public abstract class Vector extends MathObject implements Serializable {
   }
 
   public abstract Vector copy();
+
+  public abstract Vector emptyLike();
 
   public abstract long dim();
 }

@@ -18,12 +18,13 @@
 
 package com.tencent.angel.ml.math2.vector;
 
-import static java.lang.Math.sqrt;
-
 import com.tencent.angel.ml.math2.utils.ArrayCopy;
 import com.tencent.angel.ml.matrix.RowType;
-import java.util.Arrays;
 import org.apache.commons.lang.NotImplementedException;
+
+import java.util.Arrays;
+
+import static java.lang.Math.sqrt;
 
 public class IntDummyVector extends Vector implements IntKeyVector, SimpleVector {
 
@@ -153,6 +154,11 @@ public class IntDummyVector extends Vector implements IntKeyVector, SimpleVector
   @Override
   public IntDummyVector copy() {
     return new IntDummyVector(matrixId, rowId, clock, dim, ArrayCopy.copy(indices));
+  }
+
+  @Override
+  public Vector emptyLike() {
+    throw new UnsupportedOperationException("this operation is not support!");
   }
 
   @Override

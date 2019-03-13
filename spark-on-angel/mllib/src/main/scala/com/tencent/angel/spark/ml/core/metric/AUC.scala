@@ -61,7 +61,7 @@ class AUC extends Metric {
 
     // calculate the summation of ranks for positive samples
     val sumRanks = sorted.zipWithIndex().filter(f => f._1._1.toInt == 1).map(f => f._2 + 1).reduce(_ + _)
-    val auc = (sumRanks - (numPositive * (numPositive + 1.0)) / 2.0) / (numPositive * numNegetive)
+    val auc = sumRanks * 1.0 / numPositive / numNegetive - (numPositive + 1.0) / 2.0 / numNegetive
 
     sorted.unpersist()
     auc

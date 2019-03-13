@@ -93,7 +93,7 @@ public class RangePartitioner implements Partitioner {
     // if col == -1, we use the start/end index to calculate range,
     // we use double to store the range value since two long minus might exceed the
     // range of long.
-    if (col == -1)
+    if (col <= 0)
       range = ((double) end - (double) start);
 
     long partSize = DEFAULT_PARTITION_SIZE;
@@ -110,7 +110,7 @@ public class RangePartitioner implements Partitioner {
     }
 
     if (blockCol < 0)
-      blockCol = Math.min(Math.max(100, col / serverNum),
+      blockCol = Math.min(Math.max(100, (long)(range / serverNum)),
               Math.max(partSize / blockRow, (long) (row * (range / maxPartNum / blockRow))));
 
     LOG.info("blockRow = " + blockRow + ", blockCol=" + blockCol);

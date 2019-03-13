@@ -43,14 +43,14 @@ object FTRLExample {
     PSContext.getOrCreate(sc)
 
     val data = sc.textFile(input)
-      .map(s => (DataLoader.parseLongFloat(s, dim), DataLoader.parseLabel(s, false)))
+      .map(s => (DataLoader.parseLongDummy(s, dim), DataLoader.parseLabel(s, false)))
       .map {
         f =>
           f._1.setY(f._2)
           f._1
       }
 
-      data.persist(StorageLevel.DISK_ONLY)
+    data.persist(StorageLevel.DISK_ONLY)
     val size = data.count()
 
     val max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.max).max()
