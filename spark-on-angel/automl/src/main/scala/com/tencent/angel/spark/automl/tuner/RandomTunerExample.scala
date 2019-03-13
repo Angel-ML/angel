@@ -36,7 +36,7 @@ object RandomTunerExample extends App {
     cs.addParam(param2)
     cs.addParam(param3)
     cs.addParam(param4)
-    val solver: Solver = Solver(cs, surrogate = "Random")
+    val solver: Solver = Solver(Array(param1, param2, param3, param4), true, surrogate = "Random")
     val trail: Trail = new TestTrail()
     (0 until 25).foreach { iter =>
       println(s"------iteration $iter starts------")

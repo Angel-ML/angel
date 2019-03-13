@@ -81,14 +81,7 @@ class Solver(
       }
       acqAndConfig.map(_._2)
     } else {
-      if (grid) {
-        val configs: Array[Configuration] = cs.gridSample()
-        configs
-      }
-      else {
-        val configs: Array[Configuration] = cs.sample(TunerParam.sampleSize)
-        configs
-      }
+      if (grid) cs.gridSample() else cs.sample(TunerParam.sampleSize)
     }
   }
 

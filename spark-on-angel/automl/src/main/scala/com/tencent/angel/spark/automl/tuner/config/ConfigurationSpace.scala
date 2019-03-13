@@ -145,9 +145,7 @@ class ConfigurationSpace(
         configs += new Configuration(param2Idx, param2Doc, vec)
       }
       configs.toArray
-    }
-
-    else if (numParams == 2) {
+    } else if (numParams == 2) {
       val paramsGrid: Array[Array[Double]] = cartesian(paramsArray(0), paramsArray(1))
       var tmp: ArrayBuffer[Vector] = new ArrayBuffer[Vector]
       paramsGrid.foreach {
@@ -158,9 +156,7 @@ class ConfigurationSpace(
         configs += new Configuration(param2Idx, param2Doc, vec)
       }
       configs.toArray
-    }
-
-    else {
+    } else {
       var paramsGrid: Array[Array[Double]] = cartesian(paramsArray(0), paramsArray(1))
 
       paramsArray.foreach { a =>
