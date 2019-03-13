@@ -15,7 +15,7 @@
  *
  */
 
-package com.tencent.angel.spark.ml.tree.tree.param;
+package com.tencent.angel.spark.ml.tree.param;
 
 import com.tencent.angel.spark.ml.tree.objective.loss.MultiStrategy;
 import java.util.Arrays;

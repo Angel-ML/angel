@@ -15,9 +15,9 @@
  *
  */
 
-package com.tencent.angel.spark.ml.tree.tree.basic;
+package com.tencent.angel.spark.ml.tree.basic;
 
-import com.tencent.angel.spark.ml.tree.tree.param.TreeParam;
+import com.tencent.angel.spark.ml.tree.param.TreeParam;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.TreeMap;

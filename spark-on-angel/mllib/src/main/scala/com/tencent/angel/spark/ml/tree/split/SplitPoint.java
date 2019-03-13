@@ -15,7 +15,7 @@
  *
  */
 
-package com.tencent.angel.spark.ml.tree.tree.split;
+package com.tencent.angel.spark.ml.tree.split;
 
 import org.apache.spark.ml.linalg.Vector;
 
