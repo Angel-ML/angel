@@ -76,6 +76,7 @@ object GBDTTrainer {
     param.evalMetrics = params.getOrElse(MLConf.ML_GBDT_EVAL_METRIC, "error").split(",").map(_.trim).filter(_.nonEmpty)
     SharedConf.get().set(MLConf.ML_GBDT_LOSS_FUNCTION, param.lossFunc)
     param.multiStrategy = params.getOrElse("ml.gbdt.multi.class.strategy", "one-tree")
+    if (param.isMultiClassMultiTree) param.lossFunc = "binary:logistic"
 
     // major algo conf
     param.featSampleRatio = params.getOrElse(MLConf.ML_GBDT_FEATURE_SAMPLE_RATIO, "1.0").toFloat
@@ -241,8 +242,9 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
       Array.copy(partLabel, 0, labels, offset, partLabel.length)
       offset += partLabel.length
     })
-    Instance.ensureLabel(labels, param.numClass)
+    val changeLabel = Instance.ensureLabel(labels, param.numClass)
     val bcLabels = sc.broadcast(labels)
+    val bcChangeLabel = sc.broadcast(changeLabel)
     println(s"Collect labels cost ${System.currentTimeMillis() - labelStart} ms")
 
     // IdenticalPartitioner for shuffle operation
@@ -375,7 +377,7 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
         val valid = validIter.toArray
         val validData = valid.map(_.feature)
         val validLabels = valid.map(_.label.toFloat)
-        Instance.ensureLabel(validLabels, bcParam.value.numClass)
+        if (bcChangeLabel.value) Instance.changeLabel(validLabels, bcParam.value.numClass)
         val workerId = TaskContext.getPartitionId
         val worker = new FPGBDTTrainer(workerId, bcParam.value,
           featureInfoOfGroup(bcFeatureInfo.value, workerId, bcGroupIdToFid.value(workerId)),
