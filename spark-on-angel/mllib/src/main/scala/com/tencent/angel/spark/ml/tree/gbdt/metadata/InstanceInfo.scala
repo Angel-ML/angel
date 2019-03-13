@@ -21,8 +21,8 @@ package com.tencent.angel.spark.ml.tree.gbdt.metadata
 import com.tencent.angel.spark.ml.tree.gbdt.dataset.Dataset
 import com.tencent.angel.spark.ml.tree.gbdt.histogram.{BinaryGradPair, GradPair, MultiGradPair}
 import com.tencent.angel.spark.ml.tree.objective.loss.{BinaryLoss, Loss, MultiLoss, MultiStrategy}
-import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam
-import com.tencent.angel.spark.ml.tree.tree.split.SplitEntry
+import com.tencent.angel.spark.ml.tree.param.GBDTParam
+import com.tencent.angel.spark.ml.tree.split.SplitEntry
 import com.tencent.angel.spark.ml.tree.util.{ConcurrentUtil, Maths, RangeBitSet}
 import java.util.concurrent.ExecutorService
 
@@ -123,8 +123,8 @@ case class InstanceInfo(param: GBDTParam, predictions: Array[Float], weights: Ar
       var sumHess = 0.0
       for (insId <- start until end) {
         val predInd = numClass * insId + curClass
-        val grad = binaryLoss.firOrderGrad(predictions(predInd), if (labels(insId) == curClass) labels(insId) else 0)
-        val hess = binaryLoss.secOrderGrad(predictions(predInd), if (labels(insId) == curClass) labels(insId) else 0, grad)
+        val grad = binaryLoss.firOrderGrad(predictions(predInd), if (labels(insId) == curClass) 1 else 0)
+        val hess = binaryLoss.secOrderGrad(predictions(predInd), if (labels(insId) == curClass) 1 else 0, grad)
         gradients(insId) = grad
         hessians(insId) = hess
         sumGrad += grad

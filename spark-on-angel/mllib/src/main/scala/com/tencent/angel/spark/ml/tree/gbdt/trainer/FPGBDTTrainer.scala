@@ -30,8 +30,8 @@ import com.tencent.angel.spark.ml.tree.objective.ObjectiveFactory
 import com.tencent.angel.spark.ml.tree.objective.loss.{Loss, MultiStrategy}
 import com.tencent.angel.spark.ml.tree.objective.metric.EvalMetric
 import com.tencent.angel.spark.ml.tree.objective.metric.EvalMetric.Kind
-import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam
-import com.tencent.angel.spark.ml.tree.tree.split.{SplitEntry, SplitPoint}
+import com.tencent.angel.spark.ml.tree.param.GBDTParam
+import com.tencent.angel.spark.ml.tree.split.{SplitEntry, SplitPoint}
 import com.tencent.angel.spark.ml.tree.util.{Maths, RangeBitSet}
 import org.apache.spark.ml.linalg.Vector
 
@@ -218,16 +218,19 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
         cur += 1
       }
     }
-    timing {
-      if (toBuild.head == 0) {
-        histManager.buildHistForRoot(trainData, instanceInfo, threadPool)
-      } else {
-        histManager.buildHistForNodes(toBuild, trainData, instanceInfo, toSubtract, threadPool)
-      }
-    } { t => buildHistTime(nids.min) = t }
+    if (toBuild.nonEmpty) {
+      timing {
+        if (toBuild.head == 0) {
+          histManager.buildHistForRoot(trainData, instanceInfo, threadPool)
+        } else {
+          histManager.buildHistForNodes(toBuild, trainData, instanceInfo, toSubtract, threadPool)
+        }
+      } { t => buildHistTime(nids.min) = t }
+    }
     println(s"Build histograms cost ${System.currentTimeMillis() - buildStart} ms")
 
     val findStart = System.currentTimeMillis()
+
     val res = (nids, canSplits).zipped.map {
       case (nid, true) =>
         val hist = histManager.getNodeHist(nid)
@@ -275,7 +278,7 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
 
   def canSplitNode(nid: Int): Boolean = {
     if (instanceInfo.getNodeSize(nid) > param.minNodeInstance) {
-      if (param.numClass == 2) {
+      if (param.numClass == 2 || param.isMultiClassMultiTree) {
         val sumGradPair = histManager.getGradPair(nid).asInstanceOf[BinaryGradPair]
         param.satisfyWeight(sumGradPair.getGrad, sumGradPair.getHess)
       } else {
@@ -331,8 +334,8 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
         validPreds(i) += node.getWeight * param.learningRate
       } else {
         if (param.isMultiClassMultiTree) {
-          val curClass = (forest.size - 1) % param.numClass
-          validPreds(i * param.numClass + curClass) += node.getWeight * param.learningRate
+          val k = (forest.size - 1) % param.numClass
+          validPreds(i * param.numClass + k) += node.getWeight * param.learningRate
         } else {
           val weights = node.getWeights
           for (k <- 0 until param.numClass)
