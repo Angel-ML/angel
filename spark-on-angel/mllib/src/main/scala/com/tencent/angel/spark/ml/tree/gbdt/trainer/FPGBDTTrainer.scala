@@ -361,10 +361,14 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
       (kind, trainSum, trainMetric, validSum, validMetric)
     })
 
-    val evalTrainMsg = metrics.map(metric => s"${metric._1}[${metric._3}]").mkString(", ")
-    println(s"Evaluation on train data after ${forest.size} tree(s): $evalTrainMsg")
-    val evalValidMsg = metrics.map(metric => s"${metric._1}[${metric._5}]").mkString(", ")
-    println(s"Evaluation on valid data after ${forest.size} tree(s): $evalValidMsg")
+    if (! (param.isMultiClassMultiTree && forest.size % param.numClass != 0) ) {
+      val round = if (param.isMultiClassMultiTree) forest.size / param.numClass else forest.size
+      val evalTrainMsg = metrics.map(metric => s"${metric._1}[${metric._3}]").mkString(", ")
+      println(s"Evaluation on train data after ${round} tree(s): $evalTrainMsg")
+      val evalValidMsg = metrics.map(metric => s"${metric._1}[${metric._5}]").mkString(", ")
+      println(s"Evaluation on valid data after ${round} tree(s): $evalValidMsg")
+    }
+
     metrics.map(metric => (metric._1, metric._2, metric._4))
   }
 

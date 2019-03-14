@@ -31,7 +31,7 @@ import com.tencent.angel.spark.ml.tree.gbdt.tree.{GBTSplit, GBTTree}
 import com.tencent.angel.spark.ml.tree.objective.ObjectiveFactory
 import com.tencent.angel.spark.ml.tree.objective.metric.EvalMetric.Kind
 import com.tencent.angel.spark.ml.tree.sketch.HeapQuantileSketch
-import com.tencent.angel.spark.ml.tree.util.{DataLoader, Maths}
+import com.tencent.angel.spark.ml.tree.util.{DataLoader, LogHelper, Maths}
 import com.tencent.angel.spark.ml.util.SparkUtils
 import org.apache.hadoop.fs.Path
 import org.apache.spark.broadcast.Broadcast
@@ -412,8 +412,10 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
     val evalMetrics = ObjectiveFactory.getEvalMetricsOrDefault(param.evalMetrics, loss)
     val multiStrategy = ObjectiveFactory.getMultiStrategy(param.multiStrategy)
 
+    LogHelper.setLogLevel("info")
+
     for (treeId <- 0 until param.numTree) {
-      println(s"Start to train tree ${treeId + 1}")
+      LogHelper.print(s"Start to train tree ${treeId + 1}")
 
       // 1. create new tree
       val createStart = System.currentTimeMillis()
@@ -421,7 +423,7 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
       val bestSplits = new Array[GBTSplit](Maths.pow(2, param.maxDepth) - 1)
       val bestOwnerIds = new Array[Int](Maths.pow(2, param.maxDepth) - 1)
       val bestAliasFids = new Array[Int](Maths.pow(2, param.maxDepth) - 1)
-      println(s"Tree[${treeId + 1}] Create new tree cost ${System.currentTimeMillis() - createStart} ms")
+      LogHelper.print(s"Tree[${treeId + 1}] Create new tree cost ${System.currentTimeMillis() - createStart} ms")
 
       // 2. iteratively build one tree
       var hasActive = true
@@ -451,7 +453,7 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
         val validSplits = gatheredSplits.filter(_._4.isValid(param.minSplitGain))
         val leaves = gatheredSplits.filter(!_._4.isValid(param.minSplitGain)).map(_._1)
         if (gatheredSplits.nonEmpty) {
-          println(s"Build histograms and find best splits cost " +
+          LogHelper.print(s"Build histograms and find best splits cost " +
             s"${System.currentTimeMillis() - findStart} ms, " +
             s"${validSplits.length} node(s) to split")
           val resultStart = System.currentTimeMillis()
@@ -462,12 +464,12 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
             worker.getSplitResults(bcValidSplits.value).iterator
           }).collect()
           val bcSplitResults = sc.broadcast(splitResults)
-          println(s"Get split results cost ${System.currentTimeMillis() - resultStart} ms")
+          LogHelper.print(s"Get split results cost ${System.currentTimeMillis() - resultStart} ms")
           // 2.3. split nodes
           val splitStart = System.currentTimeMillis()
           hasActive = workers.map(_.splitNodes(bcSplitResults.value)).collect()(0)
           bcSplitResults.destroy()
-          println(s"Split nodes cost ${System.currentTimeMillis() - splitStart} ms")
+          LogHelper.print(s"Split nodes cost ${System.currentTimeMillis() - splitStart} ms")
         } else {
           // no active nodes
           hasActive = false
@@ -487,26 +489,27 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
           trainMetrics(index) += train
           validMetrics(index) += valid
       })
-      val evalTrainMsg = (evalMetrics, trainMetrics).zipped.map {
-        case (evalMetric, trainSum) => evalMetric.getKind match {
-          case Kind.AUC => s"${evalMetric.getKind}[${evalMetric.avg(trainSum, workers.count.toInt)}]"
-          case _ => s"${evalMetric.getKind}[${evalMetric.avg(trainSum, numTrain)}]"
-        }
-      }.mkString(", ")
-      println(s"Evaluation on train data after ${treeId + 1} tree(s): $evalTrainMsg")
-      val evalValidMsg = (evalMetrics, validMetrics).zipped.map {
-        case (evalMetric, validSum) => evalMetric.getKind match {
-          case Kind.AUC => s"${evalMetric.getKind}[${evalMetric.avg(validSum, workers.count.toInt)}]"
-          case _ => s"${evalMetric.getKind}[${evalMetric.avg(validSum, numValid)}]"
-        }
-      }.mkString(", ")
-      println(s"Evaluation on valid data after ${treeId + 1} tree(s): $evalValidMsg")
-      println(s"Tree[${treeId + 1}] Finish tree cost ${System.currentTimeMillis() - finishStart} ms")
-
-      val currentTime = System.currentTimeMillis()
-      println(s"Train tree cost ${currentTime - createStart} ms, " +
-        s"${treeId + 1} tree(s) done, ${currentTime - trainStart} ms elapsed")
-
+      if (! (param.isMultiClassMultiTree && (treeId + 1) % param.numClass != 0) ) {
+        val evalTrainMsg = (evalMetrics, trainMetrics).zipped.map {
+          case (evalMetric, trainSum) => evalMetric.getKind match {
+            case Kind.AUC => s"${evalMetric.getKind}[${evalMetric.avg(trainSum, workers.count.toInt)}]"
+            case _ => s"${evalMetric.getKind}[${evalMetric.avg(trainSum, numTrain)}]"
+          }
+        }.mkString(", ")
+        val round = if (param.isMultiClassMultiTree) (treeId + 1) / param.numClass else (treeId + 1)
+        println(s"Evaluation on train data after ${round} tree(s): $evalTrainMsg")
+        val evalValidMsg = (evalMetrics, validMetrics).zipped.map {
+          case (evalMetric, validSum) => evalMetric.getKind match {
+            case Kind.AUC => s"${evalMetric.getKind}[${evalMetric.avg(validSum, workers.count.toInt)}]"
+            case _ => s"${evalMetric.getKind}[${evalMetric.avg(validSum, numValid)}]"
+          }
+        }.mkString(", ")
+        println(s"Evaluation on valid data after ${round} tree(s): $evalValidMsg")
+        LogHelper.print(s"Tree[${round}] Finish tree cost ${System.currentTimeMillis() - finishStart} ms")
+        val currentTime = System.currentTimeMillis()
+        println(s"Train tree cost ${currentTime - createStart} ms, " +
+          s"${round} tree(s) done, ${currentTime - trainStart} ms elapsed")
+      }
       //      workers.map(_.reportTime()).collect().zipWithIndex.foreach {
       //        case (str, id) =>
       //          println(s"========Time cost summation of worker[$id]========")
