@@ -20,7 +20,6 @@ object FTRLExample {
     val conf = new SparkConf()
 
     val sc = new SparkContext(conf)
-    sc.setLogLevel("ERROR")
     PSContext.getOrCreate(sc)
   }
 
