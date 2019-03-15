@@ -21,28 +21,34 @@ package com.tencent.angel.spark.ml.util
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage
 import com.tencent.angel.ml.math2.vector._
 
-import scala.collection.mutable.ArrayBuffer
-import org.apache.spark.ml.linalg.{Vector, Vectors}
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.types.{StringType, StructField, StructType}
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 object DataLoader {
 
-  def parseIntDouble(text: String, dim: Int): LabeledData = {
+  def processLabel(text: String, hasLabel: Boolean, isTraining: Boolean): (Double, String, Array[String]) = {
+
+    val splits = text.trim.split(" ")
+
+    if (splits.size < 1) {
+      (Double.NaN, "", null)
+    } else {
+      if (hasLabel && isTraining) {
+        val label = splits(0).toDouble
+        (label, "", splits.tail)
+      } else if (hasLabel && !isTraining) {
+        val attached = splits(0).trim
+        (Double.NaN, attached, splits.tail)
+      } else {
+        (Double.NaN, "", splits)
+      }
+    }
+  }
+
+  def parseIntDouble(text: String, dim: Int, isTraining: Boolean = true, hasLabel: Boolean = true): LabeledData = {
     if (null == text) return null
 
-    var splits = text.trim.split(" ")
-
-    if (splits.length < 1) return null
-
-    var y = splits(0).toDouble
-    if (y == 0.0) y = -1.0
-
-    splits = splits.tail
+    val (y, attached, splits) = processLabel(text, hasLabel, isTraining)
     val len = splits.length
 
     val keys = new Array[Int](len)
@@ -55,19 +61,13 @@ object DataLoader {
       vals(indx2) = kv(1).toDouble
     }
     val x = VFactory.sparseDoubleVector(dim, keys, vals)
-    new LabeledData(x, y)
+    new LabeledData(x, y, attached)
   }
 
-  def parseLongFloat(text: String, dim: Long): LabeledData = {
+  def parseLongFloat(text: String, dim: Long, isTraining: Boolean = true, hasLabel: Boolean = true): LabeledData = {
     if (null == text) return null
-    var splits = text.trim.split(" ")
 
-    if (splits.length < 1) return null
-
-    var y = splits(0).toDouble
-    if (y == 0.0) y = -1.0
-
-    splits = splits.tail
+    val (y, attached, splits) = processLabel(text, hasLabel, isTraining)
     val len = splits.length
 
     val keys = new Array[Long](len)
@@ -80,63 +80,46 @@ object DataLoader {
       vals(indx2) = kv(1).toFloat
     }
     val x = VFactory.sparseLongKeyFloatVector(dim, keys, vals)
-    new LabeledData(x, y)
+    new LabeledData(x, y, attached)
   }
 
-  def parseLongDummy(text: String, dim: Long): LabeledData = {
+  def parseLongDummy(text: String, dim: Long, isTraining: Boolean = true, hasLabel: Boolean = true): LabeledData = {
     if (null == text) return null
-    var splits = text.trim.split(" ")
-    if (splits.length < 1) return null
-    var y = splits(0).toDouble
-    if (y == 0.0) y = -1.0
-
-    splits = splits.tail
+    val (y, attached, splits) = processLabel(text, hasLabel, isTraining)
     val len = splits.length
     val keys = new Array[Long](len)
     val vals = new Array[Float](len)
     java.util.Arrays.fill(vals, 1.0F)
 
-    splits.zipWithIndex.foreach{ case (value: String, indx2: Int) =>
+    splits.zipWithIndex.foreach { case (value: String, indx2: Int) =>
       keys(indx2) = value.toLong
     }
 
-//    val x = VFactory.longDummyVector(dim, keys)
+    //    val x = VFactory.longDummyVector(dim, keys)
     val x = VFactory.sparseLongKeyFloatVector(dim, keys, vals)
-    new LabeledData(x, y)
+    new LabeledData(x, y, attached)
   }
 
-  def parseIntDummy(text: String, dim: Int): LabeledData = {
+  def parseIntDummy(text: String, dim: Int, isTraining: Boolean = true, hasLabel: Boolean = true): LabeledData = {
     if (null == text) return null
-    var splits = text.trim.split(" ")
-    if (splits.length < 1) return null
-    var y = splits(0).toDouble
-    if (y == 0.0) y = -1.0
-
-    splits = splits.tail
+    val (y, attached, splits) = processLabel(text, hasLabel, isTraining)
     val len = splits.length
     val keys = new Array[Int](len)
     val vals = new Array[Float](len)
     java.util.Arrays.fill(vals, 1.0F)
 
-    splits.zipWithIndex.foreach{ case (value: String, indx2: Int) =>
+    splits.zipWithIndex.foreach { case (value: String, indx2: Int) =>
       keys(indx2) = value.toInt
     }
 
     val x = VFactory.sparseFloatVector(dim, keys, vals)
-    new LabeledData(x, y)
+    new LabeledData(x, y, attached)
   }
 
-  def parseLongDouble(text: String, dim: Long): LabeledData = {
+  def parseLongDouble(text: String, dim: Long, isTraining: Boolean = true, hasLabel: Boolean = true): LabeledData = {
     if (null == text) return null
 
-    var splits = text.trim.split(" ")
-
-    if (splits.length < 1) return null
-
-    var y = splits(0).toDouble
-    if (y == 0.0) y = -1.0
-
-    splits = splits.tail
+    val (y, attached, splits) = processLabel(text, hasLabel, isTraining)
     val len = splits.length
 
     val keys = new Array[Long](len)
@@ -149,20 +132,13 @@ object DataLoader {
       vals(indx2) = kv(1).toDouble
     }
     val x = VFactory.sparseLongKeyDoubleVector(dim, keys, vals)
-    new LabeledData(x, y)
+    new LabeledData(x, y, attached)
   }
 
-  def parseIntFloat(text: String, dim: Int): LabeledData = {
+  def parseIntFloat(text: String, dim: Int, isTraining: Boolean = true, hasLabel: Boolean = true): LabeledData = {
     if (null == text) return null
 
-    var splits = text.trim.split(" ")
-
-    if (splits.length < 1) return null
-
-    var y = splits(0).toDouble
-    if (y == 0.0) y = -1.0
-
-    splits = splits.tail
+    val (y, attached, splits) = processLabel(text, hasLabel, isTraining)
     val len = splits.length
 
     val keys: Array[Int] = new Array[Int](len)
@@ -175,7 +151,7 @@ object DataLoader {
       vals(indx2) = kv(1).toFloat
     }
     val x = VFactory.sparseFloatVector(dim, keys, vals)
-    new LabeledData(x, y)
+    new LabeledData(x, y, attached)
   }
 
   def parseLabel(text: String, negLabel: Boolean): Double = {
