@@ -35,7 +35,7 @@ class Cartesian(override val uid: String)
   override protected def outputDataType: DataType = new VectorUDT()
 }
 
-object Normalizer extends DefaultParamsReadable[Cartesian] {
+object Cartesian extends DefaultParamsReadable[Cartesian] {
 
   @Since("1.6.0")
   override def load(path: String): Cartesian = super.load(path)

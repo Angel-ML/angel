@@ -25,24 +25,23 @@ import org.apache.spark.ml.util.Identifiable
 import org.apache.spark.ml.linalg.{Vector, Vectors}
 import org.apache.spark.ml.linalg.{DenseVector, SparseVector}
 import org.apache.spark.sql.{DataFrame, Dataset}
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types.{ArrayType, StructType}
 import org.apache.spark.sql.functions._
 import breeze.linalg.argsort
 import breeze.linalg.{DenseVector => BDV}
 import Math.abs
 
+import scala.util.Sorting
 
-class LassoSelectorWrapper {
-
-}
 
 class LassoSelector(override val uid: String) extends Estimator[LassoSelectorModel]{
 
   var featuresCol: String = _
   var outputCol: String = _
   var labelCol: String = _
+  var numTopFeatures: Int = _
 
-  def this() = this(Identifiable.randomUID("lassoSelector"))
+  def this() = this(Identifiable.randomUID("LassoSelector"))
 
   override def transformSchema(schema: StructType): StructType = {
     schema
@@ -63,6 +62,11 @@ class LassoSelector(override val uid: String) extends Estimator[LassoSelectorMod
     this
   }
 
+  def setNumTopFeatures(value: Int): this.type = {
+    numTopFeatures = value
+    this
+  }
+
   override def fit(dataset: Dataset[_]): LassoSelectorModel = {
 
     val lr = new LogisticRegression()
@@ -73,16 +77,22 @@ class LassoSelector(override val uid: String) extends Estimator[LassoSelectorMod
 
     val lrModel = lr.fit(dataset)
 
-    val cofficients: Array[Double] = lrModel.coefficients.toArray.map(i => abs(i))
+    val coefficients: Array[Double] = lrModel.coefficients.toArray.map(i => abs(i))
 
-    val sortedIndices: Array[Int] = argsort.argsortDenseVector_Double(BDV(cofficients)).toArray.reverse
+    val sortedIndices: Array[Int] = argsort.argsortDenseVector_Double(BDV(coefficients)).toArray.reverse
 
-    new LassoSelectorModel(uid, sortedIndices).setInputCol(featuresCol).setOutputCol(outputCol)
-
+    new LassoSelectorModel(uid, sortedIndices)
+      .setInputCol(featuresCol)
+      .setOutputCol(outputCol)
+      .setNumTopFeatures(numTopFeatures)
   }
 
   override def copy(extra: ParamMap): Estimator[LassoSelectorModel] = {
-    new LassoSelector(uid).setFeaturesCol(featuresCol).setOutputCol(outputCol).setLabelCol(labelCol)
+    new LassoSelector(uid)
+      .setFeaturesCol(featuresCol)
+      .setOutputCol(outputCol)
+      .setLabelCol(labelCol)
+      .setNumTopFeatures(numTopFeatures)
   }
 }
 
@@ -93,12 +103,7 @@ class LassoSelectorModel(override val uid: String,
 
   var outputCol: String = _
 
-  var numTopFeatures: Int = 50
-
-  def setNumTopFeatures(value: Int): this.type = {
-    numTopFeatures = value
-    this
-  }
+  var numTopFeatures: Int = _
 
   def setInputCol(value: String): this.type = {
     inputCol = value
@@ -110,31 +115,41 @@ class LassoSelectorModel(override val uid: String,
     this
   }
 
+  def setNumTopFeatures(value: Int): this.type = {
+    numTopFeatures = value
+    this
+  }
+
   override def transformSchema(schema: StructType): StructType = schema
 
   override def transform(dataset: Dataset[_]): DataFrame = {
-    sortedIndices.foreach(index => print(index + ", "))
-    println()
+
+    val selectedIndices: Array[Int] = sortedIndices.take(numTopFeatures)
+    Sorting.quickSort(selectedIndices)
+    println(s"selected indices: ${selectedIndices.mkString(",")}")
+
     // select function, select the top features order by lasso cofficients
     val select = udf { vector: Vector =>
-
-      val orginalValues: Array[Double] = vector.toArray
       vector match {
         // for DenseVector, just select top features
-        case v1: DenseVector =>
-          val values: Array[Double] = sortedIndices.take(numTopFeatures) map orginalValues
+        case dv: DenseVector =>
+          val values: Array[Double] = dv.toArray
+          for (i <- 0 until selectedIndices(0)) values(i) = 0
+          for (k <- 0 until selectedIndices.size - 1) {
+            for (i <- selectedIndices(k) + 1 until selectedIndices(k+1)) {
+              values(i) = 0
+            }
+          }
+          for (i <- selectedIndices.last + 1 until values.size) values(i) = 0
           Vectors.dense(values)
-        case v2: SparseVector =>
-          val nonZeroIndices = vector.asInstanceOf[SparseVector].indices.filter(_ < numTopFeatures)
-          val values: Array[Double] = sortedIndices.take(numTopFeatures).sorted map orginalValues
-          val nonZeroValues: Array[Double] = nonZeroIndices map values
-          Vectors.sparse(numTopFeatures, nonZeroIndices, nonZeroValues)
-
+        case sv: SparseVector =>
+          val selectedPairs = sv.indices.zip(sv.values)
+            .filter{ case (k, v) => selectedIndices.contains(k) }
+          Vectors.sparse(sv.size, selectedPairs.map(_._1), selectedPairs.map(_._2))
         case _ =>
           throw new IllegalArgumentException("Require DenseVector or SparseVector in spark.ml.linalg, but "
             + vector.getClass.getSimpleName + " is given.")
       }
-
     }
     dataset.withColumn(outputCol, select(col(inputCol)))
   }

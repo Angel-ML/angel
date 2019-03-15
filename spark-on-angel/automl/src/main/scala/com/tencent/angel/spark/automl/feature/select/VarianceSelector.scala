@@ -18,8 +18,8 @@
 
 package com.tencent.angel.spark.automl.feature.select
 
-import breeze.linalg.{DenseVector, argsort}
-import org.apache.spark.ml.linalg.{Vector, Vectors}
+import breeze.linalg.{argsort, DenseVector => BDV}
+import org.apache.spark.ml.linalg.{DenseVector, SparseVector, Vector, Vectors}
 import org.apache.spark.ml.{Estimator, Model}
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.util.Identifiable
@@ -31,10 +31,13 @@ import org.apache.spark.sql.functions.{col, udf}
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.sql.types.StructType
 
+import scala.util.Sorting
+
 class VarianceSelector(override val uid: String) extends Estimator[VarianceSelectorModel] {
 
   var featuresCol: String = _
   var outputCol: String = _
+  var numTopFeatures: Int = _
 
   def this() = this(Identifiable.randomUID("varianceSelector"))
 
@@ -52,19 +55,30 @@ class VarianceSelector(override val uid: String) extends Estimator[VarianceSelec
     this
   }
 
+  def setNumTopFeatures(value: Int): this.type = {
+    numTopFeatures = value
+    this
+  }
+
   override def fit(dataset: Dataset[_]): VarianceSelectorModel = {
     val featuresRDD: RDD[OldVector]  = dataset.select(featuresCol).rdd.map{case Row(v: Vector) =>
       OldVectors.dense(v.toArray)
     }
     val summary: MultivariateStatisticalSummary = Statistics.colStats(featuresRDD)
     val variance: Array[Double] = summary.mean.toArray
-    val sortedIndices: Array[Int] = argsort.argsortDenseVector_Double(DenseVector(variance)).toArray.reverse
+    val sortedIndices: Array[Int] = argsort.argsortDenseVector_Double(BDV(variance)).toArray.reverse
 
-    new VarianceSelectorModel(uid, sortedIndices).setInputCol(featuresCol).setOutputCol(outputCol)
+    new VarianceSelectorModel(uid, sortedIndices)
+      .setInputCol(featuresCol)
+      .setOutputCol(outputCol)
+      .setNumTopFeatures(numTopFeatures)
   }
 
   override def copy(extra: ParamMap): Estimator[VarianceSelectorModel] = {
-    new VarianceSelector().setFeaturesCol(featuresCol).setOutputCol(outputCol)
+    new VarianceSelector()
+      .setFeaturesCol(featuresCol)
+      .setOutputCol(outputCol)
+      .setNumTopFeatures(numTopFeatures)
   }
 
 }
@@ -96,13 +110,32 @@ class VarianceSelectorModel(override val uid: String,
   override def transformSchema(schema: StructType): StructType = schema
 
   override def transform(dataset: Dataset[_]): DataFrame = {
-    sortedIndices.foreach(index => print(index + ", "))
-    println()
-    // select function, select the top features order by lasso cofficients
+    val selectedIndices: Array[Int] = sortedIndices.take(numTopFeatures)
+    Sorting.quickSort(selectedIndices)
+    println(s"selected indices: ${selectedIndices.mkString(",")}")
+
+    // select function, select the top features order by lasso coefficients
     val select = udf { vector: Vector =>
-      val orginalValues: Array[Double] = vector.toArray
-      val values: Array[Double] = sortedIndices.take(numTopFeatures) map orginalValues
-      Vectors.dense(values)
+      vector match {
+        // for DenseVector, just select top features
+        case dv: DenseVector =>
+          val values: Array[Double] = dv.toArray
+          for (i <- 0 until selectedIndices(0)) values(i) = 0
+          for (k <- 0 until selectedIndices.size - 1) {
+            for (i <- selectedIndices(k) + 1 until selectedIndices(k+1)) {
+              values(i) = 0
+            }
+          }
+          for (i <- selectedIndices.last + 1 until values.size) values(i) = 0
+          Vectors.dense(values)
+        case sv: SparseVector =>
+          val selectedPairs = sv.indices.zip(sv.values)
+            .filter{ case (k, v) => selectedIndices.contains(k) }
+          Vectors.sparse(sv.size, selectedPairs.map(_._1), selectedPairs.map(_._2))
+        case _ =>
+          throw new IllegalArgumentException("Require DenseVector or SparseVector in spark.ml.linalg, but "
+            + vector.getClass.getSimpleName + " is given.")
+      }
     }
     dataset.withColumn(outputCol, select(col(inputCol)))
   }
@@ -112,5 +145,6 @@ class VarianceSelectorModel(override val uid: String,
       .setNumTopFeatures(numTopFeatures)
       .setInputCol(inputCol)
       .setOutputCol(outputCol)
+      .setNumTopFeatures(numTopFeatures)
   }
 }
