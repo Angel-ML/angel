@@ -43,6 +43,8 @@ class ConfigurationSpace(
 
   // configurations tried
   var preX: HashSet[Vector] = HashSet[Vector]()
+  var gridValues: Array[Configuration] = Array.empty
+  var gridIndice = 0
 
   def getParamNum: Int = numParams
 
@@ -145,7 +147,26 @@ class ConfigurationSpace(
     configs.toArray
   }
 
-  def gridSample(): Array[Configuration] = {
+  def gridSample(size: Int): Array[Configuration] = {
+    if (gridValues.isEmpty) {
+      gridValues = getGridConfigs()
+    }
+    val startIndice = gridIndice
+    val endIndice = (gridIndice + size) min gridValues.size
+    println(s"configuration space size ${gridValues.size}, " +
+      s"remaining ${gridValues.size - startIndice}, sample from $startIndice to $endIndice")
+    gridIndice = endIndice
+    if (startIndice == gridValues.size) {
+      Array.empty
+    } else {
+      val ret = new Array[Configuration](endIndice - startIndice)
+      Array.copy(gridValues, startIndice, ret, 0, endIndice - startIndice)
+      ret
+    }
+  }
+
+  def getGridConfigs(): Array[Configuration] = {
+    assert(spaceSize() < Int.MaxValue, "all parameters must be discrete!")
     println(s"configuration space size ${spaceSize()}")
     var configs: ArrayBuffer[Configuration] = new ArrayBuffer[Configuration]
 

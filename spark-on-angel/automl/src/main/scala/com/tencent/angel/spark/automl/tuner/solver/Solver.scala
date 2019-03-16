@@ -82,7 +82,7 @@ class Solver(
       case SurrogateMode.RANDOM =>
         cs.randomSample(TunerParam.batchSize)
       case SurrogateMode.GRID =>
-        cs.gridSample()
+        cs.gridSample(TunerParam.batchSize)
     }
   }
 

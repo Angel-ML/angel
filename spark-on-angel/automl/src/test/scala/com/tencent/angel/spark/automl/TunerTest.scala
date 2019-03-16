@@ -45,14 +45,16 @@ class TunerTest {
   @Test def testGrid(): Unit = {
     val param1 = ParamSpace.fromConfigString("param1", "[1:10:10]")
     val param2 = ParamSpace.fromConfigString("param2", "[-5:5:10]")
-    val param3: ParamSpace[Double] = new DiscreteSpace[Double]("param3", Array(0.0, 1.0, 3.0, 5.0))
-    val param4: ParamSpace[Double] = new DiscreteSpace[Double]("param4", Array(-5.0, -3.0, 0.0, 3.0, 5.0))
+    val param3 = ParamSpace.fromConfigString("param3", "{0.0,1.0,3.0,5.0}")
+    val param4 = ParamSpace.fromConfigString("param4", "{-5.0,-3.0,0.0,3.0,5.0}")
     val solver: Solver = Solver(Array(param1, param2, param3, param4), true, surrogate = "Grid")
     val trail: Trail = new TestTrail()
-    val configs: Array[Configuration] = solver.suggest()
-    println(s"grid size: ${configs.size}")
-    val results: Array[Double] = trail.evaluate(configs)
-    solver.feed(configs, results)
+    (0 until 3000).foreach { iter =>
+      println(s"------iteration $iter starts------")
+      val configs: Array[Configuration] = solver.suggest()
+      val results: Array[Double] = trail.evaluate(configs)
+      solver.feed(configs, results)
+    }
     val result: (Vector, Double) = solver.optimal
     solver.stop
     println(s"Best configuration ${result._1.toArray.mkString(",")}, best performance: ${result._2}")
