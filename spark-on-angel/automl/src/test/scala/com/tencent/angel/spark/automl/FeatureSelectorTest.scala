@@ -30,7 +30,7 @@ class FeatureSelectorTest {
       .setFeaturesCol("features")
       .setLabelCol("label")
       .setOutputCol("selectedFeatures")
-      .setNumTopFeatures(20)
+      .setNumTopFeatures(50)
 
     val selectedDF = selector.fit(data).transform(data)
 
@@ -71,7 +71,7 @@ class FeatureSelectorTest {
       .setFeaturesCol("features")
       .setLabelCol("label")
       .setOutputCol("selectedFeatures")
-      .setNumTopFeatures(20)
+      .setNumTopFeatures(50)
 
     val selectedDF = selector.fit(data).transform(data)
 
@@ -111,7 +111,7 @@ class FeatureSelectorTest {
     val selector = new VarianceSelector()
       .setFeaturesCol("features")
       .setOutputCol("selectedFeatures")
-      .setNumTopFeatures(20)
+      .setNumTopFeatures(50)
 
     val selectedDF = selector.fit(data).transform(data)
 
