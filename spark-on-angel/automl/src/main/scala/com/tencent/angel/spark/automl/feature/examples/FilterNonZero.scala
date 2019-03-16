@@ -20,7 +20,7 @@ package com.tencent.angel.spark.automl.feature.examples
 import com.tencent.angel.spark.automl.feature.FeatureUtils
 import com.tencent.angel.spark.automl.feature.cross.FeatureCrossMeta
 import org.apache.spark.ml.Pipeline
-import org.apache.spark.ml.feature.operator.{Cartesian, VectorFilterZero}
+import org.apache.spark.ml.feature.operator.{SelfCartesian, VectorFilterZero}
 import org.apache.spark.sql.SparkSession
 
 object FilterNonZero {
@@ -43,7 +43,7 @@ object FilterNonZero {
 
     val featureMap: Map[Int, Int] = Map[Int, Int]()
 
-    val cartesian = new Cartesian()
+    val cartesian = new SelfCartesian()
       .setInputCol("features")
       .setOutputCol("cartesian_features")
 

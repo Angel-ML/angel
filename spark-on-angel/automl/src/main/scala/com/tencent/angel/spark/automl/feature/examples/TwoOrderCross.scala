@@ -23,7 +23,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.ml.classification.{BinaryLogisticRegressionSummary, LogisticRegression}
 import org.apache.spark.ml.feature.{ChiSqSelector, VectorAssembler}
-import org.apache.spark.ml.feature.operator.{Cartesian, VectorFilterZero}
+import org.apache.spark.ml.feature.operator.{SelfCartesian, VectorFilterZero}
 import org.apache.spark.sql.SparkSession
 
 object TwoOrderCross {
@@ -50,7 +50,7 @@ object TwoOrderCross {
     var crossInfo: Map[Int, FeatureCrossMeta] = Map[Int, FeatureCrossMeta]()
     (0 until maxDim).foreach(idx => crossInfo += idx -> FeatureCrossMeta(idx, idx.toString))
 
-    val cartesian_1 = new Cartesian()
+    val cartesian_1 = new SelfCartesian()
       .setInputCol("features")
       .setOutputCol("cartesian_features_1")
 
@@ -70,7 +70,7 @@ object TwoOrderCross {
       .setInputCols(Array("features", "filter_features_1"))
       .setOutputCol("assemble_features_1")
 
-    val cartesian_2 = new Cartesian()
+    val cartesian_2 = new SelfCartesian()
       .setInputCol("assemble_features_1")
       .setOutputCol("cartesian_features_2")
 

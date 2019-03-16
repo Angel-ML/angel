@@ -24,19 +24,18 @@ import org.apache.spark.ml.UnaryTransformer
 import org.apache.spark.ml.util.{DefaultParamsReadable, DefaultParamsWritable, Identifiable}
 import org.apache.spark.sql.types.DataType
 
-class Cartesian(override val uid: String)
-  extends UnaryTransformer[Vector, Vector, Cartesian] with DefaultParamsWritable {
+class SelfCartesian(override val uid: String)
+  extends UnaryTransformer[Vector, Vector, SelfCartesian] with DefaultParamsWritable {
 
-  @Since("1.4.0")
-  def this() = this(Identifiable.randomUID("cartesian_product"))
+  def this() = this(Identifiable.randomUID("SelfCartesian"))
 
   override protected def createTransformFunc: Vector => Vector = FeatureCrossOp.flatCartesian
 
   override protected def outputDataType: DataType = new VectorUDT()
 }
 
-object Cartesian extends DefaultParamsReadable[Cartesian] {
+object SelfCartesian extends DefaultParamsReadable[SelfCartesian] {
 
   @Since("1.6.0")
-  override def load(path: String): Cartesian = super.load(path)
+  override def load(path: String): SelfCartesian = super.load(path)
 }
