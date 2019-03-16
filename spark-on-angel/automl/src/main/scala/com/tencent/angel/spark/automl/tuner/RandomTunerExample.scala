@@ -27,18 +27,13 @@ import org.apache.spark.ml.linalg.Vector
 object RandomTunerExample extends App {
 
   override def main(args: Array[String]): Unit = {
-    val param1: ParamSpace[Double] = new ContinuousSpace("param1", 0, 10, 11)
-    val param2: ParamSpace[Double] = new ContinuousSpace("param2", -5, 5, 11)
-    val param3: ParamSpace[Double] = new DiscreteSpace[Double]("param3", Array(0.0, 1.0, 3.0, 5.0))
-    val param4: ParamSpace[Double] = new DiscreteSpace[Double]("param4", Array(-5.0, -3.0, 0.0, 3.0, 5.0))
-    val cs: ConfigurationSpace = new ConfigurationSpace("cs")
-    cs.addParam(param1)
-    cs.addParam(param2)
-    cs.addParam(param3)
-    cs.addParam(param4)
-    val solver: Solver = Solver(Array(param1, param2, param3, param4), true, surrogate = "Random")
+//    val param1: ParamSpace[Double] = new ContinuousSpace("param1", 0, 10, 11)
+//    val param2: ParamSpace[Double] = new ContinuousSpace("param2", -5, 5, 11)
+    val param3 = ParamSpace.fromConfigString("param3", "{2.0,3.0,4.0,5.0,6.0}")
+    val param4 = ParamSpace.fromConfigString("param4", "{3:10:1}")
+    val solver: Solver = Solver(Array(param3, param4), true, surrogate = "Random")
     val trail: Trail = new TestTrail()
-    (0 until 25).foreach { iter =>
+    (0 until 100).foreach { iter =>
       println(s"------iteration $iter starts------")
       val configs: Array[Configuration] = solver.suggest()
       val results: Array[Double] = trail.evaluate(configs)

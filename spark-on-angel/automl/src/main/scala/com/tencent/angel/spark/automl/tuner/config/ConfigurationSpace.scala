@@ -78,14 +78,27 @@ class ConfigurationSpace(
 
   def addHistory(vec: Vector): Unit = preX += vec
 
+  def spaceSize(): Int = {
+    var size: Int = if (numParams > 0) 1 else 0
+    var hasInfinite = false
+    getParams().foreach{ param =>
+      param.numValues match {
+        case Int.MaxValue => hasInfinite = true
+        case _ => size *= param.numValues
+      }
+    }
+    if (hasInfinite) Int.MaxValue else size
+  }
+
   def sample(size: Int): Array[Configuration] = {
     var configs: ArrayBuffer[Configuration] = new ArrayBuffer[Configuration]
 
     var missing: Int = 0
-    var isEmpty: Boolean = false
+    val left = if (spaceSize() == Int.MaxValue) Int.MaxValue else spaceSize - preX.size
+    val trueSize = left min size
+    println(s"configuration space size ${spaceSize()}, remaining $left, sample $trueSize")
     do {
-      missing = size - configs.length
-      //println(s"num of params: $numParams")
+      missing = trueSize - configs.length
       val vectors: Array[Vector] = Array.fill(missing)(Vectors.dense(new Array[Double](numParams)))
       param2Idx.foreach { case (paramName, paramIdx) =>
         paramDict.get(paramName) match {
@@ -97,32 +110,43 @@ class ConfigurationSpace(
         }
       }
       val validVectors = vectors.filter(isValid)
-      // check is there is no valid config
-      if (validVectors.isEmpty) {
-        isEmpty = true
-      } else {
-        validVectors.foreach { vec =>
-          configs += new Configuration(param2Idx, param2Doc, vec)
-        }
+      validVectors.foreach { vec =>
+        configs += new Configuration(param2Idx, param2Doc, vec)
       }
-    } while (configs.length < size && !isEmpty)
+    } while (configs.length < trueSize)
 
     configs.toArray
   }
 
-  def asDouble(num: AnyVal): Double = {
-    num match {
-      case i: Int => i.toDouble
-      case i: Long => i.toLong
-      case i: Float => i.toDouble
-      case i: Double => i
-      case _ => throw new AutoMLException(s"type ${num.getClass} is not supported")
-    }
+  def randomSample(size: Int): Array[Configuration] = {
+    var configs: ArrayBuffer[Configuration] = new ArrayBuffer[Configuration]
+
+    var missing: Int = 0
+    val left = if (spaceSize() == Int.MaxValue) Int.MaxValue else spaceSize - preX.size
+    val trueSize = left min size
+    println(s"configuration space size ${spaceSize()}, remaining $left, sample $trueSize")
+    do {
+      missing = trueSize - configs.length
+      val vectors: Array[Vector] = Array.fill(missing)(Vectors.dense(new Array[Double](numParams)))
+      param2Idx.foreach { case (paramName, paramIdx) =>
+        paramDict.get(paramName) match {
+          case Some(param) =>
+            param.sample(missing).map(asDouble).zipWithIndex.foreach { case (f: Double, i: Int) =>
+              vectors(i).toArray(paramIdx) = f
+            }
+          case None => LOG.info(s"Cannot find $paramName.")
+        }
+      }
+      val validVectors = vectors.filter(isValid)
+      validVectors.foreach { vec =>
+        configs += new Configuration(param2Idx, param2Doc, vec)
+      }
+    } while (configs.length < trueSize)
+    configs.toArray
   }
 
-  def isValid(vec: Vector): Boolean = !preX.contains(vec)
-
   def gridSample(): Array[Configuration] = {
+    println(s"configuration space size ${spaceSize()}")
     var configs: ArrayBuffer[Configuration] = new ArrayBuffer[Configuration]
 
     var tmp: ArrayBuffer[Array[Double]] = new ArrayBuffer[Array[Double]]
@@ -175,6 +199,17 @@ class ConfigurationSpace(
       }
       configs.toArray
     }
-
   }
+
+  def asDouble(num: AnyVal): Double = {
+    num match {
+      case i: Int => i.toDouble
+      case i: Long => i.toLong
+      case i: Float => i.toDouble
+      case i: Double => i
+      case _ => throw new AutoMLException(s"type ${num.getClass} is not supported")
+    }
+  }
+
+  def isValid(vec: Vector): Boolean = !preX.contains(vec)
 }

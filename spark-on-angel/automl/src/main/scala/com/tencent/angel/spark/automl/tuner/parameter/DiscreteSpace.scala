@@ -33,22 +33,22 @@ class DiscreteSpace[T <: AnyVal : ClassTag](
                                              override val name: String,
                                              var values: Array[T],
                                              override val doc: String = "discrete param",
-                                             var seed: Int = 100) extends ParamSpace[T](name, doc) {
+                                             var seed: Int = 101) extends ParamSpace[T](name, doc) {
 
   private val helper: String = "supported format of discrete parameter: [0.1,0.2,0.3,0.4] or [0.1:1:0.1]"
 
   def this(name: String, config: String, doc: String) = {
-    this(name, Array.empty[T], doc, seed = 100)
+    this(name, Array.empty[T], doc, seed = 101)
     this.values = parseConfig(config)
+  }
+
+  def this(name: String, config: String) = {
+    this(name, config, "discrete param")
   }
 
   def this(name: String, config: String, doc: String, seed: Int) = {
     this(name, Array.empty[T], doc, seed = seed)
     this.values = parseConfig(config)
-  }
-
-  def this(name: String, config: String) = {
-    this(name, config, "discrete param", seed = 100)
   }
 
   def this(name: String, config: String, seed: Int) = {
@@ -132,7 +132,7 @@ object DiscreteSpace {
   }
 
   def main(args: Array[String]): Unit = {
-    val obj = new DiscreteSpace[Int]("test", "1:10:1", seed = 10)
+    val obj = new DiscreteSpace[Int]("test", "1:10:1")
     println(obj.toString)
     println(obj.getValues(1))
     println(obj.sample(2).toString())

@@ -129,13 +129,13 @@ object GPModel {
             covParams: BDV[Double],
             noiseStdDev: Double,
             meanFunc: (BDM[Double]) => BDV[Double]): GPModel = {
-    new GPModel(CovarianceType.parse(covName), covParams, noiseStdDev, meanFunc)
+    new GPModel(CovarianceType.fromString(covName), covParams, noiseStdDev, meanFunc)
   }
 
   def apply(covType: CovarianceType.Value,
             covParams: BDV[Double],
             noiseStdDev: Double,
             meanFunc: (BDM[Double]) => BDV[Double]): GPModel = {
-    new GPModel(CovarianceType.parse(covType), covParams, noiseStdDev, meanFunc)
+    new GPModel(CovarianceType.fromString(covType), covParams, noiseStdDev, meanFunc)
   }
 }

@@ -34,6 +34,7 @@ object GridTunerExample extends App {
     val solver: Solver = Solver(Array(param1, param2, param3, param4), true, surrogate = "Grid")
     val trail: Trail = new TestTrail()
     val configs: Array[Configuration] = solver.suggest()
+    println(s"grid size: ${configs.size}")
     val results: Array[Double] = trail.evaluate(configs)
     solver.feed(configs, results)
     val result: (Vector, Double) = solver.optimal

@@ -15,28 +15,19 @@
  *
  */
 
+package com.tencent.angel.spark.automl.tuner.surrogate
 
-package com.tencent.angel.spark.automl.tuner.kernel
 
-object CovarianceType extends Enumeration {
+object SurrogateMode extends Enumeration {
 
-  type CovarianceType = Value
+  type SurrogateMode = Value
 
-  val MATERN3 = Value("MATERN3")
-  val MATERN5 = Value("MATERN5")
-  val MATERN5_ISO = Value("MATERN5_ISO")
-  val SQUAREEXP_ISO = Value("SQUAREEXP_ISO")
+  val GP = Value("GaussianProcess")
+  val RF = Value("RandomForest")
+  val RANDOM = Value("Random")
+  val GRID = Value("Grid")
 
-  def fromString(name: String): Covariance = {
-    val covType = CovarianceType.withName(name.toUpperCase())
-    fromString(covType)
-  }
-
-  def fromString(covType: CovarianceType.Value): Covariance = covType match {
-    case MATERN3 => new Matern3
-    case MATERN5 => new Matern5
-    case MATERN5_ISO => new Matern5Iso
-    case SQUAREEXP_ISO => new SquareExpIso
-    case _ => new Matern5
+  def fromString(mode: String): SurrogateMode = {
+    SurrogateMode.withName(mode)
   }
 }

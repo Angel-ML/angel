@@ -37,6 +37,7 @@ abstract class ParamSpace[+T: ClassTag](val name: String,
 
   def getValues: Array[Double]
 
+  def numValues: Int
 }
 
 object ParamSpace {

@@ -51,7 +51,7 @@ class ContinuousSpace(
   }
 
   def this(name: String, config: String) = {
-    this(name, 0, 1, -1, seed = 100)
+    this(name, 0, 1, -1)
     val items = parseConfig(config)
     lower = items._1
     upper = items._2
@@ -121,7 +121,7 @@ class ContinuousSpace(
 
   def getValues: Array[Double] = gridValues
 
-  def numValues: Int = num
+  def numValues: Int = if (isGrid) gridValues.length else Int.MaxValue
 
   def toGridSearch: ParamSpace[Double] = this
 
@@ -143,5 +143,12 @@ object ContinuousSpace {
 
   def apply(name: String, config: String) = {
     new ContinuousSpace(name, config)
+  }
+
+  def main(args: Array[String]): Unit = {
+    val seed: Int = 100
+    val rd = new Random(seed)
+    println((0 until 100).map(_ => rd.nextInt(100)).mkString(","))
+    println((0 until 100).map(_ => rd.nextInt(100)).mkString(","))
   }
 }
