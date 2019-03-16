@@ -37,17 +37,12 @@ class ContinuousSpace(
                        var upper: Double,
                        var num: Int,
                        distribution: Distribution.Value = Distribution.LINEAR,
-                       override val doc: String = "continuous param space",
-                       var seed: Int = 100) extends ParamSpace[Double](name, doc) {
+                       override val doc: String = "continuous param space") extends ParamSpace[Double](name, doc) {
 
   private val helper: String = "supported format of continuous parameter: [0,1] or [0,1,100]"
 
   def this(name: String, lower: Double, upper: Double) = {
-    this(name, lower, upper, -1, seed = 100)
-  }
-
-  def this(name: String, lower: Double, upper: Double, seed: Int) = {
-    this(name, lower, upper, -1, seed = seed)
+    this(name, lower, upper, -1)
   }
 
   def this(name: String, config: String) = {
@@ -56,23 +51,16 @@ class ContinuousSpace(
     lower = items._1
     upper = items._2
     num = items._3
-    if (num != -1) {
-      isGrid = true
-      gridValues = toGrid
-    }
+    isGrid = if (num == -1) false else true
+    gridValues = if (isGrid) getGridValues else Array.empty
   }
 
-  def this(name: String, config: String, seed: Int) = {
-    this(name, 0, 1, -1, seed = seed)
-    val items = parseConfig(config)
-    lower = items._1
-    upper = items._2
-    num = items._3
-    if (num != -1) {
-      isGrid = true
-      gridValues = toGrid
-    }
-  }
+  require(lower < upper, s"lower bound should less than upper bound")
+
+  val rd = new Random()
+
+  var isGrid: Boolean = if (num == -1) false else true
+  var gridValues: Array[Double] = if (isGrid) getGridValues else Array.empty
 
   def parseConfig(input: String): (Double, Double, Int) = {
     assert(input.startsWith("[") && input.endsWith("]"))
@@ -95,14 +83,7 @@ class ContinuousSpace(
     ret
   }
 
-  require(lower < upper, s"lower bound should less than upper bound")
-
-  val rd = new Random(seed)
-
-  var isGrid: Boolean = if (num == -1) false else true
-  var gridValues: Array[Double] = if (isGrid) toGrid else Array.empty
-
-  def toGrid(): Array[Double] = {
+  def getGridValues(): Array[Double] = {
     var ret: ArrayBuffer[Double] = ArrayBuffer[Double]()
     distribution match {
       case Distribution.LINEAR =>
@@ -143,12 +124,5 @@ object ContinuousSpace {
 
   def apply(name: String, config: String) = {
     new ContinuousSpace(name, config)
-  }
-
-  def main(args: Array[String]): Unit = {
-    val seed: Int = 100
-    val rd = new Random(seed)
-    println((0 until 100).map(_ => rd.nextInt(100)).mkString(","))
-    println((0 until 100).map(_ => rd.nextInt(100)).mkString(","))
   }
 }

@@ -32,27 +32,17 @@ import scala.util.Random
 class DiscreteSpace[T <: AnyVal : ClassTag](
                                              override val name: String,
                                              var values: Array[T],
-                                             override val doc: String = "discrete param",
-                                             var seed: Int = 101) extends ParamSpace[T](name, doc) {
+                                             override val doc: String = "discrete param") extends ParamSpace[T](name, doc) {
 
   private val helper: String = "supported format of discrete parameter: [0.1,0.2,0.3,0.4] or [0.1:1:0.1]"
 
   def this(name: String, config: String, doc: String) = {
-    this(name, Array.empty[T], doc, seed = 101)
+    this(name, Array.empty[T], doc)
     this.values = parseConfig(config)
   }
 
   def this(name: String, config: String) = {
     this(name, config, "discrete param")
-  }
-
-  def this(name: String, config: String, doc: String, seed: Int) = {
-    this(name, Array.empty[T], doc, seed = seed)
-    this.values = parseConfig(config)
-  }
-
-  def this(name: String, config: String, seed: Int) = {
-    this(name, config, "discrete param", seed = seed)
   }
 
   def parseConfig(input: String): Array[T] = {
@@ -105,7 +95,7 @@ class DiscreteSpace[T <: AnyVal : ClassTag](
     }
   }
 
-  val rd = new Random(seed)
+  val rd = new Random()
 
   def getValues: Array[Double] = values.map(asDouble)
 

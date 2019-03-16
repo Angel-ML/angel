@@ -51,15 +51,15 @@ class Solver(
     pType.toLowerCase match {
       case "discrete" =>
         vType.toLowerCase match {
-          case "float" => addParam(new DiscreteSpace[Float](name, config, seed = seed))
-          case "double" => addParam(new DiscreteSpace[Double](name, config, seed = seed))
-          case "int" => addParam(new DiscreteSpace[Int](name, config, seed = seed))
-          case "long" => addParam(new DiscreteSpace[Long](name, config, seed = seed))
+          case "float" => addParam(new DiscreteSpace[Float](name, config))
+          case "double" => addParam(new DiscreteSpace[Double](name, config))
+          case "int" => addParam(new DiscreteSpace[Int](name, config))
+          case "long" => addParam(new DiscreteSpace[Long](name, config))
           case _ => throw new AutoMLException(s"unsupported value type $vType")
         }
       case "continuous" =>
         vType.toLowerCase match {
-          case "double" => addParam(new ContinuousSpace(name, config, seed = seed))
+          case "double" => addParam(new ContinuousSpace(name, config))
           case _ => throw new AutoMLException(s"unsupported value type $vType")
         }
       case _ => throw new AutoMLException(s"unsupported param type $pType, should be ${PARAM_TYPES.mkString(",")}")
@@ -140,7 +140,7 @@ object Solver {
         val acq: Acquisition = new EI(sur, 0.1f)
         val opt: AcqOptimizer = new RandomSearch(acq, cs)
         new Solver(cs, sur, acq, opt, mode)
-      case SurrogateMode.GP =>
+      case SurrogateMode.RF =>
         val sur: Surrogate = new RFSurrogate(cs, minimize)
         val acq: Acquisition = new EI(sur, 0.1f)
         val opt: AcqOptimizer = new RandomSearch(acq, cs)
