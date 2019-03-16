@@ -27,11 +27,9 @@ import org.apache.spark.ml.linalg.Vector
 object RandomTunerExample extends App {
 
   override def main(args: Array[String]): Unit = {
-//    val param1: ParamSpace[Double] = new ContinuousSpace("param1", 0, 10, 11)
-//    val param2: ParamSpace[Double] = new ContinuousSpace("param2", -5, 5, 11)
-    val param3 = ParamSpace.fromConfigString("param3", "{2.0,3.0,4.0,5.0,6.0}")
-    val param4 = ParamSpace.fromConfigString("param4", "{3:10:1}")
-    val solver: Solver = Solver(Array(param3, param4), true, surrogate = "Random")
+    val param1 = ParamSpace.fromConfigString("param3", "{2.0,3.0,4.0,5.0,6.0}")
+    val param2 = ParamSpace.fromConfigString("param4", "{3:10:1}")
+    val solver: Solver = Solver(Array(param1, param2), true, surrogate = "Random")
     val trail: Trail = new TestTrail()
     (0 until 100).foreach { iter =>
       println(s"------iteration $iter starts------")
