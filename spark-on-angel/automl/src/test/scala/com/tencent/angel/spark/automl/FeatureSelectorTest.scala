@@ -1,8 +1,10 @@
 package com.tencent.angel.spark.automl
 
-import com.tencent.angel.spark.automl.feature.select.{LassoSelector, LassoSelectorModel, RandomForestSelector, VarianceSelector}
+import com.tencent.angel.spark.automl.feature.select.{LassoSelector, LassoSelectorModel, RandomForestSelector}
+import org.apache.spark.ml.attribute.{Attribute, AttributeGroup, NominalAttribute}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.ml.classification.{BinaryLogisticRegressionSummary, LogisticRegression}
+import org.apache.spark.ml.feature.operator.VarianceSelector
 import org.junit.Test
 
 class FeatureSelectorTest {
@@ -111,7 +113,7 @@ class FeatureSelectorTest {
     val selector = new VarianceSelector()
       .setFeaturesCol("features")
       .setOutputCol("selectedFeatures")
-      .setNumTopFeatures(50)
+      .setNumTopFeatures(500)
 
     val selectedDF = selector.fit(data).transform(data)
 
