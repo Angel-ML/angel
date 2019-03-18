@@ -23,7 +23,7 @@ import com.tencent.angel.ml.core.optimizer.loss.{L2Loss, LogLoss}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.automl.tuner.config.{Configuration, ConfigurationSpace}
+import com.tencent.angel.spark.automl.tuner.config.{Configuration, ConfigurationSpace, EarlyStopping}
 import com.tencent.angel.spark.automl.tuner.parameter.ParamSpace
 import com.tencent.angel.spark.automl.tuner.solver.Solver
 import com.tencent.angel.spark.automl.utils.AutoMLException
@@ -37,7 +37,10 @@ import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.Random
 
-class AutoOfflineLearner(var tuneIter: Int = 20, minimize: Boolean = true,surrogate: String="GP") {
+class AutoOfflineLearner(var tuneIter: Int = 20,
+                         minimize: Boolean = true,
+                         surrogate: String="GP",
+                         var early_stopping: EarlyStopping = new EarlyStopping(patience = 0)) {
 
   // Shared configuration with Angel-PS
   val conf = SharedConf.get()
@@ -201,7 +204,8 @@ class AutoOfflineLearner(var tuneIter: Int = 20, minimize: Boolean = true,surrog
 
     if (modelInput.length > 0) model.load(modelInput)
 
-    (0 until tuneIter).foreach{ iter =>
+
+    (0 until tuneIter).foreach { iter =>
       println(s"==========Tuner Iteration[$iter]==========")
       val configs: Array[Configuration] = solver.suggest
       for (config <- configs) {
@@ -213,7 +217,22 @@ class AutoOfflineLearner(var tuneIter: Int = 20, minimize: Boolean = true,surrog
         resetParam(paramMap)
         model.resetParam(paramMap).graph.init(0)
         val result = train(data, model)
-        solver.feed(config, result._1)
+        if(early_stopping.pat > 0){
+          early_stopping.update(result._1)
+          if (early_stopping.early_stop) {
+            println("Early stopping")
+            val result: (Vector, Double) = solver.optimal
+            solver.stop
+            println(s"Best configuration ${result._1.toArray.mkString(",")}, best performance: ${result._2}")
+            return
+          }
+          else {
+            solver.feed(config, result._1)
+          }
+        }
+        else {
+          solver.feed(config, result._1)
+        }
       }
     }
     val result: (Vector, Double) = solver.optimal
@@ -221,8 +240,8 @@ class AutoOfflineLearner(var tuneIter: Int = 20, minimize: Boolean = true,surrog
     println(s"Best configuration ${result._1.toArray.mkString(",")}, best performance: ${result._2}")
 
     //if (modelOutput.length > 0) model.save(modelOutput)
-
   }
+
 
 
 
