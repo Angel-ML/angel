@@ -18,7 +18,9 @@
 package com.tencent.angel.spark.automl.feature.examples
 
 import org.apache.spark.SparkConf
-import org.apache.spark.ml.classification.{BinaryLogisticRegressionSummary, LogisticRegression}
+import org.apache.spark.ml.Pipeline
+import org.apache.spark.ml.classification.LogisticRegression
+import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
 import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.ml.feature.operator.{VarianceSelector, VectorCartesian}
 import org.apache.spark.sql.SparkSession
@@ -29,10 +31,10 @@ object DistributedFeatureCrossSelector {
 
     val conf = new SparkConf()
 
-    val input = conf.get("spark.input.path")
-    val numFeatures = conf.get("spark.num.feature")
+    val input = conf.get("spark.input.path", "data/a9a/a9a_123d_train_trans.libsvm")
+    val numFeatures = conf.get("spark.num.feature", "123")
 
-    val spark = SparkSession.builder().config(conf).getOrCreate()
+    val spark = SparkSession.builder().master("local").config(conf).getOrCreate()
 
     val data = spark.read.format("libsvm")
       .option("numFeatures", numFeatures)
@@ -43,36 +45,24 @@ object DistributedFeatureCrossSelector {
       .setInputCols(Array("features", "features"))
       .setOutputCol("f_f")
 
-    val cartesianDF = cartesian.transform(data)
-    println(s"cartesian data:")
-    cartesianDF.show(1, truncate = false)
-
     val selector = new VarianceSelector()
       .setFeaturesCol("f_f")
       .setOutputCol("selected_f_f")
       .setNumTopFeatures(100)
 
-    val selectorDF = selector.fit(cartesianDF).transform(cartesianDF)
-    println(s"selector data:")
-    selectorDF.show(1, truncate = false)
-
     val assembler = new VectorAssembler()
       .setInputCols(Array("features", "f_f"))
       .setOutputCol("assembled_features")
 
-    val assemblerDF = assembler.transform(selectorDF)
-    println(s"selector data:")
-    assemblerDF.show(1, truncate = false)
+    val pipeline = new Pipeline()
+      .setStages(Array(cartesian, selector, assembler))
 
-    //    val pipeline = new Pipeline()
-    //      .setStages(Array(cartesian, selector, assembler))
-    //
-    //    val crossDF = pipeline.fit(data).transform(data).persist()
-    //    data.unpersist()
-    //    crossDF.drop("f_f", "selected_f_f")
-    //    crossDF.show(1)
+    val crossDF = pipeline.fit(data).transform(data).persist()
+    data.unpersist()
+    crossDF.drop("f_f", "selected_f_f")
+    crossDF.show(1)
 
-    val splitDF = assemblerDF.randomSplit(Array(0.7, 0.3))
+    val splitDF = crossDF.randomSplit(Array(0.9, 0.1))
 
     val trainDF = splitDF(0).persist()
     val testDF = splitDF(1).persist()
@@ -83,9 +73,13 @@ object DistributedFeatureCrossSelector {
       .setMaxIter(20)
       .setRegParam(0.01)
 
-    val originalAUC = originalLR.fit(trainDF).evaluate(testDF)
-      .asInstanceOf[BinaryLogisticRegressionSummary].areaUnderROC
-
+    val originalPredictions = originalLR.fit(trainDF).transform(testDF)
+    originalPredictions.show(1)
+    val originalEvaluator = new BinaryClassificationEvaluator()
+      .setLabelCol("label")
+      .setRawPredictionCol("rawPrediction")
+      .setMetricName("areaUnderROC")
+    val originalAUC = originalEvaluator.evaluate(originalPredictions)
     println(s"original features auc: $originalAUC")
 
     val crossLR = new LogisticRegression()
@@ -94,9 +88,13 @@ object DistributedFeatureCrossSelector {
       .setMaxIter(20)
       .setRegParam(0.01)
 
-    val crossAUC = crossLR.fit(trainDF).evaluate(testDF)
-      .asInstanceOf[BinaryLogisticRegressionSummary].areaUnderROC
-
+    val crossPredictions = crossLR.fit(trainDF).transform(testDF)
+    crossPredictions.show(1)
+    val crossEvaluator = new BinaryClassificationEvaluator()
+      .setLabelCol("label")
+      .setRawPredictionCol("rawPrediction")
+      .setMetricName("areaUnderROC")
+    val crossAUC = crossEvaluator.evaluate(crossPredictions)
     println(s"cross features auc: $crossAUC")
 
     spark.close()

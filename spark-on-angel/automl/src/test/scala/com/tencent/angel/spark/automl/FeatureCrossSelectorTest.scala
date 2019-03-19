@@ -38,36 +38,24 @@ class FeatureCrossSelectorTest {
       .setInputCols(Array("features", "features"))
       .setOutputCol("f_f")
 
-    val cartesianDF = cartesian.transform(data)
-    println(s"cartesian data:")
-    cartesianDF.show(1, truncate = false)
-
     val selector = new VarianceSelector()
       .setFeaturesCol("f_f")
       .setOutputCol("selected_f_f")
       .setNumTopFeatures(100)
 
-    val selectorDF = selector.fit(cartesianDF).transform(cartesianDF)
-    println(s"selector data:")
-    selectorDF.show(1, truncate = false)
-
     val assembler = new VectorAssembler()
       .setInputCols(Array("features", "f_f"))
       .setOutputCol("assembled_features")
 
-    val assemblerDF = assembler.transform(selectorDF)
-    println(s"selector data:")
-    assemblerDF.show(1, truncate = false)
+    val pipeline = new Pipeline()
+      .setStages(Array(cartesian, selector, assembler))
 
-//    val pipeline = new Pipeline()
-//      .setStages(Array(cartesian, selector, assembler))
-//
-//    val crossDF = pipeline.fit(data).transform(data).persist()
-//    data.unpersist()
-//    crossDF.drop("f_f", "selected_f_f")
-//    crossDF.show(1)
+    val crossDF = pipeline.fit(data).transform(data).persist()
+    data.unpersist()
+    crossDF.drop("f_f", "selected_f_f")
+    crossDF.show(1)
 
-    val splitDF = assemblerDF.randomSplit(Array(0.7, 0.3))
+    val splitDF = crossDF.randomSplit(Array(0.7, 0.3))
 
     val trainDF = splitDF(0).persist()
     val testDF = splitDF(1).persist()
