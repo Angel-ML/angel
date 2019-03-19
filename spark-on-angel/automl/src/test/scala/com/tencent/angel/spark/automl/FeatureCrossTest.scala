@@ -22,7 +22,7 @@ import org.apache.spark.ml.attribute.{Attribute, AttributeGroup, NumericAttribut
 import org.apache.spark.ml.classification.{BinaryLogisticRegressionSummary, LogisticRegression}
 import org.apache.spark.ml.feature.{Interaction, VectorAssembler}
 import org.apache.spark.ml.feature.operator.{SelfCartesian, VectorCartesian}
-import org.apache.spark.ml.linalg.Vectors
+import org.apache.spark.ml.linalg.{DenseVector, SparseVector, Vectors}
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.{StructField, StructType}
 import org.apache.spark.ml.linalg.SQLDataTypes.VectorType
@@ -64,30 +64,58 @@ class FeatureCrossTest {
   }
 
   @Test def testVectorCartesian(): Unit = {
-    val spark = SparkSession.builder().master("local").getOrCreate()
+    val data = spark.read.format("libsvm")
+      .option("numFeatures", "123")
+      .load("../../data/a9a/a9a_123d_train_trans.libsvm")
+      .persist()
 
-    val data = Seq(
-      Row(Vectors.dense(Array(1.0,2.0,3.0)), Vectors.dense(Array(2.0,3.0,4.0)), Vectors.dense(Array(3.0,4.0,5.0)))
-    )
+    val cartesian = new VectorCartesian()
+      .setInputCols(Array("features", "features"))
+      .setOutputCol("cartesian_features")
 
-    val schema = Seq(
-      StructField("vec1", VectorType, true),
-      StructField("vec2", VectorType, true),
-      StructField("vec3", VectorType, true)
-    )
+    val assembler = new VectorAssembler()
+      .setInputCols(Array("features", "cartesian_features"))
+      .setOutputCol("assemble_features")
 
-    val df = spark.createDataFrame(
-      spark.sparkContext.parallelize(data),
-      StructType(schema)
-    )
+    val pipeline = new Pipeline()
+      .setStages(Array(cartesian, assembler))
 
-    val vectorCartesian = new VectorCartesian()
-      .setInputCols(Array("vec1", "vec1"))
-      .setOutputCol("vec1_vec1")
+    val featureModel = pipeline.fit(data)
+    val crossDF = featureModel.transform(data)
+    crossDF.show(1, truncate = false)
 
-    val interacted = vectorCartesian.transform(df)
+    val splitData = crossDF.randomSplit(Array(0.9, 0.1))
 
-    interacted.show(truncate = false)
+    val trainDF = splitData(0).persist()
+    val testDF = splitData(1).persist()
+
+    // original features
+    val originalLR = new LogisticRegression()
+      .setFeaturesCol("features")
+      .setMaxIter(10)
+      .setRegParam(0.01)
+    val originalAUC = originalLR.fit(trainDF).evaluate(testDF).asInstanceOf[BinaryLogisticRegressionSummary].areaUnderROC
+    println(s"original feature: auc = $originalAUC")
+
+    // cartesian features
+    val cartesianLR = new LogisticRegression()
+      .setFeaturesCol("cartesian_features")
+      .setMaxIter(10)
+      .setRegParam(0.01)
+    val cartesianAUC = cartesianLR.fit(trainDF).evaluate(testDF).asInstanceOf[BinaryLogisticRegressionSummary].areaUnderROC
+    println(s"cartesian feature: auc = $cartesianAUC")
+
+    // original features + cartesian features
+    val assemblerLR = new LogisticRegression()
+      .setFeaturesCol("assemble_features")
+      .setLabelCol("label")
+      .setMaxIter(10)
+      .setRegParam(0.01)
+    val assemblerAUC = assemblerLR.fit(trainDF).evaluate(testDF).asInstanceOf[BinaryLogisticRegressionSummary].areaUnderROC
+    println(s"original feature + cartesian feature: auc = $assemblerAUC")
+
+    spark.close()
+
   }
 
   @Test def testSelfCartesian(): Unit = {
@@ -109,7 +137,7 @@ class FeatureCrossTest {
 
     val featureModel = pipeline.fit(data)
     val crossDF = featureModel.transform(data)
-    crossDF.show(1)
+    crossDF.show(1, truncate = false)
 
     val splitData = crossDF.randomSplit(Array(0.7, 0.3))
 
@@ -138,7 +166,7 @@ class FeatureCrossTest {
       .setLabelCol("label")
       .setMaxIter(10)
       .setRegParam(0.01)
-    val assemblerAUC = assemblerLR.fit(crossDF).evaluate(testDF).asInstanceOf[BinaryLogisticRegressionSummary].areaUnderROC
+    val assemblerAUC = assemblerLR.fit(trainDF).evaluate(testDF).asInstanceOf[BinaryLogisticRegressionSummary].areaUnderROC
     println(s"original feature + cartesian feature: auc = $assemblerAUC")
 
     spark.close()

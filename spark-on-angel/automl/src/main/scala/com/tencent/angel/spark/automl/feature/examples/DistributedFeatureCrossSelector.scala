@@ -15,23 +15,28 @@
  *
  */
 
-package com.tencent.angel.spark.automl
+package com.tencent.angel.spark.automl.feature.examples
 
-import org.apache.spark.ml.Pipeline
+import org.apache.spark.SparkConf
 import org.apache.spark.ml.classification.{BinaryLogisticRegressionSummary, LogisticRegression}
 import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.ml.feature.operator.{VarianceSelector, VectorCartesian}
 import org.apache.spark.sql.SparkSession
-import org.junit.Test
 
-class FeatureCrossSelectorTest {
+object DistributedFeatureCrossSelector {
 
-  val spark = SparkSession.builder().master("local").getOrCreate()
+  def main(args: Array[String]): Unit = {
 
-  @Test def testTwoOrderCrossAndSelector(): Unit = {
+    val conf = new SparkConf()
+
+    val input = conf.get("spark.input.path")
+    val numFeatures = conf.get("spark.num.feature")
+
+    val spark = SparkSession.builder().config(conf).getOrCreate()
+
     val data = spark.read.format("libsvm")
-      .option("numFeatures", "123")
-      .load("../../data/a9a/a9a_123d_train_trans.libsvm")
+      .option("numFeatures", numFeatures)
+      .load(input)
       .persist()
 
     val cartesian = new VectorCartesian()
@@ -59,13 +64,13 @@ class FeatureCrossSelectorTest {
     println(s"selector data:")
     assemblerDF.show(1, truncate = false)
 
-//    val pipeline = new Pipeline()
-//      .setStages(Array(cartesian, selector, assembler))
-//
-//    val crossDF = pipeline.fit(data).transform(data).persist()
-//    data.unpersist()
-//    crossDF.drop("f_f", "selected_f_f")
-//    crossDF.show(1)
+    //    val pipeline = new Pipeline()
+    //      .setStages(Array(cartesian, selector, assembler))
+    //
+    //    val crossDF = pipeline.fit(data).transform(data).persist()
+    //    data.unpersist()
+    //    crossDF.drop("f_f", "selected_f_f")
+    //    crossDF.show(1)
 
     val splitDF = assemblerDF.randomSplit(Array(0.7, 0.3))
 
@@ -93,6 +98,7 @@ class FeatureCrossSelectorTest {
       .asInstanceOf[BinaryLogisticRegressionSummary].areaUnderROC
 
     println(s"cross features auc: $crossAUC")
-  }
 
+    spark.close()
+  }
 }

@@ -245,6 +245,7 @@ object VarianceSelectorModel extends MLReadable[VarianceSelectorModel] {
 
     override def load(path: String): VarianceSelectorModel = {
       val metadata = DefaultParamsReader.loadMetadata(path, sc, className)
+      val dataPath = new Path(path, "data").toString
       val data = sparkSession.read.parquet(dataPath).select("selectedFeatures").head()
       val selectedFeatures = data.getAs[Seq[Int]](0).toArray
       val model = new VarianceSelectorModel(metadata.uid, selectedFeatures)
