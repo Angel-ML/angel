@@ -39,7 +39,7 @@ import scala.util.Random
 
 class AutoOfflineLearner(var tuneIter: Int = 20,
                          minimize: Boolean = true,
-                         surrogate: String="GP",
+                         surrogate: String="GaussianProcess",
                          var early_stopping: EarlyStopping = new EarlyStopping(patience = 0)) {
 
   // Shared configuration with Angel-PS
