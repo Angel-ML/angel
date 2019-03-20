@@ -33,6 +33,8 @@ object DistributedFeatureCrossSelector {
 
     val input = conf.get("spark.input.path", "data/a9a/a9a_123d_train_trans.libsvm")
     val numFeatures = conf.get("spark.num.feature", "123")
+    val twoOrderNumFeatures = conf.getInt("spark.two.order.num.feature", 123)
+    val threeOrderNumFeatures = conf.getInt("spark.three.order.num.feature", 123)
 
     val spark = SparkSession.builder().master("local").config(conf).getOrCreate()
 
@@ -48,18 +50,27 @@ object DistributedFeatureCrossSelector {
     val selector = new VarianceSelector()
       .setFeaturesCol("f_f")
       .setOutputCol("selected_f_f")
-      .setNumTopFeatures(100)
+      .setNumTopFeatures(twoOrderNumFeatures)
+
+    val cartesian2 = new VectorCartesian()
+      .setInputCols(Array("features", "selected_f_f"))
+      .setOutputCol("f_f_f")
+
+    val selector2 = new VarianceSelector()
+      .setFeaturesCol("f_f_f")
+      .setOutputCol("selected_f_f_f")
+      .setNumTopFeatures(threeOrderNumFeatures)
 
     val assembler = new VectorAssembler()
-      .setInputCols(Array("features", "f_f"))
+      .setInputCols(Array("features", "selected_f_f", "selected_f_f_f"))
       .setOutputCol("assembled_features")
 
     val pipeline = new Pipeline()
-      .setStages(Array(cartesian, selector, assembler))
+      .setStages(Array(cartesian, selector, cartesian2, selector2, assembler))
 
     val crossDF = pipeline.fit(data).transform(data).persist()
     data.unpersist()
-    crossDF.drop("f_f", "selected_f_f")
+    crossDF.drop("f_f", "f_f_f", "selected_f_f", "selected_f_f_f")
     crossDF.show(1)
 
     val splitDF = crossDF.randomSplit(Array(0.9, 0.1))

@@ -43,12 +43,21 @@ class FeatureCrossSelectorTest {
       .setOutputCol("selected_f_f")
       .setNumTopFeatures(100)
 
+    val cartesian2 = new VectorCartesian()
+      .setInputCols(Array("features", "selected_f_f"))
+      .setOutputCol("f_f_f")
+
+    val selector2 = new VarianceSelector()
+      .setFeaturesCol("f_f_f")
+      .setOutputCol("selected_f_f_f")
+      .setNumTopFeatures(1000)
+
     val assembler = new VectorAssembler()
-      .setInputCols(Array("features", "f_f"))
+      .setInputCols(Array("features", "selected_f_f", "selected_f_f_f"))
       .setOutputCol("assembled_features")
 
     val pipeline = new Pipeline()
-      .setStages(Array(cartesian, selector, assembler))
+      .setStages(Array(cartesian, selector, cartesian2, selector2, assembler))
 
     val crossDF = pipeline.fit(data).transform(data).persist()
     data.unpersist()

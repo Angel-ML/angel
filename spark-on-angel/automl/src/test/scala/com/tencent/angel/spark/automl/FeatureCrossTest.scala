@@ -21,7 +21,7 @@ import org.apache.spark.ml.Pipeline
 import org.apache.spark.ml.attribute.{Attribute, AttributeGroup, NumericAttribute}
 import org.apache.spark.ml.classification.{BinaryLogisticRegressionSummary, LogisticRegression}
 import org.apache.spark.ml.feature.{Interaction, VectorAssembler}
-import org.apache.spark.ml.feature.operator.{SelfCartesian, VectorCartesian}
+import org.apache.spark.ml.feature.operator.{SelfCartesian, VarianceSelector, VectorCartesian}
 import org.apache.spark.ml.linalg.{DenseVector, SparseVector, Vectors}
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.{StructField, StructType}
@@ -170,6 +170,40 @@ class FeatureCrossTest {
     println(s"original feature + cartesian feature: auc = $assemblerAUC")
 
     spark.close()
+  }
+
+  @Test def testThreeOrderCross(): Unit = {
+    val data = spark.read.format("libsvm")
+      .option("numFeatures", 8)
+      .load("../../data/abalone/abalone_8d_train.libsvm")
+      .persist()
+
+    val cartesian = new VectorCartesian()
+      .setInputCols(Array("features", "features"))
+      .setOutputCol("f_f")
+
+    val cartesian2 = new VectorCartesian()
+      .setInputCols(Array("features", "f_f"))
+      .setOutputCol("f_f_f")
+
+    val assembler = new VectorAssembler()
+      .setInputCols(Array("features", "f_f", "f_f_f"))
+      .setOutputCol("assembled_features")
+
+    val pipeline = new Pipeline()
+      .setStages(Array(cartesian, cartesian2, assembler))
+
+    val crossDF = pipeline.fit(data).transform(data).persist()
+    crossDF.show(1)
+
+    val twoOrderDim = crossDF.head().getAs[DenseVector]("f_f").toArray.size
+    println(s"three order features size: $twoOrderDim")
+
+    val threeOrderDim = crossDF.head().getAs[DenseVector]("f_f_f").toArray.size
+    println(s"three order features size: $threeOrderDim")
+
+    val assembledDim = crossDF.head().getAs[DenseVector]("assembled_features").toArray.size
+    println(s"assembled features size: $assembledDim")
   }
 
 }
