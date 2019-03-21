@@ -82,7 +82,7 @@ class FeatureCrossTest {
 
     val featureModel = pipeline.fit(data)
     val crossDF = featureModel.transform(data)
-    crossDF.show(1, truncate = false)
+    crossDF.show(1)
 
     val splitData = crossDF.randomSplit(Array(0.9, 0.1))
 

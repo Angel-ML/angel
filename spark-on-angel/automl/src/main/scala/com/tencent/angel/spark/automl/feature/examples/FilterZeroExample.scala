@@ -23,7 +23,7 @@ import org.apache.spark.ml.Pipeline
 import org.apache.spark.ml.feature.operator.{SelfCartesian, VectorFilterZero}
 import org.apache.spark.sql.SparkSession
 
-object FilterNonZero {
+object FilterZeroExample {
 
   def main(args: Array[String]): Unit = {
 
