@@ -18,6 +18,11 @@ class LouvainPSModel(
     this
   }
 
+  def fetchNode2Community(start: Int, end: Int, keys: Array[Int], adjs: Array[Array[Int]]): IntIntVector = {
+    val nodes =  (adjs.slice(start, end).flatten ++ keys.slice(start, end)).distinct
+    node2CommunityPSVector.pull(nodes).asInstanceOf[IntIntVector]
+  }
+
   def fetch(
       start: Int,
       end: Int,

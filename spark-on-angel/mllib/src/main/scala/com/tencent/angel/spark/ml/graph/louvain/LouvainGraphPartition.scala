@@ -16,11 +16,43 @@ class LouvainGraphPartition(
     var weights: Array[Array[Float]]) extends Serializable {
   assert(keys.length == adjs.length)
   private lazy val allNodes = (adjs.flatten ++ keys).distinct
-  private var nodeWeights = weights.map(_.sum)
+
+  private var nodeWeights: Array[Float] = _
+
+  def setNodeWeights(nodeWeights: Array[Float]): this.type = {
+    if (null == nodeWeights) {
+      this.nodeWeights = weights.map(_.sum)
+    } else {
+      this.nodeWeights = nodeWeights
+    }
+    this
+  }
 
   private[louvain] def max: Int = keys.aggregate(Int.MinValue)(math.max, math.max)
 
   private[louvain] def partitionWeights: Float = weights.map(_.sum).sum
+
+  def createNewEdges(model: LouvainPSModel, batchSize: Int): Iterator[((Int, Int), Float)] = {
+    makeBatches(batchSize).flatMap { batch =>
+      val (start, end) = batch
+      val id2comm = model.fetchNode2Community(start, end, keys, adjs)
+      Iterator.range(start, end).flatMap { i =>
+        val u = id2comm.get(keys(i))
+        val adj = adjs(i)
+        val weight = weights(i)
+        adj.indices.flatMap { j =>
+          val v = id2comm.get(adj(j))
+          if (u < v) {
+            Iterator.single(((u, v), weight(j)))
+          } else if (v < u) {
+            Iterator.single(((v, u), weight(j)))
+          } else {
+            Iterator.empty
+          }
+        }
+      }
+    }
+  }
 
   def modularityOptimize(
       model: LouvainPSModel,

@@ -11,10 +11,10 @@ import com.tencent.angel.spark.util.VectorUtils
 
 object Louvain {
 
-  def apply(edges: RDD[(Int, Int)], storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY): Louvain = {
+  def apply(edges: RDD[((Int, Int), Float)], storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY): Louvain = {
     val partNum = edges.getNumPartitions
-    val graph = edges.flatMap { case (src, dst) =>
-      Iterator((src, (dst, 1.0f)), (dst, (src, 1.0f)))
+    val graph = edges.flatMap { case ((src, dst), wgt) =>
+      Iterator((src, (dst, wgt)), (dst, (src, wgt)))
     }.groupByKey(partNum).mapPartitions { iter =>
       val keys = new ArrayBuffer[Int]()
       val neighbors = new ArrayBuffer[Array[Int]]()
@@ -30,7 +30,9 @@ object Louvain {
       new LouvainGraphPartition(keys, neighbors, weights)
     }.persist(storageLevel)
 
-    new Louvain(graph)
+    val maxId = graph.map(_.max).fold(Int.MinValue)(math.max)
+    val model = LouvainPSModel.apply(maxId + 1)
+    new Louvain(graph, model)
   }
 
   def main(args: Array[String]): Unit = {
@@ -45,10 +47,11 @@ object Louvain {
       val arr = line.split("[\\s+,]")
       val src = arr(0).toInt
       val dst = arr(1).toInt
-      (src, dst)
+      ((src, dst), 1.0f)
     }
     val louvain = Louvain(edges, storageLevel)
-    louvain.process(100)
+
+    louvain.modularityOptimize(100)
     louvain.save("louvain")
     stop()
   }
@@ -68,16 +71,13 @@ object Louvain {
   }
 }
 
-class Louvain(@transient val graph: RDD[LouvainGraphPartition]) extends Serializable {
+class Louvain(
+    @transient val graph: RDD[LouvainGraphPartition],
+    louvainPSModel: LouvainPSModel) extends Serializable {
 
-  private val louvainPSModel = LouvainPSModel.apply(maxId)
 
   private def initializePS(louvainPSModel: LouvainPSModel): Unit = {
     graph.foreach(_.initializePS(louvainPSModel))
-  }
-
-  private lazy val maxId: Int = {
-    graph.map(_.max).aggregate(Int.MinValue)(math.max, math.max) + 1
   }
 
   private lazy val totalWeights: Double = {
@@ -112,8 +112,12 @@ class Louvain(@transient val graph: RDD[LouvainGraphPartition]) extends Serializ
       .saveAsTextFile(path)
   }
 
-  def process(maxIter: Int): Unit = {
+  def init(): this.type = {
     initializePS(louvainPSModel)
+    this
+  }
+
+  def modularityOptimize(maxIter: Int): Unit = {
     val q2 = Q2()
     println(s"Q2 = $q2")
     for (_ <- 0 until maxIter) {
@@ -125,5 +129,12 @@ class Louvain(@transient val graph: RDD[LouvainGraphPartition]) extends Serializ
     }
     val (v, k) = hist
     println(s"key = ${k.mkString(",")}, value = ${v.mkString(",")}")
+  }
+
+  def folding(batchSize: Int, storageLevel: StorageLevel): Louvain = {
+    val newEdges = graph.flatMap { part =>
+      part.createNewEdges(louvainPSModel, batchSize)
+    }.reduceByKey(_ + _)
+    Louvain.apply(newEdges, storageLevel)
   }
 }
