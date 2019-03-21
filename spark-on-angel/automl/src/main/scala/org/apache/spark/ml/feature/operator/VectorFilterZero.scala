@@ -22,7 +22,7 @@ import org.apache.spark.annotation.Since
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.attribute.{Attribute, AttributeGroup, NumericAttribute, UnresolvedAttribute}
 import org.apache.spark.ml.feature.VectorAssembler
-import org.apache.spark.ml.linalg.{SparseVector, Vector, VectorUDT, Vectors}
+import org.apache.spark.ml.linalg.{DenseVector, SparseVector, Vector, VectorUDT, Vectors}
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.param.shared.{HasInputCol, HasOutputCol}
 import org.apache.spark.ml.util.{DefaultParamsReadable, DefaultParamsWritable, Identifiable}
@@ -35,7 +35,7 @@ import scala.collection.mutable.{ArrayBuffer, ArrayBuilder}
 class VectorFilterZero(var featureMap: Map[Int, Int], override val uid: String)
   extends Transformer with HasInputCol with HasOutputCol with DefaultParamsWritable {
 
-  def this(featureMap: Map[Int, Int]) = this(featureMap, Identifiable.randomUID("drop_nonzero_feature"))
+  def this(featureMap: Map[Int, Int]) = this(featureMap, Identifiable.randomUID("VectorFilterZero"))
 
   /** @group setParam */
   def setInputCol(value: String): this.type = set(inputCol, value)
@@ -127,7 +127,6 @@ object VectorFilterZero extends DefaultParamsReadable[VectorFilterZero]{
           case sv: SparseVector =>
             sv.indices
           case _ => throw new IllegalArgumentException(s"Input column $column should be SparseVector.")
-
         }
       }.reduce(_ union _ distinct)
       Iterator(mergeIndices)

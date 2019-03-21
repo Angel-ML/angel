@@ -20,9 +20,7 @@ package org.apache.spark.ml.feature.operator
 
 import breeze.linalg.{argsort, DenseVector => BDV}
 import org.apache.hadoop.fs.Path
-import org.apache.spark.annotation.Since
 import org.apache.spark.ml.attribute.{Attribute, AttributeGroup, NominalAttribute}
-import org.apache.spark.ml.feature.ChiSqSelector
 import org.apache.spark.ml.feature.operator.VarianceSelectorModel.VarianceSelectorModelWriter
 import org.apache.spark.ml.linalg.{DenseVector, SparseVector, Vector, VectorUDT, Vectors}
 import org.apache.spark.ml.param.shared.{HasFeaturesCol, HasOutputCol}
@@ -35,6 +33,8 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.functions.{col, udf}
 import org.apache.spark.sql.types.{StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
+
+import scala.collection.mutable.{ArrayBuffer, ArrayBuilder}
 
 /**
   * Params for [[VarianceSelector]] and [[VarianceSelectorModel]].
@@ -187,22 +187,21 @@ class VarianceSelectorModel(override val uid: String,
   }
 
   override def transform(dataset: Dataset[_]): DataFrame = {
-    println(s"select ${filterIndices.size} features: ${filterIndices.mkString(",")}")
-
     // select function, select the top features order by lasso coefficients
     val select = udf { vector: Vector =>
       vector match {
         // for DenseVector, just select top features
         case dv: DenseVector =>
-          val values: Array[Double] = dv.toArray
-          for (i <- 0 until filterIndices(0)) values(i) = 0
-          for (k <- 0 until filterIndices.size - 1) {
-            for (i <- filterIndices(k) + 1 until filterIndices(k+1)) {
-              values(i) = 0
-            }
-          }
-          for (i <- filterIndices.last + 1 until values.size) values(i) = 0
-          Vectors.dense(values)
+          val denseValues = dv.toArray
+          val values = filterIndices.map(denseValues)
+          Vectors.sparse(dv.size, filterIndices, values)
+//          for (i <- 0 until filterIndices(0)) values(i) = 0
+//          for (k <- 0 until filterIndices.length - 1) {
+//            for (i <- filterIndices(k) + 1 until filterIndices(k+1)) {
+//              values(i) = 0
+//            }
+//          }
+//          for (i <- filterIndices.last + 1 until values.length) values(i) = 0
         case sv: SparseVector =>
           val selectedPairs = sv.indices.zip(sv.values)
             .filter{ case (k, v) => filterIndices.contains(k) }

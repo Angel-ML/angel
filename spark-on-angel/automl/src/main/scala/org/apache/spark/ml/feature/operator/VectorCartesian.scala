@@ -54,6 +54,7 @@ class VectorCartesian (override val uid: String) extends Transformer
   }
 
   override def transform(dataset: Dataset[_]): DataFrame = {
+    val startTime = System.currentTimeMillis()
     transformSchema(dataset.schema, logging = true)
     val inputFeatures = $(inputCols).map(c => dataset.schema(c))
     val vectorDims = getVectorDimension(dataset, ${inputCols})
@@ -94,11 +95,16 @@ class VectorCartesian (override val uid: String) extends Transformer
   }
 
   private def getVectorDimension(dataset: Dataset[_], cols: Array[String]): Array[Int] = {
-    cols.map{ colName =>
-      dataset.select(colName).first() match {
-        case Row(v: Vector) => v.size
-        case _ => throw new SparkException(s"col $colName should be Vector")
-      }
+    dataset.head match {
+      case row: Row =>
+        cols.map { col =>
+          row.getAs[Vector](col).size
+//          match {
+//            case dv: DenseVector => dv.size
+//            case sv: SparseVector => sv.size
+//          }
+        }
+      case _ => throw new SparkException(s"item in dataset should be Row.")
     }
   }
 
