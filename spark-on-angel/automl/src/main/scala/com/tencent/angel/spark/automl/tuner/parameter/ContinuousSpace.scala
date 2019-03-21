@@ -18,6 +18,7 @@
 
 package com.tencent.angel.spark.automl.tuner.parameter
 
+import com.tencent.angel.spark.automl.tuner.TunerParam
 import com.tencent.angel.spark.automl.utils.{AutoMLException, Distribution}
 
 import scala.collection.mutable.ArrayBuffer
@@ -51,16 +52,15 @@ class ContinuousSpace(
     lower = items._1
     upper = items._2
     num = items._3
-    isGrid = if (num == -1) false else true
-    gridValues = if (isGrid) getGridValues else Array.empty
+    resetGrid(num)
   }
 
   require(lower < upper, s"lower bound should less than upper bound")
 
   val rd = new Random()
 
-  var isGrid: Boolean = if (num == -1) false else true
-  var gridValues: Array[Double] = if (isGrid) getGridValues else Array.empty
+  var isGrid: Boolean = false
+  var gridValues: Array[Double] = _
 
   def parseConfig(input: String): (Double, Double, Int) = {
     assert(input.startsWith("[") && input.endsWith("]"))
@@ -83,7 +83,7 @@ class ContinuousSpace(
     ret
   }
 
-  def getGridValues(): Array[Double] = {
+  def getGridValues(num: Int): Array[Double] = {
     var ret: ArrayBuffer[Double] = ArrayBuffer[Double]()
     distribution match {
       case Distribution.LINEAR =>
@@ -94,6 +94,11 @@ class ContinuousSpace(
       case _ => println(s"Distribution $distribution not supported")
     }
     ret.toArray
+  }
+
+  def resetGrid(numGrid: Int): Unit = {
+    isGrid = if (numGrid < 0) false else true
+    gridValues = if (isGrid) getGridValues(numGrid) else Array.empty
   }
 
   def getLower: Double = lower

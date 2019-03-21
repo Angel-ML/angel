@@ -39,6 +39,16 @@ class Solver(
 
   val PARAM_TYPES: Array[String] = Array("discrete", "continuous")
 
+  ensureValid()
+
+  def ensureValid(): Unit = {
+    // ensure grid
+    surrogateMode match {
+      case SurrogateMode.GRID => cs.setAllToGrid()
+      case _ =>
+    }
+  }
+
   def getHistory(): (Array[Vector], Array[Double]) = (surrogate.preX.toArray, surrogate.preY.toArray)
 
   def getSurrogate: Surrogate = surrogate

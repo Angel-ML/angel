@@ -25,6 +25,7 @@ object TunerParam {
 
   var batchSize: Int = 1
   var sampleSize: Int = 10 * batchSize
+  var defaultGridSize: Int = 100
 
   var taskName: String = "com.tencent.angel.spark.automl.tuner.trail.TestRunner"
 
@@ -34,6 +35,10 @@ object TunerParam {
 
   def setSampleSize(num: Int): Unit = {
     sampleSize = num
+  }
+
+  def setDefaultGridSize(num: Int): Unit = {
+    defaultGridSize = num
   }
 
   def setTaskName(name: String): Unit = {

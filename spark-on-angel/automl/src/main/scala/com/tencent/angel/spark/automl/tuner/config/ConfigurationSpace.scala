@@ -18,8 +18,9 @@
 
 package com.tencent.angel.spark.automl.tuner.config
 
+import com.tencent.angel.spark.automl.tuner.TunerParam
 import com.tencent.angel.spark.automl.tuner.math.BreezeOp._
-import com.tencent.angel.spark.automl.tuner.parameter.ParamSpace
+import com.tencent.angel.spark.automl.tuner.parameter.{ContinuousSpace, ParamSpace}
 import com.tencent.angel.spark.automl.utils.AutoMLException
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.spark.ml.linalg.{Vector, Vectors}
@@ -79,6 +80,14 @@ class ConfigurationSpace(
   def addHistories(vecs: Array[Vector]): Unit = preX ++= vecs
 
   def addHistory(vec: Vector): Unit = preX += vec
+
+  def setAllToGrid(): Unit = {
+    getParams().foreach{
+      case cParam: ContinuousSpace =>
+          if(!cParam.isGrid)  cParam.resetGrid(TunerParam.defaultGridSize)
+      case _ =>
+    }
+  }
 
   def spaceSize(): Int = {
     var size: Int = if (numParams > 0) 1 else 0
@@ -166,8 +175,8 @@ class ConfigurationSpace(
   }
 
   def getGridConfigs(): Array[Configuration] = {
-    assert(spaceSize() < Int.MaxValue, "all parameters must be discrete!")
-    println(s"configuration space size ${spaceSize()}")
+    //assert(spaceSize() < Int.MaxValue, "all parameters must be discrete!")
+    //println(s"configuration space size ${spaceSize()}")
     var configs: ArrayBuffer[Configuration] = new ArrayBuffer[Configuration]
 
     var tmp: ArrayBuffer[Array[Double]] = new ArrayBuffer[Array[Double]]

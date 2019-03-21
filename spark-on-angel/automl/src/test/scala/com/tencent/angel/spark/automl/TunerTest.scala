@@ -43,7 +43,7 @@ class TunerTest {
   }
 
   @Test def testGrid(): Unit = {
-    val param1 = ParamSpace.fromConfigString("param1", "[1:10:10]")
+    val param1 = ParamSpace.fromConfigString("param1", "[1,10]")
     val param2 = ParamSpace.fromConfigString("param2", "[-5:5:10]")
     val param3 = ParamSpace.fromConfigString("param3", "{0.0,1.0,3.0,5.0}")
     val param4 = ParamSpace.fromConfigString("param4", "{-5.0,-3.0,0.0,3.0,5.0}")
