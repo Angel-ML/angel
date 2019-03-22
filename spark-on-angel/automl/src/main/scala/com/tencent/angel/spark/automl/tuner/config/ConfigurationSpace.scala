@@ -189,9 +189,8 @@ class ConfigurationSpace(
     val paramsArray: Array[Array[Double]] = tmp.toArray
 
     if (numParams == 1) {
-      val paramsGrid: Array[Array[Double]] = paramsArray
       var tmp: ArrayBuffer[Vector] = new ArrayBuffer[Vector]
-      paramsGrid.foreach {
+      paramsArray.head.foreach {
         tmp += Vectors.dense(_)
       }
       val paramsVec = tmp.toArray
