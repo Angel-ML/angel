@@ -19,6 +19,7 @@ package com.tencent.angel.spark.automl.feature.examples
 
 import org.apache.spark.SparkConf
 import org.apache.spark.ml.classification.{BinaryLogisticRegressionSummary, LogisticRegression}
+import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
 import org.apache.spark.ml.{Pipeline, PipelineStage}
 import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.ml.feature.operator.{VarianceSelector, VectorCartesian, VectorFilterZero}
@@ -113,8 +114,13 @@ object FeatureEngineeringExample {
       .setLabelCol("label")
       .setMaxIter(20)
       .setRegParam(0.01)
-    val originalAUC = originalLR.fit(trainDF).evaluate(testDF)
-      .asInstanceOf[BinaryLogisticRegressionSummary].areaUnderROC
+    val originalPredictions = originalLR.fit(trainDF).transform(testDF)
+    originalPredictions.show(1)
+    val originalEvaluator = new BinaryClassificationEvaluator()
+      .setLabelCol("label")
+      .setRawPredictionCol("rawPrediction")
+      .setMetricName("areaUnderROC")
+    val originalAUC = originalEvaluator.evaluate(originalPredictions)
     println(s"original features auc: $originalAUC")
 
     val crossLR = new LogisticRegression()
@@ -122,11 +128,14 @@ object FeatureEngineeringExample {
       .setLabelCol("label")
       .setMaxIter(20)
       .setRegParam(0.01)
-    val crossAUC = crossLR.fit(trainDF).evaluate(testDF)
-      .asInstanceOf[BinaryLogisticRegressionSummary].areaUnderROC
+    val crossPredictions = crossLR.fit(trainDF).transform(testDF)
+    crossPredictions.show(1)
+    val crossEvaluator = new BinaryClassificationEvaluator()
+      .setLabelCol("label")
+      .setRawPredictionCol("rawPrediction")
+      .setMetricName("areaUnderROC")
+    val crossAUC = crossEvaluator.evaluate(crossPredictions)
     println(s"cross features auc: $crossAUC")
-
-
   }
 
 }
