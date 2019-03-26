@@ -20,7 +20,7 @@ package com.tencent.angel.spark.ml.tree.gbdt.metadata
 
 import com.tencent.angel.spark.ml.tree.gbdt.dataset.Dataset
 import com.tencent.angel.spark.ml.tree.gbdt.histogram.{BinaryGradPair, GradPair, MultiGradPair}
-import com.tencent.angel.spark.ml.tree.objective.loss.{BinaryLoss, Loss, MultiLoss, MultiStrategy}
+import com.tencent.angel.spark.ml.tree.objective.loss._
 import com.tencent.angel.spark.ml.tree.param.GBDTParam
 import com.tencent.angel.spark.ml.tree.split.SplitEntry
 import com.tencent.angel.spark.ml.tree.util.{ConcurrentUtil, Maths, RangeBitSet}
@@ -49,6 +49,9 @@ object InstanceInfo {
 
 case class InstanceInfo(param: GBDTParam, predictions: Array[Float], weights: Array[Float], gradients: Array[Double], hessians: Array[Double],
                         nodePosStart: Array[Int], nodePosEnd: Array[Int], nodeToIns: Array[Int]) {
+
+  val gradCache: Array[Double] = if (param.isMultiClassMultiTree) new Array[Double](predictions.size) else Array.empty
+  val hessCache: Array[Double] = if (param.isMultiClassMultiTree) new Array[Double](predictions.size) else Array.empty
 
   def resetPosInfo(): Unit = {
     val num = weights.length
@@ -115,7 +118,7 @@ case class InstanceInfo(param: GBDTParam, predictions: Array[Float], weights: Ar
 
   def calcGradPairsForMultiClassMultiTree(labels: Array[Float], loss: Loss, param: GBDTParam, curTree: Int,
                                           threadPool: ExecutorService = null): GradPair = {
-    def calcGPForMultiClassMultiTree(start: Int, end: Int): GradPair = {
+    def calcBinaryGPForMultiClassMultiTree(start: Int, end: Int): GradPair = {
       val numClass = param.numClass
       val curClass = (curTree - 1) % numClass   // class starts from 0
       val binaryLoss = loss.asInstanceOf[BinaryLoss]
@@ -133,15 +136,98 @@ case class InstanceInfo(param: GBDTParam, predictions: Array[Float], weights: Ar
       new BinaryGradPair(sumGrad, sumHess)
     }
 
+    def calcGPForMultiClassMultiTree(start: Int, end: Int): GradPair = {
+      val numClass = param.numClass
+      val curClass = (curTree - 1) % numClass   // class starts from 0
+      var sumGrad = 0.0
+      var sumHess = 0.0
+      for (insId <- start until end) {
+        val pair = calcGradHess(predictions, labels, insId, curClass)
+        gradients(insId) = pair._1
+        hessians(insId) = pair._2
+        sumGrad += pair._1
+        sumHess += pair._2
+      }
+      new BinaryGradPair(sumGrad, sumHess)
+    }
+
+    def calcGradHess(preds: Array[Float], labels: Array[Float], insId: Int, curClass: Int): (Double, Double) = {
+      val numClass = preds.length / labels.length
+      val points = new Array[Float](numClass)
+      Array.copy(preds, insId * numClass, points, 0, numClass)
+      var wMax = 0.0
+      for(point <- points) {
+        wMax = math.max(wMax, point)
+      }
+      var wSum = 0.0
+      for(point <- points) {
+        wSum += math.exp(point - wMax)
+      }
+      var p = math.exp(points(curClass) - wMax) / wSum
+      val h = math.max(2.0 * p * (1 - p), 1e-16)
+      p = if (labels(insId) == curClass) p - 1 else p
+      (p, h)
+    }
+
+    def calcGPWithCache(start: Int, end: Int): GradPair = {
+      val numClass = param.numClass
+      val curClass = (curTree - 1) % numClass
+      var sumGrad = 0.0
+      var sumHess = 0.0
+      for (insId <- start until end) {
+        val grad = gradCache(insId * numClass + curClass)
+        val hess = hessCache(insId * numClass + curClass)
+        gradients(insId) = grad
+        hessians(insId) = hess
+        sumGrad += grad
+        sumHess += hess
+      }
+      new BinaryGradPair(sumGrad, sumHess)
+    }
+
+    def calcFullGP(start: Int, end: Int): Unit = {
+      val numClass = param.numClass
+      for (insId <- start until end) {
+        val points = new Array[Float](numClass)
+        Array.copy(predictions, insId * numClass, points, 0, numClass)
+        var wMax = 0.0
+        for(point <- points) {
+          wMax = math.max(wMax, point)
+        }
+        var wSum = 0.0
+        for(point <- points) {
+          wSum += math.exp(point - wMax)
+        }
+        for (k <- 0 until numClass) {
+          var p = math.exp(points(k) - wMax) / wSum
+          val h = math.max(2.0 * p * (1 - p), 1e-16)
+          p = if (labels(insId) == k) p - 1 else p
+          gradCache(insId * numClass + k) = p
+          hessCache(insId * numClass + k) = h
+        }
+      }
+    }
+
     val numIns = labels.length
+    val numClass = param.numClass
+    val curClass = (curTree - 1) % numClass
+    if (curClass == 0) {
+      calcFullGP(0, numIns)
+    }
     if (param.numThread == 1) {
       calcGPForMultiClassMultiTree(0, numIns)
+//      calcGPWithCache(0, numIns)
     } else {
       ConcurrentUtil.rangeParallel(calcGPForMultiClassMultiTree, 0, numIns, threadPool)
         .map(_.get())
         .reduceLeft((gp1, gp2) => {
           gp1.plusBy(gp2); gp1
         })
+//      ConcurrentUtil.rangeParallel(calcGPWithCache, 0, numIns, threadPool)
+//        .map(_.get())
+//        .reduceLeft((gp1, gp2) => {
+//          gp1.plusBy(gp2); gp1
+//        })
     }
   }
 
