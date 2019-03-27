@@ -41,6 +41,7 @@ public class GBDTParam extends RegTParam {
   public String lossFunc; // name of loss function
   public String[] evalMetrics; // name of eval metric
   public String multiStrategy; // strategy of multi-class classification (one-tree or multi-tree)
+  public boolean multiGradCache; // use grad cache for multiclass-multitree, or calc grad for every tree
 
   public int numClassPerTree() {
     if (numClass > 2 && multiStrategy.equalsIgnoreCase(MultiStrategy.ONE_TREE.toString())) {

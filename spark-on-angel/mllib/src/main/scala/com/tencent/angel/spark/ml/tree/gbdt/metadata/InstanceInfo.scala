@@ -50,8 +50,8 @@ object InstanceInfo {
 case class InstanceInfo(param: GBDTParam, predictions: Array[Float], weights: Array[Float], gradients: Array[Double], hessians: Array[Double],
                         nodePosStart: Array[Int], nodePosEnd: Array[Int], nodeToIns: Array[Int]) {
 
-  val gradCache: Array[Double] = if (param.isMultiClassMultiTree) new Array[Double](predictions.size) else Array.empty
-  val hessCache: Array[Double] = if (param.isMultiClassMultiTree) new Array[Double](predictions.size) else Array.empty
+  val gradCache: Array[Double] = if (param.isMultiClassMultiTree && param.multiGradCache) new Array[Double](predictions.size) else Array.empty
+  val hessCache: Array[Double] = if (param.isMultiClassMultiTree && param.multiGradCache) new Array[Double](predictions.size) else Array.empty
 
   def resetPosInfo(): Unit = {
     val num = weights.length
@@ -164,8 +164,8 @@ case class InstanceInfo(param: GBDTParam, predictions: Array[Float], weights: Ar
         wSum += math.exp(point - wMax)
       }
       var p = math.exp(points(curClass) - wMax) / wSum
-      val h = math.max(2.0 * p * (1 - p), 1e-16)
-      p = if (labels(insId) == curClass) p - 1 else p
+      val h = math.max(2.0 * p * (1.0 - p), 1e-16)
+      p = if (labels(insId) == curClass) p - 1.0 else p
       (p, h)
     }
 
@@ -200,8 +200,8 @@ case class InstanceInfo(param: GBDTParam, predictions: Array[Float], weights: Ar
         }
         for (k <- 0 until numClass) {
           var p = math.exp(points(k) - wMax) / wSum
-          val h = math.max(2.0 * p * (1 - p), 1e-16)
-          p = if (labels(insId) == k) p - 1 else p
+          val h = math.max(2.0 * p * (1.0 - p), 1e-16)
+          p = if (labels(insId) == k) p - 1.0 else p
           gradCache(insId * numClass + k) = p
           hessCache(insId * numClass + k) = h
         }
@@ -211,23 +211,28 @@ case class InstanceInfo(param: GBDTParam, predictions: Array[Float], weights: Ar
     val numIns = labels.length
     val numClass = param.numClass
     val curClass = (curTree - 1) % numClass
-    if (curClass == 0) {
+    if (param.multiGradCache && curClass == 0) {
       calcFullGP(0, numIns)
     }
     if (param.numThread == 1) {
-      calcGPForMultiClassMultiTree(0, numIns)
-//      calcGPWithCache(0, numIns)
+      if (param.multiGradCache)
+        calcGPForMultiClassMultiTree(0, numIns)
+      else
+        calcGPWithCache(0, numIns)
     } else {
-      ConcurrentUtil.rangeParallel(calcGPForMultiClassMultiTree, 0, numIns, threadPool)
+      if (param.multiGradCache)
+        ConcurrentUtil.rangeParallel(calcGPWithCache, 0, numIns, threadPool)
+          .map(_.get())
+          .reduceLeft((gp1, gp2) => {
+            gp1.plusBy(gp2); gp1
+          })
+      else
+        ConcurrentUtil.rangeParallel(calcGPForMultiClassMultiTree, 0, numIns, threadPool)
         .map(_.get())
         .reduceLeft((gp1, gp2) => {
           gp1.plusBy(gp2); gp1
         })
-//      ConcurrentUtil.rangeParallel(calcGPWithCache, 0, numIns, threadPool)
-//        .map(_.get())
-//        .reduceLeft((gp1, gp2) => {
-//          gp1.plusBy(gp2); gp1
-//        })
+
     }
   }
 

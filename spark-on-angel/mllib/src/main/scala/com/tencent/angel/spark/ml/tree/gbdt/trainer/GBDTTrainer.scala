@@ -75,8 +75,9 @@ object GBDTTrainer {
     param.lossFunc = params.getOrElse(MLConf.ML_GBDT_LOSS_FUNCTION, "binary:logistic")
     param.evalMetrics = params.getOrElse(MLConf.ML_GBDT_EVAL_METRIC, "error").split(",").map(_.trim).filter(_.nonEmpty)
     SharedConf.get().set(MLConf.ML_GBDT_LOSS_FUNCTION, param.lossFunc)
-    param.multiStrategy = params.getOrElse("ml.gbdt.multi.class.strategy", "one-tree")
+    param.multiStrategy = params.getOrElse(MLConf.ML_GBDT_MULTI_CLASS_STRATEGY, "one-tree")
     if (param.isMultiClassMultiTree) param.lossFunc = "binary:logistic"
+    param.multiGradCache = params.getOrElse(MLConf.ML_GBDT_MULTI_CLASS_GRAD_CACHE, "true").toBoolean
 
     // major algo conf
     param.featSampleRatio = params.getOrElse(MLConf.ML_GBDT_FEATURE_SAMPLE_RATIO, "1.0").toFloat

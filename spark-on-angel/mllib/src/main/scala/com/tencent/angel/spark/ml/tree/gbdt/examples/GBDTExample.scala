@@ -56,6 +56,7 @@ object GBDTExample {
     param.evalMetrics = Array("error")
     param.multiStrategy = "multi-tree"
     if (param.isMultiClassMultiTree) param.lossFunc = "binary:logistic"
+    param.multiGradCache = true
 
     // major algo conf
     param.featSampleRatio = 1.0f
