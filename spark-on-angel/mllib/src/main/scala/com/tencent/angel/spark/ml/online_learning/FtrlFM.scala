@@ -2,9 +2,9 @@ package com.tencent.angel.spark.ml.online_learning
 
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math2.storage.{IntKeyVectorStorage}
+import com.tencent.angel.ml.math2.storage.IntKeyVectorStorage
 import com.tencent.angel.ml.math2.ufuncs.{OptFuncs, Ufuncs}
-import com.tencent.angel.ml.math2.vector.{IntDummyVector, IntKeyVector, Vector}
+import com.tencent.angel.ml.math2.vector.{IntDummyVector, IntFloatVector, IntKeyVector, Vector}
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.model.output.format.RowIdColIdValueTextRowFormat
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
@@ -115,8 +115,12 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
 
     // fetch second
     val seconds = second.pull((0 until factor * 2).toArray, indices)
+
+    println(s"seconds: ${seconds(0).asInstanceOf[IntFloatVector].getStorage.getValues.mkString(",")}")
     val localV = (0 until factor).map(idx => Ufuncs.ftrlthresholdinit(seconds(idx), seconds(idx + factor),
       alpha, beta, lambda1, lambda2, 0.0, 0.01)).toArray
+
+    println(s"localV: ${localV(0).asInstanceOf[IntFloatVector].getStorage.getValues.mkString(",")}")
 
     val localV2 = localV.map(v0 => v0.mul(v0))
 
@@ -125,10 +129,14 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
 
 
 
-    val deltaZ = localZ.emptyLike()
-    val deltaN = localN.emptyLike()
+    val deltaZ = localZ.copy()
+    val deltaN = localN.copy()
 
-    val deltaV = seconds.map(f => f.emptyLike())
+    deltaZ.clear()
+    deltaN.clear()
+
+    val deltaV = seconds.map(f => f.copy())
+    deltaV.foreach(f => f.clear())
 
     start = System.currentTimeMillis()
 
@@ -147,6 +155,8 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
 
       lossSum += loss
     }
+
+    println(s"deltaV: ${deltaV(0).asInstanceOf[IntFloatVector].getStorage.getValues.mkString(",")}")
     end = System.currentTimeMillis()
     val optimTime = end - start
 
@@ -157,6 +167,13 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
 
     println(s"batchId=$index loss=${lossSum / batch.size} pullTime=$pullTime optimTime=$optimTime pushTime=$pushTime")
     lossSum
+  }
+
+  def showSecond(): Unit = {
+    val indices = (0 until 10).toArray
+    val seconds = second.pull((0 until factor * 2).toArray, indices)
+    seconds.map(f => f.asInstanceOf[IntFloatVector].getStorage.getValues.mkString(","))
+      .foreach(f => println(f))
   }
 
   def weight(): Unit = {
@@ -252,18 +269,15 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
 
   def save(path: String): Unit = {
     val format = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
-    val modelContext1 = new ModelSaveContext(path + "/weightW")
+    val modelContext = new ModelSaveContext(path)
     val matrixContext1 = new MatrixSaveContext(firstName, format)
-    matrixContext1.addIndices(Array(0, 1))
-    modelContext1.addMatrix(matrixContext1)
-    AngelPSContext.save(modelContext1)
+    matrixContext1.addIndices(Array(0, 1, 2))
+    modelContext.addMatrix(matrixContext1)
 
-
-    val modelContext2 = new ModelSaveContext(path + "/weightV")
     val matrixContext2 = new MatrixSaveContext(secondName, format)
-    matrixContext2.addIndices((0 until factor * 2).toArray)
-    modelContext2.addMatrix(matrixContext2)
-    AngelPSContext.save(modelContext2)
+    matrixContext2.addIndices((0 until factor * 3).toArray)
+    modelContext.addMatrix(matrixContext2)
+    AngelPSContext.save(modelContext)
   }
 
   /**
@@ -273,27 +287,26 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
     */
   def saveWeight(path: String): Unit = {
     val format = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
-    val modelContext1 = new ModelSaveContext(path + "/weightW")
+    val modelContext = new ModelSaveContext(path)
     val matrixContext1 = new MatrixSaveContext(firstName, format)
     matrixContext1.addIndices(Array(2))
-    modelContext1.addMatrix(matrixContext1)
-    AngelPSContext.save(modelContext1)
+    modelContext.addMatrix(matrixContext1)
 
-    val modelContext2 = new ModelSaveContext(path + "/weightV")
     val matrixContext2 = new MatrixSaveContext(secondName, format)
     matrixContext2.addIndices((factor * 2 until factor * 3).toArray)
-    modelContext2.addMatrix(matrixContext2)
-    AngelPSContext.save(modelContext2)
+    modelContext.addMatrix(matrixContext2)
+
+    AngelPSContext.save(modelContext)
   }
 
   def load(path: String): Unit = {
     val format = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
-    val modelContext1 = new ModelLoadContext(path + "/weightW")
+    val modelContext1 = new ModelLoadContext(path)
     val matrixContext1 = new MatrixLoadContext(firstName, format)
     modelContext1.addMatrix(matrixContext1)
     AngelPSContext.load(modelContext1)
 
-    val modelContext2 = new ModelLoadContext(path + "/weightV")
+    val modelContext2 = new ModelLoadContext(path)
     val matrixContext2 = new MatrixLoadContext(secondName, format)
     modelContext2.addMatrix(matrixContext2)
     AngelPSContext.load(modelContext2)

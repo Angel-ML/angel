@@ -31,8 +31,8 @@ object FtrlFMExample {
 
     val conf = new SparkConf()
 
-    if (modelPath.length > 0)
-      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, modelPath + "/back")
+//    if (modelPath.length > 0)
+//      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, modelPath)
 
     val sc = new SparkContext(conf)
 
@@ -66,9 +66,9 @@ object FtrlFMExample {
 
     opt.init(0, max+1, -1, rowType, factor, new ColumnRangePartitioner())
 
-    if (modelPath.length > 0) {
-      opt.load(modelPath + "/back")
-    }
+//    if (modelPath.length > 0) {
+//      opt.load(modelPath + "/back")
+//    }
 
     for (epoch <- 1 to numEpoch) {
       val totalLoss = train.mapPartitions {
@@ -90,11 +90,13 @@ object FtrlFMExample {
       println(s"epoch=$epoch loss=${totalLoss / size} auc=$auc")
     }
 
+    opt.showSecond()
+
     if (output.length > 0) {
       println(s"saving model to path $output")
-      opt.weight()
-      opt.save(output + "/back")
-      opt.saveWeight(output)
+//      opt.weight()
+      opt.save(output)
+//      opt.saveWeight(output)
     }
 
     PSContext.stop()

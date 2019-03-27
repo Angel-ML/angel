@@ -44,7 +44,7 @@ object FtrlFMExample {
     val batchSize = params.getOrElse("batchSize", "100").toInt
     val partNum = params.getOrElse("partNum", "10").toInt
     val numEpoch = params.getOrElse("numEpoch", "3").toInt
-    val modelPath = params.getOrElse("output", "")
+    val modelPath = params.getOrElse("output", "model")
     val factor: Int = 10
 
     val opt = new FtrlFM(lambda1, lambda2, alpha, beta)
@@ -80,10 +80,12 @@ object FtrlFMExample {
       println(s"epoch=$epoch loss=${totalLoss / size} auc=$auc")
     }
 
+    opt.showSecond()
+
     if (modelPath.length > 0) {
-      opt.weight
-      opt.save(modelPath + "/back")
-      opt.saveWeight(modelPath)
+//      opt.weight
+//      opt.save(modelPath)
+//      opt.saveWeight(modelPath)
     }
     stop()
   }
