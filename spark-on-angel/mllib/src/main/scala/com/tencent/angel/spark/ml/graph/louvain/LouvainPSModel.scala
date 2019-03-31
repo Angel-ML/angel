@@ -18,10 +18,24 @@ class LouvainPSModel(
     this
   }
 
+  def getCommInfo(comm: Array[Int]):IntFloatVector = {
+    community2weightPSVector.pull(comm.clone()).asInstanceOf[IntFloatVector]
+  }
+
   def fetchNode2Community(start: Int, end: Int, keys: Array[Int], adjs: Array[Array[Int]]): IntIntVector = {
     val nodes =  (adjs.slice(start, end).flatten ++ keys.slice(start, end)).distinct
     node2CommunityPSVector.pull(nodes).asInstanceOf[IntIntVector]
   }
+
+  def getCommunities(keys: Array[Int]): Array[Int] = {
+    val cloneKeys = keys.clone()
+    node2CommunityPSVector.pull(cloneKeys).asInstanceOf[IntIntVector].get(keys)
+  }
+
+  def getMap(keys: Array[Int]): IntIntVector = {
+    node2CommunityPSVector.pull(keys).asInstanceOf[IntIntVector]
+  }
+
 
   def fetch(
       start: Int,

@@ -20,17 +20,18 @@ class LouvainGraphPartition(
   private var nodeWeights: Array[Float] = _
 
   def setNodeWeights(nodeWeights: Array[Float]): this.type = {
-    if (null == nodeWeights) {
-      this.nodeWeights = weights.map(_.sum)
-    } else {
-      this.nodeWeights = nodeWeights
-    }
+    this.nodeWeights = nodeWeights
     this
+  }
+
+  def calcNodeWeightsFromEdgeWeights: Array[Float] = {
+    this.nodeWeights = weights.map(_.sum)
+    this.nodeWeights
   }
 
   private[louvain] def max: Int = keys.aggregate(Int.MinValue)(math.max, math.max)
 
-  private[louvain] def partitionWeights: Float = weights.map(_.sum).sum
+  private[louvain] def partitionWeights: Float = nodeWeights.sum
 
   def createNewEdges(model: LouvainPSModel, batchSize: Int): Iterator[((Int, Int), Float)] = {
     makeBatches(batchSize).flatMap { batch =>
@@ -54,11 +55,20 @@ class LouvainGraphPartition(
     }
   }
 
+  def communityIds(model: LouvainPSModel): Array[Int] = {
+    model.getCommunities(keys).distinct
+  }
+
+  def community2nodes(model: LouvainPSModel): Array[(Int, Int)] = {
+    val pairs = model.getCommunities(keys).zip(keys)
+    pairs
+  }
+
   def modularityOptimize(
-      model: LouvainPSModel,
-      totalWeight: Double,
-      batchSize: Int = 100,
-      shuffle: Boolean = true): Unit = {
+                          model: LouvainPSModel,
+                          totalWeight: Double,
+                          batchSize: Int = 100,
+                          shuffle: Boolean = true): Unit = {
 
     if (shuffle) {
       this.shuffle()
@@ -107,10 +117,10 @@ class LouvainGraphPartition(
   // move node to a single node community, with delta = (k_i * \sigma_tol - k_i^2 / 2m - k_{i,in}) / m
   // move node to target community, with delta = (k_{i,in} - k_i * \sigma_tol / 2m) / m
   private def bestCommunityInNeighbors(
-      i: Int,
-      id2comm: IntIntVector,
-      comm2info: IntFloatVector,
-      total: Double): Int = {
+                                        i: Int,
+                                        id2comm: IntIntVector,
+                                        comm2info: IntFloatVector,
+                                        total: Double): Int = {
 
     val comm2edgeWeight = SparkCollectionProxy.createOpenHashMap[Int, Float]()
     for (j <- adjs(i).indices) {
@@ -140,13 +150,13 @@ class LouvainGraphPartition(
     nodeWeights = newIndices.map(nodeWeights.apply)
   }
 
-  private[louvain] def sumOfWeightsInsideCommunity(model: LouvainPSModel): Double = {
+  private[louvain] def sumOfWeightsBetweenCommunity(model: LouvainPSModel): Double = {
     val local2comm = model.node2CommunityPSVector.pull(allNodes).asInstanceOf[IntIntVector]
     var weight = 0.0
     for (i <- keys.indices) {
       val comm = local2comm.get(keys(i))
       for (j <- adjs(i).indices) {
-        if (comm == local2comm.get(adjs(i)(j))) {
+        if (comm != local2comm.get(adjs(i)(j))) {
           weight += weights(i)(j)
         }
       }
@@ -164,8 +174,13 @@ class LouvainGraphPartition(
     }.toArray
   }
 
-  private[louvain] def initializePS(model: LouvainPSModel): Unit = {
-    model.initialize(keys, weights.map(_.sum))
+  private[louvain] def initializePS(model: LouvainPSModel, preserve: Boolean = false): Unit = {
+    if (preserve) {
+      this.nodeWeights = model.getCommInfo(keys).get(keys)
+    } else {
+      this.nodeWeights = weights.map(_.sum)
+      model.initialize(keys, this.nodeWeights)
+    }
   }
 }
 
