@@ -151,28 +151,29 @@ class Louvain(
 
   private def Q1(): Double = {
     (VectorUtils.sum(louvainPSModel.community2weightPSVector) -
-      graph.map(_.sumOfWeightsBetweenCommunity(louvainPSModel)).sum()
+      this.graph.map(_.sumOfWeightsBetweenCommunity(louvainPSModel)).sum()
       ) / totalWeights
   }
 
   private def getNumOfCommunity: Long = {
-    graph.flatMap(_.node2community(louvainPSModel)).values.distinct().count()
+    this.graph.flatMap(_.node2community(louvainPSModel)).values.distinct().count()
   }
 
   def folding(batchSize: Int, storageLevel: StorageLevel): Louvain = {
     val curTime = System.currentTimeMillis()
-    val newEdges = graph.flatMap { part =>
+    val newEdges = this.graph.flatMap { part =>
       part.partFolding(louvainPSModel, batchSize)
     }.reduceByKey(_ + _).map { case ((src, dst), wgt) =>
       (src, dst, wgt / 2.0f)
-    }.persist(storageLevel)
-
+    }
     val newGraph = edgeTripleRDD2GraphPartitions(newEdges)
+    newGraph.foreachPartition(_ => Unit)
+    this.graph.unpersist()
     println(s"folding, takes ${System.currentTimeMillis() - curTime}ms")
     new Louvain(newGraph, louvainPSModel)
   }
 
   private def hist: (Array[Double], Array[Long]) = {
-    graph.flatMap(_.node2community(louvainPSModel)).values.histogram(25)
+    this.graph.flatMap(_.node2community(louvainPSModel)).values.histogram(25)
   }
 }
