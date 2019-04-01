@@ -15,18 +15,27 @@
  *
  */
 
+package com.tencent.angel.ps.storage.vector.storage;
 
-package com.tencent.angel.ps.storage.vector;
+public enum BasicType {
+  INT(0), LONG(1), FLOAT(2), DOUBLE(3);
 
-import com.tencent.angel.ml.math2.vector.IntVector;
-import com.tencent.angel.ml.matrix.RowType;
-import com.tencent.angel.ps.storage.vector.func.IntElemUpdateFunc;
-
-public abstract class ServerIntRow extends ServerRow {
-  public ServerIntRow(int rowId, RowType rowType, long startCol, long endCol, int estElemNum,
-    IntVector innerRow) {
-    super(rowId, rowType, startCol, endCol, estElemNum, innerRow);
+  private final int value;
+  BasicType(int value) {
+    this.value = value;
   }
 
-  public abstract void elemUpdate(IntElemUpdateFunc func);
+  public static BasicType valuesOf(int value) {
+    switch (value) {
+      case 0: return INT;
+      case 1: return LONG;
+      case 2: return FLOAT;
+      case 3: return DOUBLE;
+      default: return INT;
+    }
+  }
+
+  public int getValue() {
+    return value;
+  }
 }

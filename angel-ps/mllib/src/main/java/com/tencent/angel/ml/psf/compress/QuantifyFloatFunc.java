@@ -18,7 +18,6 @@ package com.tencent.angel.ml.psf.compress;
  */
 
 
-import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage;
 import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
@@ -27,6 +26,7 @@ import com.tencent.angel.ml.psf.compress.QuantifyFloatParam.QuantifyFloatPartPar
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerIntFloatRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;
+import com.tencent.angel.ps.storage.vector.ServerRowUtils;
 
 
 public class QuantifyFloatFunc extends UpdateFunc {
@@ -74,7 +74,7 @@ public class QuantifyFloatFunc extends UpdateFunc {
   private void doUpdate(ServerIntFloatRow row, float[] arraySlice) {
     try {
       row.getLock().writeLock().lock();
-      float[] values = ((IntFloatDenseVectorStorage)(row.getSplit().getStorage())).getValues();
+      float[] values = ServerRowUtils.getVector(row).getStorage().getValues();
       int size = row.size();
       for (int i = 0; i < size; i++) {
         values[i] = values[i] + arraySlice[i];

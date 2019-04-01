@@ -15,17 +15,19 @@
  *
  */
 
-package com.tencent.angel.ps.storage.vector;
+package com.tencent.angel.ps.storage.vector.op;
 
-import com.tencent.angel.ml.math2.vector.FloatVector;
-import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.storage.vector.func.FloatElemUpdateFunc;
 
-public abstract class ServerFloatRow extends ServerRow {
-  public ServerFloatRow(int rowId, RowType rowType, long startCol, long endCol, int estElemNum,
-    FloatVector innerRow) {
-    super(rowId, rowType, startCol, endCol, estElemNum, innerRow);
-  }
+/**
+ * The operator for the storage that store float type values
+ */
+public interface IFloatValueOp {
 
-  public abstract void elemUpdate(FloatElemUpdateFunc func);
+  /**
+   * Update all elements in the storage use the function
+   *
+   * @param func update function
+   */
+  void elemUpdate(FloatElemUpdateFunc func);
 }

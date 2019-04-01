@@ -55,72 +55,36 @@ public class LongIndexGet extends GetFunc {
     ServerPartition part = psContext.getMatrixStorageManager()
       .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
 
-    PartitionGetResult result = null;
-    if (part != null) {
-      int rowId = ((LongIndexPartGetParam) partParam).getRowId();
-      long[] indexes = ((LongIndexPartGetParam) partParam).getIndex();
-
-      ServerRow row = part.getRow(rowId);
-      RowType rowType = row.getRowType();
-
-      switch (rowType) {
-        case T_DOUBLE_SPARSE_LONGKEY:
-        case T_DOUBLE_SPARSE_LONGKEY_COMPONENT: {
-          result = new IndexPartGetDoubleResult(partParam.getPartKey(),
-            ((ServerLongDoubleRow) row).get(indexes));
-          break;
-        }
-
-        case T_DOUBLE_DENSE_LONGKEY_COMPONENT: {
-          result = new IndexPartGetDoubleResult(partParam.getPartKey(),
-            ((ServerCompDenseLongDoubleRow) row).get(indexes));
-          break;
-        }
-
-        case T_FLOAT_SPARSE_LONGKEY:
-        case T_FLOAT_SPARSE_LONGKEY_COMPONENT: {
-          result = new IndexPartGetFloatResult(partParam.getPartKey(),
-            ((ServerLongFloatRow) row).get(indexes));
-          break;
-        }
-
-        case T_FLOAT_DENSE_LONGKEY_COMPONENT: {
-          result = new IndexPartGetFloatResult(partParam.getPartKey(),
-            ((ServerCompDenseLongFloatRow) row).get(indexes));
-          break;
-        }
-
-        case T_INT_SPARSE_LONGKEY:
-        case T_INT_SPARSE_LONGKEY_COMPONENT: {
-          result = new IndexPartGetIntResult(partParam.getPartKey(),
-            ((ServerLongIntRow) row).get(indexes));
-          break;
-        }
-
-        case T_INT_DENSE_LONGKEY_COMPONENT: {
-          result = new IndexPartGetIntResult(partParam.getPartKey(),
-            ((ServerCompDenseLongIntRow) row).get(indexes));
-          break;
-        }
-
-        case T_LONG_SPARSE_LONGKEY:
-        case T_LONG_SPARSE_LONGKEY_COMPONENT: {
-          result = new IndexPartGetLongResult(partParam.getPartKey(),
-            ((ServerLongLongRow) row).get(indexes));
-          break;
-        }
-
-        case T_LONG_DENSE_LONGKEY_COMPONENT: {
-          result = new IndexPartGetLongResult(partParam.getPartKey(),
-            ((ServerCompDenseLongLongRow) row).get(indexes));
-          break;
-        }
-
-        default:
-          throw new UnsupportedOperationException(
-            "Unsupport operation: update " + rowType + " to " + this.getClass().getName());
-      }
+    if(part == null) {
+      throw new RuntimeException("Can not find partition " + partParam.getPartKey().getPartitionId());
     }
+
+    int rowId = ((LongIndexPartGetParam) partParam).getRowId();
+    long[] indexes = ((LongIndexPartGetParam) partParam).getIndex();
+    ServerRow row = part.getRow(rowId);
+
+    if(row == null) {
+      throw new RuntimeException("Can not find row " + rowId + " in partition " + partParam.getPartKey().getPartitionId());
+    }
+
+    PartitionGetResult result;
+    if (row instanceof ServerLongDoubleRow) {
+      result = new IndexPartGetDoubleResult(partParam.getPartKey(),
+          ((ServerLongDoubleRow) row).get(indexes));
+    } else if (row instanceof ServerLongFloatRow) {
+      result = new IndexPartGetFloatResult(partParam.getPartKey(),
+          ((ServerLongFloatRow) row).get(indexes));
+    } else if (row instanceof ServerLongLongRow) {
+      result = new IndexPartGetLongResult(partParam.getPartKey(),
+          ((ServerLongLongRow) row).get(indexes));
+    } else if (row instanceof ServerLongIntRow) {
+      result = new IndexPartGetIntResult(partParam.getPartKey(),
+          ((ServerLongIntRow) row).get(indexes));
+    } else {
+      throw new UnsupportedOperationException(
+          "Index get use long type key not support " + row.getClass().getName() + "now");
+    }
+
     LOG.debug("Partition get use time=" + (System.currentTimeMillis() - startTs) + " ms");
     return result;
   }

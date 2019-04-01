@@ -17,7 +17,6 @@
 
 package com.tencent.angel.model.output.format;
 
-import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.matrix.Matrix;
 import com.tencent.angel.ml.math2.vector.*;
 import com.tencent.angel.ml.math2.vector.Vector;
@@ -257,7 +256,7 @@ public abstract class RowFormat extends MatrixFormatImpl {
   public void save(ServerRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
     DataOutputStream out) throws IOException {
     if (saveContext.cloneFirst()) {
-      row = row.clone();
+      row = (ServerRow) row.deepClone();
     }
     try {
       row.startWrite();
@@ -348,7 +347,7 @@ public abstract class RowFormat extends MatrixFormatImpl {
   private void save(ServerIntFloatRow row, PSMatrixSaveContext saveContext,
     MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     int startCol = (int) meta.getStartCol();
-    IntFloatVector vector = (IntFloatVector) row.getSplit();
+    IntFloatVector vector = ServerRowUtils.getVector(row);
     IntFloatElement element = new IntFloatElement();
     if (vector.isDense()) {
       float[] data = vector.getStorage().getValues();
@@ -386,7 +385,7 @@ public abstract class RowFormat extends MatrixFormatImpl {
   private void save(ServerIntDoubleRow row, PSMatrixSaveContext saveContext,
     MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     int startCol = (int) meta.getStartCol();
-    IntDoubleVector vector = (IntDoubleVector) row.getSplit();
+    IntDoubleVector vector = ServerRowUtils.getVector(row);
     IntDoubleElement element = new IntDoubleElement();
     if (vector.isDense()) {
       double[] data = vector.getStorage().getValues();
@@ -424,7 +423,7 @@ public abstract class RowFormat extends MatrixFormatImpl {
   private void save(ServerIntIntRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
     DataOutputStream out) throws IOException {
     int startCol = (int) meta.getStartCol();
-    IntIntVector vector = (IntIntVector) row.getSplit();
+    IntIntVector vector = ServerRowUtils.getVector(row);
     IntIntElement element = new IntIntElement();
     if (vector.isDense()) {
       int[] data = vector.getStorage().getValues();
@@ -462,7 +461,7 @@ public abstract class RowFormat extends MatrixFormatImpl {
   private void save(ServerIntLongRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
     DataOutputStream out) throws IOException {
     int startCol = (int) meta.getStartCol();
-    IntLongVector vector = (IntLongVector) row.getSplit();
+    IntLongVector vector = ServerRowUtils.getVector(row);
     IntLongElement element = new IntLongElement();
     if (vector.isDense()) {
       long[] data = vector.getStorage().getValues();
@@ -501,8 +500,9 @@ public abstract class RowFormat extends MatrixFormatImpl {
     MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
     LongDoubleElement element = new LongDoubleElement();
-    if (row.getSplit() instanceof IntDoubleVector) {
-      IntDoubleVector vector = (IntDoubleVector) row.getSplit();
+    DoubleVector storageVec = ServerRowUtils.getVector(row);
+    if (storageVec instanceof IntDoubleVector) {
+      IntDoubleVector vector = (IntDoubleVector) storageVec;
       if (vector.isDense()) {
         double[] data = vector.getStorage().getValues();
         for (int i = 0; i < data.length; i++) {
@@ -535,7 +535,7 @@ public abstract class RowFormat extends MatrixFormatImpl {
         }
       }
     } else {
-      LongDoubleVector vector = (LongDoubleVector) row.getSplit();
+      LongDoubleVector vector = (LongDoubleVector) storageVec;
       if (saveContext.sortFirst()) {
         long[] indices = vector.getStorage().getIndices();
         double[] values = vector.getStorage().getValues();
@@ -564,8 +564,9 @@ public abstract class RowFormat extends MatrixFormatImpl {
     MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
     LongFloatElement element = new LongFloatElement();
-    if (row.getSplit() instanceof IntFloatVector) {
-      IntFloatVector vector = (IntFloatVector) row.getSplit();
+    FloatVector storageVec = ServerRowUtils.getVector(row);
+    if (storageVec instanceof IntFloatVector) {
+      IntFloatVector vector = (IntFloatVector) storageVec;
       if (vector.isDense()) {
         float[] data = vector.getStorage().getValues();
         for (int i = 0; i < data.length; i++) {
@@ -598,7 +599,7 @@ public abstract class RowFormat extends MatrixFormatImpl {
         }
       }
     } else {
-      LongFloatVector vector = (LongFloatVector) row.getSplit();
+      LongFloatVector vector = (LongFloatVector) storageVec;
       if (saveContext.sortFirst()) {
         long[] indices = vector.getStorage().getIndices();
         float[] values = vector.getStorage().getValues();
@@ -628,8 +629,9 @@ public abstract class RowFormat extends MatrixFormatImpl {
     DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
     LongIntElement element = new LongIntElement();
-    if (row.getSplit() instanceof IntIntVector) {
-      IntIntVector vector = (IntIntVector) row.getSplit();
+    IntVector storageVec = ServerRowUtils.getVector(row);
+    if (storageVec instanceof IntIntVector) {
+      IntIntVector vector = (IntIntVector) storageVec;
       if (vector.isDense()) {
         int[] data = vector.getStorage().getValues();
         for (int i = 0; i < data.length; i++) {
@@ -662,7 +664,7 @@ public abstract class RowFormat extends MatrixFormatImpl {
         }
       }
     } else {
-      LongIntVector vector = (LongIntVector) row.getSplit();
+      LongIntVector vector = (LongIntVector) storageVec;
       if (saveContext.sortFirst()) {
         long[] indices = vector.getStorage().getIndices();
         int[] values = vector.getStorage().getValues();
@@ -691,8 +693,9 @@ public abstract class RowFormat extends MatrixFormatImpl {
     MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
     LongLongElement element = new LongLongElement();
-    if (row.getSplit() instanceof IntLongVector) {
-      IntLongVector vector = (IntLongVector) row.getSplit();
+    LongVector storageVec = ServerRowUtils.getVector(row);
+    if (storageVec instanceof IntLongVector) {
+      IntLongVector vector = (IntLongVector) storageVec;
       if (vector.isDense()) {
         long[] data = vector.getStorage().getValues();
         for (int i = 0; i < data.length; i++) {
@@ -725,7 +728,7 @@ public abstract class RowFormat extends MatrixFormatImpl {
         }
       }
     } else {
-      LongLongVector vector = (LongLongVector) row.getSplit();
+      LongLongVector vector = (LongLongVector) storageVec;
       if (saveContext.sortFirst()) {
         long[] indices = vector.getStorage().getIndices();
         long[] values = vector.getStorage().getValues();

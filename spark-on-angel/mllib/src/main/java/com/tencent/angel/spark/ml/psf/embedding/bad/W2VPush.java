@@ -23,6 +23,8 @@ import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.vector.ServerIntFloatRow;
+import com.tencent.angel.ps.storage.vector.ServerRowUtils;
 
 public class W2VPush extends UpdateFunc {
 
@@ -55,8 +57,8 @@ public class W2VPush extends UpdateFunc {
     int dimension = param.dimension;
 
     for (int row = startRow; row < startRow + totalRows; row ++)
-      rows[row - startRow] = ((IntFloatDenseVectorStorage) partition
-              .getRow(row).getSplit().getStorage())
+      rows[row - startRow] = ServerRowUtils.getVector((ServerIntFloatRow) partition
+              .getRow(row)).getStorage()
               .getValues();
 
     for (int i = 0; i < param.length; i++) {

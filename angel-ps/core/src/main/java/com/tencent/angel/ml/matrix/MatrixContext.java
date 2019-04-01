@@ -26,6 +26,7 @@ import com.tencent.angel.model.output.format.MatrixFilesMeta;
 import com.tencent.angel.ps.storage.partitioner.Partitioner;
 import com.tencent.angel.ps.storage.partitioner.RangePartitioner;
 
+import com.tencent.angel.ps.storage.vector.element.IElement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -438,6 +439,30 @@ public class MatrixContext implements Serializable {
    */
   public void setMatrixOpLogType(MatrixOpLogType type) {
     attributes.put(MatrixConf.MATRIX_OPLOG_TYPE, type.name());
+  }
+
+  /**
+   * Set matrix value type class, this parameter should be set if you use
+   * T_ANY_INTKEY_DENSE,T_ANY_INTKEY_SPARSE and T_ANY_LONGKEY_SPARSE
+   *
+   * @param valueClass matrix value type class
+   */
+  public void setValueType(Class<? extends IElement> valueClass) {
+    attributes.put(MatrixConf.VALUE_TYPE_CLASSNANE, valueClass.getName());
+  }
+
+  /**
+   * Get matrix value type class
+   * @return null if this parameter is not set
+   * @throws ClassNotFoundException if value class is not found
+   */
+  public Class<? extends IElement> getValueType() throws ClassNotFoundException {
+    String className = attributes.get(MatrixConf.VALUE_TYPE_CLASSNANE);
+    if(className == null) {
+      return null;
+    } else {
+      return (Class<? extends IElement>) Class.forName(className);
+    }
   }
 
   /**

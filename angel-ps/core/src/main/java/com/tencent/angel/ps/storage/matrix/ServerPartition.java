@@ -27,6 +27,7 @@ import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.ps.storage.vector.ServerRowFactory;
+import com.tencent.angel.ps.storage.vector.element.IElement;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -116,13 +117,14 @@ public class ServerPartition implements Serialize {
   /**
    * Init partition
    */
-  public void init() {
+  public void init(Class<? extends IElement> valueClass) {
     if (partitionKey != null) {
-      initRows(partitionKey, rowType, estSparsity);
+      initRows(partitionKey, rowType, estSparsity, valueClass);
     }
   }
 
-  private void initRows(PartitionKey partitionKey, RowType rowType, double estSparsity) {
+  private void initRows(PartitionKey partitionKey, RowType rowType, double estSparsity,
+      Class<? extends IElement> valueClass) {
     int rowStart = partitionKey.getStartRow();
     int rowEnd = partitionKey.getEndRow();
     long startCol = partitionKey.getStartCol();
@@ -135,17 +137,20 @@ public class ServerPartition implements Serialize {
     for (int rowIndex = rowStart; rowIndex < rowEnd; rowIndex++) {
       rows.putRow(rowIndex,
           initRow(rowIndex, rowType, partitionKey.getStartCol(), partitionKey.getEndCol(),
-              elementNum));
+              elementNum, valueClass));
     }
   }
 
   private ServerRow initRow(int rowIndex, RowType rowType, long startCol, long endCol,
-      int elementNum) {
-    return ServerRowFactory.createServerRow(rowIndex, rowType, startCol, endCol, elementNum);
+      int elementNum, Class<? extends IElement> valueClass) {
+    ServerRow row = ServerRowFactory
+        .createServerRow(rowIndex, rowType, startCol, endCol, elementNum, valueClass);
+    row.init();
+    return row;
   }
 
   private ServerRow initRow(RowType rowType) {
-    return initRow(0, rowType, 0, 0, 0);
+    return initRow(0, rowType, 0, 0, 0, null);
   }
 
   /**

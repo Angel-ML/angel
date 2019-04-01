@@ -21,6 +21,8 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
+import com.tencent.angel.ps.storage.vector.ServerIntFloatRow;
+import com.tencent.angel.ps.storage.vector.ServerRowUtils;
 import com.tencent.angel.spark.ml.psf.embedding.ServerWrapper;
 import io.netty.buffer.ByteBuf;
 
@@ -58,8 +60,8 @@ public class Adjust extends UpdateFunc {
         int numRows = pkey.getEndRow() - pkey.getStartRow();
         float[][] layers = new float[numRows][];
         for (int row = 0; row < numRows; row++)
-          layers[row] = ((IntFloatDenseVectorStorage) psContext.getMatrixStorageManager()
-              .getRow(pkey, row).getSplit().getStorage())
+          layers[row] = ServerRowUtils.getVector((ServerIntFloatRow) psContext.getMatrixStorageManager()
+              .getRow(pkey, row)).getStorage()
               .getValues();
 
         EmbeddingModel model;

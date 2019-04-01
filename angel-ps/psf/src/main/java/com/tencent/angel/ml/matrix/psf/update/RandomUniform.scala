@@ -22,6 +22,7 @@ import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.matrix.psf.update.enhance.{MMUpdateFunc, MMUpdateParam}
 import com.tencent.angel.ps.storage.vector._
 import com.tencent.angel.ps.storage.vector.func.{DoubleElemUpdateFunc, FloatElemUpdateFunc, IntElemUpdateFunc, LongElemUpdateFunc}
+import com.tencent.angel.ps.storage.vector.op.{IDoubleValueOp, IFloatValueOp, IIntValueOp, ILongValueOp}
 
 /**
   * Generate a random array for `rowId`, each element belongs to uniform distribution U(min, max)
@@ -38,28 +39,28 @@ class RandomUniform(param: MMUpdateParam) extends MMUpdateFunc(param) {
     val rand = new util.Random(System.currentTimeMillis())
     val factor = max - min
     rows.foreach {
-      case r: ServerDoubleRow =>
+      case r: IDoubleValueOp =>
         r.elemUpdate(new DoubleElemUpdateFunc {
           override def update(): Double = {
             factor * rand.nextDouble() + min
           }
         })
 
-      case r: ServerFloatRow =>
+      case r: IFloatValueOp =>
         r.elemUpdate(new FloatElemUpdateFunc {
           override def update(): Float = {
             (factor * rand.nextDouble() + min).toFloat
           }
         })
 
-      case r: ServerIntRow =>
+      case r: IIntValueOp =>
         r.elemUpdate(new IntElemUpdateFunc {
           override def update(): Int = {
             (factor * rand.nextDouble() + min).toInt
           }
         })
 
-      case r: ServerLongRow =>
+      case r: ILongValueOp =>
         r.elemUpdate(new LongElemUpdateFunc {
           override def update(): Long = {
             (factor * rand.nextDouble() + min).toLong

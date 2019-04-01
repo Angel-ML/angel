@@ -22,6 +22,7 @@ import com.tencent.angel.ml.math2.ufuncs.OptFuncs;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
+import com.tencent.angel.ps.storage.vector.ServerRowUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -65,10 +66,10 @@ public class AdamUpdateFunc extends OptMMUpdateFunc {
       ServerRow gradientServerRow = partition.getRow(f + 3 * factor);
       try {
         gradientServerRow.startWrite();
-        Vector weight = partition.getRow(f).getSplit();
-        Vector velocity = partition.getRow(f + factor).getSplit();
-        Vector square = partition.getRow(f + 2 * factor).getSplit();
-        Vector gradient = gradientServerRow.getSplit();
+        Vector weight = ServerRowUtils.getVector(partition.getRow(f));
+        Vector velocity = ServerRowUtils.getVector(partition.getRow(f + factor));
+        Vector square = ServerRowUtils.getVector(partition.getRow(f + 2 * factor));
+        Vector gradient = ServerRowUtils.getVector(gradientServerRow);
 
         if (batchSize > 1) {
           gradient.idiv(batchSize);

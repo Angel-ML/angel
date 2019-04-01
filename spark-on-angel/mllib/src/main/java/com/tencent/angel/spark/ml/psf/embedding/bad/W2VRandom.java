@@ -24,6 +24,8 @@ import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 
+import com.tencent.angel.ps.storage.vector.ServerIntFloatRow;
+import com.tencent.angel.ps.storage.vector.ServerRowUtils;
 import java.util.Random;
 
 public class W2VRandom extends UpdateFunc {
@@ -37,7 +39,9 @@ public class W2VRandom extends UpdateFunc {
     super(param);
   }
 
-  public W2VRandom() { super(null);}
+  public W2VRandom() {
+    super(null);
+  }
 
   @Override
   public void partitionUpdate(PartitionUpdateParam partParam) {
@@ -45,30 +49,32 @@ public class W2VRandom extends UpdateFunc {
       W2VRandomPartitionParam param = (W2VRandomPartitionParam) partParam;
       int dimension = param.dimension;
       ServerPartition partition = psContext.getMatrixStorageManager()
-        .getPart(param.getPartKey());
+          .getPart(param.getPartKey());
       update(partition, param.getPartKey(), dimension);
     }
   }
 
   private void update(ServerPartition partition,
-                      PartitionKey pkey,
-                      int dimension) {
+      PartitionKey pkey,
+      int dimension) {
     int startRow = pkey.getStartRow();
-    int endRow   = pkey.getEndRow();
+    int endRow = pkey.getEndRow();
 
     Random random = new Random(System.currentTimeMillis());
-    for (int r = startRow; r < endRow; r ++) {
-      float[] values = ((IntFloatDenseVectorStorage) partition.getRow(r)
-        .getSplit().getStorage())
-        .getValues();
+    for (int r = startRow; r < endRow; r++) {
+      float[] values = ServerRowUtils.getVector((ServerIntFloatRow) partition.getRow(r)
+      ).getStorage()
+          .getValues();
 
       assert values.length % (dimension * 2) == 0;
       int numRows = values.length / dimension / 2;
-      for (int a = 0; a < numRows; a ++) {
+      for (int a = 0; a < numRows; a++) {
         int offset = a * dimension * 2;
-        for (int b = 0; b < dimension; b ++)
+        for (int b = 0; b < dimension; b++)
 //          values[b + offset] = (random.nextFloat() - 0.5f) / dimension;
+        {
           values[b + offset] = 0.01f;
+        }
       }
     }
   }

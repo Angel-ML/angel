@@ -18,13 +18,13 @@
 package com.tencent.angel.spark.ml.psf.ftrl;
 
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs;
-import com.tencent.angel.ml.math2.utils.VectorUtils;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.enhance.MultiRowUpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.enhance.MultiRowUpdateParam.MultiRowPartitionUpdateParam;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
+import com.tencent.angel.ps.storage.vector.ServerRowUtils;
 
 public class ComputeW extends MultiRowUpdateFunc {
 
@@ -53,10 +53,10 @@ public class ComputeW extends MultiRowUpdateFunc {
 
       ServerPartition part = psContext.getMatrixStorageManager().getPart(param.getPartKey());
       for (int i = 0; i < offset; i++) {
-        Vector z = part.getRow(rowIds[0]*offset + i).getSplit();
-        Vector n = part.getRow(rowIds[1]*offset + i).getSplit();
+        Vector z = ServerRowUtils.getVector(part.getRow(rowIds[0]*offset + i));
+        Vector n = ServerRowUtils.getVector(part.getRow(rowIds[1]*offset + i));
         Vector w = Ufuncs.ftrlthreshold(z, n, alpha, beta, lambda1, lambda2);
-        part.getRow(rowIds[2]*offset + i).setSplit(w.ifilter(1e-11));
+        ServerRowUtils.setVector(part.getRow(rowIds[2]*offset + i), w.ifilter(1e-11));
       }
 //      // calculate bias
 //      if (param.getPartKey().getStartCol() <= 0 && param.getPartKey().getEndCol() > 0) {

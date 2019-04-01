@@ -84,7 +84,7 @@ public class MatrixStorageManager {
    * @param matrixMeta the matrix partitions
    * @throws IOException load matrix partition from files failed
    */
-  public void addMatrix(MatrixMeta matrixMeta) throws IOException {
+  public void addMatrix(MatrixMeta matrixMeta) {
     int matrixId = matrixMeta.getId();
     if (matrixIdToDataMap.containsKey(matrixId)) {
       LOG.warn("MatrixId [" + matrixId + "] has already been added.");

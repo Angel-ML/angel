@@ -22,6 +22,7 @@ import com.tencent.angel.ml.math2.ufuncs.Ufuncs;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
+import com.tencent.angel.ps.storage.vector.ServerRowUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -53,8 +54,8 @@ public class PGDUpdateFunc extends OptMMUpdateFunc {
       ServerRow gradientServerRow = partition.getRow(f + factor);
       try {
         gradientServerRow.startWrite();
-        Vector weight = partition.getRow(f).getSplit();
-        Vector gradient = gradientServerRow.getSplit();
+        Vector weight = ServerRowUtils.getVector(partition.getRow(f));
+        Vector gradient = ServerRowUtils.getVector(gradientServerRow);
 
         if (batchSize > 1) {
           gradient.idiv(batchSize);

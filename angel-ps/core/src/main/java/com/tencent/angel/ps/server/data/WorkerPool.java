@@ -32,6 +32,7 @@ import com.tencent.angel.ps.server.data.request.*;
 import com.tencent.angel.ps.server.data.response.*;
 import com.tencent.angel.ps.storage.matrix.PartitionState;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.vector.ServerBasicTypeRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.utils.ByteBufUtils;
 import com.tencent.angel.utils.StringUtils;
@@ -499,7 +500,7 @@ public class WorkerPool {
       request.deserialize(in);
       PartitionKey partKey = request.getPartKey();
 
-      ServerRow row = context.getMatrixStorageManager()
+      ServerBasicTypeRow row = (ServerBasicTypeRow)context.getMatrixStorageManager()
               .getRow(request.getMatrixId(), request.getRowId(), partKey.getPartitionId());
       IndexType indexType = IndexType.valueOf(in.readInt());
       ValueType valueType = getValueType(row.getRowType());
@@ -623,7 +624,7 @@ public class WorkerPool {
         int markPos = in.readerIndex();
         for (int i = 0; i < rowNum; i++) {
           in.readerIndex(markPos);
-          ServerRow row = context.getMatrixStorageManager()
+          ServerBasicTypeRow row = (ServerBasicTypeRow)context.getMatrixStorageManager()
             .getRow(request.getMatrixId(), rowIds.get(i), partKey.getPartitionId());
           resultBuf.writeInt(rowIds.get(i));
           if(request.getFunc() == null) {
@@ -713,8 +714,7 @@ public class WorkerPool {
     }
   }
 
-  private Response handleRPC(int clientId, int seqId, ByteBuf in, TransportMethod method)
-    throws Throwable {
+  private Response handleRPC(int clientId, int seqId, ByteBuf in, TransportMethod method) {
     Response result;
     ServerState state = runningContext.getState();
     String log = "server is busy now, retry later";

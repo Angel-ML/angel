@@ -15,17 +15,18 @@
  *
  */
 
-package com.tencent.angel.ps.storage.vector;
+package com.tencent.angel.ps.storage.vector.op;
 
-import com.tencent.angel.ml.math2.vector.DoubleVector;
-import com.tencent.angel.ml.matrix.RowType;
-import com.tencent.angel.ps.storage.vector.func.DoubleElemUpdateFunc;
+/**
+ * The operator for the storage that store int key values
+ */
+public interface IIntKeyOp {
 
-public abstract class ServerDoubleRow extends ServerRow {
-  public ServerDoubleRow(int rowId, RowType rowType, long startCol, long endCol, int estElemNum,
-    DoubleVector innerRow) {
-    super(rowId, rowType, startCol, endCol, estElemNum, innerRow);
-  }
-
-  public abstract void elemUpdate(DoubleElemUpdateFunc func);
+  /**
+   * Is the element exist
+   *
+   * @param index element index
+   * @return true means exist
+   */
+  boolean exist(int index);
 }
