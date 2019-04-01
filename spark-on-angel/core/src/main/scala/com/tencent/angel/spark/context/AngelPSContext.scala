@@ -18,6 +18,7 @@
 
 package com.tencent.angel.spark.context
 
+import java.security.PrivilegedExceptionAction
 import java.util
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -38,13 +39,13 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.util.ShutdownHookManager
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv, TaskContext}
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{Map, mutable}
-
 import org.apache.commons.httpclient.URI
-
 import com.tencent.angel.ps.storage.partitioner.Partitioner
+import org.apache.hadoop.security.UserGroupInformation
 
 /**
   * AngelPSContext for driver and executor, it is an implement of `PSContext`

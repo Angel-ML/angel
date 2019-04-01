@@ -122,7 +122,20 @@ class LDARunner extends MLRunner {
     val client = AngelClientFactory.get(conf)
 
     client.startPSServer()
-    client.loadModel(new LDAModel(conf))
+    val model = new LDAModel(conf)
+
+    val path = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH)
+
+    val iter = model.getPSModels.entrySet().iterator()
+    while (iter.hasNext) {
+      val entry = iter.next()
+      client.addMatrix(entry.getValue.getContext)
+    }
+
+    conf.unset(AngelConf.ANGEL_LOAD_MODEL_PATH)
+    client.createMatrices()
+
+    conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, path)
     client.runTask(classOf[LDAPredictTask])
     client.waitForCompletion()
     client.stop()

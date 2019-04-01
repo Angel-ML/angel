@@ -649,7 +649,7 @@ public abstract class AngelClient implements AngelClientInterface {
       LOG.debug("job stat = " + jobState.name());
     }
     if (jobState != JobStateProto.J_INITED && jobState != JobStateProto.J_NEW
-      && jobState != JobStateProto.J_RUNNING) {
+      && jobState != JobStateProto.J_PREPARE_WORKERS && jobState != JobStateProto.J_RUNNING) {
       isExecuteFinished = true;
       LOG.info("job is finished! status: " + jobState);
       if (jobState == JobStateProto.J_FAILED || jobState == JobStateProto.J_KILLED) {

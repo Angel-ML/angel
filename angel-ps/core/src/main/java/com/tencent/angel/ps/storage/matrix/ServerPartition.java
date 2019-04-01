@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -24,10 +24,10 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
-import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.ps.storage.vector.ServerRowFactory;
+import com.tencent.angel.ps.storage.vector.element.IElement;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -36,15 +36,17 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * The Server partition represents a partition of matrix, which hold and manager the related matrix rows.
+ * The Server partition represents a partition of matrix, which hold and manager the related matrix
+ * rows.
  */
 public class ServerPartition implements Serialize {
+
   private final static Log LOG = LogFactory.getLog(ServerPartition.class);
 
   /**
    * Row index to server row map
    */
-  private  PartitionSource rows;
+  private PartitionSource rows;
 
   private String PartitionSourceClassName;
 
@@ -73,10 +75,10 @@ public class ServerPartition implements Serialize {
    * Create a new Server partition,include load rows.
    *
    * @param partitionKey the partition meta
-   * @param rowType      the row type
+   * @param rowType the row type
    */
   public ServerPartition(PartitionKey partitionKey, RowType rowType, double estSparsity,
-    String sourceClass) {
+      String sourceClass) {
     this.state = PartitionState.INITIALIZING;
     this.partitionKey = partitionKey;
     this.rowType = rowType;
@@ -88,7 +90,7 @@ public class ServerPartition implements Serialize {
       source = (PartitionSource) Class.forName(sourceClass).newInstance();
     } catch (Throwable e) {
       LOG.error("Can not init partition source for type " + sourceClass + " use default instead ",
-        e);
+          e);
       source = new PartitionSourceMap();
     }
     source.init(partitionKey.getEndRow() - partitionKey.getStartRow());
@@ -99,7 +101,7 @@ public class ServerPartition implements Serialize {
    * Create a new Server partition,include load rows.
    *
    * @param partitionKey the partition meta
-   * @param rowType      the row type
+   * @param rowType the row type
    */
   public ServerPartition(PartitionKey partitionKey, RowType rowType, double estSparsity) {
     this(partitionKey, rowType, estSparsity, AngelConf.DEFAULT_ANGEL_PS_PARTITION_SOURCE_CLASS);
@@ -115,30 +117,40 @@ public class ServerPartition implements Serialize {
   /**
    * Init partition
    */
-  public void init() {
+  public void init(Class<? extends IElement> valueClass) {
     if (partitionKey != null) {
-      initRows(partitionKey, rowType, estSparsity);
+      initRows(partitionKey, rowType, estSparsity, valueClass);
     }
   }
 
-  private void initRows(PartitionKey partitionKey, RowType rowType, double estSparsity) {
+  private void initRows(PartitionKey partitionKey, RowType rowType, double estSparsity,
+      Class<? extends IElement> valueClass) {
     int rowStart = partitionKey.getStartRow();
     int rowEnd = partitionKey.getEndRow();
+    long startCol = partitionKey.getStartCol();
+    long endCol = partitionKey.getEndCol();
+
+    int elementNum = partitionKey.getIndexNum();
+    if (elementNum <= 0) {
+      elementNum = (int) ((endCol - startCol) * estSparsity);
+    }
     for (int rowIndex = rowStart; rowIndex < rowEnd; rowIndex++) {
       rows.putRow(rowIndex,
-        initRow(rowIndex, rowType, partitionKey.getStartCol(), partitionKey.getEndCol(),
-          estSparsity));
+          initRow(rowIndex, rowType, partitionKey.getStartCol(), partitionKey.getEndCol(),
+              elementNum, valueClass));
     }
   }
 
   private ServerRow initRow(int rowIndex, RowType rowType, long startCol, long endCol,
-    double estSparsity) {
-    int estEleNum = (int) ((endCol - startCol) * estSparsity);
-    return ServerRowFactory.createServerRow(rowIndex, rowType, startCol, endCol, estEleNum);
+      int elementNum, Class<? extends IElement> valueClass) {
+    ServerRow row = ServerRowFactory
+        .createServerRow(rowIndex, rowType, startCol, endCol, elementNum, valueClass);
+    row.init();
+    return row;
   }
 
   private ServerRow initRow(RowType rowType) {
-    return initRow(0, rowType, 0, 0, 0.0);
+    return initRow(0, rowType, 0, 0, 0, null);
   }
 
   /**
@@ -167,7 +179,7 @@ public class ServerPartition implements Serialize {
   /**
    * Update the partition use psf
    *
-   * @param func      PS update function
+   * @param func PS update function
    * @param partParam the parameters for the PSF
    */
   public void update(UpdateFunc func, PartitionUpdateParam partParam) {
@@ -187,7 +199,7 @@ public class ServerPartition implements Serialize {
   public void update(ServerRow rowSplit) {
     ServerRow oldRowSplit = rows.getRow(rowSplit.getRowId());
     if (oldRowSplit == null || rowSplit.getClock() > oldRowSplit.getClock()
-      || rowSplit.getRowVersion() > oldRowSplit.getRowVersion()) {
+        || rowSplit.getRowVersion() > oldRowSplit.getRowVersion()) {
       rows.putRow(rowSplit.getRowId(), rowSplit);
     }
   }
@@ -213,7 +225,6 @@ public class ServerPartition implements Serialize {
    * Get a batch rows
    *
    * @param rowIndexes row indices
-   * @return
    */
   public List<ServerRow> getRows(List<Integer> rowIndexes) {
     if (rowIndexes == null || rowIndexes.isEmpty()) {
@@ -255,7 +266,8 @@ public class ServerPartition implements Serialize {
 
 
   // TODO: dynamic add/delete row
-  @Override public void serialize(ByteBuf buf) {
+  @Override
+  public void serialize(ByteBuf buf) {
     if (partitionKey == null) {
       return;
     }
@@ -276,7 +288,8 @@ public class ServerPartition implements Serialize {
     }
   }
 
-  @Override public void deserialize(ByteBuf buf) {
+  @Override
+  public void deserialize(ByteBuf buf) {
     int size = buf.readInt();
     byte[] bytes = new byte[size];
     buf.readBytes(bytes);
@@ -284,7 +297,8 @@ public class ServerPartition implements Serialize {
     try {
       rows = (PartitionSource) Class.forName(this.PartitionSourceClassName).newInstance();
     } catch (Throwable e) {
-      LOG.error("Can not init partition source for type " + this.PartitionSourceClassName + " use default instead ",
+      LOG.error("Can not init partition source for type " + this.PartitionSourceClassName
+              + " use default instead ",
           e);
       rows = new PartitionSourceMap();
     }
@@ -301,7 +315,8 @@ public class ServerPartition implements Serialize {
     }
   }
 
-  @Override public int bufferLen() {
+  @Override
+  public int bufferLen() {
     if (partitionKey == null) {
       return 0;
     }

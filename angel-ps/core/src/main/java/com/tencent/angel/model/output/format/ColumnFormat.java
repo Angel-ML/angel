@@ -418,7 +418,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   private void saveIntFloatRows(ServerPartition part, ServerRow[] rows,
       MatrixPartitionMeta partMeta, PSMatrixSaveContext saveContext, DataOutputStream output)
       throws IOException {
-    Vector vec = rows[0].getSplit();
+    Vector vec = ServerRowUtils.getVector((ServerIntFloatRow) rows[0]);
     //int size = rows.length;
     int indexOffset = (int) part.getPartitionKey().getStartCol();
     IntFloatVectorStorage storage = ((IntFloatVector) vec).getStorage();
@@ -464,7 +464,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   private void saveIntDoubleRows(ServerPartition part, ServerRow[] rows,
       MatrixPartitionMeta partMeta, PSMatrixSaveContext saveContext, DataOutputStream output)
       throws IOException {
-    Vector vec = rows[0].getSplit();
+    Vector vec = ServerRowUtils.getVector((ServerIntDoubleRow) rows[0]);
     //int size = rows.length;
     int indexOffset = (int) part.getPartitionKey().getStartCol();
     IntDoubleVectorStorage storage = ((IntDoubleVector) vec).getStorage();
@@ -508,7 +508,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
 
   private void saveIntIntRows(ServerPartition part, ServerRow[] rows, MatrixPartitionMeta partMeta,
       PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
-    Vector vec = rows[0].getSplit();
+    Vector vec = ServerRowUtils.getVector((ServerIntIntRow) rows[0]);
     //int size = rows.size();
     int indexOffset = (int) part.getPartitionKey().getStartCol();
     IntIntVectorStorage storage = ((IntIntVector) vec).getStorage();
@@ -552,7 +552,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
 
   private void saveIntLongRows(ServerPartition part, ServerRow[] rows, MatrixPartitionMeta partMeta,
       PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
-    Vector vec = rows[0].getSplit();
+    Vector vec = ServerRowUtils.getVector((ServerIntLongRow) rows[0]);
     //int size = rows.size();
     int indexOffset = (int) part.getPartitionKey().getStartCol();
     IntLongVectorStorage storage = ((IntLongVector) vec).getStorage();
@@ -597,7 +597,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   private void saveLongFloatRows(ServerPartition part, ServerRow[] rows,
       MatrixPartitionMeta partMeta, PSMatrixSaveContext saveContext, DataOutputStream output)
       throws IOException {
-    Vector vec = rows[0].getSplit();
+    Vector vec = ServerRowUtils.getVector((ServerLongFloatRow) rows[0]);
     //int size = rows.size();
     long indexOffset = part.getPartitionKey().getStartCol();
 
@@ -666,7 +666,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   private void saveLongDoubleRows(ServerPartition part, ServerRow[] rows,
       MatrixPartitionMeta partMeta, PSMatrixSaveContext saveContext, DataOutputStream output)
       throws IOException {
-    Vector vec = rows[0].getSplit();
+    Vector vec = ServerRowUtils.getVector((ServerLongDoubleRow) rows[0]);
     //int size = rows.size();
     long indexOffset = part.getPartitionKey().getStartCol();
 
@@ -735,7 +735,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
 
   private void saveLongIntRows(ServerPartition part, ServerRow[] rows, MatrixPartitionMeta partMeta,
       PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
-    Vector vec = rows[0].getSplit();
+    Vector vec = ServerRowUtils.getVector((ServerLongIntRow) rows[0]);
     //int size = rows.size();
     long indexOffset = part.getPartitionKey().getStartCol();
 
@@ -804,7 +804,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   private void saveLongLongRows(ServerPartition part, ServerRow[] rows,
       MatrixPartitionMeta partMeta, PSMatrixSaveContext saveContext, DataOutputStream output)
       throws IOException {
-    Vector vec = rows[0].getSplit();
+    Vector vec = ServerRowUtils.getVector((ServerLongLongRow) rows[0]);
     //int size = rows.size();
     long indexOffset = part.getPartitionKey().getStartCol();
 

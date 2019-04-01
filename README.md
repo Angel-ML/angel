@@ -42,6 +42,7 @@
 * [Angel中优化器](./docs/basic/optimizer_on_angel.md)
 * [Angel中的损失函数](./docs/basic/lossfunc_on_angel.md)
 * [Angel中的传输函数](./docs/basic/transfunc_on_angel.md)
+* [Angel中的学习率Decay](./docs/basic/batchsize_decay.md)
 
 ## Quick Start
 * [Angel入门](./docs/tutorials/angel_ps_quick_start.md)
@@ -49,7 +50,8 @@
 * [Angel Json配置](./docs/basic/json_conf.md)
 
 ## Algorithm
-
+* [**Angel or Spark On Angel？**](./docs/algo/angel_or_spark_on_angel.md)
+* [**Algorithm Parameter Description**](./docs/algo/model_config_details.md)
 * **Angel**
 	* **Traditional Machine Learning Methods**
 		* [Logistic Regression(LR)](./docs/algo/lr_on_angel.md)
@@ -69,12 +71,13 @@
 		* [Neural Factorization Machine(NFM)](./docs/algo/nfm_on_angel.md)
 		* [Product Neural Network(PNN)](./docs/algo/pnn_on_angel.md)
 * **Spark on Angel**
-	* **Online Learning**
-		* [FTRL](./docs/algo/ftrl_lr_spark.md)
-	* **Offline Learning**
-		* [Logistic Regression(LR)](./docs/algo/sona/lr_sona.md)
-		* [Word2Vec](./docs/algo/sona/word2vec_sona.md)
-		* [LINE](./docs/algo/sona/line_sona.md)
+	* [FTRL](./docs/algo/ftrl_lr_spark.md)
+	* [Logistic Regression(LR)](./docs/algo/sona/lr_sona.md)
+	* [Word2Vec](./docs/algo/sona/word2vec_sona.md)
+	* [LINE](./docs/algo/sona/line_sona.md)
+	* [KCORE](./docs/algo/sona/kcore_sona.md)
+	* [FTRLFM](./docs/algo/ftrl_fm_spark_en.md)
+  * [GBDT](./docs/algo/sona/feature_gbdt_sona.md)
 
 
 ## Deployment
@@ -84,6 +87,14 @@
 * [Yarn运行](./docs/deploy/run_on_yarn.md)
 * [系统配置](./docs/deploy/config_details.md)
 * [资源配置指南](./docs/deploy/resource_config_guide.md)
+* [使用OpenBlas给算法加速](./docs/deploy/blas_for_densematrix.md)
+
+## Community
+* Mailing list: angel-tsc@lists.deeplearningfoundation.org
+* Angel homepage in Linux FD: https://lists.deeplearningfoundation.org/g/angel-main
+* [TSC members & Committers](./Community.md)
+* [Contributing to Angel](./CONTRIBUTING.md)
+* [Roadmap](https://github.com/Angel-ML/angel/wiki/Roadmap)
 
 ## FAQ
 * [工程类问题](https://github.com/Tencent/angel/wiki/%E5%B7%A5%E7%A8%8B%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)

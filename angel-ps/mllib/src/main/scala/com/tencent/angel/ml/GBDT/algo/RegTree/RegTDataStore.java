@@ -90,8 +90,8 @@ public class RegTDataStore {
         x = (IntFloatVector) data.getX();
       } else if (data.getX() instanceof IntDoubleVector) {
         x = VFactory.sparseFloatVector((int) data.getX().dim(),
-            ((IntDoubleVector)data.getX()).getStorage().getIndices(),
-            Maths.double2Float(((IntDoubleVector)data.getX()).getStorage().getValues()));
+            ((IntDoubleVector) data.getX()).getStorage().getIndices(),
+            Maths.double2Float(((IntDoubleVector) data.getX()).getStorage().getValues()));
       }
 
       y = data.getY();
@@ -119,7 +119,7 @@ public class RegTDataStore {
     }
 
     featureMeta =
-            new FeatureMeta(numCol, Maths.double2Float(minFeatures), Maths.double2Float(maxFeatures));
+        new FeatureMeta(numCol, Maths.double2Float(minFeatures), Maths.double2Float(maxFeatures));
 
   }
 

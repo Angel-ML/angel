@@ -70,12 +70,23 @@ message MatrixContextProto {
   required string name = 2;
   required int32 rowNum = 3;
   required int64 colNum = 4;
-  required int64 validIndexNum = 5;
-  required int32 blockRowNum = 6;
-  required int64 blockColNum = 7;
-  required int32 rowType = 8;
-  required string partitionerClassName = 9;
-  repeated Pair attribute = 10;
+  required int64 indexStart = 5;
+  required int64 indexEnd = 6;
+  required int64 validIndexNum = 7;
+  required int32 blockRowNum = 8;
+  required int64 blockColNum = 9;
+  required int32 rowType = 10;
+  required string partitionerClassName = 11;
+  repeated PartContextProto parts = 12;
+  repeated Pair attribute = 13;
+}
+
+message PartContextProto {
+  required int32 startRow = 1;
+  required int64 startCol = 2;
+  required int32 endRow = 3;
+  required int64 endCol = 4;
+  required int32 indexNum = 5;
 }
 
 message PartitionMetaProto{
@@ -84,7 +95,8 @@ message PartitionMetaProto{
   required int64 startCol = 3;
   required int32 endRow = 4;
   required int64 endCol = 5;
-  repeated PSIdProto storedPs = 6;;
+  required int32 indexNum = 6;
+  repeated PSIdProto storedPs = 7;
 }
 
 message MatrixMetaProto {

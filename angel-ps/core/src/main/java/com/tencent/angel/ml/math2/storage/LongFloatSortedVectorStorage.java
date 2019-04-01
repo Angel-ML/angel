@@ -1,17 +1,13 @@
 package com.tencent.angel.ml.math2.storage;
 
-import java.util.Arrays;
-
-import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ml.math2.utils.ArrayCopy;
-
+import com.tencent.angel.ml.matrix.RowType;
 import java.util.Arrays;
-import java.util.Random;
 import java.util.HashSet;
-
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import java.util.Random;
 
 public class LongFloatSortedVectorStorage implements LongFloatVectorStorage {
+
   private long[] indices;
   private float[] values;
   private byte flag; // 001: dense; 010: sparse; 100: sorted
@@ -39,10 +35,11 @@ public class LongFloatSortedVectorStorage implements LongFloatVectorStorage {
   }
 
   public LongFloatSortedVectorStorage(long dim) {
-    this(dim, Math.max(128, (int) (dim / 1000)));
+    this(dim, (int) Math.min(64, Math.max(dim, 0)));
   }
 
-  @Override public float get(long idx) {
+  @Override
+  public float get(long idx) {
     if (idx < 0 || idx > dim - 1) {
       throw new ArrayIndexOutOfBoundsException();
     } else if (size == 0 || idx > indices[size - 1] || idx < indices[0]) {
@@ -53,7 +50,8 @@ public class LongFloatSortedVectorStorage implements LongFloatVectorStorage {
     }
   }
 
-  @Override public void set(long idx, float value) {
+  @Override
+  public void set(long idx, float value) {
     if (idx < 0 || idx > dim - 1) {
       throw new ArrayIndexOutOfBoundsException();
     }
@@ -107,18 +105,21 @@ public class LongFloatSortedVectorStorage implements LongFloatVectorStorage {
     size++;
   }
 
-  @Override public LongFloatVectorStorage clone() {
+  @Override
+  public LongFloatVectorStorage clone() {
     return new LongFloatSortedVectorStorage(dim, size, ArrayCopy.copy(indices),
-      ArrayCopy.copy(values));
+        ArrayCopy.copy(values));
   }
 
-  @Override public LongFloatVectorStorage copy() {
+  @Override
+  public LongFloatVectorStorage copy() {
     return new LongFloatSortedVectorStorage(dim, size, ArrayCopy.copy(indices),
-      ArrayCopy.copy(values));
+        ArrayCopy.copy(values));
   }
 
 
-  @Override public LongFloatVectorStorage oneLikeSparse() {
+  @Override
+  public LongFloatVectorStorage oneLikeSparse() {
     float[] oneLikeValues = new float[size];
     for (int i = 0; i < size; i++) {
       oneLikeValues[i] = 1;
@@ -126,7 +127,8 @@ public class LongFloatSortedVectorStorage implements LongFloatVectorStorage {
     return new LongFloatSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public LongFloatVectorStorage oneLikeSorted() {
+  @Override
+  public LongFloatVectorStorage oneLikeSorted() {
     float[] oneLikeValues = new float[size];
     for (int i = 0; i < size; i++) {
       oneLikeValues[i] = 1;
@@ -135,7 +137,8 @@ public class LongFloatSortedVectorStorage implements LongFloatVectorStorage {
   }
 
 
-  @Override public LongFloatVectorStorage oneLikeSparse(long dim, int capacity) {
+  @Override
+  public LongFloatVectorStorage oneLikeSparse(long dim, int capacity) {
     float[] oneLikeValues = new float[capacity];
     long[] indices = new long[capacity];
     HashSet set = new HashSet<Integer>();
@@ -155,7 +158,8 @@ public class LongFloatSortedVectorStorage implements LongFloatVectorStorage {
     return new LongFloatSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public LongFloatVectorStorage oneLikeSorted(long dim, int capacity) {
+  @Override
+  public LongFloatVectorStorage oneLikeSorted(long dim, int capacity) {
     float[] oneLikeValues = new float[capacity];
     long[] indices = new long[capacity];
     HashSet set = new HashSet<Integer>();
@@ -176,7 +180,8 @@ public class LongFloatSortedVectorStorage implements LongFloatVectorStorage {
     return new LongFloatSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public LongFloatVectorStorage oneLikeSparse(int capacity) {
+  @Override
+  public LongFloatVectorStorage oneLikeSparse(int capacity) {
     float[] oneLikeValues = new float[capacity];
     long[] indices = new long[capacity];
     HashSet set = new HashSet<Integer>();
@@ -196,7 +201,8 @@ public class LongFloatSortedVectorStorage implements LongFloatVectorStorage {
     return new LongFloatSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public LongFloatVectorStorage oneLikeSorted(int capacity) {
+  @Override
+  public LongFloatVectorStorage oneLikeSorted(int capacity) {
     float[] oneLikeValues = new float[capacity];
     long[] indices = new long[capacity];
     HashSet set = new HashSet<Integer>();
@@ -218,68 +224,83 @@ public class LongFloatSortedVectorStorage implements LongFloatVectorStorage {
   }
 
 
-  @Override public LongFloatVectorStorage emptySparse() {
+  @Override
+  public LongFloatVectorStorage emptySparse() {
     return new LongFloatSparseVectorStorage(dim, indices.length);
   }
 
-  @Override public LongFloatVectorStorage emptySorted() {
+  @Override
+  public LongFloatVectorStorage emptySorted() {
     return new LongFloatSortedVectorStorage(dim, indices.length);
   }
 
 
-  @Override public LongFloatVectorStorage emptySparse(long dim, int capacity) {
+  @Override
+  public LongFloatVectorStorage emptySparse(long dim, int capacity) {
     return new LongFloatSparseVectorStorage(dim, capacity);
   }
 
-  @Override public LongFloatVectorStorage emptySorted(long dim, int capacity) {
+  @Override
+  public LongFloatVectorStorage emptySorted(long dim, int capacity) {
     return new LongFloatSortedVectorStorage(dim, capacity);
   }
 
-  @Override public LongFloatVectorStorage emptySparse(int capacity) {
+  @Override
+  public LongFloatVectorStorage emptySparse(int capacity) {
     return new LongFloatSparseVectorStorage(dim, capacity);
   }
 
-  @Override public LongFloatVectorStorage emptySorted(int capacity) {
+  @Override
+  public LongFloatVectorStorage emptySorted(int capacity) {
     return new LongFloatSortedVectorStorage(dim, capacity);
   }
 
-  @Override public long[] getIndices() {
+  @Override
+  public long[] getIndices() {
     return indices;
   }
 
-  @Override public int size() {
+  @Override
+  public int size() {
     return size;
   }
 
-  @Override public boolean hasKey(long key) {
+  @Override
+  public boolean hasKey(long key) {
     return (size != 0 && key <= indices[size - 1] && key >= indices[0]
-      && Arrays.binarySearch(indices, key) > 0);
+        && Arrays.binarySearch(indices, key) > 0);
   }
 
-  @Override public RowType getType() {
+  @Override
+  public RowType getType() {
     return RowType.T_FLOAT_SPARSE_LONGKEY;
   }
 
-  @Override public boolean isDense() {
+  @Override
+  public boolean isDense() {
     return flag == 1;
   }
 
-  @Override public boolean isSparse() {
+  @Override
+  public boolean isSparse() {
     return flag == 2;
   }
 
-  @Override public boolean isSorted() {
+  @Override
+  public boolean isSorted() {
     return flag == 4;
   }
 
-  @Override public void clear() {
+  @Override
+  public void clear() {
     Arrays.parallelSetAll(indices, (int value) -> 0);
     for (int i = 0; i < values.length; i++) {
       values[i] = 0;
     }
   }
 
-  @Override public float[] getValues() {
+  @Override
+  public float[] getValues() {
     return values;
   }
 }

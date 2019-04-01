@@ -32,8 +32,6 @@ import com.tencent.angel.psagent.PSAgentContext;
 
 import java.util.*;
 
-import static sun.misc.Version.println;
-
 
 public class UpdateColsParam extends UpdateParam {
 

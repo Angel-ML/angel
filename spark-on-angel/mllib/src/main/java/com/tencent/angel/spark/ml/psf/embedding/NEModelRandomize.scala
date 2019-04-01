@@ -25,6 +25,7 @@ import com.tencent.angel.PartitionKey
 import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage
 import com.tencent.angel.ml.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc, UpdateParam}
 import com.tencent.angel.ps.storage.matrix.ServerPartition
+import com.tencent.angel.ps.storage.vector.ServerRowUtils
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.spark.ml.psf.embedding.NEModelRandomize.{RandomizePartitionUpdateParam, RandomizeUpdateParam}
 
@@ -53,7 +54,7 @@ class NEModelRandomize(param: RandomizeUpdateParam) extends UpdateFunc(param) {
       (rowId, rand.nextInt)
     ).par.foreach { case (rowId, rowSeed) =>
       val rowRandom = new Random(rowSeed)
-      val data = part.getRow(rowId).getSplit.getStorage.asInstanceOf[IntFloatDenseVectorStorage].getValues
+      val data = ServerRowUtils.getVector(part.getRow(rowId)).getStorage.asInstanceOf[IntFloatDenseVectorStorage].getValues
       if (order == 1)
         data.indices.foreach(data(_) = (rowRandom.nextFloat() - 0.5f) / dim)
       else {

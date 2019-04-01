@@ -90,4 +90,6 @@ public class MatrixConf {
    */
   public static final String MATRIX_SAVE_PATH = "matrix.save.path";
   public static final String DEFAULT_MATRIX_SAVE_PATH = "";
+
+  public static final String VALUE_TYPE_CLASSNANE = "matrix.value.type.classname";
 }

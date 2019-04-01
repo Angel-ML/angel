@@ -20,7 +20,7 @@ package com.tencent.angel.ml.matrix.psf.aggr
 
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.UnaryAggrFunc
-import com.tencent.angel.ps.storage.vector.ServerRow;
+import com.tencent.angel.ps.storage.vector.{ServerRow, ServerRowUtils};
 
 /**
   * `Min` will aggregate the minimum value of the `rowId` row in `matrixId` matrix.
@@ -31,7 +31,7 @@ class Min(matrixId: Int, rowId: Int) extends UnaryAggrFunc(matrixId, rowId) {
   def this() = this(-1, -1)
 
   override protected def processRow(row: ServerRow): Double = {
-    row.getSplit match {
+    ServerRowUtils.getVector(row) match {
       case s: DoubleVector => s.min()
       case s: FloatVector => s.min()
       case s: LongVector => s.min()

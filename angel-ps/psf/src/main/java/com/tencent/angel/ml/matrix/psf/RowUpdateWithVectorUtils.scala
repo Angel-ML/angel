@@ -56,14 +56,6 @@ object RowUpdateWithVectorUtils {
             updateLongLongRow(r, rowType, buf, long2Long)
           case r: ServerLongIntRow =>
             updateLongIntRow(r, rowType, buf, int2Int)
-          case r: ServerCompDenseLongDoubleRow =>
-            updateCompDenseLongDoubleRow(r, rowType, buf, double2Double)
-          case r: ServerCompDenseLongFloatRow =>
-            updateCompDenseLongFloatRow(r, rowType, buf, float2Float)
-          case r: ServerCompDenseLongLongRow =>
-            updateCompDenseLongLongRow(r, rowType, buf, long2Long)
-          case r: ServerCompDenseLongIntRow =>
-            updateCompDenseLongIntRow(r, rowType, buf, int2Int)
         }
       }
     } finally {
@@ -225,6 +217,8 @@ object RowUpdateWithVectorUtils {
         case _ =>
           throw new UnsupportedOperationException(s"unsupported operation: update $rowType to ServerLongLongRow")
       }
+    } finally {
+      row.endWrite()
     }
   }
 
@@ -243,106 +237,8 @@ object RowUpdateWithVectorUtils {
         case _ =>
           throw new UnsupportedOperationException(s"unsupported operation: update $rowType to ServerLongIntRow")
       }
-    }
-  }
-
-  private def updateCompDenseLongDoubleRow(row: ServerCompDenseLongDoubleRow,
-      rowType: RowType,
-      buf: ByteBuf,
-      double2Double: (Double, Double) => Double): Unit = {
-    row.startWrite()
-    try {
-      rowType match {
-        case T_DOUBLE_SPARSE_LONGKEY | T_DOUBLE_SPARSE_LONGKEY_COMPONENT =>
-          for (_ <- 0 until buf.readInt()) {
-            val index = buf.readLong() + row.getStartCol
-            row.set(index, double2Double(row.get(index), buf.readDouble()))
-          }
-        case T_DOUBLE_DENSE =>
-          for (i <- 0 until buf.readInt()) {
-            val index = i + row.getStartCol
-            row.set(index, double2Double(row.get(index), buf.readDouble()))
-          }
-        case _ =>
-          throw new UnsupportedOperationException(s"unsupported operation: update $rowType to ServerCompDenseLongDoubleRow")
-      }
-    }
-  }
-
-
-  private def updateCompDenseLongFloatRow(row: ServerCompDenseLongFloatRow,
-      rowType: RowType,
-      buf: ByteBuf,
-      floatToFloat: (Float, Float) => Float) {
-    row.startWrite()
-    try {
-      rowType match {
-        case T_FLOAT_SPARSE_LONGKEY | T_FLOAT_SPARSE_LONGKEY_COMPONENT =>
-          for (_ <- 0 until buf.readInt()) {
-            val index = (row.getStartCol + buf.readInt()).toInt
-            row.set(index, floatToFloat(row.get(index), buf.readFloat()))
-          }
-        case T_FLOAT_DENSE =>
-          assert(buf.readInt() == row.getEndCol - row.getStartCol, "size unmatched")
-          for (i <- row.getStartCol.toInt until row.getEndCol.toInt) {
-            row.set(i, floatToFloat(row.get(i), buf.readFloat()))
-          }
-        case _ =>
-          throw new UnsupportedOperationException(s"unsupported operation: update $rowType to ServerCompDenseLongFloatRow")
-      }
     } finally {
-      row.endWrite()
-    }
-  }
-
-
-  private def updateCompDenseLongLongRow(row: ServerCompDenseLongLongRow,
-      rowType: RowType,
-      buf: ByteBuf,
-      longToLong: (Long, Long) => Long) {
-    row.startWrite()
-    try {
-      rowType match {
-        case T_LONG_SPARSE_LONGKEY | T_LONG_SPARSE_LONGKEY_COMPONENT =>
-          for (_ <- 0 until buf.readInt()) {
-            val index = (row.getStartCol + buf.readInt()).toInt
-            row.set(index, longToLong(row.get(index), buf.readLong()))
-          }
-        case T_LONG_DENSE =>
-          assert(buf.readInt() == row.getEndCol - row.getStartCol, "size unmatched")
-          for (i <- row.getStartCol.toInt until row.getEndCol.toInt) {
-            row.set(i, longToLong(row.get(i), buf.readLong()))
-          }
-        case _ =>
-          throw new UnsupportedOperationException(s"unsupported operation: update $rowType to ServerCompDenseLongLongRow")
-      }
-    } finally {
-      row.endWrite()
-    }
-  }
-
-  private def updateCompDenseLongIntRow(row: ServerCompDenseLongIntRow,
-      rowType: RowType,
-      buf: ByteBuf,
-      intToInt: (Int, Int) => Int) {
-    row.startWrite()
-    try {
-      rowType match {
-        case T_INT_SPARSE_LONGKEY | T_INT_SPARSE_LONGKEY_COMPONENT =>
-          for (_ <- 0 until buf.readInt()) {
-            val index = (row.getStartCol + buf.readInt()).toInt
-            row.set(index, intToInt(row.get(index), buf.readInt()))
-          }
-        case T_INT_DENSE =>
-          assert(buf.readInt() == row.getEndCol - row.getStartCol, "size unmatched")
-          for (i <- row.getStartCol.toInt until row.getEndCol.toInt) {
-            row.set(i, intToInt(row.get(i), buf.readInt()))
-          }
-        case _ =>
-          throw new UnsupportedOperationException(s"unsupported operation: update $rowType to ServerCompDenseLongIntRow")
-      }
-    } finally {
-      row.endWrite()
+      row.endWrite();
     }
   }
 

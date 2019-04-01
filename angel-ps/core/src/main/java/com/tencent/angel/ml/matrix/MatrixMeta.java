@@ -21,6 +21,7 @@ package com.tencent.angel.ml.matrix;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ps.ParameterServerId;
 
+import com.tencent.angel.ps.storage.vector.element.IElement;
 import java.util.*;
 
 /**
@@ -91,6 +92,22 @@ public class MatrixMeta {
    */
   public long getValidIndexNum() {
     return matrixContext.getValidIndexNum();
+  }
+
+  /**
+   * get index range start
+   */
+  public long getIndexStart() {
+    return matrixContext.getIndexStart();
+  }
+
+  /**
+   * Get index range end
+   *
+   * @return index range end
+   */
+  public long getIndexEnd() {
+    return matrixContext.getIndexEnd();
   }
 
   /**
@@ -318,5 +335,14 @@ public class MatrixMeta {
    */
   public double getEstSparsity() {
     return matrixContext.getEstSparsity();
+  }
+
+  /**
+   * Get matrix value type class
+   * @return null if this parameter is not set
+   * @throws ClassNotFoundException if value class is not found
+   */
+  public Class<? extends IElement> getValueClass() throws ClassNotFoundException {
+    return matrixContext.getValueType();
   }
 }

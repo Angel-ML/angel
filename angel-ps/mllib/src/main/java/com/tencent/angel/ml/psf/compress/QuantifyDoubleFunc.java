@@ -20,7 +20,6 @@ package com.tencent.angel.ml.psf.compress;
 
 
 import com.tencent.angel.ml.psf.compress.QuantifyDoubleParam.QuantifyDoublePartUParam;
-import com.tencent.angel.ml.math2.storage.IntDoubleDenseVectorStorage;
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
@@ -28,6 +27,7 @@ import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerIntDoubleRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;
+import com.tencent.angel.ps.storage.vector.ServerRowUtils;
 
 
 public class QuantifyDoubleFunc extends UpdateFunc {
@@ -75,7 +75,7 @@ public class QuantifyDoubleFunc extends UpdateFunc {
   private void doUpdate(ServerIntDoubleRow row, double[] arraySlice) {
     try {
       row.getLock().writeLock().lock();
-      double[] values = ((IntDoubleDenseVectorStorage)(row.getSplit().getStorage())).getValues();
+      double[] values = ServerRowUtils.getVector(row).getStorage().getValues();
       int size = row.size();
       for (int i = 0; i < size; i++) {
         values[i] = values[i] + arraySlice[i];

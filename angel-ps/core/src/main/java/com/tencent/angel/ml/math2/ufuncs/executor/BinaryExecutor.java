@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -19,14 +19,26 @@
 package com.tencent.angel.ml.math2.ufuncs.executor;
 
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.math2.ufuncs.executor.comp.*;
-import com.tencent.angel.ml.math2.ufuncs.executor.mixed.*;
-import com.tencent.angel.ml.math2.ufuncs.executor.simple.*;
+import com.tencent.angel.ml.math2.ufuncs.executor.comp.CompBinaryExecutor;
+import com.tencent.angel.ml.math2.ufuncs.executor.mixed.MixedBinaryInAllExecutor;
+import com.tencent.angel.ml.math2.ufuncs.executor.mixed.MixedBinaryInNonZAExecutor;
+import com.tencent.angel.ml.math2.ufuncs.executor.mixed.MixedBinaryInZAExecutor;
+import com.tencent.angel.ml.math2.ufuncs.executor.mixed.MixedBinaryOutAllExecutor;
+import com.tencent.angel.ml.math2.ufuncs.executor.mixed.MixedBinaryOutNonZAExecutor;
+import com.tencent.angel.ml.math2.ufuncs.executor.mixed.MixedBinaryOutZAExecutor;
+import com.tencent.angel.ml.math2.ufuncs.executor.simple.SimpleBinaryInAllExecutor;
+import com.tencent.angel.ml.math2.ufuncs.executor.simple.SimpleBinaryInNonZAExecutor;
+import com.tencent.angel.ml.math2.ufuncs.executor.simple.SimpleBinaryInZAExecutor;
+import com.tencent.angel.ml.math2.ufuncs.executor.simple.SimpleBinaryOutAllExecutor;
+import com.tencent.angel.ml.math2.ufuncs.executor.simple.SimpleBinaryOutNonZAExecutor;
+import com.tencent.angel.ml.math2.ufuncs.executor.simple.SimpleBinaryOutZAExecutor;
 import com.tencent.angel.ml.math2.ufuncs.expression.Binary;
-import com.tencent.angel.ml.math2.ufuncs.expression.OpType;
-import com.tencent.angel.ml.math2.vector.*;
+import com.tencent.angel.ml.math2.vector.ComponentVector;
+import com.tencent.angel.ml.math2.vector.SimpleVector;
+import com.tencent.angel.ml.math2.vector.Vector;
 
 public class BinaryExecutor {
+
   public static Vector apply(Vector v1, Vector v2, Binary op) {
     assert v1 != null && v2 != null && op != null;
     if (v1 instanceof ComponentVector && v2 instanceof ComponentVector) {

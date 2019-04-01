@@ -121,7 +121,7 @@ public class Zero extends UpdateFunc {
 
   private void zero(ServerRow row) {
     row.startWrite();
-    row.getSplit().clear();
+    row.clear();
     row.endWrite();
   }
 }

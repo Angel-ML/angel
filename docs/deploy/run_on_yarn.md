@@ -33,7 +33,7 @@ Angel的分布式Yarn运行模式需要的环境，其实也非常简单：
 	* 将数据文件上传到指定目录下
 
 		```
-		hadoop fs -put data/exampledata/LRLocalExampleData/a9a.train hdfs://my-nn:54310/test/lr_data
+		hadoop fs -put data/a9a/a9a_123d_train.libsvm hdfs://my-nn:54310/test/lr_data
 		```
 2. **提交任务**
 

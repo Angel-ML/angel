@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -19,28 +19,34 @@
 package com.tencent.angel.ml.math2.ufuncs.expression;
 
 public class Not extends Unary {
+
   public Not(boolean inplace) {
     setInplace(inplace);
   }
 
 
-  @Override public boolean isOrigin() {
+  @Override
+  public boolean isOrigin() {
     return true;
   }
 
-  @Override public double apply(double elem) {
+  @Override
+  public double apply(double elem) {
     return -elem;
   }
 
-  @Override public float apply(float elem) {
+  @Override
+  public float apply(float elem) {
     return -elem;
   }
 
-  @Override public long apply(long elem) {
+  @Override
+  public long apply(long elem) {
     return -elem;
   }
 
-  @Override public int apply(int elem) {
+  @Override
+  public int apply(int elem) {
     return -elem;
   }
 }
