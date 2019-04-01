@@ -19,9 +19,9 @@ package com.tencent.angel.ml.matrix.psf.graph.adjacency.getneighbor;
 
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import io.netty.buffer.ByteBuf;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.apache.commons.collections.map.HashedMap;
 
 public class PartGetNeighborResult extends PartitionGetResult {
 
@@ -51,7 +51,7 @@ public class PartGetNeighborResult extends PartitionGetResult {
   @Override
   public void deserialize(ByteBuf buf) {
     int size = buf.readInt();
-    neighborIndices = new HashedMap(size);
+    neighborIndices = new HashMap(size);
     for(int i = 0; i < size; i++) {
       int nodeIndex = buf.readInt();
       int [] neighbors = new int[buf.readInt()];
