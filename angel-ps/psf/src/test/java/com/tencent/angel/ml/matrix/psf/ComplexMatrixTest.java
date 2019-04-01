@@ -15,7 +15,7 @@
  *
  */
 
-package com.tencent.angel;
+package com.tencent.angel.ml.matrix.psf;
 
 import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.client.AngelClientFactory;
@@ -50,10 +50,14 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
 import org.apache.log4j.PropertyConfigurator;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+/**
+ * A simple ut for adj table
+ */
 public class ComplexMatrixTest {
   private static final Log LOG = LogFactory.getLog(ComplexMatrixTest.class);
   private static final String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
@@ -68,7 +72,7 @@ public class ComplexMatrixTest {
   private static PSAttemptId psAttempt0Id;
 
   public static final int nodeNum = 10000;
-  public static final int maxNeighborNum = 100;
+  public static final int maxNeighborNum = 1000;
 
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
@@ -106,9 +110,9 @@ public class ComplexMatrixTest {
       MatrixContext mMatrix = new MatrixContext();
       mMatrix.setName("w1");
       mMatrix.setRowNum(1);
-      mMatrix.setColNum(100000);
+      mMatrix.setColNum(nodeNum);
       mMatrix.setMaxRowNumInBlock(1);
-      mMatrix.setMaxColNumInBlock(50000);
+      mMatrix.setMaxColNumInBlock(nodeNum / 10);
       mMatrix.setRowType(RowType.T_ANY_INTKEY_DENSE);
       mMatrix.setValueType(IntArrayElement.class);
       angelClient.addMatrix(mMatrix);
@@ -116,9 +120,9 @@ public class ComplexMatrixTest {
       MatrixContext mMatrix2 = new MatrixContext();
       mMatrix2.setName("w2");
       mMatrix2.setRowNum(1);
-      mMatrix2.setColNum(100000);
+      mMatrix2.setColNum(nodeNum);
       mMatrix2.setMaxRowNumInBlock(1);
-      mMatrix2.setMaxColNumInBlock(50000);
+      mMatrix2.setMaxColNumInBlock(nodeNum / 10);
       mMatrix2.setRowType(RowType.T_ANY_INTKEY_SPARSE);
       mMatrix2.setValueType(IntArrayElement.class);
       angelClient.addMatrix(mMatrix2);
@@ -140,11 +144,14 @@ public class ComplexMatrixTest {
   }
 
   @Test
-  public void testGet() throws ExecutionException, InterruptedException {
+  public void testInitAndGet() throws ExecutionException, InterruptedException {
     Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
-    MatrixClient client1 = worker.getPSAgent().getMatrixClient("w1", 0);
+    MatrixClient client1 = worker.getPSAgent().getMatrixClient("w2", 0);
     int matrixW1Id = client1.getMatrixId();
-    Map<Integer, int []> adjMap = getAdjTable(nodeNum, maxNeighborNum);
+    // Generate graph data
+    Map<Integer, int []> adjMap = generateAdjTable(nodeNum, maxNeighborNum);
+
+    // Init graph adj table
     InitNeighbor func = new InitNeighbor(new InitNeighborParam(matrixW1Id, adjMap));
     client1.update(func).get();
 
@@ -153,15 +160,19 @@ public class ComplexMatrixTest {
     for(int nodeId : adjMap.keySet()) {
       nodeIds[i++] = nodeId;
     }
+
+    // Get graph adj table from PS
     GetNeighbor getFunc = new GetNeighbor(new GetNeighborParam(matrixW1Id, nodeIds, maxNeighborNum));
     Map<Integer, int[]> getResults = ((GetNeighborResult) (client1.get(getFunc)))
         .getNodeIdToNeighborIndices();
+
+    // Check the result
     for(Entry<Integer, int[]> entry : getResults.entrySet()) {
       Assert.assertArrayEquals(entry.getValue(), adjMap.get(entry.getKey()));
     }
   }
 
-  public static Map<Integer, int[]> getAdjTable(int nodeNum, int maxNeighborNum) {
+  private static Map<Integer, int[]> generateAdjTable(int nodeNum, int maxNeighborNum) {
     Random r = new Random();
 
     Map<Integer, int[]> adjTable = new HashMap<>(nodeNum);
@@ -171,7 +182,7 @@ public class ComplexMatrixTest {
     return adjTable;
   }
 
-  public static int[] chooseNeighbors(int nodeNum, int nodeId, int neighborNum, Random r) {
+  private static int[] chooseNeighbors(int nodeNum, int nodeId, int neighborNum, Random r) {
     if(neighborNum == 0) {
       return new int[0];
     }
@@ -195,7 +206,7 @@ public class ComplexMatrixTest {
     return ret;
   }
 
-  public static String toString(int [][] adjTable) {
+  private static String toString(int [][] adjTable) {
     int len = adjTable.length;
     StringBuilder b = new StringBuilder();
     for(int i = 0; i < len; i++) {
@@ -212,5 +223,10 @@ public class ComplexMatrixTest {
     }
 
     return b.toString();
+  }
+
+  @AfterClass
+  public static void stop() throws Exception {
+    angelClient.stop();
   }
 }
