@@ -2,8 +2,9 @@ package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.spark.ml.graph.louvain.Louvain.edgeTripleRDD2GraphPartitions
-import com.tencent.angel.spark.ml.graph.louvain.{Louvain, LouvainGraphPartition, LouvainPSModel}
+import com.tencent.angel.spark.ml.louvain.Louvain.edgeTripleRDD2GraphPartitions
+import com.tencent.angel.spark.ml.graph.louvain.{Louvain, LouvainGraphPartition}
+import com.tencent.angel.spark.ml.louvain.{Louvain, LouvainGraphPartition, LouvainPSModel}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}

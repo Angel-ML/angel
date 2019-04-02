@@ -1,7 +1,7 @@
-package com.tencent.angel.spark.ml.graph.louvain
+package com.tencent.angel.spark.ml.louvain
 
 import com.tencent.angel.ml.math2.vector.IntFloatVector
-import com.tencent.angel.spark.ml.graph.louvain.Louvain.edgeTripleRDD2GraphPartitions
+import Louvain.edgeTripleRDD2GraphPartitions
 import com.tencent.angel.spark.util.VectorUtils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
