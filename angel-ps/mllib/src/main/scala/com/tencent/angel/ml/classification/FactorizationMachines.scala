@@ -36,7 +36,7 @@ class FactorizationMachines(conf: Configuration, _ctx: TaskContext = null) exten
   val numFactors: Int = sharedConf.getInt(MLCoreConf.ML_RANK_NUM, MLCoreConf.DEFAULT_ML_RANK_NUM)
   val optProvider = new PSOptimizerProvider()
 
-  override def buildNetwork(): Unit = {
+  override def buildNetwork(): this.type = {
     val inputOptName: String = sharedConf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
     val wide = new SimpleInputLayer("input", 1, new Identity(), optProvider.getOptimizer(inputOptName))
 
@@ -47,5 +47,7 @@ class FactorizationMachines(conf: Configuration, _ctx: TaskContext = null) exten
     val join = new SumPooling("sumPooling", 1, Array[Layer](wide, innerSumCross))
 
     new LossLayer("simpleLossLayer", join, new LogLoss())
+
+    this
   }
 }

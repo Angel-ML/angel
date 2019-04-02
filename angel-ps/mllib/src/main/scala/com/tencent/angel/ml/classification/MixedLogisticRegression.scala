@@ -39,7 +39,7 @@ class MixedLogisticRegression(conf: Configuration, _ctx: TaskContext = null) ext
   val rank: Int = sharedConf.getInt(AngelMLConf.ML_MLR_RANK, AngelMLConf.DEFAULT_ML_MLR_RANK)
   val optProvider = new PSOptimizerProvider()
 
-  override def buildNetwork(): Unit = {
+  override def buildNetwork(): this.type = {
     val ipOptName: String = sharedConf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
     val optimizer = optProvider.getOptimizer(ipOptName)
 
@@ -49,5 +49,7 @@ class MixedLogisticRegression(conf: Configuration, _ctx: TaskContext = null) ext
     val conbined = new DotPooling("dotpooling_layer", 1, Array[Layer](sigmoid, softmax))
 
     new LossLayer("simpleLossLayer", conbined, new CrossEntropyLoss())
+
+    this
   }
 }

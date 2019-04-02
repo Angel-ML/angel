@@ -2,7 +2,7 @@ package com.tencent.angel.ml.core.local.variables
 
 import java.util.Random
 
-import com.tencent.angel.ml.core.network.EvnContext
+import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.utils.ValueNotAllowed
 import com.tencent.angel.ml.core.variable.{Updater, VarState, VariableManager, VecVariable}
 import com.tencent.angel.ml.math2.matrix.Matrix
@@ -22,7 +22,8 @@ class LocalVecVariable(name: String,
   extends LocalVariable(name, rowType, updater, formatClassName, allowPullWithIndex) with VecVariable {
   override protected var vector: Vector = _
 
-  protected override def doCreate(envCtx: EvnContext): Unit = {
+  protected override def doCreate[T](envCtx: EnvContext[T]): Unit = {
+    assert(envCtx == null || envCtx.client == null)
     storage = rowType match {
       case RowType.T_DOUBLE_DENSE =>
         MFactory.rbIntDoubleMatrix(numSlot + 1, length.toInt, StorageType.DENSE)

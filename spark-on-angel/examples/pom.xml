@@ -52,6 +52,12 @@
             <artifactId>angel-ps-mllib</artifactId>
             <version>${project.version}</version>
             <scope>${dist.deps.scope}</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.json4s</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 

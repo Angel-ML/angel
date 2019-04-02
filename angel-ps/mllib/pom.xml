@@ -55,16 +55,6 @@
             <artifactId>angel-ps-psf</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!--dependency>
-          <groupId>org.json4s</groupId>
-          <artifactId>json4s-core_2.11</artifactId>
-          <version>3.2.11</version>
-        </dependency-->
-        <!--dependency>
-          <groupId>org.json4s</groupId>
-          <artifactId>json4s-ast_2.11</artifactId>
-          <version>3.2.11</version>
-        </dependency-->
         <dependency>
             <groupId>com.tencent.angel</groupId>
             <artifactId>angel-mlcore</artifactId>

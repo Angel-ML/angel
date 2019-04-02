@@ -3,11 +3,12 @@ package com.tencent.angel.ml.core.variable
 import java.util
 import java.util.concurrent.atomic.AtomicBoolean
 
+import com.tencent.angel.client.AngelClient
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.matrix.MatrixContext
-import com.tencent.angel.ml.core.AngelEvnContext
+import com.tencent.angel.ml.core.AngelEnvContext
 import com.tencent.angel.ml.core.conf.{AngelMLConf, SharedConf}
-import com.tencent.angel.ml.core.network.EvnContext
+import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.model._
@@ -18,7 +19,7 @@ abstract class PSVariable(name: String,
                           updater: Updater,
                           formatClassName: String,
                           allowPullWithIndex: Boolean)
-                         (implicit variableManager: VariableManager)
+                         (implicit variableManager: VariableManager, cilsImpl: CILSImpl)
   extends Variable(name, rowType, updater, formatClassName, allowPullWithIndex) {
 
   protected var matrixId: Int = -1
@@ -32,20 +33,19 @@ abstract class PSVariable(name: String,
 
   protected def rowsSaved(withSlot: Boolean = false): Array[Int]
 
-  protected def doCreate(envCtx: EvnContext): Unit = {
-    val angelEvnContext: AngelEvnContext = envCtx.asInstanceOf[AngelEvnContext]
-
-    if (angelEvnContext.angelClient != null) {
-      // create matrix in angel client (on client)
-      val mcList = new util.ArrayList[MatrixContext]()
-      mcList.add(getMatrixCtx)
-      angelEvnContext.angelClient.createMatrices(mcList)
-      // the matrix is created, but the is no PSAgent in client, so cannot call:
-      // matrixId = PSMatrixUtils.getMatrixId(name)
+  protected def doCreate[T](envCtx: EnvContext[T]): Unit = {
+    if (envCtx != null && envCtx.client != null) {
+      cilsImpl.doCreate(getMatrixCtx, envCtx)
     } else {
       // create matrix in work, on worker
       // in fact, the matrix has created, just get the matrixId here
-      matrixId = PSMatrixUtils.getMatrixId(name)
+      if (matrixId == -1) {
+        matrixId = PSMatrixUtils.getMatrixId(name)
+      }
+
+      if (ctx == null) {
+        ctx = getMatrixCtx
+      }
     }
   }
 
@@ -77,13 +77,9 @@ abstract class PSVariable(name: String,
   }
 
   // call only on client
-  protected override def doLoad(envCtx: EvnContext, path: String): Unit = {
-    val angelEvnContext = envCtx.asInstanceOf[AngelEvnContext]
-    if (angelEvnContext.angelClient != null) {
-      val angelClient = angelEvnContext.angelClient
-      val loadContext = new ModelLoadContext(path)
-      loadContext.addMatrix(new MatrixLoadContext(name))
-      angelClient.load(loadContext)
+  protected override def doLoad[T](envCtx: EnvContext[T], path: String): Unit = {
+    if (envCtx != null && envCtx.client != null) {
+      cilsImpl.doLoad(getMatrixCtx, envCtx, path)
     } else {
       if (matrixId == -1) {
         matrixId = PSMatrixUtils.getMatrixId(name)
@@ -95,25 +91,12 @@ abstract class PSVariable(name: String,
     }
   }
 
-  protected override def doSave(envCtx: EvnContext, path: String): Unit = {
-    val angelEvnContext: AngelEvnContext = envCtx.asInstanceOf[AngelEvnContext]
-    val withSlot: Boolean = conf.getBoolean(AngelMLConf.ML_VERABLE_SAVE_WITHSLOT,
-      AngelMLConf.DEFAULT_ML_VERABLE_SAVE_WITHSLOT)
-
-    if (angelEvnContext.angelClient != null) {
-      val angelClient = angelEvnContext.angelClient
-      val saveContext: ModelSaveContext = new ModelSaveContext(path)
-      val msc: MatrixSaveContext = new MatrixSaveContext(name, formatClassName)
-      msc.addIndices(rowsSaved(withSlot))
-      saveContext.addMatrix(msc)
-
-      if (PSVariable.isFirstSave.getAndSet(false)) {
-        val deleteExistsFile = conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
-          AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST)
-        angelClient.save(saveContext, deleteExistsFile)
-      } else {
-        angelClient.save(saveContext, false)
-      }
+  protected override def doSave[T](envCtx: EnvContext[T], path: String): Unit = {
+    if (envCtx != null && envCtx.client != null) {
+      val withSlot: Boolean = conf.getBoolean(AngelMLConf.ML_VERABLE_SAVE_WITHSLOT,
+        AngelMLConf.DEFAULT_ML_VERABLE_SAVE_WITHSLOT)
+      val indices = rowsSaved(withSlot)
+      cilsImpl.doSave(getMatrixCtx, indices, envCtx, path)
     }
   }
 }

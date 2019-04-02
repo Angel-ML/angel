@@ -59,6 +59,7 @@ object MLCoreConf {
   val DEFAULT_ML_DATA_POSNEG_RATIO = -1
   val ML_FIELD_NUM = "ml.field.num"
   val DEFAULT_ML_FIELD_NUM = -1
+  val ML_IS_DATA_SPARSE = "ml.is.data.sparse"
   val ML_DATA_STORAGE_LEVEL = "ml.data.storage.level"
   val DEFAULT_ML_DATA_STORAGE_LEVEL = "memory"
 
@@ -159,6 +160,7 @@ object MLCoreConf {
   val DEFAULT_ML_OPT_DECAY_BETA = 0.001
 
   // Save Format
+  val ML_MATRIX_OUTPUT_FORMAT = "ml.matrix.output.format"
   val ML_FCLAYER_MATRIX_OUTPUT_FORMAT = "ml.fclayer.matrix.output.format"
   val DEFAULT_ML_FCLAYER_MATRIX_OUTPUT_FORMAT: String = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
   val ML_EMBEDDING_MATRIX_OUTPUT_FORMAT = "ml.embedding.matrix.output.format"

@@ -38,10 +38,12 @@ class SoftmaxRegression(conf: Configuration, _ctx: TaskContext = null) extends A
   val numClass: Int = SharedConf.numClass
   val optProvider = new PSOptimizerProvider()
 
-  override def buildNetwork(): Unit = {
+  override def buildNetwork(): this.type = {
     val ipOptName: String = sharedConf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
     val input = new SimpleInputLayer("input", numClass, new Identity(), optProvider.getOptimizer(ipOptName))
     new LossLayer("softmaxLossLayer", input, new SoftmaxLoss())
+
+    this
   }
 
 }

@@ -7,7 +7,7 @@ import com.tencent.angel.ml.core.variable._
 import com.tencent.angel.ml.math2.utils.RowType
 
 class PSVariableProvider(dataFormat: String, modelType: RowType, placeHolder: PlaceHolder)(
-  implicit variableManager: VariableManager) extends VariableProvider {
+  implicit variableManager: VariableManager, cilsImpl: CILSImpl) extends VariableProvider {
   private val validIndexNum: Long = SharedConf.modelSize
 
   override def getEmbedVariable(name: String, numRows: Long, numCols: Long, updater: Updater, formatClassName: String, taskNum: Int): EmbedVariable = {

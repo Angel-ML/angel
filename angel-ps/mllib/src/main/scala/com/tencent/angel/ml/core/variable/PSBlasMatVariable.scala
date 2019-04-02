@@ -16,7 +16,7 @@ class PSBlasMatVariable(name: String,
                         rowType: RowType,
                         formatClassName: String,
                         allowPullWithIndex: Boolean)
-                       (implicit variableManager: VariableManager)
+                       (implicit variableManager: VariableManager, cilsImpl: CILSImpl)
   extends PSVariable(name, rowType, updater, formatClassName, allowPullWithIndex) with BlasMatVariable {
   override val numFactors: Int = 1
   override protected var matrix: Matrix = _
@@ -35,7 +35,7 @@ class PSBlasMatVariable(name: String,
       val numColsInternal = numRows * numCols
 
       PSMatrixUtils.createPSMatrixCtx(name, numRowsInternal, numColsInternal,
-        RowTypeUtils.getDenseModelType(rowType))
+        RowTypeUtils.getDenseModelType(rowType), formatClassName)
     } else {
       ctx
     }

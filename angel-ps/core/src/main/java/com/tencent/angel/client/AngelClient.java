@@ -339,7 +339,8 @@ public abstract class AngelClient implements AngelClientInterface {
     }
 
     try {
-      /*UserGroupInformation ugi = UGITools.getCurrentUser(conf);
+      /*
+      UserGroupInformation ugi = UGITools.getCurrentUser(conf);
       ugi.doAs(new PrivilegedExceptionAction<String>() {
         @Override public String run() throws Exception {
           Path savePath = new Path(saveContext.getSavePath());
