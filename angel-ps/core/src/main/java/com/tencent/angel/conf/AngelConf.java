@@ -56,6 +56,29 @@ public class AngelConf extends Configuration {
   private static final String ANGEL_TASK_PREFIX = "angel.task.";
   private static final String ANGEL_WORKERGROUP_PREFIX = "angel.workergroup.";
 
+  public static final String ANGEL_KUBERNETES_PREFIX = "angel.kubernetes.";
+  public static final String ANGEL_KUBERNETES_MASTER_LABEL_PREFIX = "angel.kubernetes.master.label.";
+  public static final String ANGEL_KUBERNETES_MASTER_ANNOTATION_PREFIX = "angel.kubernetes.master.annotation.";
+  public static final String ANGEL_KUBERNETES_MASTER_SECRETS_PREFIX = "angel.kubernetes.master.secrets.";
+  public static final String ANGEL_KUBERNETES_MASTER_SECRET_KEY_REF_PREFIX = "angel.kubernetes.master.secretKeyRef.";
+  public static final String ANGEL_KUBERNETES_MASTER_ENV_PREFIX = "angel.kubernetes.masterEnv.";
+  public static final String ANGEL_KUBERNETES_EXECUTOR_ENV_PREFIX = "angel.kubernetes.executorEnv.";
+  public static final String ANGEL_KUBERNETES_MASTER_VOLUMES_PREFIX = "angel.kubernetes.master.volumes.";
+  public static final String ANGEL_KUBERNETES_EXECUTOR_LABEL_PREFIX = "angel.kubernetes.executor.label.";
+  public static final String ANGEL_KUBERNETES_EXECUTOR_ANNOTATION_PREFIX = "angel.kubernetes.executor.annotation.";
+  public static final String ANGEL_KUBERNETES_EXECUTOR_SECRETS_PREFIX = "angel.kubernetes.executor.secrets.";
+  public static final String ANGEL_KUBERNETES_EXECUTOR_SECRET_KEY_REF_PREFIX = "angel.kubernetes.executor.secretKeyRef.";
+  public static final String ANGEL_KUBERNETES_EXECUTOR_VOLUMES_PREFIX = "angel.kubernetes.executor.volumes.";
+  public static final String ANGEL_KUBERNETES_VOLUMES_HOSTPATH_TYPE = "hostPath";
+  public static final String ANGEL_KUBERNETES_VOLUMES_PVC_TYPE = "persistentVolumeClaim";
+  public static final String ANGEL_KUBERNETES_VOLUMES_EMPTYDIR_TYPE = "emptyDir";
+  public static final String ANGEL_KUBERNETES_VOLUMES_MOUNT_PATH_KEY = "mount.path";
+  public static final String ANGEL_KUBERNETES_VOLUMES_MOUNT_READONLY_KEY = "mount.readOnly";
+  public static final String ANGEL_KUBERNETES_VOLUMES_OPTIONS_PATH_KEY = "options.path";
+  public static final String ANGEL_KUBERNETES_VOLUMES_OPTIONS_CLAIM_NAME_KEY = "options.claimName";
+  public static final String ANGEL_KUBERNETES_VOLUMES_OPTIONS_MEDIUM_KEY = "options.medium";
+  public static final String ANGEL_KUBERNETES_VOLUMES_OPTIONS_SIZE_LIMIT_KEY = "options.sizeLimit";
+
   // //////////////////////////////
   // Application Configs
   // //////////////////////////////
@@ -67,7 +90,7 @@ public class AngelConf extends Configuration {
    * <p>
    * "predict" action type means predict result use model.
    */
-  public static final String ANGEL_ACTION_TYPE = "action.type";
+  public static final String ANGEL_ACTION_TYPE = "angel.action.type";
   public static final String DEFAULT_ANGEL_ACTION_TYPE = "train";
 
   /**
@@ -148,7 +171,7 @@ public class AngelConf extends Configuration {
    * Application deploy mode, now support YARN and LOCAL mode
    */
   public static final String ANGEL_DEPLOY_MODE = "angel.deploy.mode";
-  public static final String DEFAULT_ANGEL_DEPLOY_MODE = "YARN"; // YARN, LOCAL
+  public static final String DEFAULT_ANGEL_DEPLOY_MODE = "YARN"; // YARN, LOCAL, KUBERNETES
 
   /**
    * Application running mode, now support ANGEL_PS_WORKER and ANGEL_PS.
@@ -175,7 +198,7 @@ public class AngelConf extends Configuration {
   /**
    * The resource pool of application, it is used by YARN to allocate resources for the application.
    */
-  public static final String ANGEL_QUEUE = "queue";
+  public static final String ANGEL_QUEUE = "angel.queue";
 
   /**
    * Angel application name.
@@ -842,6 +865,114 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_PS_JVM_YOUNG_FACTOR = ANGEL_PS_PREFIX + "jvm.young.factor";
   public static final float DEFAULT_ANGEL_PS_JVM_YOUNG_FACTOR = 0.4f;
 
+  // //////////////////////////////
+  // Kubernetes Configs.
+  // //////////////////////////////
+  /**
+   * whether to wait for the application to finish before exiting the launcher process.
+   */
+  public static final String ANGEL_KUBERNETES_WAIT_FOR_APP_COMPLETION = ANGEL_KUBERNETES_PREFIX + "submission.waitAppCompletion";
+  public static final Boolean DEFAULT_ANGEL_KUBERNETES_WAIT_FOR_APP_COMPLETION = true;
+
+  /**
+   * kubernetes api server url.
+   */
+  public static final String ANGEL_KUBERNETES_MASTER = ANGEL_KUBERNETES_PREFIX + "master";
+
+  /**
+   * The namespace that will be used for running the master and executor pods.
+   */
+  public static final String ANGEL_KUBERNETES_NAMESPACE = ANGEL_KUBERNETES_PREFIX + "namespace";
+  public static final String DEFAULT_ANGEL_KUBERNETES_NAMESPACE = "spark";
+
+  /**
+   * Kubernetes image pull policy. Valid values are Always, Never, and IfNotPresent.
+   */
+  public static final String ANGEL_KUBERNETES_CONTAINER_IMAGE_PULL_POLICY = ANGEL_KUBERNETES_PREFIX + "container.image.pullPolicy";
+  public static final String DEFAULT_ANGEL_KUBERNETES_CONTAINER_IMAGE_PULL_POLICY = "IfNotPresent";
+
+  /**
+   * Kubernetes executor pod role. Valid values are ps, worker
+   */
+  public static final String ANGEL_KUBERNETES_EXECUTOR_ROLE = ANGEL_KUBERNETES_PREFIX + "executor.role";
+  public static final String DEFAULT_ANGEL_KUBERNETES_EXECUTOR_ROLE = "ps";
+
+  /**
+   * Prefix to use in front of the executor pod names
+   */
+  public static final String ANGEL_KUBERNETES_EXECUTOR_POD_NAME_PREFIX = ANGEL_KUBERNETES_PREFIX + "executor.podNamePrefix";
+
+  public static final String ANGEL_KUBERNETES_AUTH_SUBMISSION_CONF_PREFIX = ANGEL_KUBERNETES_PREFIX + "authenticate.submission";
+
+  public static final String ANGEL_KUBERNETES_KUBERNETES_AUTH_CLIENT_MODE_PREFIX = ANGEL_KUBERNETES_PREFIX + "authenticate";
+
+  public static final String OAUTH_TOKEN_CONF_SUFFIX = "oauthToken";
+
+  public static final String OAUTH_TOKEN_FILE_CONF_SUFFIX = "oauthTokenFile";
+
+  public static final String CLIENT_KEY_FILE_CONF_SUFFIX = "clientKeyFile";
+
+  public static final String CLIENT_CERT_FILE_CONF_SUFFIX = "clientCertFile";
+
+  public static final String CA_CERT_FILE_CONF_SUFFIX = "caCertFile";
+
+  /**
+   * Interval between reports of the current app status, Logging interval must be a positive time value.
+   */
+  public static final String ANGEL_KUBERNETES_REPORT_INTERVAL = ANGEL_KUBERNETES_PREFIX + "report.interval";
+  public static final int DEFAULT_ANGEL_KUBERNETES_REPORT_INTERVAL = 1000;
+
+  /**
+   * Interval between successive inspection of executor events sent from the Kubernetes API.
+   */
+  public static final String ANGEL_KUBERNETES_EXECUTOR_EVENT_PROCESSING_INTERVAL = ANGEL_KUBERNETES_PREFIX + "executor.eventProcessingInterval";
+  public static final int DEFAULT_ANGEL_KUBERNETES_EXECUTOR_EVENT_PROCESSING_INTERVAL = 1000;
+
+  /**
+   * Container image to use for Angel containers.
+   */
+  public static final String ANGEL_KUBERNETES_CONTAINER_IMAGE = ANGEL_KUBERNETES_PREFIX + "container.image";
+
+  /**
+   * Specify the hard cpu limit for the angel pods
+   */
+  public static final String ANGEL_KUBERNETES_MASTER_LIMIT_CORES = ANGEL_KUBERNETES_PREFIX + "master.limit.cores";
+
+  public static final String ANGEL_KUBERNETES_PS_LIMIT_CORES = ANGEL_KUBERNETES_PREFIX + "ps.limit.cores";
+
+  public static final String ANGEL_KUBERNETES_WORKER_LIMIT_CORES = ANGEL_KUBERNETES_PREFIX + "worker.limit.cores";
+
+  public static final String ANGEL_KUBERNETES_MASTER_PORT = ANGEL_KUBERNETES_PREFIX + "master.port";
+  public static final int DEFAULT_ANGEL_KUBERNETES_MASTER_PORT = 9078;
+
+  public static final String ANGEL_KUBERNETES_MASTER_POD_IP = ANGEL_KUBERNETES_PREFIX + "master.pod.ip";
+
+  /**
+   * Number of pods to launch at once in each round of executor allocation.
+   */
+  public static final String ANGEL_KUBERNETES_ALLOCATION_BATCH_SIZE = ANGEL_KUBERNETES_PREFIX + "allocation.batch.size";
+  public static final int DEFAULT_ANGEL_KUBERNETES_ALLOCATION_BATCH_SIZE = 5;
+
+  /**
+   * Time to wait between each round of executor allocation.
+   */
+  public static final String ANGEL_KUBERNETES_ALLOCATION_BATCH_DELAY = ANGEL_KUBERNETES_PREFIX + "allocation.batch.delay";
+  public static final int DEFAULT_ANGEL_KUBERNETES_ALLOCATION_BATCH_DELAY = 1000;
+
+  /**
+   * Name of the angel master pod
+   */
+  public static final String ANGEL_KUBERNETES_MASTER_POD_NAME = ANGEL_KUBERNETES_PREFIX + "master.pod.name";
+
+  /**
+   * Interval between polls against the Kubernetes API server to inspect the state of executors.
+   */
+  public static final String ANGEL_KUBERNETES_EXECUTOR_API_POLLING_INTERVAL = ANGEL_KUBERNETES_PREFIX + "executor.apiPollingInterval";
+  public static final int DEFAULT_ANGEL_KUBERNETES_EXECUTOR_API_POLLING_INTERVAL = 30000;
+
+  public static final String ANGEL_KUBERNETES_APP_ID = ANGEL_KUBERNETES_PREFIX + "app.id";
+
+
   // ////////////////// IPC //////////////////////////
   /**
    * The read buffer size for rpc message encoded by protobuf.
@@ -1202,27 +1333,27 @@ public class AngelConf extends Configuration {
   public static final int DEFAULT_ANGEL_MODEL_PARSE_THREAD_COUNT = 5;
 
 
-  public static final String ML_CONNECTION_TIMEOUT_MILLIS = "ml.connection.timeout";
+  public static final String ML_CONNECTION_TIMEOUT_MILLIS = "angel.ml.connection.timeout";
   /**
    * If not specified, the default connection timeout will be used (3 sec).
    */
   public static final long DEFAULT_CONNECTION_TIMEOUT_MILLIS = 3 * 1000L;
-  public static final String CONNECTION_READ_TIMEOUT_SEC = "ml.connection.read.timeout";
+  public static final String CONNECTION_READ_TIMEOUT_SEC = "angel.ml.connection.read.timeout";
   /**
    * If not specified, the default connection read timeout will be used (300 sec).
    */
   public static final int DEFAULT_CONNECTION_READ_TIMEOUT_SEC = 60 * 5;
   public static final int DEFAULT_READ_TIMEOUT_SEC = 10;
-  public static final String SERVER_IO_THREAD = "netty.server.io.threads";
-  public static final String NETWORK_IO_MODE = "netty.io.mode";
+  public static final String SERVER_IO_THREAD = "angel.netty.server.io.threads";
+  public static final String NETWORK_IO_MODE = "angel.netty.io.mode";
 
-  public static final String CLIENT_IO_THREAD = "netty.client.io.threads";
+  public static final String CLIENT_IO_THREAD = "angel.netty.client.io.threads";
   /**
    * timeout for each RPC
    */
-  public static final String ML_RPC_TIMEOUT_KEY = "ml.rpc.timeout";
+  public static final String ML_RPC_TIMEOUT_KEY = "angel.ml.rpc.timeout";
   public static final int DEFAULT_ML_RPC_TIMEOUT = 60000;
-  public static final String ML_CLIENT_RPC_MAXATTEMPTS = "ml.client.rpc.maxattempts";
+  public static final String ML_CLIENT_RPC_MAXATTEMPTS = "angel.ml.client.rpc.maxattempts";
 
   // Mark whether use pyangel or not.
   public static final String ANGEL_API_TYPE = "angel.app.type";

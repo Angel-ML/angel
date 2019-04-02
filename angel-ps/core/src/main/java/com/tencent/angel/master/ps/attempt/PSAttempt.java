@@ -281,29 +281,33 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
     @SuppressWarnings("unchecked") @Override
     public void transition(PSAttempt psAttempt, PSAttemptEvent event) {
       LOG.info("allocate ps server attempt resource, ps attempt id = " + psAttempt.getId());
-
       // reqeuest resource:send a resource request to the resource allocator
       AngelDeployMode deployMode = psAttempt.getContext().getDeployMode();
-      ContainerAllocatorEvent allocatorEvent = null;
-
-      if (deployMode == AngelDeployMode.LOCAL) {
-        allocatorEvent = new LocalContainerAllocatorEvent(ContainerAllocatorEventType.CONTAINER_REQ,
-          psAttempt.getId());
-
+      if (deployMode == AngelDeployMode.KUBERNETES) {
+        psAttempt.getContext().getEventHandler()
+                .handle(new PSAttemptEvent(PSAttemptEventType.PA_CONTAINER_ASSIGNED, psAttempt.getId()));
       } else {
-        if (psAttempt.getExpectedIp() != null) {
-          allocatorEvent = new YarnContainerRequestEvent(psAttempt.getId(),
-            psAttempt.getContext().getParameterServerManager().getPsResource(),
-            psAttempt.getContext().getParameterServerManager().getPriority(),
-            new String[] {psAttempt.getExpectedIp()});
-        } else {
-          allocatorEvent = new YarnContainerRequestEvent(psAttempt.getId(),
-            psAttempt.getContext().getParameterServerManager().getPsResource(),
-            psAttempt.getContext().getParameterServerManager().getPriority());
-        }
-      }
+        ContainerAllocatorEvent allocatorEvent = null;
 
-      psAttempt.getContext().getEventHandler().handle(allocatorEvent);
+        if (deployMode == AngelDeployMode.LOCAL) {
+          allocatorEvent = new LocalContainerAllocatorEvent(ContainerAllocatorEventType.CONTAINER_REQ,
+                  psAttempt.getId());
+
+        } else {
+          if (psAttempt.getExpectedIp() != null) {
+            allocatorEvent = new YarnContainerRequestEvent(psAttempt.getId(),
+                    psAttempt.getContext().getParameterServerManager().getPsResource(),
+                    psAttempt.getContext().getParameterServerManager().getPriority(),
+                    new String[] {psAttempt.getExpectedIp()});
+          } else {
+            allocatorEvent = new YarnContainerRequestEvent(psAttempt.getId(),
+                    psAttempt.getContext().getParameterServerManager().getPsResource(),
+                    psAttempt.getContext().getParameterServerManager().getPriority());
+          }
+        }
+
+        psAttempt.getContext().getEventHandler().handle(allocatorEvent);
+      }
     }
   }
 
@@ -312,28 +316,33 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
     implements SingleArcTransition<PSAttempt, PSAttemptEvent> {
     @SuppressWarnings({"unchecked"}) @Override
     public void transition(final PSAttempt psAttempt, PSAttemptEvent event) {
-      PSAttemptContainerAssignedEvent assignedEvent = (PSAttemptContainerAssignedEvent) event;
-      PSAttemptId psAttemptId = psAttempt.getId();
-      psAttempt.container = assignedEvent.getContainer();
-
-      // Once the resource is applied, build and send the launch request to the container launcher
       AngelDeployMode deployMode = psAttempt.getContext().getDeployMode();
-      ContainerLauncherEvent launchEvent = null;
-      if (deployMode == AngelDeployMode.LOCAL) {
-        launchEvent =
-          new LocalContainerLauncherEvent(ContainerLauncherEventType.CONTAINER_REMOTE_LAUNCH,
-            psAttempt.getId());
+      if (deployMode == AngelDeployMode.KUBERNETES) {
+        psAttempt.getContext().getEventHandler()
+                .handle(new PSAttemptEvent(PSAttemptEventType.PA_CONTAINER_LAUNCHED, psAttempt.getId()));
       } else {
-        ContainerLaunchContext launchContext = ContainerContextUtils.createContainerLaunchContext(
-          psAttempt.getContext().getContainerAllocator().getApplicationACLs(),
-          psAttempt.getContext().getConf(), psAttemptId, psAttempt.getContext().getApplicationId(),
-          psAttempt.getContext().getMasterService(), psAttempt.getContext().getCredentials());
+        PSAttemptContainerAssignedEvent assignedEvent = (PSAttemptContainerAssignedEvent) event;
+        PSAttemptId psAttemptId = psAttempt.getId();
+        psAttempt.container = assignedEvent.getContainer();
 
-        launchEvent =
-          new ContainerRemoteLaunchEvent(psAttemptId, launchContext, assignedEvent.getContainer());
+        // Once the resource is applied, build and send the launch request to the container launcher
+        ContainerLauncherEvent launchEvent = null;
+        if (deployMode == AngelDeployMode.LOCAL) {
+          launchEvent =
+                  new LocalContainerLauncherEvent(ContainerLauncherEventType.CONTAINER_REMOTE_LAUNCH,
+                          psAttempt.getId());
+        } else {
+          ContainerLaunchContext launchContext = ContainerContextUtils.createContainerLaunchContext(
+                  psAttempt.getContext().getContainerAllocator().getApplicationACLs(),
+                  psAttempt.getContext().getConf(), psAttemptId, psAttempt.getContext().getApplicationId(),
+                  psAttempt.getContext().getMasterService(), psAttempt.getContext().getCredentials());
+
+          launchEvent =
+                  new ContainerRemoteLaunchEvent(psAttemptId, launchContext, assignedEvent.getContainer());
+        }
+
+        psAttempt.getContext().getEventHandler().handle(launchEvent);
       }
-
-      psAttempt.getContext().getEventHandler().handle(launchEvent);
     }
   }
 

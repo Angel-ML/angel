@@ -27,6 +27,7 @@ import com.tencent.angel.common.location.Location
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.conf.AngelConf._
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.kubernetesmanager.scheduler.KubernetesClusterManager
 import com.tencent.angel.ml.matrix.{MatrixContext, MatrixMeta, RowType}
 import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.ps.ParameterServer
@@ -38,12 +39,11 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.util.ShutdownHookManager
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv, TaskContext}
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{Map, mutable}
-
 import org.apache.commons.httpclient.URI
-
 import com.tencent.angel.ps.storage.partitioner.Partitioner
 
 /**
@@ -308,10 +308,12 @@ private[spark] object AngelPSContext {
     val appName = conf.get("spark.app.name") + "-ps"
     val queue = conf.get("spark.yarn.queue", "root.default")
 
-    /** mode: YARN or LOCAL */
+    /** mode: YARN , KUBERNETES or LOCAL */
     val master = conf.getOption("spark.master")
     val isLocal = if (master.isEmpty || master.get.toLowerCase.startsWith("local")) true else false
     val deployMode = if (isLocal) "LOCAL" else conf.get("spark.ps.mode", DEFAULT_ANGEL_DEPLOY_MODE)
+
+    val masterMem = conf.getSizeAsGb("spark.angel.master.memory", "2g").toInt
 
     val psNum = conf.getInt("spark.ps.instances", 1)
     val psCores = conf.getInt("spark.ps.cores", 1)
@@ -350,7 +352,13 @@ private[spark] object AngelPSContext {
     hadoopConf.set(ANGEL_ACTION_TYPE, "train")
     hadoopConf.set(ANGEL_SAVE_MODEL_PATH, tempPath)
 
+    if (deployMode == "KUBERNETES") {
+      hadoopConf.set(ANGEL_KUBERNETES_MASTER, master.get.substring("k8s://".length))
+      hadoopConf.set(ANGEL_KUBERNETES_CONTAINER_IMAGE, conf.get("spark.kubernetes.container.image"))
+    }
     // Setting resource
+    hadoopConf.setInt(ANGEL_AM_MEMORY_GB, masterMem)
+
     hadoopConf.setInt(ANGEL_PS_NUMBER, psNum)
     hadoopConf.setInt(ANGEL_PS_CPU_VCORES, psCores)
     hadoopConf.setInt(ANGEL_PS_MEMORY_GB, psMem)

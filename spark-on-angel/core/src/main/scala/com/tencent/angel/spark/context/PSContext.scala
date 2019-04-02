@@ -18,13 +18,17 @@
 
 package com.tencent.angel.spark.context
 
+import java.util.ServiceLoader
+
 import com.tencent.angel.AngelDeployMode
 import com.tencent.angel.ml.matrix.{MatrixMeta, RowType}
 import org.apache.spark._
-import scala.collection.Map
 
+import scala.collection.Map
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.spark.models.PSVector
+import org.apache.spark.scheduler.ExternalClusterManager
+import org.apache.spark.util.Utils
 
 
 abstract class PSContext {

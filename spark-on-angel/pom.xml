@@ -53,6 +53,12 @@
 		</dependency>
 		<dependency>
 			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-kubernetes_${scala.binary.version}</artifactId>
+			<version>${spark.version}</version>
+			<!--<scope>${dist.deps.scope}</scope>-->
+		</dependency>
+		<dependency>
+			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-mllib_${scala.binary.version}</artifactId>
 			<version>${spark.version}</version>
 			<!--<scope>${dist.deps.scope}</scope>-->
