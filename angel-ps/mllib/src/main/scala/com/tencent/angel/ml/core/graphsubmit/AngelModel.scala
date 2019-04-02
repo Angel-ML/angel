@@ -25,7 +25,7 @@ import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.network.layers.PlaceHolder
 import com.tencent.angel.ml.core.utils.JsonUtils
-import com.tencent.angel.ml.core.variable.{VariableManager, VariableProvider}
+import com.tencent.angel.ml.core.variable.{AngelCILSImpl, CILSImpl, VariableManager, VariableProvider}
 import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
@@ -37,6 +37,7 @@ class AngelModel(conf: Configuration, _ctx: TaskContext) extends GraphModel {
 
   override protected val placeHolder: PlaceHolder = new PlaceHolder(sharedConf)
   override protected implicit val variableManager: VariableManager = PSVariableManager.get(isSparseFormat)
+  protected implicit val cilsImpl: CILSImpl = new AngelCILSImpl()
   override protected val variableProvider: VariableProvider = new PSVariableProvider(dataFormat, modelType, placeHolder)
 
   implicit lazy val graph: Graph = if (_ctx != null) {
@@ -48,8 +49,10 @@ class AngelModel(conf: Configuration, _ctx: TaskContext) extends GraphModel {
     new Graph(variableProvider, placeHolder, sharedConf, totalTaskNum)
   }
 
-  override def buildNetwork(): Unit = {
+  override def buildNetwork(): this.type = {
     JsonUtils.layerFromJson(sharedConf.getJson)
+
+    this
   }
 
 

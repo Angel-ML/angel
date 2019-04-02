@@ -22,7 +22,9 @@ package com.tencent.angel.ml.core.conf
 import com.tencent.angel.ml.core.utils.{MLException, RowTypeUtils}
 import com.tencent.angel.ml.math2.utils.RowType
 import org.apache.commons.logging.LogFactory
-import org.json4s.JsonAST.JObject
+import org.json4s.JsonAST._
+import org.json4s.JsonDSL._
+import org.json4s.jackson.JsonMethods.{compact, render, parse}
 
 import scala.collection.mutable
 
@@ -212,12 +214,44 @@ class SharedConf private() extends Serializable {
   def getJson: JObject = synchronized {
     graphJson
   }
+
+  override def toString: String = {
+    val fields = dataMap.toList.map{ case (key: String, value: String) =>
+      JField(key, JString(value))
+    }
+    val res =  if (graphJson != null) {
+      new JObject(fields) ~ JField("graphJson", graphJson)
+    } else {
+      new JObject(fields)
+    }
+
+    compact(render(res))
+  }
 }
 
 object SharedConf {
   val LOG = LogFactory.getLog("SharedConfObject")
 
   private var sc: SharedConf = _
+
+  def fromString(confString: String): SharedConf = {
+    if (sc == null) {
+      sc = new SharedConf
+    }
+
+    parse(confString) match {
+      case JObject(obj: List[JField]) =>
+        obj.foreach{
+          case (key, JString(value)) if ! key.equalsIgnoreCase("graphJson") =>
+            sc.set(key, value)
+          case (key, value: JObject) if key.equalsIgnoreCase("graphJson")=>
+            sc.setJson(value)
+          case _ => throw new Exception("Shared Conf Error!")
+        }
+    }
+
+    sc
+  }
 
   def get(): SharedConf = synchronized {
     if (sc == null) {
@@ -303,7 +337,8 @@ object SharedConf {
   def inputDataFormat: String = {
     get()
 
-    sc.getString(MLCoreConf.ML_DATA_INPUT_FORMAT, MLCoreConf.DEFAULT_ML_DATA_INPUT_FORMAT)
+    sc.getString(MLCoreConf.ML_DATA_INPUT_FORMAT,
+      MLCoreConf.DEFAULT_ML_DATA_INPUT_FORMAT)
   }
 
   def batchSize: Int = {
@@ -402,5 +437,13 @@ object SharedConf {
 
     sc.get(MLCoreConf.ML_OPT_DECAY_CLASS_NAME,
       MLCoreConf.DEFAULT_ML_OPT_DECAY_CLASS_NAME)
+  }
+
+  def isSparse: Boolean = {
+    get()
+    val ipFormat = inputDataFormat
+    sc.getBoolean(MLCoreConf.ML_IS_DATA_SPARSE,
+      ipFormat == "libsvm" || ipFormat == "dummy"
+    )
   }
 }

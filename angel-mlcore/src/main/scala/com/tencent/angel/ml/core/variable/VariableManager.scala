@@ -2,7 +2,7 @@ package com.tencent.angel.ml.core.variable
 
 import java.util.concurrent
 
-import com.tencent.angel.ml.core.network.EvnContext
+import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.variable.VarState.VarState
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.vector._
@@ -66,9 +66,9 @@ abstract class VariableManager {
     * Variable operation
     */
 
-  def createALL(envCtx: EvnContext): Unit
+  def createALL[T](envCtx: EnvContext[T]): Unit
 
-  def create(envCtx: EvnContext, name: String): Unit = {
+  def create[T](envCtx: EnvContext[T], name: String): Unit = {
     val variable = getVariable(name)
 
     if (variable != null) {
@@ -76,11 +76,11 @@ abstract class VariableManager {
     }
   }
 
-  def initALL(taskId: Int = 0, mean: Double = 0.0, stddev: Double = 0.00001): Unit = {
+  def initALL[T](envCtx: EnvContext[T], taskId: Int = 0, mean: Double = 0.0, stddev: Double = 0.00001): Unit = {
     variables.values().foreach { variable => variable.init(taskId, mean, stddev) }
   }
 
-  def init(name: String, mean: Double = 0.0, stddev: Double = 0.00001): Unit = {
+  def init[T](envCtx: EnvContext[T], name: String, mean: Double = 0.0, stddev: Double = 0.00001): Unit = {
     val variable = getVariable(name)
 
     if (variable != null) {
@@ -139,9 +139,9 @@ abstract class VariableManager {
     }
   }
 
-  def loadALL(envCtx: EvnContext, path: String): Unit
+  def loadALL[T](envCtx: EnvContext[T], path: String): Unit
 
-  def load(name: String, envCtx: EvnContext, path: String): Unit = {
+  def load[T](name: String, envCtx: EnvContext[T], path: String): Unit = {
     val variable = getVariable(name)
 
     if (variable != null) {
@@ -149,9 +149,9 @@ abstract class VariableManager {
     }
   }
 
-  def saveALL(envCtx: EvnContext, path: String): Unit
+  def saveALL[T](envCtx: EnvContext[T], path: String): Unit
 
-  def save(name: String, envCtx: EvnContext, path: String): Unit = {
+  def save[T](name: String, envCtx: EnvContext[T], path: String): Unit = {
     val variable = getVariable(name)
 
     if (variable != null) {

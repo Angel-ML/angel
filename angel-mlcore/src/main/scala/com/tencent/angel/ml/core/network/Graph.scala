@@ -17,7 +17,9 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 
-trait EvnContext
+trait EnvContext[T] {
+  def client: T
+}
 
 
 class Graph(val provider: VariableProvider, val placeHolder: PlaceHolder, val conf: SharedConf, val taskNum: Int) {
@@ -34,8 +36,9 @@ class Graph(val provider: VariableProvider, val placeHolder: PlaceHolder, val co
 
   protected var lr: Double = SharedConf.learningRate
 
-  def addInputLayer(layer: InputLayer): Unit = {
+  def addInputLayer(layer: InputLayer): this.type = {
     inputLayers.append(layer)
+    this
   }
 
   def getALLInputLayers: List[InputLayer] = inputLayers.toList
@@ -48,16 +51,18 @@ class Graph(val provider: VariableProvider, val placeHolder: PlaceHolder, val co
     layerOption.getOrElse(null.asInstanceOf[InputLayer])
   }
 
-  def setLossLayer(layer: LossLayer): Unit = {
+  def setLossLayer(layer: LossLayer): this.type = {
     lossLayer = layer
+    this
   }
 
   def getLossLayer: LossLayer = lossLayer
 
   def getLossFunc: LossFunc = lossLayer.lossFunc
 
-  def addTrainableLayer(layer: Trainable): Unit = {
+  def addTrainableLayer(layer: Trainable): this.type = {
     trainableLayer.append(layer)
+    this
   }
 
   def getALLTrainableLayers: List[Trainable] = {
@@ -91,17 +96,20 @@ class Graph(val provider: VariableProvider, val placeHolder: PlaceHolder, val co
     * training
     */
 
-  def setLR(lr: Double): Unit = {
+  def setLR(lr: Double): this.type = {
     this.lr = lr
     trainableLayer.foreach { trainable =>
       trainable.optimizer.setLR(lr)
     }
+
+    this
   }
 
   def getLR: Double = this.lr
 
-  def feedData(data: Array[LabeledData]): Unit = {
+  def feedData(data: Array[LabeledData]): this.type = {
     placeHolder.feedData(data)
+    this
   }
 
   // forward
@@ -144,12 +152,14 @@ class Graph(val provider: VariableProvider, val placeHolder: PlaceHolder, val co
     * Matrix Cache
     */
 
-  def put2Cache(name: String, mat: Matrix): Unit = {
+  def put2Cache(name: String, mat: Matrix): this.type = {
     dataCache.addMatrix(name, mat)
+    this
   }
 
-  def put2Cache(name: String, vec: Vector): Unit = {
+  def put2Cache(name: String, vec: Vector): this.type = {
     dataCache.addVector(name, vec)
+    this
   }
 
   def isMatrixInCache(name: String): Boolean = {
@@ -168,8 +178,9 @@ class Graph(val provider: VariableProvider, val placeHolder: PlaceHolder, val co
     dataCache.getVector(name)
   }
 
-  def clearCache(): Unit = {
+  def clearCache(): this.type = {
     dataCache.clearAll()
+    this
   }
 
   /** **********************************************************************************

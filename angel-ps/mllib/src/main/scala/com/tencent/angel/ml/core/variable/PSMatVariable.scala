@@ -17,7 +17,7 @@ class PSMatVariable(name: String,
                     rowType: RowType,
                     formatClassName: String,
                     allowPullWithIndex: Boolean)
-                   (implicit variableManager: VariableManager)
+                   (implicit variableManager: VariableManager, cilsImpl: CILSImpl)
   extends PSVariable(name, rowType, updater, formatClassName, allowPullWithIndex) with MatVariable {
 
   override val numFactors: Int = numRows
@@ -36,9 +36,8 @@ class PSMatVariable(name: String,
       val numRowsInternal = numRows * (numSlot + 1)
       val numColsInternal = numCols
 
-      val ctx_ = PSMatrixUtils.createPSMatrixCtx(name, numRowsInternal, numColsInternal, rowType)
-      ctx_.setValidIndexNum(validIndexNum)
-      ctx_
+      PSMatrixUtils.createPSMatrixCtx(name, numRowsInternal, numColsInternal,
+        rowType, formatClassName, validIndexNum)
     } else {
       ctx
     }

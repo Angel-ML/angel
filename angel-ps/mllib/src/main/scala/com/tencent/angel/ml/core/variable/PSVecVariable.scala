@@ -17,16 +17,15 @@ class PSVecVariable(name: String,
                     rowType: RowType,
                     formatClassName: String,
                     allowPullWithIndex: Boolean)
-                   (implicit variableManager: VariableManager)
+                   (implicit variableManager: VariableManager, cilsImpl: CILSImpl)
   extends PSVariable(name, rowType, updater, formatClassName, allowPullWithIndex) with VecVariable {
   override val numFactors: Int = 1
   override protected var vector: Vector = _
 
   def getMatrixCtx: MatrixContext = {
     if (ctx == null) {
-      val ctx_ = PSMatrixUtils.createPSMatrixCtx(name, numSlot + 1, length, rowType)
-      ctx_.setValidIndexNum(validIndexNum)
-      ctx_
+      PSMatrixUtils.createPSMatrixCtx(name, numSlot + 1, length, rowType,
+        formatClassName, validIndexNum)
     } else {
       ctx
     }

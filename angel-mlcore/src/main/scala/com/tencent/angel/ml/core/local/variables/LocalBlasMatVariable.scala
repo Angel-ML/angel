@@ -3,7 +3,7 @@ package com.tencent.angel.ml.core.local.variables
 import java.util.Random
 
 import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.network.EvnContext
+import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.utils.{OptUtils, ValueNotAllowed}
 import com.tencent.angel.ml.core.variable.{BlasMatVariable, Updater, VariableManager}
 import com.tencent.angel.ml.math2.matrix.Matrix
@@ -24,7 +24,8 @@ class LocalBlasMatVariable(name: String,
   extends LocalVariable(name, rowType, updater, formatClassName, allowPullWithIndex) with BlasMatVariable {
   override protected var matrix: Matrix = _
 
-  protected override def doCreate(envCtx: EvnContext): Unit = {
+  protected override def doCreate[T](envCtx: EnvContext[T]): Unit = {
+    assert(envCtx == null || envCtx.client == null)
     storage = SharedConf.valueType() match {
       case "float" =>
         MFactory.rbIntFloatMatrix(numSlot + 1, (numRows * numCols).toInt, StorageType.DENSE)

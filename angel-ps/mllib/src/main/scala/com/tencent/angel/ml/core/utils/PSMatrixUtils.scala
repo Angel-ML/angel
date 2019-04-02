@@ -28,6 +28,7 @@ import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import com.tencent.angel.matrix.psf.get.getrows.{GetRows, GetRowsParam, GetRowsResult}
+import com.tencent.angel.ml.core.conf.MLCoreConf
 import com.tencent.angel.ps.server.data.request.{InitFunc, RandomNormalInitFunc, UpdateOp}
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
 import com.tencent.angel.psagent.PSAgentContext
@@ -42,10 +43,22 @@ object PSMatrixUtils {
     meta.getMatrixContext.getMatrixId
   }
 
-  def createPSMatrixCtx(name: String, numRows: Int, numCols: Long, rowType: RowType): MatrixContext = {
+  def createPSMatrixCtx(name: String, numRows: Int, numCols: Long,
+                        rowType: RowType, formatClassName: String): MatrixContext = {
     val matrix = new MatrixContext(name, numRows, numCols)
     matrix.setPartitionerClass(classOf[ColumnRangePartitioner])
     matrix.setRowType(rowType)
+    matrix.set(MLCoreConf.ML_MATRIX_OUTPUT_FORMAT, formatClassName)
+    matrix
+  }
+
+  def createPSMatrixCtx(name: String, numRows: Int, numCols: Long, rowType: RowType,
+                        formatClassName: String, validIndexNum: Long): MatrixContext = {
+    val matrix = new MatrixContext(name, numRows, numCols)
+    matrix.setPartitionerClass(classOf[ColumnRangePartitioner])
+    matrix.setRowType(rowType)
+    matrix.set(MLCoreConf.ML_MATRIX_OUTPUT_FORMAT, formatClassName)
+    matrix.setValidIndexNum(validIndexNum)
     matrix
   }
 
