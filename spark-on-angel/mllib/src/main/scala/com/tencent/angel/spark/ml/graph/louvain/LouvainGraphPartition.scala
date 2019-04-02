@@ -10,14 +10,13 @@ import scala.util.Random
 class LouvainGraphPartition(
                              var superNodes: Array[Int],
                              var adj: Array[Array[Int]],
-                             var adjWeights: Array[Array[Float]]) extends Serializable {
+                             var adjWeights: Array[Array[Float]],
+                             var partRelatedNodeWeights: Array[Float]) extends Serializable {
 
   assert(superNodes.length == adj.length)
   assert(adj.length == adjWeights.length)
 
   private lazy val partRelatedNodeIds = (adj.flatten ++ superNodes).distinct
-
-  private var partRelatedNodeWeights: Array[Float] = _
 
   def maxIdInPart: Int = {
     superNodes.aggregate(Int.MinValue)(math.max, math.max)
@@ -45,6 +44,20 @@ class LouvainGraphPartition(
           }
         }
       }
+    }
+  }
+
+  private def makeBatchIterator(batchSize: Int): Iterator[(Int, Int)] = new Iterator[(Int, Int)] {
+    var index = 0
+
+    override def next(): (Int, Int) = {
+      val preIndex = index
+      index = index + batchSize
+      (preIndex, math.min(index, superNodes.length))
+    }
+
+    override def hasNext: Boolean = {
+      index < superNodes.length
     }
   }
 
@@ -91,20 +104,6 @@ class LouvainGraphPartition(
       model.updateNode2community(updatedNodeBuffer.toArray, updatedCommBuffer.toArray)
       val (comm, delta) = communityWeightDelta.unzip
       model.incrementCommWeight(comm.toArray, delta.toArray)
-    }
-  }
-
-  private def makeBatchIterator(batchSize: Int): Iterator[(Int, Int)] = new Iterator[(Int, Int)] {
-    var index = 0
-
-    override def next(): (Int, Int) = {
-      val preIndex = index
-      index = index + batchSize
-      (preIndex, math.min(index, superNodes.length))
-    }
-
-    override def hasNext: Boolean = {
-      index < superNodes.length
     }
   }
 
@@ -166,13 +165,9 @@ class LouvainGraphPartition(
     model.getNode2commPairsArr(this.superNodes.clone())
   }
 
-  private[louvain] def louvainPartInit(model: LouvainPSModel, folded: Boolean): Unit = {
-    if (folded) {
-      this.partRelatedNodeWeights = model.getCommInfo(superNodes).get(superNodes)
-    } else {
-      this.partRelatedNodeWeights = adjWeights.map(_.sum)
-      model.setNode2commAndComm2weight(superNodes, this.partRelatedNodeWeights)
-    }
+  private[louvain] def updateNodeWeightsToPS(model: LouvainPSModel): Unit = {
+    model.setNode2commAndComm2weight(superNodes, this.partRelatedNodeWeights)
+    println(s"first 5 is ${this.partRelatedNodeIds.take(5).mkString(",")}")
   }
 }
 

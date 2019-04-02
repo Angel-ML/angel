@@ -3,7 +3,8 @@ package com.tencent.angel.spark.examples.cluster
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.graph.louvain.Louvain.edgeTripleRDD2GraphPartitions
-import com.tencent.angel.spark.ml.graph.louvain.{Louvain, LouvainPSModel}
+import com.tencent.angel.spark.ml.graph.louvain.{Louvain, LouvainGraphPartition, LouvainPSModel}
+import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -19,6 +20,8 @@ object LouvainExample {
     val batchSize = params.getOrElse("batchSize", "10000").toInt
     val numOpt = params.getOrElse("numOpt", "4").toInt
     val output = params.getOrElse("output", null)
+    val enableCheck = params.getOrElse("enableCheck", "false").toBoolean
+    val eps = params.getOrElse("eps", "0.0").toDouble
 
     start(mode)
     val edges = SparkContext.getOrCreate().textFile(input, partitionNum).flatMap { line =>
@@ -32,41 +35,44 @@ object LouvainExample {
       } else {
         Iterator.empty
       }
-    }.reduceByKey(_ + _).map { case ((src, dst), wgt) => (src, dst, wgt) }
-    val graph = edgeTripleRDD2GraphPartitions(edges, storageLevel = storageLevel)
+    }.reduceByKey(_ + _, partitionNum).map { case ((src, dst), wgt) => (src, dst, wgt) }
+    val graph: RDD[LouvainGraphPartition] = edgeTripleRDD2GraphPartitions(edges, storageLevel = storageLevel)
     val maxId = graph.map(_.maxIdInPart).fold(Int.MinValue)(math.max)
     val model = LouvainPSModel.apply(maxId + 1)
     var louvain = new Louvain(graph, model)
-    louvain.init(false)
-    louvain.modularityOptimize(numOpt, batchSize)
+    louvain.updateNodeWeightsToPS()
+    louvain.modularityOptimize(numOpt, batchSize, eps)
 
     // correctIds
     var totalSum = louvain.checkTotalSum(model)
     louvain.correctCommunityId(model)
-    assert(louvain.check(model) == 0)
-    assert(louvain.checkTotalSum(model) == totalSum)
+
+    if (enableCheck) {
+      assert(louvain.checkCommId(model) == 0)
+      assert(louvain.checkTotalSum(model) == totalSum)
+    }
 
 
     var foldIter = 0
     while (foldIter < numFold) {
       foldIter += 1
       louvain = louvain.folding(batchSize, storageLevel)
-      louvain.init()
-      louvain.modularityOptimize(numOpt, batchSize)
+      louvain.modularityOptimize(numOpt, batchSize, eps)
 
       // correctIds
       totalSum = louvain.checkTotalSum(model)
       louvain.correctCommunityId(model)
-      assert(louvain.check(model) == 0)
-      assert(louvain.checkTotalSum(model) == totalSum)
+      if (foldIter < numFold && enableCheck) {
+        assert(louvain.checkCommId(model) == 0)
+        assert(louvain.checkTotalSum(model) == totalSum)
+      }
     }
-
     // save
     louvain.save(output)
     stop()
   }
 
-  def start(mode: String = "local"): Unit = {
+  def start(mode: String): Unit = {
     val conf = new SparkConf()
     conf.setMaster(mode)
     conf.setAppName("louvain")
