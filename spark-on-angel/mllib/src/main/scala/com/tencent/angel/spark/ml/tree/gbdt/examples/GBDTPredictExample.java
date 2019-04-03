@@ -25,7 +25,7 @@ import java.util.Arrays;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 
-public class PredictExample {
+public class GBDTPredictExample {
 
   public static void main(String[] argv) {
     SparkConf conf = new SparkConf().setMaster("local").setAppName("test");

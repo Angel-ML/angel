@@ -23,7 +23,7 @@ import com.tencent.angel.spark.ml.tree.param.GBDTParam
 import com.tencent.angel.spark.ml.tree.util.Maths
 import org.apache.spark.{SparkConf, SparkContext}
 
-object TrainExample {
+object GBDTTrainExample {
 
   def main(args: Array[String]): Unit = {
 
