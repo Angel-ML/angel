@@ -17,7 +17,7 @@ class AutoLRTestGP extends PSFunSuite with SharedPSContext {
   override def beforeAll(): Unit = {
     super.beforeAll()
 
-    input = "../data/census/census_148d_train.libsvm"
+    input = "../../data/census/census_148d_train.libsvm"
 
 
     // build SharedConf with params
@@ -35,7 +35,7 @@ class AutoLRTestGP extends PSFunSuite with SharedPSContext {
     dim = SharedConf.indexRange.toInt
 
     SharedConf.get().set(AngelConf.ANGEL_RUNNING_MODE, RunningMode.ANGEL_PS.toString)
-    val Earlystop = new EarlyStopping(patience = 5, minimize = false, min_delta = 0.01)
+    val Earlystop = new EarlyStopping(patience = 5, minimize = false, minDelta = 0.01)
     learner = new AutoOfflineLearner(25,false,surrogate = "GaussianProcess",Earlystop)
     learner.addParam("continuous", "double", MLConf.ML_LEARN_RATE, "[0.1:1:100]",seed = 10)
     learner.addParam("continuous", "double", MLConf.ML_LEARN_DECAY, "[0.1:1:100]",seed = 20)
