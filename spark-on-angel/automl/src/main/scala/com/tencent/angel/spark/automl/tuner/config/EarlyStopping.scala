@@ -27,12 +27,12 @@ package com.tencent.angel.spark.automl.tuner.config
   *                 Default: false
   */
 class EarlyStopping(patience:Int=5,
-                    var min_delta:Double = 0.0,
+                    var minDelta:Double = 0.0,
                     minimize:Boolean=false) {
 
   var counter: Int = 0
-  var best_score: Double = Double.NegativeInfinity
-  var early_stop: Boolean = false
+  var bestScore: Double = Double.NegativeInfinity
+  var earlyStop: Boolean = false
   val pat = patience
 
   def greater(a: Double, b: Double): Boolean = {
@@ -44,7 +44,7 @@ class EarlyStopping(patience:Int=5,
     }
   }
 
-  var monitor_op = greater _
+  var monitorOp = greater _
 
   def less(a: Double, b: Double): Boolean = {
     if (a > b) {
@@ -56,23 +56,23 @@ class EarlyStopping(patience:Int=5,
   }
 
   if (minimize) {
-    monitor_op = less _
-    min_delta = -min_delta
-    best_score = Double.PositiveInfinity
+    monitorOp = less _
+    minDelta = -minDelta
+    bestScore = Double.PositiveInfinity
   }
 
 
   def update(val_score: Double): Unit = {
     val score = val_score
-    if (monitor_op(score - min_delta, best_score)) {
-      best_score = score
+    if (monitorOp(score - minDelta, bestScore)) {
+      bestScore = score
       counter = 0
     }
     else {
       counter += 1
       println(s"EarlyStopping counter: ${counter} out of ${patience}")
       if (counter >= patience) {
-        early_stop = true
+        earlyStop = true
       }
     }
   }
