@@ -133,8 +133,8 @@ class Louvain(
     var curTime = System.currentTimeMillis()
     val q2 = Q2()
     val q1 = Q1()
-    var deltaQ = q1 - q2
-    var prevQ = deltaQ
+    var deltaQ = Double.MaxValue
+    var prevQ = q1 - q2
     println(s"Q1=$q1, Q2=$q2, Q = ${q1 - q2}, takes ${System.currentTimeMillis() - curTime}ms")
     var optIter = 0
     while (optIter < maxIter && deltaQ > eps) {
@@ -148,7 +148,7 @@ class Louvain(
       val q = q1 - q2
       println(s"Q1=$q1, Q2=$q2, Q = $q, takes ${System.currentTimeMillis() - curTime}ms")
       curTime = System.currentTimeMillis()
-      deltaQ = q - deltaQ
+      deltaQ = q - prevQ
       prevQ = q
       println(s"numCommunity = $getNumOfCommunity, takes ${System.currentTimeMillis() - curTime}ms")
       optIter += 1
