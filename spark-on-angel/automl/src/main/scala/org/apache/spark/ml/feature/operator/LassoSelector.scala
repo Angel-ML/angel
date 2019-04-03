@@ -18,32 +18,31 @@
 
 package org.apache.spark.ml.feature.operator
 
-import breeze.linalg.{argsort, DenseVector => BDV}
-import org.apache.hadoop.fs.Path
-import org.apache.spark.ml.attribute.{Attribute, AttributeGroup, NominalAttribute}
-import org.apache.spark.ml.feature.operator.VarianceSelectorModel.VarianceSelectorModelWriter
-import org.apache.spark.ml.linalg.{DenseVector, SparseVector, Vector, VectorUDT, Vectors}
-import org.apache.spark.ml.param.shared.{HasFeaturesCol, HasOutputCol}
+import org.apache.spark.ml.classification.LogisticRegression
+import org.apache.spark.ml.{Estimator, Model}
 import org.apache.spark.ml.param._
 import org.apache.spark.ml.util._
-import org.apache.spark.ml.{Estimator, Model}
-import org.apache.spark.mllib.linalg.{Vector => OldVector, Vectors => OldVectors}
-import org.apache.spark.mllib.stat.{MultivariateStatisticalSummary, Statistics}
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.functions.{col, udf}
-import org.apache.spark.sql.types.{StructField, StructType}
-import org.apache.spark.sql.{DataFrame, Dataset, Row}
+import org.apache.spark.ml.linalg.{DenseVector, SparseVector, Vector, VectorUDT, Vectors}
+import org.apache.spark.sql.{DataFrame, Dataset}
+import org.apache.spark.sql.types.{ArrayType, StructField, StructType}
+import org.apache.spark.sql.functions._
+import breeze.linalg.argsort
+import breeze.linalg.{DenseVector => BDV}
+import Math.abs
 
-import scala.collection.mutable.{ArrayBuffer, ArrayBuilder}
+import org.apache.hadoop.fs.Path
+import org.apache.spark.ml.attribute.{Attribute, AttributeGroup, NominalAttribute}
+import org.apache.spark.ml.param.shared.{HasFeaturesCol, HasLabelCol, HasOutputCol}
+
 
 /**
-  * Params for [[VarianceSelector]] and [[VarianceSelectorModel]].
+  * Params for [[LassoSelector]] and [[LassoSelectorModel]].
   */
-private[feature] trait VarianceSelectorParams extends Params
-  with HasFeaturesCol with HasOutputCol {
+private[feature] trait LassoSelectorParams extends Params
+  with HasFeaturesCol with HasOutputCol with HasLabelCol {
 
   /**
-    * Number of features that selector will select, ordered by descending variance. If the
+    * Number of features that selector will select, ordered by descending lasso cofficients. If the
     * number of features is less than numTopFeatures, then this will select all features.
     * Only applicable when selectorType = "numTopFeatures".
     * The default value of numTopFeatures is 50.
@@ -51,7 +50,7 @@ private[feature] trait VarianceSelectorParams extends Params
     * @group param
     */
   final val numTopFeatures = new IntParam(this, "numTopFeatures",
-    "Number of features that selector will select, ordered by descending variance. If the" +
+    "Number of features that selector will select, ordered by descending lasso cofficients. If the" +
       " number of features is < numTopFeatures, then this will select all features.",
     ParamValidators.gtEq(1))
   setDefault(numTopFeatures -> 50)
@@ -65,40 +64,43 @@ private[feature] trait VarianceSelectorParams extends Params
     * @group param
     */
   final val percentile = new DoubleParam(this, "percentile",
-    "Percentile of features that selector will select, ordered by variance.",
+    "Percentile of features that selector will select, ordered by lasso cofficients.",
     ParamValidators.inRange(0, 1))
   setDefault(percentile -> 0.1)
 
   /**
-    * The selector type of the VarianceSelector.
+    * The selector type of the LassoSelector.
     * Supported options: "numTopFeatures" (default), "percentile".
     * @group param
     */
   final val selectorType = new Param[String](this, "selectorType",
     "The selector type of the ChisqSelector. " +
-      "Supported options: " + VarianceSelector.supportedSelectorTypes.mkString(", "),
-    ParamValidators.inArray[String](VarianceSelector.supportedSelectorTypes))
-  setDefault(selectorType -> VarianceSelector.NumTopFeatures)
+      "Supported options: " + LassoSelector.supportedSelectorTypes.mkString(", "),
+    ParamValidators.inArray[String](LassoSelector.supportedSelectorTypes))
+  setDefault(selectorType -> LassoSelector.NumTopFeatures)
 
   def getSelectorType: String = $(selectorType)
 }
 
+
 /**
-  * Variance feature selection, which selects features with high variance.
+  * Lasso feature selection, which selects features with high cofficients of the trained Logistic Regression Model.
   * The selector supports different selection methods: `numTopFeatures`, `percentile`.
   *  - `numTopFeatures` chooses a fixed number of top features according to a chi-squared test.
   *  - `percentile` is similar but chooses a fraction of all features instead of a fixed number.
   * By default, the selection method is `numTopFeatures`, with the default number of top features
   * set to 50.
   */
-class VarianceSelector(override val uid: String)
-  extends Estimator[VarianceSelectorModel] with VarianceSelectorParams with DefaultParamsWritable {
+class LassoSelector(override val uid: String)
+  extends Estimator[LassoSelectorModel] with LassoSelectorParams with DefaultParamsWritable {
 
-  def this() = this(Identifiable.randomUID("varianceSelector"))
+  def this() = this(Identifiable.randomUID("LassoSelector"))
 
   def setFeaturesCol(value: String): this.type = set(featuresCol, value)
 
   def setOutputCol(value: String): this.type = set(outputCol, value)
+
+  def setLabelCol(value: String): this.type = set(labelCol, value)
 
   def setNumTopFeatures(value: Int): this.type = set(numTopFeatures, value)
 
@@ -106,24 +108,28 @@ class VarianceSelector(override val uid: String)
 
   def setSelectorType(value: String): this.type = set(selectorType, value)
 
-  override def fit(dataset: Dataset[_]): VarianceSelectorModel = {
-    val featuresRDD: RDD[OldVector]  = dataset.select(col($(featuresCol))).rdd.map{case Row(v: Vector) =>
-      OldVectors.dense(v.toArray)
-    }
-    val summary: MultivariateStatisticalSummary = Statistics.colStats(featuresRDD)
-    val variance: Array[Double] = summary.mean.toArray
-    val sortedIndices: Array[Int] = argsort.argsortDenseVector_Double(BDV(variance)).toArray.reverse
+  override def fit(dataset: Dataset[_]): LassoSelectorModel = {
 
-    val selectedIndices: Array[Int] = sortedIndices.take($(numTopFeatures))
+    val lr = new LogisticRegression()
+      .setFeaturesCol(${featuresCol})
+      .setLabelCol(${labelCol})
+      .setElasticNetParam(1.0)
+      .setMaxIter(10)
 
-    new VarianceSelectorModel(uid, selectedIndices)
-      .setFeaturesCol($(featuresCol))
-      .setOutputCol($(outputCol))
+    val lrModel = lr.fit(dataset)
+
+    val coefficients: Array[Double] = lrModel.coefficients.toArray.map(i => abs(i))
+
+    val sortedIndices: Array[Int] = argsort.argsortDenseVector_Double(BDV(coefficients)).toArray.reverse
+
+    new LassoSelectorModel(uid, sortedIndices)
+      .setFeaturesCol(${featuresCol})
+      .setOutputCol(${outputCol})
       .setNumTopFeatures(${numTopFeatures})
   }
 
   override def transformSchema(schema: StructType): StructType = {
-    val otherPairs = VarianceSelector.supportedSelectorTypes.filter(_ != $(selectorType))
+    val otherPairs = LassoSelector.supportedSelectorTypes.filter(_ != $(selectorType))
     otherPairs.foreach { paramName: String =>
       if (isSet(getParam(paramName))) {
         logWarning(s"Param $paramName will take no effect when selector type = ${$(selectorType)}.")
@@ -133,11 +139,10 @@ class VarianceSelector(override val uid: String)
     SchemaUtils.appendColumn(schema, $(outputCol), new VectorUDT)
   }
 
-  override def copy(extra: ParamMap): VarianceSelector = defaultCopy(extra)
+  override def copy(extra: ParamMap): LassoSelector = defaultCopy(extra)
 }
 
-
-object VarianceSelector extends DefaultParamsReadable[VarianceSelector] {
+object LassoSelector extends DefaultParamsReadable[LassoSelector] {
 
   /** String name for `numTopFeatures` selector type. */
   private[spark] val NumTopFeatures: String = "numTopFeatures"
@@ -148,16 +153,15 @@ object VarianceSelector extends DefaultParamsReadable[VarianceSelector] {
   /** Set of selector types that ChiSqSelector supports. */
   val supportedSelectorTypes: Array[String] = Array(NumTopFeatures, Percentile)
 
-  override def load(path: String): VarianceSelector = super.load(path)
+  override def load(path: String): LassoSelector = super.load(path)
 }
 
-
 /**
-  * Model fitted by [[VarianceSelector]].
+  * Model fitted by [[LassoSelector]].
   */
-class VarianceSelectorModel(override val uid: String,
-                            val selectedFeatures: Array[Int])
-  extends Model[VarianceSelectorModel] with VarianceSelectorParams with MLWritable {
+class LassoSelectorModel(override val uid: String,
+                         val selectedFeatures: Array[Int])
+  extends Model[LassoSelectorModel] with LassoSelectorParams {
 
   private var filterIndices: Array[Int] = selectedFeatures.sorted
 
@@ -190,22 +194,23 @@ class VarianceSelectorModel(override val uid: String,
   }
 
   override def transform(dataset: Dataset[_]): DataFrame = {
+//    println(s"select ${filterIndices.size} features: ${filterIndices.mkString(",")}")
     filterIndices = selectedFeatures.take(${numTopFeatures}).sorted
+
     // select function, select the top features order by lasso coefficients
     val select = udf { vector: Vector =>
       vector match {
         // for DenseVector, just select top features
         case dv: DenseVector =>
-          val denseValues = dv.toArray
-          val values = filterIndices.map(denseValues)
-          Vectors.sparse(dv.size, filterIndices, values)
-//          for (i <- 0 until filterIndices(0)) values(i) = 0
-//          for (k <- 0 until filterIndices.length - 1) {
-//            for (i <- filterIndices(k) + 1 until filterIndices(k+1)) {
-//              values(i) = 0
-//            }
-//          }
-//          for (i <- filterIndices.last + 1 until values.length) values(i) = 0
+          val values: Array[Double] = dv.toArray
+          for (i <- 0 until filterIndices(0)) values(i) = 0
+          for (k <- 0 until filterIndices.size - 1) {
+            for (i <- filterIndices(k) + 1 until filterIndices(k+1)) {
+              values(i) = 0
+            }
+          }
+          for (i <- filterIndices.last + 1 until values.size) values(i) = 0
+          Vectors.dense(values)
         case sv: SparseVector =>
           val selectedPairs = sv.indices.zip(sv.values)
             .filter{ case (k, v) => filterIndices.contains(k) }
@@ -218,19 +223,17 @@ class VarianceSelectorModel(override val uid: String,
     dataset.withColumn($(outputCol), select(col($(featuresCol))))
   }
 
-  override def copy(extra: ParamMap): VarianceSelectorModel = {
-    val copied = new VarianceSelectorModel(uid, filterIndices)
+
+  override def copy(extra: ParamMap): LassoSelectorModel = {
+    val copied = new LassoSelectorModel(uid, filterIndices)
     copyValues(copied, extra).setParent(parent)
   }
-
-  override def write: MLWriter = new VarianceSelectorModelWriter(this)
 }
 
+object LassoSelectorModel extends MLReadable[LassoSelectorModel] {
 
-object VarianceSelectorModel extends MLReadable[VarianceSelectorModel] {
-
-  private[VarianceSelectorModel]
-  class VarianceSelectorModelWriter(instance: VarianceSelectorModel) extends MLWriter {
+  private[LassoSelectorModel]
+  class LassoSelectorModelWriter(instance: LassoSelectorModel) extends MLWriter {
 
     private case class Data(selectedFeatures: Seq[Int])
 
@@ -242,22 +245,22 @@ object VarianceSelectorModel extends MLReadable[VarianceSelectorModel] {
     }
   }
 
-  private class VarianceSelectorModelReader extends MLReader[VarianceSelectorModel] {
+  private class LassoSelectorModelReader extends MLReader[LassoSelectorModel] {
 
-    private val className = classOf[VarianceSelectorModel].getName
+    private val className = classOf[LassoSelectorModel].getName
 
-    override def load(path: String): VarianceSelectorModel = {
+    override def load(path: String): LassoSelectorModel = {
       val metadata = DefaultParamsReader.loadMetadata(path, sc, className)
-      val dataPath = new Path(path, "data").toString
-      val data = sparkSession.read.parquet(dataPath).select("selectedFeatures").head()
+      val data = sparkSession.read.parquet(path).select("selectedFeatures").head()
       val selectedFeatures = data.getAs[Seq[Int]](0).toArray
-      val model = new VarianceSelectorModel(metadata.uid, selectedFeatures)
+      val model = new LassoSelectorModel(metadata.uid, selectedFeatures)
       DefaultParamsReader.getAndSetParams(model, metadata)
       model
     }
   }
 
-  override def read: MLReader[VarianceSelectorModel] = new VarianceSelectorModelReader
+  override def read: MLReader[LassoSelectorModel] = new LassoSelectorModelReader
 
-  override def load(path: String): VarianceSelectorModel = super.load(path)
+  override def load(path: String): LassoSelectorModel = super.load(path)
 }
+
