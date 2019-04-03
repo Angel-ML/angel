@@ -19,6 +19,10 @@ public class RootedPageRankSampler extends SampleGenerator{
         this.endPrp = endPrp;
     }
 
+    /**
+     *
+     * @return （src, dst, label). One postive word-context pair per sentence.
+     */
     @Override
     public Tuple3<Integer, Integer, Integer> next() {
         int sen_len = sentences[curSenId].length;
