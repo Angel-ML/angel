@@ -15,10 +15,10 @@
  *
  */
 
-package com.tencent.angel.spark.ml.tree.tree.basic;
+package com.tencent.angel.spark.ml.tree.basic;
 
 import java.io.Serializable;
-import com.tencent.angel.spark.ml.tree.tree.split.SplitEntry;
+import com.tencent.angel.spark.ml.tree.split.SplitEntry;
 
 public abstract class TNode<NodeStat extends TNodeStat> implements Serializable {
 

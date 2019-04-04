@@ -71,10 +71,10 @@ class GBDTPredictor extends Serializable {
   }
 
   def predictRaw(vec: Vector): Array[Float] = {
-
     val param = forest.head.getParam
+    require(param.numFeature == vec.size, s"feature dimension should be ${param.numFeature}")
     val preds = Array.ofDim[Float](if (param.numClass == 2) 1 else param.numClass)
-    forest.foreach(tree => {
+    forest.zipWithIndex.foreach { case (tree: GBTTree, index: Int) =>
       var node = tree.getRoot
       while (!node.isLeaf) {
         if (node.getSplitEntry.flowTo(vec) == 0)
@@ -85,11 +85,16 @@ class GBDTPredictor extends Serializable {
       if (param.numClass == 2) {
         preds(0) += node.getWeight * param.learningRate
       } else {
-        val weights = node.getWeights
-        for (k <- 0 until param.numClass)
-          preds(k) += weights(k)
+        if (param.isMultiClassMultiTree) {
+          val curClass = index % param.numClass
+          preds(curClass) += node.getWeight * param.learningRate
+        } else {
+          val weights = node.getWeights
+          for (k <- 0 until param.numClass)
+            preds(k) += weights(k)
+        }
       }
-    })
+    }
     preds
   }
 
@@ -100,23 +105,42 @@ class GBDTPredictor extends Serializable {
     }
   }
 
+  def predictRaw(indices: Array[Int], values: Array[Double]): Array[Float] = {
+    val param = forest.head.getParam
+    require(param.numFeature > indices.last, s"feature dimension should be ${param.numFeature}")
+    val vec = Vectors.sparse(param.numFeature, indices, values)
+    predictRaw(vec)
+  }
+
+  def predictRaw(features: Array[Double]): Array[Float] = {
+    val param = forest.head.getParam
+    require(param.numFeature >= features.length, s"feature dimension should be ${param.numFeature}")
+    val vec = Vectors.dense(features)
+    predictRaw(vec)
+  }
+
   def predict(vec: Vector): Int = {
+    val param = forest.head.getParam
+    require(param.numFeature == vec.size, s"feature dimension should be ${param.numFeature}")
     val preds = predictRaw(vec)
     probToClass(preds)
   }
 
   def predict(features: Array[Double]): Int = {
+    val param = forest.head.getParam
+    require(param.numFeature >= features.length, s"feature dimension should be ${param.numFeature}")
     val vec = Vectors.dense(features)
     val preds = predictRaw(vec)
     probToClass(preds)
   }
 
-  def predict(dim: Int, indices: Array[Int], values: Array[Double]): Int = {
-    val vec = Vectors.sparse(dim, indices, values)
+  def predict(indices: Array[Int], values: Array[Double]): Int = {
+    val param = forest.head.getParam
+    require(param.numFeature > indices.last, s"feature dimension should be ${param.numFeature}")
+    val vec = Vectors.sparse(param.numFeature, indices, values)
     val preds = predictRaw(vec)
     probToClass(preds)
   }
-
 }
 
 object GBDTPredictor {

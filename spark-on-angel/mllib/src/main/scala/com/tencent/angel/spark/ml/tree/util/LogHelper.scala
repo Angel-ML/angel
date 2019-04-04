@@ -15,17 +15,22 @@
  *
  */
 
+package com.tencent.angel.spark.ml.tree.util
 
-package com.tencent.angel.spark.ml.tree.gbdt.tree;
+object LogHelper {
 
-import com.tencent.angel.spark.ml.tree.basic.Tree;
-import com.tencent.angel.spark.ml.tree.param.GBDTParam;
+  var LOG_LEVEL: String = "info"
 
-public class GBTTree extends Tree<GBDTParam, GBTNode> {
+  def setLogLevel(level: String): Unit = {
+    assert(level.equalsIgnoreCase("debug") || level.equalsIgnoreCase("info"))
+    LOG_LEVEL = level.toLowerCase
+  }
 
-  public GBTTree(GBDTParam param) {
-    super(param);
-    GBTNode root = new GBTNode(0, null, param.numClass);
-    this.nodes.put(0, root);
+  def print(msg: String): Unit = {
+    LOG_LEVEL match {
+      case "debug" => println(msg)
+      case _ =>
+    }
   }
 }
+

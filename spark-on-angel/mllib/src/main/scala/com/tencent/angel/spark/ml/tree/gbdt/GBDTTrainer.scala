@@ -28,7 +28,7 @@ import com.tencent.angel.spark.ml.tree.objective.ObjectiveFactory
 import com.tencent.angel.spark.ml.tree.objective.loss.Loss
 import com.tencent.angel.spark.ml.tree.objective.metric.EvalMetric
 import com.tencent.angel.spark.ml.tree.sketch.HeapQuantileSketch
-import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam
+import com.tencent.angel.spark.ml.tree.param.GBDTParam
 import com.tencent.angel.spark.ml.tree.util.{DataLoader, EvenPartitioner, Maths}
 import it.unimi.dsi.fastutil.bytes.ByteArrayList
 import it.unimi.dsi.fastutil.ints.IntArrayList

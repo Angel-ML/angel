@@ -19,7 +19,7 @@
 package com.tencent.angel.spark.ml.tree.gbdt.tree;
 
 import com.tencent.angel.spark.ml.tree.gbdt.histogram.GradPair;
-import com.tencent.angel.spark.ml.tree.tree.split.SplitEntry;
+import com.tencent.angel.spark.ml.tree.split.SplitEntry;
 import java.io.Serializable;
 
 public class GBTSplit implements Serializable {

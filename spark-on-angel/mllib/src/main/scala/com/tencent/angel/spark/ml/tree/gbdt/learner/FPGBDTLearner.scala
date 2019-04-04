@@ -26,8 +26,8 @@ import com.tencent.angel.spark.ml.tree.gbdt.metadata.{DataInfo, FeatureInfo}
 import com.tencent.angel.spark.ml.tree.gbdt.tree.{GBTNode, GBTSplit, GBTTree}
 import com.tencent.angel.spark.ml.tree.objective.ObjectiveFactory
 import com.tencent.angel.spark.ml.tree.objective.metric.EvalMetric
-import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam
-import com.tencent.angel.spark.ml.tree.tree.split.SplitEntry
+import com.tencent.angel.spark.ml.tree.param.GBDTParam
+import com.tencent.angel.spark.ml.tree.split.SplitEntry
 import com.tencent.angel.spark.ml.tree.util.{EvenPartitioner, Maths, RangeBitSet}
 import org.apache.spark.ml.linalg.Vector
 

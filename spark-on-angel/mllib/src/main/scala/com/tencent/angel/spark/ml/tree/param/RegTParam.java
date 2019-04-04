@@ -15,7 +15,7 @@
  *
  */
 
-package com.tencent.angel.spark.ml.tree.tree.param;
+package com.tencent.angel.spark.ml.tree.param;
 
 public class RegTParam extends TreeParam {
 

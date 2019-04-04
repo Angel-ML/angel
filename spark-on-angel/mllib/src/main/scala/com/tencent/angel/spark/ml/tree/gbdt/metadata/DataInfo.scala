@@ -23,8 +23,8 @@ import java.{util => ju}
 import com.tencent.angel.spark.ml.tree.data.{DataSet, FeatureRow, InstanceRow}
 import com.tencent.angel.spark.ml.tree.gbdt.histogram.{BinaryGradPair, GradPair, MultiGradPair}
 import com.tencent.angel.spark.ml.tree.objective.loss.{BinaryLoss, Loss, MultiLoss}
-import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam
-import com.tencent.angel.spark.ml.tree.tree.split.SplitEntry
+import com.tencent.angel.spark.ml.tree.param.GBDTParam
+import com.tencent.angel.spark.ml.tree.split.SplitEntry
 import com.tencent.angel.spark.ml.tree.util.{Maths, RangeBitSet}
 
 object DataInfo {

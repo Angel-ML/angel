@@ -15,8 +15,9 @@
  *
  */
 
-package com.tencent.angel.spark.ml.tree.tree.param;
+package com.tencent.angel.spark.ml.tree.param;
 
+import com.tencent.angel.spark.ml.tree.objective.loss.MultiStrategy;
 import java.util.Arrays;
 import com.tencent.angel.spark.ml.tree.util.Maths;
 
@@ -39,6 +40,20 @@ public class GBDTParam extends RegTParam {
 
   public String lossFunc; // name of loss function
   public String[] evalMetrics; // name of eval metric
+  public String multiStrategy; // strategy of multi-class classification (one-tree or multi-tree)
+  public boolean multiGradCache; // use grad cache for multiclass-multitree, or calc grad for every tree
+
+  public int numClassPerTree() {
+    if (numClass > 2 && multiStrategy.equalsIgnoreCase(MultiStrategy.ONE_TREE.toString())) {
+      return numClass;
+    } else {
+      return 2;
+    }
+  }
+
+  public boolean isMultiClassMultiTree() {
+    return numClass > 2 && multiStrategy.equalsIgnoreCase(MultiStrategy.MULTI_TREE.toString());
+  }
 
   /**
    * Whether the sum of hessian satisfies weight

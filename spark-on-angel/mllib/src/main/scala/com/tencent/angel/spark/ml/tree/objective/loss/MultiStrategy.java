@@ -15,17 +15,20 @@
  *
  */
 
+package com.tencent.angel.spark.ml.tree.objective.loss;
 
-package com.tencent.angel.spark.ml.tree.gbdt.tree;
+public enum MultiStrategy {
 
-import com.tencent.angel.spark.ml.tree.basic.Tree;
-import com.tencent.angel.spark.ml.tree.param.GBDTParam;
+  ONE_TREE("one-tree"),
+  MULTI_TREE("multi-tree");
 
-public class GBTTree extends Tree<GBDTParam, GBTNode> {
+  private String name;
 
-  public GBTTree(GBDTParam param) {
-    super(param);
-    GBTNode root = new GBTNode(0, null, param.numClass);
-    this.nodes.put(0, root);
+  private MultiStrategy(String name) { this.name = name; }
+
+  @Override
+  public String toString() {
+    return name;
   }
+
 }

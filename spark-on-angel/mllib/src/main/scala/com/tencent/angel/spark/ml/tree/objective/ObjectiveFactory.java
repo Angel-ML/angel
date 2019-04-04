@@ -148,4 +148,13 @@ public class ObjectiveFactory {
     }
   }
 
+  public static MultiStrategy getMultiStrategy(String name) {
+    for (MultiStrategy strategy : MultiStrategy.values()) {
+      if (name.equalsIgnoreCase(strategy.toString())) {
+        return strategy;
+      }
+    }
+    throw new GBDTException("Unrecognizable multi strategy: " + name);
+  }
+
 }

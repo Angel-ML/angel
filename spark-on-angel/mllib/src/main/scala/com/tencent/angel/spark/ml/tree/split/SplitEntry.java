@@ -15,7 +15,7 @@
  *
  */
 
-package com.tencent.angel.spark.ml.tree.tree.split;
+package com.tencent.angel.spark.ml.tree.split;
 
 import java.io.Serializable;
 import javax.validation.constraints.NotNull;

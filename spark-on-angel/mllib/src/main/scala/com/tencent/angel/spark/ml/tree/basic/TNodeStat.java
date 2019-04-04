@@ -15,23 +15,28 @@
  *
  */
 
-package com.tencent.angel.spark.ml.tree.tree.split;
+package com.tencent.angel.spark.ml.tree.basic;
 
 import java.io.Serializable;
 
-// different types of tree node splits, enumerated by their complexity
-public enum SplitType implements Serializable {
-  SPLIT_POINT("SPLIT_POINT"),
-  SPLIT_SET("SPLIT_SET");
+public abstract class TNodeStat implements Serializable {
 
-  private final String type;
+  protected float gain;  // gain of current node
+  protected float nodeWeight;  // weight of current node
 
-  SplitType(String type) {
-    this.type = type;
+  public float getGain() {
+    return gain;
   }
 
-  @Override
-  public String toString() {
-    return type;
+  public float getNodeWeight() {
+    return nodeWeight;
+  }
+
+  public void setGain(float gain) {
+    this.gain = gain;
+  }
+
+  public void setNodeWeight(float nodeWeight) {
+    this.nodeWeight = nodeWeight;
   }
 }
