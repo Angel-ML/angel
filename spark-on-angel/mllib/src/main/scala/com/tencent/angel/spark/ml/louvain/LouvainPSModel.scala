@@ -5,6 +5,7 @@ import com.tencent.angel.ml.math2.storage.IntIntSparseVectorStorage
 import com.tencent.angel.ml.math2.vector.{IntFloatVector, IntIntVector}
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.models.PSVector
+import com.tencent.angel.spark.util.VectorUtils
 
 import scala.collection.JavaConversions._
 
@@ -19,6 +20,12 @@ class LouvainPSModel(
     community2weightPSVector.update(VFactory.sparseFloatVector(dim, nodes, degree))
     this
   }
+
+  def sumOfSquareOfCommunityWeights: Double = {
+    VectorUtils.dot(community2weightPSVector, community2weightPSVector)
+  }
+
+  def sumOfCommunityWeight: Double = VectorUtils.sum(community2weightPSVector)
 
   def getCommInfo(comm: Array[Int]): IntFloatVector = {
     community2weightPSVector.pull(comm.clone()).asInstanceOf[IntFloatVector]

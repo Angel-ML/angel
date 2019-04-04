@@ -1,10 +1,8 @@
-package com.tencent.angel.spark.examples.cluster
+package com.tencent.angel.spark.ml.louvain
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.louvain.Louvain.edgeTripleRDD2GraphPartitions
-import com.tencent.angel.spark.ml.graph.louvain.{Louvain, LouvainGraphPartition}
-import com.tencent.angel.spark.ml.louvain.{Louvain, LouvainGraphPartition, LouvainPSModel}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
@@ -23,6 +21,7 @@ object LouvainExample {
     val output = params.getOrElse("output", null)
     val enableCheck = params.getOrElse("enableCheck", "false").toBoolean
     val eps = params.getOrElse("eps", "0.0").toDouble
+    val bufferSize = params.getOrElse("bufferSize", "1000000").toInt
 
     start(mode)
     val edges = SparkContext.getOrCreate().textFile(input, partitionNum).flatMap { line =>
@@ -46,11 +45,12 @@ object LouvainExample {
 
     // correctIds
     var totalSum = louvain.checkTotalSum(model)
-    louvain.correctCommunityId(model)
+    louvain.correctCommunityId(model, bufferSize)
 
     if (enableCheck) {
       assert(louvain.checkCommId(model) == 0)
-      assert(louvain.checkTotalSum(model) == totalSum)
+      val total = louvain.checkTotalSum(model)
+      assert(total == totalSum, s"$total != $totalSum")
     }
 
 
@@ -62,14 +62,29 @@ object LouvainExample {
 
       // correctIds
       totalSum = louvain.checkTotalSum(model)
-      louvain.correctCommunityId(model)
+      println(s"total = $totalSum")
+      louvain.correctCommunityId(model, bufferSize)
       if (foldIter < numFold && enableCheck) {
         assert(louvain.checkCommId(model) == 0)
-        assert(louvain.checkTotalSum(model) == totalSum)
+        val total = louvain.checkTotalSum(model)
+        assert(total == totalSum, s"$total != $totalSum")
       }
     }
     // save
-    louvain.save(output)
+
+    val nodesRDD = SparkContext.getOrCreate().textFile(input, partitionNum).flatMap { line =>
+      val arr = line.split("[\\s+,]")
+      val src = arr(0).toInt
+      val dst = arr(1).toInt
+      if (src < dst) {
+        Iterator(src, dst)
+      } else if (dst < src) {
+        Iterator(dst, src)
+      } else {
+        Iterator.empty
+      }
+    }.distinct()
+    louvain.save(output, nodesRDD)
     stop()
   }
 

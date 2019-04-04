@@ -1,6 +1,6 @@
 package com.tencent.angel.spark.ml.louvain
 
-import com.tencent.angel.ml.math2.vector.IntFloatVector
+import com.tencent.angel.ml.math2.vector.{IntFloatVector, IntIntVector}
 import Louvain.edgeTripleRDD2GraphPartitions
 import com.tencent.angel.spark.util.VectorUtils
 import org.apache.spark.rdd.RDD
@@ -59,35 +59,62 @@ class Louvain(
 
   private lazy val totalWeights: Double = {
     val total = graph.map(_.partitionWeights).sum()
-    println(s"total=$total")
+    println(s"totalNodeWeights=$total")
     total
   }
 
   // set community id as the the minimum id of nodes in it
-  def correctCommunityId(model: LouvainPSModel): Unit = {
-    commId2NodeId(model).groupByKey.foreachPartition { iter =>
+  def correctCommunityId(model: LouvainPSModel, bufferSize: Int = 1000000):Unit = {
+    val commInfoDeltaRDD = commId2NodeId(model).groupByKey.mapPartitions { iter =>
       if (iter.nonEmpty) {
         val oldCommIdsBuffer = new ArrayBuffer[Int]()
         val newCommIdsBuffer = new ArrayBuffer[Int]()
-        val nodesBuffer = new ArrayBuffer[Int]()
-        val nodeNewCommIdsBuffer = new ArrayBuffer[Int]()
-        iter.foreach { case (commId, nodes) =>
-          oldCommIdsBuffer += commId
-          val newId = nodes.min
-          newCommIdsBuffer += newId
-          nodesBuffer ++= nodes
-          nodeNewCommIdsBuffer ++= Array.tabulate(nodes.size)(_ => newId)
+
+        val nodesBuffer = new ArrayBuffer[Int](bufferSize)
+        val nodeNewCommIdsBuffer = new ArrayBuffer[Int](bufferSize)
+        var numNodeCorrected = 0
+        while (iter.hasNext) {
+          var used = 0
+          while (iter.hasNext && used < bufferSize) {
+            val (commId, nodes) = iter.next
+            val newId = nodes.min
+
+            oldCommIdsBuffer += commId
+            newCommIdsBuffer += newId
+
+            nodesBuffer ++= nodes
+            nodeNewCommIdsBuffer ++= Array.tabulate(nodes.size)(_ => newId)
+
+            used += nodes.size
+            numNodeCorrected += 1
+          }
+          if (used > 0) {
+            // update node2comm
+            println(s"numNodeCorrected=$numNodeCorrected")
+            model.updateNode2community(nodesBuffer.toArray, nodeNewCommIdsBuffer.toArray)
+            nodesBuffer.clear()
+            nodeNewCommIdsBuffer.clear()
+          }
         }
+
         val oldCommIds = oldCommIdsBuffer.toArray
-        val newCommIds = newCommIdsBuffer.toArray
         val oldInfo = model.getCommInfo(oldCommIds).get(oldCommIds)
-        // update node2comm
-        model.updateNode2community(nodesBuffer.toArray, nodeNewCommIdsBuffer.toArray)
-        // update comm2info
-        model.incrementCommWeight(oldCommIds, oldInfo.map(x => -x))
-        model.incrementCommWeight(newCommIds, oldInfo)
+        Iterator((oldCommIds, oldInfo.map(x => -x)),  (newCommIdsBuffer.toArray, oldInfo))
+      } else {
+        Iterator.empty
       }
+    }.cache()
+
+    // since we calculate delta from old community info from ps,
+    // the old community info should preserve before all task has finished.
+    // here we use a handy trigger job for this purpose.
+    commInfoDeltaRDD.foreachPartition(_ => Unit)
+
+    // update community info
+    commInfoDeltaRDD.foreach { case (commIds, commInfoDelta) =>
+      model.incrementCommWeight(commIds, commInfoDelta)
     }
+    commInfoDeltaRDD.unpersist(false)
   }
 
   def checkCommId(model: LouvainPSModel): Long = {
@@ -118,10 +145,12 @@ class Louvain(
     graph.flatMap(_.partCommunityIds(model)).distinct()
   }
 
-  def save(path: String): Unit = {
-    graph.flatMap(_.node2community(louvainPSModel))
-      .map { case (id, comm) => s"$id,$comm" }
-      .saveAsTextFile(path + s"/${System.currentTimeMillis()}")
+  def save(path: String, nodesRDD: RDD[Int]): Unit = {
+    nodesRDD.mapPartitions { iter =>
+      val nodes = iter.toArray
+      val pair = nodes.zip(louvainPSModel.getNode2commMap(nodes).get(nodes))
+      pair.map { case (id, comm) => s"$id,$comm" }.toIterator
+    }.saveAsTextFile(path)
   }
 
   def updateNodeWeightsToPS(): this.type = {
@@ -156,19 +185,19 @@ class Louvain(
   }
 
   private def Q2(): Double = {
-    VectorUtils.dot(louvainPSModel.community2weightPSVector,
-      louvainPSModel.community2weightPSVector
-    ) / math.pow(totalWeights, 2)
+   louvainPSModel.sumOfSquareOfCommunityWeights / math.pow(totalWeights, 2)
   }
 
   private def modularityOptimize(batchSize: Int, shuffle: Boolean): Unit = {
     graph.foreach(_.modularityOptimize(louvainPSModel, totalWeights, batchSize, shuffle))
   }
 
+  private def sumOfWeightsBetweenCommunity: Double = {
+    this.graph.map(_.sumOfWeightsBetweenCommunity(louvainPSModel)).sum()
+  }
+
   private def Q1(): Double = {
-    (VectorUtils.sum(louvainPSModel.community2weightPSVector) -
-      this.graph.map(_.sumOfWeightsBetweenCommunity(louvainPSModel)).sum()
-      ) / totalWeights
+    1 - sumOfWeightsBetweenCommunity / totalWeights
   }
 
   private def getNumOfCommunity: Long = {
