@@ -44,7 +44,14 @@ class GPSurrogate(
   override def train(): Unit = {
     val breezeX: BDM[Double] = DataUtils.toBreeze(preX.toArray)
     val breezeY: BDV[Double] = DataUtils.toBreeze(preY.toArray)
-    gpModel.fit(breezeX, breezeY)
+    val success = gpModel.fit(breezeX, breezeY)
+    if(!success) {
+      println(s"number of history before drop: ${preX.length}")
+      preX.remove(preX.length - 1)
+      preY.remove(preY.length - 1)
+      println(s"number of history after drop: ${preX.length}")
+      println(s"drop this configuration owing to convergence failure.")
+    }
 
     /*println("Fitted covariance function params:")
     println(gpModel.covParams)

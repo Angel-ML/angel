@@ -18,8 +18,9 @@
 
 package com.tencent.angel.spark.automl.tuner.model
 
-import breeze.linalg.{cholesky, diag, DenseMatrix => BDM, DenseVector => BDV}
-import breeze.optimize.LBFGS
+import breeze.linalg.{Axis, cholesky, diag, DenseMatrix => BDM, DenseVector => BDV}
+import breeze.optimize.StochasticGradientDescent.SimpleSGD
+import breeze.optimize.{AdaDeltaGradientDescent, LBFGS, StochasticGradientDescent}
 import com.tencent.angel.spark.automl.tuner.kernel.{Covariance, CovarianceType}
 import com.tencent.angel.spark.automl.tuner.math.BreezeOp
 
@@ -36,8 +37,10 @@ class GPModel(val covFunc: Covariance,
   var L: BDM[Double] = _
 
   def fit(newX: BDM[Double],
-          newy: BDV[Double]): this.type = {
+          newy: BDV[Double]): Boolean = {
     require(newX.rows == newy.length, "incompatible size of the input X and y")
+
+    var trainSuccess = true
 
     if ((X == null && y == null) ||
       (newX.rows > X.rows && newy.length > y.length)) {
@@ -47,11 +50,28 @@ class GPModel(val covFunc: Covariance,
 
     val kernelDiffFunc = new GPKernelDiffFunc(this)
     val initParams = BDV(covParams.toArray :+ noiseStdDev)
+    //println(s"init params: ${initParams}")
 
-    val optimizer = new LBFGS[BDV[Double]](maxIter = 10, m = 7, tolerance = 1e-10)
-    val newParams = optimizer.minimize(kernelDiffFunc, initParams)
+    //val optimizer = new LBFGS[BDV[Double]](maxIter = 10, m = 7, tolerance = 1e-10)
+    val optimizer = new SimpleSGD[BDV[Double]](1, 10)
+    var newParams = initParams
+    try {
+      newParams = optimizer.minimize(kernelDiffFunc, initParams)
+    } catch {
+      case e: breeze.linalg.NotConvergedException =>
+        println(s"Breeze Not Converged Exception")
+        newParams = initParams
+    }
+
     //println(optimizer)
-    //println(s"new params: ${newParams}")
+    println(s"new params: ${newParams}")
+    if(!checkParam(newParams)) {
+      newParams = initParams
+      println(s"reset to init params: ${newParams}")
+      trainSuccess = false
+      X.delete(X.rows - 1, Axis._0)
+      y = y.slice(0, y.length - 1)
+    }
 
     val newCovParams = BDV(newParams.toArray.dropRight(1))
     val newNoiseStdDev = newParams.toArray.last
@@ -59,7 +79,17 @@ class GPModel(val covFunc: Covariance,
     this.covParams = newCovParams
     this.noiseStdDev = newNoiseStdDev
 
-    this
+    trainSuccess
+  }
+
+  def checkParam(params: BDV[Double]): Boolean = {
+    var isValid = true
+    params.values.foreach{ param: Double =>
+      //println(s"$param")
+      if(param.isNaN || param.isInfinity)
+        isValid = false
+    }
+    isValid
   }
 
   def update(newX: BDM[Double],
