@@ -194,7 +194,7 @@ object JsonUtils {
 
             layerMap.put(name, newLayer)
             iter.remove()
-          case JString(value) if matchClassName[LossLayer](value) =>
+          case JString(value) if matchClassName[LossLayer](value) || value.equalsIgnoreCase("SimpleLossLayer")=>
             val inputLayer = extract[String](obj, LayerKeys.inputLayerKey)
             if (inputLayer.nonEmpty && layerMap.contains(inputLayer.get)) {
               val newLayer = new LossLayer(name,
@@ -307,12 +307,13 @@ object JsonUtils {
 
     outputDims.zip(transFuncs).map {
       case (outputDim: JInt, transFunc: JValue) =>
-        i += 1
-        val newName: String = if (i == outputDims.size) {
+        val newName: String = if (i + 1 == outputDims.size) {
           name
         } else {
           s"${name}_$i"
         }
+
+        i += 1
 
         val field = JField(newName, (LayerKeys.typeKey -> lType) ~
           (LayerKeys.inputLayerKey -> inputLayer) ~

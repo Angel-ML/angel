@@ -25,7 +25,7 @@ public class MapMatrix<Vec extends Vector> extends Matrix {
   }
 
   public Vector getRow(int idx) {
-    return mapMatrix.get(idx);
+    return mapMatrix.get((long)idx);
   }
 
   public Vector getRow(long idx) {
@@ -35,7 +35,7 @@ public class MapMatrix<Vec extends Vector> extends Matrix {
   public HashMap<Long, Vec> getRows(int[] idx) {
     HashMap<Long, Vec> matrix = new HashMap<Long, Vec>();
     for (int id : idx) {
-      matrix.put((long) id, mapMatrix.get(id));
+      matrix.put((long) id, mapMatrix.get((long)id));
     }
     return matrix;
   }
