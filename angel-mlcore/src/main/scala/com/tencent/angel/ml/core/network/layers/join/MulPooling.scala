@@ -65,9 +65,7 @@ class MulPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implic
   }
 
 
-  override def toString: String
-
-  = {
+  override def toString: String = {
     s"MulPooling name=$name outputDim=$outputDim"
   }
 
