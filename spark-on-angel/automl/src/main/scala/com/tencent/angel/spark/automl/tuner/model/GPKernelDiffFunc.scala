@@ -72,11 +72,13 @@ class GPKernelDiffFunc(model: GPModel) extends DiffFunction[BDV[Double]] {
       (loglikeLoss, loglikeGrads)
     } catch {
       case e: NotConvergedException =>
-        println(s"not converge exception $e")
-        (Double.NaN, BDV.zeros[Double](params.size) * Double.NaN)
+        //println(s"not converge exception $e")
+        //(Double.NaN, BDV.zeros[Double](params.size) * Double.NaN)
+        throw e
       case e: MatrixNotSymmetricException =>
         println(s"matrix not symmetric exception $e")
         (Double.NaN, BDV.zeros[Double](params.size) * Double.NaN)
+        throw e
     }
   }
 }
