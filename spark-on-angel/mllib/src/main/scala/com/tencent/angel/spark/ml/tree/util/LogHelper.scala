@@ -19,7 +19,7 @@ package com.tencent.angel.spark.ml.tree.util
 
 object LogHelper {
 
-  var LOG_LEVEL: String = "info"
+  var LOG_LEVEL: String = "debug"
 
   def setLogLevel(level: String): Unit = {
     assert(level.equalsIgnoreCase("debug") || level.equalsIgnoreCase("info"))

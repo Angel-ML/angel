@@ -18,6 +18,7 @@
 
 package com.tencent.angel.spark.ml.tree.gbdt.predictor
 
+import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.tree.common.TreeConf._
 import com.tencent.angel.spark.ml.tree.data.Instance
 import com.tencent.angel.spark.ml.tree.gbdt.tree.{GBTNode, GBTTree}
@@ -155,9 +156,14 @@ object GBDTPredictor {
     @transient val conf = new SparkConf()
     @transient implicit val sc = SparkContext.getOrCreate(conf)
 
-    val modelPath = conf.get(ML_MODEL_PATH)
-    val predictPath = conf.get(ML_PREDICT_PATH)
-    val outputPath = conf.get(ML_OUTPUT_PATH)
+    val params = ArgsUtil.parse(args)
+
+    //val modelPath = conf.get(ML_MODEL_PATH)
+    val modelPath = params.getOrElse(ML_MODEL_PATH, "xxx")
+    //val predictPath = conf.get(ML_PREDICT_PATH)
+    val predictPath = params.getOrElse(ML_PREDICT_PATH, "xxx")
+    //val outputPath = conf.get(ML_OUTPUT_PATH)
+    val outputPath = params.getOrElse(ML_OUTPUT_PATH, "xxx")
 
     val predictor = new GBDTPredictor
     predictor.loadModel(sc, modelPath)

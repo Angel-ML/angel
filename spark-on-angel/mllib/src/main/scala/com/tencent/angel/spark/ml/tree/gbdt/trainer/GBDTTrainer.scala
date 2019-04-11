@@ -66,6 +66,7 @@ object GBDTTrainer {
     val params = ArgsUtil.parse(args)
 
     // dataset conf
+    param.taskType = params.getOrElse(MLConf.ML_GBDT_TASK_TYPE, MLConf.DEFAULT_ML_GBDT_TASK_TYPE)
     param.numClass = params.getOrElse(MLConf.ML_NUM_CLASS, "2").toInt
     param.numFeature = params.getOrElse(MLConf.ML_FEATURE_INDEX_RANGE, "-1").toInt
     SharedConf.get().setInt(MLConf.ML_NUM_CLASS, param.numClass)
@@ -75,9 +76,18 @@ object GBDTTrainer {
     param.lossFunc = params.getOrElse(MLConf.ML_GBDT_LOSS_FUNCTION, "binary:logistic")
     param.evalMetrics = params.getOrElse(MLConf.ML_GBDT_EVAL_METRIC, "error").split(",").map(_.trim).filter(_.nonEmpty)
     SharedConf.get().set(MLConf.ML_GBDT_LOSS_FUNCTION, param.lossFunc)
-    param.multiStrategy = params.getOrElse("ml.gbdt.multi.class.strategy", "one-tree")
-    if (param.isMultiClassMultiTree) param.lossFunc = "binary:logistic"
-    param.multiGradCache = params.getOrElse("ml.gbdt.multi.class.grad.cache", "true").toBoolean
+
+    param.taskType match {
+      case "regression" =>
+        require(param.lossFunc.equals("rmse") && param.evalMetrics.equals("rmse"),
+          "loss function and metric of regression task should be rmse")
+        param.numClass = 2
+      case "classification" =>
+        require(param.numClass >= 2, "number of labels should be larger than 2")
+        param.multiStrategy = params.getOrElse("ml.gbdt.multi.class.strategy", "one-tree")
+        if (param.isMultiClassMultiTree) param.lossFunc = "binary:logistic"
+        param.multiGradCache = params.getOrElse("ml.gbdt.multi.class.grad.cache", "true").toBoolean
+    }
 
     // major algo conf
     param.featSampleRatio = params.getOrElse(MLConf.ML_GBDT_FEATURE_SAMPLE_RATIO, "1.0").toFloat
@@ -243,7 +253,7 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
       Array.copy(partLabel, 0, labels, offset, partLabel.length)
       offset += partLabel.length
     })
-    val changeLabel = Instance.ensureLabel(labels, param.numClass)
+    val changeLabel = if (param.isClassification) Instance.ensureLabel(labels, param.numClass) else false
     val bcLabels = sc.broadcast(labels)
     val bcChangeLabel = sc.broadcast(changeLabel)
     println(s"Collect labels cost ${System.currentTimeMillis() - labelStart} ms")
@@ -411,7 +421,7 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
 
     val loss = ObjectiveFactory.getLoss(param.lossFunc)
     val evalMetrics = ObjectiveFactory.getEvalMetricsOrDefault(param.evalMetrics, loss)
-    val multiStrategy = ObjectiveFactory.getMultiStrategy(param.multiStrategy)
+    //val multiStrategy = ObjectiveFactory.getMultiStrategy(param.multiStrategy)
 
     LogHelper.setLogLevel("info")
 

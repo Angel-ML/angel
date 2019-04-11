@@ -57,6 +57,8 @@ object SplitFinder {
     val numBin = histogram.getNumBin
     for (binId <- 0 until numBin - 1) {
       histogram.scan(binId, leftStat, rightStat)
+      println(s"left stat: grad ${leftStat.asInstanceOf[BinaryGradPair].getGrad} hess ${leftStat.asInstanceOf[BinaryGradPair].getHess}")
+      println(s"right stat: grad ${rightStat.asInstanceOf[BinaryGradPair].getGrad} hess ${rightStat.asInstanceOf[BinaryGradPair].getHess}")
       if (leftStat.satisfyWeight(param) && rightStat.satisfyWeight(param)) {
         val lossChg = leftStat.calcGain(param) + rightStat.calcGain(param) - nodeGain - param.regLambda
         if (splitPoint.needReplace(lossChg)) {
