@@ -74,6 +74,7 @@ public class AngelConf extends Configuration {
    * Training data path.
    */
   public static final String ANGEL_TRAIN_DATA_PATH = "angel.train.data.path";
+  public static final String ANGEL_VALIDATE_DATA_PATH = "angel.validate.data.path";
 
   /**
    * Predict data path.
@@ -1068,6 +1069,13 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_MATRIXTRANSFER_RETRY_INTERVAL_MS =
     ANGEL_PREFIX + "matrixtransfer.retry.interval.ms";
   public static final int DEFAULT_ANGEL_MATRIXTRANSFER_RETRY_INTERVAL_MS = 10000;
+
+  /**
+   * Max retry number for a PS-RPC
+   */
+  public static final String ANGEL_MATRIXTRANSFER_MAX_TRY_COUNTER =
+      ANGEL_PREFIX + "matrixtransfer.max.retry.counter";
+  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_MAX_TRY_COUNTER = 10;
 
   /**
    * Weather we need use direct buffer in netty client.

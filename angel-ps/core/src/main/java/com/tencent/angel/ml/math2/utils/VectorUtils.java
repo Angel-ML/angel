@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -20,7 +20,27 @@ package com.tencent.angel.ml.math2.utils;
 
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math2.VFactory;
-import com.tencent.angel.ml.math2.vector.*;
+import com.tencent.angel.ml.math2.vector.CompIntDoubleVector;
+import com.tencent.angel.ml.math2.vector.CompIntFloatVector;
+import com.tencent.angel.ml.math2.vector.CompIntIntVector;
+import com.tencent.angel.ml.math2.vector.CompIntLongVector;
+import com.tencent.angel.ml.math2.vector.CompLongDoubleVector;
+import com.tencent.angel.ml.math2.vector.CompLongFloatVector;
+import com.tencent.angel.ml.math2.vector.CompLongIntVector;
+import com.tencent.angel.ml.math2.vector.CompLongLongVector;
+import com.tencent.angel.ml.math2.vector.ComponentVector;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.IntDummyVector;
+import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.ml.math2.vector.IntIntVector;
+import com.tencent.angel.ml.math2.vector.IntLongVector;
+import com.tencent.angel.ml.math2.vector.LongDoubleVector;
+import com.tencent.angel.ml.math2.vector.LongDummyVector;
+import com.tencent.angel.ml.math2.vector.LongFloatVector;
+import com.tencent.angel.ml.math2.vector.LongIntVector;
+import com.tencent.angel.ml.math2.vector.LongLongVector;
+import com.tencent.angel.ml.math2.vector.SimpleVector;
+import com.tencent.angel.ml.math2.vector.Vector;
 
 public class VectorUtils {
 
@@ -35,8 +55,8 @@ public class VectorUtils {
         }
       }
       result = new CompIntDoubleVector(((CompIntDoubleVector) v).getMatrixId(),
-        ((CompIntDoubleVector) v).getRowId(), ((CompIntDoubleVector) v).getClock(),
-        ((CompIntDoubleVector) v).getDim(), parts, ((CompIntDoubleVector) v).getSubDim());
+          ((CompIntDoubleVector) v).getRowId(), ((CompIntDoubleVector) v).getClock(),
+          ((CompIntDoubleVector) v).getDim(), parts, ((CompIntDoubleVector) v).getSubDim());
     } else if (v instanceof CompIntFloatVector) {
       IntFloatVector[] parts = new IntFloatVector[v.getNumPartitions()];
       IntFloatVector[] refParts = ((CompIntFloatVector) v).getPartitions();
@@ -46,8 +66,8 @@ public class VectorUtils {
         }
       }
       result = new CompIntFloatVector(((CompIntFloatVector) v).getMatrixId(),
-        ((CompIntFloatVector) v).getRowId(), ((CompIntFloatVector) v).getClock(),
-        ((CompIntFloatVector) v).getDim(), parts, ((CompIntFloatVector) v).getSubDim());
+          ((CompIntFloatVector) v).getRowId(), ((CompIntFloatVector) v).getClock(),
+          ((CompIntFloatVector) v).getDim(), parts, ((CompIntFloatVector) v).getSubDim());
     } else if (v instanceof CompIntLongVector) {
       IntLongVector[] parts = new IntLongVector[v.getNumPartitions()];
       IntLongVector[] refParts = ((CompIntLongVector) v).getPartitions();
@@ -57,8 +77,8 @@ public class VectorUtils {
         }
       }
       result = new CompIntLongVector(((CompIntLongVector) v).getMatrixId(),
-        ((CompIntLongVector) v).getRowId(), ((CompIntLongVector) v).getClock(),
-        ((CompIntLongVector) v).getDim(), parts, ((CompIntLongVector) v).getSubDim());
+          ((CompIntLongVector) v).getRowId(), ((CompIntLongVector) v).getClock(),
+          ((CompIntLongVector) v).getDim(), parts, ((CompIntLongVector) v).getSubDim());
     } else if (v instanceof CompIntIntVector) {
       IntIntVector[] parts = new IntIntVector[v.getNumPartitions()];
       IntIntVector[] refParts = ((CompIntIntVector) v).getPartitions();
@@ -68,8 +88,8 @@ public class VectorUtils {
         }
       }
       result = new CompIntIntVector(((CompIntIntVector) v).getMatrixId(),
-        ((CompIntIntVector) v).getRowId(), ((CompIntIntVector) v).getClock(),
-        ((CompIntIntVector) v).getDim(), parts, ((CompIntIntVector) v).getSubDim());
+          ((CompIntIntVector) v).getRowId(), ((CompIntIntVector) v).getClock(),
+          ((CompIntIntVector) v).getDim(), parts, ((CompIntIntVector) v).getSubDim());
     } else if (v instanceof CompLongDoubleVector) {
       LongDoubleVector[] parts = new LongDoubleVector[v.getNumPartitions()];
       LongDoubleVector[] refParts = ((CompLongDoubleVector) v).getPartitions();
@@ -79,8 +99,8 @@ public class VectorUtils {
         }
       }
       result = new CompLongDoubleVector(((CompLongDoubleVector) v).getMatrixId(),
-        ((CompLongDoubleVector) v).getRowId(), ((CompLongDoubleVector) v).getClock(),
-        ((CompLongDoubleVector) v).getDim(), parts, ((CompLongDoubleVector) v).getSubDim());
+          ((CompLongDoubleVector) v).getRowId(), ((CompLongDoubleVector) v).getClock(),
+          ((CompLongDoubleVector) v).getDim(), parts, ((CompLongDoubleVector) v).getSubDim());
     } else if (v instanceof CompLongFloatVector) {
       LongFloatVector[] parts = new LongFloatVector[v.getNumPartitions()];
       LongFloatVector[] refParts = ((CompLongFloatVector) v).getPartitions();
@@ -90,8 +110,8 @@ public class VectorUtils {
         }
       }
       result = new CompLongFloatVector(((CompLongFloatVector) v).getMatrixId(),
-        ((CompLongFloatVector) v).getRowId(), ((CompLongFloatVector) v).getClock(),
-        ((CompLongFloatVector) v).getDim(), parts, ((CompLongFloatVector) v).getSubDim());
+          ((CompLongFloatVector) v).getRowId(), ((CompLongFloatVector) v).getClock(),
+          ((CompLongFloatVector) v).getDim(), parts, ((CompLongFloatVector) v).getSubDim());
     } else if (v instanceof CompLongLongVector) {
       LongLongVector[] parts = new LongLongVector[v.getNumPartitions()];
       LongLongVector[] refParts = ((CompLongLongVector) v).getPartitions();
@@ -101,8 +121,8 @@ public class VectorUtils {
         }
       }
       result = new CompLongLongVector(((CompLongLongVector) v).getMatrixId(),
-        ((CompLongLongVector) v).getRowId(), ((CompLongLongVector) v).getClock(),
-        ((CompLongLongVector) v).getDim(), parts, ((CompLongLongVector) v).getSubDim());
+          ((CompLongLongVector) v).getRowId(), ((CompLongLongVector) v).getClock(),
+          ((CompLongLongVector) v).getDim(), parts, ((CompLongLongVector) v).getSubDim());
     } else if (v instanceof CompLongIntVector) {
       LongIntVector[] parts = new LongIntVector[v.getNumPartitions()];
       LongIntVector[] refParts = ((CompLongIntVector) v).getPartitions();
@@ -112,8 +132,8 @@ public class VectorUtils {
         }
       }
       result = new CompLongIntVector(((CompLongIntVector) v).getMatrixId(),
-        ((CompLongIntVector) v).getRowId(), ((CompLongIntVector) v).getClock(),
-        ((CompLongIntVector) v).getDim(), parts, ((CompLongIntVector) v).getSubDim());
+          ((CompLongIntVector) v).getRowId(), ((CompLongIntVector) v).getClock(),
+          ((CompLongIntVector) v).getDim(), parts, ((CompLongIntVector) v).getSubDim());
     } else {
       throw new AngelException("The operation is not support!");
     }
@@ -125,76 +145,80 @@ public class VectorUtils {
     if (v instanceof IntDoubleVector) {
       if (((IntDoubleVector) v).isDense()) {
         return VFactory
-          .denseDoubleVector(((IntDoubleVector) v).getMatrixId(), ((IntDoubleVector) v).getRowId(),
-            ((IntDoubleVector) v).getClock(), ((IntDoubleVector) v).getDim());
+            .denseDoubleVector(((IntDoubleVector) v).getMatrixId(),
+                ((IntDoubleVector) v).getRowId(),
+                ((IntDoubleVector) v).getClock(), ((IntDoubleVector) v).getDim());
       } else if (((IntDoubleVector) v).isSparse()) {
         int capacity = (int) (((IntDoubleVector) v).size() * 1.25);
         return VFactory
-          .sparseDoubleVector(((IntDoubleVector) v).getMatrixId(), ((IntDoubleVector) v).getRowId(),
-            ((IntDoubleVector) v).getClock(), ((IntDoubleVector) v).getDim(), capacity);
+            .sparseDoubleVector(((IntDoubleVector) v).getMatrixId(),
+                ((IntDoubleVector) v).getRowId(),
+                ((IntDoubleVector) v).getClock(), ((IntDoubleVector) v).getDim(), capacity);
       } else {
         return VFactory
-          .sortedDoubleVector(((IntDoubleVector) v).getMatrixId(), ((IntDoubleVector) v).getRowId(),
-            ((IntDoubleVector) v).getClock(), ((IntDoubleVector) v).getDim(),
-            ((IntDoubleVector) v).size());
+            .sortedDoubleVector(((IntDoubleVector) v).getMatrixId(),
+                ((IntDoubleVector) v).getRowId(),
+                ((IntDoubleVector) v).getClock(), ((IntDoubleVector) v).getDim(),
+                ((IntDoubleVector) v).size());
       }
     } else if (v instanceof IntFloatVector) {
       if (((IntFloatVector) v).isDense()) {
         return VFactory
-          .denseFloatVector(((IntFloatVector) v).getMatrixId(), ((IntFloatVector) v).getRowId(),
-            ((IntFloatVector) v).getClock(), ((IntFloatVector) v).getDim());
+            .denseFloatVector(((IntFloatVector) v).getMatrixId(), ((IntFloatVector) v).getRowId(),
+                ((IntFloatVector) v).getClock(), ((IntFloatVector) v).getDim());
       } else if (((IntFloatVector) v).isSparse()) {
         int capacity = (int) (((IntFloatVector) v).size() * 1.25);
         return VFactory
-          .sparseFloatVector(((IntFloatVector) v).getMatrixId(), ((IntFloatVector) v).getRowId(),
-            ((IntFloatVector) v).getClock(), ((IntFloatVector) v).getDim(), capacity);
+            .sparseFloatVector(((IntFloatVector) v).getMatrixId(), ((IntFloatVector) v).getRowId(),
+                ((IntFloatVector) v).getClock(), ((IntFloatVector) v).getDim(), capacity);
       } else {
         return VFactory
-          .sortedFloatVector(((IntFloatVector) v).getMatrixId(), ((IntFloatVector) v).getRowId(),
-            ((IntFloatVector) v).getClock(), ((IntFloatVector) v).getDim(),
-            ((IntFloatVector) v).size());
+            .sortedFloatVector(((IntFloatVector) v).getMatrixId(), ((IntFloatVector) v).getRowId(),
+                ((IntFloatVector) v).getClock(), ((IntFloatVector) v).getDim(),
+                ((IntFloatVector) v).size());
       }
     } else if (v instanceof IntLongVector) {
       if (((IntLongVector) v).isDense()) {
         return VFactory
-          .denseLongVector(((IntLongVector) v).getMatrixId(), ((IntLongVector) v).getRowId(),
-            ((IntLongVector) v).getClock(), ((IntLongVector) v).getDim());
+            .denseLongVector(((IntLongVector) v).getMatrixId(), ((IntLongVector) v).getRowId(),
+                ((IntLongVector) v).getClock(), ((IntLongVector) v).getDim());
       } else if (((IntLongVector) v).isSparse()) {
         int capacity = (int) (((IntLongVector) v).size() * 1.25);
         return VFactory
-          .sparseLongVector(((IntLongVector) v).getMatrixId(), ((IntLongVector) v).getRowId(),
-            ((IntLongVector) v).getClock(), ((IntLongVector) v).getDim(), capacity);
+            .sparseLongVector(((IntLongVector) v).getMatrixId(), ((IntLongVector) v).getRowId(),
+                ((IntLongVector) v).getClock(), ((IntLongVector) v).getDim(), capacity);
       } else {
         return VFactory
-          .sortedLongVector(((IntLongVector) v).getMatrixId(), ((IntLongVector) v).getRowId(),
-            ((IntLongVector) v).getClock(), ((IntLongVector) v).getDim(),
-            ((IntLongVector) v).size());
+            .sortedLongVector(((IntLongVector) v).getMatrixId(), ((IntLongVector) v).getRowId(),
+                ((IntLongVector) v).getClock(), ((IntLongVector) v).getDim(),
+                ((IntLongVector) v).size());
       }
     } else if (v instanceof IntIntVector) {
       if (((IntIntVector) v).isDense()) {
         return VFactory
-          .denseIntVector(((IntIntVector) v).getMatrixId(), ((IntIntVector) v).getRowId(),
-            ((IntIntVector) v).getClock(), ((IntIntVector) v).getDim());
+            .denseIntVector(((IntIntVector) v).getMatrixId(), ((IntIntVector) v).getRowId(),
+                ((IntIntVector) v).getClock(), ((IntIntVector) v).getDim());
       } else if (((IntIntVector) v).isSparse()) {
         int capacity = (int) (((IntIntVector) v).size() * 1.25);
         return VFactory
-          .sparseIntVector(((IntIntVector) v).getMatrixId(), ((IntIntVector) v).getRowId(),
-            ((IntIntVector) v).getClock(), ((IntIntVector) v).getDim(), capacity);
+            .sparseIntVector(((IntIntVector) v).getMatrixId(), ((IntIntVector) v).getRowId(),
+                ((IntIntVector) v).getClock(), ((IntIntVector) v).getDim(), capacity);
       } else {
         return VFactory
-          .sortedIntVector(((IntIntVector) v).getMatrixId(), ((IntIntVector) v).getRowId(),
-            ((IntIntVector) v).getClock(), ((IntIntVector) v).getDim(), ((IntIntVector) v).size());
+            .sortedIntVector(((IntIntVector) v).getMatrixId(), ((IntIntVector) v).getRowId(),
+                ((IntIntVector) v).getClock(), ((IntIntVector) v).getDim(),
+                ((IntIntVector) v).size());
       }
     } else if (v instanceof LongDoubleVector) {
       if (((LongDoubleVector) v).isSparse()) {
         int capacity = (int) (((LongDoubleVector) v).size() * 1.25);
         return VFactory.sparseLongKeyDoubleVector(((LongDoubleVector) v).getMatrixId(),
-          ((LongDoubleVector) v).getRowId(), ((LongDoubleVector) v).getClock(),
-          ((LongDoubleVector) v).getDim(), capacity);
+            ((LongDoubleVector) v).getRowId(), ((LongDoubleVector) v).getClock(),
+            ((LongDoubleVector) v).getDim(), capacity);
       } else if (((LongDoubleVector) v).isSorted()) {
         return VFactory.sortedLongKeyDoubleVector(((LongDoubleVector) v).getMatrixId(),
-          ((LongDoubleVector) v).getRowId(), ((LongDoubleVector) v).getClock(),
-          ((LongDoubleVector) v).getDim(), (int) ((LongDoubleVector) v).size());
+            ((LongDoubleVector) v).getRowId(), ((LongDoubleVector) v).getClock(),
+            ((LongDoubleVector) v).getDim(), (int) ((LongDoubleVector) v).size());
       } else {
         throw new AngelException("LongKey dense is not support in emptyLike!");
       }
@@ -202,12 +226,12 @@ public class VectorUtils {
       if (((LongFloatVector) v).isSparse()) {
         int capacity = (int) (((LongFloatVector) v).size() * 1.25);
         return VFactory.sparseLongKeyFloatVector(((LongFloatVector) v).getMatrixId(),
-          ((LongFloatVector) v).getRowId(), ((LongFloatVector) v).getClock(),
-          ((LongFloatVector) v).getDim(), capacity);
+            ((LongFloatVector) v).getRowId(), ((LongFloatVector) v).getClock(),
+            ((LongFloatVector) v).getDim(), capacity);
       } else if (((LongFloatVector) v).isSorted()) {
         return VFactory.sortedLongKeyFloatVector(((LongFloatVector) v).getMatrixId(),
-          ((LongFloatVector) v).getRowId(), ((LongFloatVector) v).getClock(),
-          ((LongFloatVector) v).getDim(), (int) ((LongFloatVector) v).size());
+            ((LongFloatVector) v).getRowId(), ((LongFloatVector) v).getClock(),
+            ((LongFloatVector) v).getDim(), (int) ((LongFloatVector) v).size());
       } else {
         throw new AngelException("LongKey dense is not support in emptyLike!");
       }
@@ -215,12 +239,12 @@ public class VectorUtils {
       if (((LongLongVector) v).isSparse()) {
         int capacity = (int) (((LongLongVector) v).size() * 1.25);
         return VFactory.sparseLongKeyLongVector(((LongLongVector) v).getMatrixId(),
-          ((LongLongVector) v).getRowId(), ((LongLongVector) v).getClock(),
-          ((LongLongVector) v).getDim(), capacity);
+            ((LongLongVector) v).getRowId(), ((LongLongVector) v).getClock(),
+            ((LongLongVector) v).getDim(), capacity);
       } else if (((LongLongVector) v).isSorted()) {
         return VFactory.sortedLongKeyLongVector(((LongLongVector) v).getMatrixId(),
-          ((LongLongVector) v).getRowId(), ((LongLongVector) v).getClock(),
-          ((LongLongVector) v).getDim(), (int) ((LongLongVector) v).size());
+            ((LongLongVector) v).getRowId(), ((LongLongVector) v).getClock(),
+            ((LongLongVector) v).getDim(), (int) ((LongLongVector) v).size());
       } else {
         throw new AngelException("LongKey dense is not support in emptyLike!");
       }
@@ -228,13 +252,15 @@ public class VectorUtils {
       if (((LongIntVector) v).isSparse()) {
         int capacity = (int) (((LongIntVector) v).size() * 1.25);
         return VFactory
-          .sparseLongKeyIntVector(((LongIntVector) v).getMatrixId(), ((LongIntVector) v).getRowId(),
-            ((LongIntVector) v).getClock(), ((LongIntVector) v).getDim(), capacity);
+            .sparseLongKeyIntVector(((LongIntVector) v).getMatrixId(),
+                ((LongIntVector) v).getRowId(),
+                ((LongIntVector) v).getClock(), ((LongIntVector) v).getDim(), capacity);
       } else if (((LongIntVector) v).isSorted()) {
         return VFactory
-          .sortedLongKeyIntVector(((LongIntVector) v).getMatrixId(), ((LongIntVector) v).getRowId(),
-            ((LongIntVector) v).getClock(), ((LongIntVector) v).getDim(),
-            (int) ((LongIntVector) v).size());
+            .sortedLongKeyIntVector(((LongIntVector) v).getMatrixId(),
+                ((LongIntVector) v).getRowId(),
+                ((LongIntVector) v).getClock(), ((LongIntVector) v).getDim(),
+                (int) ((LongIntVector) v).size());
       } else {
         throw new AngelException("LongKey dense is not support in emptyLike!");
       }

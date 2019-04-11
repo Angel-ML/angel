@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -32,16 +32,17 @@ import org.apache.commons.lang.NotImplementedException;
 import java.io.Serializable;
 
 public abstract class Vector extends MathObject implements Serializable {
+
   protected int rowId;
 
   protected VectorStorage storage;
 
-  public void setStorage(VectorStorage storage) {
-    this.storage = storage;
-  }
-
   public VectorStorage getStorage() {
     return storage;
+  }
+
+  public void setStorage(VectorStorage storage) {
+    this.storage = storage;
   }
 
   public void clear() {
@@ -173,6 +174,8 @@ public abstract class Vector extends MathObject implements Serializable {
   }
 
   public abstract Vector copy();
+
+  public abstract Vector emptyLike();
 
   public abstract long dim();
 }

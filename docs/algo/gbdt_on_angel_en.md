@@ -94,17 +94,21 @@ Overall, Angel PS's advantage as stated above is demonstrated by GBDT's performa
 	* ml.learn.rate: learning rate
 	* ml.validate.ratio: proportion of data used for validation (no validation when set to 0)
 	* ml.gbdt.sample.ratio: proportion of features selected for training; default is 1
-	* ml.gbdt.server.split: if true, use two-stage tree splitting; default is true
+	* ml.gbdt.server.split: if true, use two-stage tree splitting; default is false
 	* ml.compress.bytes: low-precision compression; the size of each floating point can set to [1,8]
+  * ml.gbdt.batch.size: batch size for parallel training
+	* angel.compress.bytes：bytes of low-precision compression (1 to 8)
+
 
 * I/O Parameters
 	* angel.train.data.path: input path for train
 	* angel.predict.data.path: input path for predict
+	* ml.gbdt.cate.feat：categorical features，with the format of "feature id : feature rang" ("0:2,1:3" for instance). "none" means no categorical feature，"all" means all features are categorical
+	* ml.model.type: type of model, default: T_FLOAT_DENSE
 	* ml.feature.index.range: number of features
-	* ml.model.size: the size of model. for some sparse model, there are features that all samples are zero at those indices (invalidate indices). ml.model.size = ml.feature.index.range - number of invalidate indices
 	* ml.data.type: [Angel Data Format](data_format_en.md), can be "dummy" or "libsvm"
 	* angel.save.model.path: save path for trained model
-    * angel.predict.out.path: output path for predict
+  * angel.predict.out.path: output path for predict
 	* angel.log.path: save path for the log
 
 * Resource Parameters

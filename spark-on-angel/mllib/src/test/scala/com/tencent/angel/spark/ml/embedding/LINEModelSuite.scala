@@ -1,3 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.spark.ml.embedding
 
 import scala.collection.mutable.ArrayBuffer
@@ -15,9 +32,9 @@ class LINEModelSuite extends PSFunSuite with SharedPSContext {
   val numPartition = 4
   val lr = 0.025f
   val dim = 32
-  val batchSize = 128
+  val batchSize = 1024
   val numPSPart = 2
-  val numEpoch = 3
+  val numEpoch = 2
   val negative = 5
   val storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
   var param: Param = _
@@ -46,6 +63,7 @@ class LINEModelSuite extends PSFunSuite with SharedPSContext {
     param.setNumEpoch(numEpoch)
     param.setNegSample(negative)
     param.setMaxIndex(maxNodeId)
+    param.setModelCPInterval(1000)
   }
 
   test("first order") {
@@ -61,7 +79,7 @@ class LINEModelSuite extends PSFunSuite with SharedPSContext {
         println(msg)
       }
     }
-    model.train(data, param)
+    model.train(data, param, "")
     model.save(output, 0)
     model.destroy()
 
@@ -88,7 +106,7 @@ class LINEModelSuite extends PSFunSuite with SharedPSContext {
         println(msg)
       }
     }
-    model.train(data, param)
+    model.train(data, param, "")
     model.save(output, 0)
     model.destroy()
 

@@ -1,17 +1,17 @@
 package com.tencent.angel.ml.math2.storage;
 
 import com.tencent.angel.ml.matrix.RowType;
-import it.unimi.dsi.fastutil.ints.*;
-import it.unimi.dsi.fastutil.longs.*;
-import it.unimi.dsi.fastutil.floats.*;
-import it.unimi.dsi.fastutil.doubles.*;
+import it.unimi.dsi.fastutil.doubles.DoubleIterator;
+import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-
 import java.util.Arrays;
-import java.util.Random;
 import java.util.HashSet;
+import java.util.Random;
 
 public class IntDoubleSparseVectorStorage implements IntDoubleVectorStorage {
+
   private Int2DoubleOpenHashMap map;
   private byte flag; // 001: dense; 010: sparse; 100: sorted
   private int dim;
@@ -31,38 +31,45 @@ public class IntDoubleSparseVectorStorage implements IntDoubleVectorStorage {
   }
 
   public IntDoubleSparseVectorStorage(int dim) {
-    this(dim, Math.max(128, (int) (dim / 1000)));
+    this(dim, Math.min(64, Math.max(dim, 0)));
   }
 
   public IntDoubleSparseVectorStorage(int dim, int[] indices, double[] values) {
     this(dim, new Int2DoubleOpenHashMap(indices, values));
   }
 
-  @Override public double get(int idx) {
+  @Override
+  public double get(int idx) {
     return map.get(idx);
   }
 
-  @Override public void set(int idx, double value) {
+  @Override
+  public void set(int idx, double value) {
     map.put(idx, value);
   }
 
-  @Override public int[] getIndices() {
+  @Override
+  public int[] getIndices() {
     return map.keySet().toIntArray();
   }
 
-  @Override public ObjectIterator<Int2DoubleMap.Entry> entryIterator() {
+  @Override
+  public ObjectIterator<Int2DoubleMap.Entry> entryIterator() {
     return map.int2DoubleEntrySet().fastIterator();
   }
 
-  @Override public IntDoubleVectorStorage clone() {
+  @Override
+  public IntDoubleVectorStorage clone() {
     return new IntDoubleSparseVectorStorage(dim, map.clone());
   }
 
-  @Override public IntDoubleVectorStorage copy() {
+  @Override
+  public IntDoubleVectorStorage copy() {
     return new IntDoubleSparseVectorStorage(dim, map.clone());
   }
 
-  @Override public IntDoubleVectorStorage oneLikeDense() {
+  @Override
+  public IntDoubleVectorStorage oneLikeDense() {
     double[] oneLikeValues = new double[dim];
     for (int i = 0; i < dim; i++) {
       oneLikeValues[i] = 1;
@@ -70,7 +77,8 @@ public class IntDoubleSparseVectorStorage implements IntDoubleVectorStorage {
     return new IntDoubleDenseVectorStorage(oneLikeValues);
   }
 
-  @Override public IntDoubleVectorStorage oneLikeSparse() {
+  @Override
+  public IntDoubleVectorStorage oneLikeSparse() {
     int capacity = map.size();
     double[] oneLikeValues = new double[capacity];
 
@@ -80,7 +88,8 @@ public class IntDoubleSparseVectorStorage implements IntDoubleVectorStorage {
     return new IntDoubleSparseVectorStorage(dim, map.keySet().toIntArray(), oneLikeValues);
   }
 
-  @Override public IntDoubleVectorStorage oneLikeSorted() {
+  @Override
+  public IntDoubleVectorStorage oneLikeSorted() {
     int capacity = map.size();
     double[] oneLikeValues = new double[capacity];
     int[] indices = map.keySet().toIntArray();
@@ -91,7 +100,8 @@ public class IntDoubleSparseVectorStorage implements IntDoubleVectorStorage {
     return new IntDoubleSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public IntDoubleVectorStorage oneLikeDense(int dim) {
+  @Override
+  public IntDoubleVectorStorage oneLikeDense(int dim) {
     double[] oneLikeValues = new double[dim];
     for (int i = 0; i < dim; i++) {
       oneLikeValues[i] = 1;
@@ -99,7 +109,8 @@ public class IntDoubleSparseVectorStorage implements IntDoubleVectorStorage {
     return new IntDoubleDenseVectorStorage(oneLikeValues);
   }
 
-  @Override public IntDoubleVectorStorage oneLikeSparse(int dim, int capacity) {
+  @Override
+  public IntDoubleVectorStorage oneLikeSparse(int dim, int capacity) {
     double[] oneLikeValues = new double[capacity];
     int[] indices = new int[capacity];
     HashSet set = new HashSet<Integer>();
@@ -119,48 +130,8 @@ public class IntDoubleSparseVectorStorage implements IntDoubleVectorStorage {
     return new IntDoubleSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public IntDoubleVectorStorage oneLikeSorted(int dim, int capacity) {
-    double[] oneLikeValues = new double[capacity];
-    int[] indices = new int[capacity];
-    HashSet set = new HashSet<Integer>();
-    Random rand = new Random();
-    int j = 0;
-    while (set.size() < capacity) {
-      int idx = rand.nextInt((int) dim);
-      if (!set.contains(idx)) {
-        indices[j] = idx;
-        set.add(idx);
-        j++;
-      }
-    }
-    Arrays.sort(indices);
-    for (int i = 0; i < capacity; i++) {
-      oneLikeValues[i] = 1;
-    }
-    return new IntDoubleSparseVectorStorage(dim, indices, oneLikeValues);
-  }
-
-  @Override public IntDoubleVectorStorage oneLikeSparse(int capacity) {
-    double[] oneLikeValues = new double[capacity];
-    int[] indices = new int[capacity];
-    HashSet set = new HashSet<Integer>();
-    Random rand = new Random();
-    int j = 0;
-    while (set.size() < capacity) {
-      int idx = rand.nextInt((int) dim);
-      if (!set.contains(idx)) {
-        indices[j] = idx;
-        set.add(idx);
-        j++;
-      }
-    }
-    for (int i = 0; i < capacity; i++) {
-      oneLikeValues[i] = 1;
-    }
-    return new IntDoubleSparseVectorStorage(dim, indices, oneLikeValues);
-  }
-
-  @Override public IntDoubleVectorStorage oneLikeSorted(int capacity) {
+  @Override
+  public IntDoubleVectorStorage oneLikeSorted(int dim, int capacity) {
     double[] oneLikeValues = new double[capacity];
     int[] indices = new int[capacity];
     HashSet set = new HashSet<Integer>();
@@ -181,75 +152,136 @@ public class IntDoubleSparseVectorStorage implements IntDoubleVectorStorage {
     return new IntDoubleSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public IntDoubleVectorStorage emptyDense() {
+  @Override
+  public IntDoubleVectorStorage oneLikeSparse(int capacity) {
+    double[] oneLikeValues = new double[capacity];
+    int[] indices = new int[capacity];
+    HashSet set = new HashSet<Integer>();
+    Random rand = new Random();
+    int j = 0;
+    while (set.size() < capacity) {
+      int idx = rand.nextInt((int) dim);
+      if (!set.contains(idx)) {
+        indices[j] = idx;
+        set.add(idx);
+        j++;
+      }
+    }
+    for (int i = 0; i < capacity; i++) {
+      oneLikeValues[i] = 1;
+    }
+    return new IntDoubleSparseVectorStorage(dim, indices, oneLikeValues);
+  }
+
+  @Override
+  public IntDoubleVectorStorage oneLikeSorted(int capacity) {
+    double[] oneLikeValues = new double[capacity];
+    int[] indices = new int[capacity];
+    HashSet set = new HashSet<Integer>();
+    Random rand = new Random();
+    int j = 0;
+    while (set.size() < capacity) {
+      int idx = rand.nextInt((int) dim);
+      if (!set.contains(idx)) {
+        indices[j] = idx;
+        set.add(idx);
+        j++;
+      }
+    }
+    Arrays.sort(indices);
+    for (int i = 0; i < capacity; i++) {
+      oneLikeValues[i] = 1;
+    }
+    return new IntDoubleSparseVectorStorage(dim, indices, oneLikeValues);
+  }
+
+  @Override
+  public IntDoubleVectorStorage emptyDense() {
     return new IntDoubleDenseVectorStorage(dim);
   }
 
-  @Override public IntDoubleVectorStorage emptySparse() {
+  @Override
+  public IntDoubleVectorStorage emptySparse() {
     return new IntDoubleSparseVectorStorage(dim, map.size());
   }
 
-  @Override public IntDoubleVectorStorage emptySorted() {
+  @Override
+  public IntDoubleVectorStorage emptySorted() {
     return new IntDoubleSortedVectorStorage(dim, map.size());
   }
 
-  @Override public IntDoubleVectorStorage emptyDense(int length) {
+  @Override
+  public IntDoubleVectorStorage emptyDense(int length) {
     return new IntDoubleDenseVectorStorage(length);
   }
 
-  @Override public IntDoubleVectorStorage emptySparse(int dim, int capacity) {
+  @Override
+  public IntDoubleVectorStorage emptySparse(int dim, int capacity) {
     return new IntDoubleSparseVectorStorage(dim, capacity);
   }
 
-  @Override public IntDoubleVectorStorage emptySorted(int dim, int capacity) {
+  @Override
+  public IntDoubleVectorStorage emptySorted(int dim, int capacity) {
     return new IntDoubleSortedVectorStorage(dim, capacity);
   }
 
-  @Override public IntDoubleVectorStorage emptySparse(int capacity) {
+  @Override
+  public IntDoubleVectorStorage emptySparse(int capacity) {
     return new IntDoubleSparseVectorStorage(dim, capacity);
   }
 
-  @Override public IntDoubleVectorStorage emptySorted(int capacity) {
+  @Override
+  public IntDoubleVectorStorage emptySorted(int capacity) {
     return new IntDoubleSortedVectorStorage(dim, capacity);
   }
 
-  @Override public IntSet indexIterator() {
+  @Override
+  public IntSet indexIterator() {
     return map.keySet();
   }
 
-  @Override public int size() {
+  @Override
+  public int size() {
     return map.size();
   }
 
-  @Override public boolean hasKey(int key) {
+  @Override
+  public boolean hasKey(int key) {
     return map.containsKey(key);
   }
 
-  @Override public RowType getType() {
+  @Override
+  public RowType getType() {
     return RowType.T_DOUBLE_SPARSE;
   }
 
-  @Override public boolean isDense() {
+  @Override
+  public boolean isDense() {
     return flag == 1;
   }
 
-  @Override public boolean isSparse() {
+  @Override
+  public boolean isSparse() {
     return flag == 2;
   }
 
-  @Override public boolean isSorted() {
+  @Override
+  public boolean isSorted() {
     return flag == 4;
   }
 
-  @Override public void clear() {
+  @Override
+  public void clear() {
     map.clear();
   }
 
-  @Override public DoubleIterator valueIterator() {
+  @Override
+  public DoubleIterator valueIterator() {
     return map.values().iterator();
   }
 
-  @Override public double[] getValues() {
+  @Override
+  public double[] getValues() {
     return map.values().toDoubleArray();
   }
 }

@@ -473,16 +473,16 @@ class BlasMatrixBinaryTest {
       }
     }
     //blasmatrix vs blasmatrix
-    matrixlist1.get(0).dot(matrixlist1.get(0))
-    matrixlist1.get(1).dot(matrixlist1.get(1))
-    println(s"blasmatrix dot blasmatrix : ${Ufuncs.dot(densematrix3, densematrix1).sum()}")
-    println(s"blasmatrix dot blasmatrix : ${Ufuncs.dot(densematrix4, densematrix2).sum()}")
-    println(s"blasmatrix dot blasmatrix : ${Ufuncs.dot(densematrix3, true, densematrix3, true).sum()}")
-    println(s"blasmatrix dot blasmatrix : ${Ufuncs.dot(densematrix4, true, densematrix4, true).sum()}")
-    println(s"blasmatrix dot blasmatrix : ${Ufuncs.dot(densematrix3, true, densematrix3, false).sum()}")
-    println(s"blasmatrix dot blasmatrix : ${Ufuncs.dot(densematrix4, true, densematrix4, false).sum()}")
-    println(s"blasmatrix dot blasmatrix : ${Ufuncs.dot(densematrix3, false, densematrix3, true).sum()}")
-    println(s"blasmatrix dot blasmatrix : ${Ufuncs.dot(densematrix4, false, densematrix4, true).sum()}")
+    matrixlist1.get(0).dot(matrixlist1.get(0), true)
+    matrixlist1.get(1).dot(matrixlist1.get(1),true)
+    println(s"blasmatrix dot blasmatrix : ${Ufuncs.dot(densematrix3, densematrix1, true).sum()}")
+    println(s"blasmatrix dot blasmatrix : ${Ufuncs.dot(densematrix4, densematrix2, true).sum()}")
+    println(s"blasmatrix dot blasmatrix : ${Ufuncs.dot(densematrix3, true, densematrix3, true, true).sum()}")
+    println(s"blasmatrix dot blasmatrix : ${Ufuncs.dot(densematrix4, true, densematrix4, true, true).sum()}")
+    println(s"blasmatrix dot blasmatrix : ${Ufuncs.dot(densematrix3, true, densematrix3, false, true).sum()}")
+    println(s"blasmatrix dot blasmatrix : ${Ufuncs.dot(densematrix4, true, densematrix4, false, true).sum()}")
+    println(s"blasmatrix dot blasmatrix : ${Ufuncs.dot(densematrix3, false, densematrix3, true, true).sum()}")
+    println(s"blasmatrix dot blasmatrix : ${Ufuncs.dot(densematrix4, false, densematrix4, true, true).sum()}")
   }
 
   @Test

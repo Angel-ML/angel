@@ -19,6 +19,7 @@
 package com.tencent.angel.ml.core.utils.paramsutils
 
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.optimizer.loss._
 import org.json4s.{DefaultFormats, JDouble, JNothing, JString, JValue}
 
@@ -43,7 +44,8 @@ object LossFuncParams {
       case JNothing if default.isDefined => default.get
       case JNothing if default.isEmpty => new LossFuncParams("LogLoss")
       case loss: JString if loss.extract[String].trim.equalsIgnoreCase("huberloss") =>
-        HuberLossParams(loss.extract[String].trim, Some(1.0))
+        HuberLossParams(loss.extract[String].trim,
+          Some(SharedConf.get().getDouble(MLConf.ML_LOSSFUNCTION_HUBER_DELTA)))
       case loss: JString =>
         new LossFuncParams(loss.extract[String].trim)
       case _: JValue =>
@@ -51,7 +53,7 @@ object LossFuncParams {
 
         if (name.equalsIgnoreCase("huberloss")) {
           val delta: Option[Double] = json \ ParamKeys.delta match {
-            case JNothing => Some(1.0)
+            case JNothing => Some(SharedConf.get().getDouble(MLConf.ML_LOSSFUNCTION_HUBER_DELTA))
             case loss: JDouble => Some(loss.extract[Double])
           }
           HuberLossParams(name, delta)

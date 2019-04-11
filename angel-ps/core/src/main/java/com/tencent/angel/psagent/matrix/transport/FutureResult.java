@@ -18,6 +18,7 @@
 
 package com.tencent.angel.psagent.matrix.transport;
 
+import com.tencent.angel.exception.PSRPCException;
 import java.util.concurrent.*;
 
 /**
@@ -31,6 +32,8 @@ public class FutureResult<T> implements Future<T> {
    * the result of the asynchronous task
    */
   private volatile T result = null;
+
+  private volatile ExecutionException exeExp = null;
 
   /**
    * counter latch
@@ -53,7 +56,16 @@ public class FutureResult<T> implements Future<T> {
     if (result != null) {
       return result;
     }
+
+    if(exeExp != null) {
+      throw new ExecutionException(exeExp);
+    }
     counter.await();
+
+    if(exeExp != null) {
+      throw new ExecutionException(exeExp);
+    }
+
     return result;
   }
 
@@ -62,7 +74,20 @@ public class FutureResult<T> implements Future<T> {
     if (result != null) {
       return result;
     }
-    counter.await(timeout, unit);
+
+    if(exeExp != null) {
+      throw new ExecutionException(exeExp);
+    }
+
+    boolean ret = counter.await(timeout, unit);
+    if(!ret) {
+      throw new TimeoutException("Wait result timeout, timeout = " + timeout + " " + unit.name());
+    }
+
+    if(exeExp != null) {
+      throw new ExecutionException(exeExp);
+    }
+
     return result;
   }
 
@@ -74,5 +99,23 @@ public class FutureResult<T> implements Future<T> {
   public void set(T result) {
     this.result = result;
     counter.countDown();
+  }
+
+  /**
+   * Set the execution exception, if you task executes failed, you can use it to break the waiting task
+   * @param e execution exception
+   */
+  public void setExecuteException(ExecutionException e) {
+    this.exeExp = e;
+    counter.countDown();
+  }
+
+
+  /**
+   * Set the execution error log, if you task executes failed, you can use it to break the waiting task
+   * @param errorLog execution error log
+   */
+  public void setExecuteError(String errorLog) {
+    setExecuteException(new ExecutionException(new PSRPCException(errorLog)));
   }
 }

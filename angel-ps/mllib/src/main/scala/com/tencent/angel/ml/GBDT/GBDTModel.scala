@@ -29,6 +29,7 @@ import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.ml.core.utils.Maths
+import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
@@ -191,7 +192,14 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
 
     (0 until dataSet.size).foreach { idx =>
       val instance = dataSet.read
-      val x: IntFloatVector = instance.getX.asInstanceOf[IntFloatVector]
+      val x: IntFloatVector = instance.getX match {
+        case vec: IntFloatVector => vec
+        case vec: IntDoubleVector => {
+          VFactory.sparseFloatVector(vec.dim.toInt,
+            vec.getStorage.getIndices, vec.getStorage.getValues.map(_.toFloat))
+        }
+      }
+
       val y: Double = instance.getY
       var pred: Double = 0
 

@@ -2,9 +2,9 @@ package com.tencent.angel.spark.ml.classification
 
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.Layer
-import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleLossLayer, SimpleInputLayer}
 import com.tencent.angel.ml.core.network.layers.join.SumPooling
 import com.tencent.angel.ml.core.network.layers.linear.BiInteractionCross
+import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer, SimpleLossLayer}
 import com.tencent.angel.ml.core.network.transfunc.Identity
 import com.tencent.angel.ml.core.optimizer.loss.LogLoss
 import com.tencent.angel.ml.core.utils.paramsutils.{EmbeddingParams, JsonUtils}

@@ -18,14 +18,13 @@
 
 package com.tencent.angel.spark.ml.embedding
 
-import scala.collection.mutable.ArrayBuffer
-import scala.util.Random
-
-import org.apache.spark.rdd.RDD
-
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel
 import com.tencent.angel.spark.ml.feature.{Features, SubSampling}
 import com.tencent.angel.spark.ml.{PSFunSuite, SharedPSContext}
+import org.apache.spark.rdd.RDD
+
+import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
 
 class Word2VecModelSuite extends PSFunSuite with SharedPSContext {
 
@@ -35,9 +34,9 @@ class Word2VecModelSuite extends PSFunSuite with SharedPSContext {
   val dim = 32
   val batchSize = 128
   val numPSPart = 2
-  val numEpoch = 5
+  val numEpoch = 2
   val negative = 5
-  val window = 6
+  val window = 3
   var param: Param = _
   var docs: RDD[Array[Int]] = _
 
@@ -47,15 +46,16 @@ class Word2VecModelSuite extends PSFunSuite with SharedPSContext {
     val data = sc.textFile(input)
     data.cache()
     val (corpus, _) = Features.corpusStringToInt(sc.textFile(input))
-    docs = SubSampling.sampling(corpus).repartition(2)
+    val subsampleTmp = SubSampling.sampling(corpus)
+    docs = subsampleTmp._2.repartition(2)
     docs.cache()
     docs.count()
     data.unpersist()
     val numDocs = docs.count()
-    val maxWordId = docs.map(_.max).max().toLong + 1
+    val maxWordId = subsampleTmp._1
     val numTokens = docs.map(_.length).sum().toLong
     val maxLength = docs.map(_.length).max()
-    println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens")
+    println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens maxLength=$maxLength")
 
     param = new Param()
     param.setLearningRate(lr)
@@ -87,7 +87,7 @@ class Word2VecModelSuite extends PSFunSuite with SharedPSContext {
         println(msg)
       }
     }
-    model.train(docs, param)
+    model.train(docs, param, "")
     model.save(output, 0)
     model.destroy()
 
@@ -114,7 +114,7 @@ class Word2VecModelSuite extends PSFunSuite with SharedPSContext {
         println(msg)
       }
     }
-    model.train(docs, param)
+    model.train(docs, param, "")
     model.save(output, 0)
     model.destroy()
 
