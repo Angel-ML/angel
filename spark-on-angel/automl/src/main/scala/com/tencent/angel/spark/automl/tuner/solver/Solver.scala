@@ -83,11 +83,12 @@ class Solver(
     surrogateMode match {
       case SurrogateMode.GP | SurrogateMode.RF =>
         val acqAndConfig = optimizer.maximize(TunerParam.batchSize)
-        println(s"suggest configurations:")
+        print(s"suggest configurations: ")
         acqAndConfig.foreach { case (acq, config) =>
-          println(s"config[${config.getVector.toArray.mkString("(", ",", ")")}], " +
-            s"acquisition[$acq]")
+          print(s">> config[${config.getVector.toArray.mkString("(", ",", ")")}], " +
+            s"acquisition[$acq] << ")
         }
+        println()
         acqAndConfig.map(_._2)
       case SurrogateMode.RANDOM =>
         cs.randomSample(TunerParam.batchSize)
