@@ -19,21 +19,24 @@
 package com.tencent.angel.ml.core.graphsubmit
 
 import com.tencent.angel.client.AngelClient
-import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer}
+import com.tencent.angel.ml.core.network.layers.{AngelGraph, PlaceHolder}
+import com.tencent.angel.ml.core.optimizer.loss._
+import com.tencent.angel.ml.core.utils.paramsutils.{JsonUtils, ParamKeys}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
 import com.tencent.angel.ml.model.MLModel
-import com.tencent.angel.ml.core.network.layers.{AngelGraph, PlaceHolder}
-import com.tencent.angel.ml.core.optimizer.loss._
-import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
-import com.tencent.angel.ml.math2.utils.VectorUtils
 import com.tencent.angel.ml.predict.PredictResult
+import com.tencent.angel.utils.HdfsUtil
 import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FSDataOutputStream, FileSystem, Path}
 import org.json4s.JValue
-
+import org.json4s.JsonAST._
+import org.json4s.JsonDSL._
+import org.json4s.jackson.JsonMethods.{pretty, render}
 
 class GraphModel(conf: Configuration, _ctx: TaskContext = null)
   extends MLModel(conf, _ctx) {
@@ -96,7 +99,7 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
             (0 until mat.getNumRows).foreach { i =>
               resData.put(SoftmaxPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
             }
-          case (mat: BlasFloatMatrix, lossFunc: SoftmaxLoss) if mat.getNumCols == 4  =>
+          case (mat: BlasFloatMatrix, lossFunc: SoftmaxLoss) if mat.getNumCols == 4 =>
             (0 until mat.getNumRows).foreach { i =>
               resData.put(SoftmaxPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
             }
@@ -134,7 +137,7 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
           (0 until mat.getNumRows).foreach { i =>
             resData.put(SoftmaxPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
           }
-        case (mat: BlasFloatMatrix, _: SoftmaxLoss) if mat.getNumCols == 4  =>
+        case (mat: BlasFloatMatrix, _: SoftmaxLoss) if mat.getNumCols == 4 =>
           (0 until mat.getNumRows).foreach { i =>
             resData.put(SoftmaxPredictResult(attached(i), mat.get(i, 0), mat.get(i, 1), mat.get(i, 2), mat.get(i, 3)))
           }
@@ -165,6 +168,49 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
 
   def saveModel(client: AngelClient, path: String): Unit = {
     graph.saveModel(client, path)
+  }
+
+  def saveJson(path: String): Unit = {
+    val jsonFile: Path = new Path(path, "graph.json")
+    val tmpJsonFile = HdfsUtil.toTmpPath(jsonFile)
+    val fs: FileSystem = tmpJsonFile.getFileSystem(conf)
+    val jsonOut: FSDataOutputStream = fs.create(tmpJsonFile)
+    jsonOut.writeBytes(pretty(render(toJson)))
+    jsonOut.flush()
+    jsonOut.close()
+    HdfsUtil.rename(tmpJsonFile, jsonFile, fs)
+  }
+
+  def toJson: JObject = {
+//    if (jsonAst != null) {
+//      jsonAst.asInstanceOf[JObject]
+//    } else {
+      val data = (ParamKeys.format -> JString(SharedConf.inputDataFormat)) ~
+        (ParamKeys.indexRange -> JLong(SharedConf.indexRange)) ~
+        (ParamKeys.numField -> JInt(sharedConf.getInt(MLConf.ML_FIELD_NUM))) ~
+        (ParamKeys.validateRatio -> JDouble(sharedConf.getDouble(MLConf.ML_VALIDATE_RATIO))) ~
+        (ParamKeys.sampleRatio -> JDouble(sharedConf.getDouble(MLConf.ML_BATCH_SAMPLE_RATIO))) ~
+        (ParamKeys.useShuffle -> JBool(sharedConf.getBoolean(MLConf.ML_DATA_USE_SHUFFLE))) ~
+        (ParamKeys.posnegRatio -> JDouble(sharedConf.getDouble(MLConf.ML_DATA_POSNEG_RATIO))) ~
+        (ParamKeys.transLabel -> JString(sharedConf.getString(MLConf.ML_DATA_LABEL_TRANS)))
+
+      val model = (ParamKeys.modelType -> JString(SharedConf.modelType.toString)) ~
+        (ParamKeys.modelSize -> JLong(SharedConf.modelSize)) ~
+        (ParamKeys.blockSize -> JInt(sharedConf.getInt(MLConf.ML_BLOCK_SIZE)))
+
+      val train = (ParamKeys.epoch -> JInt(SharedConf.epochNum)) ~
+        (ParamKeys.numUpdatePerEpoch -> JInt(SharedConf.numUpdatePerEpoch)) ~
+        (ParamKeys.batchSize -> JInt(SharedConf.batchSize)) ~
+        (ParamKeys.lr -> JDouble(sharedConf.getDouble(MLConf.ML_LEARN_RATE))) ~
+        (ParamKeys.decayClass -> JString(sharedConf.getString(MLConf.ML_OPT_DECAY_CLASS_NAME))) ~
+        (ParamKeys.decayAlpha -> JDouble(sharedConf.getDouble(MLConf.ML_OPT_DECAY_ALPHA))) ~
+        (ParamKeys.decayBeta -> JDouble(sharedConf.getDouble(MLConf.ML_OPT_DECAY_BETA)))
+
+      (ParamKeys.data -> data) ~
+      (ParamKeys.model -> model) ~
+      (ParamKeys.train -> train) ~
+        (ParamKeys.layers -> graph.toJson)
+    //}
   }
 }
 

@@ -18,8 +18,8 @@
       "transfunc": "softmax"
     },
     {
-      "name": "dotpolling",
-      "type": "dotpolling",
+      "name": "dotpooling",
+      "type": "dotpooling",
       "outputdim": 1,
       "inputlayers": [
         "sigmoid",
@@ -30,7 +30,7 @@
       "name": "simplelosslayer",
       "type": "simplelosslayer",
       "lossfunc": "CrossEntropyLoss",
-      "inputlayer": "dotpolling"
+      "inputlayer": "dotpooling"
     }
   ]
 }

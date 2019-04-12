@@ -21,7 +21,7 @@ package com.tencent.angel.spark.ml.tree.gbdt.learner
 import com.tencent.angel.spark.ml.tree.data.{Instance, VerticalPartition => VP}
 import com.tencent.angel.spark.ml.tree.gbdt.metadata.FeatureInfo
 import com.tencent.angel.spark.ml.tree.gbdt.tree.GBTSplit
-import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam
+import com.tencent.angel.spark.ml.tree.param.GBDTParam
 import com.tencent.angel.spark.ml.tree.util.{DataLoader, Maths, Transposer}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel

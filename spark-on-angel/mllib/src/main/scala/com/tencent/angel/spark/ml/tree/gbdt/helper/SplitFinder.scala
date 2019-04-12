@@ -21,8 +21,8 @@ package com.tencent.angel.spark.ml.tree.gbdt.helper
 import com.tencent.angel.spark.ml.tree.gbdt.histogram.{BinaryGradPair, GradPair, Histogram, MultiGradPair}
 import com.tencent.angel.spark.ml.tree.gbdt.metadata.FeatureInfo
 import com.tencent.angel.spark.ml.tree.gbdt.tree.GBTSplit
-import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam
-import com.tencent.angel.spark.ml.tree.tree.split.{SplitPoint, SplitSet}
+import com.tencent.angel.spark.ml.tree.param.GBDTParam
+import com.tencent.angel.spark.ml.tree.split.{SplitPoint, SplitSet}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -46,7 +46,7 @@ object SplitFinder {
   def findBestSplitPoint(param: GBDTParam, fid: Int, splits: Array[Float], defaultBin: Int,
                          histogram: Histogram, sumGradPair: GradPair, nodeGain: Float): GBTSplit = {
     val splitPoint = new SplitPoint()
-    val leftStat = if (param.numClass == 2) {
+    val leftStat = if (param.numClass == 2 || param.isMultiClassMultiTree) {
       new BinaryGradPair()
     } else {
       new MultiGradPair(param.numClass, param.fullHessian)
@@ -75,7 +75,7 @@ object SplitFinder {
                        histogram: Histogram, sumGradPair: GradPair, nodeGain: Float): GBTSplit = {
 
     def binFlowTo(left: GradPair, bin: GradPair): Int = {
-      if (param.numClass == 2) {
+      if (param.numClass == 2 || param.isMultiClassMultiTree) {
         val sumGrad = sumGradPair.asInstanceOf[BinaryGradPair].getGrad
         val leftGrad = left.asInstanceOf[BinaryGradPair].getGrad
         val binGrad = bin.asInstanceOf[BinaryGradPair].getGrad
@@ -99,7 +99,7 @@ object SplitFinder {
     var curSplitId = 0
     val edges = ArrayBuffer[Float]()
     edges.sizeHint(FeatureInfo.ENUM_THRESHOLD)
-    val binGradPair = if (param.numClass == 2) {
+    val binGradPair = if (param.numClass == 2 || param.isMultiClassMultiTree) {
       new BinaryGradPair()
     } else {
       new MultiGradPair(param.numClass, param.fullHessian)

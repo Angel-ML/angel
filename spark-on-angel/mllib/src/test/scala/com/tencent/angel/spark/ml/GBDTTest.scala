@@ -3,7 +3,7 @@ package com.tencent.angel.spark.ml
 import com.tencent.angel.spark.ml.tree.common.TreeConf._
 import com.tencent.angel.spark.ml.tree.gbdt.predictor.GBDTPredictor
 import com.tencent.angel.spark.ml.tree.gbdt.trainer.GBDTTrainer
-import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam
+import com.tencent.angel.spark.ml.tree.param.GBDTParam
 import com.tencent.angel.spark.ml.tree.util.Maths
 import org.apache.hadoop.fs.Path
 

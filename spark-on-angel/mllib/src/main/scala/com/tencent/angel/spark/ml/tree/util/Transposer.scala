@@ -22,7 +22,7 @@ import com.tencent.angel.spark.ml.tree.data.{FeatureRow, Instance, InstanceRow}
 import com.tencent.angel.spark.ml.tree.gbdt.GBDTTrainer
 import com.tencent.angel.spark.ml.tree.gbdt.metadata.FeatureInfo
 import com.tencent.angel.spark.ml.tree.sketch.HeapQuantileSketch
-import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam
+import com.tencent.angel.spark.ml.tree.param.GBDTParam
 import it.unimi.dsi.fastutil.bytes.ByteArrayList
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList
 import it.unimi.dsi.fastutil.ints.IntArrayList

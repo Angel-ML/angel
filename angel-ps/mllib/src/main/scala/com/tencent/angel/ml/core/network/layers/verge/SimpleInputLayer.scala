@@ -25,6 +25,7 @@ import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.transfunc.TransFunc
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
+import com.tencent.angel.ml.core.utils.paramsutils.ParamKeys
 import com.tencent.angel.ml.core.utils.{NetUtils, PSMatrixUtils}
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
@@ -37,6 +38,8 @@ import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
+import org.json4s.JsonAST._
+import org.json4s.JsonDSL._
 
 
 class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, override val optimizer: Optimizer)(implicit graph: AngelGraph)
@@ -262,5 +265,13 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     weightMCS.addIndices((0 until outputDim).toArray)
     saveContext.addMatrix(weightMCS)
     saveContext.addMatrix(biasMCS)
+  }
+
+  override def toJson: JObject = {
+    (ParamKeys.name -> name) ~
+      (ParamKeys.typeName -> s"${this.getClass.getSimpleName}") ~
+      (ParamKeys.outputDim -> outputDim) ~
+      (ParamKeys.transFunc -> transFunc.toJson) ~
+      (ParamKeys.optimizer -> optimizer.toJson)
   }
 }
