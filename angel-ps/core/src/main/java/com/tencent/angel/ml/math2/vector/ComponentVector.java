@@ -24,6 +24,8 @@ public interface ComponentVector {
 
   ComponentVector copy();
 
+  ComponentVector emptyLike();
+
   int getNumPartitions();
 
   Vector[] getPartitions();

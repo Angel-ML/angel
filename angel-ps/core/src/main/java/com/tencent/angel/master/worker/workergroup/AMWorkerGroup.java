@@ -20,6 +20,7 @@ package com.tencent.angel.master.worker.workergroup;
 
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.worker.WorkerGroupManagerEvent;
+import com.tencent.angel.master.worker.WorkerManagerEvent;
 import com.tencent.angel.master.worker.WorkerManagerEventType;
 import com.tencent.angel.master.worker.worker.AMWorker;
 import com.tencent.angel.master.worker.worker.AMWorkerEvent;
@@ -456,6 +457,8 @@ public class AMWorkerGroup implements EventHandler<AMWorkerGroupEvent> {
 
     @Override public void transition(AMWorkerGroup group, AMWorkerGroupEvent event) {
       group.setLaunchTime(System.currentTimeMillis());
+      group.getContext().getEventHandler()
+          .handle(new WorkerGroupManagerEvent(WorkerManagerEventType.WORKERGROUP_REGISTER, group.getId()));
     }
   }
 

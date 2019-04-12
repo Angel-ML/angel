@@ -25,28 +25,7 @@ import com.tencent.angel.ml.math2.ufuncs.executor.UnaryExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.matrix.BinaryMatrixExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.matrix.DotMatrixExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.matrix.UnaryMatrixExecutor;
-import com.tencent.angel.ml.math2.ufuncs.expression.Abs;
-import com.tencent.angel.ml.math2.ufuncs.expression.Add;
-import com.tencent.angel.ml.math2.ufuncs.expression.Axpy;
-import com.tencent.angel.ml.math2.ufuncs.expression.Axpy2;
-import com.tencent.angel.ml.math2.ufuncs.expression.Div;
-import com.tencent.angel.ml.math2.ufuncs.expression.Exp;
-import com.tencent.angel.ml.math2.ufuncs.expression.FTRLThreshold;
-import com.tencent.angel.ml.math2.ufuncs.expression.Log;
-import com.tencent.angel.ml.math2.ufuncs.expression.Log1p;
-import com.tencent.angel.ml.math2.ufuncs.expression.Max;
-import com.tencent.angel.ml.math2.ufuncs.expression.Min;
-import com.tencent.angel.ml.math2.ufuncs.expression.Mul;
-import com.tencent.angel.ml.math2.ufuncs.expression.Not;
-import com.tencent.angel.ml.math2.ufuncs.expression.Pow;
-import com.tencent.angel.ml.math2.ufuncs.expression.Replace;
-import com.tencent.angel.ml.math2.ufuncs.expression.SAdd;
-import com.tencent.angel.ml.math2.ufuncs.expression.SDiv;
-import com.tencent.angel.ml.math2.ufuncs.expression.SMul;
-import com.tencent.angel.ml.math2.ufuncs.expression.SSub;
-import com.tencent.angel.ml.math2.ufuncs.expression.SoftThreshold;
-import com.tencent.angel.ml.math2.ufuncs.expression.Sqrt;
-import com.tencent.angel.ml.math2.ufuncs.expression.Sub;
+import com.tencent.angel.ml.math2.ufuncs.expression.*;
 import com.tencent.angel.ml.math2.vector.Vector;
 
 public class Ufuncs {
@@ -145,6 +124,10 @@ public class Ufuncs {
 
   public static Vector imin(Vector v1, Vector v2) {
     return BinaryExecutor.apply(v1, v2, new Min(true));
+  }
+
+  public static Vector ftrlpossion(Vector v1, Vector v2, float p) {
+    return BinaryExecutor.apply(v1, v2, new FtrlPossion(false, p));
   }
 
   /*
@@ -248,6 +231,16 @@ public class Ufuncs {
   public static Vector ftrlthreshold(Vector zv, Vector nv, double alpha, double beta,
       double lambda1, double lambda2) {
     return BinaryExecutor.apply(zv, nv, new FTRLThreshold(false, alpha, beta, lambda1, lambda2));
+  }
+
+  public static Vector ftrlthresholdinit(Vector zv, Vector nv, double alpha, double beta,
+                                         double lambda1, double lambda2, double mean, double stdev) {
+    return BinaryExecutor.apply(zv, nv, new FTRLThresholdInit(false, alpha, beta, lambda1, lambda2,
+      mean, stdev));
+  }
+
+  public static Vector fmgrad(Vector x, Vector v, double dot) {
+    return BinaryExecutor.apply(x, v, new FMGrad(false, dot));
   }
 
   /*

@@ -59,6 +59,7 @@ trait SharedPSContext extends BeforeAndAfterAll with BeforeAndAfterEach {
       .master("local")
       .appName("test")
       .config(psConf)
+      .config(conf)
 
     _spark = builder.getOrCreate()
     sc.setLogLevel("ERROR")

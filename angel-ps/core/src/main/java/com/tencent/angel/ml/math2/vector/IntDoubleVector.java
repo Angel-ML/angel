@@ -26,15 +26,13 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.lang.ArrayUtils;
 
 public class IntDoubleVector extends DoubleVector implements IntKeyVector, SimpleVector {
-
   private int dim;
 
   public IntDoubleVector() {
     super();
   }
 
-  public IntDoubleVector(int matrixId, int rowId, int clock, int dim,
-      IntDoubleVectorStorage storage) {
+  public IntDoubleVector(int matrixId, int rowId, int clock, int dim, IntDoubleVectorStorage storage) {
     this.matrixId = matrixId;
     this.rowId = rowId;
     this.clock = clock;
@@ -72,9 +70,7 @@ public class IntDoubleVector extends DoubleVector implements IntKeyVector, Simpl
 
   public double max() {
     IntDoubleVectorStorage idstorage = (IntDoubleVectorStorage) storage;
-    if (idstorage.size() == 0) {
-      return 0;
-    }
+    if (idstorage.size() == 0) return 0;
     double maxval = Double.MIN_VALUE;
     if (idstorage.isSparse()) {
       DoubleIterator iter = idstorage.valueIterator();
@@ -96,9 +92,7 @@ public class IntDoubleVector extends DoubleVector implements IntKeyVector, Simpl
 
   public double min() {
     IntDoubleVectorStorage idstorage = (IntDoubleVectorStorage) storage;
-    if (idstorage.size() == 0) {
-      return 0;
-    }
+    if (idstorage.size() == 0) return 0;
     double minval = Double.MAX_VALUE;
     if (idstorage.isSparse()) {
       DoubleIterator iter = idstorage.valueIterator();
@@ -120,9 +114,7 @@ public class IntDoubleVector extends DoubleVector implements IntKeyVector, Simpl
 
   public int argmax() {
     IntDoubleVectorStorage idstorage = (IntDoubleVectorStorage) storage;
-    if (idstorage.size() == 0) {
-      return -1;
-    }
+    if (idstorage.size() == 0) return -1;
     double maxval = Double.MIN_VALUE;
     int maxidx = -1;
     if (idstorage.isDense()) {
@@ -162,9 +154,7 @@ public class IntDoubleVector extends DoubleVector implements IntKeyVector, Simpl
 
   public int argmin() {
     IntDoubleVectorStorage idstorage = (IntDoubleVectorStorage) storage;
-    if (idstorage.size() == 0) {
-      return -1;
-    }
+    if (idstorage.size() == 0) return -1;
     double minval = Double.MAX_VALUE;
     int minidx = -1;
     if (idstorage.isDense()) {
@@ -204,9 +194,7 @@ public class IntDoubleVector extends DoubleVector implements IntKeyVector, Simpl
 
   public double std() {
     IntDoubleVectorStorage dstorage = (IntDoubleVectorStorage) storage;
-    if (dstorage.size() == 0) {
-      return 0;
-    }
+    if (dstorage.size() == 0) return 0;
     double sumval = 0.0;
     double sumval2 = 0.0;
     if (dstorage.isSparse()) {
@@ -229,9 +217,7 @@ public class IntDoubleVector extends DoubleVector implements IntKeyVector, Simpl
 
   public double average() {
     IntDoubleVectorStorage dstorage = (IntDoubleVectorStorage) storage;
-    if (dstorage.size() == 0) {
-      return 0;
-    }
+    if (dstorage.size() == 0) return 0;
     double sumval = 0.0;
     if (dstorage.isSparse()) {
       DoubleIterator iter = dstorage.valueIterator();
@@ -254,9 +240,7 @@ public class IntDoubleVector extends DoubleVector implements IntKeyVector, Simpl
 
   public int numZeros() {
     IntDoubleVectorStorage dstorage = (IntDoubleVectorStorage) storage;
-    if (dstorage.size() == 0) {
-      return (int) dim;
-    }
+    if (dstorage.size() == 0) return (int) dim;
     int numZero = 0;
     if (dstorage.isSparse()) {
       DoubleIterator iter = dstorage.valueIterator();
@@ -284,6 +268,20 @@ public class IntDoubleVector extends DoubleVector implements IntKeyVector, Simpl
   public IntDoubleVector copy() {
     return new IntDoubleVector(matrixId, rowId, clock, dim,
         ((IntDoubleVectorStorage) storage).copy());
+  }
+
+  @Override
+  public IntDoubleVector emptyLike() {
+    if (storage.isDense()) {
+      return new IntDoubleVector(matrixId, rowId, clock, dim,
+          ((IntDoubleVectorStorage) storage).emptyDense());
+    } else if (storage.isSparse()) {
+      return new IntDoubleVector(matrixId, rowId, clock, dim,
+          ((IntDoubleVectorStorage) storage).emptySparse());
+    } else {
+      return new IntDoubleVector(matrixId, rowId, clock, dim,
+          ((IntDoubleVectorStorage) storage).emptySorted());
+    }
   }
 
   @Override

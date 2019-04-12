@@ -207,8 +207,21 @@ public class ConfUtils {
     throws MalformedURLException {
     String[] fileNameArray = fileNames.split(",");
     StringBuilder sb = new StringBuilder();
+
     for (int i = 0; i < fileNameArray.length; i++) {
-      if (new Path(fileNameArray[i]).isAbsoluteAndSchemeAuthorityNull()) {
+      Path filePath = new Path(fileNameArray[i]);
+      if(!filePath.isAbsolute()) {
+        String pwd = "";
+        File pwdFile = new File("");
+        try{
+          pwd = pwdFile.getAbsolutePath();
+        } catch(Throwable e){
+          LOG.warn("get pwd failed " + e.getMessage());
+        }
+        LOG.info("PWD=" + pwd);
+
+        sb.append("file://").append(pwd).append(File.separatorChar).append(fileNameArray[i]);
+      } else if (filePath.isAbsoluteAndSchemeAuthorityNull()) {
         sb.append("file://").append(fileNameArray[i]);
       } else {
         sb.append(fileNameArray[i]);

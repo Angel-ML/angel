@@ -18,69 +18,125 @@
 
 package com.tencent.angel.spark.ml.online_learning
 
-import java.util
-
-import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.storage.LongKeyVectorStorage
 import com.tencent.angel.ml.math2.ufuncs.{OptFuncs, Ufuncs}
-import com.tencent.angel.ml.math2.vector.{LongDoubleVector, LongDummyVector, LongFloatVector, LongKeyVector, Vector}
+import com.tencent.angel.ml.math2.vector.{LongDummyVector, LongKeyVector, Vector}
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.model.output.format.{ColIdValueTextRowFormat, RowIdColIdValueTextRowFormat}
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.ps.storage.partitioner.{ColumnRangePartitioner, Partitioner}
-import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
-import com.tencent.angel.spark.ml.psf.ftrl.{ComputeW, FTRLPartitioner}
-import com.tencent.angel.spark.models.PSVector
-import com.tencent.angel.spark.models.impl.PSVectorImpl
+import com.tencent.angel.spark.context.AngelPSContext
+import com.tencent.angel.spark.ml.psf.ftrl.ComputeW
+import com.tencent.angel.spark.ml.util.AutoPartitioner
+import com.tencent.angel.spark.models.impl.{PSMatrixImpl, PSVectorImpl}
+import com.tencent.angel.spark.models.{PSMatrix, PSVector}
+import org.apache.spark.rdd.RDD
 
-class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regularSkipFeatIndex: Long = 0) extends Serializable {
+class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extends Serializable {
 
-  var zPS: PSVector = _
-  var nPS: PSVector = _
   var wPS: PSVector = _
   var name = "weights"
+  var possionRate: Float = 1.0f
+  var matrix: PSMatrix = _
 
-  def init(dim: Long, rowType: RowType): Unit = {
+
+  /** Init with `dim` given, the default start index is 0
+    *
+    * @param dim , [0, dim)
+    */
+  def init(dim: Long): Unit =
+    init(dim, RowType.T_FLOAT_SPARSE_LONGKEY)
+
+  def init(dim: Long, rowType: RowType): Unit =
     init(dim, -1, rowType)
-  }
 
-  def init(dim: Long, nnz: Long, rowType: RowType, partitioner: Partitioner): Unit = {
-    zPS = PSVector.longKeySparse(dim, nnz, 3, rowType,
-      additionalConfiguration = Map(AngelConf.Angel_PS_PARTITION_CLASS -> partitioner.getClass.getName))
-    nPS = PSVector.duplicate(zPS)
-    wPS = PSVector.duplicate(zPS)
-    name = PSContext.instance().getMatrixMeta(zPS.poolId).get.getName
-  }
-
-  def init(dim: Long, nnz: Long, rowType: RowType): Unit = {
+  def init(dim: Long, nnz: Long, rowType: RowType): Unit =
     init(dim, nnz, rowType, new ColumnRangePartitioner())
+
+  /**
+    * Init with dim, nnz, rowType and partitioner
+    *
+    * @param dim         , the index range is [0, dim) if dim > 0, else [long.min, long.max) is dim=-1
+    * @param nnz         , number-of-non-zero elements in model
+    * @param rowType     , default is T_FLOAT_SPARSE_LONGKEY
+    * @param partitioner , default is column-range-partitioner
+    */
+  def init(dim: Long, nnz: Long, rowType: RowType, partitioner: Partitioner): Unit = {
+    val ctx = new MatrixContext(name, 3, dim, nnz, -1, -1)
+    ctx.setRowType(rowType)
+    ctx.setPartitionerClass(partitioner.getClass)
+    init(ctx)
   }
 
-  def init(dim: Long): Unit = init(dim, RowType.T_FLOAT_SPARSE_LONGKEY)
-
+  /**
+    * Init with start and end given
+    *
+    * @param start   , the start index
+    * @param end     , the end index range
+    * @param nnz     , the number of non-zero element in model
+    * @param rowType , default is T_FLOAT_SPARSE_LONGKEY
+    */
   def init(start: Long, end: Long, nnz: Long, rowType: RowType): Unit = {
-    val ctx = new MatrixContext()
-    ctx.setName(name)
-    ctx.setColNum(end)
-    ctx.setRowNum(3)
-    ctx.setPartitionerClass(classOf[FTRLPartitioner])
+    init(start, end, nnz, rowType, new ColumnRangePartitioner())
+  }
+
+  def init(start: Long, end: Long): Unit =
+    init(start, end, -1, RowType.T_FLOAT_SPARSE_LONGKEY)
+
+  def init(start: Long, end: Long, nnz: Long, rowType: RowType,
+           partitioner: Partitioner): Unit = {
+    val ctx = new MatrixContext(name, 3, start, end)
+    ctx.setPartitionerClass(partitioner.getClass)
     ctx.setRowType(rowType)
     ctx.setValidIndexNum(nnz)
-    ctx.setMaxColNumInBlock(start)
-    val matId = PSMatrixUtils.createPSMatrix(ctx)
-
-    zPS = new PSVectorImpl(matId, 0, end, rowType)
-    nPS = new PSVectorImpl(matId, 1, end, rowType)
-    wPS = new PSVectorImpl(matId, 2, end, rowType)
+    init(ctx)
   }
 
+  /**
+    * Init model with the training data, this method will scan the index distribution in data
+    * and automatically generate partitions with load balance into consideration
+    *
+    * @param start       , the start index
+    * @param end         , the end index
+    * @param rowType     , default is T_FLOAT_SPARSE_LONGKEY
+    * @param data        , training data
+    * @param partitioner , a load balance partitioner
+    */
+  def init(start: Long, end: Long, rowType: RowType, data: RDD[Vector],
+           partitioner: AutoPartitioner): Unit = {
+    val ctx = new MatrixContext(name, 3, start, end)
+    ctx.setRowType(rowType)
+    partitioner.partition(data, ctx)
+    init(ctx)
+  }
 
+  /**
+    * create the model with a matrix-context and init three PSVector
+    *
+    * @param ctx , matrix context
+    */
+  def init(ctx: MatrixContext): Unit = {
+    val matId = PSMatrixUtils.createPSMatrix(ctx)
+    wPS = new PSVectorImpl(matId, 2, ctx.getColNum, ctx.getRowType)
+    matrix = new PSMatrixImpl(matId, ctx.getRowNum, ctx.getColNum, ctx.getRowType)
+  }
+
+  def setPossionRate(possionRate: Float): Unit =
+    this.possionRate = possionRate
+
+
+  /**
+    * Optimize a batch of data with FTRL optimizer
+    *
+    * @param batch , data batch
+    * @return summation of loss for this batch
+    */
   def optimize(batch: Array[LabeledData]): Double = {
-
     var (start, end) = (0L, 0L)
+
+    // First, distinct the feature indices of this batch
     val indices = batch.flatMap {
       case point =>
         point.getX match {
@@ -91,60 +147,68 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     }.distinct
 
     start = System.currentTimeMillis()
-    val localZ = zPS.pull(indices)
-    val localN = nPS.pull(indices)
+
+    // Fetch the dimensions of n/z
+
+    val vectors = matrix.pull(Array(0, 1), indices)
+    val (localZ, localN) = (vectors(0), vectors(1))
+
+    assert(localN.getSize == indices.length)
+    assert(localZ.getSize == indices.length)
+
     end = System.currentTimeMillis()
     val pullTime = end - start
 
 
     start = System.currentTimeMillis()
+
+    // calculate w with FTRL
     val weight = Ufuncs.ftrlthreshold(localZ, localN, alpha, beta, lambda1, lambda2)
     val dim = batch.head.getX.dim()
-    val deltaZ = VFactory.sparseLongKeyFloatVector(dim)
-    val deltaN = VFactory.sparseLongKeyFloatVector(dim)
+
+    // allocate two vectors for delta n/z
+    // TODO: use emptylike instead
+    val deltaZ = localZ.copy()
+    val deltaN = localN.copy()
+    deltaZ.clear()
+    deltaN.clear()
 
     val iter = batch.iterator
     var lossSum = 0.0
+
     while (iter.hasNext) {
       val point = iter.next()
       val (feature, label) = (point.getX, point.getY)
+      // calculate margin
       val margin = -weight.dot(feature)
       val multiplier = 1.0 / (1.0 + math.exp(margin)) - label
-      val grad = feature match {
-        case x: LongDummyVector =>
-          val values = new Array[Float](x.getIndices.length)
-          util.Arrays.fill(values, multiplier.toFloat)
-          VFactory.sparseLongKeyFloatVector(dim, x.getIndices, values)
-        case _ =>
-          feature.mul(multiplier)
-      }
 
-      val featureIndices = feature match {
-        case longV: LongDoubleVector => longV.getStorage.getIndices
-        case longV: LongFloatVector => longV.getStorage.getIndices
-        case dummyV: LongDummyVector => dummyV.getIndices
-      }
-      val indicesValue = featureIndices.map{ _ =>1.0f}
-      val featureN = VFactory.sparseLongKeyFloatVector(dim, featureIndices, indicesValue).mul(localN)
-      val delta = OptFuncs.ftrldelta(featureN, grad, alpha)
+      // sample the feature index with Possion sampling
+      val possion = Ufuncs.ftrlpossion(localN, feature, possionRate).ifilter(10e-10)
+      val grad = possion.imul(multiplier)
+
+      // calculate delta z/n
+      deltaZ.iadd(grad)
+      Ufuncs.iaxpy2(deltaN, grad, 1)
+      OptFuncs.iftrldetalintersect(grad, localN, alpha)
+      deltaZ.isub(grad.imul(weight))
 
       val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
-
       lossSum += loss
-      Ufuncs.iaxpy2(deltaN, grad, 1)
-      deltaZ.iadd(grad.isub(delta.imul(weight)))
     }
     end = System.currentTimeMillis()
     val optimTime = end - start
 
+    // push delta z/n
     start = System.currentTimeMillis()
-    zPS.increment(deltaZ)
-    nPS.increment(deltaN)
+    matrix.increment(Array(0, 1), Array(deltaZ, deltaN))
     end = System.currentTimeMillis()
     val pushTime = end - start
 
-    println(s"${lossSum / batch.size} pullTime=$pullTime optimTime=$optimTime pushTime=$pushTime")
-
+    println(s"${lossSum / batch.size} " +
+      s"pullTime=$pullTime " +
+      s"optimTime=$optimTime " +
+      s"pushTime=$pushTime")
     lossSum
   }
 
@@ -164,8 +228,9 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
         }
     }.distinct
 
-    val localZ = zPS.pull(indices)
-    val localN = nPS.pull(indices)
+    // Fetch the dimensions of n/z
+    val vectors = matrix.pull(Array(0, 1), indices)
+    val (localZ, localN) = (vectors(0), vectors(1))
     val weight = Ufuncs.ftrlthreshold(localZ, localN, alpha, beta, lambda1, lambda2)
 
     batch.map {
@@ -177,90 +242,6 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     }
   }
 
-  /**
-    * Optimizing only for LongDoubleVector. This version is ok and the model is correct.
-    *
-    * @param batch   : training mini-batch examples
-    * @param costFun : function to calculate gradients
-    * @return Loss for this batch
-    */
-  def optimize(batch: Array[(Vector, Double)],
-               costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)): Double = {
-
-    val dim = batch.head._1.dim()
-    val featIds = batch.flatMap { case (v, _) =>
-      v match {
-        case longV: LongDoubleVector => longV.getStorage.getIndices
-        case dummyV: LongDummyVector => dummyV.getIndices
-        case _ => throw new Exception("only support SparseVector and DummyVector")
-      }
-    }.distinct
-
-    val localZ = zPS.pull(featIds).asInstanceOf[LongDoubleVector]
-    val localN = nPS.pull(featIds).asInstanceOf[LongDoubleVector]
-
-    val deltaZ = VFactory.sparseLongKeyDoubleVector(dim)
-    val deltaN = VFactory.sparseLongKeyDoubleVector(dim)
-
-    val fetaValues = featIds.map { fId =>
-      val zVal = localZ.get(fId)
-      val nVal = localN.get(fId)
-
-      updateWeight(fId, zVal, nVal, alpha, beta, lambda1, lambda2)
-    }
-
-    val localW = VFactory.sparseLongKeyDoubleVector(dim, featIds, fetaValues)
-
-    val lossSum = batch.map { case (feature, label) =>
-      optimize(feature, label, localN, localW, deltaZ, deltaN, costFun)
-    }.sum
-
-    zPS.increment(deltaZ)
-    nPS.increment(deltaN)
-
-    println(s"${lossSum / batch.length}")
-
-    lossSum
-  }
-
-  /**
-    * Optimizing for one example (feature, label)
-    *
-    * @param feature
-    * @param label
-    * @param localN , N in the local executor
-    * @param localW . weight in the local executor
-    * @param deltaZ , delta value for z
-    * @param deltaN , delta value for n
-    * @param costFun
-    * @return
-    */
-  def optimize(feature: Vector,
-               label: Double,
-               localN: LongDoubleVector,
-               localW: LongDoubleVector,
-               deltaZ: LongDoubleVector,
-               deltaN: LongDoubleVector,
-               costFun: (LongDoubleVector, Double, Vector) => (LongDoubleVector, Double)
-              ): Double = {
-
-    val featIndices = feature match {
-      case longV: LongDoubleVector => longV.getStorage.getIndices
-      case dummyV: LongDummyVector => dummyV.getIndices
-    }
-
-    val (newGradient, loss) = costFun(localW, label, feature)
-
-    featIndices.foreach { fId =>
-      val nVal = localN.get(fId)
-      val gOnId = newGradient.get(fId)
-      val dOnId = 1.0 / alpha * (Math.sqrt(nVal + gOnId * gOnId) - Math.sqrt(nVal))
-
-      deltaZ.set(fId, deltaZ.get(fId) + gOnId - dOnId * localW.get(fId))
-      deltaN.set(fId, deltaN.get(fId) + gOnId * gOnId)
-    }
-    (loss)
-  }
 
   /**
     * calculate w from z and n and store it in the w row
@@ -268,38 +249,9 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     * @return
     */
   def weight: PSVector = {
-//    val wPS = PSVector.duplicate(zPS)
-    val func = new ComputeW(wPS.poolId, alpha, beta, lambda1, lambda2)
+    val func = new ComputeW(matrix.id, alpha, beta, lambda1, lambda2, 1.0)
     wPS.psfUpdate(func).get()
     wPS
-  }
-
-  /**
-    * calculate w from z and n for one dimension
-    *
-    * @param fId
-    * @param zOnId
-    * @param nOnId
-    * @param alpha
-    * @param beta
-    * @param lambda1
-    * @param lambda2
-    * @return
-    */
-  def updateWeight(fId: Long,
-                   zOnId: Double,
-                   nOnId: Double,
-                   alpha: Double,
-                   beta: Double,
-                   lambda1: Double,
-                   lambda2: Double): Double = {
-    if (fId == regularSkipFeatIndex) {
-      -1.0 * alpha * zOnId / (beta + Math.sqrt(nOnId))
-    } else if (Math.abs(zOnId) <= lambda1) {
-      0.0
-    } else {
-      (-1) * (1.0 / (lambda2 + (beta + Math.sqrt(nOnId)) / alpha)) * (zOnId - Math.signum(zOnId).toInt * lambda1)
-    }
   }
 
   def log1pExp(x: Double): Double = {
@@ -310,15 +262,25 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double, regula
     }
   }
 
+  /**
+    * Save z and n for increment training
+    *
+    * @param path, output path
+    */
   def save(path: String): Unit = {
     val format = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
     val modelContext = new ModelSaveContext(path)
     val matrixContext = new MatrixSaveContext(name, format)
-    matrixContext.addIndices(Array(0, 1, 2))
+    matrixContext.addIndices(Array(0, 1))
     modelContext.addMatrix(matrixContext)
     AngelPSContext.save(modelContext)
   }
 
+  /**
+    * Save w for model serving
+    *
+    * @param path, output path
+    */
   def saveWeight(path: String): Unit = {
     val format = classOf[ColIdValueTextRowFormat].getCanonicalName
     val modelContext = new ModelSaveContext(path)

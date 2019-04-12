@@ -35,7 +35,7 @@ public class VelocityUtils {
   private static VelocityEngine ve;
   private static String[] itypes = new String[] {"Int", "Long"};
   private static String[] dtypes = new String[] {"Double", "Float", "Long", "Int"};
-  private static String basePath = "E:\\github\\fitzwang\\angel\\angel-ps\\core\\src\\main\\java";
+  private static String basePath = "F:\\rachel\\angel\\angel-ps\\core\\src\\main\\java";
 
   @BeforeClass public static void init() {
         /*  first, get and initialize an engine  */

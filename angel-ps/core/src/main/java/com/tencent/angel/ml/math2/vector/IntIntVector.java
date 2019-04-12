@@ -26,7 +26,6 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.lang.ArrayUtils;
 
 public class IntIntVector extends IntVector implements IntKeyVector, SimpleVector {
-
   private int dim;
 
   public IntIntVector() {
@@ -71,9 +70,7 @@ public class IntIntVector extends IntVector implements IntKeyVector, SimpleVecto
 
   public int max() {
     IntIntVectorStorage idstorage = (IntIntVectorStorage) storage;
-    if (idstorage.size() == 0) {
-      return 0;
-    }
+    if (idstorage.size() == 0) return 0;
     int maxval = Integer.MIN_VALUE;
     if (idstorage.isSparse()) {
       IntIterator iter = idstorage.valueIterator();
@@ -95,9 +92,7 @@ public class IntIntVector extends IntVector implements IntKeyVector, SimpleVecto
 
   public int min() {
     IntIntVectorStorage idstorage = (IntIntVectorStorage) storage;
-    if (idstorage.size() == 0) {
-      return 0;
-    }
+    if (idstorage.size() == 0) return 0;
     int minval = Integer.MAX_VALUE;
     if (idstorage.isSparse()) {
       IntIterator iter = idstorage.valueIterator();
@@ -119,9 +114,7 @@ public class IntIntVector extends IntVector implements IntKeyVector, SimpleVecto
 
   public int argmax() {
     IntIntVectorStorage idstorage = (IntIntVectorStorage) storage;
-    if (idstorage.size() == 0) {
-      return -1;
-    }
+    if (idstorage.size() == 0) return -1;
     int maxval = Integer.MIN_VALUE;
     int maxidx = -1;
     if (idstorage.isDense()) {
@@ -161,9 +154,7 @@ public class IntIntVector extends IntVector implements IntKeyVector, SimpleVecto
 
   public int argmin() {
     IntIntVectorStorage idstorage = (IntIntVectorStorage) storage;
-    if (idstorage.size() == 0) {
-      return -1;
-    }
+    if (idstorage.size() == 0) return -1;
     int minval = Integer.MAX_VALUE;
     int minidx = -1;
     if (idstorage.isDense()) {
@@ -203,9 +194,7 @@ public class IntIntVector extends IntVector implements IntKeyVector, SimpleVecto
 
   public double std() {
     IntIntVectorStorage dstorage = (IntIntVectorStorage) storage;
-    if (dstorage.size() == 0) {
-      return 0;
-    }
+    if (dstorage.size() == 0) return 0;
     double sumval = 0.0;
     double sumval2 = 0.0;
     if (dstorage.isSparse()) {
@@ -228,9 +217,7 @@ public class IntIntVector extends IntVector implements IntKeyVector, SimpleVecto
 
   public double average() {
     IntIntVectorStorage dstorage = (IntIntVectorStorage) storage;
-    if (dstorage.size() == 0) {
-      return 0;
-    }
+    if (dstorage.size() == 0) return 0;
     double sumval = 0.0;
     if (dstorage.isSparse()) {
       IntIterator iter = dstorage.valueIterator();
@@ -253,9 +240,7 @@ public class IntIntVector extends IntVector implements IntKeyVector, SimpleVecto
 
   public int numZeros() {
     IntIntVectorStorage dstorage = (IntIntVectorStorage) storage;
-    if (dstorage.size() == 0) {
-      return (int) dim;
-    }
+    if (dstorage.size() == 0) return (int) dim;
     int numZero = 0;
     if (dstorage.isSparse()) {
       IntIterator iter = dstorage.valueIterator();
@@ -275,12 +260,28 @@ public class IntIntVector extends IntVector implements IntKeyVector, SimpleVecto
   }
 
   public IntIntVector clone() {
-    return new IntIntVector(matrixId, rowId, clock, dim, ((IntIntVectorStorage) storage).clone());
+    return new IntIntVector(matrixId, rowId, clock, dim,
+        ((IntIntVectorStorage) storage).clone());
   }
 
   @Override
   public IntIntVector copy() {
-    return new IntIntVector(matrixId, rowId, clock, dim, ((IntIntVectorStorage) storage).copy());
+    return new IntIntVector(matrixId, rowId, clock, dim,
+        ((IntIntVectorStorage) storage).copy());
+  }
+
+  @Override
+  public IntIntVector emptyLike() {
+    if (storage.isDense()) {
+      return new IntIntVector(matrixId, rowId, clock, dim,
+          ((IntIntVectorStorage) storage).emptyDense());
+    } else if (storage.isSparse()) {
+      return new IntIntVector(matrixId, rowId, clock, dim,
+          ((IntIntVectorStorage) storage).emptySparse());
+    } else {
+      return new IntIntVector(matrixId, rowId, clock, dim,
+          ((IntIntVectorStorage) storage).emptySorted());
+    }
   }
 
   @Override

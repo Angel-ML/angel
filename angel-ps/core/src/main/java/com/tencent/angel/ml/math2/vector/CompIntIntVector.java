@@ -22,7 +22,6 @@ import com.tencent.angel.ml.math2.ufuncs.executor.comp.CompReduceExecutor;
 import com.tencent.angel.ml.matrix.RowType;
 
 public class CompIntIntVector extends IntVector implements IntKeyVector, ComponentVector {
-
   private IntIntVector[] partitions;
   private int numPartitions;
   private int dim;
@@ -32,8 +31,7 @@ public class CompIntIntVector extends IntVector implements IntKeyVector, Compone
     super();
   }
 
-  public CompIntIntVector(int matrixId, int rowId, int clock, int dim, IntIntVector[] partitions,
-      int subDim) {
+  public CompIntIntVector(int matrixId, int rowId, int clock, int dim, IntIntVector[] partitions, int subDim) {
     setMatrixId(matrixId);
     setRowId(rowId);
     setClock(clock);
@@ -190,8 +188,7 @@ public class CompIntIntVector extends IntVector implements IntKeyVector, Compone
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = partitions[i].clone();
     }
-    return new CompIntIntVector(getMatrixId(), getRowId(), getClock(), (int) getDim(),
-        newPartitions, subDim);
+    return new CompIntIntVector(getMatrixId(), getRowId(), getClock(), (int) getDim(), newPartitions, subDim);
   }
 
   @Override
@@ -199,6 +196,15 @@ public class CompIntIntVector extends IntVector implements IntKeyVector, Compone
     IntIntVector[] newPartitions = new IntIntVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = partitions[i].copy();
+    }
+    return new CompIntIntVector(getMatrixId(), getRowId(), getClock(), (int) getDim(), newPartitions, subDim);
+  }
+
+  @Override
+  public CompIntIntVector emptyLike() {
+    IntIntVector[] newPartitions = new IntIntVector[partitions.length];
+    for (int i = 0; i < partitions.length; i++) {
+      newPartitions[i] = partitions[i].emptyLike();
     }
     return new CompIntIntVector(getMatrixId(), getRowId(), getClock(), (int) getDim(),
         newPartitions, subDim);

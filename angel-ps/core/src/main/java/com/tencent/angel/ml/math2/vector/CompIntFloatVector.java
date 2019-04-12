@@ -22,7 +22,6 @@ import com.tencent.angel.ml.math2.ufuncs.executor.comp.CompReduceExecutor;
 import com.tencent.angel.ml.matrix.RowType;
 
 public class CompIntFloatVector extends FloatVector implements IntKeyVector, ComponentVector {
-
   private IntFloatVector[] partitions;
   private int numPartitions;
   private int dim;
@@ -32,8 +31,7 @@ public class CompIntFloatVector extends FloatVector implements IntKeyVector, Com
     super();
   }
 
-  public CompIntFloatVector(int matrixId, int rowId, int clock, int dim,
-      IntFloatVector[] partitions, int subDim) {
+  public CompIntFloatVector(int matrixId, int rowId, int clock, int dim, IntFloatVector[] partitions, int subDim) {
     setMatrixId(matrixId);
     setRowId(rowId);
     setClock(clock);
@@ -55,8 +53,7 @@ public class CompIntFloatVector extends FloatVector implements IntKeyVector, Com
     this(0, 0, 0, dim, partitions, subDim);
   }
 
-  public CompIntFloatVector(int matrixId, int rowId, int clock, int dim,
-      IntFloatVector[] partitions) {
+  public CompIntFloatVector(int matrixId, int rowId, int clock, int dim, IntFloatVector[] partitions) {
     this(matrixId, rowId, clock, dim, partitions, -1);
   }
 
@@ -191,8 +188,7 @@ public class CompIntFloatVector extends FloatVector implements IntKeyVector, Com
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = partitions[i].clone();
     }
-    return new CompIntFloatVector(getMatrixId(), getRowId(), getClock(), (int) getDim(),
-        newPartitions, subDim);
+    return new CompIntFloatVector(getMatrixId(), getRowId(), getClock(), (int) getDim(), newPartitions, subDim);
   }
 
   @Override
@@ -200,6 +196,15 @@ public class CompIntFloatVector extends FloatVector implements IntKeyVector, Com
     IntFloatVector[] newPartitions = new IntFloatVector[partitions.length];
     for (int i = 0; i < partitions.length; i++) {
       newPartitions[i] = partitions[i].copy();
+    }
+    return new CompIntFloatVector(getMatrixId(), getRowId(), getClock(), (int) getDim(), newPartitions, subDim);
+  }
+
+  @Override
+  public CompIntFloatVector emptyLike() {
+    IntFloatVector[] newPartitions = new IntFloatVector[partitions.length];
+    for (int i = 0; i < partitions.length; i++) {
+      newPartitions[i] = partitions[i].emptyLike();
     }
     return new CompIntFloatVector(getMatrixId(), getRowId(), getClock(), (int) getDim(),
         newPartitions, subDim);

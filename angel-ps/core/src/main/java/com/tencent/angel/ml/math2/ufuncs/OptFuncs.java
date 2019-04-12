@@ -21,15 +21,7 @@ package com.tencent.angel.ml.math2.ufuncs;
 import com.tencent.angel.ml.math2.matrix.Matrix;
 import com.tencent.angel.ml.math2.ufuncs.executor.BinaryExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.matrix.BinaryMatrixExecutor;
-import com.tencent.angel.ml.math2.ufuncs.expression.AdaDeltaDelta;
-import com.tencent.angel.ml.math2.ufuncs.expression.AdaDeltaHessian;
-import com.tencent.angel.ml.math2.ufuncs.expression.AdaDeltaThreshold;
-import com.tencent.angel.ml.math2.ufuncs.expression.AdaGradDelta;
-import com.tencent.angel.ml.math2.ufuncs.expression.AdaGradThreshold;
-import com.tencent.angel.ml.math2.ufuncs.expression.AdamDelta;
-import com.tencent.angel.ml.math2.ufuncs.expression.ExpSmoothing;
-import com.tencent.angel.ml.math2.ufuncs.expression.ExpSmoothing2;
-import com.tencent.angel.ml.math2.ufuncs.expression.FtrlDelta;
+import com.tencent.angel.ml.math2.ufuncs.expression.*;
 import com.tencent.angel.ml.math2.vector.Vector;
 
 
@@ -98,6 +90,14 @@ public class OptFuncs {
 
   public static Vector ftrldelta(Vector v1, Vector v2, double alpha) {
     return BinaryExecutor.apply(v1, v2, new FtrlDelta(false, alpha));
+  }
+
+  public static Vector ftrldetalintersect(Vector v1, Vector v2, double alpha) {
+    return BinaryExecutor.apply(v1, v2, new FtrlDeltaIntersect(false, alpha));
+  }
+
+  public static Vector iftrldetalintersect(Vector v1, Vector v2, double alpha) {
+    return BinaryExecutor.apply(v1, v2, new FtrlDeltaIntersect(true, alpha));
   }
 
   // -----------------
