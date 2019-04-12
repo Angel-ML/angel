@@ -20,9 +20,11 @@ package com.tencent.angel.ml.core.network.layers.verge
 
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
+import com.tencent.angel.ml.core.utils.paramsutils.ParamKeys
 import com.tencent.angel.ml.math2.matrix._
 import org.apache.commons.logging.LogFactory
-
+import org.json4s.JsonAST.{JField, JObject, JString}
+import org.json4s.JsonDSL._
 
 class SimpleLossLayer(name: String, inputLayer: Layer, lossFunc: LossFunc)(
   implicit graph: AngelGraph) extends LinearLayer(name, -1, inputLayer)(graph) with LossLayer {
@@ -91,5 +93,11 @@ class SimpleLossLayer(name: String, inputLayer: Layer, lossFunc: LossFunc)(
     s"SimpleLossLayer lossFunc=$lossFunc"
   }
 
-
+  override def toJson: JObject = {
+    (ParamKeys.name -> name) ~
+      (ParamKeys.typeName -> s"${this.getClass.getSimpleName}") ~
+      (ParamKeys.outputDim -> outputDim) ~
+      (ParamKeys.inputLayer, JString(inputLayer.name)) ~
+      (ParamKeys.lossFunc, lossFunc.toJson)
+  }
 }

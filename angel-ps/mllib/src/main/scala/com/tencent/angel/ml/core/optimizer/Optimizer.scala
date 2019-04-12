@@ -22,6 +22,7 @@ import java.util.concurrent.Future
 
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
+import org.json4s.JsonAST.JObject
 
 abstract class Optimizer(stepSize: Double) extends Serializable {
   protected var numSlot: Int
@@ -65,4 +66,6 @@ abstract class Optimizer(stepSize: Double) extends Serializable {
   def update(matrixId: Int, numFactors: Int, epoch: Int): Future[VoidResult]
 
   def update(matrixId: Int, numFactors: Int, epoch: Int, batchSize: Int): Future[VoidResult]
+
+  def toJson: JObject
 }

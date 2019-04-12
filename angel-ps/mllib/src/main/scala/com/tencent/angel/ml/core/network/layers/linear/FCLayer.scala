@@ -29,6 +29,7 @@ import com.tencent.angel.ml.core.network.layers.verge.Embedding
 import com.tencent.angel.ml.core.network.transfunc.TransFunc
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
+import com.tencent.angel.ml.core.utils.paramsutils.ParamKeys
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.utils.MatrixUtils
@@ -39,7 +40,8 @@ import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
-
+import org.json4s.JsonAST._
+import org.json4s.JsonDSL._
 
 class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransFunc, override val optimizer: Optimizer
              )(implicit graph: AngelGraph) extends LinearLayer(name, outputDim, inputLayer)(graph) with Trainable {
@@ -193,5 +195,14 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
     saveContext.addMatrix(weightMCS)
     saveContext.addMatrix(biasMCS)
 
+  }
+
+  override def toJson: JObject = {
+    (ParamKeys.name -> name) ~
+      (ParamKeys.typeName -> s"${this.getClass.getSimpleName}") ~
+      (ParamKeys.outputDim -> outputDim) ~
+      (ParamKeys.inputLayer, JString(inputLayer.name)) ~
+      (ParamKeys.transFunc -> transFunc.toJson) ~
+      (ParamKeys.optimizer -> optimizer.toJson)
   }
 }

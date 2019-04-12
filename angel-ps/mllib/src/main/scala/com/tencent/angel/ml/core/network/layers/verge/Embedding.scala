@@ -26,6 +26,7 @@ import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
+import com.tencent.angel.ml.core.utils.paramsutils.ParamKeys
 import com.tencent.angel.ml.core.utils.{NetUtils, PSMatrixUtils}
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.storage._
@@ -39,6 +40,9 @@ import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadC
 import com.tencent.angel.ps.server.data.request.RandomNormalInitFunc
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
+import org.json4s.JsonAST._
+import org.json4s.JsonDSL._
+
 
 class Embedding(name: String, outputDim: Int, val numFactors: Int, override val optimizer: Optimizer)(implicit graph: AngelGraph)
   extends InputLayer(name, outputDim)(graph) with Trainable {
@@ -382,5 +386,13 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
     val embedMatMCS: MatrixSaveContext = new MatrixSaveContext(embedMatCtx.getName, outputFormat)
     embedMatMCS.addIndices((0 until numFactors).toArray)
     saveContext.addMatrix(embedMatMCS)
+  }
+
+  override def toJson: JObject = {
+    (ParamKeys.name -> name) ~
+      (ParamKeys.typeName -> s"${this.getClass.getSimpleName}") ~
+      (ParamKeys.outputDim -> outputDim) ~
+      (ParamKeys.numFactors -> numFactors) ~
+      (ParamKeys.optimizer -> optimizer.toJson)
   }
 }
