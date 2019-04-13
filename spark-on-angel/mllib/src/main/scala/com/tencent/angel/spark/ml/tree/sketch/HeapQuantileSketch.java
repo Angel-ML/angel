@@ -398,10 +398,10 @@ public class HeapQuantileSketch extends QuantileSketch {
       }
       if (samplesArr[i] != samplesArr[i - 1]) {
         cnt++;
-        if (cnt++ > maxItemNums) {
-          return null;
-        }
       }
+    }
+    if (cnt > maxItemNums) {
+      return null;
     }
     if (cnt != samplesArr.length) {
       float[] res = new float[cnt];

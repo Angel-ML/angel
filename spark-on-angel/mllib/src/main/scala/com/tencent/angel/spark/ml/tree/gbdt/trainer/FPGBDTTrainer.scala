@@ -239,8 +239,6 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
         val split = timing {
           splitFinder.findBestSplit(hist, sumGradPair, nodeGain)
         } { t => findSplitTime(nid) = t }
-        require(split == null, s"split is null for node $nid")
-        println(s"nid $nid, split fid ${split.getSplitEntry.getFid}, split gain ${split.getSplitEntry.getGain}")
         (nid, if (split.isValid(param.minSplitGain)) split else new GBTSplit())
       case (nid, false) =>
         setAsLeaf(nid)

@@ -47,6 +47,12 @@ object GBDTRegression {
 
     val params = ArgsUtil.parse(args)
 
+    val trainPath = "data/dna/dna.scale"  //dimension=181
+    val validPath = "data/dna/dna.scale.t"
+    //val trainPath = "data/abalone/abalone_8d_train.libsvm"  //dimension=8
+    //val validPath = "data/abalone/abalone_8d_train.libsvm"
+    val modelPath = "xxx"
+
     // dataset conf
     param.taskType = "regression"
     param.numClass = 2
@@ -78,10 +84,6 @@ object GBDTRegression {
     param.maxLeafWeight = 0.0f
 
     println(s"Hyper-parameters:\n$param")
-
-    val trainPath = "data/dna/dna.scale"
-    val validPath = "data/dna/dna.scale.t"
-    val modelPath = "xxx"
 
     @transient implicit val sc = new SparkContext(conf)
 

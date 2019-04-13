@@ -23,7 +23,7 @@ import com.tencent.angel.spark.ml.tree.util.Maths
 
 object FeatureInfo {
 
-  val ENUM_THRESHOLD: Int = -1
+  val ENUM_THRESHOLD: Int = 10
 
   def apply(numFeature: Int, splits: Array[Array[Float]]): FeatureInfo = {
     require(splits.length == numFeature)

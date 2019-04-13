@@ -314,10 +314,19 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
           })
           if (merged(i) != null && !merged(i).isEmpty) {
             val distinct = merged(i).tryDistinct(FeatureInfo.ENUM_THRESHOLD)
-            if (distinct == null)
-              (false, Maths.unique(merged(i).getQuantiles(numSplit)), merged(i).getN.toInt)
-            else
+            if (distinct == null) {
+              val tmpSplits = Maths.unique(merged(i).getQuantiles(numSplit))
+              if (tmpSplits.length == 1 && tmpSplits(0) > 0) {
+                (false, Array(0, tmpSplits(0)), merged(i).getN.toInt)
+              } else if (tmpSplits.length == 1 && tmpSplits(0) < 0) {
+                (false, Array(tmpSplits(0), 0), merged(i).getN.toInt)
+              } else {
+                (false, tmpSplits, merged(i).getN.toInt)
+              }
+            }
+            else {
               (true, distinct, merged(i).getN.toInt)
+            }
           } else {
             (false, null, 0)
           }
