@@ -21,7 +21,7 @@ package com.tencent.angel.spark.ml.tree.gbdt.trainer
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam
+import com.tencent.angel.spark.ml.tree.param.GBDTParam
 import com.tencent.angel.spark.ml.tree.common.TreeConf._
 import com.tencent.angel.spark.ml.tree.gbdt.dataset.Dataset
 import com.tencent.angel.spark.ml.tree.gbdt.dataset.Dataset._
@@ -31,7 +31,7 @@ import com.tencent.angel.spark.ml.tree.gbdt.tree.{GBTSplit, GBTTree}
 import com.tencent.angel.spark.ml.tree.objective.ObjectiveFactory
 import com.tencent.angel.spark.ml.tree.objective.metric.EvalMetric.Kind
 import com.tencent.angel.spark.ml.tree.sketch.HeapQuantileSketch
-import com.tencent.angel.spark.ml.tree.util.{DataLoader, Maths}
+import com.tencent.angel.spark.ml.tree.util.{DataLoader, LogHelper, Maths}
 import com.tencent.angel.spark.ml.util.SparkUtils
 import org.apache.hadoop.fs.Path
 import org.apache.spark.broadcast.Broadcast
@@ -75,6 +75,9 @@ object GBDTTrainer {
     param.lossFunc = params.getOrElse(MLConf.ML_GBDT_LOSS_FUNCTION, "binary:logistic")
     param.evalMetrics = params.getOrElse(MLConf.ML_GBDT_EVAL_METRIC, "error").split(",").map(_.trim).filter(_.nonEmpty)
     SharedConf.get().set(MLConf.ML_GBDT_LOSS_FUNCTION, param.lossFunc)
+    param.multiStrategy = params.getOrElse("ml.gbdt.multi.class.strategy", "one-tree")
+    if (param.isMultiClassMultiTree) param.lossFunc = "binary:logistic"
+    param.multiGradCache = params.getOrElse("ml.gbdt.multi.class.grad.cache", "true").toBoolean
 
     // major algo conf
     param.featSampleRatio = params.getOrElse(MLConf.ML_GBDT_FEATURE_SAMPLE_RATIO, "1.0").toFloat
@@ -84,6 +87,7 @@ object GBDTTrainer {
     param.numSplit = params.getOrElse(MLConf.ML_GBDT_SPLIT_NUM, "10").toInt
     SharedConf.get().setInt(MLConf.ML_GBDT_SPLIT_NUM, param.numSplit)
     param.numTree = params.getOrElse(MLConf.ML_GBDT_TREE_NUM, "20").toInt
+    if (param.isMultiClassMultiTree) param.numTree *= param.numClass
     SharedConf.get().setInt(MLConf.ML_GBDT_TREE_NUM, param.numTree)
     param.maxDepth = params.getOrElse(MLConf.ML_GBDT_TREE_DEPTH, "7").toInt
     SharedConf.get().setInt(MLConf.ML_GBDT_TREE_DEPTH, param.maxDepth)
@@ -239,8 +243,9 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
       Array.copy(partLabel, 0, labels, offset, partLabel.length)
       offset += partLabel.length
     })
-    Instance.ensureLabel(labels, param.numClass)
+    val changeLabel = Instance.ensureLabel(labels, param.numClass)
     val bcLabels = sc.broadcast(labels)
+    val bcChangeLabel = sc.broadcast(changeLabel)
     println(s"Collect labels cost ${System.currentTimeMillis() - labelStart} ms")
 
     // IdenticalPartitioner for shuffle operation
@@ -373,7 +378,7 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
         val valid = validIter.toArray
         val validData = valid.map(_.feature)
         val validLabels = valid.map(_.label.toFloat)
-        Instance.ensureLabel(validLabels, bcParam.value.numClass)
+        if (bcChangeLabel.value) Instance.changeLabel(validLabels, bcParam.value.numClass)
         val workerId = TaskContext.getPartitionId
         val worker = new FPGBDTTrainer(workerId, bcParam.value,
           featureInfoOfGroup(bcFeatureInfo.value, workerId, bcGroupIdToFid.value(workerId)),
@@ -406,9 +411,12 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
 
     val loss = ObjectiveFactory.getLoss(param.lossFunc)
     val evalMetrics = ObjectiveFactory.getEvalMetricsOrDefault(param.evalMetrics, loss)
+    val multiStrategy = ObjectiveFactory.getMultiStrategy(param.multiStrategy)
+
+    LogHelper.setLogLevel("info")
 
     for (treeId <- 0 until param.numTree) {
-      println(s"Start to train tree ${treeId + 1}")
+      LogHelper.print(s"Start to train tree ${treeId + 1}")
 
       // 1. create new tree
       val createStart = System.currentTimeMillis()
@@ -416,7 +424,7 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
       val bestSplits = new Array[GBTSplit](Maths.pow(2, param.maxDepth) - 1)
       val bestOwnerIds = new Array[Int](Maths.pow(2, param.maxDepth) - 1)
       val bestAliasFids = new Array[Int](Maths.pow(2, param.maxDepth) - 1)
-      println(s"Tree[${treeId + 1}] Create new tree cost ${System.currentTimeMillis() - createStart} ms")
+      LogHelper.print(s"Tree[${treeId + 1}] Create new tree cost ${System.currentTimeMillis() - createStart} ms")
 
       // 2. iteratively build one tree
       var hasActive = true
@@ -446,7 +454,7 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
         val validSplits = gatheredSplits.filter(_._4.isValid(param.minSplitGain))
         val leaves = gatheredSplits.filter(!_._4.isValid(param.minSplitGain)).map(_._1)
         if (gatheredSplits.nonEmpty) {
-          println(s"Build histograms and find best splits cost " +
+          LogHelper.print(s"Build histograms and find best splits cost " +
             s"${System.currentTimeMillis() - findStart} ms, " +
             s"${validSplits.length} node(s) to split")
           val resultStart = System.currentTimeMillis()
@@ -457,12 +465,12 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
             worker.getSplitResults(bcValidSplits.value).iterator
           }).collect()
           val bcSplitResults = sc.broadcast(splitResults)
-          println(s"Get split results cost ${System.currentTimeMillis() - resultStart} ms")
+          LogHelper.print(s"Get split results cost ${System.currentTimeMillis() - resultStart} ms")
           // 2.3. split nodes
           val splitStart = System.currentTimeMillis()
           hasActive = workers.map(_.splitNodes(bcSplitResults.value)).collect()(0)
           bcSplitResults.destroy()
-          println(s"Split nodes cost ${System.currentTimeMillis() - splitStart} ms")
+          LogHelper.print(s"Split nodes cost ${System.currentTimeMillis() - splitStart} ms")
         } else {
           // no active nodes
           hasActive = false
@@ -482,26 +490,27 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
           trainMetrics(index) += train
           validMetrics(index) += valid
       })
-      val evalTrainMsg = (evalMetrics, trainMetrics).zipped.map {
-        case (evalMetric, trainSum) => evalMetric.getKind match {
-          case Kind.AUC => s"${evalMetric.getKind}[${evalMetric.avg(trainSum, workers.count.toInt)}]"
-          case _ => s"${evalMetric.getKind}[${evalMetric.avg(trainSum, numTrain)}]"
-        }
-      }.mkString(", ")
-      println(s"Evaluation on train data after ${treeId + 1} tree(s): $evalTrainMsg")
-      val evalValidMsg = (evalMetrics, validMetrics).zipped.map {
-        case (evalMetric, validSum) => evalMetric.getKind match {
-          case Kind.AUC => s"${evalMetric.getKind}[${evalMetric.avg(validSum, workers.count.toInt)}]"
-          case _ => s"${evalMetric.getKind}[${evalMetric.avg(validSum, numValid)}]"
-        }
-      }.mkString(", ")
-      println(s"Evaluation on valid data after ${treeId + 1} tree(s): $evalValidMsg")
-      println(s"Tree[${treeId + 1}] Finish tree cost ${System.currentTimeMillis() - finishStart} ms")
-
-      val currentTime = System.currentTimeMillis()
-      println(s"Train tree cost ${currentTime - createStart} ms, " +
-        s"${treeId + 1} tree(s) done, ${currentTime - trainStart} ms elapsed")
-
+      if (! (param.isMultiClassMultiTree && (treeId + 1) % param.numClass != 0) ) {
+        val evalTrainMsg = (evalMetrics, trainMetrics).zipped.map {
+          case (evalMetric, trainSum) => evalMetric.getKind match {
+            case Kind.AUC => s"${evalMetric.getKind}[${evalMetric.avg(trainSum, workers.count.toInt)}]"
+            case _ => s"${evalMetric.getKind}[${evalMetric.avg(trainSum, numTrain)}]"
+          }
+        }.mkString(", ")
+        val round = if (param.isMultiClassMultiTree) (treeId + 1) / param.numClass else (treeId + 1)
+        println(s"Evaluation on train data after ${round} tree(s): $evalTrainMsg")
+        val evalValidMsg = (evalMetrics, validMetrics).zipped.map {
+          case (evalMetric, validSum) => evalMetric.getKind match {
+            case Kind.AUC => s"${evalMetric.getKind}[${evalMetric.avg(validSum, workers.count.toInt)}]"
+            case _ => s"${evalMetric.getKind}[${evalMetric.avg(validSum, numValid)}]"
+          }
+        }.mkString(", ")
+        println(s"Evaluation on valid data after ${round} tree(s): $evalValidMsg")
+        LogHelper.print(s"Tree[${round}] Finish tree cost ${System.currentTimeMillis() - finishStart} ms")
+        val currentTime = System.currentTimeMillis()
+        println(s"Train tree cost ${currentTime - createStart} ms, " +
+          s"${round} tree(s) done, ${currentTime - trainStart} ms elapsed")
+      }
       //      workers.map(_.reportTime()).collect().zipWithIndex.foreach {
       //        case (str, id) =>
       //          println(s"========Time cost summation of worker[$id]========")

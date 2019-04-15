@@ -117,6 +117,12 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
    */
   private final Map<TaskId, AMWorker> taskIdToWorkerMap;
 
+
+  /**
+   * Running worker group id set
+   */
+  private final Set<WorkerGroupId> runningGroups;
+
   /**
    * success worker group id set
    */
@@ -181,13 +187,14 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
       RecordFactoryProvider.getRecordFactory(null).newRecordInstance(Priority.class);
     PRIORITY_WORKER.setPriority(workerPriority);
 
-    workerGroupMap = new HashMap<WorkerGroupId, AMWorkerGroup>();
-    findWorkerGroupMap = new HashMap<WorkerId, AMWorkerGroup>();
-    workersMap = new HashMap<WorkerId, AMWorker>();
-    taskIdToWorkerMap = new HashMap<TaskId, AMWorker>();
-    successGroups = new HashSet<WorkerGroupId>();
-    killedGroups = new HashSet<WorkerGroupId>();
-    failedGroups = new HashSet<WorkerGroupId>();
+    workerGroupMap = new HashMap<>();
+    findWorkerGroupMap = new HashMap<>();
+    workersMap = new HashMap<>();
+    taskIdToWorkerMap = new HashMap<>();
+    runningGroups = new HashSet<>();
+    successGroups = new HashSet<>();
+    killedGroups = new HashSet<>();
+    failedGroups = new HashSet<>();
   }
 
   public AMWorkerGroup getWorkGroup(WorkerId workerId) {
@@ -222,6 +229,19 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
 
   @SuppressWarnings("unchecked") private void handleEvent(WorkerManagerEvent event) {
     switch (event.getType()) {
+      case WORKERGROUP_REGISTER: {
+        WorkerGroupManagerEvent workerGroupEvent = (WorkerGroupManagerEvent) event;
+        //add this worker group to the success set
+        runningGroups.add(workerGroupEvent.getWorkerGroupId());
+
+        //check if all worker group run or run over
+        if (runningGroups.size() == workerGroupMap.size()) {
+          LOG.info("now all WorkerGroups are finished!");
+          context.getEventHandler().handle(new AppEvent(AppEventType.ALL_WORKERS_LAUNCHED));
+        }
+        break;
+      }
+
       case WORKERGROUP_DONE: {
         WorkerGroupManagerEvent workerGroupEvent = (WorkerGroupManagerEvent) event;
         //add this worker group to the success set
@@ -646,4 +666,5 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
   public int getSuccessWorkerGroupNum() {
     return successGroups.size();
   }
+
 }

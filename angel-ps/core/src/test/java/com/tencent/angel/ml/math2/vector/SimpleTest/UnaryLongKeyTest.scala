@@ -138,21 +138,21 @@ class UnaryLongKeyTest {
   @Test
   def sqrtTest() {
     assert(abs(Ufuncs.sqrt(llist.get(0)).sum() - sum(sqrt(sparse1))) < 1.0)
-    assert(abs(Ufuncs.sqrt(llist.get(1)).sum() - sum(sqrt(sorted1))) < 1.0)
+    assert(Ufuncs.sqrt(llist.get(1)).sum() == sum(sqrt(sorted1)))
 
   }
 
   @Test
   def smulTest() {
     assert(abs(Ufuncs.smul(llist.get(0), 0.5).sum() - sum(sparse1 :* 0.5)) < 1.0)
-    assert(abs(Ufuncs.smul(llist.get(1), 0.5).sum() - sum(sorted1 :* 0.5)) < 1.0)
+    assert(Ufuncs.smul(llist.get(1), 0.5).sum() == sum(sorted1 :* 0.5))
 
   }
 
   @Test
   def sdivTest() {
     assert(abs(Ufuncs.sdiv(llist.get(0), 0.5).sum() - sum(sparse1 :/ 0.5)) < 1.0)
-    assert(abs(Ufuncs.sdiv(llist.get(1), 0.5).sum() - sum(sorted1 :/ 0.5)) < 1.0)
+    assert(Ufuncs.sdiv(llist.get(1), 0.5).sum() == sum(sorted1 :/ 0.5))
 
   }
 

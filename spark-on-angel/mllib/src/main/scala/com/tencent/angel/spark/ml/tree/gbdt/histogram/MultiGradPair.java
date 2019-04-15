@@ -18,7 +18,7 @@
 
 package com.tencent.angel.spark.ml.tree.gbdt.histogram;
 
-import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam;
+import com.tencent.angel.spark.ml.tree.param.GBDTParam;
 import com.tencent.angel.spark.ml.tree.util.Maths;
 import java.io.Serializable;
 import java.util.Arrays;

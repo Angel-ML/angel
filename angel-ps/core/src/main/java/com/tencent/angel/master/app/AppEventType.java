@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -22,19 +22,31 @@ public enum AppEventType {
   /**
    * init the application
    */
-  INIT, /**
-   * start tasks
+  INIT,
+
+  /**
+   * Launch workers
    */
-  START, /**
+  LAUNCH_WORKERS,
+
+  /**
+   * All Workers are launched
+   */
+  ALL_WORKERS_LAUNCHED,
+
+  /**
    * kill the applicaion
    */
-  KILL, /**
+  KILL,
+  /**
    * some error happened
    */
-  INTERNAL_ERROR, /**
+  INTERNAL_ERROR,
+  /**
    * tasks are successful
    */
-  EXECUTE_SUCESS, /**
+  EXECUTE_SUCESS,
+  /**
    * write the matrices to file
    */
   SUCCESS

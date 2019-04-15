@@ -20,9 +20,12 @@ package com.tencent.angel.ml.core.optimizer
 
 import java.util.concurrent.Future
 
+import com.tencent.angel.ml.core.utils.paramsutils.ParamKeys
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.psf.optimizer.MomentumUpdateFunc
 import com.tencent.angel.psagent.PSAgentContext
+import org.json4s.JsonAST.JObject
+import org.json4s.JsonDSL._
 
 class Momentum(stepSize: Double, val momentum: Double) extends Optimizer(stepSize) {
   override protected var numSlot: Int = 2
@@ -40,5 +43,8 @@ class Momentum(stepSize: Double, val momentum: Double) extends Optimizer(stepSiz
     s"Momentum momentum=$momentum lr=$lr regL2=$regL2Param"
   }
 
-
+  override def toJson: JObject = {
+    (ParamKeys.typeName -> s"${this.getClass.getSimpleName}") ~
+      (ParamKeys.momentum -> momentum)
+  }
 }
