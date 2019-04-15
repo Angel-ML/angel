@@ -354,7 +354,6 @@ private[spark] object AngelPSContext {
 
     if (deployMode == "KUBERNETES") {
       hadoopConf.set(ANGEL_KUBERNETES_MASTER, master.get.substring("k8s://".length))
-      hadoopConf.set(ANGEL_KUBERNETES_CONTAINER_IMAGE, conf.get("spark.kubernetes.container.image"))
     }
     // Setting resource
     hadoopConf.setInt(ANGEL_AM_MEMORY_GB, masterMem)
@@ -380,8 +379,9 @@ private[spark] object AngelPSContext {
    addUserResourceFiles(conf, hadoopConf)
 
     // Some other settings
-    conf.getAllWithPrefix("angel").foreach {
-      case (key, value) => hadoopConf.set(s"angel$key", value)
+    conf.getAllWithPrefix("spark.angel").foreach {
+      case (key, value) =>
+        hadoopConf.set(s"angel$key", value)
     }
     hadoopConf
   }

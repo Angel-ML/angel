@@ -106,8 +106,8 @@ private[angel] class BasicAngelMasterFeatureStep(
         .withRestartPolicy("Never")
         .endSpec()
       .editOrNewSpec()
-        .withServiceAccount(conf.namespace())
-        .withServiceAccountName(conf.namespace())
+        .withServiceAccount(conf.serviceAccount())
+        .withServiceAccountName(conf.serviceAccount())
         .endSpec()
       .build()
 

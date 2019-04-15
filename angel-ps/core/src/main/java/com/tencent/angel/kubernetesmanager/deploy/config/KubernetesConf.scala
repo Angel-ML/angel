@@ -39,6 +39,9 @@ private[angel] case class KubernetesConf[T <: KubernetesRoleSpecificConf](
   def namespace(): String = angelConf.get(AngelConf.ANGEL_KUBERNETES_NAMESPACE,
     AngelConf.DEFAULT_ANGEL_KUBERNETES_NAMESPACE)
 
+  def serviceAccount(): String = angelConf.get(AngelConf.ANGEL_KUBERNETES_SERVICEACCOUNT,
+    AngelConf.DEFAULT_ANGEL_KUBERNETES_SERVICEACCOUNT)
+
   def imagePullPolicy(): String = angelConf.get(AngelConf.ANGEL_KUBERNETES_CONTAINER_IMAGE_PULL_POLICY,
     AngelConf.DEFAULT_ANGEL_KUBERNETES_CONTAINER_IMAGE_PULL_POLICY)
 }

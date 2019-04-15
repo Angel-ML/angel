@@ -883,7 +883,10 @@ public class AngelConf extends Configuration {
    * The namespace that will be used for running the master and executor pods.
    */
   public static final String ANGEL_KUBERNETES_NAMESPACE = ANGEL_KUBERNETES_PREFIX + "namespace";
-  public static final String DEFAULT_ANGEL_KUBERNETES_NAMESPACE = "spark";
+  public static final String DEFAULT_ANGEL_KUBERNETES_NAMESPACE = "default";
+
+  public static final String ANGEL_KUBERNETES_SERVICEACCOUNT = ANGEL_KUBERNETES_PREFIX + "serviceaccount";
+  public static final String DEFAULT_ANGEL_KUBERNETES_SERVICEACCOUNT = "default";
 
   /**
    * Kubernetes image pull policy. Valid values are Always, Never, and IfNotPresent.

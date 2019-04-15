@@ -119,8 +119,8 @@ private[angel] class BasicAngelExecutorFeatureStep(
         .withRestartPolicy("Never")
         .endSpec()
       .editOrNewSpec()
-        .withServiceAccount(kubernetesConf.namespace())
-        .withServiceAccountName(kubernetesConf.namespace())
+        .withServiceAccount(kubernetesConf.serviceAccount())
+        .withServiceAccountName(kubernetesConf.serviceAccount())
       .endSpec()
       .build()
 
