@@ -2,6 +2,7 @@ package org.apache.spark
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.util.CollectionsUtils
+import org.apache.spark.util.collection.{OpenHashMap, OpenHashSet}
 import org.apache.spark.util.random.XORShiftRandom
 
 import scala.collection.mutable.ArrayBuffer
@@ -25,4 +26,12 @@ object SparkPrivateClassProxy {
   }
 
   def getXORShiftRandom(seed: Long): XORShiftRandom = new XORShiftRandom(seed)
+
+  def createOpenHashMap[K: ClassTag, V: ClassTag](): OpenHashMap[K, V] = {
+    new OpenHashMap[K, V]()
+  }
+
+  def createOpenHashSet[K: ClassTag](): OpenHashSet[K] = {
+    new OpenHashSet[K]()
+  }
 }

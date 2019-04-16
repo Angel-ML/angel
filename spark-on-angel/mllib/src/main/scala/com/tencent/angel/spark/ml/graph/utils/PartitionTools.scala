@@ -11,9 +11,9 @@ object PartitionTools {
     var lower = Long.MinValue
     var numPart = 0
     for (upper <- bounds ++ Array(Long.MaxValue)) {
-      if (lower <= upper) {
+      if (lower < upper) {
         ctx.addPart(new PartContext(0, 1, lower, upper, -1))
-        lower = upper + 1
+        lower = upper
         numPart += 1
       }
     }

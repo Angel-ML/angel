@@ -102,6 +102,10 @@ class NodeIndexer extends Serializable {
     }
   }
 
+  def decodePartition[C: ClassTag, U: ClassTag](rdd: RDD[C])(func: PSVector => Iterator[C] => Iterator[U]): RDD[U] = {
+    rdd.mapPartitions(func(int2long))
+  }
+
 
   def decodeInt2IntPSVector(ps: PSVector): RDD[(Long, Long)] = {
     val sc = SparkContext.getOrCreate()

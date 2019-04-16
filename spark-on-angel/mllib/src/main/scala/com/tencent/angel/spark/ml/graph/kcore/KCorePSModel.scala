@@ -15,7 +15,7 @@
  *
  */
 
-package com.tencent.angel.spark.ml.kcore
+package com.tencent.angel.spark.ml.graph.kcore
 
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.IntIntVector
