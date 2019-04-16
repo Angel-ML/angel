@@ -1,4 +1,4 @@
-package com.tencent.angel.spark.ml.louvain
+package com.tencent.angel.spark.ml.graph.louvain
 
 import com.tencent.angel.ml.math2.vector.{IntFloatVector, IntIntVector}
 import org.apache.spark.util.collection.SparkCollectionProxy
@@ -17,10 +17,6 @@ class LouvainGraphPartition(
   assert(adj.length == adjWeights.length)
 
   private lazy val partRelatedNodeIds = (adj.flatten ++ superNodes).distinct
-
-  def maxIdInPart: Int = {
-    superNodes.aggregate(Int.MinValue)(math.max, math.max)
-  }
 
   def partFolding(model: LouvainPSModel, batchSize: Int): Iterator[((Int, Int), Float)] = {
     this.makeBatchIterator(batchSize).flatMap { batch =>
@@ -44,20 +40,6 @@ class LouvainGraphPartition(
           }
         }
       }
-    }
-  }
-
-  private def makeBatchIterator(batchSize: Int): Iterator[(Int, Int)] = new Iterator[(Int, Int)] {
-    var index = 0
-
-    override def next(): (Int, Int) = {
-      val preIndex = index
-      index = index + batchSize
-      (preIndex, math.min(index, superNodes.length))
-    }
-
-    override def hasNext: Boolean = {
-      index < superNodes.length
     }
   }
 
@@ -104,6 +86,20 @@ class LouvainGraphPartition(
       model.updateNode2community(updatedNodeBuffer.toArray, updatedCommBuffer.toArray)
       val (comm, delta) = communityWeightDelta.unzip
       model.incrementCommWeight(comm.toArray, delta.toArray)
+    }
+  }
+
+  private def makeBatchIterator(batchSize: Int): Iterator[(Int, Int)] = new Iterator[(Int, Int)] {
+    var index = 0
+
+    override def next(): (Int, Int) = {
+      val preIndex = index
+      index = index + batchSize
+      (preIndex, math.min(index, superNodes.length))
+    }
+
+    override def hasNext: Boolean = {
+      index < superNodes.length
     }
   }
 

@@ -1,8 +1,7 @@
-package com.tencent.angel.spark.ml.louvain
+package com.tencent.angel.spark.ml.graph.louvain
 
-import com.tencent.angel.ml.math2.vector.{IntFloatVector, IntIntVector}
-import Louvain.edgeTripleRDD2GraphPartitions
-import com.tencent.angel.spark.util.VectorUtils
+import com.tencent.angel.ml.math2.vector.IntFloatVector
+import com.tencent.angel.spark.ml.graph.louvain.LouvainGraph.edgeTripleRDD2GraphPartitions
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 
@@ -14,7 +13,7 @@ import scala.collection.mutable.ArrayBuffer
   *
   */
 
-object Louvain {
+object LouvainGraph {
 
   def edgeTripleRDD2GraphPartitions(tripleRdd: RDD[(Int, Int, Float)],
                                     model: LouvainPSModel = null,
@@ -53,9 +52,9 @@ object Louvain {
 }
 
 
-class Louvain(
-               @transient val graph: RDD[LouvainGraphPartition],
-               louvainPSModel: LouvainPSModel) extends Serializable {
+class LouvainGraph(
+                    @transient val graph: RDD[LouvainGraphPartition],
+                    louvainPSModel: LouvainPSModel) extends Serializable {
 
   private lazy val totalWeights: Double = {
     val total = graph.map(_.partitionWeights).sum()
@@ -64,7 +63,7 @@ class Louvain(
   }
 
   // set community id as the the minimum id of nodes in it
-  def correctCommunityId(model: LouvainPSModel, bufferSize: Int = 1000000):Unit = {
+  def correctCommunityId(model: LouvainPSModel, bufferSize: Int = 1000000): Unit = {
     val commInfoDeltaRDD = commId2NodeId(model).groupByKey.mapPartitions { iter =>
       if (iter.nonEmpty) {
         val oldCommIdsBuffer = new ArrayBuffer[Int]()
@@ -99,7 +98,7 @@ class Louvain(
 
         val oldCommIds = oldCommIdsBuffer.toArray
         val oldInfo = model.getCommInfo(oldCommIds).get(oldCommIds)
-        Iterator((oldCommIds, oldInfo.map(x => -x)),  (newCommIdsBuffer.toArray, oldInfo))
+        Iterator((oldCommIds, oldInfo.map(x => -x)), (newCommIdsBuffer.toArray, oldInfo))
       } else {
         Iterator.empty
       }
@@ -117,15 +116,15 @@ class Louvain(
     commInfoDeltaRDD.unpersist(false)
   }
 
+  def commId2NodeId(model: LouvainPSModel): RDD[(Int, Int)] = {
+    graph.flatMap(_.partComm2nodeParis(model))
+  }
+
   def checkCommId(model: LouvainPSModel): Long = {
     // check ids
     commId2NodeId(model).groupByKey.filter { case (commId, nodes) =>
       commId != nodes.min
     }.count()
-  }
-
-  def commId2NodeId(model: LouvainPSModel): RDD[(Int, Int)] = {
-    graph.flatMap(_.partComm2nodeParis(model))
   }
 
   def checkTotalSum(model: LouvainPSModel): Double = {
@@ -185,26 +184,26 @@ class Louvain(
   }
 
   private def Q2(): Double = {
-   louvainPSModel.sumOfSquareOfCommunityWeights / math.pow(totalWeights, 2)
+    louvainPSModel.sumOfSquareOfCommunityWeights / math.pow(totalWeights, 2)
   }
 
   private def modularityOptimize(batchSize: Int, shuffle: Boolean): Unit = {
     graph.foreach(_.modularityOptimize(louvainPSModel, totalWeights, batchSize, shuffle))
   }
 
-  private def sumOfWeightsBetweenCommunity: Double = {
-    this.graph.map(_.sumOfWeightsBetweenCommunity(louvainPSModel)).sum()
-  }
-
   private def Q1(): Double = {
     1 - sumOfWeightsBetweenCommunity / totalWeights
+  }
+
+  private def sumOfWeightsBetweenCommunity: Double = {
+    this.graph.map(_.sumOfWeightsBetweenCommunity(louvainPSModel)).sum()
   }
 
   private def getNumOfCommunity: Long = {
     this.graph.flatMap(_.node2community(louvainPSModel)).values.distinct().count()
   }
 
-  def folding(batchSize: Int, storageLevel: StorageLevel): Louvain = {
+  def folding(batchSize: Int, storageLevel: StorageLevel): LouvainGraph = {
     val curTime = System.currentTimeMillis()
     val newEdges = this.graph.flatMap { part =>
       part.partFolding(louvainPSModel, batchSize)
@@ -215,7 +214,7 @@ class Louvain(
     newGraph.foreachPartition(_ => Unit)
     this.graph.unpersist()
     println(s"folding, takes ${System.currentTimeMillis() - curTime}ms")
-    new Louvain(newGraph, louvainPSModel)
+    new LouvainGraph(newGraph, louvainPSModel)
   }
 
   private def hist: (Array[Double], Array[Long]) = {

@@ -1,4 +1,4 @@
-package com.tencent.angel.spark.ml.louvain
+package com.tencent.angel.spark.ml.graph.louvain
 
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.storage.IntIntSparseVectorStorage

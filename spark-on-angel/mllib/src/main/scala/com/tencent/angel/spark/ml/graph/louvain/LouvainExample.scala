@@ -1,11 +1,10 @@
-package com.tencent.angel.spark.examples.cluster
+package com.tencent.angel.spark.ml.graph.louvain
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.spark.ml.graph.louvain.Louvain
-import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.storage.StorageLevel
+import org.apache.spark.{SparkConf, SparkContext}
 
 object LouvainExample {
   def main(args: Array[String]): Unit = {
@@ -23,10 +22,8 @@ object LouvainExample {
     val eps = params.getOrElse("eps", "0.0").toDouble
     val bufferSize = params.getOrElse("bufferSize", "1000000").toInt
     val isWeighted = params.getOrElse("isWeighted", "false").toBoolean
-    val cpDir = params.getOrElse("cpDir", "")
-    val psPartitionNum = params.getOrElse("psPartitionNum", "10").toInt
 
-    start(mode, cpDir)
+    start(mode)
     val df = SparkSession.builder().getOrCreate()
       .read.csv(input)
     val louvain = new Louvain()
@@ -39,7 +36,6 @@ object LouvainExample {
       .setEps(eps)
       .setBufferSize(bufferSize)
       .setIsWeighted(isWeighted)
-      .setPSPartitionNum(psPartitionNum)
 
     val mapping = louvain.transform(df)
 
@@ -47,12 +43,12 @@ object LouvainExample {
     stop()
   }
 
-  def start(mode: String, cpDir: String): Unit = {
+  def start(mode: String): Unit = {
     val conf = new SparkConf()
     conf.setMaster(mode)
     conf.setAppName("louvain")
     val sc = new SparkContext(conf)
-    sc.setCheckpointDir(cpDir)
+    sc.setLogLevel("WARN")
     PSContext.getOrCreate(sc)
   }
 
