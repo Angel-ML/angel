@@ -3,6 +3,7 @@ package com.tencent.angel.ml.core.local
 import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.variable.VariableManager
 import com.tencent.angel.ml.math2.vector.Vector
+import org.apache.hadoop.conf.Configuration
 
 import scala.collection.JavaConversions._
 
@@ -12,8 +13,8 @@ class LocalVariableManager private(isSparseFormat: Boolean) extends VariableMana
     variables.values().foreach { variable => variable.create(envCtx) }
   }
 
-  override def loadALL[T](envCtx: EnvContext[T], path: String): Unit = {
-    variables.values().foreach { variable => variable.load(envCtx, path) }
+  override def loadALL[T](envCtx: EnvContext[T], path: String, conf: Configuration): Unit = {
+    variables.values().foreach { variable => variable.load(envCtx, path, conf) }
   }
 
   override def pullALL(epoch: Int, indices: Vector = null): Unit = {

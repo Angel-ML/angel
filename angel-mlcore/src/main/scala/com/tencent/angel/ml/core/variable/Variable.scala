@@ -11,6 +11,7 @@ import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector
 import com.tencent.angel.ml.math2.vector.Vector
+import org.apache.hadoop.conf.Configuration
 
 import scala.language.implicitConversions
 
@@ -35,7 +36,7 @@ trait TrainCycle {
 
   def create[T](envCtx: EnvContext[T] = null): Unit
 
-  def load[T](envCtx: EnvContext[T], path: String): Unit
+  def load[T](envCtx: EnvContext[T], path: String, conf: Configuration): Unit
 
   def init(taskFlag: Int, mean: Double, stddev: Double): Unit
 
@@ -188,14 +189,14 @@ abstract class Variable(val name: String,
     }
   }
 
-  protected def doLoad[T](envCtx: EnvContext[T], path: String): Unit
+  protected def doLoad[T](envCtx: EnvContext[T], path: String, conf: Configuration): Unit
 
-  override def load[T](envCtx: EnvContext[T], path: String): Unit = {
+  override def load[T](envCtx: EnvContext[T], path: String, conf: Configuration): Unit = {
     writeLock.lock()
 
     try {
       if (state == VarState.Created) {
-        doLoad(envCtx, path)
+        doLoad(envCtx, path, conf)
 
         // trans state
         transSate(VarState.Created, VarState.Initialized)

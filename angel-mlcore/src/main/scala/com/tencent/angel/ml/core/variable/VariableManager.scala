@@ -6,6 +6,7 @@ import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.variable.VarState.VarState
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.vector._
+import org.apache.hadoop.conf.Configuration
 
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.{universe => ru}
@@ -139,13 +140,13 @@ abstract class VariableManager {
     }
   }
 
-  def loadALL[T](envCtx: EnvContext[T], path: String): Unit
+  def loadALL[T](envCtx: EnvContext[T], path: String, conf: Configuration): Unit
 
-  def load[T](name: String, envCtx: EnvContext[T], path: String): Unit = {
+  def load[T](name: String, envCtx: EnvContext[T], path: String, conf: Configuration): Unit = {
     val variable = getVariable(name)
 
     if (variable != null) {
-      variable.load(envCtx, path)
+      variable.load(envCtx, path, conf)
     }
   }
 

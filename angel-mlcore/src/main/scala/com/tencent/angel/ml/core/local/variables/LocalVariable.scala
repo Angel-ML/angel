@@ -19,11 +19,11 @@ abstract class LocalVariable(name: String,
   extends Variable(name, rowType, updater, formatClassName, allowPullWithIndex) {
   var storage: Matrix = _
 
-  protected override def doLoad[T](envCtx: EnvContext[T], path: String): Unit = {
+  protected override def doLoad[T](envCtx: EnvContext[T], path: String, conf: Configuration): Unit = {
     // val loadPath = SharedConf.get().getString(MLConf.ML_LOAD_MODEL_PATH)
     assert(envCtx == null || envCtx.client == null)
     val pathName = s"$path${File.separator}$name"
-    storage = ModelTools.loadToLocal(new MatrixLoadContext(name, pathName), new Configuration())
+    storage = ModelTools.loadToLocal(new MatrixLoadContext(name, pathName), conf)
   }
 
   protected override def doSave[T](envCtx: EnvContext[T], path: String): Unit = {

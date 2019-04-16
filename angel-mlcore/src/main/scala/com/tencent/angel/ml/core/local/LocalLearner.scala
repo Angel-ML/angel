@@ -1,7 +1,7 @@
 package com.tencent.angel.ml.core.local
 
 import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
-import com.tencent.angel.ml.core.{Learner, GraphModel}
+import com.tencent.angel.ml.core.{GraphModel, Learner}
 import com.tencent.angel.ml.core.data.{DataBlock, DataReader}
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.variable.VoidType
@@ -9,6 +9,7 @@ import com.tencent.angel.ml.core.optimizer.decayer.{StepSizeScheduler, WarmResta
 import com.tencent.angel.ml.core.utils.ValidationUtils
 import com.tencent.angel.ml.math2.utils.LabeledData
 import org.apache.commons.logging.{Log, LogFactory}
+import org.apache.hadoop.conf.Configuration
 
 class LocalLearner(conf: SharedConf) extends Learner {
   private val LOG: Log = LogFactory.getLog(classOf[LocalLearner])
@@ -28,7 +29,7 @@ class LocalLearner(conf: SharedConf) extends Learner {
     model.createMatrices(env)
     model.init(env)
   } else {
-    model.loadModel(env, modelPath)
+    model.loadModel(env, modelPath, new Configuration())
   }
 
   private val lr0 = SharedConf.learningRate

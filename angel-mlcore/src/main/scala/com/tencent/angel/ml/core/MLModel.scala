@@ -10,6 +10,7 @@ import com.tencent.angel.ml.core.variable.{Variable, VariableManager, VariablePr
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.utils.{LabeledData, RowType}
 import com.tencent.angel.ml.math2.vector.Vector
+import org.apache.hadoop.conf.Configuration
 
 
 abstract class MLModel {
@@ -110,8 +111,8 @@ abstract class MLModel {
     this
   }
 
-  def loadModel[T](envCtx: EnvContext[T], path: String): this.type = {
-    variableManager.loadALL[T](envCtx, path)
+  def loadModel[T](envCtx: EnvContext[T], path: String, conf: Configuration): this.type = {
+    variableManager.loadALL[T](envCtx, path, conf)
     this
   }
 
