@@ -75,6 +75,9 @@
 	* [Logistic Regression(LR)](./docs/algo/sona/lr_sona.md)
 	* [Word2Vec](./docs/algo/sona/word2vec_sona.md)
 	* [LINE](./docs/algo/sona/line_sona.md)
+	* [KCORE](./docs/algo/sona/kcore_sona.md)
+	* [FTRLFM](./docs/algo/ftrl_fm_spark_en.md)
+  * [GBDT](./docs/algo/sona/feature_gbdt_sona.md)
 
 
 ## Deployment
@@ -85,6 +88,13 @@
 * [系统配置](./docs/deploy/config_details.md)
 * [资源配置指南](./docs/deploy/resource_config_guide.md)
 * [使用OpenBlas给算法加速](./docs/deploy/blas_for_densematrix.md)
+
+## Community
+* Mailing list: angel-tsc@lists.deeplearningfoundation.org
+* Angel homepage in Linux FD: https://lists.deeplearningfoundation.org/g/angel-main
+* [TSC members & Committers](./Community.md)
+* [Contributing to Angel](./CONTRIBUTING.md)
+* [Roadmap](https://github.com/Angel-ML/angel/wiki/Roadmap)
 
 ## FAQ
 * [工程类问题](https://github.com/Tencent/angel/wiki/%E5%B7%A5%E7%A8%8B%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)

@@ -175,6 +175,11 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
     activeNodes.nonEmpty
   }
 
+  /**
+    *
+    * @param nids: active tree nodes
+    * @return
+    */
   def buildHistAndFindSplit(nids: Seq[Int]): Seq[(Int, GBTSplit)] = {
     val canSplits = nids.map(canSplitNode)
 
