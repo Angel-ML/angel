@@ -1,6 +1,7 @@
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.spark.examples.cluster.KCoreExample.start
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.graph.louvain.Louvain
 import com.tencent.angel.spark.ml.graph.utils.GraphIO
@@ -12,6 +13,8 @@ object LouvainExample {
 
     val params = ArgsUtil.parse(args)
     val mode = params.getOrElse("mode", "yarn-cluster")
+    val sc = start(mode)
+
     val input = params.getOrElse("input", null)
     val partitionNum = params.getOrElse("partitionNum", "100").toInt
     val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
@@ -23,10 +26,13 @@ object LouvainExample {
     val eps = params.getOrElse("eps", "0.0").toDouble
     val bufferSize = params.getOrElse("bufferSize", "1000000").toInt
     val isWeighted = params.getOrElse("isWeighted", "false").toBoolean
-    val cpDir = params.getOrElse("cpDir", "")
-    val psPartitionNum = params.getOrElse("psPartitionNum", "10").toInt
 
-    start(mode, cpDir)
+    val psPartitionNum = params.getOrElse("psPartitionNum",
+      sc.getConf.get("spark.ps.instances", "10")).toInt
+
+    val cpDir = params.getOrElse("cpDir", throw new Exception("checkpoint dir not provided"))
+    sc.setCheckpointDir(cpDir)
+
     val louvain = new Louvain()
       .setPartitionNum(partitionNum)
       .setStorageLevel(storageLevel)
@@ -47,13 +53,13 @@ object LouvainExample {
     stop()
   }
 
-  def start(mode: String, cpDir: String): Unit = {
+  def start(mode: String): SparkContext = {
     val conf = new SparkConf()
     conf.setMaster(mode)
     conf.setAppName("louvain")
     val sc = new SparkContext(conf)
-    sc.setCheckpointDir(cpDir)
     PSContext.getOrCreate(sc)
+    sc
   }
 
   def stop(): Unit = {
