@@ -1,7 +1,6 @@
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.examples.cluster.KCoreExample.start
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.graph.louvain.Louvain
 import com.tencent.angel.spark.ml.graph.utils.GraphIO
@@ -30,7 +29,8 @@ object LouvainExample {
     val psPartitionNum = params.getOrElse("psPartitionNum",
       sc.getConf.get("spark.ps.instances", "10")).toInt
 
-    val cpDir = params.getOrElse("cpDir", throw new Exception("checkpoint dir not provided"))
+    val cpDir = params.get("cpDir").filter(_.nonEmpty).orElse(GraphIO.defaultCheckpointDir)
+    .getOrElse(throw new Exception("checkpoint dir not provided"))
     sc.setCheckpointDir(cpDir)
 
     val louvain = new Louvain()

@@ -1,5 +1,7 @@
 package com.tencent.angel.spark.ml.graph.utils
 
+import org.apache.hadoop.fs.Path
+import org.apache.spark.SparkContext
 import org.apache.spark.sql.types.{LongType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
@@ -37,4 +39,11 @@ object GraphIO {
       .csv(output)
   }
 
+  def defaultCheckpointDir: Option[String] = {
+    val sparkContext = SparkContext.getOrCreate()
+    sparkContext.getConf.getOption("spark.yarn.stagingDir")
+      .map { base =>
+        new Path(base, s".sparkStaging/${sparkContext.getConf.getAppId}").toString
+      }
+  }
 }

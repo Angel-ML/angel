@@ -23,7 +23,8 @@ object KCoreExample {
     val psPartitionNum = params.getOrElse("psPartitionNum",
       sc.getConf.get("spark.ps.instances", "10")).toInt
 
-    val cpDir = params.getOrElse("cpDir", throw new Exception("checkpoint dir not provided"))
+    val cpDir = params.get("cpDir").filter(_.nonEmpty).orElse(GraphIO.defaultCheckpointDir)
+      .getOrElse(throw new Exception("checkpoint dir not provided"))
     sc.setCheckpointDir(cpDir)
 
 
