@@ -1,7 +1,7 @@
 package com.tencent.angel.spark.ml.graph.louvain
 
 import com.tencent.angel.ml.math2.vector.{IntFloatVector, IntIntVector}
-import org.apache.spark.util.collection.SparkCollectionProxy
+import org.apache.spark.SparkPrivateClassProxy
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
@@ -68,7 +68,7 @@ class LouvainGraphPartition(
       val (id2comm, comm2info) = model.getModelPart(nodes)
       val updatedNodeBuffer = new ArrayBuffer[Int]()
       val updatedCommBuffer = new ArrayBuffer[Int]()
-      val communityWeightDelta = SparkCollectionProxy.createOpenHashMap[Int, Float]()
+      val communityWeightDelta = SparkPrivateClassProxy.createOpenHashMap[Int, Float]()
 
       for (i <- start until end) {
         val node = superNodes(i)
@@ -111,7 +111,7 @@ class LouvainGraphPartition(
                                         comm2info: IntFloatVector,
                                         total: Double): Int = {
 
-    val comm2edgeWeight = SparkCollectionProxy.createOpenHashMap[Int, Float]()
+    val comm2edgeWeight = SparkPrivateClassProxy.createOpenHashMap[Int, Float]()
     for (j <- this.adj(i).indices) {
       comm2edgeWeight.changeValue(id2comm.get(this.adj(i)(j)), this.adjWeights(i)(j), _ + this.adjWeights(i)(j))
     }

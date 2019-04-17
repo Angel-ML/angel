@@ -67,12 +67,14 @@ class NodeIndexer extends Serializable {
 
     // update mapping to ps
     mappingRDD.foreachPartition { iter =>
-      val (key, value) = iter.toArray.unzip
-      val intValues = value.map(_.toInt)
-      val long2intVec = VFactory.sparseLongKeyIntVector(Long.MaxValue, key, intValues)
-      val int2longVec = VFactory.sparseLongVector(this.numNodes, intValues, key)
-      long2int.update(long2intVec)
-      int2long.update(int2longVec)
+      BatchIter(iter, 1000000).foreach { batch =>
+        val (key, value) = batch.unzip
+        val intValues = value.map(_.toInt)
+        val long2intVec = VFactory.sparseLongKeyIntVector(Long.MaxValue, key, intValues)
+        val int2longVec = VFactory.sparseLongVector(this.numNodes, intValues, key)
+        long2int.update(long2intVec)
+        int2long.update(int2longVec)
+      }
     }
     mappingRDD.unpersist(false)
   }
@@ -100,6 +102,10 @@ class NodeIndexer extends Serializable {
         func(batch, int2long)
       }
     }
+  }
+
+  def decodePartition[C: ClassTag, U: ClassTag](rdd: RDD[C])(func: PSVector => Iterator[C] => Iterator[U]): RDD[U] = {
+    rdd.mapPartitions(func(int2long))
   }
 
 
