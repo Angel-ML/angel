@@ -75,8 +75,10 @@ class KCore(override val uid: String) extends Transformer
       Iterator.single(KCoreGraphPartition(keys.toArray, values.toArray))
     }.persist($(storageLevel))
 
+    graph.checkpoint()
     graph.foreachPartition(_ => Unit)
     rawEdges.unpersist(false)
+    indexer.destroyEncoder()
 
     val numNodes = indexer.getNumNodes
     val model = KCorePSModel.fromMaxId(numNodes)
