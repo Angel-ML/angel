@@ -3,7 +3,7 @@ package com.tencent.angel.spark.examples.cluster
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.graph.kcore.KCore
-import org.apache.spark.sql.SparkSession
+import com.tencent.angel.spark.ml.graph.utils.GraphIO
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -22,17 +22,18 @@ object KCoreExample {
     val psPartitionNum = params.getOrElse("psPartitionNum", "10").toInt
 
     start(mode, cpDir)
-    val df = SparkSession.builder().getOrCreate()
-      .read.csv(input)
-    val kcore = new KCore()
+
+    val kCore = new KCore()
       .setPartitionNum(partitionNum)
       .setStorageLevel(storageLevel)
       .setBatchSize(batchSize)
       .setPSPartitionNum(psPartitionNum)
+      .setSrcNodeIdCol("src")
+      .setDstNodeIdCol("dst")
 
-    val mapping = kcore.transform(df)
-
-    mapping.write.parquet(output)
+    val df = GraphIO.load(input, isWeighted = false)
+    val mapping = kCore.transform(df)
+    GraphIO.save(mapping, output)
     stop()
   }
 

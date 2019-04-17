@@ -3,9 +3,9 @@ package com.tencent.angel.spark.examples.cluster
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.graph.louvain.Louvain
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.SparkSession
+import com.tencent.angel.spark.ml.graph.utils.GraphIO
 import org.apache.spark.storage.StorageLevel
+import org.apache.spark.{SparkConf, SparkContext}
 
 object LouvainExample {
   def main(args: Array[String]): Unit = {
@@ -27,8 +27,6 @@ object LouvainExample {
     val psPartitionNum = params.getOrElse("psPartitionNum", "10").toInt
 
     start(mode, cpDir)
-    val df = SparkSession.builder().getOrCreate()
-      .read.csv(input)
     val louvain = new Louvain()
       .setPartitionNum(partitionNum)
       .setStorageLevel(storageLevel)
@@ -40,10 +38,12 @@ object LouvainExample {
       .setBufferSize(bufferSize)
       .setIsWeighted(isWeighted)
       .setPSPartitionNum(psPartitionNum)
+      .setSrcNodeIdCol("src")
+      .setDstNodeIdCol("dst")
 
+    val df = GraphIO.load(input, isWeighted = isWeighted)
     val mapping = louvain.transform(df)
-
-    mapping.write.parquet(output)
+    GraphIO.save(mapping, output)
     stop()
   }
 
