@@ -46,11 +46,17 @@ class KCore(override val uid: String) extends Transformer
       } else {
         Iterator.empty
       }
-    }.persist(StorageLevel.DISK_ONLY)
+    }.persist(StorageLevel.MEMORY_ONLY)
 
-    val nodes = rawEdges.flatMap { case (src, dst) =>
-      Iterator(src, dst)
+    val nodes = rawEdges.mapPartitions { iter =>
+      val distinct = collection.mutable.HashSet[Long]()
+      iter.foreach { case (src, dst) =>
+        distinct.add(src)
+        distinct.add(dst)
+      }
+      distinct.toIterator
     }.distinct($(partitionNum))
+
 
     val indexer = new NodeIndexer()
     indexer.train($(psPartitionNum), nodes)

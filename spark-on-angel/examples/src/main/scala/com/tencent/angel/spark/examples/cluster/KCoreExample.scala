@@ -20,6 +20,8 @@ object KCoreExample {
     val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
     val batchSize = params.getOrElse("batchSize", "10000").toInt
     val output = params.getOrElse("output", null)
+    val srcIndex = params.getOrElse("src", "0").toInt
+    val dstIndex = params.getOrElse("dst", "1").toInt
     val psPartitionNum = params.getOrElse("psPartitionNum",
       sc.getConf.get("spark.ps.instances", "10")).toInt
 
@@ -37,7 +39,7 @@ object KCoreExample {
       .setSrcNodeIdCol("src")
       .setDstNodeIdCol("dst")
 
-    val df = GraphIO.load(input, isWeighted = false)
+    val df = GraphIO.load(input, isWeighted = false, srcIndex, dstIndex)
     val mapping = kCore.transform(df)
     GraphIO.save(mapping, output)
     stop()
