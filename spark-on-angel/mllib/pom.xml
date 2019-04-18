@@ -49,12 +49,6 @@
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>com.tencent.tdw</groupId>
-      <artifactId>spark-toolkit_2.11</artifactId>
-      <version>3.11.0</version>
-      <scope>provided</scope>
-    </dependency>
   </dependencies>
 
   <build>
