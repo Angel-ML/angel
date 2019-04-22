@@ -18,8 +18,9 @@
 
 package com.tencent.angel.spark.ml.tree.gbdt.predictor
 
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.spark.ml.tree.common.TreeConf._
+import com.tencent.angel.spark.ml.tree.common.TreeConf
 import com.tencent.angel.spark.ml.tree.data.Instance
 import com.tencent.angel.spark.ml.tree.gbdt.tree.{GBTNode, GBTTree}
 import com.tencent.angel.spark.ml.tree.util.DataLoader
@@ -158,12 +159,14 @@ object GBDTPredictor {
 
     val params = ArgsUtil.parse(args)
 
-    //val modelPath = conf.get(ML_MODEL_PATH)
-    val modelPath = params.getOrElse(ML_MODEL_PATH, "xxx")
-    //val predictPath = conf.get(ML_PREDICT_PATH)
-    val predictPath = params.getOrElse(ML_PREDICT_PATH, "xxx")
-    //val outputPath = conf.get(ML_OUTPUT_PATH)
-    val outputPath = params.getOrElse(ML_OUTPUT_PATH, "xxx")
+    //val modelPath = params.getOrElse(TreeConf.ML_MODEL_PATH, "xxx")
+    val modelPath = params.getOrElse(AngelConf.ANGEL_LOAD_MODEL_PATH, "xxx")
+
+    //val predictPath = params.getOrElse(TreeConf.ML_PREDICT_PATH, "xxx")
+    val predictPath = params.getOrElse(AngelConf.ANGEL_PREDICT_DATA_PATH, "xxx")
+
+    //val outputPath = params.getOrElse(TreeConf.ML_OUTPUT_PATH, "xxx")
+    val outputPath = params.getOrElse(AngelConf.ANGEL_PREDICT_PATH, "xxx")
 
     val predictor = new GBDTPredictor
     predictor.loadModel(sc, modelPath)
