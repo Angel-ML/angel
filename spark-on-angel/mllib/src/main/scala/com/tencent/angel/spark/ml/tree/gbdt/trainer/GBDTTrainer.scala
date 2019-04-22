@@ -78,7 +78,7 @@ object GBDTTrainer {
 
     param.taskType match {
       case "regression" =>
-        require(param.lossFunc.equals("rmse") && param.evalMetrics.equals("rmse"),
+        require(param.lossFunc.equals("rmse") && param.evalMetrics(0).equals("rmse"),
           "loss function and metric of regression task should be rmse")
         param.numClass = 2
       case "classification" =>

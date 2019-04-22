@@ -55,42 +55,74 @@ GBDT的训练方法中，核心是一种叫梯度直方图的数据结构，需�
 ### 参数
 
 * **算法参数**
-  * ml.num.class：分裂数量
+  * ml.gbdt.task.type：任务类型，分类或者回归
   * ml.gbdt.loss.func：代价函数，支持二分类（binary:logistic）、多分类（multi:logistic）和均方根误差（rmse）
   * ml.gbdt.eval.metric：模型指标，支持rmse、error、log-loss、cross-entropy、precision和auc
+  * ml.num.class：分类数量，仅对分类任务有用
   * ml.gbdt.feature.sample.ratio：特征采样比例（0到1之间）
   * ml.gbdt.tree.num：树的数量	
   * ml.gbdt.tree.depth：树的最大高度
   * ml.gbdt.split.num：每个特征的分裂点的数量
   * ml.learn.rate：学习速率
+  * ml.gbdt.min.node.instance：叶子节点上数据的最少数量
+  * ml.gbdt.min.split.gain：分裂需要的最小增益
+  * ml.gbdt.reg.lambda：正则化系数
 
 * **输入输出参数**
 	* angel.train.data.path：训练数据的输入路径
 	* angel.validate.data.path：验证数据的输入路径
+	* angel.predict.data.path：预测数据的输入路径
+	* angel.predict.out.path：预测结果的保存路径
 	* angel.save.model.path：训练完成后，模型的保存路径
+	* angel.load.model.path：预测开始前，模型的加载路径
 
 ### 训练任务启动命令示例
 
 使用spark提交任务
-
+ 
   ./spark-submit \
     --master yarn-cluster \   
     --conf spark.ps.jars=$SONA_ANGEL_JARS \  
-    --jars $SONA_SPARK_JARS  \  
-    --name "LR Adam on Spark-on-Angel" \  
+    --conf spark.ps.cores=1 \
+    --conf spark.ps.memory=10g \
+    --conf spark.ps.log.level=INFO \
+    --queue $queue \
+    --jars $SONA_SPARK_JARS  \
+    --name "GBDT on Spark-on-Angel" \
     --driver-memory 5g \  
     --num-executors 10 \  
     --executor-cores 1 \  
     --executor-memory 10g \   
     --class com.tencent.angel.spark.ml.tree.gbdt.trainer.GBDTTrainer \  
     spark-on-angel-mllib-${ANGEL_VERSION}.jar \   
+    ml.gbdt.task.type:classification \
     angel.train.data.path:XXX angel.validate.data.path:XXX angel.save.model.path:XXX \  
     ml.gbdt.loss.func:binary:logistic ml.gbdt.eval.metric:error,log-loss \  
-    ml.learn.rate:0.1 ml.gbdt.split.num:10  ml.gbdt.tree.num:20 ml.gbdt.tree.depth:7 ml.class.num:2 \ 
-    ml.feature.index.range:47237 ml.gbdt.feature.sample.ratio:1.0
-        
- 
+    ml.learn.rate:0.1 ml.gbdt.split.num:10  ml.gbdt.tree.num:20 ml.gbdt.tree.depth:7 ml.num.class:2 \ 
+    ml.feature.index.range:47237 ml.gbdt.feature.sample.ratio:1.0 ml.gbdt.multi.class.strategy:one-tree ml.gbdt.min.node.instance:100
+    
+### 预测任务启动命令示例
 
+使用spark提交任务
+
+  ./spark-submit \
+      --master yarn-cluster \   
+      --conf spark.ps.jars=$SONA_ANGEL_JARS \  
+      --conf spark.ps.cores=1 \
+      --conf spark.ps.memory=10g \
+      --conf spark.ps.log.level=INFO \
+      --queue $queue \
+      --jars $SONA_SPARK_JARS  \
+      --name "GBDT on Spark-on-Angel" \
+      --driver-memory 5g \  
+      --num-executors 10 \  
+      --executor-cores 1 \  
+      --executor-memory 10g \   
+      --class com.tencent.angel.spark.ml.tree.gbdt.predictor.GBDTPredictor \  
+      spark-on-angel-mllib-${ANGEL_VERSION}.jar \
+      angel.load.model.path:XXX angel.predict.data.path:XXX angel.predict.out.path:XXX  \  
+      
+  
 
 ## 5. 性能
 

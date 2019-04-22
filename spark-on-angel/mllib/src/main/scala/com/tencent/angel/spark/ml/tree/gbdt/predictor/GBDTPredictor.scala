@@ -20,7 +20,6 @@ package com.tencent.angel.spark.ml.tree.gbdt.predictor
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.spark.ml.tree.common.TreeConf
 import com.tencent.angel.spark.ml.tree.data.Instance
 import com.tencent.angel.spark.ml.tree.gbdt.tree.{GBTNode, GBTTree}
 import com.tencent.angel.spark.ml.tree.util.DataLoader
@@ -69,7 +68,10 @@ class GBDTPredictor extends Serializable {
     val fs = path.getFileSystem(sc.hadoopConfiguration)
     if (fs.exists(path)) fs.delete(path, true)
 
-    preds.map(pred => s"${pred._1} ${pred._2} ${pred._3.mkString(",")}").saveAsTextFile(outputPath)
+    if (forest.head.getParam.isClassification)
+      preds.map(pred => s"${pred._1} ${pred._2} ${pred._3.mkString(",")}").saveAsTextFile(outputPath)
+    else
+      preds.map(pred => s"${pred._1} ${pred._3.mkString(",")}").saveAsTextFile(outputPath)
     println(s"Writing predictions to $outputPath")
   }
 
@@ -85,7 +87,7 @@ class GBDTPredictor extends Serializable {
         else
           node = node.getRightChild.asInstanceOf[GBTNode]
       }
-      if (param.numClass == 2) {
+      if (param.isRegression || param.numClass == 2) {
         preds(0) += node.getWeight * param.learningRate
       } else {
         if (param.isMultiClassMultiTree) {

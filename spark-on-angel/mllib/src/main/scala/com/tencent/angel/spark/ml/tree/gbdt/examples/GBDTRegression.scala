@@ -47,16 +47,16 @@ object GBDTRegression {
 
     val params = ArgsUtil.parse(args)
 
-    val trainPath = "data/dna/dna.scale"  //dimension=181
-    val validPath = "data/dna/dna.scale.t"
-    //val trainPath = "data/abalone/abalone_8d_train.libsvm"  //dimension=8
-    //val validPath = "data/abalone/abalone_8d_train.libsvm"
-    val modelPath = "xxx"
+    //val trainPath = "data/dna/dna.scale"  //dimension=181
+    //val validPath = "data/dna/dna.scale.t"
+    val trainPath = "data/abalone/abalone_8d_train.libsvm"  //dimension=8
+    val validPath = "data/abalone/abalone_8d_train.libsvm"
+    val modelPath = "tmp/gbdt/abalone"
 
     // dataset conf
     param.taskType = "regression"
     param.numClass = 2
-    param.numFeature = 181
+    param.numFeature = 8
 
     // loss and metric
     param.lossFunc = "rmse"
