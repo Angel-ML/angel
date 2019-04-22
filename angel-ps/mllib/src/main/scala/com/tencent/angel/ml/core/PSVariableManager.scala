@@ -32,7 +32,7 @@ class PSVariableManager private(isSparseFormat: Boolean) extends VariableManager
         client.load()
         getALLVariables.foreach { variable => variable.setState(VarState.Initialized) }
       case _ =>
-        getALLVariables.foreach { variable => variable.load(envCtx, path) }
+        getALLVariables.foreach { variable => variable.load(envCtx, path, null) }
     }
   }
 
@@ -80,12 +80,13 @@ class PSVariableManager private(isSparseFormat: Boolean) extends VariableManager
 }
 
 object PSVariableManager {
-  private var vm: VariableManager = _
+  private val vmtl: ThreadLocal[VariableManager]  = new ThreadLocal[VariableManager]()
 
   def get(isSparseFormat: Boolean): VariableManager = synchronized {
-    if (vm == null) {
-      vm = new PSVariableManager(isSparseFormat)
+    if (vmtl.get() == null) {
+      vmtl.set(new PSVariableManager(isSparseFormat))
     }
-    vm
+
+    vmtl.get()
   }
 }

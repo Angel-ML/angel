@@ -163,24 +163,24 @@ abstract class VariableManager {
 
 
 object VariableManager {
-  private var vm: VariableManager = _
+  private var vmtl: ThreadLocal[VariableManager] = new ThreadLocal[VariableManager]()
 
   def get(name: String, isSparseFormat: Boolean): VariableManager = synchronized {
-    if (vm == null) {
+    if (vmtl.get() == null) {
       val rtMirror = ru.runtimeMirror(getClass.getClassLoader)
       val objModuleSymbol = rtMirror.staticModule(name)
       val objModuleMirror = rtMirror.reflectModule(objModuleSymbol)
       val method = objModuleMirror.symbol.typeSignature.member(ru.TermName("get")).asMethod
       val objMirror = rtMirror.reflect(objModuleMirror.instance)
       val result = objMirror.reflectMethod(method)(isSparseFormat)
-      vm = result.asInstanceOf[VariableManager]
+      vmtl.set(result.asInstanceOf[VariableManager])
     }
 
-    vm
+    vmtl.get()
   }
 
   def addVariable(v: Variable): Unit = {
-    assert(vm != null)
-    vm.addVariable(v)
+    assert(vmtl.get() != null)
+    vmtl.get().addVariable(v)
   }
 }

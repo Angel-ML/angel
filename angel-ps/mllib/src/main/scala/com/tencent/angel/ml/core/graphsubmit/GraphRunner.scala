@@ -53,7 +53,7 @@ class GraphRunner extends MLRunner with SConfHelper {
 
       model.createMatrices(envCtx)
       if (!loadModelPath.isEmpty) {
-        model.loadModel(envCtx, loadModelPath)
+        model.loadModel(envCtx, loadModelPath, conf)
       } else {
         model.setState(VarState.Initialized)
       }
@@ -90,7 +90,7 @@ class GraphRunner extends MLRunner with SConfHelper {
       model.buildNetwork()
 
       model.createMatrices(envCtx)
-      model.loadModel(envCtx, loadModelPath)
+      model.loadModel(envCtx, loadModelPath, conf)
       client.runTask(classOf[GraphPredictTask])
       client.waitForCompletion()
     } catch {

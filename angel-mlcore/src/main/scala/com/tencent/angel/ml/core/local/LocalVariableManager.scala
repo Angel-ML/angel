@@ -47,12 +47,13 @@ class LocalVariableManager private(isSparseFormat: Boolean) extends VariableMana
 }
 
 object LocalVariableManager {
-  private var vm: VariableManager = _
+  private var vmtl: ThreadLocal[VariableManager] = new ThreadLocal[VariableManager]()
 
   def get(isSparseFormat: Boolean): VariableManager = synchronized {
-    if (vm == null) {
-      vm = new LocalVariableManager(isSparseFormat)
+    if (vmtl.get() == null) {
+      vmtl.set(new LocalVariableManager(isSparseFormat))
     }
-    vm
+
+    vmtl.get()
   }
 }
