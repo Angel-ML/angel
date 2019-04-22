@@ -1,11 +1,9 @@
 package com.tencent.angel.spark.ml.graph.utils
 
-import com.tencent.tdw.spark.toolkit.tdw.TDWFunctions
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
-import com.tencent.tdw.spark.toolkit.tdw.TDWFunctions._
 import org.apache.spark.sql.functions._
 
 object GraphIO {
@@ -64,61 +62,32 @@ object GraphIO {
            srcIndex: Int = 0, dstIndex: Int = 1, weightIndex: Int = 2,
            sep: String = " "): DataFrame = {
     val ss = SparkSession.builder().getOrCreate()
-
-    if (input.trim.startsWith("tdw://")) {
-      var df = TDWFunctions.loadTable(ss, input)
-      val columns = df.columns
-      if (isWeighted) {
-        df = df.select(columns(srcIndex), columns(dstIndex), columns(weightIndex))
-          .withColumnRenamed(columns(srcIndex), "src")
-          .withColumnRenamed(columns(dstIndex), "dst")
-          .withColumnRenamed(columns(weightIndex), "weight")
-        df = convert2Float(df, df.schema(2), "_tmp")
-      } else {
-        df = df.select(columns(srcIndex), columns(dstIndex))
-          .withColumnRenamed(columns(srcIndex), "src")
-          .withColumnRenamed(columns(dstIndex), "dst")
-
-      }
-      df.printSchema()
-      val schemaToLong = df.schema.take(2)
-      schemaToLong.foreach { field =>
-        df = convert2Long(df, field, "_tmp")
-      }
-      df.printSchema()
-      df
+    val schema = if (isWeighted) {
+      StructType(Seq(
+        StructField("src", LongType, nullable = false),
+        StructField("dst", LongType, nullable = false)
+      ))
     } else {
-      val schema = if (isWeighted) {
-        StructType(Seq(
-          StructField("src", LongType, nullable = false),
-          StructField("dst", LongType, nullable = false)
-        ))
-      } else {
-        StructType(Seq(
-          StructField("src", LongType, nullable = false),
-          StructField("dst", LongType, nullable = false),
-          StructField("wgt", LongType, nullable = false)
-        ))
-      }
-      ss.read
-        .option("sep", sep)
-        .option("header", "false")
-        .schema(schema)
-        .csv(input)
+      StructType(Seq(
+        StructField("src", LongType, nullable = false),
+        StructField("dst", LongType, nullable = false),
+        StructField("wgt", LongType, nullable = false)
+      ))
     }
+    ss.read
+      .option("sep", sep)
+      .option("header", "false")
+      .schema(schema)
+      .csv(input)
   }
 
   def save(df: DataFrame, output: String): Unit = {
     df.printSchema()
-    if (output.startsWith("tdw://")) {
-      df.saveToTable(output)
-    } else {
-      df.write
-        .mode(SaveMode.Overwrite)
-        .option(HEADER, "false")
-        .option(DELIMITER, "\t")
-        .csv(output)
-    }
+    df.write
+      .mode(SaveMode.Overwrite)
+      .option(HEADER, "false")
+      .option(DELIMITER, "\t")
+      .csv(output)
   }
 
   def defaultCheckpointDir: Option[String] = {
