@@ -12,6 +12,7 @@ import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.model._
+import org.apache.hadoop.conf.Configuration
 
 
 abstract class PSVariable(name: String,
@@ -77,7 +78,7 @@ abstract class PSVariable(name: String,
   }
 
   // call only on client
-  protected override def doLoad[T](envCtx: EnvContext[T], path: String): Unit = {
+  protected override def doLoad[T](envCtx: EnvContext[T], path: String, conf: Configuration): Unit = {
     if (envCtx != null && envCtx.client != null) {
       cilsImpl.doLoad(getMatrixCtx, envCtx, path)
     } else {

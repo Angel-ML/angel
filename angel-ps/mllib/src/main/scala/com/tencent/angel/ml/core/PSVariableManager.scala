@@ -7,6 +7,7 @@ import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.variable.{PSVariable, VarState, VariableManager}
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
+import org.apache.hadoop.conf.Configuration
 
 import scala.collection.JavaConversions._
 
@@ -26,7 +27,7 @@ class PSVariableManager private(isSparseFormat: Boolean) extends VariableManager
     }
   }
 
-  override def loadALL[T](envCtx: EnvContext[T], path: String): Unit = {
+  override def loadALL[T](envCtx: EnvContext[T], path: String, conf: Configuration): Unit = {
     envCtx match {
       case AngelEnvContext(client: AngelClient) if client != null =>
         client.load()
@@ -69,7 +70,7 @@ class PSVariableManager private(isSparseFormat: Boolean) extends VariableManager
           assert(variable.getState == VarState.Initialized || variable.getState == VarState.Ready)
           saveContext.addMatrix(new MatrixSaveContext(variable.name, variable.formatClassName))
         }
-        saveContext.setSavePath(sharedConf.get(AngelConf.ANGEL_JOB_OUTPUT_PATH))
+        saveContext.setSavePath(sharedConf.get(AngelConf.ANGEL_JOB_OUTPUT_PATH, ""))
         val deleteExistsFile = sharedConf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
           AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST)
         client.save(saveContext, deleteExistsFile)

@@ -11,6 +11,7 @@ import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLay
 import com.tencent.angel.ml.core.optimizer.loss._
 import com.tencent.angel.ml.core.utils.JsonUtils
 import com.tencent.angel.ml.core.variable.{VariableManager, VariableProvider}
+import org.apache.hadoop.conf.Configuration
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.scalatest.FunSuite
@@ -184,7 +185,7 @@ class JsonTest extends FunSuite {
     val conf = SharedConf.get()
     val json = "deepfm"
     val jsonPath = s"E:\\github\\fitzwang\\angel\\angel-mlcore\\src\\test\\jsons\\$json.json"
-    val layers = JsonUtils.parseAndUpdateJson(jsonPath, conf)
+    val layers = JsonUtils.parseAndUpdateJson(jsonPath, conf, new Configuration())
     val dataFormat = "libsvm"
     val modelType = SharedConf.modelType
     val placeHolder: PlaceHolder = new PlaceHolder(conf)
