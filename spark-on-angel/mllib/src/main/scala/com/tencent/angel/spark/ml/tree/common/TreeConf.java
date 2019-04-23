@@ -25,6 +25,10 @@ public class TreeConf {
   public static final String ML_TRAIN_PATH = "spark.ml.train.path";
   public static final String ML_VALID_PATH = "spark.ml.valid.path";
   public static final String ML_PREDICT_PATH = "spark.ml.predict.path";
+  public static final String ML_OUTPUT_PATH = "spark.ml.output.path";
+
+  public static final String ML_GBDT_TASK_TYPE = "ml.gbdt.task.type";
+  public static final String DEFAULT_ML_GBDT_TASK_TYPE = "classification";
   public static final String ML_VALID_DATA_RATIO = "spark.ml.valid.ratio";
   public static final double DEFAULT_ML_VALID_DATA_RATIO = 0.25;
   public static final String ML_NUM_CLASS = "spark.ml.class.num";

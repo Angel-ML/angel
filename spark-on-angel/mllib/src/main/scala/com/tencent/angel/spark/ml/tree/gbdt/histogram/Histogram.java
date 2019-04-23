@@ -36,6 +36,7 @@ public class Histogram implements Serializable {
     this.numClass = numClass;
     this.fullHessian = fullHessian;
     this.multiClassMultiTree = multiClassMultiTree;
+
     if (numClass == 2 || multiClassMultiTree) {
       this.gradients = new double[numBin];
       this.hessians = new double[numBin];

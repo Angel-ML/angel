@@ -23,6 +23,7 @@ import com.tencent.angel.spark.ml.tree.util.Maths;
 
 public class GBDTParam extends RegTParam {
 
+  public String taskType; // classification or regression
   public int numClass; // number of classes/labels
   public int numTree;  // number of trees
   public int numThread;  // parallelism
@@ -42,6 +43,14 @@ public class GBDTParam extends RegTParam {
   public String[] evalMetrics; // name of eval metric
   public String multiStrategy; // strategy of multi-class classification (one-tree or multi-tree)
   public boolean multiGradCache; // use grad cache for multiclass-multitree, or calc grad for every tree
+
+  public boolean isClassification() {
+    return taskType.equalsIgnoreCase("classification");
+  }
+
+  public boolean isRegression() {
+    return taskType.equalsIgnoreCase("regression");
+  }
 
   public int numClassPerTree() {
     if (numClass > 2 && multiStrategy.equalsIgnoreCase(MultiStrategy.ONE_TREE.toString())) {
