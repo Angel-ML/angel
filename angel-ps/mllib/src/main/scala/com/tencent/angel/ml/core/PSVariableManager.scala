@@ -7,6 +7,7 @@ import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.variable.{PSVariable, VarState, VariableManager}
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
+import org.apache.hadoop.conf.Configuration
 
 import scala.collection.JavaConversions._
 
@@ -26,13 +27,13 @@ class PSVariableManager private(isSparseFormat: Boolean) extends VariableManager
     }
   }
 
-  override def loadALL[T](envCtx: EnvContext[T], path: String): Unit = {
+  override def loadALL[T](envCtx: EnvContext[T], path: String, conf: Configuration): Unit = {
     envCtx match {
       case AngelEnvContext(client: AngelClient) if client != null =>
         client.load()
         getALLVariables.foreach { variable => variable.setState(VarState.Initialized) }
       case _ =>
-        getALLVariables.foreach { variable => variable.load(envCtx, path) }
+        getALLVariables.foreach { variable => variable.load(envCtx, path, null) }
     }
   }
 
@@ -69,7 +70,7 @@ class PSVariableManager private(isSparseFormat: Boolean) extends VariableManager
           assert(variable.getState == VarState.Initialized || variable.getState == VarState.Ready)
           saveContext.addMatrix(new MatrixSaveContext(variable.name, variable.formatClassName))
         }
-        saveContext.setSavePath(sharedConf.get(AngelConf.ANGEL_JOB_OUTPUT_PATH))
+        saveContext.setSavePath(sharedConf.get(AngelConf.ANGEL_JOB_OUTPUT_PATH, ""))
         val deleteExistsFile = sharedConf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
           AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST)
         client.save(saveContext, deleteExistsFile)
@@ -80,12 +81,13 @@ class PSVariableManager private(isSparseFormat: Boolean) extends VariableManager
 }
 
 object PSVariableManager {
-  private var vm: VariableManager = _
+  private val vmtl: ThreadLocal[VariableManager]  = new ThreadLocal[VariableManager]()
 
   def get(isSparseFormat: Boolean): VariableManager = synchronized {
-    if (vm == null) {
-      vm = new PSVariableManager(isSparseFormat)
+    if (vmtl.get() == null) {
+      vmtl.set(new PSVariableManager(isSparseFormat))
     }
-    vm
+
+    vmtl.get()
   }
 }
