@@ -19,37 +19,12 @@
 package com.tencent.angel.ml.math2.ufuncs.executor.simple;
 
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.math2.storage.IntDoubleSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntDoubleVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntFloatSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntFloatVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntIntSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntIntVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntLongSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntLongVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongDoubleSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongDoubleVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongFloatSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongFloatVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongIntSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongIntVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongLongSortedVectorStorage;
-import com.tencent.angel.ml.math2.storage.LongLongVectorStorage;
+import com.tencent.angel.ml.math2.storage.*;
 import com.tencent.angel.ml.math2.ufuncs.executor.StorageSwitch;
 import com.tencent.angel.ml.math2.ufuncs.expression.Binary;
 import com.tencent.angel.ml.math2.utils.ArrayCopy;
 import com.tencent.angel.ml.math2.utils.Constant;
-import com.tencent.angel.ml.math2.vector.IntDoubleVector;
-import com.tencent.angel.ml.math2.vector.IntDummyVector;
-import com.tencent.angel.ml.math2.vector.IntFloatVector;
-import com.tencent.angel.ml.math2.vector.IntIntVector;
-import com.tencent.angel.ml.math2.vector.IntLongVector;
-import com.tencent.angel.ml.math2.vector.LongDoubleVector;
-import com.tencent.angel.ml.math2.vector.LongDummyVector;
-import com.tencent.angel.ml.math2.vector.LongFloatVector;
-import com.tencent.angel.ml.math2.vector.LongIntVector;
-import com.tencent.angel.ml.math2.vector.LongLongVector;
-import com.tencent.angel.ml.math2.vector.Vector;
+import com.tencent.angel.ml.math2.vector.*;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
@@ -61,7 +36,6 @@ import it.unimi.dsi.fastutil.longs.Long2LongMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 public class SimpleBinaryOutZAExecutor {
-
   public static Vector apply(Vector v1, Vector v2, Binary op) {
     if (v1 instanceof IntDoubleVector && v2 instanceof IntDoubleVector) {
       return apply((IntDoubleVector) v1, (IntDoubleVector) v2, op);
@@ -203,12 +177,12 @@ public class SimpleBinaryOutZAExecutor {
       }
     } else if (v1.isSparse() && v2.isDense()) {
       if (op.isKeepStorage() || v1.size() <= Constant.sparseDenseStorageThreshold * v1.getDim()) {
-        ObjectIterator<Int2DoubleMap.Entry> iter = newStorage.entryIterator();
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         double[] v2Values = v2.getStorage().getValues();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
-          entry.setValue(op.apply(entry.getDoubleValue(), v2Values[idx]));
+          newStorage.set(idx, op.apply(entry.getDoubleValue(), v2Values[idx]));
         }
       } else {
         double[] newValues = newStorage.getValues();
@@ -245,8 +219,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
         IntDoubleVectorStorage v1storage = v1.getStorage();
@@ -257,8 +230,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getDoubleValue()));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         IntDoubleVectorStorage v2storage = v2.getStorage();
@@ -269,8 +241,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         ObjectIterator<Int2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
         IntDoubleVectorStorage v1storage = v1.getStorage();
@@ -293,8 +264,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         int[] v2Indices = v2.getStorage().getIndices();
         double[] v2Values = v2.getStorage().getValues();
@@ -307,8 +277,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         IntDoubleVectorStorage v2storage = v2.getStorage();
@@ -319,8 +288,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         int[] v2Indices = v2.getStorage().getIndices();
         double[] v2Values = v2.getStorage().getValues();
@@ -345,8 +313,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v2.size
           ObjectIterator<Int2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
           IntDoubleVectorStorage v1storage = v1.getStorage();
@@ -368,8 +335,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v1.size
           int[] resIndices = newStorage.getIndices();
           double[] resValues = newStorage.getValues();
@@ -397,8 +363,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Int2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
         IntDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -443,8 +408,7 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {//sorted v2.size
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -464,8 +428,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -474,8 +437,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -485,8 +447,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -506,8 +467,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// sparse preferred
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -516,8 +476,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -527,8 +486,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted v2.size
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -548,8 +506,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {// dense preferred
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -558,8 +515,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -589,8 +545,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// dense preferred
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -600,8 +555,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -616,8 +570,7 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   private static Vector apply(IntDoubleVector v1, IntFloatVector v2, Binary op) {
@@ -699,12 +652,12 @@ public class SimpleBinaryOutZAExecutor {
       }
     } else if (v1.isSparse() && v2.isDense()) {
       if (op.isKeepStorage() || v1.size() <= Constant.sparseDenseStorageThreshold * v1.getDim()) {
-        ObjectIterator<Int2DoubleMap.Entry> iter = newStorage.entryIterator();
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         float[] v2Values = v2.getStorage().getValues();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
-          entry.setValue(op.apply(entry.getDoubleValue(), v2Values[idx]));
+          newStorage.set(idx, op.apply(entry.getDoubleValue(), v2Values[idx]));
         }
       } else {
         double[] newValues = newStorage.getValues();
@@ -741,8 +694,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
         IntDoubleVectorStorage v1storage = v1.getStorage();
@@ -753,8 +705,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getFloatValue()));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         IntFloatVectorStorage v2storage = v2.getStorage();
@@ -765,8 +716,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
         IntDoubleVectorStorage v1storage = v1.getStorage();
@@ -789,8 +739,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         int[] v2Indices = v2.getStorage().getIndices();
         float[] v2Values = v2.getStorage().getValues();
@@ -803,8 +752,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         IntFloatVectorStorage v2storage = v2.getStorage();
@@ -815,8 +763,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         int[] v2Indices = v2.getStorage().getIndices();
         float[] v2Values = v2.getStorage().getValues();
@@ -841,8 +788,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v2.size
           ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
           IntDoubleVectorStorage v1storage = v1.getStorage();
@@ -864,8 +810,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v1.size
           int[] resIndices = newStorage.getIndices();
           double[] resValues = newStorage.getValues();
@@ -893,8 +838,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
         IntDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -939,8 +883,7 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {//sorted v2.size
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -960,8 +903,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -970,8 +912,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -981,8 +922,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -1002,8 +942,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// sparse preferred
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -1012,8 +951,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -1023,8 +961,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted v2.size
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -1044,8 +981,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {// dense preferred
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -1054,8 +990,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -1085,8 +1020,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// dense preferred
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -1096,8 +1030,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -1112,8 +1045,7 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   private static Vector apply(IntDoubleVector v1, IntLongVector v2, Binary op) {
@@ -1195,12 +1127,12 @@ public class SimpleBinaryOutZAExecutor {
       }
     } else if (v1.isSparse() && v2.isDense()) {
       if (op.isKeepStorage() || v1.size() <= Constant.sparseDenseStorageThreshold * v1.getDim()) {
-        ObjectIterator<Int2DoubleMap.Entry> iter = newStorage.entryIterator();
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         long[] v2Values = v2.getStorage().getValues();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
-          entry.setValue(op.apply(entry.getDoubleValue(), v2Values[idx]));
+          newStorage.set(idx, op.apply(entry.getDoubleValue(), v2Values[idx]));
         }
       } else {
         double[] newValues = newStorage.getValues();
@@ -1237,8 +1169,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
         IntDoubleVectorStorage v1storage = v1.getStorage();
@@ -1249,8 +1180,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getLongValue()));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         IntLongVectorStorage v2storage = v2.getStorage();
@@ -1261,8 +1191,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
         IntDoubleVectorStorage v1storage = v1.getStorage();
@@ -1285,8 +1214,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         int[] v2Indices = v2.getStorage().getIndices();
         long[] v2Values = v2.getStorage().getValues();
@@ -1299,8 +1227,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         IntLongVectorStorage v2storage = v2.getStorage();
@@ -1311,8 +1238,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         int[] v2Indices = v2.getStorage().getIndices();
         long[] v2Values = v2.getStorage().getValues();
@@ -1337,8 +1263,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v2.size
           ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
           IntDoubleVectorStorage v1storage = v1.getStorage();
@@ -1360,8 +1285,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v1.size
           int[] resIndices = newStorage.getIndices();
           double[] resValues = newStorage.getValues();
@@ -1389,8 +1313,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
         IntDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -1435,8 +1358,7 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {//sorted v2.size
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -1456,8 +1378,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -1466,8 +1387,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -1477,8 +1397,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -1498,8 +1417,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// sparse preferred
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -1508,8 +1426,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -1519,8 +1436,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted v2.size
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -1540,8 +1456,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {// dense preferred
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -1550,8 +1465,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -1581,8 +1495,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// dense preferred
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -1592,8 +1505,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -1608,8 +1520,7 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   private static Vector apply(IntDoubleVector v1, IntIntVector v2, Binary op) {
@@ -1691,12 +1602,12 @@ public class SimpleBinaryOutZAExecutor {
       }
     } else if (v1.isSparse() && v2.isDense()) {
       if (op.isKeepStorage() || v1.size() <= Constant.sparseDenseStorageThreshold * v1.getDim()) {
-        ObjectIterator<Int2DoubleMap.Entry> iter = newStorage.entryIterator();
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         int[] v2Values = v2.getStorage().getValues();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
-          entry.setValue(op.apply(entry.getDoubleValue(), v2Values[idx]));
+          newStorage.set(idx, op.apply(entry.getDoubleValue(), v2Values[idx]));
         }
       } else {
         double[] newValues = newStorage.getValues();
@@ -1733,8 +1644,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
         IntDoubleVectorStorage v1storage = v1.getStorage();
@@ -1745,8 +1655,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         IntIntVectorStorage v2storage = v2.getStorage();
@@ -1757,8 +1666,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
         IntDoubleVectorStorage v1storage = v1.getStorage();
@@ -1781,8 +1689,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         int[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
@@ -1795,8 +1702,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         IntIntVectorStorage v2storage = v2.getStorage();
@@ -1807,8 +1713,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         int[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
@@ -1833,8 +1738,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v2.size
           ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
           IntDoubleVectorStorage v1storage = v1.getStorage();
@@ -1856,8 +1760,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v1.size
           int[] resIndices = newStorage.getIndices();
           double[] resValues = newStorage.getValues();
@@ -1885,8 +1788,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
         IntDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -1931,8 +1833,7 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {//sorted v2.size
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -1952,8 +1853,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -1962,8 +1862,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -1973,8 +1872,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -1994,8 +1892,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// sparse preferred
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -2004,8 +1901,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -2015,8 +1911,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted v2.size
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -2036,8 +1931,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {// dense preferred
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -2046,8 +1940,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -2077,8 +1970,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// dense preferred
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -2088,8 +1980,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -2104,8 +1995,7 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   private static Vector apply(IntFloatVector v1, IntFloatVector v2, Binary op) {
@@ -2187,12 +2077,12 @@ public class SimpleBinaryOutZAExecutor {
       }
     } else if (v1.isSparse() && v2.isDense()) {
       if (op.isKeepStorage() || v1.size() <= Constant.sparseDenseStorageThreshold * v1.getDim()) {
-        ObjectIterator<Int2FloatMap.Entry> iter = newStorage.entryIterator();
+        ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         float[] v2Values = v2.getStorage().getValues();
         while (iter.hasNext()) {
           Int2FloatMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
-          entry.setValue(op.apply(entry.getFloatValue(), v2Values[idx]));
+          newStorage.set(idx, op.apply(entry.getFloatValue(), v2Values[idx]));
         }
       } else {
         float[] newValues = newStorage.getValues();
@@ -2229,8 +2119,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
         IntFloatVectorStorage v1storage = v1.getStorage();
@@ -2241,8 +2130,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getFloatValue()));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         IntFloatVectorStorage v2storage = v2.getStorage();
@@ -2253,8 +2141,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
         IntFloatVectorStorage v1storage = v1.getStorage();
@@ -2277,8 +2164,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         int[] v2Indices = v2.getStorage().getIndices();
         float[] v2Values = v2.getStorage().getValues();
@@ -2291,8 +2177,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         IntFloatVectorStorage v2storage = v2.getStorage();
@@ -2303,8 +2188,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         int[] v2Indices = v2.getStorage().getIndices();
         float[] v2Values = v2.getStorage().getValues();
@@ -2329,8 +2213,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v2.size
           ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
           IntFloatVectorStorage v1storage = v1.getStorage();
@@ -2352,8 +2235,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v1.size
           int[] resIndices = newStorage.getIndices();
           float[] resValues = newStorage.getValues();
@@ -2381,8 +2263,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
         IntFloatVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -2427,8 +2308,7 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {//sorted v2.size
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -2448,8 +2328,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -2458,8 +2337,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -2469,8 +2347,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -2490,8 +2367,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// sparse preferred
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -2500,8 +2376,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -2511,8 +2386,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted v2.size
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -2532,8 +2406,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {// dense preferred
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -2542,8 +2415,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -2573,8 +2445,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// dense preferred
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -2584,8 +2455,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -2600,8 +2470,7 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   private static Vector apply(IntFloatVector v1, IntLongVector v2, Binary op) {
@@ -2683,12 +2552,12 @@ public class SimpleBinaryOutZAExecutor {
       }
     } else if (v1.isSparse() && v2.isDense()) {
       if (op.isKeepStorage() || v1.size() <= Constant.sparseDenseStorageThreshold * v1.getDim()) {
-        ObjectIterator<Int2FloatMap.Entry> iter = newStorage.entryIterator();
+        ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         long[] v2Values = v2.getStorage().getValues();
         while (iter.hasNext()) {
           Int2FloatMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
-          entry.setValue(op.apply(entry.getFloatValue(), v2Values[idx]));
+          newStorage.set(idx, op.apply(entry.getFloatValue(), v2Values[idx]));
         }
       } else {
         float[] newValues = newStorage.getValues();
@@ -2725,8 +2594,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
         IntFloatVectorStorage v1storage = v1.getStorage();
@@ -2737,8 +2605,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getLongValue()));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         IntLongVectorStorage v2storage = v2.getStorage();
@@ -2749,8 +2616,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
         IntFloatVectorStorage v1storage = v1.getStorage();
@@ -2773,8 +2639,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         int[] v2Indices = v2.getStorage().getIndices();
         long[] v2Values = v2.getStorage().getValues();
@@ -2787,8 +2652,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         IntLongVectorStorage v2storage = v2.getStorage();
@@ -2799,8 +2663,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         int[] v2Indices = v2.getStorage().getIndices();
         long[] v2Values = v2.getStorage().getValues();
@@ -2825,8 +2688,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v2.size
           ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
           IntFloatVectorStorage v1storage = v1.getStorage();
@@ -2848,8 +2710,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v1.size
           int[] resIndices = newStorage.getIndices();
           float[] resValues = newStorage.getValues();
@@ -2877,8 +2738,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
         IntFloatVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -2923,8 +2783,7 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {//sorted v2.size
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -2944,8 +2803,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -2954,8 +2812,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -2965,8 +2822,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -2986,8 +2842,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// sparse preferred
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -2996,8 +2851,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -3007,8 +2861,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted v2.size
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -3028,8 +2881,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {// dense preferred
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -3038,8 +2890,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -3069,8 +2920,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// dense preferred
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -3080,8 +2930,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -3096,8 +2945,7 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   private static Vector apply(IntFloatVector v1, IntIntVector v2, Binary op) {
@@ -3179,12 +3027,12 @@ public class SimpleBinaryOutZAExecutor {
       }
     } else if (v1.isSparse() && v2.isDense()) {
       if (op.isKeepStorage() || v1.size() <= Constant.sparseDenseStorageThreshold * v1.getDim()) {
-        ObjectIterator<Int2FloatMap.Entry> iter = newStorage.entryIterator();
+        ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         int[] v2Values = v2.getStorage().getValues();
         while (iter.hasNext()) {
           Int2FloatMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
-          entry.setValue(op.apply(entry.getFloatValue(), v2Values[idx]));
+          newStorage.set(idx, op.apply(entry.getFloatValue(), v2Values[idx]));
         }
       } else {
         float[] newValues = newStorage.getValues();
@@ -3221,8 +3069,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
         IntFloatVectorStorage v1storage = v1.getStorage();
@@ -3233,8 +3080,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         IntIntVectorStorage v2storage = v2.getStorage();
@@ -3245,8 +3091,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
         IntFloatVectorStorage v1storage = v1.getStorage();
@@ -3269,8 +3114,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         int[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
@@ -3283,8 +3127,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         IntIntVectorStorage v2storage = v2.getStorage();
@@ -3295,8 +3138,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         int[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
@@ -3321,8 +3163,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v2.size
           ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
           IntFloatVectorStorage v1storage = v1.getStorage();
@@ -3344,8 +3185,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v1.size
           int[] resIndices = newStorage.getIndices();
           float[] resValues = newStorage.getValues();
@@ -3373,8 +3213,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
         IntFloatVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -3419,8 +3258,7 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {//sorted v2.size
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -3440,8 +3278,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -3450,8 +3287,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -3461,8 +3297,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -3482,8 +3317,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// sparse preferred
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -3492,8 +3326,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -3503,8 +3336,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted v2.size
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -3524,8 +3356,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {// dense preferred
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -3534,8 +3365,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -3565,8 +3395,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// dense preferred
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -3576,8 +3405,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -3592,8 +3420,7 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   private static Vector apply(IntLongVector v1, IntLongVector v2, Binary op) {
@@ -3675,12 +3502,12 @@ public class SimpleBinaryOutZAExecutor {
       }
     } else if (v1.isSparse() && v2.isDense()) {
       if (op.isKeepStorage() || v1.size() <= Constant.sparseDenseStorageThreshold * v1.getDim()) {
-        ObjectIterator<Int2LongMap.Entry> iter = newStorage.entryIterator();
+        ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
         long[] v2Values = v2.getStorage().getValues();
         while (iter.hasNext()) {
           Int2LongMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
-          entry.setValue(op.apply(entry.getLongValue(), v2Values[idx]));
+          newStorage.set(idx, op.apply(entry.getLongValue(), v2Values[idx]));
         }
       } else {
         long[] newValues = newStorage.getValues();
@@ -3717,8 +3544,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
         IntLongVectorStorage v1storage = v1.getStorage();
@@ -3729,8 +3555,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getLongValue()));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
         IntLongVectorStorage v2storage = v2.getStorage();
@@ -3741,8 +3566,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
         IntLongVectorStorage v1storage = v1.getStorage();
@@ -3765,8 +3589,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         int[] v2Indices = v2.getStorage().getIndices();
         long[] v2Values = v2.getStorage().getValues();
@@ -3779,8 +3602,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
         IntLongVectorStorage v2storage = v2.getStorage();
@@ -3791,8 +3613,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         int[] v2Indices = v2.getStorage().getIndices();
         long[] v2Values = v2.getStorage().getValues();
@@ -3817,8 +3638,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v2.size
           ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
           IntLongVectorStorage v1storage = v1.getStorage();
@@ -3840,8 +3660,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v1.size
           int[] resIndices = newStorage.getIndices();
           long[] resValues = newStorage.getValues();
@@ -3869,8 +3688,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
         IntLongVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -3915,8 +3733,7 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {//sorted v2.size
           int[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -3936,8 +3753,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           int[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -3946,8 +3762,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -3957,8 +3772,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {
           int[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -3978,8 +3792,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// sparse preferred
           int[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -3988,8 +3801,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -3999,8 +3811,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted v2.size
           int[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -4020,8 +3831,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {// dense preferred
           int[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -4030,8 +3840,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -4061,8 +3870,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// dense preferred
           int[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -4072,8 +3880,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -4088,8 +3895,7 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   private static Vector apply(IntLongVector v1, IntIntVector v2, Binary op) {
@@ -4171,12 +3977,12 @@ public class SimpleBinaryOutZAExecutor {
       }
     } else if (v1.isSparse() && v2.isDense()) {
       if (op.isKeepStorage() || v1.size() <= Constant.sparseDenseStorageThreshold * v1.getDim()) {
-        ObjectIterator<Int2LongMap.Entry> iter = newStorage.entryIterator();
+        ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
         int[] v2Values = v2.getStorage().getValues();
         while (iter.hasNext()) {
           Int2LongMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
-          entry.setValue(op.apply(entry.getLongValue(), v2Values[idx]));
+          newStorage.set(idx, op.apply(entry.getLongValue(), v2Values[idx]));
         }
       } else {
         long[] newValues = newStorage.getValues();
@@ -4213,8 +4019,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
         IntLongVectorStorage v1storage = v1.getStorage();
@@ -4225,8 +4030,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
         IntIntVectorStorage v2storage = v2.getStorage();
@@ -4237,8 +4041,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
         IntLongVectorStorage v1storage = v1.getStorage();
@@ -4261,8 +4064,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         int[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
@@ -4275,8 +4077,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
         IntIntVectorStorage v2storage = v2.getStorage();
@@ -4287,8 +4088,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         int[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
@@ -4313,8 +4113,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v2.size
           ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
           IntLongVectorStorage v1storage = v1.getStorage();
@@ -4336,8 +4135,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v1.size
           int[] resIndices = newStorage.getIndices();
           long[] resValues = newStorage.getValues();
@@ -4365,8 +4163,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
         IntLongVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -4411,8 +4208,7 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {//sorted v2.size
           int[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -4432,8 +4228,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           int[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -4442,8 +4237,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -4453,8 +4247,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {
           int[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -4474,8 +4267,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// sparse preferred
           int[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -4484,8 +4276,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -4495,8 +4286,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted v2.size
           int[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -4516,8 +4306,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {// dense preferred
           int[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -4526,8 +4315,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -4557,8 +4345,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// dense preferred
           int[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -4568,8 +4355,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -4584,8 +4370,7 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   private static Vector apply(IntIntVector v1, IntIntVector v2, Binary op) {
@@ -4667,12 +4452,12 @@ public class SimpleBinaryOutZAExecutor {
       }
     } else if (v1.isSparse() && v2.isDense()) {
       if (op.isKeepStorage() || v1.size() <= Constant.sparseDenseStorageThreshold * v1.getDim()) {
-        ObjectIterator<Int2IntMap.Entry> iter = newStorage.entryIterator();
+        ObjectIterator<Int2IntMap.Entry> iter = v1.getStorage().entryIterator();
         int[] v2Values = v2.getStorage().getValues();
         while (iter.hasNext()) {
           Int2IntMap.Entry entry = iter.next();
           int idx = entry.getIntKey();
-          entry.setValue(op.apply(entry.getIntValue(), v2Values[idx]));
+          newStorage.set(idx, op.apply(entry.getIntValue(), v2Values[idx]));
         }
       } else {
         int[] newValues = newStorage.getValues();
@@ -4709,8 +4494,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
         IntIntVectorStorage v1storage = v1.getStorage();
@@ -4721,8 +4505,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2IntMap.Entry> iter = v1.getStorage().entryIterator();
         IntIntVectorStorage v2storage = v2.getStorage();
@@ -4733,8 +4516,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getIntValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
         IntIntVectorStorage v1storage = v1.getStorage();
@@ -4757,8 +4539,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         int[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
@@ -4771,8 +4552,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2IntMap.Entry> iter = v1.getStorage().entryIterator();
         IntIntVectorStorage v2storage = v2.getStorage();
@@ -4783,8 +4563,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getIntValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         int[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
@@ -4809,8 +4588,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v2.size
           ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
           IntIntVectorStorage v1storage = v1.getStorage();
@@ -4832,8 +4610,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v1.size
           int[] resIndices = newStorage.getIndices();
           int[] resValues = newStorage.getValues();
@@ -4861,8 +4638,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
         IntIntVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -4907,8 +4683,7 @@ public class SimpleBinaryOutZAExecutor {
       int size1 = v1.size();
       int size2 = v2.size();
 
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {//sorted v2.size
           int[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -4928,8 +4703,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           int[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -4938,8 +4712,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -4949,8 +4722,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {
           int[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -4970,8 +4742,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// sparse preferred
           int[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -4980,8 +4751,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -4991,8 +4761,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted v2.size
           int[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -5012,8 +4781,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {// dense preferred
           int[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -5022,8 +4790,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -5053,8 +4820,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// dense preferred
           int[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -5064,8 +4830,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -5080,15 +4845,13 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   private static Vector apply(LongDoubleVector v1, LongDoubleVector v2, Binary op) {
     LongDoubleVectorStorage newStorage = (LongDoubleVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isSparse() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
         LongDoubleVectorStorage v1storage = v1.getStorage();
@@ -5099,8 +4862,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getDoubleValue()));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         LongDoubleVectorStorage v2storage = v2.getStorage();
@@ -5111,8 +4873,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         ObjectIterator<Long2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
         LongDoubleVectorStorage v1storage = v1.getStorage();
@@ -5135,8 +4896,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         long[] v2Indices = v2.getStorage().getIndices();
         double[] v2Values = v2.getStorage().getValues();
@@ -5149,8 +4909,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         LongDoubleVectorStorage v2storage = v2.getStorage();
@@ -5161,8 +4920,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         long[] v2Indices = v2.getStorage().getIndices();
         double[] v2Values = v2.getStorage().getValues();
@@ -5187,8 +4945,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v2.size
           ObjectIterator<Long2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
           LongDoubleVectorStorage v1storage = v1.getStorage();
@@ -5210,8 +4967,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v1.size
           long[] resIndices = newStorage.getIndices();
           double[] resValues = newStorage.getValues();
@@ -5239,8 +4995,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Long2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
         LongDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -5285,8 +5040,7 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {//sorted v2.size
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -5306,8 +5060,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -5316,8 +5069,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -5327,8 +5079,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -5348,8 +5099,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// sparse preferred
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -5358,8 +5108,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -5369,8 +5118,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted v2.size
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -5390,8 +5138,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {// dense preferred
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -5400,8 +5147,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -5431,8 +5177,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// dense preferred
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -5442,8 +5187,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -5458,15 +5202,13 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   private static Vector apply(LongDoubleVector v1, LongFloatVector v2, Binary op) {
     LongDoubleVectorStorage newStorage = (LongDoubleVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isSparse() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
         LongDoubleVectorStorage v1storage = v1.getStorage();
@@ -5477,8 +5219,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getFloatValue()));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         LongFloatVectorStorage v2storage = v2.getStorage();
@@ -5489,8 +5230,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
         LongDoubleVectorStorage v1storage = v1.getStorage();
@@ -5513,8 +5253,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         long[] v2Indices = v2.getStorage().getIndices();
         float[] v2Values = v2.getStorage().getValues();
@@ -5527,8 +5266,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         LongFloatVectorStorage v2storage = v2.getStorage();
@@ -5539,8 +5277,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         long[] v2Indices = v2.getStorage().getIndices();
         float[] v2Values = v2.getStorage().getValues();
@@ -5565,8 +5302,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v2.size
           ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
           LongDoubleVectorStorage v1storage = v1.getStorage();
@@ -5588,8 +5324,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v1.size
           long[] resIndices = newStorage.getIndices();
           double[] resValues = newStorage.getValues();
@@ -5617,8 +5352,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
         LongDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -5663,8 +5397,7 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {//sorted v2.size
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -5684,8 +5417,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -5694,8 +5426,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -5705,8 +5436,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -5726,8 +5456,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// sparse preferred
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -5736,8 +5465,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -5747,8 +5475,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted v2.size
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -5768,8 +5495,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {// dense preferred
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -5778,8 +5504,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -5809,8 +5534,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// dense preferred
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -5820,8 +5544,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -5836,15 +5559,13 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   private static Vector apply(LongDoubleVector v1, LongLongVector v2, Binary op) {
     LongDoubleVectorStorage newStorage = (LongDoubleVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isSparse() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
         LongDoubleVectorStorage v1storage = v1.getStorage();
@@ -5855,8 +5576,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getLongValue()));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         LongLongVectorStorage v2storage = v2.getStorage();
@@ -5867,8 +5587,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
         LongDoubleVectorStorage v1storage = v1.getStorage();
@@ -5891,8 +5610,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         long[] v2Indices = v2.getStorage().getIndices();
         long[] v2Values = v2.getStorage().getValues();
@@ -5905,8 +5623,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         LongLongVectorStorage v2storage = v2.getStorage();
@@ -5917,8 +5634,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         long[] v2Indices = v2.getStorage().getIndices();
         long[] v2Values = v2.getStorage().getValues();
@@ -5943,8 +5659,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v2.size
           ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
           LongDoubleVectorStorage v1storage = v1.getStorage();
@@ -5966,8 +5681,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v1.size
           long[] resIndices = newStorage.getIndices();
           double[] resValues = newStorage.getValues();
@@ -5995,8 +5709,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
         LongDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -6041,8 +5754,7 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {//sorted v2.size
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -6062,8 +5774,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -6072,8 +5783,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -6083,8 +5793,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -6104,8 +5813,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// sparse preferred
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -6114,8 +5822,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -6125,8 +5832,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted v2.size
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -6146,8 +5852,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {// dense preferred
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -6156,8 +5861,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -6187,8 +5891,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// dense preferred
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -6198,8 +5901,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -6214,15 +5916,13 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   private static Vector apply(LongDoubleVector v1, LongIntVector v2, Binary op) {
     LongDoubleVectorStorage newStorage = (LongDoubleVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isSparse() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
         LongDoubleVectorStorage v1storage = v1.getStorage();
@@ -6233,8 +5933,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         LongIntVectorStorage v2storage = v2.getStorage();
@@ -6245,8 +5944,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
         LongDoubleVectorStorage v1storage = v1.getStorage();
@@ -6269,8 +5967,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         long[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
@@ -6283,8 +5980,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         LongIntVectorStorage v2storage = v2.getStorage();
@@ -6295,8 +5991,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getDoubleValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         long[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
@@ -6321,8 +6016,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v2.size
           ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
           LongDoubleVectorStorage v1storage = v1.getStorage();
@@ -6344,8 +6038,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v1.size
           long[] resIndices = newStorage.getIndices();
           double[] resValues = newStorage.getValues();
@@ -6373,8 +6066,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
         LongDoubleVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -6419,8 +6111,7 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {//sorted v2.size
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -6440,8 +6131,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -6450,8 +6140,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -6461,8 +6150,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -6482,8 +6170,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// sparse preferred
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -6492,8 +6179,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -6503,8 +6189,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted v2.size
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -6524,8 +6209,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {// dense preferred
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -6534,8 +6218,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -6565,8 +6248,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// dense preferred
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -6576,8 +6258,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -6592,15 +6273,13 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   private static Vector apply(LongFloatVector v1, LongFloatVector v2, Binary op) {
     LongFloatVectorStorage newStorage = (LongFloatVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isSparse() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
         LongFloatVectorStorage v1storage = v1.getStorage();
@@ -6611,8 +6290,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getFloatValue()));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         LongFloatVectorStorage v2storage = v2.getStorage();
@@ -6623,8 +6301,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
         LongFloatVectorStorage v1storage = v1.getStorage();
@@ -6647,8 +6324,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         long[] v2Indices = v2.getStorage().getIndices();
         float[] v2Values = v2.getStorage().getValues();
@@ -6661,8 +6337,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         LongFloatVectorStorage v2storage = v2.getStorage();
@@ -6673,8 +6348,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         long[] v2Indices = v2.getStorage().getIndices();
         float[] v2Values = v2.getStorage().getValues();
@@ -6699,8 +6373,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v2.size
           ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
           LongFloatVectorStorage v1storage = v1.getStorage();
@@ -6722,8 +6395,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v1.size
           long[] resIndices = newStorage.getIndices();
           float[] resValues = newStorage.getValues();
@@ -6751,8 +6423,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
         LongFloatVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -6797,8 +6468,7 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {//sorted v2.size
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -6818,8 +6488,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -6828,8 +6497,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -6839,8 +6507,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -6860,8 +6527,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// sparse preferred
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -6870,8 +6536,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -6881,8 +6546,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted v2.size
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -6902,8 +6566,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {// dense preferred
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -6912,8 +6575,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -6943,8 +6605,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// dense preferred
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -6954,8 +6615,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -6970,15 +6630,13 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   private static Vector apply(LongFloatVector v1, LongLongVector v2, Binary op) {
     LongFloatVectorStorage newStorage = (LongFloatVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isSparse() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
         LongFloatVectorStorage v1storage = v1.getStorage();
@@ -6989,8 +6647,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getLongValue()));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         LongLongVectorStorage v2storage = v2.getStorage();
@@ -7001,8 +6658,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
         LongFloatVectorStorage v1storage = v1.getStorage();
@@ -7025,8 +6681,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         long[] v2Indices = v2.getStorage().getIndices();
         long[] v2Values = v2.getStorage().getValues();
@@ -7039,8 +6694,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         LongLongVectorStorage v2storage = v2.getStorage();
@@ -7051,8 +6705,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         long[] v2Indices = v2.getStorage().getIndices();
         long[] v2Values = v2.getStorage().getValues();
@@ -7077,8 +6730,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v2.size
           ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
           LongFloatVectorStorage v1storage = v1.getStorage();
@@ -7100,8 +6752,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v1.size
           long[] resIndices = newStorage.getIndices();
           float[] resValues = newStorage.getValues();
@@ -7129,8 +6780,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
         LongFloatVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -7175,8 +6825,7 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {//sorted v2.size
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -7196,8 +6845,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -7206,8 +6854,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -7217,8 +6864,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -7238,8 +6884,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// sparse preferred
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -7248,8 +6893,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -7259,8 +6903,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted v2.size
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -7280,8 +6923,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {// dense preferred
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -7290,8 +6932,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -7321,8 +6962,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// dense preferred
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -7332,8 +6972,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -7348,15 +6987,13 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   private static Vector apply(LongFloatVector v1, LongIntVector v2, Binary op) {
     LongFloatVectorStorage newStorage = (LongFloatVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isSparse() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
         LongFloatVectorStorage v1storage = v1.getStorage();
@@ -7367,8 +7004,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         LongIntVectorStorage v2storage = v2.getStorage();
@@ -7379,8 +7015,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
         LongFloatVectorStorage v1storage = v1.getStorage();
@@ -7403,8 +7038,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         long[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
@@ -7417,8 +7051,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         LongIntVectorStorage v2storage = v2.getStorage();
@@ -7429,8 +7062,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getFloatValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         long[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
@@ -7455,8 +7087,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v2.size
           ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
           LongFloatVectorStorage v1storage = v1.getStorage();
@@ -7478,8 +7109,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v1.size
           long[] resIndices = newStorage.getIndices();
           float[] resValues = newStorage.getValues();
@@ -7507,8 +7137,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
         LongFloatVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -7553,8 +7182,7 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {//sorted v2.size
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -7574,8 +7202,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -7584,8 +7211,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -7595,8 +7221,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -7616,8 +7241,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// sparse preferred
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -7626,8 +7250,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -7637,8 +7260,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted v2.size
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -7658,8 +7280,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {// dense preferred
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -7668,8 +7289,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -7699,8 +7319,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// dense preferred
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -7710,8 +7329,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -7726,15 +7344,13 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   private static Vector apply(LongLongVector v1, LongLongVector v2, Binary op) {
     LongLongVectorStorage newStorage = (LongLongVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isSparse() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
         LongLongVectorStorage v1storage = v1.getStorage();
@@ -7745,8 +7361,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getLongValue()));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2LongMap.Entry> iter = v1.getStorage().entryIterator();
         LongLongVectorStorage v2storage = v2.getStorage();
@@ -7757,8 +7372,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
         LongLongVectorStorage v1storage = v1.getStorage();
@@ -7781,8 +7395,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         long[] v2Indices = v2.getStorage().getIndices();
         long[] v2Values = v2.getStorage().getValues();
@@ -7795,8 +7408,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2LongMap.Entry> iter = v1.getStorage().entryIterator();
         LongLongVectorStorage v2storage = v2.getStorage();
@@ -7807,8 +7419,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         long[] v2Indices = v2.getStorage().getIndices();
         long[] v2Values = v2.getStorage().getValues();
@@ -7833,8 +7444,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v2.size
           ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
           LongLongVectorStorage v1storage = v1.getStorage();
@@ -7856,8 +7466,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v1.size
           long[] resIndices = newStorage.getIndices();
           long[] resValues = newStorage.getValues();
@@ -7885,8 +7494,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
         LongLongVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -7931,8 +7539,7 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {//sorted v2.size
           long[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -7952,8 +7559,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           long[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -7962,8 +7568,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -7973,8 +7578,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {
           long[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -7994,8 +7598,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// sparse preferred
           long[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -8004,8 +7607,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -8015,8 +7617,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted v2.size
           long[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -8036,8 +7637,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {// dense preferred
           long[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -8046,8 +7646,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -8077,8 +7676,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// dense preferred
           long[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -8088,8 +7686,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -8104,15 +7701,13 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return new LongLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new LongLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   private static Vector apply(LongLongVector v1, LongIntVector v2, Binary op) {
     LongLongVectorStorage newStorage = (LongLongVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isSparse() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
         LongLongVectorStorage v1storage = v1.getStorage();
@@ -8123,8 +7718,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2LongMap.Entry> iter = v1.getStorage().entryIterator();
         LongIntVectorStorage v2storage = v2.getStorage();
@@ -8135,8 +7729,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
         LongLongVectorStorage v1storage = v1.getStorage();
@@ -8159,8 +7752,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         long[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
@@ -8173,8 +7765,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2LongMap.Entry> iter = v1.getStorage().entryIterator();
         LongIntVectorStorage v2storage = v2.getStorage();
@@ -8185,8 +7776,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getLongValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         long[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
@@ -8211,8 +7801,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v2.size
           ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
           LongLongVectorStorage v1storage = v1.getStorage();
@@ -8234,8 +7823,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v1.size
           long[] resIndices = newStorage.getIndices();
           long[] resValues = newStorage.getValues();
@@ -8263,8 +7851,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
         LongLongVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -8309,8 +7896,7 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {//sorted v2.size
           long[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -8330,8 +7916,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           long[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -8340,8 +7925,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -8351,8 +7935,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {
           long[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -8372,8 +7955,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// sparse preferred
           long[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -8382,8 +7964,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -8393,8 +7974,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted v2.size
           long[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -8414,8 +7994,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {// dense preferred
           long[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -8424,8 +8003,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -8455,8 +8033,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// dense preferred
           long[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -8466,8 +8043,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -8482,15 +8058,13 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return new LongLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new LongLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   private static Vector apply(LongIntVector v1, LongIntVector v2, Binary op) {
     LongIntVectorStorage newStorage = (LongIntVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isSparse() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
         LongIntVectorStorage v1storage = v1.getStorage();
@@ -8501,8 +8075,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), entry.getIntValue()));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2IntMap.Entry> iter = v1.getStorage().entryIterator();
         LongIntVectorStorage v2storage = v2.getStorage();
@@ -8513,8 +8086,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getIntValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
         LongIntVectorStorage v1storage = v1.getStorage();
@@ -8537,8 +8109,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         long[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
@@ -8551,8 +8122,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(storage.get(idx), v2Values[i]));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2IntMap.Entry> iter = v1.getStorage().entryIterator();
         LongIntVectorStorage v2storage = v2.getStorage();
@@ -8563,8 +8133,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(entry.getIntValue(), v2.get(idx)));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         long[] v2Indices = v2.getStorage().getIndices();
         int[] v2Values = v2.getStorage().getValues();
@@ -8589,8 +8158,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v2.size
           ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
           LongIntVectorStorage v1storage = v1.getStorage();
@@ -8612,8 +8180,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {// sorted preferred v1.size
           long[] resIndices = newStorage.getIndices();
           int[] resValues = newStorage.getValues();
@@ -8641,8 +8208,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
         LongIntVectorStorage v1storage = v1.getStorage();
         while (iter.hasNext()) {
@@ -8687,8 +8253,7 @@ public class SimpleBinaryOutZAExecutor {
       long size1 = v1.size();
       long size2 = v2.size();
 
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {//sorted v2.size
           long[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -8708,8 +8273,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           long[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -8718,8 +8282,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -8729,8 +8292,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sortedDenseStorageThreshold * v1.dim()) {
         if (op.isKeepStorage()) {
           long[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -8750,8 +8312,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// sparse preferred
           long[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -8760,8 +8321,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -8771,8 +8331,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sortedDenseStorageThreshold * v2.dim()) {
         if (op.isKeepStorage()) {// sorted v2.size
           long[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -8792,8 +8351,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {// dense preferred
           long[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -8802,8 +8360,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -8833,8 +8390,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {// dense preferred
           long[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -8844,8 +8400,7 @@ public class SimpleBinaryOutZAExecutor {
 
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-              newStorage
-                  .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+              newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
               v1Pointor++;
               v2Pointor++;
             } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
@@ -8860,8 +8415,7 @@ public class SimpleBinaryOutZAExecutor {
       throw new AngelException("The operation is not support!");
     }
 
-    return new LongIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new LongIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
 
@@ -8885,8 +8439,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         int[] v2Indices = v2.getIndices();
         int size = v2.size();
@@ -8896,8 +8449,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
@@ -8907,8 +8459,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         int[] v2Indices = v2.getIndices();
         int size = v2.size();
@@ -8942,6 +8493,7 @@ public class SimpleBinaryOutZAExecutor {
           int[] resIndices = ArrayCopy.copy(v2.getIndices());
           double[] resValues = newStorage.getValues();
 
+
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
               resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
@@ -8953,8 +8505,7 @@ public class SimpleBinaryOutZAExecutor {
               v1Pointor++;
             }
           }
-          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -8991,8 +8542,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -9030,8 +8580,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
 
-          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {//dense or sparse
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -9057,6 +8606,7 @@ public class SimpleBinaryOutZAExecutor {
           double[] resValues = newStorage.getValues();
           int[] v2Indices = v2.getIndices();
 
+
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
               resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
@@ -9068,8 +8618,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {//dense or sparse
           int[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -9090,8 +8639,7 @@ public class SimpleBinaryOutZAExecutor {
       }
     }
 
-    return new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   public static Vector apply(IntFloatVector v1, IntDummyVector v2, Binary op) {
@@ -9114,8 +8662,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         int[] v2Indices = v2.getIndices();
         int size = v2.size();
@@ -9125,8 +8672,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
@@ -9136,8 +8682,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         int[] v2Indices = v2.getIndices();
         int size = v2.size();
@@ -9171,6 +8716,7 @@ public class SimpleBinaryOutZAExecutor {
           int[] resIndices = ArrayCopy.copy(v2.getIndices());
           float[] resValues = newStorage.getValues();
 
+
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
               resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
@@ -9182,8 +8728,7 @@ public class SimpleBinaryOutZAExecutor {
               v1Pointor++;
             }
           }
-          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -9220,8 +8765,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -9259,8 +8803,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
 
-          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {//dense or sparse
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -9286,6 +8829,7 @@ public class SimpleBinaryOutZAExecutor {
           float[] resValues = newStorage.getValues();
           int[] v2Indices = v2.getIndices();
 
+
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
               resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
@@ -9297,8 +8841,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {//dense or sparse
           int[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -9319,8 +8862,7 @@ public class SimpleBinaryOutZAExecutor {
       }
     }
 
-    return new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   public static Vector apply(IntLongVector v1, IntDummyVector v2, Binary op) {
@@ -9343,8 +8885,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         int[] v2Indices = v2.getIndices();
         int size = v2.size();
@@ -9354,8 +8895,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
@@ -9365,8 +8905,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         int[] v2Indices = v2.getIndices();
         int size = v2.size();
@@ -9400,6 +8939,7 @@ public class SimpleBinaryOutZAExecutor {
           int[] resIndices = ArrayCopy.copy(v2.getIndices());
           long[] resValues = newStorage.getValues();
 
+
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
               resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
@@ -9411,8 +8951,7 @@ public class SimpleBinaryOutZAExecutor {
               v1Pointor++;
             }
           }
-          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           int[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -9449,8 +8988,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {
           int[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -9488,8 +9026,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
 
-          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {//dense or sparse
           int[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -9515,6 +9052,7 @@ public class SimpleBinaryOutZAExecutor {
           long[] resValues = newStorage.getValues();
           int[] v2Indices = v2.getIndices();
 
+
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
               resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
@@ -9526,8 +9064,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {//dense or sparse
           int[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -9548,8 +9085,7 @@ public class SimpleBinaryOutZAExecutor {
       }
     }
 
-    return new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   public static Vector apply(IntIntVector v1, IntDummyVector v2, Binary op) {
@@ -9572,8 +9108,7 @@ public class SimpleBinaryOutZAExecutor {
         }
       }
     } else if (v1.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         int[] v2Indices = v2.getIndices();
         int size = v2.size();
@@ -9583,8 +9118,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Int2IntMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
@@ -9594,8 +9128,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         int[] v2Indices = v2.getIndices();
         int size = v2.size();
@@ -9629,6 +9162,7 @@ public class SimpleBinaryOutZAExecutor {
           int[] resIndices = ArrayCopy.copy(v2.getIndices());
           int[] resValues = newStorage.getValues();
 
+
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
               resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
@@ -9640,8 +9174,7 @@ public class SimpleBinaryOutZAExecutor {
               v1Pointor++;
             }
           }
-          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           int[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -9678,8 +9211,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {
           int[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -9717,8 +9249,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
 
-          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {//dense or sparse
           int[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -9744,6 +9275,7 @@ public class SimpleBinaryOutZAExecutor {
           int[] resValues = newStorage.getValues();
           int[] v2Indices = v2.getIndices();
 
+
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
               resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
@@ -9755,8 +9287,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new IntIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {//dense or sparse
           int[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -9777,16 +9308,14 @@ public class SimpleBinaryOutZAExecutor {
       }
     }
 
-    return new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   public static Vector apply(LongDoubleVector v1, LongDummyVector v2, Binary op) {
     LongDoubleVectorStorage newStorage = (LongDoubleVectorStorage) StorageSwitch.apply(v1, v2, op);
 
     if (v1.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         long[] v2Indices = v2.getIndices();
         long size = v2.size();
@@ -9796,8 +9325,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
@@ -9807,8 +9335,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         long[] v2Indices = v2.getIndices();
         long size = v2.size();
@@ -9842,6 +9369,7 @@ public class SimpleBinaryOutZAExecutor {
           long[] resIndices = ArrayCopy.copy(v2.getIndices());
           double[] resValues = newStorage.getValues();
 
+
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
               resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
@@ -9853,8 +9381,7 @@ public class SimpleBinaryOutZAExecutor {
               v1Pointor++;
             }
           }
-          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -9891,8 +9418,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -9930,8 +9456,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
 
-          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {//dense or sparse
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -9957,6 +9482,7 @@ public class SimpleBinaryOutZAExecutor {
           double[] resValues = newStorage.getValues();
           long[] v2Indices = v2.getIndices();
 
+
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
               resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
@@ -9968,8 +9494,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongDoubleSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {//dense or sparse
           long[] v1Indices = v1.getStorage().getIndices();
           double[] v1Values = v1.getStorage().getValues();
@@ -9990,16 +9515,14 @@ public class SimpleBinaryOutZAExecutor {
       }
     }
 
-    return new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new LongDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   public static Vector apply(LongFloatVector v1, LongDummyVector v2, Binary op) {
     LongFloatVectorStorage newStorage = (LongFloatVectorStorage) StorageSwitch.apply(v1, v2, op);
 
     if (v1.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         long[] v2Indices = v2.getIndices();
         long size = v2.size();
@@ -10009,8 +9532,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
@@ -10020,8 +9542,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         long[] v2Indices = v2.getIndices();
         long size = v2.size();
@@ -10055,6 +9576,7 @@ public class SimpleBinaryOutZAExecutor {
           long[] resIndices = ArrayCopy.copy(v2.getIndices());
           float[] resValues = newStorage.getValues();
 
+
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
               resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
@@ -10066,8 +9588,7 @@ public class SimpleBinaryOutZAExecutor {
               v1Pointor++;
             }
           }
-          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -10104,8 +9625,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -10143,8 +9663,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
 
-          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {//dense or sparse
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -10170,6 +9689,7 @@ public class SimpleBinaryOutZAExecutor {
           float[] resValues = newStorage.getValues();
           long[] v2Indices = v2.getIndices();
 
+
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
               resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
@@ -10181,8 +9701,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongFloatSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {//dense or sparse
           long[] v1Indices = v1.getStorage().getIndices();
           float[] v1Values = v1.getStorage().getValues();
@@ -10203,16 +9722,14 @@ public class SimpleBinaryOutZAExecutor {
       }
     }
 
-    return new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new LongFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   public static Vector apply(LongLongVector v1, LongDummyVector v2, Binary op) {
     LongLongVectorStorage newStorage = (LongLongVectorStorage) StorageSwitch.apply(v1, v2, op);
 
     if (v1.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         long[] v2Indices = v2.getIndices();
         long size = v2.size();
@@ -10222,8 +9739,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2LongMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
@@ -10233,8 +9749,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         long[] v2Indices = v2.getIndices();
         long size = v2.size();
@@ -10268,6 +9783,7 @@ public class SimpleBinaryOutZAExecutor {
           long[] resIndices = ArrayCopy.copy(v2.getIndices());
           long[] resValues = newStorage.getValues();
 
+
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
               resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
@@ -10279,8 +9795,7 @@ public class SimpleBinaryOutZAExecutor {
               v1Pointor++;
             }
           }
-          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           long[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -10317,8 +9832,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {
           long[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -10356,8 +9870,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
 
-          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {//dense or sparse
           long[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -10383,6 +9896,7 @@ public class SimpleBinaryOutZAExecutor {
           long[] resValues = newStorage.getValues();
           long[] v2Indices = v2.getIndices();
 
+
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
               resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
@@ -10394,8 +9908,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongLongSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {//dense or sparse
           long[] v1Indices = v1.getStorage().getIndices();
           long[] v1Values = v1.getStorage().getValues();
@@ -10416,16 +9929,14 @@ public class SimpleBinaryOutZAExecutor {
       }
     }
 
-    return new LongLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new LongLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
   public static Vector apply(LongIntVector v1, LongDummyVector v2, Binary op) {
     LongIntVectorStorage newStorage = (LongIntVectorStorage) StorageSwitch.apply(v1, v2, op);
 
     if (v1.isSparse()) {
-      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2
-          .dim()) {
+      if (v1.getSize() >= v2.getSize() && v2.getSize() <= Constant.sparseDenseStorageThreshold * v2.dim()) {
         // sparse preferred, keep storage guaranteed
         long[] v2Indices = v2.getIndices();
         long size = v2.size();
@@ -10435,8 +9946,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-      } else if (v1.getSize() <= v2.getSize()
-          && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
+      } else if (v1.getSize() <= v2.getSize() && v1.getSize() <= Constant.sparseDenseStorageThreshold * v1.dim()) {
         // sparse preferred, keep storage guaranteed
         ObjectIterator<Long2IntMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
@@ -10446,8 +9956,7 @@ public class SimpleBinaryOutZAExecutor {
             newStorage.set(idx, op.apply(v1.get(idx), 1));
           }
         }
-      } else if (v1.getSize() > v2.getSize()
-          && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
+      } else if (v1.getSize() > v2.getSize() && v2.getSize() > Constant.sparseDenseStorageThreshold * v2.dim()) {
         // preferred dense
         long[] v2Indices = v2.getIndices();
         long size = v2.size();
@@ -10481,6 +9990,7 @@ public class SimpleBinaryOutZAExecutor {
           long[] resIndices = ArrayCopy.copy(v2.getIndices());
           int[] resValues = newStorage.getValues();
 
+
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
               resValues[v2Pointor] = op.apply(v1Values[v1Pointor], 1);
@@ -10492,8 +10002,7 @@ public class SimpleBinaryOutZAExecutor {
               v1Pointor++;
             }
           }
-          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {
           long[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -10530,8 +10039,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {
           long[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -10569,8 +10077,7 @@ public class SimpleBinaryOutZAExecutor {
             }
           }
 
-          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices,
-              resValues);
+          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v2.size(), resIndices, resValues);
         } else {//dense or sparse
           long[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -10596,6 +10103,7 @@ public class SimpleBinaryOutZAExecutor {
           int[] resValues = newStorage.getValues();
           long[] v2Indices = v2.getIndices();
 
+
           while (v1Pointor < size1 && v2Pointor < size2) {
             if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
               resValues[v1Pointor] = op.apply(v1Values[v1Pointor], 1);
@@ -10607,8 +10115,7 @@ public class SimpleBinaryOutZAExecutor {
               v2Pointor++;
             }
           }
-          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices,
-              resValues);
+          newStorage = new LongIntSortedVectorStorage(v1.getDim(), (int) v1.size(), resIndices, resValues);
         } else {//dense or sparse
           long[] v1Indices = v1.getStorage().getIndices();
           int[] v1Values = v1.getStorage().getValues();
@@ -10629,8 +10136,7 @@ public class SimpleBinaryOutZAExecutor {
       }
     }
 
-    return new LongIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-        newStorage);
+    return new LongIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newStorage);
   }
 
 
