@@ -77,6 +77,13 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_VALIDATE_DATA_PATH = "angel.validate.data.path";
 
   /**
+   * kerberos config
+   */
+  public static final String ANGEL_KERBEROS_KEYTAB = "angel.kerberos.keytab";
+  public static final String ANGEL_KERBEROS_PRINCIPAL = "angel.kerberos.principal";
+  public static final String ANGEL_KERBEROS_KEYTAB_NAME="angel.kerberos.keytab.name";
+
+  /**
    * Predict data path.
    */
   public static final String ANGEL_PREDICT_DATA_PATH = "angel.predict.data.path";

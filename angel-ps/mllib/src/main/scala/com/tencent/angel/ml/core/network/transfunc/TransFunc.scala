@@ -19,13 +19,20 @@
 package com.tencent.angel.ml.core.network.transfunc
 
 
+import com.tencent.angel.ml.core.utils.paramsutils.ParamKeys
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.ufuncs.{TransFuncs, Ufuncs}
+import org.json4s.JsonAST.{JField, JObject, JString, JValue}
+import org.json4s.JsonDSL._
 
 trait TransFunc extends Serializable {
   def apply(mat: Matrix): Matrix
 
   def calGrad(output: Matrix, grad: Matrix): Matrix
+
+  def toJson: JObject = {
+    JObject(JField(ParamKeys.typeName, JString(s"${this.getClass.getSimpleName}")))
+  }
 }
 
 class Identity() extends TransFunc {
@@ -75,6 +82,11 @@ class SigmoidWithDropout(proba: Double, actionType: String) extends TransFunc {
   def calGrad(output: Matrix, grad: Matrix): Matrix = {
     TransFuncs.gradsigmoidwithdropout(output, grad)
   }
+
+  override def toJson: JObject = {
+    (ParamKeys.typeName -> s"${this.getClass.getSimpleName}") ~
+      (ParamKeys.proba -> proba) ~ (ParamKeys.actionType -> actionType)
+  }
 }
 
 class TanhWithDropout(proba: Double, actionType: String) extends TransFunc {
@@ -88,6 +100,11 @@ class TanhWithDropout(proba: Double, actionType: String) extends TransFunc {
   override def calGrad(output: Matrix, grad: Matrix): Matrix = {
     TransFuncs.gradtanhwithdropout(output, grad)
   }
+
+  override def toJson: JObject = {
+    (ParamKeys.typeName -> s"${this.getClass.getSimpleName}") ~
+      (ParamKeys.proba -> proba) ~ (ParamKeys.actionType -> actionType)
+  }
 }
 
 class Dropout(proba: Double, actionType: String) extends TransFunc {
@@ -100,6 +117,11 @@ class Dropout(proba: Double, actionType: String) extends TransFunc {
 
   override def calGrad(output: Matrix, grad: Matrix): Matrix = {
     TransFuncs.graddropout(output, grad, proba)
+  }
+
+  override def toJson: JObject = {
+    (ParamKeys.typeName -> s"${this.getClass.getSimpleName}") ~
+      (ParamKeys.proba -> proba) ~ (ParamKeys.actionType -> actionType)
   }
 }
 

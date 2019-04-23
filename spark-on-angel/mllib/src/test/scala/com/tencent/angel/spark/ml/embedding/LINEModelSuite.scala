@@ -27,7 +27,7 @@ import com.tencent.angel.spark.ml.embedding.line.LINEModel
 import com.tencent.angel.spark.ml.{PSFunSuite, SharedPSContext}
 
 class LINEModelSuite extends PSFunSuite with SharedPSContext {
-  val input = "../../data/bc/edge"
+  val input = "data/bc/edge"
   val output = "model/"
   val numPartition = 4
   val lr = 0.025f

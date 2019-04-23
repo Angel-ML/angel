@@ -204,6 +204,7 @@ object MLConf {
   val DEFAULT_ML_GBDT_CATE_FEAT = "none"
 
   val ML_GBDT_LOSS_FUNCTION: String = "ml.gbdt.loss.func"
+  val DEFAULT_ML_GBDT_LOSS_FUNCTION: String = "binary:logistic"
   val ML_GBDT_EVAL_METRIC = "ml.gbdt.eval.metric"
   val DEFAULT_ML_GBDT_EVAL_METRIC = "error"
   val ML_GBDT_MULTI_CLASS_STRATEGY = "ml.gbdt.multi.class.strategy"

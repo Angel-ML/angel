@@ -194,6 +194,7 @@ public class AngelYarnClient extends AngelClient {
     String files = conf.get(AngelConf.ANGEL_JOB_CACHE_FILES);
     String libjars = conf.get(AngelConf.ANGEL_JOB_LIBJARS);
     String archives = conf.get(AngelConf.ANGEL_JOB_CACHE_ARCHIVES);
+    String ketabFile = conf.get(AngelConf.ANGEL_KERBEROS_KEYTAB);
 
     // Create a number of filenames in the JobTracker's fs namespace
     LOG.info("default FileSystem: " + jtFs.getUri());
@@ -234,6 +235,19 @@ public class AngelYarnClient extends AngelClient {
           throw new IOException("Failed to create uri for " + tmpFile, ue);
         }
       }
+    }
+
+    if (ketabFile != null) {
+        ketabFile = "file://" + ketabFile;
+        URI tmpURI = null;
+        try {
+            tmpURI = new URI(ketabFile);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
+        }
+        Path tmp = new Path(tmpURI);
+        Path newPath = copyRemoteFiles(submitJobDir, tmp, conf, i);
+        conf.set(AngelConf.ANGEL_KERBEROS_KEYTAB_NAME, newPath.getName());
     }
 
     if (libjars != null) {
@@ -290,6 +304,7 @@ public class AngelYarnClient extends AngelClient {
     }
     // this might have name collisions. copy will throw an exception
     // parse the original path to create new path
+
     Path newPath = new Path(parentDir, originalPath.getName());
     FileUtil.copy(remoteFs, originalPath, jtFs, newPath, false, conf);
     jtFs.setReplication(newPath, replication);
@@ -371,6 +386,11 @@ public class AngelYarnClient extends AngelClient {
 
     localResources.put(AngelConf.ANGEL_JOB_CONF_FILE,
       createApplicationResource(defaultFileContext, jobConfPath, LocalResourceType.FILE));
+    if(conf.get(AngelConf.ANGEL_KERBEROS_KEYTAB) != null) {
+        Path keytabPath = new Path(jobSubmitPath, conf.get(AngelConf.ANGEL_KERBEROS_KEYTAB_NAME));
+        localResources.put(conf.get(AngelConf.ANGEL_KERBEROS_KEYTAB_NAME),
+                createApplicationResource(defaultFileContext, keytabPath, LocalResourceType.FILE));
+    }
 
     // Setup security tokens
     DataOutputBuffer dob = new DataOutputBuffer();

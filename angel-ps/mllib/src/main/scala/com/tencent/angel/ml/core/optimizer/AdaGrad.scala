@@ -19,10 +19,13 @@ package com.tencent.angel.ml.core.optimizer
 
 import java.util.concurrent.Future
 
+import com.tencent.angel.ml.core.utils.paramsutils.ParamKeys
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.psf.optimizer.AdaGradUpdateFunc
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
+import org.json4s.JsonAST._
+import org.json4s.JsonDSL._
 
 class AdaGrad(stepSize: Double, val beta: Double) extends Optimizer(stepSize) {
   private val LOG = LogFactory.getLog(classOf[AdaGrad])
@@ -39,5 +42,10 @@ class AdaGrad(stepSize: Double, val beta: Double) extends Optimizer(stepSize) {
 
   override def toString: String = {
     s"AdaGrad beta=$beta lr=$lr regL2=$regL2Param regL1=$regL1Param epsilon=$epsilon"
+  }
+
+  override def toJson: JObject = {
+    (ParamKeys.typeName -> s"${this.getClass.getSimpleName}") ~
+      (ParamKeys.beta -> beta)
   }
 }

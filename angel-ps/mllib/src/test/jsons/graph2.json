@@ -1,0 +1,81 @@
+{
+  "data" : {
+    "format" : "dummy",
+    "indexrange" : 148,
+    "numfield" : 13,
+    "validateratio" : 0.1,
+    "sampleratio" : 0.2,
+    "useshuffle" : false,
+    "posnegratio" : -1.0,
+    "translabel" : "NoTrans"
+  },
+  "model" : {
+    "modeltype" : "T_FLOAT_DENSE",
+    "modelsize" : 148,
+    "blockSize" : 1000000
+  },
+  "train" : {
+    "epoch" : 5,
+    "numupdateperepoch" : 10,
+    "batchsize" : 128,
+    "lr" : 0.5,
+    "decayclass" : "WarmRestarts",
+    "decayalpha" : 0.05,
+    "decaybeta" : 0.001
+  },
+  "layers" : [ {
+    "name" : "input",
+    "type" : "SimpleInputLayer",
+    "outputdim" : 1,
+    "transfunc" : {
+      "type" : "Identity"
+    },
+    "optimizer" : {
+      "type" : "Momentum",
+      "momentum" : 0.9
+    }
+  }, {
+    "name" : "embedding",
+    "type" : "Embedding",
+    "outputdim" : 104,
+    "numfactors" : 8,
+    "optimizer" : {
+      "type" : "Momentum",
+      "momentum" : 0.9
+    }
+  }, {
+    "name" : "innerSumPooling",
+    "type" : "BiInnerSumCross",
+    "outputdim" : 1,
+    "inputlayer" : "embedding"
+  }, {
+    "name" : "fclayer",
+    "type" : "FCLayer",
+    "outputdims" : [ 100, 100, 1 ],
+    "inputlayer" : "embedding",
+    "transfuncs" : [ {
+      "type" : "Relu"
+    }, {
+      "type" : "Relu"
+    }, {
+      "type" : "Identity"
+    } ],
+    "optimizer" : {
+      "type" : "Momentum",
+      "momentum" : 0.9
+    }
+  }, {
+    "name" : "sumPooling",
+    "type" : "SumPooling",
+    "outputdim" : 1,
+    "inputlayers" : [ "input", "innerSumPooling", "fclayer" ]
+  }, {
+    "name" : "simpleLossLayer",
+    "type" : "SimpleLossLayer",
+    "outputdim" : -1,
+    "inputlayer" : "sumPooling",
+    "lossfunc" : {
+      "type" : "LogLoss"
+    }
+  } ]
+}

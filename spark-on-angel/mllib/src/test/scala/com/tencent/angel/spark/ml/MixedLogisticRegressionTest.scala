@@ -32,7 +32,7 @@ class MixedLogisticRegressionTest extends PSFunSuite with SharedPSContext {
   override def beforeAll(): Unit = {
     super.beforeAll()
 
-    input = "../../data/census/census_148d_train.libsvm"
+    input = "data/census/census_148d_train.libsvm"
 
     // build SharedConf with params
     SharedConf.get()
