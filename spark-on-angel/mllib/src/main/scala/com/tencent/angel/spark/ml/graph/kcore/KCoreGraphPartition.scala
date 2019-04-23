@@ -16,15 +16,14 @@
  */
 
 
-package com.tencent.angel.spark.ml.kcore
+package com.tencent.angel.spark.ml.graph.kcore
+
+import com.tencent.angel.ml.math2.vector.IntIntVector
+import org.apache.spark.SparkPrivateClassProxy
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-
-import org.apache.spark.util.collection.SparkCollectionProxy
-
-import com.tencent.angel.ml.math2.vector.IntIntVector
 
 class KCoreGraphPartition(val keys: Array[Int], val adjs: Array[Array[Int]]) extends Serializable {
   assert(keys.length == adjs.length)
@@ -32,7 +31,7 @@ class KCoreGraphPartition(val keys: Array[Int], val adjs: Array[Array[Int]]) ext
   //  private val LOG = LoggerFactory.getLogger(this.getClass)
 
   private val invertAdjs = {
-    val tempMap = SparkCollectionProxy.createOpenHashMap[Int, ArrayBuffer[Int]]()
+    val tempMap = SparkPrivateClassProxy.createOpenHashMap[Int, ArrayBuffer[Int]]()
     adjs.zipWithIndex.foreach { case (adj, index) =>
       adj.foreach { nei =>
         tempMap.changeValue(nei, new ArrayBuffer[Int]() += index, _ += index)
@@ -53,12 +52,6 @@ class KCoreGraphPartition(val keys: Array[Int], val adjs: Array[Array[Int]]) ext
     model.pull(getKeysCopy).get(keys).map(Coder.decodeCoreNumber).sum
   }
 
-  private def getKeysCopy: Array[Int] = {
-    val keyCopy = new Array[Int](keys.length)
-    System.arraycopy(keys, 0, keyCopy, 0, keys.length)
-    keyCopy
-  }
-
   /*
   reset version
   we have only 6 bit to encode version, when version goes to 127, reset it to 1
@@ -76,6 +69,12 @@ class KCoreGraphPartition(val keys: Array[Int], val adjs: Array[Array[Int]]) ext
       }
     }
     model.updateCoreWithActive(coreWithVersions)
+  }
+
+  private def getKeysCopy: Array[Int] = {
+    val keyCopy = new Array[Int](keys.length)
+    System.arraycopy(keys, 0, keyCopy, 0, keys.length)
+    keyCopy
   }
 
   def init(model: KCorePSModel): Unit = {

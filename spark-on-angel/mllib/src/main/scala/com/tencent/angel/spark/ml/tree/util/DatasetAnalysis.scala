@@ -17,7 +17,7 @@
 
 package com.tencent.angel.spark.ml.tree.util
 
-import com.tencent.angel.spark.ml.tree.common.TreeConf._
+import com.tencent.angel.spark.ml.tree.common.TreeConf
 import com.tencent.angel.spark.ml.tree.gbdt.metadata.FeatureInfo
 import com.tencent.angel.spark.ml.tree.sketch.HeapQuantileSketch
 import org.apache.spark.{SparkConf, SparkContext}
@@ -42,10 +42,10 @@ object DatasetAnalysis {
   }
 
   def analysis(conf: SparkConf)(implicit sc: SparkContext): Unit = {
-    val input = conf.get(ML_TRAIN_PATH)
-    val dim = conf.get(ML_NUM_FEATURE).toInt
-    val numWorker = conf.get(ML_NUM_WORKER).toInt
-    val numSplit = conf.getInt(ML_GBDT_SPLIT_NUM, DEFAULT_ML_GBDT_SPLIT_NUM)
+    val input = conf.get(TreeConf.ML_TRAIN_PATH)
+    val dim = conf.get(TreeConf.ML_NUM_FEATURE).toInt
+    val numWorker = conf.get(TreeConf.ML_NUM_WORKER).toInt
+    val numSplit = conf.getInt(TreeConf.ML_GBDT_SPLIT_NUM, TreeConf.DEFAULT_ML_GBDT_SPLIT_NUM)
 
     val loadStart = System.currentTimeMillis()
 
@@ -167,7 +167,7 @@ object DatasetAnalysis {
   }
 
   def change_label(conf: SparkConf)(implicit sc: SparkContext): Unit = {
-    val input = conf.get(ML_TRAIN_PATH)
+    val input = conf.get(TreeConf.ML_TRAIN_PATH)
     val output = conf.get("spark.ml.output.path")
 
     sc.textFile(input)
@@ -183,9 +183,9 @@ object DatasetAnalysis {
   }
 
   def coalesce_label(conf: SparkConf)(implicit sc: SparkContext): Unit = {
-    val input = conf.get(ML_TRAIN_PATH)
+    val input = conf.get(TreeConf.ML_TRAIN_PATH)
     val output = conf.get("spark.ml.output.path")
-    val numClass = conf.get(ML_NUM_CLASS).toInt
+    val numClass = conf.get(TreeConf.ML_NUM_CLASS).toInt
     val coalescedNumClass = conf.get("spark.ml.coalesced.class.num").toInt
 
     val avg = if (numClass % coalescedNumClass > numClass / 2) {
@@ -208,9 +208,9 @@ object DatasetAnalysis {
   }
 
   def shuffle_feature(conf: SparkConf)(implicit sc: SparkContext): Unit = {
-    val input = conf.get(ML_TRAIN_PATH)
+    val input = conf.get(TreeConf.ML_TRAIN_PATH)
     val output = conf.get("spark.ml.output.path")
-    val numFeature = conf.get(ML_NUM_FEATURE).toInt
+    val numFeature = conf.get(TreeConf.ML_NUM_FEATURE).toInt
     val shuffle = (0 until numFeature).toArray
     Maths.shuffle(shuffle)
     val bcShuffle = sc.broadcast(shuffle)

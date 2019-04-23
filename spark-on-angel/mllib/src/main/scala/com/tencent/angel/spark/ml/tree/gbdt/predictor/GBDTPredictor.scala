@@ -18,10 +18,10 @@
 
 package com.tencent.angel.spark.ml.tree.gbdt.predictor
 
-import com.tencent.angel.spark.ml.tree.common.TreeConf._
+import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.tree.data.Instance
 import com.tencent.angel.spark.ml.tree.gbdt.tree.{GBTNode, GBTTree}
-import com.tencent.angel.spark.ml.tree.objective.ObjectiveFactory
 import com.tencent.angel.spark.ml.tree.util.DataLoader
 import org.apache.hadoop.fs.Path
 import org.apache.spark.ml.linalg.{Vector, Vectors}
@@ -37,16 +37,18 @@ class GBDTPredictor extends Serializable {
     println(s"Reading model from $modelPath")
   }
 
-  def predict(predictor: GBDTPredictor, instances: RDD[Instance]): RDD[(Long, Array[Float])] = {
+  def predict(predictor: GBDTPredictor, instances: RDD[Instance]): RDD[(Long, Int, Array[Float])] = {
     val bcPredictor = instances.sparkContext.broadcast(predictor)
     instances.map { instance =>
-      (instance.label.toLong, bcPredictor.value.predictRaw(instance.feature))
+      val predProbs = bcPredictor.value.predictRaw(instance.feature)
+      val predClass = bcPredictor.value.probToClass(predProbs)
+      (instance.label.toLong, predClass, predProbs)
     }
   }
 
-  def predict(implicit sc: SparkContext, validPath: String, predPath: String): Unit = {
-    println(s"Predicting dataset $validPath")
-    val instances: RDD[Instance] = DataLoader.loadLibsvmDP(validPath, forest.head.getParam.numFeature).cache()
+  def predict(implicit sc: SparkContext, predictPath: String, outputPath: String): Unit = {
+    println(s"Predicting dataset: $predictPath")
+    val instances: RDD[Instance] = DataLoader.loadLibsvmDP(predictPath, forest.head.getParam.numFeature).cache()
     //val labels = instances.map(_.label.toFloat).collect()
     val preds = predict(this, instances)
     instances.unpersist()
@@ -62,12 +64,15 @@ class GBDTPredictor extends Serializable {
     //      s"$kind[$metric]"
     //    }).mkString(", "))
 
-    val path = new Path(predPath)
+    val path = new Path(outputPath)
     val fs = path.getFileSystem(sc.hadoopConfiguration)
     if (fs.exists(path)) fs.delete(path, true)
 
-    preds.map(pred => s"${pred._1}  ${pred._2.mkString(",")}").saveAsTextFile(predPath)
-    println(s"Writing predictions to $predPath")
+    if (forest.head.getParam.isClassification)
+      preds.map(pred => s"${pred._1} ${pred._2} ${pred._3.mkString(",")}").saveAsTextFile(outputPath)
+    else
+      preds.map(pred => s"${pred._1} ${pred._3.mkString(",")}").saveAsTextFile(outputPath)
+    println(s"Writing predictions to $outputPath")
   }
 
   def predictRaw(vec: Vector): Array[Float] = {
@@ -82,7 +87,7 @@ class GBDTPredictor extends Serializable {
         else
           node = node.getRightChild.asInstanceOf[GBTNode]
       }
-      if (param.numClass == 2) {
+      if (param.isRegression || param.numClass == 2) {
         preds(0) += node.getWeight * param.learningRate
       } else {
         if (param.isMultiClassMultiTree) {
@@ -101,7 +106,7 @@ class GBDTPredictor extends Serializable {
   def probToClass(preds: Array[Float]): Int = {
     preds.length match {
       case 1 => if (preds.head > 0.5) 1 else 0
-      case _ => preds.zipWithIndex.maxBy(_._1)._2 + 1
+      case _ => preds.zipWithIndex.maxBy(_._1)._2
     }
   }
 
@@ -154,13 +159,20 @@ object GBDTPredictor {
     @transient val conf = new SparkConf()
     @transient implicit val sc = SparkContext.getOrCreate(conf)
 
-    val modelPath = conf.get(ML_MODEL_PATH)
-    val validPath = conf.get(ML_VALID_PATH)
-    val predictPath = conf.get(ML_PREDICT_PATH)
+    val params = ArgsUtil.parse(args)
+
+    //val modelPath = params.getOrElse(TreeConf.ML_MODEL_PATH, "xxx")
+    val modelPath = params.getOrElse(AngelConf.ANGEL_LOAD_MODEL_PATH, "xxx")
+
+    //val predictPath = params.getOrElse(TreeConf.ML_PREDICT_PATH, "xxx")
+    val predictPath = params.getOrElse(AngelConf.ANGEL_PREDICT_DATA_PATH, "xxx")
+
+    //val outputPath = params.getOrElse(TreeConf.ML_OUTPUT_PATH, "xxx")
+    val outputPath = params.getOrElse(AngelConf.ANGEL_PREDICT_PATH, "xxx")
 
     val predictor = new GBDTPredictor
     predictor.loadModel(sc, modelPath)
-    predictor.predict(sc, validPath, predictPath)
+    predictor.predict(sc, predictPath, outputPath)
 
     sc.stop
   }

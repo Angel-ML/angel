@@ -34,7 +34,20 @@ import com.tencent.angel.spark.models.impl.{PSMatrixImpl, PSVectorImpl}
 import com.tencent.angel.spark.models.{PSMatrix, PSVector}
 import org.apache.spark.rdd.RDD
 
-class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extends Serializable {
+class FTRL() extends Serializable {
+
+  var lambda1: Double = 0
+  var lambda2: Double = 0
+  var alpha: Double = 0
+  var beta: Double = 0
+
+  def this(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) {
+    this()
+    this.lambda1 = lambda1
+    this.lambda2 = lambda2
+    this.alpha = alpha
+    this.beta = beta
+  }
 
   var wPS: PSVector = _
   var name = "weights"
@@ -218,7 +231,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extend
     * @param batch
     * @return
     */
-  def predict(batch: Array[LabeledData]): Array[(Double, Double)] = {
+  def predict(batch: Array[LabeledData], isTraining:Boolean=true): Array[(Double, Double)] = {
     val indices = batch.flatMap {
       case point =>
         point.getX match {
@@ -228,10 +241,15 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extend
         }
     }.distinct
 
+    val weight = isTraining match {
+      case true =>
+        val vectors = matrix.pull(Array(0, 1), indices)
+        val (localZ, localN) = (vectors(0), vectors(1))
+        Ufuncs.ftrlthreshold(localZ, localN, alpha, beta, lambda1, lambda2)
+      case false =>
+        matrix.pull(Array(2), indices)(0)
+    }
     // Fetch the dimensions of n/z
-    val vectors = matrix.pull(Array(0, 1), indices)
-    val (localZ, localN) = (vectors(0), vectors(1))
-    val weight = Ufuncs.ftrlthreshold(localZ, localN, alpha, beta, lambda1, lambda2)
 
     batch.map {
       case point =>
