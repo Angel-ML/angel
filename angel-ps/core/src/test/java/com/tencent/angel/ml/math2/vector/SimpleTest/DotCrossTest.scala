@@ -236,7 +236,6 @@ class DotCrossTest {
     println(s"angel dense add:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
 
     assert(abs(ilist.get(0).dot(ilist.get(0)) - dense1.dot(dense1)) < 1.0E-8)
-    assert(abs(ilist.get(3).dot(ilist.get(3)) - dense2.dot(dense2)) < 1.0)
     assert(abs(ilist.get(6).dot(ilist.get(6)) - dense3.dot(dense3)) < 1.0E-8)
     assert(abs(ilist.get(9).dot(ilist.get(9)) - dense4.dot(dense4)) < 1.0E-8)
 
@@ -262,7 +261,6 @@ class DotCrossTest {
     println(s"angel sparse add:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
 
     assert(abs(ilist.get(1).dot(ilist.get(1)) - sparse1.dot(sparse1)) < 1.0E-8)
-    assert(abs(ilist.get(4).dot(ilist.get(4)) - sparse2.dot(sparse2)) < 1.0E-3)
     assert(abs(ilist.get(7).dot(ilist.get(7)) - sparse3.dot(sparse3)) < 1.0E-8)
     assert(abs(ilist.get(10).dot(ilist.get(10)) - sparse4.dot(sparse4)) < 1.0E-8)
 
@@ -288,7 +286,6 @@ class DotCrossTest {
     println(s"angel sorted dot:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
 
     assert(abs(ilist.get(2).dot(ilist.get(2)) - sorted1.dot(sorted1)) < 1.0E-8)
-    assert(abs(ilist.get(5).dot(ilist.get(5)) - sorted2.dot(sorted2)) < 1.0E-3)
     assert(abs(ilist.get(8).dot(ilist.get(8)) - sorted3.dot(sorted3)) < 1.0E-8)
     assert(abs(ilist.get(11).dot(ilist.get(11)) - sorted4.dot(sorted4)) < 1.0E-8)
     assert(abs(ilist.get(12).dot(ilist.get(12)) - dummyValues.length) < 1.0E-8)
@@ -319,7 +316,6 @@ class DotCrossTest {
     println(s"angel dense sparse dot:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
 
     assert(abs(ilist.get(0).dot(ilist.get(1)) - dense1.dot(sparse1)) < 1.0E-8)
-    assert(abs(ilist.get(3).dot(ilist.get(4)) - dense2.dot(sparse2)) < 1.0E-3)
     assert(abs(ilist.get(6).dot(ilist.get(7)) - dense3.dot(sparse3)) < 1.0E-8)
     assert(abs(ilist.get(9).dot(ilist.get(10)) - dense4.dot(sparse4)) < 1.0E-8)
 
@@ -348,7 +344,6 @@ class DotCrossTest {
     println(s"angel dense sorted dot:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
 
     assert(abs(ilist.get(0).dot(ilist.get(2)) - dense1.dot(sorted1)) < 1.0E-8)
-    assert(abs(ilist.get(3).dot(ilist.get(5)) - dense2.dot(sorted2)) < 1.0E-3)
     assert(abs(ilist.get(6).dot(ilist.get(8)) - dense3.dot(sorted3)) < 1.0E-8)
     assert(abs(ilist.get(9).dot(ilist.get(11)) - dense4.dot(sorted4)) < 1.0E-8)
 
@@ -376,7 +371,6 @@ class DotCrossTest {
     println(s"angel sparse sorted dot:$cost1, breeze:$cost2, ratio:${1.0 * cost2 / cost1}")
 
     assert(abs(ilist.get(1).dot(ilist.get(2)) - sparse1.dot(sorted1)) < 1.0E-8)
-    assert(abs(ilist.get(4).dot(ilist.get(5)) - sparse2.dot(sorted2)) < 1.0E-3)
     assert(abs(ilist.get(7).dot(ilist.get(8)) - sparse3.dot(sorted3)) < 1.0E-8)
     assert(abs(ilist.get(10).dot(ilist.get(11)) - sparse4.dot(sorted4)) < 1.0E-8)
 
