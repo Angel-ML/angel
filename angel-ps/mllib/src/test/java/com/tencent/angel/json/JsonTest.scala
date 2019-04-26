@@ -12,7 +12,7 @@ class JsonTest extends FunSuite{
     val sharedConf = SharedConf.get()
     val placeHolder = new PlaceHolder(sharedConf)
     implicit val graph: AngelGraph = new AngelGraph(placeHolder, sharedConf)
-    val jsonFile = "E:\\angel\\angel-ps\\mllib\\src\\test\\jsons\\graph.json"
+    val jsonFile = "angel-ps\\mllib\\src\\test\\jsons\\graph.json"
     val jsonAst = JsonUtils.parseJson(jsonFile)
     JsonUtils.fillGraph(jsonAst)
 
