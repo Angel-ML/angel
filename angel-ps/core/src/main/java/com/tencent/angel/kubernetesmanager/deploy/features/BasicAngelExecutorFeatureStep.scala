@@ -49,6 +49,10 @@ private[angel] class BasicAngelExecutorFeatureStep(
       (Constants.ENV_MASTER_BIND_ADDRESS, kubernetesConf.angelConf.get(AngelConf.ANGEL_KUBERNETES_MASTER_POD_IP)),
       (Constants.ENV_MASTER_BIND_PORT, kubernetesConf.angelConf.getInt(AngelConf.ANGEL_KUBERNETES_MASTER_PORT,
         AngelConf.DEFAULT_ANGEL_KUBERNETES_MASTER_PORT).toString),
+      (Constants.ENV_ANGEL_USER_TASK, kubernetesConf.angelConf.get(AngelConf.ANGEL_TASK_USER_TASKCLASS,
+        AngelConf.DEFAULT_ANGEL_TASK_USER_TASKCLASS)),
+      (Constants.ENV_ANGEL_WORKERGROUP_NUMBER, kubernetesConf.angelConf.get(AngelConf.ANGEL_WORKERGROUP_ACTUAL_NUM)),
+      (Constants.ENV_ANGEL_TASK_NUMBER, kubernetesConf.angelConf.get(AngelConf.ANGEL_TASK_ACTUAL_NUM)),
       (Constants.ENV_EXECUTOR_CORES, executorCores.toString),
       (Constants.ENV_EXECUTOR_MEMORY, s"${executorMemoryMiB}M"),
       (Constants.ENV_APPLICATION_ID, kubernetesConf.appId),
@@ -66,15 +70,7 @@ private[angel] class BasicAngelExecutorFeatureStep(
           .withNewFieldRef("v1", "status.podIP")
           .build())
         .build()
-    ) ++ kubernetesConf.angelConf.iterator().asScala.map(x => (x.getKey, x.getValue))
-      .toSeq
-      .filter(env => env._1.startsWith("angel."))
-      .map { env =>
-        new EnvVarBuilder()
-          .withName(env._1)
-          .withValue(env._2)
-          .build()
-      }
+    )
 
     val executorContainer = new ContainerBuilder(pod.container)
       .withName(executorRole)

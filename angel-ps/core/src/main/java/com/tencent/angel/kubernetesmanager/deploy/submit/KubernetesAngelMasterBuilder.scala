@@ -4,22 +4,21 @@ import com.tencent.angel.kubernetesmanager.deploy.config.{KubernetesConf, Kubern
 import com.tencent.angel.kubernetesmanager.deploy.features._
 
 private[angel] class KubernetesAngelMasterBuilder(
-                                                   provideBasicStep: (KubernetesConf[KubernetesMasterSpecificConf]) => BasicAngelMasterFeatureStep =
+    provideBasicStep: (KubernetesConf[KubernetesMasterSpecificConf]) => BasicAngelMasterFeatureStep =
       new BasicAngelMasterFeatureStep(_),
-                                                   provideSecretsStep: (KubernetesConf[_ <: KubernetesRoleSpecificConf]
+    provideSecretsStep: (KubernetesConf[_ <: KubernetesRoleSpecificConf]
       => MountSecretsFeatureStep) =
       new MountSecretsFeatureStep(_),
-                                                   provideEnvSecretsStep: (KubernetesConf[_ <: KubernetesRoleSpecificConf]
+    provideEnvSecretsStep: (KubernetesConf[_ <: KubernetesRoleSpecificConf]
       => EnvSecretsFeatureStep) =
       new EnvSecretsFeatureStep(_),
-                                                   provideLocalDirsStep: (KubernetesConf[_ <: KubernetesRoleSpecificConf])
+    provideLocalDirsStep: (KubernetesConf[_ <: KubernetesRoleSpecificConf])
       => LocalDirsFeatureStep =
       new LocalDirsFeatureStep(_),
-                                                   provideVolumesStep: (KubernetesConf[_ <: KubernetesRoleSpecificConf]
+    provideVolumesStep: (KubernetesConf[_ <: KubernetesRoleSpecificConf]
       => MountVolumesFeatureStep) =
       new MountVolumesFeatureStep(_),
-                                                   provideJavaStep: (
-      KubernetesConf[KubernetesMasterSpecificConf]
+    provideJavaStep: (KubernetesConf[KubernetesMasterSpecificConf]
         => JavaMasterFeatureStep) =
     new JavaMasterFeatureStep(_)) {
 

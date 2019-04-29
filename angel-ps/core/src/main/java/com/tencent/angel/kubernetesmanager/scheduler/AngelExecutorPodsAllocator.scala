@@ -2,7 +2,7 @@ package com.tencent.angel.kubernetesmanager.scheduler
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
-import io.fabric8.kubernetes.api.model.PodBuilder
+import io.fabric8.kubernetes.api.model.{ContainerBuilder, PodBuilder}
 import io.fabric8.kubernetes.client.KubernetesClient
 import org.apache.hadoop.conf.Configuration
 import com.tencent.angel.kubernetesmanager.deploy.config.{Constants, KubernetesConf}
@@ -118,9 +118,21 @@ private[angel] class AngelExecutorPodsAllocator(
             applicationId,
             masterPod)
           val executorPod = executorBuilder.buildFromFeatures(executorConf)
+          val resolvedExecutorContainer = new ContainerBuilder(executorPod.container)
+            .addNewVolumeMount()
+            .withName(Constants.ANGEL_CONF_VOLUME)
+            .withMountPath(Constants.ANGEL_CONF_DIR_INTERNAL)
+            .endVolumeMount()
+            .build()
           val podWithAttachedContainer = new PodBuilder(executorPod.pod)
             .editOrNewSpec()
-            .addToContainers(executorPod.container)
+            .addToContainers(resolvedExecutorContainer)
+            .addNewVolume()
+            .withName(Constants.ANGEL_CONF_VOLUME)
+            .withNewConfigMap()
+            .withName(executorConf.appResourceNamePrefix + "-master-conf-map")
+            .endConfigMap()
+            .endVolume()
             .endSpec()
             .build()
           kubernetesClient.pods().create(podWithAttachedContainer)

@@ -22,6 +22,7 @@ import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.common.location.LocationManager;
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.kubernetesmanager.scheduler.KubernetesClusterManager;
 import com.tencent.angel.master.app.*;
 import com.tencent.angel.master.client.ClientManager;
 import com.tencent.angel.master.data.DataSpliter;
@@ -364,6 +365,10 @@ public class AngelApplicationMaster extends CompositeService {
 
     @Override public Configuration getConf() {
       return conf;
+    }
+
+    @Override public KubernetesClusterManager getK8sClusterManager() {
+      return null;
     }
 
     @Override public WebApp getWebApp() {

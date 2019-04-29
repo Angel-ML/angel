@@ -9,6 +9,7 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.*;
 import com.tencent.angel.master.client.ClientManager;
 import com.tencent.angel.master.data.DataSpliter;
+import com.tencent.angel.master.data.DummyDataSpliter;
 import com.tencent.angel.master.deploy.ContainerAllocator;
 import com.tencent.angel.kubernetesmanager.scheduler.KubernetesClusterManager;
 import com.tencent.angel.master.matrix.committer.AMModelLoader;
@@ -28,9 +29,18 @@ import com.tencent.angel.master.psagent.*;
 import com.tencent.angel.master.slowcheck.SlowChecker;
 import com.tencent.angel.master.task.AMTaskManager;
 import com.tencent.angel.master.worker.WorkerManager;
+import com.tencent.angel.master.worker.WorkerManagerEventType;
+import com.tencent.angel.master.worker.attempt.WorkerAttemptEvent;
+import com.tencent.angel.master.worker.attempt.WorkerAttemptEventType;
+import com.tencent.angel.master.worker.worker.AMWorkerEvent;
+import com.tencent.angel.master.worker.worker.AMWorkerEventType;
+import com.tencent.angel.master.worker.workergroup.AMWorkerGroupEvent;
+import com.tencent.angel.master.worker.workergroup.AMWorkerGroupEventType;
 import com.tencent.angel.plugin.AngelServiceLoader;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.utils.ConfUtils;
+import com.tencent.angel.worker.WorkerAttemptId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -52,7 +62,9 @@ import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.SystemClock;
 import org.apache.hadoop.yarn.webapp.WebApp;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.locks.Lock;
@@ -274,6 +286,10 @@ public class AngelKubernetesApplicationMaster extends CompositeService {
             return conf;
         }
 
+        @Override public KubernetesClusterManager getK8sClusterManager() {
+            return k8sClusterManager;
+        }
+
         @Override public WebApp getWebApp() {
             return webApp;
         }
@@ -429,9 +445,10 @@ public class AngelKubernetesApplicationMaster extends CompositeService {
 
             // stop all services
             LOG.info("Calling stop for all the services");
+            LOG.info("Now stop ps scheduler.");
+            conf.set(AngelConf.ANGEL_KUBERNETES_EXECUTOR_ROLE, "ps");
+            k8sClusterManager.stop(conf);
             AngelKubernetesApplicationMaster.this.stop();
-
-            //k8sClusterManager.stop();
 
             // 1.write application state to file so that the client can get the state of the application
             // if master exit
@@ -465,14 +482,13 @@ public class AngelKubernetesApplicationMaster extends CompositeService {
 
     private void exit(int code) {
         AngelDeployMode deployMode = appContext.getDeployMode();
-        if (deployMode == AngelDeployMode.YARN) {
+        if (deployMode == AngelDeployMode.KUBERNETES) {
             System.exit(code);
         }
     }
 
     private void writeAppState() throws IllegalArgumentException, IOException {
-        String interalStatePath = "/tmp/state";
-                //appContext.getConf().get(AngelConf.ANGEL_APP_SERILIZE_STATE_FILE);
+        String interalStatePath = appContext.getConf().get(AngelConf.ANGEL_APP_SERILIZE_STATE_FILE);
 
         LOG.info("start to write app state to file " + interalStatePath);
 
@@ -499,11 +515,7 @@ public class AngelKubernetesApplicationMaster extends CompositeService {
         AngelKubernetesAppMasterShutdownHook hook = null;
         try {
             Configuration conf = new Configuration();
-            for (Entry<String, String> confTuple : System.getenv().entrySet()) {
-                if (confTuple.getKey().startsWith("angel.")) {
-                    conf.set(confTuple.getKey(), confTuple.getValue());
-                }
-            }
+            ConfUtils.addResourceProperties(conf, Constants.ANGEL_CONF_PATH());
             conf.set(AngelConf.ANGEL_KUBERNETES_MASTER_POD_IP,
                     System.getenv(Constants.ENV_MASTER_BIND_ADDRESS()));
             conf.set(AngelConf.ANGEL_KUBERNETES_MASTER_POD_NAME,
@@ -597,6 +609,36 @@ public class AngelKubernetesApplicationMaster extends CompositeService {
 
         // recover task information if needed
         recoverTaskState();
+        RunningMode mode = appContext.getRunningMode();
+        LOG.info("running mode=" + mode);
+        switch (mode) {
+            case ANGEL_PS_WORKER: {
+                conf.setBoolean("mapred.mapper.new-api", true);
+                // a dummy data spliter is just for test now
+                boolean useDummyDataSpliter = conf.getBoolean(AngelConf.ANGEL_AM_USE_DUMMY_DATASPLITER,
+                        AngelConf.DEFAULT_ANGEL_AM_USE_DUMMY_DATASPLITER);
+                if (useDummyDataSpliter) {
+                    dataSpliter = new DummyDataSpliter(appContext);
+                } else {
+                    // recover data splits information if needed
+                    recoveryDataSplits();
+                }
+
+                // init worker manager and register worker manager event
+                workerManager = new WorkerManager(appContext);
+                workerManager.adjustTaskNumber(dataSpliter.getSplitNum());
+                addIfService(workerManager);
+                dispatcher.register(WorkerManagerEventType.class, workerManager);
+                dispatcher.register(AMWorkerGroupEventType.class, new WorkerGroupEventHandler());
+                dispatcher.register(AMWorkerEventType.class, new WorkerEventHandler());
+                dispatcher.register(WorkerAttemptEventType.class, new WorkerAttemptEventHandler());
+                LOG.info("build WorkerManager success");
+                break;
+            }
+
+            case ANGEL_PS:
+                break;
+        }
 
         // register slow worker/ps checker
         addIfService(new SlowChecker(appContext));
@@ -741,6 +783,32 @@ public class AngelKubernetesApplicationMaster extends CompositeService {
 
     public String getAppName() {
         return appName;
+    }
+
+    public class WorkerAttemptEventHandler implements EventHandler<WorkerAttemptEvent> {
+
+        @Override public void handle(WorkerAttemptEvent event) {
+            WorkerAttemptId workerAttemptId = event.getWorkerAttemptId();
+
+            workerManager.getWorker(workerAttemptId.getWorkerId()).getWorkerAttempt(workerAttemptId)
+                    .handle(event);
+        }
+    }
+
+
+    public class WorkerEventHandler implements EventHandler<AMWorkerEvent> {
+
+        @Override public void handle(AMWorkerEvent event) {
+            workerManager.getWorker(event.getWorkerId()).handle(event);
+        }
+    }
+
+
+    public class WorkerGroupEventHandler implements EventHandler<AMWorkerGroupEvent> {
+
+        @Override public void handle(AMWorkerGroupEvent event) {
+            workerManager.getWorkerGroup(event.getGroupId()).handle(event);
+        }
     }
 
     public class ParameterServerEventHandler implements EventHandler<AMParameterServerEvent> {

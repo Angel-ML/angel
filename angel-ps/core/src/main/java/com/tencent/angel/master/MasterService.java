@@ -20,6 +20,7 @@ package com.tencent.angel.master;
 
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
+import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.common.location.Location;
 import com.tencent.angel.common.location.LocationManager;
 import com.tencent.angel.conf.AngelConf;
@@ -1116,6 +1117,17 @@ public class MasterService extends AbstractService implements MasterProtocol {
     throws ServiceException {
     LOG.info("start to calculation");
     context.getApp().startExecute();
+    if (context.getDeployMode() == AngelDeployMode.KUBERNETES) {
+      int workerNum = context.getConf().getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER,
+              AngelConf.DEFAULT_ANGEL_WORKERGROUP_NUMBER);
+      while (context.getWorkerManager().getRegisterWorkerNumber() < workerNum) {
+        LOG.debug("waiting for worker register in monitor...");
+      }
+      LOG.info("Now scheduler and lanuch worker pod.");
+      Configuration conf = context.getConf();
+      conf.set(AngelConf.ANGEL_KUBERNETES_EXECUTOR_ROLE, "worker");
+      context.getK8sClusterManager().scheduler(conf);
+    }
     return StartResponse.newBuilder().build();
   }
 

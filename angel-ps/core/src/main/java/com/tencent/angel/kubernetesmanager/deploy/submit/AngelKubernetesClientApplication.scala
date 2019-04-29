@@ -1,6 +1,6 @@
 package com.tencent.angel.kubernetesmanager.deploy.submit
 
-import java.io.{Closeable, StringWriter}
+import java.io.{Closeable, StringReader, StringWriter}
 import java.util.{Collections, Properties}
 
 import com.tencent.angel.conf.AngelConf
@@ -115,6 +115,8 @@ private[angel] class Client(
       .addToData(Constants.ANGEL_CONF_FILE_NAME, propertiesWriter.toString)
       .build()
   }
+
+
 }
 
 /**
@@ -180,7 +182,7 @@ private[angel] class KubernetesClientApplication {
         case e: Exception =>
           throw e
     }
-    if(podIp != null && !"".equals(podIp)) {
+    if(podIp != null && !"".equals(podIp) && pod.getStatus.getPhase.equals("Running")) {
       LOG.info("Now angel master pod state phase is Running, return angel master pod ip.")
     }
     podIp

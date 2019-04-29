@@ -32,7 +32,7 @@ private[angel] object KubernetesUtils {
   /**
     * Extract Angel volume configuration properties with a given name prefix.
     *
-    * @param angelConf Spark configuration
+    * @param angelConf Angel configuration
     * @param prefix the given property name prefix
     * @return a Map storing with volume name as key and spec as value
     */
@@ -113,8 +113,7 @@ private[angel] object KubernetesUtils {
     */
   implicit private class MapOps[A, B](m: Map[A, B]) {
     def getTry(key: A): Try[B] = {
-      m
-        .get(key)
+      m.get(key)
         .fold[Try[B]](Failure(new NoSuchElementException(key.toString)))(Success(_))
     }
   }

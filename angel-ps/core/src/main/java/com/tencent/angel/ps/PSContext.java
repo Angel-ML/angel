@@ -90,6 +90,8 @@ public class PSContext {
 
     if (mode.equals(AngelDeployMode.LOCAL.toString())) {
       return AngelDeployMode.LOCAL;
+    } else if (mode.equals(AngelDeployMode.KUBERNETES.toString())) {
+      return AngelDeployMode.KUBERNETES;
     } else {
       return AngelDeployMode.YARN;
     }

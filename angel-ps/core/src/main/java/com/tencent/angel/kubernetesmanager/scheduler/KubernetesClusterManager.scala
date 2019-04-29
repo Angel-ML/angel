@@ -6,7 +6,8 @@ import org.apache.hadoop.conf.Configuration
 
 private[angel] class KubernetesClusterManager {
 
-  private var schedulerBackend: KubernetesClusterSchedulerBackend = _
+  private var psSchedulerBackend: KubernetesClusterSchedulerBackend = _
+  private var workerSchedulerBackend: KubernetesClusterSchedulerBackend = _
 
   def doScheduler(conf: Configuration): Unit = {
     val (authConfPrefix,
@@ -50,23 +51,49 @@ private[angel] class KubernetesClusterManager {
     val podsPollingEventSource = new AngelExecutorPodsPollingSnapshotSource(
       conf, kubernetesClient, snapshotsStore, eventsPollingExecutor)
 
-    schedulerBackend = new KubernetesClusterSchedulerBackend(
-      conf,
-      kubernetesClient,
-      requestExecutorsService,
-      snapshotsStore,
-      executorPodsAllocator,
-      executorPodsLifecycleEventHandler,
-      podsWatchEventSource,
-      podsPollingEventSource)
+    if (psRole(conf)) {
+      psSchedulerBackend = new KubernetesClusterSchedulerBackend(
+        conf,
+        kubernetesClient,
+        requestExecutorsService,
+        snapshotsStore,
+        executorPodsAllocator,
+        executorPodsLifecycleEventHandler,
+        podsWatchEventSource,
+        podsPollingEventSource)
+    } else {
+      workerSchedulerBackend = new KubernetesClusterSchedulerBackend(
+        conf,
+        kubernetesClient,
+        requestExecutorsService,
+        snapshotsStore,
+        executorPodsAllocator,
+        executorPodsLifecycleEventHandler,
+        podsWatchEventSource,
+        podsPollingEventSource)
+    }
   }
 
   def scheduler(conf: Configuration): Unit = {
     doScheduler(conf)
-    schedulerBackend.start()
+    if (psRole(conf)) {
+      psSchedulerBackend.start()
+    } else {
+      workerSchedulerBackend.start()
+    }
   }
 
-  def stop(): Unit = {
-    schedulerBackend.stop()
+  def psRole(conf: Configuration): Boolean = {
+    val executorRole = conf.get(AngelConf.ANGEL_KUBERNETES_EXECUTOR_ROLE,
+      AngelConf.DEFAULT_ANGEL_KUBERNETES_EXECUTOR_ROLE)
+    executorRole.equals("ps")
+  }
+
+  def stop(conf: Configuration): Unit = {
+    if (psRole(conf)) {
+      psSchedulerBackend.stop()
+    } else {
+      workerSchedulerBackend.stop()
+    }
   }
 }

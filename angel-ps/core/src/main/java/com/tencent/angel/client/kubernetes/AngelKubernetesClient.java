@@ -85,8 +85,9 @@ public class AngelKubernetesClient extends AngelClient {
             Path stagingDir = AngelApps.getStagingDir(conf, userName);
 
             // 2.get job id
-
-            appId = ApplicationId.newInstance(System.currentTimeMillis(), new Random().nextInt(99999));
+            long clusterTimestamp = System.currentTimeMillis();
+            int randomId = new Random().nextInt(99999);
+            appId = ApplicationId.newInstance(clusterTimestamp, randomId);
             JobID jobId = TypeConverter.fromYarn(appId);
 
             Path submitJobDir = new Path(stagingDir, appId.toString());
@@ -95,6 +96,8 @@ public class AngelKubernetesClient extends AngelClient {
             conf.set(AngelConf.ANGEL_JOB_DIR, submitJobDir.toString());
             conf.set(AngelConf.ANGEL_JOB_ID, jobId.toString());
             conf.set(AngelConf.ANGEL_KUBERNETES_APP_ID, appId.toString());
+            conf.setLong(AngelConf.ANGEL_KUBERNETES_APP_CLUSTERTIMESTAMP, clusterTimestamp);
+            conf.setInt(AngelConf.ANGEL_KUBERNETES_APP_RANDOMID, randomId);
 
             setInputDirectory();
             setOutputDirectory();
@@ -130,7 +133,7 @@ public class AngelKubernetesClient extends AngelClient {
             waitForAllPS(conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER));
             LOG.info("start pss success");
         } catch (Exception x) {
-            LOG.error("submit application to yarn failed.", x);
+            LOG.error("submit application to kubernetes cluster failed.", x);
             throw new AngelException(x);
         }
     }
@@ -166,7 +169,7 @@ public class AngelKubernetesClient extends AngelClient {
                     masterLocation = new Location(masterPodIp, port);
                     LOG.info("master host=" + masterLocation.getIp() + ", port=" + masterLocation.getPort());
                     LOG.info("start to create rpc client to am");
-                    Thread.sleep(1000);
+                    Thread.sleep(5000);
                     master = connection.getMasterService(masterLocation.getIp(), masterLocation.getPort());
                     startHeartbeat();
                 } catch (Exception e) {

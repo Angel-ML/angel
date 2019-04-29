@@ -34,15 +34,16 @@ private[angel] class BasicAngelMasterFeatureStep(
           .build()
       }
 
+    /*
     val angelConfToEnvs = conf.angelConf.iterator().asScala.map(x => (x.getKey, x.getValue))
       .toSeq
-      .filter(env => env._1.startsWith("angel."))
       .map { env =>
       new EnvVarBuilder()
         .withName(env._1)
         .withValue(env._2)
         .build()
     }
+    */
 
     val masterCpuQuantity = new QuantityBuilder(false)
       .withAmount(masterCpuCores.toString)
@@ -65,7 +66,6 @@ private[angel] class BasicAngelMasterFeatureStep(
         .withProtocol("TCP")
         .endPort()
       .addAllToEnv(masterCustomEnvs.asJava)
-      .addAllToEnv(angelConfToEnvs.asJava)
       .addNewEnv()
         .withName(Constants.ENV_MASTER_BIND_ADDRESS)
         .withValueFrom(new EnvVarSourceBuilder()

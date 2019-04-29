@@ -974,6 +974,8 @@ public class AngelConf extends Configuration {
   public static final int DEFAULT_ANGEL_KUBERNETES_EXECUTOR_API_POLLING_INTERVAL = 30000;
 
   public static final String ANGEL_KUBERNETES_APP_ID = ANGEL_KUBERNETES_PREFIX + "app.id";
+  public static final String ANGEL_KUBERNETES_APP_CLUSTERTIMESTAMP = ANGEL_KUBERNETES_PREFIX + "app.clusterTimestamp";
+  public static final String ANGEL_KUBERNETES_APP_RANDOMID = ANGEL_KUBERNETES_PREFIX + "app.randomId";
 
 
   // ////////////////// IPC //////////////////////////

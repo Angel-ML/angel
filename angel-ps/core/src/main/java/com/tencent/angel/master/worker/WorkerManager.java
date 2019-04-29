@@ -464,6 +464,20 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
   }
 
   /**
+   * get worker number
+   *
+   * @return int worker number
+   */
+  public int getRegisterWorkerNumber() {
+    try {
+      readLock.lock();
+      return workerLastHeartbeatTS.size();
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  /**
    * get the number of worker groups that are not finish
    *
    * @return int the number of worker groups that are not finish

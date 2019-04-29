@@ -21,6 +21,7 @@ package com.tencent.angel.master.app;
 import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.common.location.LocationManager;
+import com.tencent.angel.kubernetesmanager.scheduler.KubernetesClusterManager;
 import com.tencent.angel.master.MasterService;
 import com.tencent.angel.master.client.ClientManager;
 import com.tencent.angel.master.data.DataSpliter;
@@ -154,6 +155,12 @@ import org.apache.hadoop.yarn.webapp.WebApp;
    * @return Configuration application configuration
    */
   Configuration getConf();
+
+  /**
+   * Get kubernetes clustermanager to scheduler worker
+   * @return kubernetes clustermanager
+   */
+  KubernetesClusterManager getK8sClusterManager();
 
   /**
    * Get web server
