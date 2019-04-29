@@ -46,12 +46,13 @@ message CounterGroupProto {
 enum JobStateProto {
   J_NEW = 1;
   J_INITED = 2;
-  J_RUNNING = 3;
-  J_EXECUTE_SUCCESSED = 4;
-  J_COMMITTING = 5;
-  J_SUCCEEDED = 6;
-  J_FAILED = 7;
-  J_KILLED = 8;
+  J_PREPARE_WORKERS = 3;
+  J_RUNNING = 4;
+  J_EXECUTE_SUCCESSED = 5;
+  J_COMMITTING = 6;
+  J_SUCCEEDED = 7;
+  J_FAILED = 8;
+  J_KILLED = 9;
 }
 
 message GetJobReportRequest{

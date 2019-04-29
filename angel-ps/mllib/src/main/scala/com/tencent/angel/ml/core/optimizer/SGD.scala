@@ -20,9 +20,12 @@ package com.tencent.angel.ml.core.optimizer
 
 import java.util.concurrent.Future
 
+import com.tencent.angel.ml.core.utils.paramsutils.ParamKeys
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.psf.optimizer.PGDUpdateFunc
 import com.tencent.angel.psagent.PSAgentContext
+import org.json4s.JsonAST.{JField, JObject, JString}
+
 
 class SGD(stepSize: Double) extends Optimizer(stepSize) {
   override protected var numSlot: Int = 1
@@ -38,5 +41,9 @@ class SGD(stepSize: Double) extends Optimizer(stepSize) {
 
   override def toString: String = {
     s"SGD lr=$lr regL2=$regL2Param regL1=$regL1Param"
+  }
+
+  override def toJson: JObject = {
+    JObject(JField(ParamKeys.typeName, JString(s"${this.getClass.getSimpleName}")))
   }
 }

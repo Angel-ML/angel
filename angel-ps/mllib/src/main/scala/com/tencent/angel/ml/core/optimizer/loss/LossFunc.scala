@@ -24,6 +24,9 @@ import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, Vecto
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, BlasMatrix, Matrix}
 import com.tencent.angel.ml.math2.ufuncs.{LossFuncs, TransFuncs, Ufuncs}
 import com.tencent.angel.ml.core.network.layers.AngelGraph
+import com.tencent.angel.ml.core.utils.paramsutils.ParamKeys
+import org.json4s.JsonAST.{JField, JObject, JString}
+import org.json4s.JsonDSL._
 
 trait LossFunc extends Serializable {
   def calLoss(modelOut: Matrix, graph: AngelGraph): Double
@@ -33,6 +36,10 @@ trait LossFunc extends Serializable {
   def calGrad(modelOut: Matrix, graph: AngelGraph): Matrix
 
   def predict(modelOut: Matrix, graph: AngelGraph): Matrix
+
+  def toJson: JObject = {
+    JObject(JField(ParamKeys.typeName, JString(s"${this.getClass.getSimpleName}")))
+  }
 }
 
 class L2Loss extends LossFunc {
@@ -334,4 +341,8 @@ class HuberLoss(delta: Double) extends LossFunc {
   }
 
   override def toString: String = s"HuberLoss"
+
+  override def toJson: JObject = {
+    (ParamKeys.typeName -> JString(s"${this.getClass.getSimpleName}")) ~ ("delta" -> delta)
+  }
 }

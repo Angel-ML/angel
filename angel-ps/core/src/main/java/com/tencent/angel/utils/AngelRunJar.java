@@ -26,6 +26,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.security.PrivilegedExceptionAction;
 
 /**
@@ -44,6 +47,22 @@ public class AngelRunJar {
     }
   }
 
+    private static void setKerberos(Configuration conf) throws IOException {
+        String keytab = conf.get(AngelConf.ANGEL_KERBEROS_KEYTAB);
+        String principal = conf.get(AngelConf.ANGEL_KERBEROS_PRINCIPAL);
+        Boolean loginFromKeytab = principal !=null;
+        if (loginFromKeytab) {
+            if(!new File(keytab).exists()) {
+                throw new FileNotFoundException("Keytab file: " + keytab + " does not exist");
+            } else {
+                LOG.info("Kerberos credentials: principal = " + principal + ", keytab = " + keytab);
+                conf.set("hadoop.security.authentication", "kerberos");
+                UserGroupInformation.setConfiguration(conf);
+                UserGroupInformation.loginUserFromKeytab(principal, keytab);
+            }
+        }
+    }
+
   public static void submit(Configuration conf) throws Exception {
     LOG.info("angel python file: " + conf.get("angel.pyangel.pyfile"));
     if (null != conf.get("angel.pyangel.pyfile")) {
@@ -52,6 +71,7 @@ public class AngelRunJar {
     // instance submitter class
     final String submitClassName =
       conf.get(AngelConf.ANGEL_APP_SUBMIT_CLASS, AngelConf.DEFAULT_ANGEL_APP_SUBMIT_CLASS);
+    setKerberos(conf);
     UserGroupInformation ugi = UGITools.getCurrentUser(conf);
     ugi.doAs(new PrivilegedExceptionAction<String>() {
       @Override public String run() throws Exception {

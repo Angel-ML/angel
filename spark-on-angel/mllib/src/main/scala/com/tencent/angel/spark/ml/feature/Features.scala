@@ -61,7 +61,7 @@ object Features {
       while (iterator.hasNext) {
         val line = iterator.next()
         if (line != null && line.length > 0) {
-          for (word <- line.stripLineEnd.split(" ")) {
+          for (word <- line.stripLineEnd.split("[\\s+|,]")) {
             set.add(word)
           }
         }
@@ -97,7 +97,7 @@ object Features {
         }
 
         sentences.filter(f => f != null && f.length > 0).map { case line =>
-          line.stripLineEnd.split(" ").map(s => map.get(s).toInt)
+          line.stripLineEnd.split("[\\s+|,]").map(s => map.get(s).toInt)
         }}.flatMap(f => f)
 
 

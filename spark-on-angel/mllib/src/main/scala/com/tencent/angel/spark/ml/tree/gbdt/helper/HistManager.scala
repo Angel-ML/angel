@@ -24,7 +24,7 @@ import com.tencent.angel.spark.ml.tree.gbdt.dataset.{Dataset, Partition}
 import com.tencent.angel.spark.ml.tree.gbdt.histogram.{GradPair, Histogram}
 import com.tencent.angel.spark.ml.tree.gbdt.metadata.FeatureInfo
 import com.tencent.angel.spark.ml.tree.gbdt.metadata.InstanceInfo
-import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam
+import com.tencent.angel.spark.ml.tree.param.GBDTParam
 import com.tencent.angel.spark.ml.tree.util.{ConcurrentUtil, Maths}
 
 import scala.collection.mutable.ArrayBuffer
@@ -45,7 +45,7 @@ object HistManager {
     val fids = partition.indices
     val bins = partition.values
     val indexEnds = partition.indexEnds
-    if (param.numClass == 2) {
+    if (param.numClass == 2 || param.isMultiClassMultiTree) {
       var indexStart = if (start == 0) 0 else indexEnds(start - 1)
       for (i <- start until end) {
         val insId = i + insIdOffset
@@ -86,7 +86,7 @@ object HistManager {
     val insLayouts = dataset.insLayouts
     val partitions = dataset.partitions
     val partOffsets = dataset.partOffsets
-    if (param.numClass == 2) {
+    if (param.numClass == 2 || param.isMultiClassMultiTree) {
       for (i <- start until end) {
         val insId = insIds(i)
         val grad = gradients(insId)
@@ -143,7 +143,7 @@ object HistManager {
     for (fid <- 0 until numFeat) {
       if (isFeatUsed(fid))
         histograms(fid) = new Histogram(featureInfo.getNumBin(fid),
-          param.numClass, param.fullHessian)
+          param.numClass, param.fullHessian, param.isMultiClassMultiTree)
     }
     histograms
   }

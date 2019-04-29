@@ -21,8 +21,8 @@ package com.tencent.angel.spark.ml.tree.gbdt.tree;
 import com.tencent.angel.spark.ml.tree.gbdt.histogram.BinaryGradPair;
 import com.tencent.angel.spark.ml.tree.gbdt.histogram.GradPair;
 import com.tencent.angel.spark.ml.tree.gbdt.histogram.MultiGradPair;
-import com.tencent.angel.spark.ml.tree.tree.basic.TNode;
-import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam;
+import com.tencent.angel.spark.ml.tree.basic.TNode;
+import com.tencent.angel.spark.ml.tree.param.GBDTParam;
 
 
 public class GBTNode extends TNode<GBTNodeStat> {

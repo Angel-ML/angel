@@ -20,9 +20,9 @@ package com.tencent.angel.spark.ml.tree.gbdt.histogram;
 
 import com.tencent.angel.spark.ml.tree.gbdt.metadata.FeatureInfo;
 import com.tencent.angel.spark.ml.tree.gbdt.tree.GBTSplit;
-import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam;
-import com.tencent.angel.spark.ml.tree.tree.split.SplitPoint;
-import com.tencent.angel.spark.ml.tree.tree.split.SplitSet;
+import com.tencent.angel.spark.ml.tree.param.GBDTParam;
+import com.tencent.angel.spark.ml.tree.split.SplitPoint;
+import com.tencent.angel.spark.ml.tree.split.SplitSet;
 import com.tencent.angel.spark.ml.tree.util.Maths;
 import java.util.ArrayList;
 import java.util.List;
