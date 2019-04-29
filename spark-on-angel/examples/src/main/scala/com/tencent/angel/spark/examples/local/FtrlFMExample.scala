@@ -79,7 +79,7 @@ object FtrlFMExample {
               f._1.setY(f._2)
               f._1
           }
-      }
+    }
     val size = data.count()
 
     if (loadPath.size > 0)
