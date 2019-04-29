@@ -55,7 +55,6 @@ object FtrlFMExample {
     val batchSize = params.getOrElse("batchSize", "100").toInt
     val partNum = params.getOrElse("partNum", "10").toInt
     val numEpoch = params.getOrElse("numEpoch", "3").toInt
-
     val modelPath = params.getOrElse("output", "file:///model")
     val loadPath = params.getOrElse("load", "file:///model")
     val factor = params.getOrElse("factor", "10").toInt
@@ -80,7 +79,7 @@ object FtrlFMExample {
               f._1.setY(f._2)
               f._1
           }
-      }
+    }
     val size = data.count()
 
     if (loadPath.size > 0)
@@ -106,12 +105,10 @@ object FtrlFMExample {
       println(s"epoch=$epoch loss=${totalLoss / size} auc=$auc")
     }
 
-    opt.showSecond()
-
     if (modelPath.length > 0) {
-//      opt.weight
-//      opt.save(modelPath)
-//      opt.saveWeight(modelPath)
+      opt.weight
+      opt.save(modelPath + "/back")
+      opt.saveWeight(modelPath)
     }
   }
 

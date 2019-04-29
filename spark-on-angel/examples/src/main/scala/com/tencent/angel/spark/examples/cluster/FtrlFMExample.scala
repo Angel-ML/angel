@@ -56,7 +56,6 @@ object FtrlFMExample {
 
     val conf = new SparkConf()
 
-
     if (loadPath.length > 0)
       conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, loadPath + "/back")
 
@@ -125,13 +124,11 @@ object FtrlFMExample {
       println(s"epoch=$epoch loss=${totalLoss / size} auc=$auc")
     }
 
-    opt.showSecond()
-
     if (output.length > 0) {
       println(s"saving model to path $output")
-//      opt.weight()
-      opt.save(output)
-//      opt.saveWeight(output)
+      opt.weight()
+      opt.save(output + "/back")
+      opt.saveWeight(output)
     }
   }
 

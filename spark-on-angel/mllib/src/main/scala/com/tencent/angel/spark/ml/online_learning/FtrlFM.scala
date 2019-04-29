@@ -2,9 +2,9 @@ package com.tencent.angel.spark.ml.online_learning
 
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math2.storage.LongKeyVectorStorage
+import com.tencent.angel.ml.math2.storage.{IntKeyVectorStorage, LongKeyVectorStorage}
 import com.tencent.angel.ml.math2.ufuncs.{OptFuncs, Ufuncs}
-import com.tencent.angel.ml.math2.vector.{IntFloatVector, LongDummyVector, LongKeyVector, Vector}
+import com.tencent.angel.ml.math2.vector.{IntDummyVector, IntKeyVector, LongDummyVector, LongKeyVector, Vector}
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.model.output.format.RowIdColIdValueTextRowFormat
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
@@ -128,12 +128,8 @@ class FtrlFM() extends Serializable {
 
     // fetch second
     val seconds = second.pull((0 until factor * 2).toArray, indices)
-
-    println(s"seconds: ${seconds(0).asInstanceOf[IntFloatVector].getStorage.getValues.mkString(",")}")
     val localV = (0 until factor).map(idx => Ufuncs.ftrlthresholdinit(seconds(idx), seconds(idx + factor),
       alpha, beta, lambda1, lambda2, 0.0, 0.01)).toArray
-
-    println(s"localV: ${localV(0).asInstanceOf[IntFloatVector].getStorage.getValues.mkString(",")}")
 
     val localV2 = localV.map(v0 => v0.mul(v0))
 
@@ -142,14 +138,10 @@ class FtrlFM() extends Serializable {
 
 
 
-    val deltaZ = localZ.copy()
-    val deltaN = localN.copy()
+    val deltaZ = localZ.emptyLike()
+    val deltaN = localN.emptyLike()
 
-    deltaZ.clear()
-    deltaN.clear()
-
-    val deltaV = seconds.map(f => f.copy())
-    deltaV.foreach(f => f.clear())
+    val deltaV = seconds.map(f => f.emptyLike())
 
     start = System.currentTimeMillis()
 
@@ -168,8 +160,6 @@ class FtrlFM() extends Serializable {
 
       lossSum += loss
     }
-
-    println(s"deltaV: ${deltaV(0).asInstanceOf[IntFloatVector].getStorage.getValues.mkString(",")}")
     end = System.currentTimeMillis()
     val optimTime = end - start
 
@@ -180,13 +170,6 @@ class FtrlFM() extends Serializable {
 
     println(s"batchId=$index loss=${lossSum / batch.size} pullTime=$pullTime optimTime=$optimTime pushTime=$pushTime")
     lossSum
-  }
-
-  def showSecond(): Unit = {
-    val indices = (0 until 10).toArray
-    val seconds = second.pull((0 until factor * 2).toArray, indices)
-    seconds.map(f => f.asInstanceOf[IntFloatVector].getStorage.getValues.mkString(","))
-      .foreach(f => println(f))
   }
 
   def weight(): Unit = {
@@ -291,15 +274,18 @@ class FtrlFM() extends Serializable {
 
   def save(path: String): Unit = {
     val format = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
-    val modelContext = new ModelSaveContext(path)
+    val modelContext1 = new ModelSaveContext(path + "/weightW")
     val matrixContext1 = new MatrixSaveContext(firstName, format)
-    matrixContext1.addIndices(Array(0, 1, 2))
-    modelContext.addMatrix(matrixContext1)
+    matrixContext1.addIndices(Array(0, 1))
+    modelContext1.addMatrix(matrixContext1)
+    AngelPSContext.save(modelContext1)
 
+
+    val modelContext2 = new ModelSaveContext(path + "/weightV")
     val matrixContext2 = new MatrixSaveContext(secondName, format)
-    matrixContext2.addIndices((0 until factor * 3).toArray)
-    modelContext.addMatrix(matrixContext2)
-    AngelPSContext.save(modelContext)
+    matrixContext2.addIndices((0 until factor * 2).toArray)
+    modelContext2.addMatrix(matrixContext2)
+    AngelPSContext.save(modelContext2)
   }
 
   /**
@@ -309,26 +295,27 @@ class FtrlFM() extends Serializable {
     */
   def saveWeight(path: String): Unit = {
     val format = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
-    val modelContext = new ModelSaveContext(path)
+    val modelContext1 = new ModelSaveContext(path + "/weightW")
     val matrixContext1 = new MatrixSaveContext(firstName, format)
     matrixContext1.addIndices(Array(2))
-    modelContext.addMatrix(matrixContext1)
+    modelContext1.addMatrix(matrixContext1)
+    AngelPSContext.save(modelContext1)
 
+    val modelContext2 = new ModelSaveContext(path + "/weightV")
     val matrixContext2 = new MatrixSaveContext(secondName, format)
     matrixContext2.addIndices((factor * 2 until factor * 3).toArray)
-    modelContext.addMatrix(matrixContext2)
-
-    AngelPSContext.save(modelContext)
+    modelContext2.addMatrix(matrixContext2)
+    AngelPSContext.save(modelContext2)
   }
 
   def load(path: String): Unit = {
     val format = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
-    val modelContext1 = new ModelLoadContext(path)
+    val modelContext1 = new ModelLoadContext(path + "/weightW")
     val matrixContext1 = new MatrixLoadContext(firstName, format)
     modelContext1.addMatrix(matrixContext1)
     AngelPSContext.load(modelContext1)
 
-    val modelContext2 = new ModelLoadContext(path)
+    val modelContext2 = new ModelLoadContext(path + "/weightV")
     val matrixContext2 = new MatrixLoadContext(secondName, format)
     modelContext2.addMatrix(matrixContext2)
     AngelPSContext.load(modelContext2)
