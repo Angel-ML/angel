@@ -1,5 +1,5 @@
 # ModelLoader
-> After the training process is completed, the model needs to be put into production envirionment. To offer a better interface by which other systems can utilize the models trained by Angel conveniently, Angel provides a `ModelLoader` class as a model loading tool. `ModelLoader` provides a set of static methods that read and store model files on memory in basic data structures (Array and Map).
+> After the training process is completed, the model needs to be put into production envirionment. To offer a better interface by which other systems can utilize the models trained by Angel conveniently, Angel provides a `ModelLoader` class as a model loading tool. `ModelLoader` provides a set of static methods that read and store model files in memory in basic data structures (Array and Map).
 
 1. **loadToDoubleArrays**
     - **Definition**: ```double[][] loadToDoubleArrays(String modelDir, Configuration conf) throws IOException```
