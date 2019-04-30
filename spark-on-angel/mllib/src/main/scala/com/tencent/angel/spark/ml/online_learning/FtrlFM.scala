@@ -2,9 +2,9 @@ package com.tencent.angel.spark.ml.online_learning
 
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math2.storage.{IntKeyVectorStorage, LongKeyVectorStorage}
+import com.tencent.angel.ml.math2.storage.LongKeyVectorStorage
 import com.tencent.angel.ml.math2.ufuncs.{OptFuncs, Ufuncs}
-import com.tencent.angel.ml.math2.vector.{IntDummyVector, IntKeyVector, LongDummyVector, LongKeyVector, Vector}
+import com.tencent.angel.ml.math2.vector.{LongDummyVector, LongKeyVector, Vector}
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.model.output.format.RowIdColIdValueTextRowFormat
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
@@ -16,10 +16,15 @@ import com.tencent.angel.spark.models.impl.PSMatrixImpl
 
 class FtrlFM() extends Serializable {
 
+  val firstName = "first"
+  val secondName = "second"
   var lambda1: Double = 0
   var lambda2: Double = 0
   var alpha: Double = 0
   var beta: Double = 0
+  var first: PSMatrix = _
+  var second: PSMatrix = _
+  var factor: Int = 0
 
   def this(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) {
     this()
@@ -28,12 +33,6 @@ class FtrlFM() extends Serializable {
     this.alpha = alpha
     this.beta = beta
   }
-
-  val firstName = "first"
-  val secondName = "second"
-  var first: PSMatrix = _
-  var second: PSMatrix = _
-  var factor: Int = 0
 
   def init(dim: Long, factor: Int): Unit = {
     init(dim, RowType.T_FLOAT_SPARSE_LONGKEY, factor)
@@ -50,7 +49,7 @@ class FtrlFM() extends Serializable {
   /**
     * Init with dim, nnz, rowType, factor and partitioner
     *
-    * @param dim        , the index range is [0, dim) if dim>0, else [long.min, long.max) if dim=-1 and rowType is sparse
+    * @param dim         , the index range is [0, dim) if dim>0, else [long.min, long.max) if dim=-1 and rowType is sparse
     * @param nnz         , number-of-non-zero elements in model
     * @param rowType     , default is T_FLOAT_SPARSE_LONGKEY
     * @param factor      , num of factors
@@ -69,6 +68,16 @@ class FtrlFM() extends Serializable {
     secondCtx.setPartitionerClass(partitioner.getClass)
     second = init(secondCtx)
     this.factor = factor
+  }
+
+  /**
+    * create the model with a matrix-context and init three PSVector
+    *
+    * @param ctx , matrix context
+    */
+  def init(ctx: MatrixContext): PSMatrix = {
+    val matId = PSMatrixUtils.createPSMatrix(ctx)
+    new PSMatrixImpl(matId, ctx.getRowNum, ctx.getColNum, ctx.getRowType)
   }
 
   def init(start: Long, end: Long, factor: Int): Unit = {
@@ -95,16 +104,6 @@ class FtrlFM() extends Serializable {
     second = init(secondCtx)
 
     this.factor = factor
-  }
-
-  /**
-    * create the model with a matrix-context and init three PSVector
-    *
-    * @param ctx , matrix context
-    */
-  def init(ctx: MatrixContext): PSMatrix = {
-    val matId = PSMatrixUtils.createPSMatrix(ctx)
-    new PSMatrixImpl(matId, ctx.getRowNum, ctx.getColNum, ctx.getRowType)
   }
 
   def optimize(index: Int, batch: Array[LabeledData]): Double = {
@@ -135,7 +134,6 @@ class FtrlFM() extends Serializable {
 
     end = System.currentTimeMillis()
     val pullTime = end - start
-
 
 
     val deltaZ = localZ.emptyLike()
@@ -172,14 +170,6 @@ class FtrlFM() extends Serializable {
     lossSum
   }
 
-  def weight(): Unit = {
-    val func1 = new ComputeW(first.id, alpha, beta, lambda1, lambda2, 1.0)
-    first.psfUpdate(func1).get()
-
-    val func2 = new ComputeW(second.id, alpha, beta, lambda1, lambda2, factor)
-    second.psfUpdate(func2).get()
-  }
-
   def delta(grad: Vector, localN: Vector, weight: Vector,
             deltaZ: Vector, deltaN: Vector): Unit = {
     deltaZ.iadd(grad)
@@ -188,14 +178,46 @@ class FtrlFM() extends Serializable {
     deltaZ.isub(grad.imul(weight))
   }
 
-  def predict(w: Vector, v: Array[Vector], v2: Array[Vector], feature: Vector): Double = {
-    val sumW = w.dot(feature)
+  def gradient(w: Vector, v: Array[Vector], v2: Array[Vector],
+               label: Double, feature: Vector): (Vector, Array[Vector], Double) = {
+
+
+    val marginW = w.dot(feature)
+    val vdot = v.map(v0 => v0.dot(feature))
     val f2 = feature.mul(feature)
-    val sumV = v.zip(v2).map { case (v0, v2) =>
-      val t1 = v0.dot(feature)
-      t1*t1 - v2.dot(f2)
+    val marginV = v.zip(vdot).zip(v2).map { case ((v0, dot), v2) =>
+      dot * dot - v2.dot(f2)
     }
-    return sumW + sumV.sum / 2.0
+
+    val margin = -(marginW + marginV.sum / 2.0)
+    val multiplier = 1.0 / (1.0 + math.exp(margin)) - label
+    val gradW = feature.mul(multiplier)
+
+
+    val gradV = v.zip(vdot).map { case (v0, dot) =>
+      val grad = Ufuncs.fmgrad(feature, v0, dot)
+      grad.imul(multiplier)
+      grad
+    }
+
+    val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
+    (gradW, gradV, loss)
+  }
+
+  def log1pExp(x: Double): Double = {
+    if (x > 0) {
+      x + math.log1p(math.exp(-x))
+    } else {
+      math.log1p(math.exp(x))
+    }
+  }
+
+  def weight(): Unit = {
+    val func1 = new ComputeW(first.id, alpha, beta, lambda1, lambda2, 1.0)
+    first.psfUpdate(func1).get()
+
+    val func2 = new ComputeW(second.id, alpha, beta, lambda1, lambda2, factor)
+    second.psfUpdate(func2).get()
   }
 
   def predict(batch: Array[LabeledData], isTraining: Boolean = true): Array[(Double, Double)] = {
@@ -237,39 +259,14 @@ class FtrlFM() extends Serializable {
     }
   }
 
-  def gradient(w: Vector, v: Array[Vector], v2: Array[Vector],
-               label: Double, feature: Vector): (Vector, Array[Vector], Double) = {
-
-
-    val marginW = w.dot(feature)
-    val vdot = v.map(v0 => v0.dot(feature))
+  def predict(w: Vector, v: Array[Vector], v2: Array[Vector], feature: Vector): Double = {
+    val sumW = w.dot(feature)
     val f2 = feature.mul(feature)
-    val marginV = v.zip(vdot).zip(v2).map { case ((v0, dot),v2) =>
-      dot*dot - v2.dot(f2)
+    val sumV = v.zip(v2).map { case (v0, v2) =>
+      val t1 = v0.dot(feature)
+      t1 * t1 - v2.dot(f2)
     }
-
-    val margin = -(marginW + marginV.sum / 2.0)
-    val multiplier = 1.0 / (1.0 + math.exp(margin)) - label
-    val gradW = feature.mul(multiplier)
-
-
-    val gradV = v.zip(vdot).map { case (v0, dot) =>
-      val grad = Ufuncs.fmgrad(feature, v0, dot)
-      grad.imul(multiplier)
-      grad
-    }
-
-    val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
-    (gradW, gradV, loss)
-  }
-
-
-  def log1pExp(x: Double): Double = {
-    if (x > 0) {
-      x + math.log1p(math.exp(-x))
-    } else {
-      math.log1p(math.exp(x))
-    }
+    return sumW + sumV.sum / 2.0
   }
 
   def save(path: String): Unit = {
@@ -291,7 +288,7 @@ class FtrlFM() extends Serializable {
   /**
     * Save w, v for model serving
     *
-    * @param path, output path
+    * @param path , output path
     */
   def saveWeight(path: String): Unit = {
     val format = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
