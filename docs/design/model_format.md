@@ -40,7 +40,8 @@ Angel的模型是以矩阵为单位来保存的，每一个矩阵在模型保存
 **具体包含字段**：
 - **rowId**：行号
 - **offset**：行数据在文件中的位置
-- **elementNum**：该行保存的文件格式
+- **elementNum**：该行包含的元素个数
+- **saveType**：该行保存的文件格式
 
 ## 数据文件格式
 Angel2.0采用了用户自定义的模型格式。即可以根据实际需求定制模型输出格式。一般情况下，使用Angel的默认模型输出格式即可。由于Angel默认的输出格式比较简单，大部分并不需要依赖元数据文件就可以直接解析。
@@ -63,23 +64,23 @@ Angel提供了8中默认的模型输出格式：
 
 #### ValueTextRowFormat
 - **说明**：文本格式，只包含模型的值，每个值是一个单独的行。与ValueBinaryRowFormat类似这种格式只适合单行稠密的模型，由于数据文件中没有列号（特征索引），所以需要充模型元数据中获取索引范围。
-- **格式**：
-value
-value
+- **格式**：<br>
+value<br>
+value<br>
 value
 
 #### ColIdValueTextRowFormat
 - **说明**：文本格式，包含特征索引和对应的值，每一行是一个特征id和值的对，特征id和值之间的分隔符默认是逗号。这种格式适合单行模型，例如LR等。
-- **格式**：
-index,value
-index,value
+- **格式**：<br>
+index,value<br>
+index,value<br>
 index,value
 
 #### RowIdColIdValueTextRowFormat
 - **说明**：文本格式，包含行号，特征索引和对应的值，每一行是一个行号，特征id和值的对。行号，特征id和值之间的分隔符默认是逗号。这种格式可以表示多行模型。
-- **格式**：
-rowid,index,value
-rowid,index,value
+- **格式**：<br>
+rowid,index,value<br>
+rowid,index,value<br>
 rowid,index,value
 
 #### BinaryColumnFormat
@@ -88,19 +89,21 @@ rowid,index,value
 
 #### TextColumnFormat
 - **说明**：文本格式，这种格式是以列主序来输出一个矩阵，目前只用于Embedding相关的输出（例如DNN，FM等算法中的Embedding层），每一个行是一个列。分隔符默认是逗号。
-- **格式**：
-index,row1 value,row2 value,...
-index,row1 value,row2 value,...
+- **格式**：<br>
+index,row1 value,row2 value,...<br>
+index,row1 value,row2 value,...<br>
 index,row1 value,row2 value,...
 
 ## 具体算法输出格式
 Angel的算法目前基本都是基于新的计算图框架来实现的，计算图中的每一层都可以单独设置模型格式。**在默认的情况下，SimpleInputLayer使用的是ColIdValueTextRowFormat，Embedding层使用的是TextColumnFormat，FCLayer使用的是RowIdColIdValueTextRowFormat。**
+
 - **LR，线性回归，SVM**：默认的模型保存格式为ColIdValueTextRowFormat。
 - **GBDT**：RowIdColIdValueTextRowFormat
-- **FM**：线性部分使用的是ColIdValueTextRowFormat，Embedding使用的是Embedding层使用的是TextColumnFormat
+- **FM**：线性部分使用的是ColIdValueTextRowFormat，Embedding层使用的是TextColumnFormat
 - **DeepFM, DNN，Wide And Deep，PNN，NFM等**：线性部分使用的是ColIdValueTextRowFormat，Embedding层使用的是TextColumnFormat，全连接部分使用的是RowIdColIdValueTextRowFormat
 
-当然，如果你不想使用默认格式，可以通过参数配置模型输出格式：
+当然，如果你不想使用默认格式，可以通过参数配置模型输出格式： 
+
 - ***ml.simpleinputlayer.matrix.output.format***：SimpleInputLayer使用的输出格式
 - ***ml.embedding.matrix.output.format***：Embedding使用的输出格式
 - ***ml.fclayer.matrix.output.format***：FCLayer使用的输出格式
