@@ -43,7 +43,7 @@ The command to submit a Angel ModelConverter job is:
     * angel.save.model.path   
       Save path of the converted text file
     * angel.modelconverts.model.names   
-      List of the names of models to be converted, separated by ",". **This parameter is not required. The converter will convert all models under the designated directory path if this parameter is not assigned **
+      List of the names of models to be converted, separated by ",". **This parameter is not required. The converter will convert all models under the designated directory path if this parameter is not assigned**
     * angel.modelconverts.serde.class    
       Serialization format of row output. **This parameter is not required. The default "index:value" format will be used when the parameter is not assigned**
     * angel.app.submit.class    
