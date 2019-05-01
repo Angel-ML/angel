@@ -56,13 +56,12 @@ The command to submit a Angel ModelConverter job is:
 * As demonstrated in the example below, head of the file holds the model's basic information (name, dimension, etc.). Each row's index will be identified as "rowIndex=xxx" at the beginning, followed by a series of key:value pair, with key and value respectively indicating the column index under this row and its corresponding value.
 
     ```
-    ​```
     rowIndex=0
     0:-0.004235138405748639
     1:-0.003367253227582031
     3:-0.003988846053264014
     6:0.001803243020660425
     8:1.9413353447408782E-4
-    ​```
+    ...
     ```
 
