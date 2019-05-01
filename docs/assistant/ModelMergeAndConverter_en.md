@@ -37,16 +37,16 @@ The command to submit a Angel ModelConverter job is:
 --angel.modelconverts.serde.class ${SerdeClass}
 ```
 
-* Parameter Descriptions:
-    * angel.load.model.path  
+* **Parameter Descriptions**:
+    * **angel.load.model.path**  
       Model input path, namely the save path of the original binary model file. Note that it is not required to include the matrix name in path
-    * angel.save.model.path   
+    * **angel.save.model.path**   
       Save path of the converted text file
-    * angel.modelconverts.model.names   
+    * **angel.modelconverts.model.names**   
       List of the names of models to be converted, separated by ",". **This parameter is not required. The converter will convert all models under the designated directory path if this parameter is not assigned**
-    * angel.modelconverts.serde.class    
+    * **angel.modelconverts.serde.class**    
       Serialization format of row output. **This parameter is not required. The default "index:value" format will be used when the parameter is not assigned**
-    * angel.app.submit.class    
+    * **angel.app.submit.class**    
       Starting entrance of an Angel task, configured as `com.tencent.angel.ml.toolkits.modelconverter.ModelMergeAndConverterRunner`
 
 ### File Format after Conversion
