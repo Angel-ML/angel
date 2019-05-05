@@ -28,7 +28,6 @@ object FtrlFMExample {
   }
 
   def main(args: Array[String]): Unit = {
-    start()
     val params = ArgsUtil.parse(args)
     val actionType = params.getOrElse("actionType", "train").toString
     if (actionType == "train" || actionType == "incTrain") {
@@ -50,14 +49,14 @@ object FtrlFMExample {
     val dataType = params.getOrElse("dataType", "libsvm")
     val batchSize = params.getOrElse("batchSize", "100").toInt
     val numEpoch = params.getOrElse("numEpoch", "3").toInt
-    val output = params.getOrElse("output", "")
-    val loadPath = params.getOrElse("load", "")
+    val output = params.getOrElse("modelPath", "")
+    val modelPath = params.getOrElse("model", "")
     val factor = params.getOrElse("factor", "5").toInt
 
     val conf = new SparkConf()
 
-    if (loadPath.length > 0)
-      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, loadPath + "/back")
+    if (modelPath.length > 0)
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, modelPath + "/back")
 
     val sc = new SparkContext(conf)
 
@@ -100,8 +99,8 @@ object FtrlFMExample {
 
     opt.init(min, max+1, -1, rowType, factor, new ColumnRangePartitioner())
 
-    if (loadPath.length > 0) {
-      opt.load(loadPath + "/back")
+    if (modelPath.length > 0) {
+      opt.load(modelPath + "/back")
     }
 
     for (epoch <- 1 to numEpoch) {
@@ -138,16 +137,16 @@ object FtrlFMExample {
     val input = params.getOrElse("input", "data/census/census_148d_train.libsvm")
     val dataType = params.getOrElse("dataType", "libsvm")
     val partNum = params.getOrElse("partNum", "10").toInt
-    val isTraining = params.getOrElse("isTraining", false).asInstanceOf[Boolean]
-    val hasLabel = params.getOrElse("hasLabel", true).asInstanceOf[Boolean]
-    val loadPath = params.getOrElse("load", "")
+    val isTraining = params.getOrElse("isTraining", "false").toBoolean
+    val hasLabel = params.getOrElse("hasLabel", "true").toBoolean
+    val modelPath = params.getOrElse("model", "")
     val predictPath = params.getOrElse("predict", "")
     val factor = params.getOrElse("factor", "10").toInt
 
-    val opt = new FtrlFM()
-    opt.init(dim, RowType.T_FLOAT_SPARSE_LONGKEY, factor)
-
-    val sc = SparkContext.getOrCreate()
+    val conf = new SparkConf()
+    conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, modelPath + "/back")
+    val sc = new SparkContext(conf)
+    PSContext.getOrCreate(sc)
 
     val inputData = sc.textFile(input)
     val data = dataType match {
@@ -159,8 +158,15 @@ object FtrlFMExample {
           (DataLoader.parseLongDummy(s, dim, isTraining, hasLabel)))
     }
 
-    if (loadPath.size > 0) {
-      opt.load(loadPath)
+    val size = data.count()
+
+    val max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.max).max()
+    val min = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.min).min()
+
+    val opt = new FtrlFM()
+    opt.init(min, max+1, -1, RowType.T_FLOAT_SPARSE_LONGKEY, factor, new ColumnRangePartitioner())
+    if (modelPath.size > 0) {
+      opt.load(modelPath)
     }
 
     val scores = data.mapPartitions {
@@ -169,9 +175,9 @@ object FtrlFMExample {
     }
 
     val path = new Path(predictPath)
-    val hdfs = org.apache.hadoop.fs.FileSystem.get(sc.hadoopConfiguration)
-    if (hdfs.exists(path)) {
-      hdfs.delete(path, true)
+    val fs = path.getFileSystem(sc.hadoopConfiguration)
+    if (fs.exists(path)) {
+      fs.delete(path, true)
     }
 
     scores.saveAsTextFile(predictPath)

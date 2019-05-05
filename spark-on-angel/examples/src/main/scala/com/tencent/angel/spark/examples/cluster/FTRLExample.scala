@@ -29,7 +29,6 @@ object FTRLExample {
   }
 
   def main(args: Array[String]): Unit = {
-    start()
     val params = ArgsUtil.parse(args)
     val actionType = params.getOrElse("actionType", "train").toString
     if (actionType == "train" || actionType == "incTrain") {
@@ -51,14 +50,21 @@ object FTRLExample {
     val dataType = params.getOrElse("dataType", "libsvm")
     val batchSize = params.getOrElse("batchSize", "100").toInt
     val numEpoch = params.getOrElse("numEpoch", "3").toInt
-    val output = params.getOrElse("output", "")
-    val loadPath = params.getOrElse("load", "")
+    val output = params.getOrElse("modelPath", "")
+    val modelPath = params.getOrElse("model", "")
     val withBalancePartition = params.getOrElse("balance", "false").toBoolean
-    val possionRate = params.getOrElse("possion", "0.1f").toFloat
+    val possionRate = params.getOrElse("possion", "1.0f").toFloat
     val bits = params.getOrElse("bits", "20").toInt
     val numPartitions = params.getOrElse("numPartitions", "100").toInt
 
-    val sc = SparkContext.getOrCreate()
+    val opt = new FTRL(lambda1, lambda2, alpha, beta)
+    val rowType = RowType.T_FLOAT_SPARSE_LONGKEY
+
+    val conf = new SparkConf()
+    if (modelPath.length > 0)
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, modelPath + "/back")
+    val sc = new SparkContext(conf)
+    PSContext.getOrCreate(sc)
 
     val inputData = sc.textFile(input)
     val data = dataType match {
@@ -87,10 +93,6 @@ object FTRLExample {
 
     println(s"num examples = ${size} min_index=$min max_index=$max")
 
-    val opt = new FTRL(lambda1, lambda2, alpha, beta)
-
-    val rowType = RowType.T_FLOAT_SPARSE_LONGKEY
-
     if (withBalancePartition)
       opt.init(min, max + 1, rowType, data.map(f => f.getX),
         new LoadBalancePartitioner(bits, numPartitions))
@@ -99,9 +101,9 @@ object FTRLExample {
 
     opt.setPossionRate(possionRate)
 
-    if (loadPath.length > 0)
-      opt.load(loadPath + "/back")
-
+    if (modelPath.length > 0){
+      opt.load(modelPath + "/back")
+    }
     for (epoch <- 1 to numEpoch) {
       val totalLoss = data.mapPartitions {
         case iterator =>
@@ -136,16 +138,19 @@ object FTRLExample {
     val input = params.getOrElse("input", "data/census/census_148d_train.libsvm")
     val dataType = params.getOrElse("dataType", "libsvm")
     val partNum = params.getOrElse("partNum", "10").toInt
-    val isTraining = params.getOrElse("isTraining", false).asInstanceOf[Boolean]
-    val hasLabel = params.getOrElse("hasLabel", true).asInstanceOf[Boolean]
-    val loadPath = params.getOrElse("load", "")
+    val isTraining = params.getOrElse("isTraining", "false").toBoolean
+    val hasLabel = params.getOrElse("hasLabel", "true").toBoolean
+    val modelPath = params.getOrElse("modelPath", "")
     val predictPath = params.getOrElse("predict", "")
 
 
     val opt = new FTRL()
-    opt.init(dim, RowType.T_FLOAT_SPARSE_LONGKEY)
+    val conf = new SparkConf()
+    conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, modelPath + "/weight")
 
-    val sc = SparkContext.getOrCreate()
+    val sc = new SparkContext(conf)
+    PSContext.getOrCreate(sc)
+
     val inputData = sc.textFile(input)
     val data = dataType match {
       case "libsvm" =>
@@ -156,8 +161,12 @@ object FTRLExample {
           (DataLoader.parseLongDummy(s, dim, isTraining, hasLabel)))
     }
 
-    if (loadPath.size > 0) {
-      opt.load(loadPath + "/weight")
+    val max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.max).max()
+    val min = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.min).min()
+    opt.init(min, max + 1, -1, RowType.T_FLOAT_SPARSE_LONGKEY, new ColumnRangePartitioner())
+
+    if (modelPath.size > 0) {
+      opt.load(modelPath + "/weight")
     }
 
     val scores = data.mapPartitions {
@@ -166,9 +175,9 @@ object FTRLExample {
     }
 
     val path = new Path(predictPath)
-    val hdfs = org.apache.hadoop.fs.FileSystem.get(sc.hadoopConfiguration)
-    if (hdfs.exists(path)) {
-      hdfs.delete(path, true)
+    val fs = path.getFileSystem(sc.hadoopConfiguration)
+    if (fs.exists(path)) {
+      fs.delete(path, true)
     }
 
     scores.saveAsTextFile(predictPath)

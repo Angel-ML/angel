@@ -34,7 +34,8 @@ object DataLoader {
       (Double.NaN, "", null)
     } else {
       if (hasLabel && isTraining) {
-        val label = splits(0).toDouble
+        var label = splits(0).toDouble
+        if (label == 0.0) label = -1.0
         (label, "", splits.tail)
       } else if (hasLabel && !isTraining) {
         val attached = splits(0).trim

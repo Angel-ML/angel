@@ -304,7 +304,7 @@ private[spark] object AngelPSContext {
   /**
     * Convert SparkConf to Angel Configuration.
     */
-  private def convertToHadoop(conf: SparkConf): Configuration = {
+  def convertToHadoop(conf: SparkConf): Configuration = {
     val appName = conf.get("spark.app.name") + "-ps"
     val queue = conf.get("spark.yarn.queue", "root.default")
 

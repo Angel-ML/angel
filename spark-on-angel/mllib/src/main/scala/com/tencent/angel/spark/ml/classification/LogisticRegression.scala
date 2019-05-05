@@ -27,7 +27,7 @@ import com.tencent.angel.spark.ml.core.GraphModel
 
 class LogisticRegression extends GraphModel {
 
-  val lr = conf.getDouble(MLConf.ML_LEARN_RATE)
+  val lr = sharedConf.getDouble(MLConf.ML_LEARN_RATE)
   val gamma: Double = SharedConf.get().getDouble(MLConf.ML_OPT_ADAM_GAMMA)
   val beta: Double = SharedConf.get().getDouble(MLConf.ML_OPT_ADAM_BETA)
 

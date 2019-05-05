@@ -19,29 +19,34 @@
 package com.tencent.angel.spark.ml.core
 
 
-import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.{AngelGraph, PlaceHolder, STATUS}
 import com.tencent.angel.ml.core.optimizer.decayer._
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
-import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
+import com.tencent.angel.ml.core.utils.paramsutils.{JsonUtils, ParamKeys}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.spark.context.AngelPSContext
-import org.json4s.JsonAST.JValue
+import com.tencent.angel.utils.HdfsUtil
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FSDataOutputStream, FileSystem, Path}
+import org.json4s.JsonAST._
+import org.json4s.JsonDSL._
+import org.json4s.jackson.JsonMethods.{pretty, render}
 
 class GraphModel extends Serializable {
 
-  val conf = SharedConf.get()
-  implicit val graph = new AngelGraph(new PlaceHolder())
-  var jsonAst: JValue = conf.getJson
+  val sharedConf: SharedConf = SharedConf.get()
+  implicit val graph: AngelGraph = new AngelGraph(new PlaceHolder())
+  var jsonAst: JValue = sharedConf.getJson
   val stepSize: Double = SharedConf.learningRate
   val scheduler: StepSizeScheduler = StepSizeScheduler(SharedConf.getStepSizeScheduler, stepSize)
 
   def ensureJsonAst(): Unit = {
     if (jsonAst == null) {
       JsonUtils.init()
-      jsonAst = conf.getJson
+      jsonAst = sharedConf.getJson
     }
   }
 
@@ -59,7 +64,7 @@ class GraphModel extends Serializable {
     println(s"graph=\n$graph")
   }
 
-  def forward(epoch:Int, data: Array[LabeledData]): Matrix = {
+  def forward(epoch: Int, data: Array[LabeledData]): Matrix = {
     graph.feedData(data)
     graph.pullParams(epoch)
     graph.predict()
@@ -88,16 +93,51 @@ class GraphModel extends Serializable {
 
   def save(path: String): Unit = {
     val context = new ModelSaveContext(path)
-    graph.getTrainable.map(layer => layer.saveParams(context))
+    graph.getTrainable.foreach(layer => layer.saveParams(context))
     AngelPSContext.save(context)
   }
 
   def load(path: String): Unit = {
     val context = new ModelLoadContext(path)
-    graph.getTrainable.map(layer => layer.loadParams(context))
+    graph.getTrainable.foreach(layer => layer.loadParams(context))
     AngelPSContext.load(context)
   }
 
+  def saveJson(path: String, conf: Configuration): Unit = {
+    val jsonFile: Path = new Path(path, "graph.json")
+    val tmpJsonFile = HdfsUtil.toTmpPath(jsonFile)
+    val fs: FileSystem = tmpJsonFile.getFileSystem(conf)
+    val jsonOut: FSDataOutputStream = fs.create(tmpJsonFile)
+    jsonOut.writeBytes(pretty(render(toJson)))
+    jsonOut.flush()
+    jsonOut.close()
+    HdfsUtil.rename(tmpJsonFile, jsonFile, fs)
+  }
+
+  def toJson: JObject = {
+    val data = (ParamKeys.format -> JString(SharedConf.inputDataFormat)) ~
+      (ParamKeys.indexRange -> JLong(SharedConf.indexRange)) ~
+      (ParamKeys.numField -> JInt(sharedConf.getInt(MLConf.ML_FIELD_NUM))) ~
+      (ParamKeys.validateRatio -> JDouble(sharedConf.getDouble(MLConf.ML_VALIDATE_RATIO))) ~
+      (ParamKeys.sampleRatio -> JDouble(sharedConf.getDouble(MLConf.ML_BATCH_SAMPLE_RATIO)))
+
+    val model = (ParamKeys.modelType -> JString(SharedConf.modelType.toString)) ~
+      (ParamKeys.modelSize -> JLong(SharedConf.modelSize)) ~
+      (ParamKeys.blockSize -> JInt(sharedConf.getInt(MLConf.ML_BLOCK_SIZE)))
+
+    val train = (ParamKeys.epoch -> JInt(SharedConf.epochNum)) ~
+      (ParamKeys.numUpdatePerEpoch -> JInt(SharedConf.numUpdatePerEpoch)) ~
+      (ParamKeys.batchSize -> JInt(SharedConf.batchSize)) ~
+      (ParamKeys.lr -> JDouble(sharedConf.getDouble(MLConf.ML_LEARN_RATE))) ~
+      (ParamKeys.decayClass -> JString(sharedConf.getString(MLConf.ML_OPT_DECAY_CLASS_NAME))) ~
+      (ParamKeys.decayAlpha -> JDouble(sharedConf.getDouble(MLConf.ML_OPT_DECAY_ALPHA))) ~
+      (ParamKeys.decayBeta -> JDouble(sharedConf.getDouble(MLConf.ML_OPT_DECAY_BETA)))
+
+    (ParamKeys.data -> data) ~
+      (ParamKeys.model -> model) ~
+      (ParamKeys.train -> train) ~
+      (ParamKeys.layers -> graph.toJson)
+  }
 }
 
 object GraphModel {
