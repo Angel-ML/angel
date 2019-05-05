@@ -20,7 +20,7 @@ package com.tencent.angel;
 
 /**
  * Angel deploy mode.
- * Angel application support LOCAL or YARN
+ * Angel application support LOCAL  or YARN
  */
 public enum AngelDeployMode {
   LOCAL, YARN
