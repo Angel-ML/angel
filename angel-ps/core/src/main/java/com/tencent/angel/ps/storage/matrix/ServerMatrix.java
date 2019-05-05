@@ -19,11 +19,15 @@
 package com.tencent.angel.ps.storage.matrix;
 
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.PartitionMeta;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.PSContext;
-import com.tencent.angel.ps.storage.vector.ServerRow;
+import com.tencent.angel.ps.storage.partition.IServerPartition;
+import com.tencent.angel.ps.storage.partition.storage.IServerPartitionStorage;
+import com.tencent.angel.ps.storage.partition.ServerPartition;
+import com.tencent.angel.ps.storage.partition.ServerPartitionFactory;
 import com.tencent.angel.ps.storage.vector.element.IElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -77,7 +81,32 @@ public class ServerMatrix {
     String sourceClass = matrixMeta.getAttribute(AngelConf.ANGEL_PS_PARTITION_SOURCE_CLASS,
         AngelConf.DEFAULT_ANGEL_PS_PARTITION_SOURCE_CLASS);
 
+    // Get server partition class
+    Class<? extends IServerPartition> partClass;
+    try {
+      partClass = matrixMeta.getPartitionClass();
+
+      // If partition class is not set, just use the default partition class
+      if (partClass == null) {
+        partClass = MatrixConf.DEFAULT_SERVER_PARTITION_CLASS;
+      }
+    } catch (Throwable e) {
+      LOG.fatal("Server partition class failed ", e);
+      throw new RuntimeException(e);
+    }
+
+    // Get server partition storage class type
+    Class<? extends IServerPartitionStorage> storageClass;
+    try {
+      storageClass = matrixMeta.getPartitionStorageClass();
+    } catch (Throwable e) {
+      LOG.fatal("Server partition class failed ", e);
+      throw new RuntimeException(e);
+    }
+
     RowType rowType = matrixMeta.getRowType();
+
+    // Get value class
     Class<? extends IElement> valueClass = null;
     if (rowType.isCompleType()) {
       try {
@@ -93,11 +122,12 @@ public class ServerMatrix {
     }
 
     for (PartitionMeta partMeta : partMetas.values()) {
-      ServerPartition part = new ServerPartition(partMeta.getPartitionKey(),
-          matrixMeta.getRowType(),
-          matrixMeta.getEstSparsity(), sourceClass);
+      ServerPartition part = ServerPartitionFactory
+          .getPartition(partMeta.getPartitionKey(), partClass, storageClass,
+              matrixMeta.getRowType(), valueClass,
+              matrixMeta.getEstSparsity());
       partitionMaps.put(partMeta.getPartId(), part);
-      part.init(valueClass);
+      part.init();
       part.setState(PartitionState.READ_AND_WRITE);
     }
   }
@@ -129,20 +159,6 @@ public class ServerMatrix {
    */
   public int getId() {
     return matrixId;
-  }
-
-  /**
-   * Get row split
-   *
-   * @param partId partition id
-   * @param rowId row index
-   */
-  public ServerRow getRow(int partId, int rowId) {
-    ServerPartition part = getPartition(partId);
-    if (part == null) {
-      return null;
-    }
-    return part.getRow(rowId);
   }
 
   /**

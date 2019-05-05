@@ -31,7 +31,7 @@ import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.server.data.request.*;
 import com.tencent.angel.ps.server.data.response.*;
 import com.tencent.angel.ps.storage.matrix.PartitionState;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerBasicTypeRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.utils.ByteBufUtils;
@@ -1265,7 +1265,7 @@ public class WorkerPool {
    * @return response
    */
   private Response recoverPart(RecoverPartRequest request) {
-    if (LOG.isDebugEnabled()) {
+    /*if (LOG.isDebugEnabled()) {
       LOG.debug("recover part request=" + request);
     }
 
@@ -1287,7 +1287,7 @@ public class WorkerPool {
     if (LOG.isDebugEnabled()) {
       LOG.debug("recover partition  request " + request + " use time=" + (System.currentTimeMillis()
         - startTs));
-    }
+    }*/
 
     return new Response(ResponseType.SUCCESS);
   }

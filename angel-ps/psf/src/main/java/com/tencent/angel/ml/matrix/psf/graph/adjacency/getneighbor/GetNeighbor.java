@@ -22,7 +22,7 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.storage.matrix.ServerMatrix;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
 import com.tencent.angel.ps.storage.vector.ServerIntAnyRow;
 import com.tencent.angel.ps.storage.vector.element.IntArrayElement;
 import java.util.HashMap;
@@ -47,7 +47,7 @@ public class GetNeighbor extends GetFunc {
   public PartitionGetResult partitionGet(PartitionGetParam partParam) {
     PartGetNeighborParam param = (PartGetNeighborParam) partParam;
     ServerMatrix matrix = psContext.getMatrixStorageManager().getMatrix(partParam.getMatrixId());
-    ServerPartition part = matrix.getPartition(partParam.getPartKey().getPartitionId());
+    RowBasedPartition part = (RowBasedPartition)matrix.getPartition(partParam.getPartKey().getPartitionId());
     ServerIntAnyRow row = (ServerIntAnyRow)part.getRow(0);
     IntArrayElement element;
     Map<Integer, int[]> results = new HashMap<>();

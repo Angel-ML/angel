@@ -21,7 +21,7 @@ package com.tencent.angel.ml.psf.optimizer;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.enhance.MMUpdateParam;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
 
 
 public abstract class OptMMUpdateFunc extends UpdateFunc {
@@ -36,7 +36,7 @@ public abstract class OptMMUpdateFunc extends UpdateFunc {
 
   @Override
   public void partitionUpdate(PartitionUpdateParam partParam) {
-    ServerPartition part = psContext.getMatrixStorageManager()
+    RowBasedPartition part = (RowBasedPartition)psContext.getMatrixStorageManager()
         .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
 
     assert part != null;
@@ -45,5 +45,5 @@ public abstract class OptMMUpdateFunc extends UpdateFunc {
     update(part, vs2.getRowIds()[0], vs2.getScalars());
   }
 
-  abstract void update(ServerPartition partition, int factor, double[] scalars);
+  abstract void update(RowBasedPartition partition, int factor, double[] scalars);
 }

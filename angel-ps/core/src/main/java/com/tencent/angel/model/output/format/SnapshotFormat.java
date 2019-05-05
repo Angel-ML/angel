@@ -22,9 +22,10 @@ import com.tencent.angel.ml.math2.vector.*;
 import com.tencent.angel.model.MatrixLoadContext;
 import com.tencent.angel.model.PSMatrixLoadContext;
 import com.tencent.angel.model.PSMatrixSaveContext;
-import com.tencent.angel.ps.storage.matrix.PartitionSource;
 import com.tencent.angel.ps.storage.matrix.PartitionState;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
+import com.tencent.angel.ps.storage.partition.ServerPartition;
 import com.tencent.angel.ps.storage.vector.*;
 import com.tencent.angel.utils.Sort;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
@@ -55,6 +56,18 @@ public class SnapshotFormat extends MatrixFormatImpl {
 
   public SnapshotFormat(Configuration conf) {
     super(conf);
+  }
+
+  @Override
+  public void save(ServerPartition part, MatrixPartitionMeta partMeta,
+      PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
+
+  }
+
+  @Override
+  public void load(ServerPartition part, MatrixPartitionMeta partMeta,
+      PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+
   }
 
   static enum SaveType {
@@ -91,12 +104,12 @@ public class SnapshotFormat extends MatrixFormatImpl {
    * @param output      output stream
    * @throws IOException
    */
-  public void save(ServerPartition part, MatrixPartitionMeta partMeta,
+  public void save(RowBasedPartition part, MatrixPartitionMeta partMeta,
     PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
     List<Integer> rowIds = saveContext.getRowIndexes();
-    PartitionSource rows = part.getRows();
+
     if (rowIds == null || rowIds.isEmpty()) {
-      Iterator<Map.Entry<Integer, ServerRow>> iter = part.getRows().iterator();
+      Iterator<Map.Entry<Integer, ServerRow>> iter = part.getRowsStorage().iterator();
       rowIds = new ArrayList<>();
       while (iter.hasNext()) {
         rowIds.add(iter.next().getKey());
@@ -110,7 +123,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
 
     partMeta.setSaveRowNum(rowIds.size());
     for (int rowId : rowIds) {
-      ServerRow row = rows.getRow(rowId);
+      ServerRow row = part.getRow(rowId);
       RowPartitionMeta rowMeta = new RowPartitionMeta(rowId, 0, 0);
       if (row != null) {
         rowMeta.setElementNum(row.size());
@@ -120,7 +133,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
         } else {
           rowMeta.setSaveType(SaveType.SPARSE.getTypeId());
         }
-        save(rows.getRow(rowId), saveContext, partMeta, output);
+        save(part.getRow(rowId), saveContext, partMeta, output);
       } else {
         rowMeta.setElementNum(0);
         rowMeta.setOffset(dataOutputStream.getPos());
@@ -178,13 +191,13 @@ public class SnapshotFormat extends MatrixFormatImpl {
    * @param input       input stream
    * @throws IOException
    */
-  public void load(ServerPartition part, MatrixPartitionMeta partMeta,
+  public void load(RowBasedPartition part, MatrixPartitionMeta partMeta,
     PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
-    PartitionSource rows = part.getRows();
+
     try {
       Map<Integer, RowPartitionMeta> rowMetas = partMeta.getRowMetas();
       for (RowPartitionMeta rowMeta : rowMetas.values()) {
-        ServerRow row = rows.getRow(rowMeta.getRowId());
+        ServerRow row = part.getRow(rowMeta.getRowId());
         load(row, partMeta, loadContext, input);
       }
     } finally {

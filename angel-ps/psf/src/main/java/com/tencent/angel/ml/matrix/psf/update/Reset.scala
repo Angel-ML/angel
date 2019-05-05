@@ -25,6 +25,7 @@ import io.netty.buffer.ByteBuf
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.ml.matrix.psf.update.Reset.{ZeroParam, ZeroPartitionParam}
 import com.tencent.angel.ml.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc, UpdateParam}
+import com.tencent.angel.ps.storage.partition.RowBasedPartition
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.{Log, LogFactory}
 
@@ -40,7 +41,7 @@ class Reset(param: ZeroParam) extends UpdateFunc(param) {
     val part = psContext.getMatrixStorageManager.getPart(partParam.getMatrixId, partParam.getPartKey.getPartitionId)
     if (part != null) {
       partParam.asInstanceOf[ZeroPartitionParam].rowIds.par.foreach { rowId =>
-        val row = part.getRow(rowId)
+        val row = part.asInstanceOf[RowBasedPartition].getRow(rowId)
         if(row == null) {
           return
         }

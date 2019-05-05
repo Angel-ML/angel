@@ -21,7 +21,7 @@ package com.tencent.angel.ml.psf.optimizer;
 import com.tencent.angel.ml.math2.ufuncs.OptFuncs;
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs;
 import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.ps.storage.vector.ServerRowUtils;
 import org.apache.commons.logging.Log;
@@ -46,7 +46,7 @@ public class FTRLUpdateFunc extends OptMMUpdateFunc {
   }
 
   @Override
-  public void update(ServerPartition partition, int factor, double[] scalars) {
+  public void update(RowBasedPartition partition, int factor, double[] scalars) {
     double alpha = scalars[0];
     double beta = scalars[1];
     double lambda1 = scalars[2];

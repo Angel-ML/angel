@@ -24,7 +24,7 @@ import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
 import com.tencent.angel.ps.storage.vector.ServerIntDoubleRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.ps.storage.vector.ServerRowUtils;
@@ -49,7 +49,7 @@ public class QuantifyDoubleFunc extends UpdateFunc {
   }
 
   @Override public void partitionUpdate(PartitionUpdateParam partParam) {
-    ServerPartition part = psContext.getMatrixStorageManager()
+    RowBasedPartition part = (RowBasedPartition)psContext.getMatrixStorageManager()
       .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
 
     if (part != null) {

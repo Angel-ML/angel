@@ -20,7 +20,7 @@ package com.tencent.angel.psagent.matrix.cache;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.psagent.PSAgentContext;
 
@@ -61,7 +61,7 @@ public class MatricesCache {
    * Create a new MatricesCache.
    */
   public MatricesCache() {
-    matricesCacheMap = new ConcurrentHashMap<Integer, MatrixCache>();
+    matricesCacheMap = new ConcurrentHashMap<>();
     stopped = new AtomicBoolean(false);
   }
 
@@ -149,7 +149,7 @@ public class MatricesCache {
    * @param partKey  partition key
    * @return matrix partition
    */
-  public ServerPartition getPartition(int matrixId, PartitionKey partKey) {
+  public RowBasedPartition getPartition(int matrixId, PartitionKey partKey) {
     MatrixCache matrixCache = matricesCacheMap.get(matrixId);
     if (matrixCache == null) {
       return null;
@@ -195,7 +195,7 @@ public class MatricesCache {
    * @param partKey  partition key
    * @param part     matrix partition
    */
-  public void update(int matrixId, PartitionKey partKey, ServerPartition part) {
+  public void update(int matrixId, PartitionKey partKey, RowBasedPartition part) {
     MatrixCache matrixCache = matricesCacheMap.get(matrixId);
     if (matrixCache == null) {
       matricesCacheMap.putIfAbsent(matrixId, new MatrixCache(matrixId));
