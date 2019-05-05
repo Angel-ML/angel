@@ -28,7 +28,7 @@ import scala.util.Random
 
 class Word2VecModelSuite extends PSFunSuite with SharedPSContext {
 
-  val input = "data/text8/text8.split.head"
+  val input = "../../data/text8/text8.split.head"
   val output = "model/"
   val lr = 0.1f
   val dim = 32
