@@ -28,7 +28,7 @@ class Graph(val provider: VariableProvider, val placeHolder: PlaceHolder, val co
   protected val inputLayers = new ListBuffer[InputLayer]()
   protected var lossLayer: LossLayer = _
   protected val trainableLayer = new ListBuffer[Trainable]()
-  private val dataCache = new DataCache()
+  private val dataCache: ThreadLocal[DataCache] = new ThreadLocal[DataCache]()
 
   val timeStats = new TimeStats()
 
@@ -153,33 +153,61 @@ class Graph(val provider: VariableProvider, val placeHolder: PlaceHolder, val co
     */
 
   def put2Cache(name: String, mat: Matrix): this.type = {
-    dataCache.addMatrix(name, mat)
+    if (dataCache.get() == null) {
+      dataCache.set(new DataCache())
+    }
+
+    dataCache.get.addMatrix(name, mat)
     this
   }
 
   def put2Cache(name: String, vec: Vector): this.type = {
-    dataCache.addVector(name, vec)
+    if (dataCache.get() == null) {
+      dataCache.set(new DataCache())
+    }
+
+    dataCache.get.addVector(name, vec)
     this
   }
 
   def isMatrixInCache(name: String): Boolean = {
-    dataCache.hasMatrix(name)
+    if (dataCache.get() == null) {
+      dataCache.set(new DataCache())
+    }
+
+    dataCache.get.hasMatrix(name)
   }
 
   def isVectorInCache(name: String): Boolean = {
-    dataCache.hasVector(name)
+    if (dataCache.get() == null) {
+      dataCache.set(new DataCache())
+    }
+
+    dataCache.get.hasVector(name)
   }
 
   def getMatrixFromCache(name: String): Matrix = {
-    dataCache.getMatrix(name)
+    if (dataCache.get() == null) {
+      dataCache.set(new DataCache())
+    }
+
+    dataCache.get.getMatrix(name)
   }
 
   def getVectorFromCache(name: String): Vector = {
-    dataCache.getVector(name)
+    if (dataCache.get() == null) {
+      dataCache.set(new DataCache())
+    }
+
+    dataCache.get.getVector(name)
   }
 
   def clearCache(): this.type = {
-    dataCache.clearAll()
+    if (dataCache.get() == null) {
+      dataCache.set(new DataCache())
+    } else {
+      dataCache.get.clearAll()
+    }
     this
   }
 
