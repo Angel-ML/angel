@@ -1,6 +1,6 @@
 # Louvain(FastUnfolding)
 
-> Louvain(FastUnfolding)算法是经典的社区发现算法, 通过优化[模块度](https://en.wikipedia.org/wiki/Modularity_(networks)指标来达到社区划分的目的。
+> Louvain(FastUnfolding)算法是经典的社区发现算法, 通过优化[模块度](https://en.wikipedia.org/wiki/Modularity)指标来达到社区划分的目的。
 
 ## 1. 算法介绍
 Louvain算法包含两个过程
