@@ -10,6 +10,10 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.control.NonFatal
 import scala.concurrent.forkjoin.{ForkJoinPool => SForkJoinPool, ForkJoinWorkerThread => SForkJoinWorkerThread}
 
+/**
+  * Use spark's ThreadUtils for ExecutorService
+  */
+
 private[angel] object ThreadUtils {
 
   private val sameThreadExecutionContext =

@@ -48,8 +48,8 @@ private[angel] object Constants {
   val ENV_ANGEL_CONF_DIR = "ANGEL_CONF_DIR"
   // Angel app configs for containers
   val ANGEL_CONF_VOLUME = "angel-conf-volume"
-  val ANGEL_CONF_DIR_INTERNAL = "/opt/angel/conf"
-  val ANGEL_CONF_FILE_NAME = "angel-site.xml"
+  val ANGEL_CONF_DIR_INTERNAL = "/opt/resource/conf"
+  val ANGEL_CONF_FILE_NAME = "angel-site.properties"
   val ANGEL_CONF_PATH = s"$ANGEL_CONF_DIR_INTERNAL/$ANGEL_CONF_FILE_NAME"
 
   val MASTER_CONTAINER_NAME = "angel-kubernetes-master"

@@ -1124,9 +1124,9 @@ public class MasterService extends AbstractService implements MasterProtocol {
         LOG.debug("waiting for worker register in monitor...");
       }
       LOG.info("Now scheduler and lanuch worker pod.");
-      Configuration conf = context.getConf();
-      conf.set(AngelConf.ANGEL_KUBERNETES_EXECUTOR_ROLE, "worker");
-      context.getK8sClusterManager().scheduler(conf);
+      Configuration workerConf = new Configuration(context.getConf());
+      workerConf.set(AngelConf.ANGEL_KUBERNETES_EXECUTOR_ROLE, "worker");
+      context.getK8sClusterManager().scheduler(workerConf);
     }
     return StartResponse.newBuilder().build();
   }

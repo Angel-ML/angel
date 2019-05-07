@@ -489,9 +489,7 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
     @SuppressWarnings("unchecked") @Override public void transition(App app, AppEvent event) {
       if (app.context.getRunningMode() == RunningMode.ANGEL_PS_WORKER && app.context.getDeployMode() == AngelDeployMode.KUBERNETES) {
         LOG.info("Now stop worker scheduler.");
-          Configuration conf = app.context.getConf();
-          conf.set(AngelConf.ANGEL_KUBERNETES_EXECUTOR_ROLE, "worker");
-        app.context.getK8sClusterManager().stop(conf);
+        app.context.getK8sClusterManager().stop("worker");
       }
     }
   }

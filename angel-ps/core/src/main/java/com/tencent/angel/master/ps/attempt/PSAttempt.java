@@ -448,18 +448,22 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
 
       // release container:send a release request to container launcher
       AngelDeployMode deployMode = psAttempt.getContext().getDeployMode();
-      ContainerLauncherEvent launchEvent = null;
-      if (deployMode == AngelDeployMode.LOCAL) {
-        launchEvent =
-          new LocalContainerLauncherEvent(ContainerLauncherEventType.CONTAINER_REMOTE_CLEANUP,
-            psAttempt.attemptId);
+      if (deployMode == AngelDeployMode.KUBERNETES) {
+          // TODO: 2019/5/5
       } else {
-        launchEvent = new YarnContainerLauncherEvent(psAttempt.getId(), psAttempt.container.getId(),
-          StringInterner.weakIntern(psAttempt.container.getNodeId().toString()),
-          psAttempt.container.getContainerToken(),
-          ContainerLauncherEventType.CONTAINER_REMOTE_CLEANUP);
+          ContainerLauncherEvent launchEvent = null;
+          if (deployMode == AngelDeployMode.LOCAL) {
+              launchEvent =
+                      new LocalContainerLauncherEvent(ContainerLauncherEventType.CONTAINER_REMOTE_CLEANUP,
+                              psAttempt.attemptId);
+          } else {
+              launchEvent = new YarnContainerLauncherEvent(psAttempt.getId(), psAttempt.container.getId(),
+                      StringInterner.weakIntern(psAttempt.container.getNodeId().toString()),
+                      psAttempt.container.getContainerToken(),
+                      ContainerLauncherEventType.CONTAINER_REMOTE_CLEANUP);
+          }
+          psAttempt.getContext().getEventHandler().handle(launchEvent);
       }
-      psAttempt.getContext().getEventHandler().handle(launchEvent);
     }
   }
 

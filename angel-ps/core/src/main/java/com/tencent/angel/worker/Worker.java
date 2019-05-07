@@ -364,6 +364,7 @@ public class Worker implements Executor {
     } catch (Exception netException) {
       if (!stopped.get()) {
         LOG.error("report to appmaster failed, err: ", netException);
+        workerExit(-1);
       }
     }
   }

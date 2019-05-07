@@ -19,6 +19,8 @@ private[angel] class KubernetesClusterManager {
       None)
     Option(conf.get(AngelConf.ANGEL_KUBERNETES_MASTER_POD_NAME))
       .getOrElse("The angel master pod name must be provided.")
+    val executorRole = conf.get(AngelConf.ANGEL_KUBERNETES_EXECUTOR_ROLE,
+      AngelConf.DEFAULT_ANGEL_KUBERNETES_EXECUTOR_ROLE)
     val namespace = conf.get(AngelConf.ANGEL_KUBERNETES_NAMESPACE, AngelConf.DEFAULT_ANGEL_KUBERNETES_NAMESPACE)
     val kubernetesClient = AngelKubernetesClientFactory.createKubernetesClient(
       apiServerUri,
@@ -28,10 +30,10 @@ private[angel] class KubernetesClusterManager {
       defaultServiceAccountToken,
       defaultServiceAccountCaCrt)
     val requestExecutorsService =  ThreadUtils.newDaemonCachedThreadPool(
-      "kubernetes-executor-requests")
+      "kubernetes-executor-requests" + "-" + executorRole)
     val subscribersExecutor = ThreadUtils
       .newDaemonThreadPoolScheduledExecutor(
-        "kubernetes-executor-snapshots-subscribers", 2)
+        "kubernetes-executor-snapshots-subscribers" + "-" + executorRole, 2)
     val snapshotsStore = new AngelExecutorPodsSnapshotsStoreImpl(subscribersExecutor)
     val executorPodsLifecycleEventHandler = new AngelExecutorPodsLifecycleManager(
       conf,
@@ -47,7 +49,7 @@ private[angel] class KubernetesClusterManager {
       kubernetesClient)
 
     val eventsPollingExecutor = ThreadUtils.newDaemonSingleThreadScheduledExecutor(
-      "kubernetes-executor-pod-polling-sync")
+      "kubernetes-executor-pod-polling-sync" + "-" + executorRole)
     val podsPollingEventSource = new AngelExecutorPodsPollingSnapshotSource(
       conf, kubernetesClient, snapshotsStore, eventsPollingExecutor)
 
@@ -89,8 +91,8 @@ private[angel] class KubernetesClusterManager {
     executorRole.equals("ps")
   }
 
-  def stop(conf: Configuration): Unit = {
-    if (psRole(conf)) {
+  def stop(executorRole: String): Unit = {
+    if (executorRole.equals("ps")) {
       psSchedulerBackend.stop()
     } else {
       workerSchedulerBackend.stop()

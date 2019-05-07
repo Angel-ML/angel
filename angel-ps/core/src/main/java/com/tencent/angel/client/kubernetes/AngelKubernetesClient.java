@@ -81,7 +81,7 @@ public class AngelKubernetesClient extends AngelClient {
     @Override public void startPSServer() throws AngelException {
         try {
             setUser();
-            setLocalAddr();
+            //setLocalAddr();
             Path stagingDir = AngelApps.getStagingDir(conf, userName);
 
             // 2.get job id

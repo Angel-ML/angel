@@ -446,8 +446,7 @@ public class AngelKubernetesApplicationMaster extends CompositeService {
             // stop all services
             LOG.info("Calling stop for all the services");
             LOG.info("Now stop ps scheduler.");
-            conf.set(AngelConf.ANGEL_KUBERNETES_EXECUTOR_ROLE, "ps");
-            k8sClusterManager.stop(conf);
+            k8sClusterManager.stop("ps");
             AngelKubernetesApplicationMaster.this.stop();
 
             // 1.write application state to file so that the client can get the state of the application
@@ -543,7 +542,7 @@ public class AngelKubernetesApplicationMaster extends CompositeService {
     }
 
     /**
-     * init and start all service modules for angel applicaiton master.
+     * init and start all service modules for angel application master.
      */
     public void initAndStart() throws Exception {
         addIfService(angelApp);
@@ -672,7 +671,8 @@ public class AngelKubernetesApplicationMaster extends CompositeService {
         int port = conf.getInt(AngelConf.ANGEL_KUBERNETES_MASTER_PORT, AngelConf.DEFAULT_ANGEL_KUBERNETES_MASTER_PORT);
         masterLocation = new Location(host, port);
         psManager.startAllPS();
-        k8sClusterManager.scheduler(conf);
+        Configuration psConf = new Configuration(conf);
+        k8sClusterManager.scheduler(psConf);
         AngelServiceLoader.startServiceIfNeed(this, getConfig());
     }
 
