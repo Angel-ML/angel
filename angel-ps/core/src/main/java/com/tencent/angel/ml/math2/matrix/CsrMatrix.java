@@ -39,15 +39,16 @@ public abstract class CsrMatrix extends Matrix{
   }
 
   protected int [] trans(int[] rowIndices){
-    int end = 1;
+    int start = 0; int end = 0;
     int [] indptr = new int[shape[0] + 1];
     indptr[0] = 0;
     int j = 1;
-    for (int i = 0; i < rowIndices.length - 1; i++) {
-      if (rowIndices[i] != rowIndices[i+1]) {
+    for (int i = 0; i < rowIndices.length; i++) {
+      if (start != rowIndices[i]) {
         indptr[j] = end;
         j++;
       }
+      start = rowIndices[i];
       end = end + 1;
     }
     indptr[shape[0]] = end;
