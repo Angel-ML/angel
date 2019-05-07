@@ -995,25 +995,48 @@ public class MFactory {
     return new MapMatrix(mapMatrix);
   }
 
-  public static CooDoubleMatrix cooDoubleMatrix(
+  public static CooIntDoubleMatrix cooIntDoubleMatrix(
       int matrixId, int clock, int[] rowIndices, int[] colIndices, double[] values, int[] shape) {
-    return new CooDoubleMatrix(matrixId, clock, rowIndices, colIndices, values, shape);
+    return new CooIntDoubleMatrix(matrixId, clock, rowIndices, colIndices, values, shape);
   }
 
-  public static CooDoubleMatrix cooDoubleMatrix(
+  public static CooIntDoubleMatrix cooIntDoubleMatrix(
       int[] rowIndices, int[] colIndices, double[] values, int[] shape) {
-    return new CooDoubleMatrix(0, 0, rowIndices, colIndices, values, shape);
+    return new CooIntDoubleMatrix(0, 0, rowIndices, colIndices, values, shape);
   }
 
-  public static CooFloatMatrix cooFloatMatrix(
+  public static CooIntFloatMatrix cooIntFloatMatrix(
       int matrixId, int clock, int[] rowIndices, int[] colIndices, float[] values, int[] shape) {
-    return new CooFloatMatrix(matrixId, clock, rowIndices, colIndices, values, shape);
+    return new CooIntFloatMatrix(matrixId, clock, rowIndices, colIndices, values, shape);
   }
 
-  public static CooFloatMatrix cooFloatMatrix(
+  public static CooIntFloatMatrix cooIntFloatMatrix(
       int[] rowIndices, int[] colIndices, float[] values, int[] shape) {
-    return new CooFloatMatrix(rowIndices, colIndices, values, shape);
+    return new CooIntFloatMatrix(rowIndices, colIndices, values, shape);
   }
+
+  public static CooLongFloatMatrix cooLongFloatMatrix(
+      long[] rowIndices, long[] colIndices, float[] values, int[] shape) {
+    return new CooLongFloatMatrix(rowIndices, colIndices, values, shape);
+  }
+
+  public static CooLongFloatMatrix cooLongFloatMatrix(
+      int matrixId, int clock, long[] rowIndices, long[] colIndices, float[] values, int[] shape) {
+    return new CooLongFloatMatrix(matrixId, clock, rowIndices, colIndices, values, shape);
+  }
+
+  public static CooLongDoubleMatrix cooLongDoubleMatrix(
+      long[] rowIndices, long[] colIndices, double[] values, int[] shape) {
+    return new CooLongDoubleMatrix(rowIndices, colIndices, values, shape);
+  }
+
+  public static CooLongDoubleMatrix cooLongDoubleMatrix(
+      int matrixId, int clock, long[] rowIndices, long[] colIndices, double[] values, int[] shape) {
+    return new CooLongDoubleMatrix(matrixId, clock, rowIndices, colIndices, values, shape);
+  }
+
+
+
 
   public static CsrDoubleMatrix csrDoubleMatrix(
       int matrixId, int clock, int[] rowIndices, int[] colIndices, double[] values, int[] shape) {

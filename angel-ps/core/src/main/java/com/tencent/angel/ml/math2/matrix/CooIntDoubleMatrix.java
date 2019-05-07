@@ -1,20 +1,20 @@
 package com.tencent.angel.ml.math2.matrix;
 
-import com.tencent.angel.ml.math2.storage.IntFloatSparseVectorStorage;
-import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.ml.math2.storage.IntDoubleSparseVectorStorage;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.math2.vector.Vector;
-import it.unimi.dsi.fastutil.floats.FloatArrayList;
+import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
-public class CooFloatMatrix extends CooMatrix{
+public class CooIntDoubleMatrix extends CooIntMatrix {
 
-  protected float [] values;
+  protected double [] values;
 
-  public CooFloatMatrix() {
+  public CooIntDoubleMatrix() {
     super();
   }
 
-  public CooFloatMatrix(int matrixId, int clock, int[] rowIndices, int[] colIndices, float[] values, int[] shape) {
+  public CooIntDoubleMatrix(int matrixId, int clock, int[] rowIndices, int[] colIndices, double[] values, int[] shape) {
     this.matrixId = matrixId;
     this.clock = clock;
     this.rowIndices = rowIndices;
@@ -23,14 +23,14 @@ public class CooFloatMatrix extends CooMatrix{
     this.shape = shape;
   }
 
-  public CooFloatMatrix(int[] rowIndices, int[] colIndices, float[] values, int[] shape) {
+  public CooIntDoubleMatrix(int[] rowIndices, int[] colIndices, double[] values, int[] shape) {
     this(0, 0, rowIndices, colIndices, values, shape);
   }
 
   @Override
   public Vector getRow(int idx) {
     IntArrayList cols = new IntArrayList();
-    FloatArrayList data = new FloatArrayList();
+    DoubleArrayList data = new DoubleArrayList();
     for (int i = 0; i < rowIndices.length; i++) {
       if (rowIndices[i] == idx) {
         cols.add(colIndices[i]);
@@ -38,15 +38,15 @@ public class CooFloatMatrix extends CooMatrix{
       }
     }
 
-    IntFloatSparseVectorStorage storage = new IntFloatSparseVectorStorage(shape[1], cols.toIntArray(), data.toFloatArray());
-    return new IntFloatVector(getMatrixId(), idx, getClock(), shape[1], storage);
+    IntDoubleSparseVectorStorage storage = new IntDoubleSparseVectorStorage(shape[1], cols.toIntArray(), data.toDoubleArray());
+    return new IntDoubleVector(getMatrixId(), idx, getClock(), shape[1], storage);
   }
 
 
   @Override
   public Vector getCol(int idx) {
     IntArrayList cols = new IntArrayList();
-    FloatArrayList data = new FloatArrayList();
+    DoubleArrayList data = new DoubleArrayList();
     for (int i = 0; i < colIndices.length; i++) {
       if (colIndices[i] == idx) {
         cols.add(rowIndices[i]);
@@ -54,11 +54,11 @@ public class CooFloatMatrix extends CooMatrix{
       }
     }
 
-    IntFloatSparseVectorStorage storage = new IntFloatSparseVectorStorage(shape[0], cols.toIntArray(), data.toFloatArray());
-    return new IntFloatVector(getMatrixId(), 0, getClock(), shape[0], storage);
+    IntDoubleSparseVectorStorage storage = new IntDoubleSparseVectorStorage(shape[0], cols.toIntArray(), data.toDoubleArray());
+    return new IntDoubleVector(getMatrixId(), 0, getClock(), shape[0], storage);
   }
 
-  public float[] getValues() {
+  public double[] getValues() {
     return values;
   }
 
@@ -73,9 +73,9 @@ public class CooFloatMatrix extends CooMatrix{
 
   @Override
   public Matrix copy() {
-    float[] newData = new float[values.length];
+    double[] newData = new double[values.length];
     System.arraycopy(values, 0, newData, 0, values.length);
-    return new CooFloatMatrix(matrixId, clock, rowIndices, colIndices, newData, shape);
+    return new CooIntDoubleMatrix(matrixId, clock, rowIndices, colIndices, newData, shape);
   }
 
   @Override
