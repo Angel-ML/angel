@@ -6,9 +6,9 @@ import com.tencent.angel.ml.math2.vector.Vector;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
-public class CsrFloatMatrix extends CsrMatrix{
+public class CsrFloatMatrix extends CsrMatrix {
 
-  protected float [] values;
+  protected float[] values;
 
   public CsrFloatMatrix() {
     super();
@@ -47,12 +47,13 @@ public class CsrFloatMatrix extends CsrMatrix{
 
     int rowNum = indptr.length - 1;
     assert (idx < rowNum);
-    for (int i = idx; i < indptr[idx + 1]; i++) {
+    for (int i = indptr[idx]; i < indptr[idx + 1]; i++) {
       cols.add(indices[i]);
       data.add(values[i]);
     }
 
-    IntFloatSparseVectorStorage storage = new IntFloatSparseVectorStorage(shape[1], cols.toIntArray(), data.toFloatArray());
+    IntFloatSparseVectorStorage storage =
+        new IntFloatSparseVectorStorage(shape[1], cols.toIntArray(), data.toFloatArray());
     return new IntFloatVector(getMatrixId(), idx, getClock(), shape[1], storage);
   }
 
@@ -61,14 +62,18 @@ public class CsrFloatMatrix extends CsrMatrix{
     IntArrayList cols = new IntArrayList();
     FloatArrayList data = new FloatArrayList();
     int[] rows = new int[indices.length];
-    int i = 0;int j = 0;
+    int i = 0;
+    int j = 0;
 
-    while (i < indptr.length -1 && j < indptr.length -1) {
-      int r = indptr[j + 1] - indptr[j];
+    while (i < indptr.length - 1 && j < indptr.length - 1) {
+      int r = indptr[i + 1] - indptr[i];
       for (int p = j; p < j + r; p++) {
         rows[p] = i;
       }
-     i++; j++;
+      if (r != 0) {
+        j++;
+      }
+      i++;
     }
 
     for (int id = 0; id < indices.length; id++) {
@@ -79,7 +84,8 @@ public class CsrFloatMatrix extends CsrMatrix{
     }
 
 
-    IntFloatSparseVectorStorage storage = new IntFloatSparseVectorStorage(shape[0], cols.toIntArray(), data.toFloatArray());
+    IntFloatSparseVectorStorage storage =
+        new IntFloatSparseVectorStorage(shape[0], cols.toIntArray(), data.toFloatArray());
     return new IntFloatVector(getMatrixId(), 0, getClock(), shape[0], storage);
   }
 
