@@ -6,9 +6,9 @@ import com.tencent.angel.ml.math2.vector.Vector;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
-public class CsrDoubleMatrix extends CsrMatrix{
+public class CsrDoubleMatrix extends CsrMatrix {
 
-  protected double [] values;
+  protected double[] values;
 
   public CsrDoubleMatrix() {
     super();
@@ -47,12 +47,13 @@ public class CsrDoubleMatrix extends CsrMatrix{
     int rowNum = indptr.length - 1;
     assert (idx < rowNum);
 
-    for (int i = idx; i < indptr[idx + 1]; i++) {
+    for (int i = indptr[idx]; i < indptr[idx + 1]; i++) {
       cols.add(indices[i]);
       data.add(values[i]);
     }
 
-    IntDoubleSparseVectorStorage storage = new IntDoubleSparseVectorStorage(shape[1], cols.toIntArray(), data.toDoubleArray());
+    IntDoubleSparseVectorStorage storage =
+        new IntDoubleSparseVectorStorage(shape[1], cols.toIntArray(), data.toDoubleArray());
     return new IntDoubleVector(getMatrixId(), idx, getClock(), shape[1], storage);
   }
 
@@ -61,14 +62,18 @@ public class CsrDoubleMatrix extends CsrMatrix{
     IntArrayList cols = new IntArrayList();
     DoubleArrayList data = new DoubleArrayList();
     int[] rows = new int[indices.length];
-    int i = 0;int j = 0;
+    int i = 0;
+    int j = 0;
 
-    while (i < indptr.length -1 && j < indptr.length -1) {
-      int r = indptr[j + 1] - indptr[j];
+    while (i < indptr.length - 1 && j < indptr.length - 1) {
+      int r = indptr[i + 1] - indptr[i];
       for (int p = j; p < j + r; p++) {
         rows[p] = i;
       }
-      i++;j++;
+      if (r != 0) {
+        j++;
+      }
+      i++;
     }
     for (int id = 0; id < indices.length; id++) {
       if (indices[id] == idx) {
@@ -77,7 +82,8 @@ public class CsrDoubleMatrix extends CsrMatrix{
       }
     }
 
-    IntDoubleSparseVectorStorage storage = new IntDoubleSparseVectorStorage(shape[0], cols.toIntArray(), data.toDoubleArray());
+    IntDoubleSparseVectorStorage storage =
+        new IntDoubleSparseVectorStorage(shape[0], cols.toIntArray(), data.toDoubleArray());
     return new IntDoubleVector(getMatrixId(), 0, getClock(), shape[0], storage);
   }
 
