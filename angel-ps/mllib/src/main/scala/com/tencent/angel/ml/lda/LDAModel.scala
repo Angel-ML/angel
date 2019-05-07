@@ -92,7 +92,7 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
 
   val LOG = LogFactory.getLog(classOf[LDAModel])
 
-  val numTasks = conf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, -1)
+  val numTasks = conf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 10)
 
   // Initializing parameters
   //  var V: Int = 0
