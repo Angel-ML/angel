@@ -19,25 +19,7 @@
 package com.tencent.angel.ml.math2;
 
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.math2.matrix.BlasDoubleMatrix;
-import com.tencent.angel.ml.math2.matrix.BlasFloatMatrix;
-import com.tencent.angel.ml.math2.matrix.MapMatrix;
-import com.tencent.angel.ml.math2.matrix.RBCompIntDoubleMatrix;
-import com.tencent.angel.ml.math2.matrix.RBCompIntFloatMatrix;
-import com.tencent.angel.ml.math2.matrix.RBCompIntIntMatrix;
-import com.tencent.angel.ml.math2.matrix.RBCompIntLongMatrix;
-import com.tencent.angel.ml.math2.matrix.RBCompLongDoubleMatrix;
-import com.tencent.angel.ml.math2.matrix.RBCompLongFloatMatrix;
-import com.tencent.angel.ml.math2.matrix.RBCompLongIntMatrix;
-import com.tencent.angel.ml.math2.matrix.RBCompLongLongMatrix;
-import com.tencent.angel.ml.math2.matrix.RBIntDoubleMatrix;
-import com.tencent.angel.ml.math2.matrix.RBIntFloatMatrix;
-import com.tencent.angel.ml.math2.matrix.RBIntIntMatrix;
-import com.tencent.angel.ml.math2.matrix.RBIntLongMatrix;
-import com.tencent.angel.ml.math2.matrix.RBLongDoubleMatrix;
-import com.tencent.angel.ml.math2.matrix.RBLongFloatMatrix;
-import com.tencent.angel.ml.math2.matrix.RBLongIntMatrix;
-import com.tencent.angel.ml.math2.matrix.RBLongLongMatrix;
+import com.tencent.angel.ml.math2.matrix.*;
 import com.tencent.angel.ml.math2.vector.CompIntDoubleVector;
 import com.tencent.angel.ml.math2.vector.CompIntFloatVector;
 import com.tencent.angel.ml.math2.vector.CompIntIntVector;
@@ -1011,5 +993,65 @@ public class MFactory {
   public static MapMatrix<LongIntVector> compLongIntMapMatrix(
       HashMap<Long, CompLongIntVector> mapMatrix) {
     return new MapMatrix(mapMatrix);
+  }
+
+  public static CooDoubleMatrix cooDoubleMatrix(
+      int matrixId, int clock, int[] rowIndices, int[] colIndices, double[] values, int[] shape) {
+    return new CooDoubleMatrix(matrixId, clock, rowIndices, colIndices, values, shape);
+  }
+
+  public static CooDoubleMatrix cooDoubleMatrix(
+      int[] rowIndices, int[] colIndices, double[] values, int[] shape) {
+    return new CooDoubleMatrix(0, 0, rowIndices, colIndices, values, shape);
+  }
+
+  public static CooFloatMatrix cooFloatMatrix(
+      int matrixId, int clock, int[] rowIndices, int[] colIndices, float[] values, int[] shape) {
+    return new CooFloatMatrix(matrixId, clock, rowIndices, colIndices, values, shape);
+  }
+
+  public static CooFloatMatrix cooFloatMatrix(
+      int[] rowIndices, int[] colIndices, float[] values, int[] shape) {
+    return new CooFloatMatrix(rowIndices, colIndices, values, shape);
+  }
+
+  public static CsrDoubleMatrix csrDoubleMatrix(
+      int matrixId, int clock, int[] rowIndices, int[] colIndices, double[] values, int[] shape) {
+    return new CsrDoubleMatrix(matrixId, clock, rowIndices, colIndices, values, shape);
+  }
+
+  public static CsrDoubleMatrix csrDoubleMatrix(
+      int[] rowIndices, int[] colIndices, double[] values, int[] shape) {
+    return new CsrDoubleMatrix(0, 0, rowIndices, colIndices, values, shape);
+  }
+
+  public static CsrFloatMatrix csrFloatMatrix(
+      int matrixId, int clock, int[] rowIndices, int[] colIndices, float[] values, int[] shape) {
+    return new CsrFloatMatrix(matrixId, clock, rowIndices, colIndices, values, shape);
+  }
+
+  public static CsrFloatMatrix csrFloatMatrix(
+      int[] rowIndices, int[] colIndices, float[] values, int[] shape) {
+    return new CsrFloatMatrix(rowIndices, colIndices, values, shape);
+  }
+
+  public static CsrDoubleMatrix csrDoubleMatrix(
+      int matrixId, int clock, double[] values, int[] indices, int[] indptr, int[] shape) {
+    return new CsrDoubleMatrix(matrixId, clock, values, indices, indptr, shape);
+  }
+
+  public static CsrDoubleMatrix csrDoubleMatrix(
+      double[] values, int[] indices, int[] indptr, int[] shape) {
+    return new CsrDoubleMatrix(0, 0,values,  indices, indptr, shape);
+  }
+
+  public static CsrFloatMatrix csrFloatMatrix(
+      int matrixId, int clock, float[] values, int[] indices, int[] indptr, int[] shape) {
+    return new CsrFloatMatrix(matrixId, clock, values, indices, indptr, shape);
+  }
+
+  public static CsrFloatMatrix csrFloatMatrix(
+      float[] values, int[] indices, int[] indptr, int[] shape) {
+    return new CsrFloatMatrix(values, indices, indptr, shape);
   }
 }
