@@ -21,7 +21,7 @@ import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.ps.storage.matrix.ServerMatrix;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
 import com.tencent.angel.ps.storage.vector.ServerIntAnyRow;
 import com.tencent.angel.ps.storage.vector.element.IntArrayElement;
 import java.util.Map.Entry;
@@ -43,7 +43,7 @@ public class InitNeighbor extends UpdateFunc {
   public void partitionUpdate(PartitionUpdateParam partParam) {
     PartInitNeighborParam param = (PartInitNeighborParam) partParam;
     ServerMatrix matrix = psContext.getMatrixStorageManager().getMatrix(partParam.getMatrixId());
-    ServerPartition part = matrix.getPartition(partParam.getPartKey().getPartitionId());
+    RowBasedPartition part = (RowBasedPartition)matrix.getPartition(partParam.getPartKey().getPartitionId());
     ServerIntAnyRow row = (ServerIntAnyRow) part.getRow(0);
 
     for (Entry<Integer, int[]> entry : param.getNodeIdToNeighborIndices().entrySet()) {

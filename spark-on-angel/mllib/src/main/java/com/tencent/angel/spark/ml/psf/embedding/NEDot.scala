@@ -19,11 +19,9 @@
 package com.tencent.angel.spark.ml.psf.embedding
 
 import scala.collection.JavaConversions._
-
 import io.netty.buffer.ByteBuf
-
 import com.tencent.angel.ml.matrix.psf.get.base._
-import com.tencent.angel.ps.storage.matrix.ServerPartition
+import com.tencent.angel.ps.storage.partition.RowBasedPartition
 import com.tencent.angel.spark.ml.psf.embedding.NEDot.{DotPartitionResult, NEDotResult}
 
 abstract class NEDot(param: GetParam) extends GetFunc(param) {
@@ -39,11 +37,11 @@ abstract class NEDot(param: GetParam) extends GetFunc(param) {
   }
 
   override def partitionGet(pParam: PartitionGetParam): PartitionGetResult = {
-    val part = psContext.getMatrixStorageManager.getPart(pParam.getMatrixId, pParam.getPartKey.getPartitionId)
+    val part = psContext.getMatrixStorageManager.getPart(pParam.getMatrixId, pParam.getPartKey.getPartitionId).asInstanceOf[RowBasedPartition]
     if (part == null) null else new DotPartitionResult(doProcess(part, pParam))
   }
 
-  def doProcess(part: ServerPartition, pParam: PartitionGetParam): Array[Float]
+  def doProcess(part: RowBasedPartition, pParam: PartitionGetParam): Array[Float]
 }
 
 object NEDot {

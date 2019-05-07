@@ -19,47 +19,41 @@
 package com.tencent.angel.ml.matrix.psf
 
 import io.netty.buffer.ByteBuf
-
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.RowType._
-import com.tencent.angel.ps.storage.matrix.ServerPartition
+import com.tencent.angel.ps.storage.partition.RowBasedPartition
 import com.tencent.angel.ps.storage.vector._
 
 object RowUpdateWithVectorUtils {
-  def update(part: ServerPartition,
+  def update(part: RowBasedPartition,
       buf: ByteBuf,
       double2Double: (Double, Double) => Double,
       float2Float: (Float, Float) => Float,
       long2Long: (Long, Long) => Long,
       int2Int: (Int, Int) => Int): Unit = {
-    part.startUpdate()
-    try {
-      val rowNum = buf.readInt
-      for (_ <- 0 until rowNum) {
-        val rowId = buf.readInt()
-        val rowType = RowType.valueOf(buf.readInt())
-        val row = part.getRow(rowId)
-        row match {
-          case r: ServerIntDoubleRow =>
-            updateIntDoubleRow(r, rowType, buf, double2Double)
-          case r: ServerIntFloatRow =>
-            updateIntFloatRow(r, rowType, buf, float2Float)
-          case r: ServerIntLongRow =>
-            updateIntLongRow(r, rowType, buf, long2Long)
-          case r: ServerIntIntRow =>
-            updateIntIntRow(r, rowType, buf, int2Int)
-          case r: ServerLongDoubleRow =>
-            updateLongDoubleRow(r, rowType, buf, double2Double)
-          case r: ServerLongFloatRow =>
-            updateLongFloatRow(r, rowType, buf, float2Float)
-          case r: ServerLongLongRow =>
-            updateLongLongRow(r, rowType, buf, long2Long)
-          case r: ServerLongIntRow =>
-            updateLongIntRow(r, rowType, buf, int2Int)
-        }
+    val rowNum = buf.readInt
+    for (_ <- 0 until rowNum) {
+      val rowId = buf.readInt()
+      val rowType = RowType.valueOf(buf.readInt())
+      val row = part.getRow(rowId)
+      row match {
+        case r: ServerIntDoubleRow =>
+          updateIntDoubleRow(r, rowType, buf, double2Double)
+        case r: ServerIntFloatRow =>
+          updateIntFloatRow(r, rowType, buf, float2Float)
+        case r: ServerIntLongRow =>
+          updateIntLongRow(r, rowType, buf, long2Long)
+        case r: ServerIntIntRow =>
+          updateIntIntRow(r, rowType, buf, int2Int)
+        case r: ServerLongDoubleRow =>
+          updateLongDoubleRow(r, rowType, buf, double2Double)
+        case r: ServerLongFloatRow =>
+          updateLongFloatRow(r, rowType, buf, float2Float)
+        case r: ServerLongLongRow =>
+          updateLongLongRow(r, rowType, buf, long2Long)
+        case r: ServerLongIntRow =>
+          updateLongIntRow(r, rowType, buf, int2Int)
       }
-    } finally {
-      part.endUpdate()
     }
   }
 

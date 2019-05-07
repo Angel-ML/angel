@@ -22,7 +22,7 @@ import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.enhance.MultiRowUpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.enhance.MultiRowUpdateParam.MultiRowPartitionUpdateParam;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.ps.storage.vector.ServerRowUtils;
 
@@ -51,7 +51,7 @@ public class ComputeW extends MultiRowUpdateFunc {
 
       int offset = (int) values[1][0];
 
-      ServerPartition part = psContext.getMatrixStorageManager().getPart(param.getPartKey());
+      RowBasedPartition part = (RowBasedPartition) psContext.getMatrixStorageManager().getPart(param.getPartKey());
       for (int i = 0; i < offset; i++) {
         Vector z = ServerRowUtils.getVector(part.getRow(rowIds[0]*offset + i));
         Vector n = ServerRowUtils.getVector(part.getRow(rowIds[1]*offset + i));

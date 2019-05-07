@@ -40,7 +40,7 @@ import com.tencent.angel.ps.server.data.TransportMethod;
 import com.tencent.angel.ps.server.data.request.*;
 import com.tencent.angel.ps.server.data.request.IndexPartGetRowsRequest;
 import com.tencent.angel.ps.server.data.response.*;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.transport.adapter.*;

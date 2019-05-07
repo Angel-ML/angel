@@ -29,20 +29,21 @@ import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.model.MatrixLoadContext;
 import com.tencent.angel.model.PSMatrixLoadContext;
 import com.tencent.angel.model.PSMatrixSaveContext;
-import com.tencent.angel.ps.storage.matrix.PartitionSource;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
+import com.tencent.angel.ps.storage.partition.ServerPartition;
 import com.tencent.angel.ps.storage.vector.*;
 import com.tencent.angel.utils.Sort;
+
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2LongMap;
-import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
 import it.unimi.dsi.fastutil.longs.Long2FloatMap;
 import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.Long2LongMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 
@@ -195,9 +196,10 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
   public void save(ServerPartition part, MatrixPartitionMeta partMeta,
       PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
     List<Integer> rowIds = saveContext.getRowIndexes();
-    PartitionSource rows = part.getRows();
+
     if (rowIds == null || rowIds.isEmpty()) {
-      Iterator<Map.Entry<Integer, ServerRow>> iter = part.getRows().iterator();
+      Iterator<Map.Entry<Integer, ServerRow>> iter = ((RowBasedPartition) part).getRowsStorage()
+          .iterator();
       rowIds = new ArrayList<>();
       while (iter.hasNext()) {
         rowIds.add(iter.next().getKey());
@@ -215,7 +217,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
     int size = rowIds.size();
     ServerRow[] rowList = new ServerRow[size];
     for (int i = 0; i < size; i++) {
-      rowList[i] = rows.getRow(rowIds.get(i));
+      rowList[i] = ((RowBasedPartition) part).getRow(rowIds.get(i));
       RowPartitionMeta rowMeta = new RowPartitionMeta(rowIds.get(i), -1, rowList[i].size());
       partMeta.setRowMeta(rowMeta);
     }
@@ -255,11 +257,11 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
     int i = 0;
     for (int rowId : rowMetas.keySet()) {
       rowIds[i] = rowId;
-      rows[i] = part.getRow(rowId);
+      rows[i] = ((RowBasedPartition) part).getRow(rowId);
       i++;
     }
 
-    ServerRow row0 = part.getRow(rowIds[0]);
+    ServerRow row0 = ((RowBasedPartition) part).getRow(rowIds[0]);
     if (row0 instanceof ServerIntFloatRow) {
       loadIntFloatRows(part, rows, partMeta, loadContext, input);
     } else if (row0 instanceof ServerIntDoubleRow) {

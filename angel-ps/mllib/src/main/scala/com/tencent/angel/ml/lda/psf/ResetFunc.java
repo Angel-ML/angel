@@ -22,7 +22,7 @@ package com.tencent.angel.ml.lda.psf;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
 import com.tencent.angel.ps.storage.vector.ServerIntIntRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 
@@ -37,7 +37,7 @@ public class ResetFunc extends UpdateFunc {
   }
 
   @Override public void partitionUpdate(PartitionUpdateParam partParam) {
-    ServerPartition part = psContext.getMatrixStorageManager()
+    RowBasedPartition part = (RowBasedPartition)psContext.getMatrixStorageManager()
       .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
 
     if (part != null) {

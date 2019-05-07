@@ -19,10 +19,10 @@
 package com.tencent.angel.spark.ml.psf.embedding
 
 import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage
-import com.tencent.angel.ps.storage.matrix.ServerPartition
+import com.tencent.angel.ps.storage.partition.RowBasedPartition
 import com.tencent.angel.ps.storage.vector.ServerRowUtils
 
-class PartitionWrapper(val part: ServerPartition, val partDim: Int, val order: Int) {
+class PartitionWrapper(val part: RowBasedPartition, val partDim: Int, val order: Int) {
   val nodePerRow: Int = {
     val startCol = part.getPartitionKey.getStartCol
     val endCol = part.getPartitionKey.getEndCol
