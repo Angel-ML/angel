@@ -29,9 +29,9 @@ public class KubernetesWorkerApp {
         String user = System.getenv(ApplicationConstants.Environment.USER.name());
 
 
-        int workerGroupIndex = Integer.parseInt(System.getenv(Constants.ENV_EXECUTOR_ID())) - 1;
+        int workerGroupIndex = Integer.parseInt(System.getenv(Constants.ENV_EXECUTOR_ID()));
         int workerIndex = workerGroupIndex;
-        int attemptIndex = 0;
+        int attemptIndex = Integer.parseInt(System.getenv(Constants.ENV_EXECUTOR_ATTEMPT_ID()));
 
         WorkerGroupId workerGroupId = new WorkerGroupId(workerGroupIndex);
         WorkerId workerId = new WorkerId(workerGroupId, workerIndex);

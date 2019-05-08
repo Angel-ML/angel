@@ -2,9 +2,10 @@ package com.tencent.angel.kubernetesmanager.scheduler
 
 import com.tencent.angel.kubernetesmanager.deploy.utils.{AngelKubernetesClientFactory, ThreadUtils}
 import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.master.app.AMContext
 import org.apache.hadoop.conf.Configuration
 
-private[angel] class KubernetesClusterManager {
+private[angel] class KubernetesClusterManager(context: AMContext) {
 
   private var psSchedulerBackend: KubernetesClusterSchedulerBackend = _
   private var workerSchedulerBackend: KubernetesClusterSchedulerBackend = _
@@ -97,5 +98,18 @@ private[angel] class KubernetesClusterManager {
     } else {
       workerSchedulerBackend.stop()
     }
+  }
+}
+
+object KubernetesClusterManager {
+  private var amContext: AMContext = _
+
+  def apply(context: AMContext): KubernetesClusterManager = {
+    amContext = context
+    new KubernetesClusterManager(context)
+  }
+
+  def getContext(): AMContext = {
+    amContext
   }
 }

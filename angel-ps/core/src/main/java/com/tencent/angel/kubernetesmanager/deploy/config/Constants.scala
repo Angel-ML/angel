@@ -37,6 +37,7 @@ private[angel] object Constants {
   val ENV_EXECUTOR_MEMORY = "ANGEL_EXECUTOR_MEMORY"
   val ENV_APPLICATION_ID = "ANGEL_APPLICATION_ID"
   val ENV_EXECUTOR_ID = "ANGEL_EXECUTOR_ID"
+  val ENV_EXECUTOR_ATTEMPT_ID= "ANGEL_EXECUTOR_ATTEMPT_ID"
   val ENV_EXECUTOR_POD_IP = "ANGEL_EXECUTOR_POD_IP"
   val ENV_JAVA_OPT_PREFIX = "ANGEL_JAVA_OPT_"
   val ENV_CLASSPATH = "ANGEL_CLASSPATH"
@@ -53,4 +54,7 @@ private[angel] object Constants {
   val ANGEL_CONF_PATH = s"$ANGEL_CONF_DIR_INTERNAL/$ANGEL_CONF_FILE_NAME"
 
   val MASTER_CONTAINER_NAME = "angel-kubernetes-master"
+
+  val ANGEL_EXECUTOR_ID = "angel.kubernetes.executor.id"
+  val ANGEL_EXECUTOR_ATTEMPT_ID = "angel.kubernetes.executor.attempt.id"
 }

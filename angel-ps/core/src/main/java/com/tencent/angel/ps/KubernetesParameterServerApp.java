@@ -19,10 +19,10 @@ public class KubernetesParameterServerApp {
     private static final Log LOG = LogFactory.getLog(KubernetesParameterServerApp.class);
     public static void main(String[] args) throws IOException {
         LOG.info("Starting Parameter Server...");
-        int serverIndex = Integer.valueOf(System.getenv(Constants.ENV_EXECUTOR_ID())) - 1;
+        int serverIndex = Integer.valueOf(System.getenv(Constants.ENV_EXECUTOR_ID()));
         String appMasterHost = System.getenv(Constants.ENV_MASTER_BIND_ADDRESS());
         int appMasterPort = Integer.valueOf(System.getenv(Constants.ENV_MASTER_BIND_PORT()));
-        int attemptIndex = 0;
+        int attemptIndex = Integer.valueOf(System.getenv(Constants.ENV_EXECUTOR_ATTEMPT_ID()));
 
         Configuration conf = new Configuration();
         ConfUtils.addResourceProperties(conf, Constants.ANGEL_CONF_PATH());

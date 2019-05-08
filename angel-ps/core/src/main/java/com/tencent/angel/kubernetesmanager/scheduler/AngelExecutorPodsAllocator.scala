@@ -10,7 +10,7 @@ import com.tencent.angel.conf.AngelConf
 import org.apache.commons.logging.{Log, LogFactory}
 
 import scala.collection.mutable
-import scala.util.control.NonFatal
+import scala.util.control.{Breaks, NonFatal}
 
 private[angel] class AngelExecutorPodsAllocator(
                                             conf: Configuration,
@@ -100,6 +100,8 @@ private[angel] class AngelExecutorPodsAllocator(
         case PodPending(_) => true
         case _ => false
       }
+      val executorRole = conf.get(AngelConf.ANGEL_KUBERNETES_EXECUTOR_ROLE,
+        AngelConf.DEFAULT_ANGEL_KUBERNETES_EXECUTOR_ROLE)
       val currentTotalExpectedExecutors = totalExpectedExecutors.get
       LOG.debug(s"Currently have $currentRunningExecutors running executors and" +
         s" $currentPendingExecutors pending executors. $newlyCreatedExecutors executors" +
@@ -109,35 +111,59 @@ private[angel] class AngelExecutorPodsAllocator(
         && currentRunningExecutors < currentTotalExpectedExecutors) {
         val numExecutorsToAllocate = math.min(
           currentTotalExpectedExecutors - currentRunningExecutors, podAllocationSize)
+        val loop = new Breaks
         LOG.info(s"Going to request $numExecutorsToAllocate executors from Kubernetes.")
-        for ( _ <- 0 until numExecutorsToAllocate) {
-          val newExecutorId = EXECUTOR_ID_COUNTER.incrementAndGet()
-          val executorConf = KubernetesConf.createExecutorConf(
-            conf,
-            newExecutorId.toString,
-            applicationId,
-            masterPod)
-          val executorPod = executorBuilder.buildFromFeatures(executorConf)
-          val resolvedExecutorContainer = new ContainerBuilder(executorPod.container)
-            .addNewVolumeMount()
-            .withName(Constants.ANGEL_CONF_VOLUME)
-            .withMountPath(Constants.ANGEL_CONF_DIR_INTERNAL)
-            .endVolumeMount()
-            .build()
-          val podWithAttachedContainer = new PodBuilder(executorPod.pod)
-            .editOrNewSpec()
-            .addToContainers(resolvedExecutorContainer)
-            .addNewVolume()
-            .withName(Constants.ANGEL_CONF_VOLUME)
-            .withNewConfigMap()
-            .withName(executorConf.appResourceNamePrefix + "-master-conf-map")
-            .endConfigMap()
-            .endVolume()
-            .endSpec()
-            .build()
-          kubernetesClient.pods().create(podWithAttachedContainer)
-          newlyCreatedExecutors(newExecutorId) = System.currentTimeMillis()
-          LOG.debug(s"Requested executor with id $newExecutorId from Kubernetes.")
+        loop.breakable {
+          for ( _ <- 0 until numExecutorsToAllocate) {
+            if (executorRole.equals("ps")) {
+              val pSAttemptId = KubernetesClusterManager.getContext()
+                .getParameterServerManager.getPsAttemptIdBlockingQueue.poll()
+              if (pSAttemptId != null) {
+                conf.set(Constants.ANGEL_EXECUTOR_ID, pSAttemptId.getPsId.getIndex.toString)
+                conf.set(Constants.ANGEL_EXECUTOR_ATTEMPT_ID, pSAttemptId.getIndex.toString)
+              } else {
+                Thread.sleep(5000)
+                loop.break
+              }
+            } else {
+              val workerAttemptId = KubernetesClusterManager.getContext()
+                .getWorkerManager.getWorkerAttemptIdBlockingQueue.poll()
+              if (workerAttemptId != null) {
+                conf.set(Constants.ANGEL_EXECUTOR_ID, workerAttemptId.getWorkerId.getWorkerGroupId.getIndex.toString)
+                conf.set(Constants.ANGEL_EXECUTOR_ATTEMPT_ID, workerAttemptId.getIndex.toString)
+              } else {
+                Thread.sleep(5000)
+                loop.break
+              }
+            }
+            val newExecutorId = EXECUTOR_ID_COUNTER.incrementAndGet()
+            val executorConf = KubernetesConf.createExecutorConf(
+              conf,
+              newExecutorId.toString,
+              applicationId,
+              masterPod)
+            val executorPod = executorBuilder.buildFromFeatures(executorConf)
+            val resolvedExecutorContainer = new ContainerBuilder(executorPod.container)
+              .addNewVolumeMount()
+              .withName(Constants.ANGEL_CONF_VOLUME)
+              .withMountPath(Constants.ANGEL_CONF_DIR_INTERNAL)
+              .endVolumeMount()
+              .build()
+            val podWithAttachedContainer = new PodBuilder(executorPod.pod)
+              .editOrNewSpec()
+              .addToContainers(resolvedExecutorContainer)
+              .addNewVolume()
+              .withName(Constants.ANGEL_CONF_VOLUME)
+              .withNewConfigMap()
+              .withName(executorConf.appResourceNamePrefix + "-master-conf-map")
+              .endConfigMap()
+              .endVolume()
+              .endSpec()
+              .build()
+            kubernetesClient.pods().create(podWithAttachedContainer)
+            newlyCreatedExecutors(newExecutorId) = System.currentTimeMillis()
+            LOG.debug(s"Requested executor with id $newExecutorId from Kubernetes.")
+          }
         }
       } else if (currentRunningExecutors >= currentTotalExpectedExecutors) {
         // TODO handle edge cases if we end up with more running executors than expected.

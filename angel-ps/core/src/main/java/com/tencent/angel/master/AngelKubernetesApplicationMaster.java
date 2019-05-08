@@ -666,7 +666,8 @@ public class AngelKubernetesApplicationMaster extends CompositeService {
         locationManager.setMasterLocation(masterService.getLocation());
 
         super.serviceStart();
-        k8sClusterManager = new KubernetesClusterManager();
+        //k8sClusterManager = new KubernetesClusterManager(appContext);
+        k8sClusterManager = KubernetesClusterManager.apply(appContext);
         String host = conf.get(AngelConf.ANGEL_KUBERNETES_MASTER_POD_IP);
         int port = conf.getInt(AngelConf.ANGEL_KUBERNETES_MASTER_PORT, AngelConf.DEFAULT_ANGEL_KUBERNETES_MASTER_PORT);
         masterLocation = new Location(host, port);

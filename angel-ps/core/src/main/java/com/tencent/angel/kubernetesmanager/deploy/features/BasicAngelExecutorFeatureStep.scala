@@ -33,7 +33,10 @@ private[angel] class BasicAngelExecutorFeatureStep(
     .get(AngelConf.ANGEL_KUBERNETES_WORKER_LIMIT_CORES))
 
   override def configurePod(pod: AngelPod): AngelPod = {
-    val name = s"$executorPodNamePrefix-$executorRole-${kubernetesConf.roleSpecificConf.executorId}"
+    //val name = s"$executorPodNamePrefix-$executorRole-${kubernetesConf.roleSpecificConf.executorId}"
+    val executorId = kubernetesConf.angelConf.get(Constants.ANGEL_EXECUTOR_ID)
+    val executorAttemptId = kubernetesConf.angelConf.get(Constants.ANGEL_EXECUTOR_ATTEMPT_ID)
+    val name = s"$executorPodNamePrefix-$executorRole-attempt-$executorId-$executorAttemptId"
 
     // hostname must be no longer than 63 characters, so take the last 63 characters of the pod
     // name as the hostname.  This preserves uniqueness since the end of name contains
@@ -57,7 +60,8 @@ private[angel] class BasicAngelExecutorFeatureStep(
       (Constants.ENV_EXECUTOR_MEMORY, s"${executorMemoryMiB}M"),
       (Constants.ENV_APPLICATION_ID, kubernetesConf.appId),
       (Constants.ENV_ANGEL_CONF_DIR, Constants.ANGEL_CONF_DIR_INTERNAL),
-      (Constants.ENV_EXECUTOR_ID, kubernetesConf.roleSpecificConf.executorId)) ++
+      (Constants.ENV_EXECUTOR_ID, executorId),
+      (Constants.ENV_EXECUTOR_ATTEMPT_ID, executorAttemptId)) ++
       kubernetesConf.roleEnvs)
       .map(env => new EnvVarBuilder()
         .withName(env._1)
