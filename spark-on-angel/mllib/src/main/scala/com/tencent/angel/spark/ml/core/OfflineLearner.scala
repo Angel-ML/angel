@@ -22,6 +22,7 @@ import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.optimizer.loss.{L2Loss, LogLoss}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
+import com.tencent.angel.spark.context.AngelPSContext.convertToHadoop
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.metric.{AUC, Precision}
 import com.tencent.angel.spark.ml.util.{DataLoader, SparkUtils}
@@ -34,12 +35,12 @@ import scala.util.Random
 class OfflineLearner {
 
   // Shared configuration with Angel-PS
-  val conf = SharedConf.get()
+  val sharedConf: SharedConf = SharedConf.get()
 
   // Some params
-  var numEpoch: Int = conf.getInt(MLConf.ML_EPOCH_NUM)
-  var fraction: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_RATIO)
-  var validationRatio: Double = conf.getDouble(MLConf.ML_VALIDATE_RATIO)
+  var numEpoch: Int = sharedConf.getInt(MLConf.ML_EPOCH_NUM)
+  var fraction: Double = sharedConf.getDouble(MLConf.ML_BATCH_SAMPLE_RATIO)
+  var validationRatio: Double = sharedConf.getDouble(MLConf.ML_VALIDATE_RATIO)
 
   println(s"fraction=$fraction validateRatio=$validationRatio numEpoch=$numEpoch")
 
@@ -147,7 +148,10 @@ class OfflineLearner {
 
     if (modelInput.length > 0) model.load(modelInput)
     train(data, model)
-    if (modelOutput.length > 0) model.save(modelOutput)
+    if (modelOutput.length > 0) {
+      model.save(modelOutput)
+      model.saveJson(modelOutput, convertToHadoop(conf))
+    }
   }
 
   def predict(input: String,
@@ -168,7 +172,7 @@ class OfflineLearner {
 
 }
 
-object OfflineLearner {
+object OfflineLearner extends Serializable {
 
   /**
     * Build manifold view for a RDD. A manifold RDD is to split a RDD to multiple RDD.

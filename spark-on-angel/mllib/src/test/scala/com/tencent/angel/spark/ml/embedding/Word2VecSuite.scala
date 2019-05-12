@@ -26,7 +26,7 @@ import scala.util.Random
 
 class Word2VecSuite extends PSFunSuite with SharedPSContext {
 
-  private val input = "data/text8/text8.split.head"
+  private val input = "../../data/text8/text8.split.head"
 
   override def beforeAll(): Unit = {
     super.beforeAll()

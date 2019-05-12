@@ -437,7 +437,7 @@ public class BlasFloatMatrix extends BlasMatrix {
     }
 
     IntFloatDenseVectorStorage storage = new IntFloatDenseVectorStorage(col);
-    return new IntFloatVector(getMatrixId(), getClock(), 0, numRows, storage);
+    return new IntFloatVector(getMatrixId(), 0, getClock(), numRows, storage);
   }
 
   public Matrix setRow(int i, Vector v) {

@@ -256,6 +256,7 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
       throw new IOException("Can not find meta file for matrix " + loadContext.getMatrixName() + " on path " + loadContext.getLoadPath());
     }
     MatrixFilesMeta matrixFilesMeta;
+    fs.setVerifyChecksum(false);
     FSDataInputStream input = fs.open(metaFilePath);
     matrixFilesMeta = new MatrixFilesMeta();
     List<MatrixPartitionMeta> partFileMetas = new ArrayList<>();
@@ -300,6 +301,7 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
           if (input != null) {
             input.close();
           }
+          fs.setVerifyChecksum(false);
           input = fs.open(new Path(loadContext.getLoadPath(), currentFileName));
         }
         input.seek(offset);
