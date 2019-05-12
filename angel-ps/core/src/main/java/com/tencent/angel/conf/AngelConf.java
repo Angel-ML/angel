@@ -413,7 +413,7 @@ public class AngelConf extends Configuration {
    * of control commands from AngelClient.
    */
   public static final String ANGEL_AM_APPSTATE_TIMEOUT_MS = ANGEL_AM_PREFIX + "appstate.timeout.ms";
-  public static final long DEFAULT_ANGEL_AM_APPSTATE_TIMEOUT_MS = 600000;
+  public static final long DEFAULT_ANGEL_AM_APPSTATE_TIMEOUT_MS = 3000000;
 
   /**
    * The time interval in milliseconds of AppMaster writing application states to hdfs.

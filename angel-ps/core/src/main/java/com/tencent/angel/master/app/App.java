@@ -115,11 +115,11 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
 
     this.launchTime = context.getStartTime();
     shouldRetry = false;
-    diagnostics = new ArrayList<String>();
+    diagnostics = new ArrayList<>();
 
     stateTimeOutMs = context.getConf().getLong(AngelConf.ANGEL_AM_APPSTATE_TIMEOUT_MS,
         AngelConf.DEFAULT_ANGEL_AM_APPSTATE_TIMEOUT_MS);
-    stateToTsMap = new HashMap<AppState, Long>();
+    stateToTsMap = new HashMap<>();
     stateToTsMap.put(AppState.NEW, context.getClock().getTime());
     stopped = new AtomicBoolean(false);
   }
@@ -500,6 +500,8 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
     public void transition(App app, AppEvent event) {
       if (app.context.getRunningMode() == RunningMode.ANGEL_PS_WORKER) {
         app.context.getWorkerManager().startAllWorker();
+      } else {
+        app.context.getEventHandler().handle(new AppEvent(AppEventType.ALL_WORKERS_LAUNCHED));
       }
     }
   }

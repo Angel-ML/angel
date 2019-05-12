@@ -365,9 +365,17 @@ public class HdfsUtil {
 
   public static void rename(Path tmpCombinePath, Path outputPath, FileSystem fs)
     throws IOException {
+    // If out path exist , just remove it first
     if (fs.exists(outputPath)) {
       fs.delete(outputPath, true);
     }
+
+    // Create parent directory if not exist
+    if(!fs.exists(outputPath.getParent())) {
+      fs.mkdirs(outputPath.getParent());
+    }
+
+    // Rename
     if (!fs.rename(tmpCombinePath, outputPath)) {
       throw new IOException("rename from " + tmpCombinePath + " to " + outputPath + " failed");
     }

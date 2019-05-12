@@ -119,8 +119,8 @@ object FtrlFMExample {
     val input = params.getOrElse("input", "data/census/census_148d_train.libsvm")
     val dataType = params.getOrElse("dataType", "libsvm")
     val partNum = params.getOrElse("partNum", "10").toInt
-    val isTraining = params.getOrElse("isTraining", false).asInstanceOf[Boolean]
-    val hasLabel = params.getOrElse("hasLabel", true).asInstanceOf[Boolean]
+    val isTraining = params.getOrElse("isTraining", "false").toBoolean
+    val hasLabel = params.getOrElse("hasLabel", "true").toBoolean
     val loadPath = params.getOrElse("load", "file:///model")
     val predictPath = params.getOrElse("predict", "file:///model/predict")
     val factor = params.getOrElse("factor", "10").toInt
@@ -150,9 +150,9 @@ object FtrlFMExample {
     }
 
     val path = new Path(predictPath)
-    val hdfs = org.apache.hadoop.fs.FileSystem.get(sc.hadoopConfiguration)
-    if (hdfs.exists(path)) {
-      hdfs.delete(path, true)
+    val fs = path.getFileSystem(sc.hadoopConfiguration)
+    if (fs.exists(path)) {
+      fs.delete(path, true)
     }
 
     scores.saveAsTextFile(predictPath)

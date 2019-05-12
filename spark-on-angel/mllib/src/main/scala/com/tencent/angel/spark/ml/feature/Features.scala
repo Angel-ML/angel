@@ -61,7 +61,7 @@ object Features {
       while (iterator.hasNext) {
         val line = iterator.next()
         if (line != null && line.length > 0) {
-          for (word <- line.stripLineEnd.split(" ")) {
+          for (word <- line.stripLineEnd.split("[\\s+|,]")) {
             set.add(word)
           }
         }
@@ -91,14 +91,14 @@ object Features {
     val ints = data.mapPartitionsWithIndex((partId, iterator) =>
       attachPartitionId(partId, iterator),
       true).join(partIndex).map { case (_, (sentences, mapping)) =>
-        val map = new JHashMap[String, Long]()
-        for ((string, index) <- mapping) {
-          map.put(string, index)
-        }
+      val map = new JHashMap[String, Long]()
+      for ((string, index) <- mapping) {
+        map.put(string, index)
+      }
 
-        sentences.filter(f => f != null && f.length > 0).map { case line =>
-          line.stripLineEnd.split(" ").map(s => map.get(s).toInt)
-        }}.flatMap(f => f)
+      sentences.filter(f => f != null && f.length > 0).map { case line =>
+        line.stripLineEnd.split("[\\s+|,]").map(s => map.get(s).toInt)
+      }}.flatMap(f => f)
 
 
     (ints, stringsWithIndex.map(f => (f._2.toInt, f._1)))
@@ -116,14 +116,14 @@ object Features {
 
     // All distinct strings
     val features = data.filter(f => f != null && f.length > 0)
-        .map(f => f.stripLineEnd.split(" ")).flatMap(f => f)
-        .map(t => (t, 1)).reduceByKey(_ + _).map(f => f._1)
+      .map(f => f.stripLineEnd.split(" ")).flatMap(f => f)
+      .map(t => (t, 1)).reduceByKey(_ + _).map(f => f._1)
 
     // Mapping each string with a hashcode ID, the hashcode is sparse
     // Now we use the default hashcode of string in Java.
     val featureWithIndex = features.map(f => (f, MurmurHash64.stringHash(f)))
 
-//    val featureWithIndex = features.zipWithIndex().map(f => (f._1, f._2.toInt))
+    //    val featureWithIndex = features.zipWithIndex().map(f => (f._1, f._2.toInt))
     featureWithIndex.cache().count()
 
     println(s"feature count ${featureWithIndex.map(f => f._1).distinct().count()}")
@@ -218,7 +218,7 @@ object Features {
       }
 
       val sparseToDenseIndex = PSMatrixUtils.getRowWithIndex(1, sparseToDenseMatrixId, 0, VFactory.denseLongVector(indices))
-          .asInstanceOf[LongIntVector]
+        .asInstanceOf[LongIntVector]
       stringsWithInts.map(f => (sparseToDenseIndex.get(f._2), f._1)).iterator
     }
 
@@ -256,3 +256,4 @@ object Features {
   }
 
 }
+

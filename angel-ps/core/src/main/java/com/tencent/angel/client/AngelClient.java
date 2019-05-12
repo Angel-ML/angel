@@ -258,6 +258,7 @@ public abstract class AngelClient implements AngelClientInterface {
    */
   public void saveMatrices(List<String> matrixNames) {
     ModelSaveContext saveContext = new ModelSaveContext();
+    saveContext.setSavePath(conf.get(AngelConf.ANGEL_JOB_OUTPUT_PATH));
     for (String name : matrixNames) {
       saveContext.addMatrix(new MatrixSaveContext(name));
     }
@@ -267,7 +268,7 @@ public abstract class AngelClient implements AngelClientInterface {
   @Override public void save(ModelSaveContext saveContext) throws AngelException {
     if (saveContext.getMatricesContext().size() == 0 || saveContext.getSavePath() == null
       || saveContext.getSavePath().isEmpty()) {
-      LOG.info("there is no matrices need save or save path is empty");
+      LOG.warn("there is no matrices need save or save path is empty");
       return;
     }
 

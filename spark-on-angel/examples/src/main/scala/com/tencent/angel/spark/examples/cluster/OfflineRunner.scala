@@ -30,11 +30,19 @@ object OfflineRunner {
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
 
+    // Train data path
     val input = params.getOrElse("input", "")
-    val output = params.getOrElse("output", "")
+
+    // Can be used in train/predict mode, it means model output path in train mode and model load path in predict mode
+    val output = params.getOrElse("modelPath", "")
     val actionType = params.getOrElse("actionType", "train")
     val network = params.getOrElse("network", "LogisticRegression")
+
+    // Model load path in train mode, just use in train mode
     val modelPath = params.getOrElse("model", "")
+
+    // Predict result save path, just use in predict mode
+    val predictPath = params.getOrElse("predictPath", "")
 
     // set running mode, use angel_ps mode for spark
     SharedConf.get().set(AngelConf.ANGEL_RUNNING_MODE, RunningMode.ANGEL_PS.toString)
@@ -50,8 +58,16 @@ object OfflineRunner {
     val conf = new SparkConf()
 
     // we set the load model path for angel-ps to load the meta information of model
-    if (modelPath.length > 0)
-      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, modelPath)
+    actionType match {
+      case MLConf.ANGEL_ML_TRAIN => {
+        if(modelPath.length > 0)
+          conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, modelPath)
+      }
+      case MLConf.ANGEL_ML_PREDICT => {
+        if(output.length > 0)
+          conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, output)
+      }
+    }
 
     val sc   = new SparkContext(conf)
 
@@ -64,7 +80,7 @@ object OfflineRunner {
 
     actionType match {
       case MLConf.ANGEL_ML_TRAIN => learner.train(input, output, modelPath, dim, model)
-      case MLConf.ANGEL_ML_PREDICT => learner.predict(input, output, modelPath, dim, model)
+      case MLConf.ANGEL_ML_PREDICT => learner.predict(input, predictPath, output, dim, model)
     }
   }
 }
