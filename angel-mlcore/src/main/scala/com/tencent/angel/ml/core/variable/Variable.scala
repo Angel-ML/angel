@@ -4,13 +4,14 @@ import java.util.concurrent.Future
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
 import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.network.EvnContext
+import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.utils.NotInitialException
 import com.tencent.angel.ml.core.variable.VarState.VarState
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector
 import com.tencent.angel.ml.math2.vector.Vector
+import org.apache.hadoop.conf.Configuration
 
 import scala.language.implicitConversions
 
@@ -33,9 +34,9 @@ trait TrainCycle {
   protected val readLock: ReentrantReadWriteLock.ReadLock = lock.readLock()
   protected val writeLock: ReentrantReadWriteLock.WriteLock = lock.writeLock()
 
-  def create(envCtx: EvnContext = null): Unit
+  def create[T](envCtx: EnvContext[T] = null): Unit
 
-  def load(envCtx: EvnContext, path: String): Unit
+  def load[T](envCtx: EnvContext[T], path: String, conf: Configuration): Unit
 
   def init(taskFlag: Int, mean: Double, stddev: Double): Unit
 
@@ -45,7 +46,7 @@ trait TrainCycle {
 
   def update[T](epoch: Int, batchSize: Int): Future[T]
 
-  def save(envCtx: EvnContext, path: String): Unit
+  def save[T](envCtx: EnvContext[T], path: String): Unit
 
   protected def transSate(from: VarState, to: VarState): Unit = {
     assert(state == from)
@@ -145,9 +146,9 @@ abstract class Variable(val name: String,
     updater.numSlot
   }
 
-  protected def doCreate(envCtx: EvnContext): Unit
+  protected def doCreate[T](envCtx: EnvContext[T]): Unit
 
-  override def create(envCtx: EvnContext): Unit = {
+  override def create[T](envCtx: EnvContext[T]): Unit = {
     writeLock.lock()
 
     try {
@@ -188,14 +189,14 @@ abstract class Variable(val name: String,
     }
   }
 
-  protected def doLoad(envCtx: EvnContext, path: String): Unit
+  protected def doLoad[T](envCtx: EnvContext[T], path: String, conf: Configuration): Unit
 
-  override def load(envCtx: EvnContext, path: String): Unit = {
+  override def load[T](envCtx: EnvContext[T], path: String, conf: Configuration): Unit = {
     writeLock.lock()
 
     try {
       if (state == VarState.Created) {
-        doLoad(envCtx, path)
+        doLoad(envCtx, path, conf)
 
         // trans state
         transSate(VarState.Created, VarState.Initialized)
@@ -244,9 +245,9 @@ abstract class Variable(val name: String,
     }
   }
 
-  protected def doSave(envCtx: EvnContext, path: String): Unit
+  protected def doSave[T](envCtx: EnvContext[T], path: String): Unit
 
-  override def save(envCtx: EvnContext, path: String): Unit = {
+  override def save[T](envCtx: EnvContext[T], path: String): Unit = {
     readLock.lock()
 
     try {

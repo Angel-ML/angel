@@ -1,6 +1,7 @@
 package com.tencent.angel.ml.core.utils
 
-import java.io.File
+import java.io.{BufferedReader, File, IOException, InputStreamReader}
+import java.net.URI
 import java.util
 
 import com.tencent.angel.ml.core.conf.SharedConf
@@ -11,6 +12,8 @@ import com.tencent.angel.ml.core.network.layers.verge._
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FSDataInputStream, FileSystem, Path}
 import org.json4s.DefaultFormats
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
@@ -194,16 +197,7 @@ object JsonUtils {
 
             layerMap.put(name, newLayer)
             iter.remove()
-          case JString(value) if matchClassName[KmeansInputLayer](value) =>
-            val newLayer = new KmeansInputLayer(name,
-              extract[Int](obj, LayerKeys.outputDimKey).get,
-              TransFunc.fromJson(obj \ LayerKeys.transFuncKey),
-              optimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
-            )
-
-            layerMap.put(name, newLayer)
-            iter.remove()
-          case JString(value) if matchClassName[LossLayer](value) =>
+          case JString(value) if matchClassName[LossLayer](value) || value.equalsIgnoreCase("SimpleLossLayer")=>
             val inputLayer = extract[String](obj, LayerKeys.inputLayerKey)
             if (inputLayer.nonEmpty && layerMap.contains(inputLayer.get)) {
               val newLayer = new LossLayer(name,
@@ -316,12 +310,13 @@ object JsonUtils {
 
     outputDims.zip(transFuncs).map {
       case (outputDim: JInt, transFunc: JValue) =>
-        i += 1
-        val newName: String = if (i == outputDims.size) {
+        val newName: String = if (i + 1 == outputDims.size) {
           name
         } else {
           s"${name}_$i"
         }
+
+        i += 1
 
         val field = JField(newName, (LayerKeys.typeKey -> lType) ~
           (LayerKeys.inputLayerKey -> inputLayer) ~
@@ -368,13 +363,37 @@ object JsonUtils {
   }
   //-----------------------------------------------------------------------------------------------------------------
 
-  def parseAndUpdateJson(jsonFileName: String, conf: SharedConf): JObject = {
+  def parseAndUpdateJson(jsonFileName: String, conf: SharedConf, hadoopConf: Configuration): JObject = {
     val sb = new mutable.StringBuilder()
-    val source = Source.fromFile(jsonFileName, "UTF-8")
-    val iter = source.getLines()
-    while(iter.hasNext) {
-      val line = iter.next()
-      sb.append(line.trim)
+    if(jsonFileName.startsWith("hdfs://")) {
+      println("jsonFileName is " + jsonFileName)
+      var inputStream: FSDataInputStream = null
+      var bufferedReader: BufferedReader = null
+      try {
+        inputStream = HDFSUtil.getFSDataInputStream(jsonFileName, hadoopConf)
+        bufferedReader = new BufferedReader(new InputStreamReader(inputStream))
+        var lineTxt: String = bufferedReader.readLine()
+        while(lineTxt != null) {
+          sb.append(lineTxt.trim)
+          lineTxt = bufferedReader.readLine()
+        }
+      } catch {
+        case e: Exception => e.printStackTrace()
+      } finally {
+        if (bufferedReader != null) {
+          bufferedReader.close()
+        }
+        if (inputStream != null) {
+          HDFSUtil.close
+        }
+      }
+    } else {
+      val source = Source.fromFile(jsonFileName, "UTF-8")
+      val iter = source.getLines()
+      while(iter.hasNext) {
+        val line = iter.next()
+        sb.append(line.trim)
+      }
     }
     val jsonStr = sb.toString()
 
@@ -419,3 +438,40 @@ object JsonUtils {
     }
   }
 }
+
+object HDFSUtil {
+  var fs: FileSystem = null
+  var hdfsInStream: FSDataInputStream = null
+
+  def getFSDataInputStream(path: String, conf: Configuration): FSDataInputStream = {
+    try {
+      fs = FileSystem.get(URI.create(path), conf)
+      hdfsInStream = fs.open(new Path(path))
+    } catch {
+      case e: IOException => {
+        e.printStackTrace()
+      }
+    }
+    hdfsInStream
+  }
+
+  def close {
+    try {
+      if (hdfsInStream != null) {
+        hdfsInStream.close
+      }
+      /*
+      if (fs != null) {
+        fs.close()
+      }
+      */
+    }
+    catch {
+      case e: IOException => {
+        e.printStackTrace()
+      }
+    }
+  }
+}
+
+

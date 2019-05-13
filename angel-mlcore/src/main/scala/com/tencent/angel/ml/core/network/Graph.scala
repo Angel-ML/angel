@@ -17,7 +17,9 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 
-trait EvnContext
+trait EnvContext[T] {
+  def client: T
+}
 
 
 class Graph(val provider: VariableProvider, val placeHolder: PlaceHolder, val conf: SharedConf, val taskNum: Int) {
@@ -26,7 +28,7 @@ class Graph(val provider: VariableProvider, val placeHolder: PlaceHolder, val co
   protected val inputLayers = new ListBuffer[InputLayer]()
   protected var lossLayer: LossLayer = _
   protected val trainableLayer = new ListBuffer[Trainable]()
-  private val dataCache = new DataCache()
+  private val dataCache: ThreadLocal[DataCache] = new ThreadLocal[DataCache]()
 
   val timeStats = new TimeStats()
 
@@ -34,8 +36,9 @@ class Graph(val provider: VariableProvider, val placeHolder: PlaceHolder, val co
 
   protected var lr: Double = SharedConf.learningRate
 
-  def addInputLayer(layer: InputLayer): Unit = {
+  def addInputLayer(layer: InputLayer): this.type = {
     inputLayers.append(layer)
+    this
   }
 
   def getALLInputLayers: List[InputLayer] = inputLayers.toList
@@ -48,16 +51,18 @@ class Graph(val provider: VariableProvider, val placeHolder: PlaceHolder, val co
     layerOption.getOrElse(null.asInstanceOf[InputLayer])
   }
 
-  def setLossLayer(layer: LossLayer): Unit = {
+  def setLossLayer(layer: LossLayer): this.type = {
     lossLayer = layer
+    this
   }
 
   def getLossLayer: LossLayer = lossLayer
 
   def getLossFunc: LossFunc = lossLayer.lossFunc
 
-  def addTrainableLayer(layer: Trainable): Unit = {
+  def addTrainableLayer(layer: Trainable): this.type = {
     trainableLayer.append(layer)
+    this
   }
 
   def getALLTrainableLayers: List[Trainable] = {
@@ -91,17 +96,20 @@ class Graph(val provider: VariableProvider, val placeHolder: PlaceHolder, val co
     * training
     */
 
-  def setLR(lr: Double): Unit = {
+  def setLR(lr: Double): this.type = {
     this.lr = lr
     trainableLayer.foreach { trainable =>
       trainable.optimizer.setLR(lr)
     }
+
+    this
   }
 
   def getLR: Double = this.lr
 
-  def feedData(data: Array[LabeledData]): Unit = {
+  def feedData(data: Array[LabeledData]): this.type = {
     placeHolder.feedData(data)
+    this
   }
 
   // forward
@@ -144,32 +152,63 @@ class Graph(val provider: VariableProvider, val placeHolder: PlaceHolder, val co
     * Matrix Cache
     */
 
-  def put2Cache(name: String, mat: Matrix): Unit = {
-    dataCache.addMatrix(name, mat)
+  def put2Cache(name: String, mat: Matrix): this.type = {
+    if (dataCache.get() == null) {
+      dataCache.set(new DataCache())
+    }
+
+    dataCache.get.addMatrix(name, mat)
+    this
   }
 
-  def put2Cache(name: String, vec: Vector): Unit = {
-    dataCache.addVector(name, vec)
+  def put2Cache(name: String, vec: Vector): this.type = {
+    if (dataCache.get() == null) {
+      dataCache.set(new DataCache())
+    }
+
+    dataCache.get.addVector(name, vec)
+    this
   }
 
   def isMatrixInCache(name: String): Boolean = {
-    dataCache.hasMatrix(name)
+    if (dataCache.get() == null) {
+      dataCache.set(new DataCache())
+    }
+
+    dataCache.get.hasMatrix(name)
   }
 
   def isVectorInCache(name: String): Boolean = {
-    dataCache.hasVector(name)
+    if (dataCache.get() == null) {
+      dataCache.set(new DataCache())
+    }
+
+    dataCache.get.hasVector(name)
   }
 
   def getMatrixFromCache(name: String): Matrix = {
-    dataCache.getMatrix(name)
+    if (dataCache.get() == null) {
+      dataCache.set(new DataCache())
+    }
+
+    dataCache.get.getMatrix(name)
   }
 
   def getVectorFromCache(name: String): Vector = {
-    dataCache.getVector(name)
+    if (dataCache.get() == null) {
+      dataCache.set(new DataCache())
+    }
+
+    dataCache.get.getVector(name)
   }
 
-  def clearCache(): Unit = {
-    dataCache.clearAll()
+  def clearCache(): this.type = {
+    if (dataCache.get() == null) {
+      dataCache.set(new DataCache())
+    } else {
+      dataCache.get.clearAll()
+    }
+    this
   }
 
   /** **********************************************************************************

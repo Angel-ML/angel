@@ -2,7 +2,7 @@ package com.tencent.angel.ml.core
 
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.data.DataBlock
-import com.tencent.angel.ml.core.network.EvnContext
+import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.network.layers.PlaceHolder
 import com.tencent.angel.ml.core.utils.RowTypeUtils
 import com.tencent.angel.ml.core.variable.VarState.VarState
@@ -10,6 +10,7 @@ import com.tencent.angel.ml.core.variable.{Variable, VariableManager, VariablePr
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.utils.{LabeledData, RowType}
 import com.tencent.angel.ml.math2.vector.Vector
+import org.apache.hadoop.conf.Configuration
 
 
 abstract class MLModel {
@@ -29,8 +30,9 @@ abstract class MLModel {
 
   def storageType: String = RowTypeUtils.storageType(modelType)
 
-  def addVariable(variable: Variable): Unit = {
+  def addVariable(variable: Variable): this.type = {
     variableManager.addVariable(variable)
+    this
   }
 
   def getVariable(name: String): Variable = {
@@ -45,12 +47,14 @@ abstract class MLModel {
 
   def hasVariable(name: String): Boolean = variableManager.hasVariable(name)
 
-  def putSlot(v: Variable, g: Matrix): Unit = {
+  def putSlot(v: Variable, g: Matrix): this.type = {
     if (variableManager.hasSlot(v.name)) {
       variableManager.getSlot(v.name).iadd(g)
     } else {
       variableManager.putSlot(v, g)
     }
+
+    this
   }
 
   def getSlot(name: String): Matrix = {
@@ -63,7 +67,11 @@ abstract class MLModel {
 
   def hasSlot(name: String): Boolean = variableManager.hasSlot(name)
 
-  def putGradient(v: Variable, g: Matrix): Unit = putSlot(v, g)
+  def putGradient(v: Variable, g: Matrix): this.type = {
+    putSlot(v, g)
+
+    this
+  }
 
   def getAllGradients: Map[String, Matrix] = getAllSlots
 
@@ -71,41 +79,51 @@ abstract class MLModel {
 
   def hasGradient(name: String): Boolean = hasSlot(name)
 
-  def feedData(data: Array[LabeledData]): Unit = {
+  def feedData(data: Array[LabeledData]): this.type = {
     placeHolder.feedData(data)
+
+    this
   }
 
   //---------------------Training Cycle
-  def createMatrices(envCtx: EvnContext): Unit = {
-    variableManager.createALL(envCtx)
+  def createMatrices[T](envCtx: EnvContext[T]): this.type = {
+    variableManager.createALL[T](envCtx)
+    this
   }
 
-  def init(taskId: Int = 0): Unit = {
-    variableManager.initALL(taskId)
+  def init[T](envCtx: EnvContext[T], taskId: Int = 0): this.type = {
+    variableManager.initALL(envCtx, taskId)
+    this
   }
 
-  def pullParams(epoch: Int, indices: Vector = null): Unit = {
+  def pullParams(epoch: Int, indices: Vector = null): this.type = {
     variableManager.pullALL(epoch, indices)
+    this
   }
 
-  def pushSlot(lr: Double): Unit = {
+  def pushSlot(lr: Double): this.type = {
     variableManager.pushALL(lr)
+    this
   }
 
-  def update[T](epoch: Int, batchSize: Int): Unit = {
+  def update[T](epoch: Int, batchSize: Int): this.type = {
     variableManager.updateALL[T](epoch, batchSize)
+    this
   }
 
-  def loadModel(envCtx: EvnContext, path: String): Unit = {
-    variableManager.loadALL(envCtx, path)
+  def loadModel[T](envCtx: EnvContext[T], path: String, conf: Configuration): this.type = {
+    variableManager.loadALL[T](envCtx, path, conf)
+    this
   }
 
-  def setState(state: VarState): Unit = {
+  def setState(state: VarState): this.type = {
     variableManager.setAllState(state)
+    this
   }
 
-  def saveModel(envCtx: EvnContext, path: String): Unit = {
-    variableManager.saveALL(envCtx, path)
+  def saveModel[T](envCtx: EnvContext[T], path: String): this.type = {
+    variableManager.saveALL[T](envCtx, path)
+    this
   }
 
   //---------------------Predict

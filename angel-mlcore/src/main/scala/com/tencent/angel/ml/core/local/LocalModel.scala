@@ -17,8 +17,10 @@ class LocalModel(conf: SharedConf) extends GraphModel {
 
   override implicit val graph: Graph = new Graph(variableProvider, placeHolder, conf, 1)
 
-  override def buildNetwork(): Unit = {
+  override def buildNetwork(): this.type = {
     JsonUtils.layerFromJson(conf.getJson)
+
+    this
   }
 
   def predict(storage: DataBlock[LabeledData]): List[PredictResult] = {

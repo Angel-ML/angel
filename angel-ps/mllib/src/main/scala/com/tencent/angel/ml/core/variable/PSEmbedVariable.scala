@@ -22,7 +22,7 @@ class PSEmbedVariable(name: String,
                       allowPullWithIndex: Boolean,
                       taskNum: Int,
                       placeHolder: PlaceHolder)
-                     (implicit variableManager: VariableManager)
+                     (implicit variableManager: VariableManager, cilsImpl: CILSImpl)
   extends PSMatVariable(name, numRows, numCols, validIndexNum, updater, rowType, formatClassName,
     allowPullWithIndex) with EmbedVariable {
   private var embeddings: JMap[JLong, Vector] = _

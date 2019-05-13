@@ -1,19 +1,20 @@
 package com.tencent.angel.ml.core.local
 
-import com.tencent.angel.ml.core.network.EvnContext
+import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.variable.VariableManager
 import com.tencent.angel.ml.math2.vector.Vector
+import org.apache.hadoop.conf.Configuration
 
 import scala.collection.JavaConversions._
 
 class LocalVariableManager private(isSparseFormat: Boolean) extends VariableManager {
 
-  override def createALL(envCtx: EvnContext): Unit = {
+  override def createALL[T](envCtx: EnvContext[T]): Unit = {
     variables.values().foreach { variable => variable.create(envCtx) }
   }
 
-  override def loadALL(envCtx: EvnContext, path: String): Unit = {
-    variables.values().foreach { variable => variable.load(envCtx, path) }
+  override def loadALL[T](envCtx: EnvContext[T], path: String, conf: Configuration): Unit = {
+    variables.values().foreach { variable => variable.load(envCtx, path, conf) }
   }
 
   override def pullALL(epoch: Int, indices: Vector = null): Unit = {
@@ -40,18 +41,19 @@ class LocalVariableManager private(isSparseFormat: Boolean) extends VariableMana
 
   }
 
-  override def saveALL(envCtx: EvnContext, path: String): Unit = {
+  override def saveALL[T](envCtx: EnvContext[T], path: String): Unit = {
     variables.values().foreach { variable => variable.save(envCtx, path) }
   }
 }
 
 object LocalVariableManager {
-  private var vm: VariableManager = _
+  private var vmtl: ThreadLocal[VariableManager] = new ThreadLocal[VariableManager]()
 
   def get(isSparseFormat: Boolean): VariableManager = synchronized {
-    if (vm == null) {
-      vm = new LocalVariableManager(isSparseFormat)
+    if (vmtl.get() == null) {
+      vmtl.set(new LocalVariableManager(isSparseFormat))
     }
-    vm
+
+    vmtl.get()
   }
 }

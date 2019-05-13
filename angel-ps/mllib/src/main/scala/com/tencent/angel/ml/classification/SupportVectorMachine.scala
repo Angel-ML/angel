@@ -37,10 +37,12 @@ import org.apache.hadoop.conf.Configuration
 class SupportVectorMachine(conf: Configuration, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
   val optProvider = new PSOptimizerProvider()
 
-  override def buildNetwork(): Unit = {
+  override def buildNetwork(): this.type = {
     val ipOptName: String = sharedConf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
 
     val input = new SimpleInputLayer("input", 1, new Identity(), optProvider.getOptimizer(ipOptName))
     new LossLayer("simpleLossLayer", input, new HingeLoss())
+
+    this
   }
 }

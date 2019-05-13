@@ -14,13 +14,19 @@
     <dependencies>
         <dependency>
             <groupId>org.json4s</groupId>
-            <artifactId>json4s-native_2.11</artifactId>
-            <version>3.2.11</version>
+            <artifactId>json4s-jackson_2.11</artifactId>
+            <version>${json4s.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
+            <version>${scala.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-reflect</artifactId>
             <version>${scala.version}</version>
         </dependency>
 
@@ -73,6 +79,7 @@
                         <id>scala-compile-first</id>
                         <phase>process-resources</phase>
                         <goals>
+                            <goal>add-source</goal>
                             <goal>compile</goal>
                         </goals>
                     </execution>
@@ -80,6 +87,7 @@
                         <id>scala-test-compile-first</id>
                         <phase>process-test-resources</phase>
                         <goals>
+                            <goal>add-source</goal>
                             <goal>testCompile</goal>
                         </goals>
                     </execution>
@@ -163,28 +171,6 @@
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>2.3.1</version>
             </plugin>
-            <!--plugin>
-                <groupId>org.scalastyle</groupId>
-                <artifactId>scalastyle-maven-plugin</artifactId>
-                <version>0.8.0</version>
-                <inherited>false</inherited>
-                <configuration>
-                    <verbose>true</verbose>
-                    <failOnViolation>true</failOnViolation>
-                    <includeTestSourceDirectory>false</includeTestSourceDirectory>
-                    <failOnWarning>false</failOnWarning>
-                    <sourceDirectory>${basedir}/*/src/main/scala</sourceDirectory>
-                    <configLocation>${main.basedir}/dev/scalastyle-config.xml</configLocation>
-                    <outputEncoding>UTF-8</outputEncoding>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin-->
         </plugins>
         <resources>
             <resource>

@@ -88,6 +88,8 @@ public class AngelPSClient {
     client = AngelClientFactory.get(conf);
   }
 
+  public Configuration getConf() { return conf; }
+
   /**
    * Start Angel ps
    *
@@ -145,6 +147,21 @@ public class AngelPSClient {
   public void save(ModelSaveContext saveContext) throws AngelException {
     Boolean deleteExistsFile = conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
         AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST);
+    client.save(saveContext, deleteExistsFile);
+  }
+
+  public void setTaskNum(int taskNum) {
+
+  }
+
+  /**
+   * Save model to hdfs
+   *
+   * @param saveContext model save context
+   * @param deleteExistsFile model save context
+   * @throws AngelException
+   */
+  public void save(ModelSaveContext saveContext, Boolean deleteExistsFile) throws AngelException {
     client.save(saveContext, deleteExistsFile);
   }
 

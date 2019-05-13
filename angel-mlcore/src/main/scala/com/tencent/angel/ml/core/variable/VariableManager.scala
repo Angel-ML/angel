@@ -2,10 +2,11 @@ package com.tencent.angel.ml.core.variable
 
 import java.util.concurrent
 
-import com.tencent.angel.ml.core.network.EvnContext
+import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.variable.VarState.VarState
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.vector._
+import org.apache.hadoop.conf.Configuration
 
 import scala.collection.JavaConversions._
 import scala.reflect.runtime.{universe => ru}
@@ -66,9 +67,9 @@ abstract class VariableManager {
     * Variable operation
     */
 
-  def createALL(envCtx: EvnContext): Unit
+  def createALL[T](envCtx: EnvContext[T]): Unit
 
-  def create(envCtx: EvnContext, name: String): Unit = {
+  def create[T](envCtx: EnvContext[T], name: String): Unit = {
     val variable = getVariable(name)
 
     if (variable != null) {
@@ -76,11 +77,11 @@ abstract class VariableManager {
     }
   }
 
-  def initALL(taskId: Int = 0, mean: Double = 0.0, stddev: Double = 0.00001): Unit = {
+  def initALL[T](envCtx: EnvContext[T], taskId: Int = 0, mean: Double = 0.0, stddev: Double = 0.00001): Unit = {
     variables.values().foreach { variable => variable.init(taskId, mean, stddev) }
   }
 
-  def init(name: String, mean: Double = 0.0, stddev: Double = 0.00001): Unit = {
+  def init[T](envCtx: EnvContext[T], name: String, mean: Double = 0.0, stddev: Double = 0.00001): Unit = {
     val variable = getVariable(name)
 
     if (variable != null) {
@@ -139,19 +140,19 @@ abstract class VariableManager {
     }
   }
 
-  def loadALL(envCtx: EvnContext, path: String): Unit
+  def loadALL[T](envCtx: EnvContext[T], path: String, conf: Configuration): Unit
 
-  def load(name: String, envCtx: EvnContext, path: String): Unit = {
+  def load[T](name: String, envCtx: EnvContext[T], path: String, conf: Configuration): Unit = {
     val variable = getVariable(name)
 
     if (variable != null) {
-      variable.load(envCtx, path)
+      variable.load(envCtx, path, conf)
     }
   }
 
-  def saveALL(envCtx: EvnContext, path: String): Unit
+  def saveALL[T](envCtx: EnvContext[T], path: String): Unit
 
-  def save(name: String, envCtx: EvnContext, path: String): Unit = {
+  def save[T](name: String, envCtx: EnvContext[T], path: String): Unit = {
     val variable = getVariable(name)
 
     if (variable != null) {
@@ -162,24 +163,24 @@ abstract class VariableManager {
 
 
 object VariableManager {
-  private var vm: VariableManager = _
+  private var vmtl: ThreadLocal[VariableManager] = new ThreadLocal[VariableManager]()
 
   def get(name: String, isSparseFormat: Boolean): VariableManager = synchronized {
-    if (vm == null) {
+    if (vmtl.get() == null) {
       val rtMirror = ru.runtimeMirror(getClass.getClassLoader)
       val objModuleSymbol = rtMirror.staticModule(name)
       val objModuleMirror = rtMirror.reflectModule(objModuleSymbol)
       val method = objModuleMirror.symbol.typeSignature.member(ru.TermName("get")).asMethod
       val objMirror = rtMirror.reflect(objModuleMirror.instance)
       val result = objMirror.reflectMethod(method)(isSparseFormat)
-      vm = result.asInstanceOf[VariableManager]
+      vmtl.set(result.asInstanceOf[VariableManager])
     }
 
-    vm
+    vmtl.get()
   }
 
   def addVariable(v: Variable): Unit = {
-    assert(vm != null)
-    vm.addVariable(v)
+    assert(vmtl.get() != null)
+    vmtl.get().addVariable(v)
   }
 }

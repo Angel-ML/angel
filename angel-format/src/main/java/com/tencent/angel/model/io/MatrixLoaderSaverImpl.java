@@ -82,6 +82,7 @@ public abstract class MatrixLoaderSaverImpl implements MatrixLoaderSaver {
               + loadContext.getLoadPath());
     }
     MatrixFilesMeta matrixFilesMeta;
+    fs.setVerifyChecksum(false);
     FSDataInputStream input = fs.open(metaFilePath);
     matrixFilesMeta = new MatrixFilesMeta();
     List<MatrixPartitionMeta> partFileMetas = new ArrayList<>();
@@ -127,6 +128,7 @@ public abstract class MatrixLoaderSaverImpl implements MatrixLoaderSaver {
           if (input != null) {
             input.close();
           }
+          fs.setVerifyChecksum(false);
           input = fs.open(new Path(loadContext.getLoadPath(), currentFileName));
         }
         input.seek(offset);

@@ -10,6 +10,7 @@ import com.tencent.angel.ml.core.optimizer.decayer.{StepSizeScheduler, WarmResta
 import com.tencent.angel.ml.core.utils.ValidationUtils
 import com.tencent.angel.ml.math2.utils.LabeledData
 import org.apache.commons.logging.{Log, LogFactory}
+import org.apache.hadoop.conf.Configuration
 
 class LocalLearner(conf: SharedConf) extends Learner {
   private val LOG: Log = LogFactory.getLog(classOf[LocalLearner])
@@ -24,12 +25,12 @@ class LocalLearner(conf: SharedConf) extends Learner {
   // 3. init or load matrices
   private val modelPath: String = conf.get(MLCoreConf.ML_LOAD_MODEL_PATH, MLCoreConf.DEFAULT_ML_LOAD_MODEL_PATH)
   private val actionType: String = conf.get(MLCoreConf.ML_ACTION_TYPE, MLCoreConf.DEFAULT_ML_ACTION_TYPE)
-  private val env = new LocalEvnContext
+  private val env = new LocalEnvContext
   if (actionType.equalsIgnoreCase("train") && modelPath.isEmpty) {
     model.createMatrices(env)
-    model.init(0)
+    model.init(env)
   } else {
-    model.loadModel(env, modelPath)
+    model.loadModel(env, modelPath, new Configuration())
   }
 
   private val lr0 = SharedConf.learningRate

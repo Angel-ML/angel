@@ -21,8 +21,10 @@ package com.tencent.angel.ml.core.conf
 
 import com.tencent.angel.ml.core.utils.{MLException, RowTypeUtils}
 import com.tencent.angel.ml.math2.utils.RowType
-import org.apache.commons.logging.LogFactory
-import org.json4s.JsonAST.JObject
+import org.apache.commons.logging.{Log, LogFactory}
+import org.json4s.JsonAST._
+import org.json4s.JsonDSL._
+import org.json4s.jackson.JsonMethods.{compact, parse, render}
 
 import scala.collection.mutable
 
@@ -212,23 +214,58 @@ class SharedConf private() extends Serializable {
   def getJson: JObject = synchronized {
     graphJson
   }
+
+  override def toString: String = {
+    val fields = dataMap.toList.map{ case (key: String, value: String) =>
+      JField(key, JString(value))
+    }
+    val res =  if (graphJson != null) {
+      new JObject(fields) ~ JField("graphJson", graphJson)
+    } else {
+      new JObject(fields)
+    }
+
+    compact(render(res))
+  }
 }
 
 object SharedConf {
-  val LOG = LogFactory.getLog("SharedConfObject")
+  val LOG: Log = LogFactory.getLog("SharedConfObject")
 
-  private var sc: SharedConf = _
+  private val sctl: ThreadLocal[SharedConf] = new ThreadLocal[SharedConf]()
 
-  def get(): SharedConf = synchronized {
-    if (sc == null) {
-      sc = new SharedConf
+  def fromString(confString: String): SharedConf = synchronized {
+
+    if (sctl.get() == null) {
+      sctl.set(new SharedConf)
+    }
+
+    val sc = sctl.get()
+
+    parse(confString) match {
+      case JObject(obj: List[JField]) =>
+        obj.foreach{
+          case (key, JString(value)) if ! key.equalsIgnoreCase("graphJson") =>
+            sc.set(key, value)
+          case (key, value: JObject) if key.equalsIgnoreCase("graphJson")=>
+            sc.setJson(value)
+          case _ => throw new Exception("Shared Conf Error!")
+        }
     }
 
     sc
   }
 
+  def get(): SharedConf = synchronized {
+    if (sctl.get() == null) {
+      sctl.set(new SharedConf)
+    }
+
+    sctl.get()
+  }
+
   def addMap(map: Map[String, String]): Unit = {
-    get()
+    val sc = get()
 
     map.map {
       case (key: String, value: String) if key.startsWith("angel.") || key.startsWith("ml.") =>
@@ -238,13 +275,13 @@ object SharedConf {
   }
 
   def actionType(): String = {
-    get()
+    val sc = get()
 
     "Train"
   }
 
   def keyType(): String = {
-    get()
+    val sc = get()
 
     RowTypeUtils.keyType(RowType.valueOf(
       sc.get(MLCoreConf.ML_MODEL_TYPE, MLCoreConf.DEFAULT_ML_MODEL_TYPE)
@@ -252,7 +289,7 @@ object SharedConf {
   }
 
   def valueType(): String = {
-    get()
+    val sc = get()
 
     RowTypeUtils.valueType(RowType.valueOf(
       sc.get(MLCoreConf.ML_MODEL_TYPE, MLCoreConf.DEFAULT_ML_MODEL_TYPE)
@@ -260,7 +297,7 @@ object SharedConf {
   }
 
   def storageType: String = {
-    get()
+    val sc = get()
 
     RowTypeUtils.storageType(RowType.valueOf(
       sc.get(MLCoreConf.ML_MODEL_TYPE, MLCoreConf.DEFAULT_ML_MODEL_TYPE)
@@ -268,7 +305,7 @@ object SharedConf {
   }
 
   def denseModelType: RowType = {
-    get()
+    val sc = get()
 
     RowTypeUtils.getDenseModelType(RowType.valueOf(
       sc.get(MLCoreConf.ML_MODEL_TYPE, MLCoreConf.DEFAULT_ML_MODEL_TYPE)
@@ -276,19 +313,19 @@ object SharedConf {
   }
 
   def numClass: Int = {
-    get()
+    val sc = get()
 
     sc.getInt(MLCoreConf.ML_NUM_CLASS, MLCoreConf.DEFAULT_ML_NUM_CLASS)
   }
 
   def modelType: RowType = {
-    get()
+    val sc = get()
 
     RowType.valueOf(sc.get(MLCoreConf.ML_MODEL_TYPE, MLCoreConf.DEFAULT_ML_MODEL_TYPE))
   }
 
   def indexRange: Long = {
-    get()
+    val sc = get()
 
     val ir = sc.getLong(MLCoreConf.ML_FEATURE_INDEX_RANGE, MLCoreConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
 
@@ -301,37 +338,38 @@ object SharedConf {
   }
 
   def inputDataFormat: String = {
-    get()
+    val sc = get()
 
-    sc.getString(MLCoreConf.ML_DATA_INPUT_FORMAT, MLCoreConf.DEFAULT_ML_DATA_INPUT_FORMAT)
+    sc.getString(MLCoreConf.ML_DATA_INPUT_FORMAT,
+      MLCoreConf.DEFAULT_ML_DATA_INPUT_FORMAT)
   }
 
   def batchSize: Int = {
-    get()
+    val sc = get()
 
     sc.getInt(MLCoreConf.ML_MINIBATCH_SIZE, MLCoreConf.DEFAULT_ML_MINIBATCH_SIZE)
   }
 
   def numUpdatePerEpoch: Int = {
-    get()
+    val sc = get()
 
     sc.getInt(MLCoreConf.ML_NUM_UPDATE_PER_EPOCH, MLCoreConf.DEFAULT_ML_NUM_UPDATE_PER_EPOCH)
   }
 
   def blockSize: Int = {
-    get()
+    val sc = get()
 
     sc.getInt(MLCoreConf.ML_BLOCK_SIZE, MLCoreConf.DEFAULT_ML_BLOCK_SIZE)
   }
 
   def epochNum: Int = {
-    get()
+    val sc = get()
 
     sc.getInt(MLCoreConf.ML_EPOCH_NUM, MLCoreConf.DEFAULT_ML_EPOCH_NUM)
   }
 
   def modelSize: Long = {
-    get()
+    val sc = get()
 
     val ms = sc.getLong(MLCoreConf.ML_MODEL_SIZE, MLCoreConf.DEFAULT_ML_MODEL_SIZE)
     if (ms == -1) {
@@ -342,25 +380,25 @@ object SharedConf {
   }
 
   def validateRatio: Double = {
-    get()
+    val sc = get()
 
     sc.getDouble(MLCoreConf.ML_VALIDATE_RATIO, MLCoreConf.DEFAULT_ML_VALIDATE_RATIO)
   }
 
   def decay: Double = {
-    get()
+    val sc = get()
 
     sc.getDouble(MLCoreConf.ML_LEARN_DECAY, MLCoreConf.DEFAULT_ML_LEARN_DECAY)
   }
 
   def learningRate: Double = {
-    get()
+    val sc = get()
 
     sc.getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)
   }
 
   def modelClassName: String = {
-    get()
+    val sc = get()
 
     val modelClass = sc.getString(MLCoreConf.ML_MODEL_CLASS_NAME, MLCoreConf.DEFAULT_ML_MODEL_CLASS_NAME)
     if (modelClass == "") {
@@ -371,19 +409,19 @@ object SharedConf {
   }
 
   def useShuffle: Boolean = {
-    get()
+    val sc = get()
 
     sc.getBoolean(MLCoreConf.ML_DATA_USE_SHUFFLE, MLCoreConf.DEFAULT_ML_DATA_USE_SHUFFLE)
   }
 
   def posnegRatio(): Double = {
-    get()
+    val sc = get()
 
     sc.getDouble(MLCoreConf.ML_DATA_POSNEG_RATIO, MLCoreConf.DEFAULT_ML_DATA_POSNEG_RATIO)
   }
 
   def optJsonProvider(): String = {
-    get()
+    val sc = get()
 
     sc.getString(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER,
       MLCoreConf.DEFAULT_ML_OPTIMIZER_JSON_PROVIDER
@@ -391,16 +429,25 @@ object SharedConf {
   }
 
   def storageLevel: String = {
-    get()
+    val sc = get()
 
     sc.get(MLCoreConf.ML_DATA_STORAGE_LEVEL,
       MLCoreConf.DEFAULT_ML_DATA_STORAGE_LEVEL)
   }
 
   def stepSizeScheduler: String = {
-    get()
+    val sc = get()
 
     sc.get(MLCoreConf.ML_OPT_DECAY_CLASS_NAME,
       MLCoreConf.DEFAULT_ML_OPT_DECAY_CLASS_NAME)
+  }
+
+  def isSparse: Boolean = {
+    val sc = get()
+
+    val ipFormat = inputDataFormat
+    sc.getBoolean(MLCoreConf.ML_IS_DATA_SPARSE,
+      ipFormat == "libsvm" || ipFormat == "dummy"
+    )
   }
 }

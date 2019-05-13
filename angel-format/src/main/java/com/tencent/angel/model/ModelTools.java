@@ -70,6 +70,7 @@ public class ModelTools {
                 + loadContext.getLoadPath());
       }
       MatrixFilesMeta matrixFilesMeta;
+      fs.setVerifyChecksum(false);
       FSDataInputStream input = fs.open(metaFilePath);
       matrixFilesMeta = new MatrixFilesMeta();
       try {

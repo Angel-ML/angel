@@ -11,14 +11,17 @@ import com.tencent.angel.ml.math2.matrix.Matrix
 abstract class GraphModel extends MLModel {
   val graph: Graph
 
-  def buildNetwork(): Unit
+  def buildNetwork(): this.type
 
-  override def addVariable(variable: Variable): Unit = {
+  override def addVariable(variable: Variable): this.type = {
     throw MethodNotImplement("addVariable is not implement in GraphModel")
+
+    this
   }
 
-  override def putSlot(v: Variable, g: Matrix): Unit = {
+  override def putSlot(v: Variable, g: Matrix): this.type = {
     throw MethodNotImplement("addVariable is not implement in GraphModel")
+    this
   }
 
   def pushGradient(lr: Double): Unit = {
