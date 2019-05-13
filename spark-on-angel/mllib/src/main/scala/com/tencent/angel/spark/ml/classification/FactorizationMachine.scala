@@ -29,9 +29,9 @@ import com.tencent.angel.spark.ml.core.GraphModel
 
 class FactorizationMachine extends GraphModel {
 
-  val numField: Int = conf.getInt(MLConf.ML_FIELD_NUM)
-  val numFactor: Int = conf.getInt(MLConf.ML_RANK_NUM)
-  val lr: Double = conf.getDouble(MLConf.ML_LEARN_RATE)
+  val numField: Int = sharedConf.getInt(MLConf.ML_FIELD_NUM)
+  val numFactor: Int = sharedConf.getInt(MLConf.ML_RANK_NUM)
+  val lr: Double = sharedConf.getDouble(MLConf.ML_LEARN_RATE)
   val gamma: Double = SharedConf.get().getDouble(MLConf.ML_OPT_ADAM_GAMMA)
   val beta: Double = SharedConf.get().getDouble(MLConf.ML_OPT_ADAM_BETA)
 

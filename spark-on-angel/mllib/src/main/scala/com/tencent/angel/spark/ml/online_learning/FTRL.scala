@@ -40,6 +40,10 @@ class FTRL() extends Serializable {
   var lambda2: Double = 0
   var alpha: Double = 0
   var beta: Double = 0
+  var wPS: PSVector = _
+  var name = "weights"
+  var possionRate: Float = 1.0f
+  var matrix: PSMatrix = _
 
   def this(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) {
     this()
@@ -48,12 +52,6 @@ class FTRL() extends Serializable {
     this.alpha = alpha
     this.beta = beta
   }
-
-  var wPS: PSVector = _
-  var name = "weights"
-  var possionRate: Float = 1.0f
-  var matrix: PSMatrix = _
-
 
   /** Init with `dim` given, the default start index is 0
     *
@@ -84,6 +82,20 @@ class FTRL() extends Serializable {
   }
 
   /**
+    * create the model with a matrix-context and init three PSVector
+    *
+    * @param ctx , matrix context
+    */
+  def init(ctx: MatrixContext): Unit = {
+    val matId = PSMatrixUtils.createPSMatrix(ctx)
+    wPS = new PSVectorImpl(matId, 2, ctx.getColNum, ctx.getRowType)
+    matrix = new PSMatrixImpl(matId, ctx.getRowNum, ctx.getColNum, ctx.getRowType)
+  }
+
+  def init(start: Long, end: Long): Unit =
+    init(start, end, -1, RowType.T_FLOAT_SPARSE_LONGKEY)
+
+  /**
     * Init with start and end given
     *
     * @param start   , the start index
@@ -94,9 +106,6 @@ class FTRL() extends Serializable {
   def init(start: Long, end: Long, nnz: Long, rowType: RowType): Unit = {
     init(start, end, nnz, rowType, new ColumnRangePartitioner())
   }
-
-  def init(start: Long, end: Long): Unit =
-    init(start, end, -1, RowType.T_FLOAT_SPARSE_LONGKEY)
 
   def init(start: Long, end: Long, nnz: Long, rowType: RowType,
            partitioner: Partitioner): Unit = {
@@ -123,17 +132,6 @@ class FTRL() extends Serializable {
     ctx.setRowType(rowType)
     partitioner.partition(data, ctx)
     init(ctx)
-  }
-
-  /**
-    * create the model with a matrix-context and init three PSVector
-    *
-    * @param ctx , matrix context
-    */
-  def init(ctx: MatrixContext): Unit = {
-    val matId = PSMatrixUtils.createPSMatrix(ctx)
-    wPS = new PSVectorImpl(matId, 2, ctx.getColNum, ctx.getRowType)
-    matrix = new PSMatrixImpl(matId, ctx.getRowNum, ctx.getColNum, ctx.getRowType)
   }
 
   def setPossionRate(possionRate: Float): Unit =
@@ -225,13 +223,21 @@ class FTRL() extends Serializable {
     lossSum
   }
 
+  def log1pExp(x: Double): Double = {
+    if (x > 0) {
+      x + math.log1p(math.exp(-x))
+    } else {
+      math.log1p(math.exp(x))
+    }
+  }
+
   /**
     * Predict with weight
     *
     * @param batch
     * @return
     */
-  def predict(batch: Array[LabeledData], isTraining:Boolean=true): Array[(Double, Double)] = {
+  def predict(batch: Array[LabeledData], isTraining: Boolean = true): Array[(Double, Double)] = {
     val indices = batch.flatMap {
       case point =>
         point.getX match {
@@ -260,7 +266,6 @@ class FTRL() extends Serializable {
     }
   }
 
-
   /**
     * calculate w from z and n and store it in the w row
     *
@@ -272,18 +277,10 @@ class FTRL() extends Serializable {
     wPS
   }
 
-  def log1pExp(x: Double): Double = {
-    if (x > 0) {
-      x + math.log1p(math.exp(-x))
-    } else {
-      math.log1p(math.exp(x))
-    }
-  }
-
   /**
     * Save z and n for increment training
     *
-    * @param path, output path
+    * @param path , output path
     */
   def save(path: String): Unit = {
     val format = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
@@ -297,7 +294,7 @@ class FTRL() extends Serializable {
   /**
     * Save w for model serving
     *
-    * @param path, output path
+    * @param path , output path
     */
   def saveWeight(path: String): Unit = {
     val format = classOf[ColIdValueTextRowFormat].getCanonicalName
