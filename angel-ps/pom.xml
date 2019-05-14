@@ -36,6 +36,7 @@
     <module>tools</module>
     <module>mllib</module>
     <module>examples</module>
+    <module>graph</module>
   </modules>
 
   <properties>
