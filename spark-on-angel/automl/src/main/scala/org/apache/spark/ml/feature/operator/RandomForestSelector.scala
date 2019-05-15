@@ -31,7 +31,7 @@ import org.apache.spark.mllib.linalg.{Vector => OldVector, Vectors => OldVectors
 import org.apache.spark.mllib.stat.{MultivariateStatisticalSummary, Statistics}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.functions.{col, udf}
-import org.apache.spark.sql.types.{StructField, StructType}
+import org.apache.spark.sql.types.{MetadataBuilder, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 
 /**
@@ -217,7 +217,12 @@ class RandomForestSelectorModel(override val uid: String,
             + vector.getClass.getSimpleName + " is given.")
       }
     }
-    dataset.withColumn($(outputCol), select(col($(featuresCol))))
+
+    dataset.withColumn(
+      $(outputCol),
+      select(col($(featuresCol))),
+      MetadataTransformUtils.featureSelectionTransform(
+        dataset.select(${featuresCol}).schema.fields.last, filterIndices, selectedFeatures.length).build())
   }
 
   override def copy(extra: ParamMap): RandomForestSelectorModel = {

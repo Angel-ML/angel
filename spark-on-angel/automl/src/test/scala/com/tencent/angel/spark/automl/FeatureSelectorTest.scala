@@ -81,6 +81,8 @@ class FeatureSelectorTest {
     val selectedTrainDF = selectorModel.transform(trainDF)
     val selectedTestDF = selectorModel.transform(testDF)
 
+    selectedTestDF.select("selectedFeatures").schema.fields.foreach(f => println(f.metadata.toString()))
+
     val selectedLR = new LogisticRegression()
       .setMaxIter(20)
       .setFeaturesCol("selectedFeatures")

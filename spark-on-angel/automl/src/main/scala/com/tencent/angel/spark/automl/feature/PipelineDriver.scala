@@ -38,7 +38,7 @@ object PipelineDriver {
 
     pipelineWrapper.setStages(stages)
 
-    val model: PipelineModel = pipelineWrapper.fit(inputDF)
+    val model: PipelineModelWrapper = pipelineWrapper.fit(inputDF)
 
     val outDF = model.transform(inputDF)
 

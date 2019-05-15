@@ -89,9 +89,16 @@ class VectorCartesian (override val uid: String) extends Transformer
 
     val featureCols = inputFeatures.map { f => dataset(f.name) }
 
-    dataset.select(
-      col("*"),
-      interactFunc(struct(featureCols: _*)).as($(outputCol), featureAttrs.toMetadata()))
+    val fields: Array[StructField] = $(inputCols).map(inputCol => dataset.select(inputCol).schema.fields.last)
+//    dataset.select(
+//      col("*"),
+//      interactFunc(struct(featureCols: _*)).as($(outputCol), featureAttrs.toMetadata()))
+
+    dataset.select(col("*"),
+      interactFunc(struct(featureCols: _*)).as(
+        $(outputCol),
+        MetadataTransformUtils.vectorCartesianTransform(fields, vectorDims(0)).build()))
+
   }
 
   private def getVectorDimension(dataset: Dataset[_], cols: Array[String]): Array[Int] = {
