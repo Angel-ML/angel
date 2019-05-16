@@ -29,6 +29,7 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet
 import org.apache.commons.logging.LogFactory
 
+import scala.collection.mutable
 import scala.util.Sorting.quickSort
 
 
@@ -43,6 +44,7 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
   private var indices: Vector = _
   private var attached: Array[String] = _
   private val keyType: String = SharedConf.keyType()
+  private var fieldKeyMap: Map[Long, Int] = _
   private val inputDataFormat: String = SharedConf.inputDataFormat
 
   // var isFeed: Boolean = false
@@ -62,6 +64,16 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
       case "dense" => true
     }
   }
+
+  def hasFieldKeyMap: Boolean = fieldKeyMap != null
+
+  def setFieldKeyMap(fkmap: Map[Long, Int]): this.type ={
+    fieldKeyMap = fkmap
+
+    this
+  }
+
+  def getFieldKeyMap: Map[Long, Int] = fieldKeyMap
 
   def getFeats: Matrix = {
     val batchSize = data.length

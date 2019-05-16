@@ -13,6 +13,7 @@ import com.tencent.angel.ml.math2.vector
 import com.tencent.angel.ml.math2.vector.Vector
 import org.apache.hadoop.conf.Configuration
 
+import scala.collection.mutable
 import scala.language.implicitConversions
 
 object VarState extends Enumeration {
@@ -107,7 +108,10 @@ object MatVariable {
 }
 
 
-trait EmbedVariable extends MatVariable
+trait EmbedVariable extends MatVariable {
+  var assembleHint: String = EmbedUtils.OneHot
+  var assembleStats: List[mutable.HashMap[Int, Int]] = _
+}
 
 object EmbedVariable {
   implicit def toMatrix(v: EmbedVariable): Matrix = v.snapshot()

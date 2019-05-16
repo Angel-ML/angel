@@ -30,7 +30,9 @@ import org.apache.commons.logging.LogFactory
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 
-class Embedding(name: String, outputDim: Int, val numFactors: Int, override val optimizer: Optimizer)(implicit graph: Graph)
+class Embedding(name: String, outputDim: Int, val numFactors: Int,
+                override val optimizer: Optimizer, assembleHint: String = EmbedUtils.OneHot
+               )(implicit graph: Graph)
   extends InputLayer(name, outputDim) with Trainable {
   graph.addTrainableLayer(this)
   private val LOG = LogFactory.getLog(classOf[Embedding])
@@ -40,13 +42,15 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
     MLCoreConf.DEFAULT_ML_EMBEDDING_MATRIX_OUTPUT_FORMAT)
   private val embedding: EmbedVariable = graph.provider.getEmbedVariable(s"${name}_embedding",
     SharedConf.indexRange.toInt, numFactors, optimizer, formatClassName, graph.taskNum)
+  embedding.assembleHint = assembleHint
 
   override protected def doForward(input: Matrix): Matrix = {
     embedding.snapshot()
   }
 
   override protected def doBackward(input: Matrix, gradInput: Matrix): Unit = {
-    val gradValue = EmbedUtils.calGradient(input, gradInput)
+    val gradValue = EmbedUtils.calGradient(graph.placeHolder, gradInput,
+      assembleHint, embedding.assembleStats)
     variableManager.putSlot(embedding.asInstanceOf[Variable], gradValue)
   }
 

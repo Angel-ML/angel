@@ -40,7 +40,9 @@ class LocalEmbedVariable(name: String,
       }
     }
 
-    matrix = EmbedUtils.geneMatrix(placeHolder.getFeats, embeddings)
+    val matStats = EmbedUtils.geneMatrix(placeHolder, assembleHint, embeddings)
+    matrix = matStats._1
+    assembleStats = matStats._2
   }
 
   protected override def doPush(grad: Matrix, alpha: Double): Unit = {

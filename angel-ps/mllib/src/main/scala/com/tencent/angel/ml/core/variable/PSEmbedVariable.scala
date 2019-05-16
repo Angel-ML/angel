@@ -40,7 +40,9 @@ class PSEmbedVariable(name: String,
     val result = PSAgentContext.get.getUserRequestAdapter.get(func).asInstanceOf[GetColsResult]
     embeddings = result.results
 
-    matrix = EmbedUtils.geneMatrix(placeHolder.getFeats, embeddings)
+    val matStats = EmbedUtils.geneMatrix(placeHolder, assembleHint, embeddings)
+    matrix = matStats._1
+    assembleStats = matStats._2
   }
 
   protected override def doPush(grad: Matrix, alpha: Double): Unit = {
