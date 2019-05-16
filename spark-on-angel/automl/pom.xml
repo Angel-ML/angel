@@ -14,12 +14,17 @@
   <artifactId>spark-on-angel-automl</artifactId>
 
   <properties>
-    <spark.version>2.2.0</spark.version>
+    <!--spark.version>2.4.0</spark.version-->
     <hadoop.version>2.7.3</hadoop.version>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.11</version>
+    </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-common</artifactId>

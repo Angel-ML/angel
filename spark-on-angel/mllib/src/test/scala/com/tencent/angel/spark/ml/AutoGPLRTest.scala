@@ -7,7 +7,7 @@ import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.ml.classification.LogisticRegression
 import com.tencent.angel.spark.ml.core.AutoOfflineLearner
 
-class AutoLRTestGrid extends PSFunSuite with SharedPSContext {
+class AutoGPLRTest extends PSFunSuite with SharedPSContext {
   private var learner: AutoOfflineLearner = _
   private var input: String = _
   private var dim: Int = _
@@ -33,9 +33,12 @@ class AutoLRTestGrid extends PSFunSuite with SharedPSContext {
 
     SharedConf.get().set(AngelConf.ANGEL_RUNNING_MODE, RunningMode.ANGEL_PS.toString)
 
-    learner = new AutoOfflineLearner(minimize = false,surrogate = "Grid")
-    learner.addParam("continuous", "double", MLConf.ML_LEARN_RATE, "[0.1:1:5]",seed = 10)
-    learner.addParam("continuous", "double", MLConf.ML_LEARN_DECAY, "[0.1:1:5]",seed = 20)
+    SharedConf.get().setInt(MLConf.ML_AUTO_TUNER_ITER, 10)
+    SharedConf.get().setBoolean(MLConf.ML_AUTO_TUNER_MINIMIZE, false)
+    SharedConf.get().set(MLConf.ML_AUTO_TUNER_MODEL, "GaussianProcess")
+
+    learner = new AutoOfflineLearner
+    learner.addParam("continuous", "double", MLConf.ML_LEARN_RATE, "[0.1:1:100]")
   }
 
   override def afterAll(): Unit = {

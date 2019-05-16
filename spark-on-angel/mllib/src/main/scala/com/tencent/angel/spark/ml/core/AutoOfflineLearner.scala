@@ -37,14 +37,15 @@ import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.Random
 
-class AutoOfflineLearner(var tuneIter: Int = 20, minimize: Boolean = true,surrogate: String="GP") {
+class AutoOfflineLearner(var tuneIter: Int = 20, var minimize: Boolean = true, var surrogate: String = "GaussianProcess") {
 
   // Shared configuration with Angel-PS
   val conf = SharedConf.get()
 
-  if(surrogate=="Grid"){
-    tuneIter = 1
-  }
+  // set tuner params
+  tuneIter = conf.getInt(MLConf.ML_AUTO_TUNER_ITER, MLConf.DEFAULT_ML_AUTO_TUNER_ITER)
+  minimize = conf.getBoolean(MLConf.ML_AUTO_TUNER_MINIMIZE, MLConf.DEFAULT_ML_AUTO_TUNER_MINIMIZE)
+  surrogate = conf.get(MLConf.ML_AUTO_TUNER_MODEL, MLConf.DEFAULT_ML_AUTO_TUNER_MODEL)
 
   // Some params
   var numEpoch: Int = conf.getInt(MLConf.ML_EPOCH_NUM)
@@ -53,9 +54,8 @@ class AutoOfflineLearner(var tuneIter: Int = 20, minimize: Boolean = true,surrog
 
   println(s"fraction=$fraction validateRatio=$validationRatio numEpoch=$numEpoch")
 
-
   val cs: ConfigurationSpace = new ConfigurationSpace("cs")
-  val solver: Solver = Solver(cs, minimize,surrogate)
+  val solver: Solver = Solver(cs, minimize, surrogate)
 
   // param name -> param type (continuous or discrete), value type (int, double,...)
   val paramType: mutable.Map[String, (String, String)] = new mutable.HashMap[String, (String, String)]()

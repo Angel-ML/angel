@@ -23,7 +23,7 @@ import com.tencent.angel.spark.automl.tuner.acquisition.{Acquisition, EI}
 import com.tencent.angel.spark.automl.tuner.config.ConfigurationSpace
 import com.tencent.angel.spark.automl.tuner.parameter.{ContinuousSpace, DiscreteSpace, ParamSpace}
 import com.tencent.angel.spark.automl.tuner.solver.{Solver, SolverWithTrail}
-import com.tencent.angel.spark.automl.tuner.surrogate.{RFSurrogate, Surrogate}
+import com.tencent.angel.spark.automl.tuner.surrogate.{RFSurrogate, Surrogate, SurrogateMode}
 import com.tencent.angel.spark.automl.tuner.trail.{TestTrail, Trail}
 import org.apache.spark.ml.linalg.Vector
 
@@ -42,7 +42,7 @@ object RFTunerExample extends App {
     val sur: Surrogate = new RFSurrogate(cs, true)
     val acq: Acquisition = new EI(sur, 0.1f)
     val opt: AcqOptimizer = new RandomSearch(acq, cs)
-    val solver: Solver = new Solver(cs, sur, acq, opt)
+    val solver: Solver = new Solver(cs, sur, acq, opt, SurrogateMode.RF)
     val trail: Trail = new TestTrail()
     val runner: SolverWithTrail = new SolverWithTrail(solver, trail)
     val result: (Vector, Double) = runner.run(10)

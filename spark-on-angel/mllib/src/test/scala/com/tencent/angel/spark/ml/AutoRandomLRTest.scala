@@ -7,7 +7,7 @@ import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.ml.classification.LogisticRegression
 import com.tencent.angel.spark.ml.core.AutoOfflineLearner
 
-class AutoLRTestRandom extends PSFunSuite with SharedPSContext {
+class AutoRandomLRTest extends PSFunSuite with SharedPSContext {
   private var learner: AutoOfflineLearner = _
   private var input: String = _
   private var dim: Int = _

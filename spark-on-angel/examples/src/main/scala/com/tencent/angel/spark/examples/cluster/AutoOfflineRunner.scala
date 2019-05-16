@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -15,17 +15,16 @@
  *
  */
 
-
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.RunningMode
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
+import com.tencent.angel.spark.ml.core.{ArgsUtil, AutoOfflineLearner, GraphModel, OfflineLearner}
 import org.apache.spark.{SparkConf, SparkContext}
 
-object OfflineRunner {
+object AutoOfflineRunner {
 
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
@@ -60,11 +59,14 @@ object OfflineRunner {
 
     val className = "com.tencent.angel.spark.ml.classification." + network
     val model = GraphModel(className)
-    val learner = new OfflineLearner
+
+    val learner = new AutoOfflineLearner
+    learner.addParam("continuous", "double", MLConf.ML_LEARN_RATE, "[0.1:1:100]")
 
     actionType match {
-      case MLConf.ANGEL_ML_TRAIN => learner.train(input, output, modelPath, dim, model)
-      case MLConf.ANGEL_ML_PREDICT => learner.predict(input, output, modelPath, dim, model)
+        case MLConf.ANGEL_ML_TRAIN => learner.train(input, output, modelPath, dim, model)
+        case MLConf.ANGEL_ML_PREDICT => learner.predict(input, output, modelPath, dim, model)
     }
   }
 }
+

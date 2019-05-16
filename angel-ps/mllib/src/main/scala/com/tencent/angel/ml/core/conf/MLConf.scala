@@ -198,6 +198,14 @@ object MLConf {
   val ML_TREE_AGGRE_MAX_MEMORY_MB = "ml.tree.aggr.max.memory.mb"
   val DEFAULT_ML_TREE_AGGRE_MAX_MEMORY_MB = 256
 
+  // AutoML params
+  val ML_AUTO_TUNER_ITER = "ml.auto.tuner.iter"
+  val DEFAULT_ML_AUTO_TUNER_ITER = 10
+  val ML_AUTO_TUNER_MODEL = "ml.auto.tuner.model"
+  val DEFAULT_ML_AUTO_TUNER_MODEL = "GaussianProcess"
+  val ML_AUTO_TUNER_MINIMIZE = "ml.auto.tuner.minimize"
+  val DEFAULT_ML_AUTO_TUNER_MINIMIZE = false
+
   /** The loss sum of all samples */
   val TRAIN_LOSS = "train.loss"
   val VALID_LOSS = "validate.loss"
