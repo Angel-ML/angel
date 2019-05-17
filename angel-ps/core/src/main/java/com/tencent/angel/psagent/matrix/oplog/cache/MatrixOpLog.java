@@ -117,8 +117,7 @@ public class MatrixOpLog {
   public void split(Map<PartitionKey, List<RowUpdateSplit>> psUpdateData) {
     long startTime = System.currentTimeMillis();
     MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-    List<PartitionKey> partitions =
-      PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
+
     int row = matrixMeta.getRowNum();
     boolean enableFilter = matrixMeta.getAttribute(MatrixConf.MATRIX_OPLOG_ENABLEFILTER,
       MatrixConf.DEFAULT_MATRIX_OPLOG_ENABLEFILTER).equalsIgnoreCase("true");
@@ -130,6 +129,9 @@ public class MatrixOpLog {
       Vector vector = getRow(rowId);
       if (vector == null)
         continue;
+
+      List<PartitionKey> partitions =
+          PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId, rowId);
 
       // Doing average or not
       if (matrixMeta.isAverage()) {

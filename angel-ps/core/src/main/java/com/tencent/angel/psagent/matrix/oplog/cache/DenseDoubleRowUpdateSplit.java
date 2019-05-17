@@ -18,6 +18,7 @@
 
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
+import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.matrix.RowType;
 import io.netty.buffer.ByteBuf;
 
@@ -42,6 +43,10 @@ public class DenseDoubleRowUpdateSplit extends RowUpdateSplit {
     this.values = values;
   }
 
+  public DenseDoubleRowUpdateSplit() {
+    this(-1, -1, -1, null);
+  }
+
   /**
    * Get values of row update
    *
@@ -57,6 +62,15 @@ public class DenseDoubleRowUpdateSplit extends RowUpdateSplit {
     for (int i = start; i < end; i++) {
       buf.writeDouble(values[i]);
     }
+  }
+
+  @Override public void deserialize(ByteBuf buf) {
+    super.deserialize(buf);
+    double [] data = new double[buf.readInt()];
+    for(int i = 0; i < data.length; i++) {
+      data[i] = buf.readDouble();
+    }
+    vector = VFactory.denseDoubleVector(data);
   }
 
   @Override public int bufferLen() {
