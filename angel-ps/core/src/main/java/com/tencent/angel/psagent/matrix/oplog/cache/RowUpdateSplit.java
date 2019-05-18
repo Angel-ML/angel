@@ -19,6 +19,7 @@
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
 import com.tencent.angel.common.Serialize;
+import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.RowType;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
@@ -42,14 +43,16 @@ public abstract class RowUpdateSplit implements Serialize {
   /**
    * row index
    */
-  protected final int rowId;
+  protected int rowId;
 
   /**
    * row type
    */
-  protected RowType rowType;
+  protected volatile RowType rowType;
 
   protected RowUpdateSplitContext splitContext;
+
+  protected Vector vector;
 
   /**
    * Create a new RowUpdateSplit.
@@ -126,7 +129,8 @@ public abstract class RowUpdateSplit implements Serialize {
   }
 
   @Override public void deserialize(ByteBuf buf) {
-    //unused now
+    rowId = buf.readInt();
+    rowType = RowType.valueOf(buf.readInt());
   }
 
   @Override public int bufferLen() {
@@ -149,5 +153,25 @@ public abstract class RowUpdateSplit implements Serialize {
    */
   public void setSplitContext(RowUpdateSplitContext splitContext) {
     this.splitContext = splitContext;
+  }
+
+  public void setRowId(int rowId) {
+    this.rowId = rowId;
+  }
+
+  public Vector getVector() {
+    return vector;
+  }
+
+  public void setVector(Vector vector) {
+    this.vector = vector;
+  }
+
+  public boolean isUseIntKey() {
+    return true;
+  }
+
+  public void setUseIntKey(boolean useIntKey) {
+
   }
 }

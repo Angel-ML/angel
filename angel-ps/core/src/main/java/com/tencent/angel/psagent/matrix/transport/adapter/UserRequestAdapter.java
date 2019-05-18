@@ -26,7 +26,10 @@ import com.tencent.angel.ml.math2.matrix.Matrix;
 import com.tencent.angel.ml.math2.vector.ComponentVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.psf.get.base.*;
+import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
+import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
+import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
@@ -37,21 +40,31 @@ import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.ResponseType;
 import com.tencent.angel.psagent.matrix.cache.MatricesCache;
-import com.tencent.angel.psagent.matrix.oplog.cache.*;
+import com.tencent.angel.psagent.matrix.oplog.cache.MatrixOpLog;
+import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplit;
+import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplitContext;
+import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplitUtils;
 import com.tencent.angel.psagent.matrix.transport.FutureResult;
 import com.tencent.angel.psagent.matrix.transport.MatrixTransportClient;
 import com.tencent.angel.psagent.task.TaskContext;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * The adapter between user requests and actual rpc requests. Because a matrix is generally
@@ -827,6 +840,7 @@ public class UserRequestAdapter {
   }
 
   class IndexRange {
+
     long startIndex;
     long endIndex;
 
@@ -837,11 +851,13 @@ public class UserRequestAdapter {
   }
 
   private IndexRange getMatrixIndexRange(int matrixId) {
-    long indexStart = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId).getIndexStart();
-    long indexEnd = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId).getIndexEnd();
+    long indexStart = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId)
+        .getIndexStart();
+    long indexEnd = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId)
+        .getIndexEnd();
     long colNum = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId).getColNum();
 
-    if(indexEnd <= indexStart) {
+    if (indexEnd <= indexStart) {
       indexStart = 0;
       indexEnd = colNum;
     }
@@ -872,16 +888,17 @@ public class UserRequestAdapter {
       IndexRange range = getMatrixIndexRange(matrixId);
 
       for (PartitionKey partKey : partitions) {
-        RowsViewUpdateItem item = new RowsViewUpdateItem(partKey, rows, range.startIndex, range.endIndex);
+        RowsViewUpdateItem item = new RowsViewUpdateItem(partKey, rows, range.startIndex,
+            range.endIndex);
         matrixClient.update(requestId, request.getMatrixId(), partKey, item, null, -1, false, op);
       }
       return result;
     } else {
-      List<PartitionKey> partitions =
-          PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId, rowId);
       delta.setMatrixId(matrixId);
       delta.setRowId(rowId);
-      Map<PartitionKey, RowUpdateSplit> splitMap = RowUpdateSplitUtils.split(delta, partitions);
+
+      Map<PartitionKey, RowUpdateSplit> splitMap = RowUpdateSplitUtils
+          .split(delta, PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId, rowId));
       Map<PartitionKey, List<RowUpdateSplit>> splitListMap = new HashMap<>(splitMap.size());
       for (Entry<PartitionKey, RowUpdateSplit> entry : splitMap.entrySet()) {
         RowUpdateSplitContext context = new RowUpdateSplitContext();
@@ -951,13 +968,12 @@ public class UserRequestAdapter {
       IndexRange range = getMatrixIndexRange(matrixId);
 
       for (PartitionKey partKey : partitions) {
-        RowsViewUpdateItem item = new RowsViewUpdateItem(partKey, rows, range.startIndex, range.endIndex);
+        RowsViewUpdateItem item = new RowsViewUpdateItem(partKey, rows, range.startIndex,
+            range.endIndex);
         matrixClient.update(requestId, request.getMatrixId(), partKey, item, null, -1, false, op);
       }
       return result;
     } else {
-      List<PartitionKey> partitions =
-          PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
       int rowNum = matrixMeta.getRowNum();
 
       Map<PartitionKey, List<RowUpdateSplit>> splitListMap = new HashMap<>();
@@ -968,7 +984,8 @@ public class UserRequestAdapter {
         }
 
         // Split this row according the matrix partitions
-        Map<PartitionKey, RowUpdateSplit> splitMap = RowUpdateSplitUtils.split(vector, partitions);
+        Map<PartitionKey, RowUpdateSplit> splitMap = RowUpdateSplitUtils.split(vector,
+            PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId, rowId));
 
         // Set split context
         for (Map.Entry<PartitionKey, RowUpdateSplit> entry : splitMap.entrySet()) {
@@ -1023,20 +1040,20 @@ public class UserRequestAdapter {
       MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
       IndexRange range = getMatrixIndexRange(matrixId);
       for (PartitionKey partKey : partitions) {
-        RowsViewUpdateItem item = new RowsViewUpdateItem(partKey, rows, range.startIndex, range.endIndex);
+        RowsViewUpdateItem item = new RowsViewUpdateItem(partKey, rows, range.startIndex,
+            range.endIndex);
         matrixClient.update(requestId, request.getMatrixId(), partKey, item, null, -1, false, op);
       }
       return result;
     } else {
-      List<PartitionKey> partitions =
-          PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
-
       Map<PartitionKey, List<RowUpdateSplit>> splitListMap = new HashMap<>();
       for (int i = 0; i < rows.length; i++) {
         rows[i].setRowId(rowIds[i]);
         rows[i].setMatrixId(matrixId);
+
         // Split this row according the matrix partitions
-        Map<PartitionKey, RowUpdateSplit> splitMap = RowUpdateSplitUtils.split(rows[i], partitions);
+        Map<PartitionKey, RowUpdateSplit> splitMap = RowUpdateSplitUtils.split(rows[i],
+            PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId, rowIds[i]));
 
         // Set split context
         for (Map.Entry<PartitionKey, RowUpdateSplit> entry : splitMap.entrySet()) {
