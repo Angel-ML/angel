@@ -24,7 +24,7 @@ class AutoGPLRTest extends PSFunSuite with SharedPSContext {
     SharedConf.get().setDouble(MLConf.ML_LEARN_RATE, 0.5)
     SharedConf.get().setDouble(MLConf.ML_LEARN_DECAY, 0.2)
     SharedConf.get().set(MLConf.ML_DATA_INPUT_FORMAT, "libsvm")
-    SharedConf.get().setInt(MLConf.ML_EPOCH_NUM, 50)
+    SharedConf.get().setInt(MLConf.ML_EPOCH_NUM, 10)
     SharedConf.get().setInt(MLConf.ML_DECAY_INTERVALS, 10)
     SharedConf.get().setDouble(MLConf.ML_VALIDATE_RATIO, 0.1)
     SharedConf.get().setDouble(MLConf.ML_REG_L2, 0.0)

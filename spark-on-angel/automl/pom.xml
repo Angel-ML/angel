@@ -14,8 +14,6 @@
   <artifactId>spark-on-angel-automl</artifactId>
 
   <properties>
-    <!--spark.version>2.4.0</spark.version-->
-    <hadoop.version>2.7.3</hadoop.version>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
   </properties>
 
@@ -26,47 +24,57 @@
       <version>4.11</version>
     </dependency>
     <dependency>
+      <groupId>org.scalanlp</groupId>
+      <artifactId>breeze_2.11</artifactId>
+      <version>0.13</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-common</artifactId>
-      <version>${hadoop.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
+      <version>${hadoop-version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-client</artifactId>
-      <version>${hadoop.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
+      <version>${hadoop-version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-hdfs</artifactId>
-      <version>${hadoop.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
+      <version>${hadoop-version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-core_${scala.binary.version}</artifactId>
       <version>${spark.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-mllib_${scala.binary.version}</artifactId>
       <version>${spark.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-sql_${scala.binary.version}</artifactId>
       <version>${spark.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>angel</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <phase>package</phase>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>

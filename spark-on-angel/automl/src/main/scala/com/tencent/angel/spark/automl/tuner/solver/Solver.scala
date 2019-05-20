@@ -57,7 +57,7 @@ class Solver(
     cs.addParam(param)
   }
 
-  def addParam(pType: String, vType: String, name: String, config: String, seed: Int = 100): Unit = {
+  def addParam(pType: String, vType: String, name: String, config: String, seed: Int): Unit = {
     pType.toLowerCase match {
       case "discrete" =>
         vType.toLowerCase match {
@@ -143,7 +143,7 @@ object Solver {
     new Solver(cs, sur, acq, opt, SurrogateMode.GP)
   }
 
-  def apply(cs: ConfigurationSpace, minimize: Boolean = true, surrogate: String): Solver = {
+  def apply(cs: ConfigurationSpace, minimize: Boolean, surrogate: String): Solver = {
     val mode = SurrogateMode.fromString(surrogate)
     mode match {
       case SurrogateMode.GP =>

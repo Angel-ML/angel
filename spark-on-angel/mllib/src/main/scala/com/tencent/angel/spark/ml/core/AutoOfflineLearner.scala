@@ -65,7 +65,7 @@ class AutoOfflineLearner(var tuneIter: Int = 20, var minimize: Boolean = true, v
     this
   }
 
-  def addParam(pType: String, vType: String, name: String, config: String, seed:Int = 100): this.type = {
+  def addParam(pType: String, vType: String, name: String, config: String, seed: Int = 100): this.type = {
     paramType += name -> (pType.toLowerCase, vType.toLowerCase)
     solver.addParam(pType, vType, name, config, seed)
     this

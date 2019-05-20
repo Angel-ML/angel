@@ -19,7 +19,6 @@
 package com.tencent.angel.spark.automl.tuner.model
 
 import breeze.linalg.{Axis, MatrixNotSymmetricException, cholesky, diag, DenseMatrix => BDM, DenseVector => BDV}
-import breeze.optimize.StochasticGradientDescent.SimpleSGD
 import breeze.optimize.{AdaDeltaGradientDescent, LBFGS, StochasticGradientDescent}
 import com.tencent.angel.spark.automl.tuner.kernel.{Covariance, CovarianceType}
 import com.tencent.angel.spark.automl.tuner.math.BreezeOp
