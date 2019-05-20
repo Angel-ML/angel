@@ -36,7 +36,7 @@ import java.util.Map.Entry;
 
 public class UpdateRowsParam extends UpdateParam {
 
-  private Vector[] updates;
+  protected Vector[] updates;
 
   public UpdateRowsParam(int matrixId, Vector[] updates) {
     super(matrixId);
@@ -68,13 +68,13 @@ public class UpdateRowsParam extends UpdateParam {
     return partParams;
   }
 
-  private void shuffleSplits(Map<PartitionKey, List<RowUpdateSplit>> partToSplits) {
+  protected void shuffleSplits(Map<PartitionKey, List<RowUpdateSplit>> partToSplits) {
     for (List<RowUpdateSplit> splits : partToSplits.values()) {
       shuffleSplits(splits);
     }
   }
 
-  private void adapt(PartitionKey part, List<RowUpdateSplit> splits) {
+  protected void adapt(PartitionKey part, List<RowUpdateSplit> splits) {
     RowUpdateSplitContext context = new RowUpdateSplitContext();
     context.setPartKey(part);
     for (RowUpdateSplit split : splits) {
@@ -94,7 +94,7 @@ public class UpdateRowsParam extends UpdateParam {
     Collections.shuffle(splits);
   }
 
-  private int getPartsNum(int matrixId) {
+  protected int getPartsNum(int matrixId) {
     return getParts(matrixId).size();
   }
 
@@ -102,17 +102,17 @@ public class UpdateRowsParam extends UpdateParam {
     return getParts(matrixId, rowId).size();
   }
 
-  private List<PartitionKey> getParts(int matrixId) {
+  protected List<PartitionKey> getParts(int matrixId) {
     return PSAgentContext.get().getPsAgent().getMatrixMetaManager()
         .getPartitions(matrixId);
   }
 
-  private List<PartitionKey> getParts(int matrixId, int rowId) {
+  protected List<PartitionKey> getParts(int matrixId, int rowId) {
     return PSAgentContext.get().getPsAgent().getMatrixMetaManager()
         .getPartitions(matrixId, rowId);
   }
 
-  private void mergeRowUpdateSplits(Map<PartitionKey, RowUpdateSplit> rowSplits,
+  protected void mergeRowUpdateSplits(Map<PartitionKey, RowUpdateSplit> rowSplits,
       Map<PartitionKey, List<RowUpdateSplit>> partToSplits) {
     for (Entry<PartitionKey, RowUpdateSplit> entry : rowSplits.entrySet()) {
       List<RowUpdateSplit> splits = partToSplits.get(entry.getKey());

@@ -52,7 +52,7 @@ public class UpdateRows extends UpdateFunc {
     }
   }
 
-  private Vector getVector(int matrixId, int rowId, PartitionKey part) {
+  protected Vector getVector(int matrixId, int rowId, PartitionKey part) {
     return psContext.getMatrixStorageManager().getMatrix(matrixId)
         .getPartition(part.getPartitionId()).getRow(rowId).getSplit();
   }

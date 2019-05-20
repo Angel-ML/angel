@@ -45,11 +45,6 @@ public class PartUpdateRowsParam extends PartitionUpdateParam {
     return updates;
   }
 
-  public void setUpdates(
-      List<RowUpdateSplit> updates) {
-    this.updates = updates;
-  }
-
   @Override
   public void serialize(ByteBuf buf) {
     super.serialize(buf);

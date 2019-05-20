@@ -52,7 +52,11 @@ public class OptFuncs {
   }
 
   public static Vector iexpsmoothing2(Vector v1, Vector v2, double factor) {
-    return BinaryExecutor.apply(v1, v2, new ExpSmoothing2(true, factor));
+    return iexpsmoothing2(v1, v2, factor, OpType.UNION);
+  }
+
+  public static Vector iexpsmoothing2(Vector v1, Vector v2, double factor, OpType type) {
+    return BinaryExecutor.apply(v1, v2, new ExpSmoothing2(true, factor, type));
   }
 
   public static Vector expsmoothing2(Vector v1, Vector v2, double factor) {
@@ -89,7 +93,11 @@ public class OptFuncs {
   }
 
   public static Vector ftrldelta(Vector v1, Vector v2, double alpha) {
-    return BinaryExecutor.apply(v1, v2, new FtrlDelta(false, alpha));
+    return ftrldelta(v1, v2, alpha, OpType.UNION);
+  }
+
+  public static Vector ftrldelta(Vector v1, Vector v2, double alpha, OpType type) {
+    return BinaryExecutor.apply(v1, v2, new FtrlDelta(false, alpha, type));
   }
 
   public static Vector ftrldetalintersect(Vector v1, Vector v2, double alpha) {
