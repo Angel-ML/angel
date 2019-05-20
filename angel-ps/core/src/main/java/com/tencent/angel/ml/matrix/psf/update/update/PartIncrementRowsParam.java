@@ -28,23 +28,49 @@ import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PartUpdateRowsParam extends PartitionUpdateParam {
+/**
+ * Partition increment parameter
+ */
+public class PartIncrementRowsParam extends PartitionUpdateParam {
 
+  /**
+   * PS increment splits
+   */
   private List<RowUpdateSplit> updates;
 
-  public PartUpdateRowsParam(int matrixId, PartitionKey part, List<RowUpdateSplit> updates) {
+  /**
+   * Create PartIncrementRowsParam
+   *
+   * @param matrixId matrix id
+   * @param part partition key
+   * @param updates increment splits in the partition
+   */
+  public PartIncrementRowsParam(int matrixId, PartitionKey part, List<RowUpdateSplit> updates) {
     super(matrixId, part);
     this.updates = updates;
   }
 
-  public PartUpdateRowsParam() {
+  /**
+   * Create a empty PartIncrementRowsParam
+   */
+  public PartIncrementRowsParam() {
     this(-1, null, null);
   }
 
+  /**
+   * Get increment splits
+   *
+   * @return increment splits
+   */
   public List<RowUpdateSplit> getUpdates() {
     return updates;
   }
 
+  /**
+   * Set increment splits
+   *
+   * @param updates increment splits
+   */
   public void setUpdates(
       List<RowUpdateSplit> updates) {
     this.updates = updates;

@@ -27,11 +27,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Component int key float value vector splitter
+ */
 public class CompIntFloatVectorSplitter implements ISplitter {
 
   @Override
   public Map<PartitionKey, RowUpdateSplit> split(Vector vector, List<PartitionKey> parts) {
-    IntFloatVector[] vecParts = ((CompIntFloatVector)vector).getPartitions();
+    IntFloatVector[] vecParts = ((CompIntFloatVector) vector).getPartitions();
     assert vecParts.length == parts.size();
 
     Map<PartitionKey, RowUpdateSplit> updateSplitMap = new HashMap<>(parts.size());

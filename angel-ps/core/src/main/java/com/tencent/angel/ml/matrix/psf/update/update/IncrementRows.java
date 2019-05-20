@@ -27,24 +27,24 @@ import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplit;
 import java.util.List;
 
 /**
- * Update PS matrix
+ * Increment PS matrix rows
  */
-public class UpdateRows extends UpdateFunc {
+public class IncrementRows extends UpdateFunc {
 
   /**
    * Create a new UpdateParam
    */
-  public UpdateRows(UpdateParam param) {
+  public IncrementRows(UpdateParam param) {
     super(param);
   }
 
-  public UpdateRows() {
+  public IncrementRows() {
     this(null);
   }
 
   @Override
   public void partitionUpdate(PartitionUpdateParam partParam) {
-    PartUpdateRowsParam partUpdateRowsParam = (PartUpdateRowsParam) partParam;
+    PartIncrementRowsParam partUpdateRowsParam = (PartIncrementRowsParam) partParam;
     List<RowUpdateSplit> updates = partUpdateRowsParam.getUpdates();
     for (RowUpdateSplit update : updates) {
       getVector(partUpdateRowsParam.getMatrixId(), update.getRowId(), partParam.getPartKey())

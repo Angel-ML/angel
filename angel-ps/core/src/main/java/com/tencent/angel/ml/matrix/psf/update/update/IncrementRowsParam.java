@@ -34,11 +34,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-public class UpdateRowsParam extends UpdateParam {
+/**
+ * Increment rows parameters
+ */
+public class IncrementRowsParam extends UpdateParam {
 
+  /**
+   * Update vectors
+   */
   private Vector[] updates;
 
-  public UpdateRowsParam(int matrixId, Vector[] updates) {
+  /**
+   * Create increment rows params
+   *
+   * @param matrixId matrix id
+   * @param updates increment rows
+   */
+  public IncrementRowsParam(int matrixId, Vector[] updates) {
     super(matrixId);
     this.updates = updates;
   }
@@ -63,7 +75,8 @@ public class UpdateRowsParam extends UpdateParam {
       // Set split context: partition key, use int key for long key vector or not ect
       adapt(partEntry.getKey(), partEntry.getValue());
 
-      partParams.add(new PartUpdateRowsParam(matrixId, partEntry.getKey(), partEntry.getValue()));
+      partParams
+          .add(new PartIncrementRowsParam(matrixId, partEntry.getKey(), partEntry.getValue()));
     }
     return partParams;
   }

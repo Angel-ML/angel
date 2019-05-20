@@ -18,7 +18,10 @@
 
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
-import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.storage.IntDoubleDenseVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntDoubleSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntDoubleSparseVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntDoubleVectorStorage;
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.matrix.RowType;
 import io.netty.buffer.ByteBuf;
@@ -59,13 +62,19 @@ public class CompIntDoubleRowUpdateSplit extends RowUpdateSplit {
     }
   }
 
+  /**
+   * Create a empty CompIntDoubleRowUpdateSplit.
+   */
+  public CompIntDoubleRowUpdateSplit() {
+    this(-1, null, -1);
+  }
+
   public IntDoubleVector getSplit() {
     return split;
   }
 
   @Override
   public void serialize(ByteBuf buf) {
-    // TODO:
     super.serialize(buf);
     IntDoubleVectorStorage storage = split.getStorage();
 

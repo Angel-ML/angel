@@ -28,6 +28,9 @@ import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplitUtils;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Long key int value vector splitter
+ */
 public class LongIntVectorSplitter implements ISplitter {
 
   @Override
