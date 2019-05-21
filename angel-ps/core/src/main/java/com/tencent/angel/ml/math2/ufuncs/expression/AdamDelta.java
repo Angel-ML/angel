@@ -79,7 +79,7 @@ public class AdamDelta extends Binary {
     if (ele1 * ele2 == 0) {
       return 0f;
     } else {
-      return (float) (ele1 / (1 - powBeta) / (Math.sqrt(ele2 / (1 - powGamma) + esp)));
+      return (float) (ele1 / (1 - powBeta) / (Math.sqrt(ele2 / (1 - powGamma)) + esp));
     }
   }
 

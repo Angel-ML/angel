@@ -11,7 +11,7 @@ class CooMatrixTest extends FunSuite{
   val floatValues = Array[Float](1, 2, 3, 4, 5, 6)
 
   test("double") {
-    val mat = MFactory.cooDoubleMatrix(rowIndices, colIndices, doubleValues, Array(3, 3))
+    val mat = MFactory.cooIntDoubleMatrix(rowIndices, colIndices, doubleValues, Array(3, 3))
     val rowVec = mat.getRow(0)
     val colVec = mat.getCol(2)
 
@@ -20,7 +20,7 @@ class CooMatrixTest extends FunSuite{
   }
 
   test("float") {
-    val mat = MFactory.cooFloatMatrix(rowIndices, colIndices, floatValues, Array(3, 3))
+    val mat = MFactory.cooIntFloatMatrix(rowIndices, colIndices, floatValues, Array(3, 3))
     val rowVec = mat.getRow(2)
     val colVec = mat.getCol(0)
 
