@@ -28,11 +28,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Component long key double value vector splitter
+ */
 public class CompLongDoubleVectorSplitter implements ISplitter {
 
   @Override
   public Map<PartitionKey, RowUpdateSplit> split(Vector vector, List<PartitionKey> parts) {
-    LongDoubleVector[] vecParts = ((CompLongDoubleVector)vector).getPartitions();
+    LongDoubleVector[] vecParts = ((CompLongDoubleVector) vector).getPartitions();
     assert vecParts.length == parts.size();
 
     Map<PartitionKey, RowUpdateSplit> updateSplitMap = new HashMap<>(parts.size());

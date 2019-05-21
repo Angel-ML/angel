@@ -29,6 +29,9 @@ import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplitUtils;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Int key float value vector splitter
+ */
 public class IntFloatVectorSplitter implements ISplitter {
 
   @Override
@@ -40,7 +43,8 @@ public class IntFloatVectorSplitter implements ISplitter {
       return RowUpdateSplitUtils
           .split(vector.getRowId(), storage.getIndices(), storage.getValues(), parts, false);
     } else if (storage instanceof IntFloatSortedVectorStorage) {
-      return RowUpdateSplitUtils.split(vector.getRowId(), storage.getIndices(), storage.getValues(), parts, true);
+      return RowUpdateSplitUtils
+          .split(vector.getRowId(), storage.getIndices(), storage.getValues(), parts, true);
     } else {
       throw new UnsupportedOperationException(
           "unsupport split for storage type:" + storage.getClass().getName());

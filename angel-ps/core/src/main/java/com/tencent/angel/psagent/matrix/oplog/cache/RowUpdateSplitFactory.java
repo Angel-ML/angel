@@ -19,6 +19,9 @@ package com.tencent.angel.psagent.matrix.oplog.cache;
 
 import com.tencent.angel.ml.matrix.RowType;
 
+/**
+ * Row update split factory
+ */
 public class RowUpdateSplitFactory {
 
   public static RowUpdateSplit get(RowType rowType) {
@@ -58,6 +61,10 @@ public class RowUpdateSplitFactory {
 
       case T_LONG_SPARSE_LONGKEY:
         return new LongKeySparseLongRowUpdateSplit();
+
+      case T_DOUBLE_DENSE_COMPONENT:
+      case T_DOUBLE_SPARSE_COMPONENT:
+        return new CompIntDoubleRowUpdateSplit();
 
       default:
         throw new UnsupportedOperationException("Unknown row type " + rowType);
