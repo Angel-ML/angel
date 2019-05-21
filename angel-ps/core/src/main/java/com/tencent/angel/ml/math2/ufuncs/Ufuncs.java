@@ -243,6 +243,14 @@ public class Ufuncs {
     return BinaryExecutor.apply(x, v, new FMGrad(false, dot));
   }
 
+  public static Vector imomentumupdate(Vector v1, Vector v2, double momentum, double eta) {
+    return BinaryExecutor.apply(v1, v2, new MomentUpdate(true, momentum, eta));
+  }
+
+  public static Vector indexget(Vector x, Vector y) {
+    return BinaryExecutor.apply(x, y, new IndexGet(false));
+  }
+
   /*
   Computes abs(v1)
   */

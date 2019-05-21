@@ -16,8 +16,6 @@
  */
 package com.tencent.angel.ml.math2.ufuncs.expression;
 
-import com.tencent.angel.ml.math2.utils.Constant;
-
 public class AdaGradDelta extends Binary {
 
   private double lambda;
@@ -25,7 +23,7 @@ public class AdaGradDelta extends Binary {
 
   public AdaGradDelta(boolean inplace, double lambda, double eta) {
     setInplace(inplace);
-    setKeepStorage(Constant.keepStorage);
+    setKeepStorage(true);
     this.lambda = lambda;
     this.eta = eta;
   }

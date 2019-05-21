@@ -117,7 +117,7 @@ public class UpdatePSFTest {
   public static String SPARSE_LONG_LONG_MAT = "sparse_long_long_mat";
   public static String SPARSE_LONG_LONG_MAT_COMP = "sparse_long_long_mat_comp";
 
-  private static final Log LOG = LogFactory.getLog(GetRowTest.class);
+  private static final Log LOG = LogFactory.getLog(UpdatePSFTest.class);
   private static final String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
   private static final String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
   private AngelClient angelClient;
