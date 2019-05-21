@@ -1,13 +1,13 @@
 package com.tencent.angel.spark.ml.psf.optim;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.psf.update.update.PartUpdateRowsParam;
+import com.tencent.angel.ml.matrix.psf.update.update.PartIncrementRowsParam;
 import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplit;
 import io.netty.buffer.ByteBuf;
 
 import java.util.List;
 
-public class PartAsyncOptimParam extends PartUpdateRowsParam {
+public class PartAsyncOptimParam extends PartIncrementRowsParam {
   private double[] doubles;
   private int[] ints;
 

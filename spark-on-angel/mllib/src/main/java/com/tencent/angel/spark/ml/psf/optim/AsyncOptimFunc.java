@@ -3,12 +3,12 @@ package com.tencent.angel.spark.ml.psf.optim;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
-import com.tencent.angel.ml.matrix.psf.update.update.UpdateRows;
+import com.tencent.angel.ml.matrix.psf.update.update.IncrementRows;
 import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplit;
 
 import java.util.List;
 
-public abstract class AsyncOptimFunc extends UpdateRows {
+public abstract class AsyncOptimFunc extends IncrementRows {
 
   public AsyncOptimFunc(UpdateParam param) {
     super(param);

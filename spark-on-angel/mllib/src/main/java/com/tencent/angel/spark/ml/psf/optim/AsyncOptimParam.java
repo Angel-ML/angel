@@ -3,7 +3,7 @@ package com.tencent.angel.spark.ml.psf.optim;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
-import com.tencent.angel.ml.matrix.psf.update.update.UpdateRowsParam;
+import com.tencent.angel.ml.matrix.psf.update.update.IncrementRowsParam;
 import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplit;
 import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplitUtils;
 
@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class AsyncOptimParam extends UpdateRowsParam {
+public class AsyncOptimParam extends IncrementRowsParam {
 
   private double[] doubles;
   private int[] ints;
