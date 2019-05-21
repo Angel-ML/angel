@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -21,6 +21,7 @@ package com.tencent.angel.psagent.matrix.oplog.cache;
 import com.tencent.angel.psagent.task.TaskContext;
 
 public class OpLogMessage {
+
   private final int matrixId;
   private final OpLogMessageType type;
   private final TaskContext context;
@@ -49,9 +50,10 @@ public class OpLogMessage {
     return seqId;
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     return "OpLogMessage [matrixId=" + matrixId + ", type=" + type + ", context=" + context
-      + ", seqId=" + seqId + "]";
+        + ", seqId=" + seqId + "]";
   }
 
   public int getSeqId() {

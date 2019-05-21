@@ -79,7 +79,7 @@ public class LongKeySparseIntRowUpdateSplit extends RowUpdateSplit {
 
   @Override
   public void setUseIntKey(boolean useIntKey) {
-    if(useIntKey) {
+    if (useIntKey) {
       setRowType(RowType.T_INT_SPARSE);
     } else {
       setRowType(RowType.T_INT_SPARSE_LONGKEY);
@@ -91,7 +91,7 @@ public class LongKeySparseIntRowUpdateSplit extends RowUpdateSplit {
     super.serialize(buf);
     long startCol = splitContext.getPartKey().getStartCol();
 
-    if(isUseIntKey()) {
+    if (isUseIntKey()) {
       if (splitContext.isEnableFilter()) {
         int filterValue = (int) splitContext.getFilterThreshold();
         int position = buf.writerIndex();
@@ -99,7 +99,7 @@ public class LongKeySparseIntRowUpdateSplit extends RowUpdateSplit {
         int needUpdateItemNum = 0;
         for (int i = start; i < end; i++) {
           if (Math.abs(values[i]) > filterValue) {
-            buf.writeInt((int)(offsets[i] - startCol));
+            buf.writeInt((int) (offsets[i] - startCol));
             buf.writeInt(values[i]);
             needUpdateItemNum++;
           }
@@ -108,7 +108,7 @@ public class LongKeySparseIntRowUpdateSplit extends RowUpdateSplit {
       } else {
         buf.writeInt(end - start);
         for (int i = start; i < end; i++) {
-          buf.writeInt((int)(offsets[i] - startCol));
+          buf.writeInt((int) (offsets[i] - startCol));
           buf.writeInt(values[i]);
         }
       }
@@ -140,9 +140,10 @@ public class LongKeySparseIntRowUpdateSplit extends RowUpdateSplit {
   public void deserialize(ByteBuf buf) {
     super.deserialize(buf);
     int size = buf.readInt();
-    if(isUseIntKey()) {
+    if (isUseIntKey()) {
       vector = VFactory.sparseIntVector(
-          (int)(splitContext.getPartKey().getEndCol() - splitContext.getPartKey().getStartCol()), size);
+          (int) (splitContext.getPartKey().getEndCol() - splitContext.getPartKey().getStartCol()),
+          size);
       for (int i = 0; i < size; i++) {
         ((IntIntVector) vector).set(buf.readInt(), buf.readInt());
       }
@@ -168,7 +169,7 @@ public class LongKeySparseIntRowUpdateSplit extends RowUpdateSplit {
 
   @Override
   public int bufferLen() {
-    if(isUseIntKey()) {
+    if (isUseIntKey()) {
       if (splitContext.isEnableFilter()) {
         return 12 + super.bufferLen() + getNeedUpdateItemNum() * 8;
       } else {

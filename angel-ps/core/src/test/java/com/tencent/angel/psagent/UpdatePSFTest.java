@@ -433,41 +433,41 @@ public class UpdatePSFTest {
 
   @Test
   public void test() throws Exception {
-    //testDenseDoubleUDF();
-    /*testSparseDoubleUDF();
+    testDenseDoubleUDF();
+    testSparseDoubleUDF();
 
-    //testDenseDoubleCompUDF();
-    //testSparseDoubleCompUDF();
+    testDenseDoubleCompUDF();
+    testSparseDoubleCompUDF();
 
     testDenseFloatUDF();
     testSparseFloatUDF();
 
-    //testDenseFloatCompUDF();
-    //testSparseFloatCompUDF();
+    testDenseFloatCompUDF();
+    testSparseFloatCompUDF();
 
     testDenseIntUDF();
     testSparseIntUDF();
 
-    //testDenseIntCompUDF();
-    //testSparseIntCompUDF();
+    testDenseIntCompUDF();
+    testSparseIntCompUDF();
 
     testDenseLongUDF();
     testSparseLongUDF();
 
-    //testDenseLongCompUDF();
-    //testSparseLongCompUDF();*/
+    testDenseLongCompUDF();
+    testSparseLongCompUDF();
 
     testSparseDoubleLongKeyUDF();
-    //testSparseDoubleLongKeyCompUDF();
+    testSparseDoubleLongKeyCompUDF();
 
     testSparseFloatLongKeyUDF();
-    //testSparseFloatLongKeyCompUDF();
+    testSparseFloatLongKeyCompUDF();
 
     testSparseIntLongKeyUDF();
-    //testSparseIntLongKeyCompUDF();
+    testSparseIntLongKeyCompUDF();
 
     testSparseLongLongKeyUDF();
-    //testSparseLongLongKeyCompUDF();
+    testSparseLongLongKeyCompUDF();
   }
 
 
