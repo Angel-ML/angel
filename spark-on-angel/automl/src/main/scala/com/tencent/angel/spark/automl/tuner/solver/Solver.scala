@@ -28,6 +28,8 @@ import com.tencent.angel.spark.automl.utils.AutoMLException
 import org.apache.spark.ml.linalg.Vector
 import org.apache.commons.logging.{Log, LogFactory}
 
+import scala.collection.mutable
+
 class Solver(
               val cs: ConfigurationSpace,
               val surrogate: Surrogate,
@@ -39,14 +41,15 @@ class Solver(
 
   val PARAM_TYPES: Array[String] = Array("discrete", "continuous")
 
-  ensureValid()
+  lazy val valid: Boolean = ensureValid()
 
-  def ensureValid(): Unit = {
+  def ensureValid(): Boolean = {
     // ensure grid
     surrogateMode match {
       case SurrogateMode.GRID => cs.setAllToGrid()
       case _ =>
     }
+    true
   }
 
   def getHistory(): (Array[Vector], Array[Double]) = (surrogate.preX.toArray, surrogate.preY.toArray)
@@ -57,23 +60,29 @@ class Solver(
     cs.addParam(param)
   }
 
-  def addParam(pType: String, vType: String, name: String, config: String, seed: Int): Unit = {
+  def addParam(pName: String, pType: String, vType: String, config: String, seed: Int): Unit = {
     pType.toLowerCase match {
       case "discrete" =>
         vType.toLowerCase match {
-          case "float" => addParam(new DiscreteSpace[Float](name, config))
-          case "double" => addParam(new DiscreteSpace[Double](name, config))
-          case "int" => addParam(new DiscreteSpace[Int](name, config))
-          case "long" => addParam(new DiscreteSpace[Long](name, config))
+          case "float" => addParam(new DiscreteSpace[Float](pName, config))
+          case "double" => addParam(new DiscreteSpace[Double](pName, config))
+          case "int" => addParam(new DiscreteSpace[Int](pName, config))
+          case "long" => addParam(new DiscreteSpace[Long](pName, config))
           case _ => throw new AutoMLException(s"unsupported value type $vType")
         }
       case "continuous" =>
         vType.toLowerCase match {
-          case "double" => addParam(new ContinuousSpace(name, config))
+          case "double" => addParam(new ContinuousSpace(pName, config))
           case _ => throw new AutoMLException(s"unsupported value type $vType")
         }
       case _ => throw new AutoMLException(s"unsupported param type $pType, should be ${PARAM_TYPES.mkString(",")}")
     }
+  }
+
+  def getParamTypes: mutable.Map[String, (String, String)] = cs.paramType
+
+  def getParamType(pName: String): (String, String) = {
+    cs.getParamType(pName)
   }
 
   /**

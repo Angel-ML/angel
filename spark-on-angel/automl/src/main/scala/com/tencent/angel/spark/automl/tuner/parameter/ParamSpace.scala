@@ -31,6 +31,10 @@ import scala.reflect.ClassTag
 abstract class ParamSpace[+T: ClassTag](val name: String,
                                         val doc: String = "param with search space") {
 
+  val pType: String
+
+  val vType: String
+
   def sample(size: Int): List[T]
 
   def sampleOne(): T

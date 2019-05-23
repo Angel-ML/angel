@@ -20,13 +20,15 @@ package com.tencent.angel.spark.automl.tuner.config
 
 import com.tencent.angel.spark.automl.tuner.TunerParam
 import com.tencent.angel.spark.automl.tuner.math.BreezeOp._
-import com.tencent.angel.spark.automl.tuner.parameter.{ContinuousSpace, ParamSpace}
+import com.tencent.angel.spark.automl.tuner.parameter.{ContinuousSpace, DiscreteSpace, ParamSpace}
 import com.tencent.angel.spark.automl.utils.AutoMLException
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.spark.ml.linalg.{Vector, Vectors}
 import org.apache.spark.sql.types._
 
+import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, HashSet}
+import scala.reflect.ClassTag
 
 class ConfigurationSpace(
                           val name: String,
@@ -42,6 +44,9 @@ class ConfigurationSpace(
   var param2Doc: Map[String, String] = paramDict.map { case (k: String, v: ParamSpace[AnyVal]) => (k, v.doc) }
   var idx2Param: Map[Int, String] = param2Idx.map(_.swap)
 
+  // param name -> param type (continuous or discrete), value type (int, double,...)
+  val paramType: mutable.Map[String, (String, String)] = new mutable.HashMap[String, (String, String)]()
+
   // configurations tried
   var preX: HashSet[Vector] = HashSet[Vector]()
   var gridValues: Array[Configuration] = Array.empty
@@ -53,9 +58,10 @@ class ConfigurationSpace(
     params.foreach(addParam)
   }
 
-  def addParam[T <: AnyVal](param: ParamSpace[T]): Unit = {
+  def addParam[T <: AnyVal: ClassTag](param: ParamSpace[T]): Unit = {
     if (!paramDict.contains(param.name)) {
       fields += DataTypes.createStructField(param.name, DataTypes.DoubleType, false)
+      paramType += param.name -> (param.pType, param.vType)
       paramDict += (param.name -> param)
       param2Idx += (param.name -> numParams)
       param2Doc += (param.name -> param.doc)
@@ -63,6 +69,18 @@ class ConfigurationSpace(
       numParams += 1
     }
     println(s"add param ${param.toString}, current params: ${paramDict.keySet.mkString(",")}")
+  }
+
+  def addParamType(pName: String, pType: String, vType: String): Unit = {
+    if (!paramType.contains(pName))
+      paramType += pName -> (pType, vType)
+  }
+
+  def getParamType(pName: String): (String, String) = {
+    if (paramType.contains(pName))
+      paramType(pName)
+    else
+      throw new AutoMLException(s"param $pName not exists in the configuration space.")
   }
 
   def getFields: Array[StructField] = fields.toArray

@@ -52,6 +52,8 @@ object AutoOfflineRunner {
     if (modelPath.length > 0)
       conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, modelPath)
 
+    conf.set(MLConf.ML_AUTO_TUNER_PARAMS, "ml.learn.rate|C|double|0.1:1:100|")
+
     val sc = new SparkContext(conf)
 
     // start PS
@@ -61,7 +63,7 @@ object AutoOfflineRunner {
     val model = GraphModel(className)
 
     val learner = new AutoOfflineLearner
-    learner.addParam("continuous", "double", MLConf.ML_LEARN_RATE, "[0.1:1:100]")
+    //learner.addParam("continuous", "double", MLConf.ML_LEARN_RATE, "[0.1:1:100]")
 
     actionType match {
         case MLConf.ANGEL_ML_TRAIN => learner.train(input, output, modelPath, dim, model)

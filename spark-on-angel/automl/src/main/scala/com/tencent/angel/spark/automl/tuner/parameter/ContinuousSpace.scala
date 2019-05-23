@@ -40,7 +40,10 @@ class ContinuousSpace(
                        distribution: Distribution.Value = Distribution.LINEAR,
                        override val doc: String = "continuous param space") extends ParamSpace[Double](name, doc) {
 
-  private val helper: String = "supported format of continuous parameter: [0,1] or [0,1,100]"
+  private val helper: String = "supported format of continuous parameter: [0,1] or [0:1:100]"
+
+  override val pType: String = "continuous"
+  override val vType: String = "double"
 
   def this(name: String, lower: Double, upper: Double) = {
     this(name, lower, upper, -1)

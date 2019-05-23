@@ -24,7 +24,7 @@ import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.automl.tuner.config.{Configuration, ConfigurationSpace}
-import com.tencent.angel.spark.automl.tuner.parameter.ParamSpace
+import com.tencent.angel.spark.automl.tuner.parameter.{ParamConfig, ParamParser, ParamSpace}
 import com.tencent.angel.spark.automl.tuner.solver.Solver
 import com.tencent.angel.spark.automl.utils.AutoMLException
 import com.tencent.angel.spark.ml.core.metric.{AUC, Precision}
@@ -42,11 +42,6 @@ class AutoOfflineLearner(var tuneIter: Int = 20, var minimize: Boolean = true, v
   // Shared configuration with Angel-PS
   val conf = SharedConf.get()
 
-  // set tuner params
-  tuneIter = conf.getInt(MLConf.ML_AUTO_TUNER_ITER, MLConf.DEFAULT_ML_AUTO_TUNER_ITER)
-  minimize = conf.getBoolean(MLConf.ML_AUTO_TUNER_MINIMIZE, MLConf.DEFAULT_ML_AUTO_TUNER_MINIMIZE)
-  surrogate = conf.get(MLConf.ML_AUTO_TUNER_MODEL, MLConf.DEFAULT_ML_AUTO_TUNER_MODEL)
-
   // Some params
   var numEpoch: Int = conf.getInt(MLConf.ML_EPOCH_NUM)
   var fraction: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_RATIO)
@@ -54,20 +49,33 @@ class AutoOfflineLearner(var tuneIter: Int = 20, var minimize: Boolean = true, v
 
   println(s"fraction=$fraction validateRatio=$validationRatio numEpoch=$numEpoch")
 
-  val cs: ConfigurationSpace = new ConfigurationSpace("cs")
-  val solver: Solver = Solver(cs, minimize, surrogate)
+  var solver: Solver = null
 
-  // param name -> param type (continuous or discrete), value type (int, double,...)
-  val paramType: mutable.Map[String, (String, String)] = new mutable.HashMap[String, (String, String)]()
+  def init(): this.type = {
+    // set tuner params
+    tuneIter = conf.getInt(MLConf.ML_AUTO_TUNER_ITER, MLConf.DEFAULT_ML_AUTO_TUNER_ITER)
+    minimize = conf.getBoolean(MLConf.ML_AUTO_TUNER_MINIMIZE, MLConf.DEFAULT_ML_AUTO_TUNER_MINIMIZE)
+    surrogate = conf.get(MLConf.ML_AUTO_TUNER_MODEL, MLConf.DEFAULT_ML_AUTO_TUNER_MODEL)
 
-  def addParam(param: ParamSpace[AnyVal]): this.type = {
-    solver.addParam(param)
+    // init solver
+    val cs: ConfigurationSpace = new ConfigurationSpace("cs")
+    solver = Solver(cs, minimize, surrogate)
+    val config = conf.get(MLConf.ML_AUTO_TUNER_PARAMS)
+    parseConfig(config)
     this
   }
 
-  def addParam(pType: String, vType: String, name: String, config: String, seed: Int = 100): this.type = {
-    paramType += name -> (pType.toLowerCase, vType.toLowerCase)
-    solver.addParam(pType, vType, name, config, seed)
+  def parseConfig(input: String): this.type = {
+    val paramConfigs: Array[ParamConfig] = ParamParser.parse(input)
+    paramConfigs.foreach{ config =>
+      addParam(config.getParamName, config.getParamType, config.getValueType,
+        config.getParamRange, Random.nextInt())
+    }
+    this
+  }
+
+  def addParam(pName: String, pType: String, vType: String, config: String, seed: Int = 100): this.type = {
+    solver.addParam(pName, pType, vType, config, seed)
     this
   }
 
@@ -206,7 +214,7 @@ class AutoOfflineLearner(var tuneIter: Int = 20, var minimize: Boolean = true, v
       val configs: Array[Configuration] = solver.suggest
       for (config <- configs) {
         val paramMap: mutable.Map[String, Double] = new mutable.HashMap[String, Double]()
-        for (paramType <- paramType) {
+        for (paramType <- solver.getParamTypes) {
           setParam(paramType._1, paramType._2._2, config.get(paramType._1))
           paramMap += (paramType._1 -> config.get(paramType._1))
         }

@@ -205,6 +205,7 @@ object MLConf {
   val DEFAULT_ML_AUTO_TUNER_MODEL = "GaussianProcess"
   val ML_AUTO_TUNER_MINIMIZE = "ml.auto.tuner.minimize"
   val DEFAULT_ML_AUTO_TUNER_MINIMIZE = false
+  val ML_AUTO_TUNER_PARAMS = "ml.auto.tuner.params"
 
   /** The loss sum of all samples */
   val TRAIN_LOSS = "train.loss"

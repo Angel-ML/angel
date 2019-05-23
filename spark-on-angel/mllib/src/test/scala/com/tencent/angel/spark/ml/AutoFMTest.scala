@@ -41,7 +41,7 @@ class AutoFMTest extends PSFunSuite with SharedPSContext {
     SharedConf.get().setInt(MLConf.ML_FEATURE_INDEX_RANGE, 149)
     SharedConf.get().setDouble(MLConf.ML_LEARN_RATE, 0.5)
     SharedConf.get().set(MLConf.ML_DATA_INPUT_FORMAT, "libsvm")
-    SharedConf.get().setInt(MLConf.ML_EPOCH_NUM, 20)
+    SharedConf.get().setInt(MLConf.ML_EPOCH_NUM, 10)
     SharedConf.get().setDouble(MLConf.ML_VALIDATE_RATIO, 0.1)
     SharedConf.get().setDouble(MLConf.ML_REG_L2, 0.0)
     SharedConf.get().setDouble(MLConf.ML_BATCH_SAMPLE_RATIO, 0.2)
@@ -52,9 +52,9 @@ class AutoFMTest extends PSFunSuite with SharedPSContext {
     SharedConf.get().setInt(MLConf.ML_AUTO_TUNER_ITER, 10)
     SharedConf.get().setBoolean(MLConf.ML_AUTO_TUNER_MINIMIZE, false)
     SharedConf.get().set(MLConf.ML_AUTO_TUNER_MODEL, "GaussianProcess")
+    SharedConf.get().set(MLConf.ML_AUTO_TUNER_PARAMS, "ml.learn.rate|C|float|0.1:1:100")
 
-    learner = new AutoOfflineLearner
-    learner.addParam("continuous", "double", MLConf.ML_LEARN_RATE, "[0.1:1:100]")
+    learner = new AutoOfflineLearner().init()
   }
 
   override def afterAll(): Unit = {

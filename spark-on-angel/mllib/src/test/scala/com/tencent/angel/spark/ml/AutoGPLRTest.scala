@@ -36,9 +36,10 @@ class AutoGPLRTest extends PSFunSuite with SharedPSContext {
     SharedConf.get().setInt(MLConf.ML_AUTO_TUNER_ITER, 10)
     SharedConf.get().setBoolean(MLConf.ML_AUTO_TUNER_MINIMIZE, false)
     SharedConf.get().set(MLConf.ML_AUTO_TUNER_MODEL, "GaussianProcess")
+    SharedConf.get().set(MLConf.ML_AUTO_TUNER_PARAMS,
+      "ml.learn.rate|C|double|0.1:1:100#ml.learn.decay|D|float|0,0.01,0.1")
 
-    learner = new AutoOfflineLearner
-    learner.addParam("continuous", "double", MLConf.ML_LEARN_RATE, "[0.1:1:100]")
+    learner = new AutoOfflineLearner().init()
   }
 
   override def afterAll(): Unit = {

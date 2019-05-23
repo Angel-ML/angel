@@ -15,7 +15,7 @@ class AutoGridLRTest extends PSFunSuite with SharedPSContext {
   override def beforeAll(): Unit = {
     super.beforeAll()
 
-    input = "../data/census/census_148d_train.libsvm"
+    input = "../../data/census/census_148d_train.libsvm"
 
     // build SharedConf with params
     SharedConf.get()
@@ -24,7 +24,7 @@ class AutoGridLRTest extends PSFunSuite with SharedPSContext {
     SharedConf.get().setDouble(MLConf.ML_LEARN_RATE, 0.5)
     SharedConf.get().setDouble(MLConf.ML_LEARN_DECAY, 0.2)
     SharedConf.get().set(MLConf.ML_DATA_INPUT_FORMAT, "libsvm")
-    SharedConf.get().setInt(MLConf.ML_EPOCH_NUM, 50)
+    SharedConf.get().setInt(MLConf.ML_EPOCH_NUM, 10)
     SharedConf.get().setInt(MLConf.ML_DECAY_INTERVALS, 10)
     SharedConf.get().setDouble(MLConf.ML_VALIDATE_RATIO, 0.1)
     SharedConf.get().setDouble(MLConf.ML_REG_L2, 0.0)
@@ -33,9 +33,13 @@ class AutoGridLRTest extends PSFunSuite with SharedPSContext {
 
     SharedConf.get().set(AngelConf.ANGEL_RUNNING_MODE, RunningMode.ANGEL_PS.toString)
 
-    learner = new AutoOfflineLearner(minimize = false,surrogate = "Grid")
-    learner.addParam("continuous", "double", MLConf.ML_LEARN_RATE, "[0.1:1:5]",seed = 10)
-    learner.addParam("continuous", "double", MLConf.ML_LEARN_DECAY, "[0.1:1:5]",seed = 20)
+    SharedConf.get().setInt(MLConf.ML_AUTO_TUNER_ITER, 10)
+    SharedConf.get().setBoolean(MLConf.ML_AUTO_TUNER_MINIMIZE, false)
+    SharedConf.get().set(MLConf.ML_AUTO_TUNER_MODEL, "Grid")
+    SharedConf.get().set(MLConf.ML_AUTO_TUNER_PARAMS,
+      "ml.learn.rate|C|double|0.1:1:5#ml.learn.decay|D|double|0,0.01,0.1")
+
+    learner = new AutoOfflineLearner().init()
   }
 
   override def afterAll(): Unit = {

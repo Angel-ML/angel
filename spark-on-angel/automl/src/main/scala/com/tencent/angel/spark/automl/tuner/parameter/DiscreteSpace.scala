@@ -23,6 +23,8 @@ import com.tencent.angel.spark.automl.utils.AutoMLException
 import scala.reflect.ClassTag
 import scala.util.Random
 
+import scala.reflect._
+
 /**
   * Search space with discrete values
   *
@@ -34,7 +36,10 @@ class DiscreteSpace[T <: AnyVal : ClassTag](
                                              var values: Array[T],
                                              override val doc: String = "discrete param") extends ParamSpace[T](name, doc) {
 
-  private val helper: String = "supported format of discrete parameter: [0.1,0.2,0.3,0.4] or [0.1:1:0.1]"
+  private val helper: String = "supported format of discrete parameter: {0.1,0.2,0.3,0.4} or {0.1:1:0.1}"
+
+  override val pType: String = "discrete"
+  override val vType = classTag[T].runtimeClass.getSimpleName.toLowerCase
 
   def this(name: String, config: String, doc: String) = {
     this(name, Array.empty[T], doc)
