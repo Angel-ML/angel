@@ -237,7 +237,7 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
       .mapPartitions(iterator => Iterator(Dataset[Int, Float](iterator.toSeq)))
       .persist()
     val numTrain = trainDP.map(_.size).collect().sum
-    println(s"Load data cost ${System.currentTimeMillis() - loadStart} ms")
+    println(s"Load data cost ${System.currentTimeMillis() - loadStart} ms, number of instances: $numTrain")
 
     // 2. collect labels, ensure 0-based indexed and broadcast
     val labelStart = System.currentTimeMillis()
