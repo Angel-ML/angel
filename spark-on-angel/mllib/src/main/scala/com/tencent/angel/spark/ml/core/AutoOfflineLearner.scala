@@ -23,7 +23,7 @@ import com.tencent.angel.ml.core.optimizer.loss.{L2Loss, LogLoss}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.automl.tuner.config.{Configuration, ConfigurationSpace}
+import com.tencent.angel.spark.automl.tuner.config.{Configuration, ConfigurationSpace,EarlyStopping}
 import com.tencent.angel.spark.automl.tuner.parameter.{ParamConfig, ParamParser, ParamSpace}
 import com.tencent.angel.spark.automl.tuner.solver.Solver
 import com.tencent.angel.spark.automl.utils.AutoMLException
@@ -37,7 +37,8 @@ import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.Random
 
-class AutoOfflineLearner(var tuneIter: Int = 20, var minimize: Boolean = true, var surrogate: String = "GaussianProcess") {
+class AutoOfflineLearner(var tuneIter: Int = 20, var minimize: Boolean = true, var surrogate: String = "GaussianProcess",
+                         var earlyStopping: EarlyStopping = new EarlyStopping(patience = 0)) {
 
   // Shared configuration with Angel-PS
   val conf = SharedConf.get()
@@ -221,7 +222,22 @@ class AutoOfflineLearner(var tuneIter: Int = 20, var minimize: Boolean = true, v
         resetParam(paramMap)
         model.resetParam(paramMap).graph.init(0)
         val result = train(data, model)
-        solver.feed(config, result._1)
+        if(earlyStopping.pat > 0){
+          earlyStopping.update(result._1)
+          if (earlyStopping.earlyStop) {
+            println("Early stopping")
+            val result: (Vector, Double) = solver.optimal
+            solver.stop
+            println(s"Best configuration ${result._1.toArray.mkString(",")}, best performance: ${result._2}")
+            return
+          }
+          else {
+            solver.feed(config, result._1)
+          }
+        }
+        else {
+          solver.feed(config, result._1)
+        }
       }
     }
     val result: (Vector, Double) = solver.optimal
