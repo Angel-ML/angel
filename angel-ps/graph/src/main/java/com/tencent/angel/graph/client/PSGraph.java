@@ -20,6 +20,9 @@ package com.tencent.angel.graph.client;
 import com.tencent.angel.graph.client.getfullneighbor.GetFullNeighbor;
 import com.tencent.angel.graph.client.getfullneighbor.GetFullNeighborParam;
 import com.tencent.angel.graph.client.getfullneighbor.GetFullNeighborResult;
+import com.tencent.angel.graph.client.sampleneighbor.SampleNeighbor;
+import com.tencent.angel.graph.client.sampleneighbor.SampleNeighborParam;
+import com.tencent.angel.graph.client.sampleneighbor.SampleNeighborResult;
 import com.tencent.angel.graph.data.EdgeId;
 import com.tencent.angel.psagent.matrix.MatrixClient;
 import java.util.Map;
@@ -108,6 +111,8 @@ public class PSGraph implements IGraph {
 
   @Override
   public Map<Long, NodeIDWeightPairs> sampleNeighbor(long[] nodeIds, int[] edgeTypes, int count) {
-    return null;
+    return ((SampleNeighborResult) matrixClient.get(new SampleNeighbor(
+            new SampleNeighborParam(matrixClient.getMatrixId(), nodeIds, edgeTypes))))
+            .getNodeIdToNeighbors();
   }
 }
