@@ -17,8 +17,20 @@
 
 package com.tencent.angel.graph.data;
 
-public class EdgeTypeIdWeightPair {
-  int [] edgeTypes;
-  float [] sumWeights;
-  float totalSumWeight;
+public class IdWeightPair<T> {
+    private final T id;
+    private final float weight;
+
+    public IdWeightPair(T id, float weight) {
+        this.id = id;
+        this.weight = weight;
+    }
+
+    public T getId() {
+        return id;
+    }
+
+    public float getWeight() {
+        return weight;
+    }
 }
