@@ -51,12 +51,12 @@ public class AggrFuncTest {
     LocalClusterHelper.setup();
     w2Client = MatrixClientFactory.get("w2", 0);
     // row 0 is a random uniform
-    w2Client.update(new RandomUniform(w2Client.getMatrixId(), 0, 0.0, 1.0)).get();
+    w2Client.update(new RandomUniform(w2Client.getMatrixId(), 0, 0.0, 1.0));
     // row 1 is a random normal
-    w2Client.update(new RandomNormal(w2Client.getMatrixId(), 1, 0.0, 1.0)).get();
+    w2Client.update(new RandomNormal(w2Client.getMatrixId(), 1, 0.0, 1.0));
     // row 2 is filled with 1.0
     w2Client.update(new MapInPlace(w2Client.getMatrixId(), 2,
-      new com.tencent.angel.ml.matrix.psf.update.enhance.map.func.Set(1.0))).get();
+      new com.tencent.angel.ml.matrix.psf.update.enhance.map.func.Set(1.0)));
 
     localArray0 = pull(w2Client, 0);
     localArray1 = pull(w2Client, 1);

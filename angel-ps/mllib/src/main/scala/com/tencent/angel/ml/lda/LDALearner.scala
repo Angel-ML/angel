@@ -149,8 +149,8 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
     model.tMat.getRow(0)
     if (ctx.getTaskIndex == 0) {
       model.tMat.zero()
-      ctx.getMatrix(model.tMat.modelName).update(new ResetFunc(new ZeroParam(model.tMat.getMatrixId(), false)))
-      ctx.getMatrix(model.wtMat.modelName).update(new ResetFunc(new ZeroParam(model.wtMat.getMatrixId(), false)))
+      ctx.getMatrix(model.tMat.modelName).asycUpdate(new ResetFunc(new ZeroParam(model.tMat.getMatrixId(), false)))
+      ctx.getMatrix(model.wtMat.modelName).asycUpdate(new ResetFunc(new ZeroParam(model.wtMat.getMatrixId(), false)))
     }
     model.tMat.clock(false).get()
     model.tMat.getRow(0)

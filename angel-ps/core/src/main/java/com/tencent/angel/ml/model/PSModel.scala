@@ -432,7 +432,7 @@ class PSModel(
   @throws(classOf[AngelException])
   def update(func: UpdateFunc): Future[VoidResult] = {
     try {
-      return getClient.update(func)
+      return getClient.asycUpdate(func)
     }
     catch {
       case e: InvalidParameterException => {

@@ -82,7 +82,7 @@ class PSVectorImpl(val poolId: Int, val id: Int, val dimension: Long, val rowTyp
 
   override def psfUpdate(func: UpdateFunc): Future[VoidResult] = {
     assertValid()
-    vectorPoolClient.update(func)
+    vectorPoolClient.asycUpdate(func)
   }
 
   private[spark] def assertSuccess(result: Result): Unit = {
@@ -138,5 +138,48 @@ class PSVectorImpl(val poolId: Int, val id: Int, val dimension: Long, val rowTyp
     if (deleted)
       throw new SparkException("This vector has been deleted!")
     this
+  }
+
+  override def asycPull(): Future[Vector] = {
+    vectorPoolClient.asycGetRow(id)
+  }
+
+  override def asycPull(indices: Array[Long]): Future[Vector] = {
+    require(rowType.isLongKey, s"rowType=$rowType, use `pull(indices: Array[Int])` instead")
+    vectorPoolClient.asycGet(id, indices)
+  }
+
+  override def asycPull(indices: Array[Int]): Future[Vector] = {
+    require(rowType.isIntKey, s"rowType=$rowType, use `pull(indices: Array[Long])` instead")
+    vectorPoolClient.asycGet(id, indices)
+  }
+
+  override def asycIncrement(delta: Vector): Future[VoidResult] = {
+    require(rowType.compatible(delta.getType), s"can't increment $rowType by ${delta.getType}")
+    vectorPoolClient.asycIncrement(id, delta)
+  }
+
+  override def asycUpdate(local: Vector): Future[VoidResult] = {
+    require(rowType.compatible(local.getType), s"can't update $rowType by ${local.getType}")
+    vectorPoolClient.asycUpdate(id, local)
+  }
+
+  override def asycPush(local: Vector): Future[VoidResult] = {
+    require(rowType.compatible(local.getType), s"can't push $rowType by ${local.getType}")
+    assertValid().reset.asycUpdate(local)
+  }
+
+  override def asycReset: Future[VoidResult] = {
+    psfUpdate(new Reset(poolId, id))
+  }
+
+  override def asycFill(value: Double): Future[VoidResult] = {
+    assertValid()
+    psfUpdate(new MapInPlace(poolId, id, new SetFunc(value)))
+  }
+
+  override def asycPsfGet(func: GetFunc): Future[GetResult] = {
+    assertValid()
+    vectorPoolClient.asycGet(func)
   }
 }

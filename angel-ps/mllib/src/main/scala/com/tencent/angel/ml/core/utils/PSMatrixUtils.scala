@@ -61,7 +61,7 @@ object PSMatrixUtils {
   }
 
   def getRow(epoch: Int, matrixId: Int, rowId: Int): Vector = {
-    PSAgentContext.get.getUserRequestAdapter.getRow(matrixId, rowId, 0)
+    PSAgentContext.get.getUserRequestAdapter.getRow(matrixId, rowId, 0).get()
   }
 
   def getRowWithIndex(epoch: Int, matrixId: Int, rowId: Int, index: Vector): Vector = {
