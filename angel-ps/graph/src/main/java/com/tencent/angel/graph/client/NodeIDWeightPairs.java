@@ -28,11 +28,6 @@ public class NodeIDWeightPairs implements Serialize {
   int[] edgeTypes;
 
   /**
-   * Neighbor store position in ids and weights
-   */
-  int[] edgeTypeIndices;
-
-  /**
    * Neighbor node ids
    */
   long[] neighborNodeIds;
@@ -42,15 +37,14 @@ public class NodeIDWeightPairs implements Serialize {
    */
   float[] neighborNodeWeights;
 
-  public NodeIDWeightPairs(int[] edgeType, int[] edgeTypeIndices, long[] neighborNodeIds, float[] neighborNodeWeights) {
+  public NodeIDWeightPairs(int[] edgeTypes, long[] neighborNodeIds, float[] neighborNodeWeights) {
     this.edgeTypes = edgeTypes;
-    this.edgeTypeIndices = edgeTypeIndices;
     this.neighborNodeIds = neighborNodeIds;
     this.neighborNodeWeights = neighborNodeWeights;
   }
 
   public NodeIDWeightPairs() {
-    this(null, null, null, null);
+    this(null, null, null);
   }
 
 
@@ -60,14 +54,6 @@ public class NodeIDWeightPairs implements Serialize {
 
   public void setEdgeTypes(int[] edgeTypes) {
     this.edgeTypes = edgeTypes;
-  }
-
-  public int[] getEdgeTypeIndices() {
-    return edgeTypeIndices;
-  }
-
-  public void setEdgeTypeIndices(int[] edgeTypeIndices) {
-    this.edgeTypeIndices = edgeTypeIndices;
   }
 
   public long[] getNeighborNodeIds() {
@@ -93,11 +79,6 @@ public class NodeIDWeightPairs implements Serialize {
       output.writeInt(edgeTypes[i]);
     }
 
-    output.writeInt(edgeTypeIndices.length);
-    for (int i = 0; i < edgeTypeIndices.length; i++) {
-      output.writeInt(edgeTypeIndices[i]);
-    }
-
     output.writeInt(neighborNodeIds.length);
     for (int i = 0; i < neighborNodeIds.length; i++) {
       output.writeLong(neighborNodeIds[i]);
@@ -116,11 +97,6 @@ public class NodeIDWeightPairs implements Serialize {
       edgeTypes[i] = input.readInt();
     }
 
-    edgeTypeIndices = new int[input.readInt()];
-    for (int i = 0; i < edgeTypeIndices.length; i++) {
-      edgeTypeIndices[i] = input.readInt();
-    }
-
     neighborNodeIds = new long[input.readInt()];
     for (int i = 0; i < neighborNodeIds.length; i++) {
       neighborNodeIds[i] = input.readLong();
@@ -134,7 +110,7 @@ public class NodeIDWeightPairs implements Serialize {
 
   @Override
   public int bufferLen() {
-    return (4 + 4 * edgeTypes.length) + (4 + 4 * edgeTypeIndices.length) + (4 + 8 * neighborNodeIds.length) + (4
+    return (4 + 4 * edgeTypes.length) + (4 + 8 * neighborNodeIds.length) + (4
         + 4 * neighborNodeWeights.length);
   }
 }

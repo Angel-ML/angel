@@ -48,12 +48,12 @@ public class Node implements INode, IElement {
   /**
    * Accumulation sums of edge weights, dimension is equal to edgeTypes
    */
-  float[] accSumWeights;
+  float[] edgeAccSumWeights;
 
   /**
    * Total sum of edge weights
    */
-  float totalSumWeights;
+  float edgeTotalSumWeights;
 
   /**
    * Neighbor group positions in "neighbors", each neighbor group corresponding to an edge type
@@ -68,7 +68,7 @@ public class Node implements INode, IElement {
   /**
    * Accumulation sums of neighbor node weights
    */
-  float[] neighborsWeight;
+  float[] neighborAccSumWeights;
 
   /**
    * Long type feature indices
@@ -100,8 +100,8 @@ public class Node implements INode, IElement {
    */
   String[] binaryFeatures;
 
-  public Node(long id, int type, float weight, int[] edgeTypes, float[] accSumWeights,
-      float totalSumWeights, int[] neigborGroupIndices, long[] neighbors, float[] neighborsWeight,
+  public Node(long id, int type, float weight, int[] edgeTypes, float[] edgeAccSumWeights,
+      float edgeTotalSumWeights, int[] neigborGroupIndices, long[] neighbors, float[] neighborAccSumWeights,
       int[] longFeatureIndices, long[] longFeatures, int[] floatFeatureIndices,
       float[] floatFeatures,
       int[] binaryFeatureIndices, String[] binaryFeatures) {
@@ -109,11 +109,11 @@ public class Node implements INode, IElement {
     this.type = type;
     this.weight = weight;
     this.edgeTypes = edgeTypes;
-    this.accSumWeights = accSumWeights;
-    this.totalSumWeights = totalSumWeights;
+    this.edgeAccSumWeights = edgeAccSumWeights;
+    this.edgeTotalSumWeights = edgeTotalSumWeights;
     this.neigborGroupIndices = neigborGroupIndices;
     this.neighbors = neighbors;
-    this.neighborsWeight = neighborsWeight;
+    this.neighborAccSumWeights = neighborAccSumWeights;
     this.longFeatureIndices = longFeatureIndices;
     this.longFeatures = longFeatures;
     this.floatFeatureIndices = floatFeatureIndices;
@@ -146,20 +146,12 @@ public class Node implements INode, IElement {
     this.weight = weight;
   }
 
-  public float[] getAccSumWeights() {
-    return accSumWeights;
+  public float[] getEdgeAccSumWeights() {
+    return edgeAccSumWeights;
   }
 
-  public void setAccSumWeights(float[] accSumWeights) {
-    this.accSumWeights = accSumWeights;
-  }
-
-  public float getTotalSumWeights() {
-    return totalSumWeights;
-  }
-
-  public void setTotalSumWeights(float totalSumWeights) {
-    this.totalSumWeights = totalSumWeights;
+  public float getEdgeTotalSumWeights() {
+    return edgeTotalSumWeights;
   }
 
   public int[] getNeigborGroupIndices() {
@@ -178,12 +170,8 @@ public class Node implements INode, IElement {
     this.neighbors = neighbors;
   }
 
-  public float[] getNeighborsWeight() {
-    return neighborsWeight;
-  }
-
-  public void setNeighborsWeight(float[] neighborsWeight) {
-    this.neighborsWeight = neighborsWeight;
+  public float[] getNeighborAccSumWeights() {
+    return neighborAccSumWeights;
   }
 
   public int[] getLongFeatureIndices() {

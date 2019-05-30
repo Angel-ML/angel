@@ -13,10 +13,13 @@ public class SampleNeighborParam extends GetParam {
      */
     private int[] edgeTypes;
 
-    public SampleNeighborParam(int matrixId, long[] nodeIds, int[] edgeTypes) {
+    private int count;
+
+    public SampleNeighborParam(int matrixId, long[] nodeIds, int[] edgeTypes, int count) {
         super(matrixId);
         this.nodeIds = nodeIds;
         this.edgeTypes = edgeTypes;
+        this.count = count;
     }
 
     public long[] getNodeIds() {
@@ -27,4 +30,7 @@ public class SampleNeighborParam extends GetParam {
         return edgeTypes;
     }
 
+    public int getCount() {
+        return count;
+    }
 }

@@ -89,10 +89,7 @@ public class GetFullNeighbor extends GetFunc {
       }
 
       // Valid edge types
-      int [] validEdgeTypes = new int[validEdgeTypeNum];
-
-      // Store position for each valid edge type
-      int [] edgeTypeOffsets = new int[validEdgeTypeNum];
+      int [] validEdgeTypes = new int[neighborsNum];
 
       // Neighbors
       long [] neighborNodeIds = new long[neighborsNum];
@@ -100,7 +97,6 @@ public class GetFullNeighbor extends GetFunc {
       // Neighbors weights
       float [] neighborWeights = new float[neighborsNum];
 
-      validEdgeTypeNum = 0;
       neighborsNum = 0;
       for(int i = 0; i < edgeTypes.length; i++) {
         int edgeType = edgeTypes[i];
@@ -115,18 +111,17 @@ public class GetFullNeighbor extends GetFunc {
 
           // Get neighbor node weight
           for(int j = 0; j < len; j++) {
-            float preSumWeight = (startIndex + j) == 0 ? 0 : node.getNeighborsWeight()[startIndex + j - 1];
-            neighborWeights[neighborsNum + j] = node.getNeighborsWeight()[startIndex + j] - preSumWeight;
+            float preSumWeight = (startIndex + j) == 0 ? 0 : node.getNeighborAccSumWeights()[startIndex + j - 1];
+            neighborWeights[neighborsNum + j] = node.getNeighborAccSumWeights()[startIndex + j] - preSumWeight;
+
+            validEdgeTypes[neighborsNum + j] = edgeType;
           }
 
-          // Update offsets
           neighborsNum += len;
-          edgeTypeOffsets[validEdgeTypeNum] = neighborsNum;
-          validEdgeTypeNum++;
         }
       }
 
-      return new NodeIDWeightPairs(validEdgeTypes, edgeTypeOffsets, neighborNodeIds, neighborWeights);
+      return new NodeIDWeightPairs(validEdgeTypes, neighborNodeIds, neighborWeights);
     } else {
       return null;
     }
