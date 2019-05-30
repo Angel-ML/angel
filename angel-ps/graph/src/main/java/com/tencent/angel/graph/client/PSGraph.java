@@ -112,7 +112,7 @@ public class PSGraph implements IGraph {
   @Override
   public Map<Long, NodeIDWeightPairs> sampleNeighbor(long[] nodeIds, int[] edgeTypes, int count) {
     return ((SampleNeighborResult) matrixClient.get(new SampleNeighbor(
-            new SampleNeighborParam(matrixClient.getMatrixId(), nodeIds, edgeTypes))))
+            new SampleNeighborParam(matrixClient.getMatrixId(), nodeIds, edgeTypes, count))))
             .getNodeIdToNeighbors();
   }
 }
