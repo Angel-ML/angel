@@ -62,7 +62,7 @@ object AutoOfflineRunner {
     val className = "com.tencent.angel.spark.ml.classification." + network
     val model = GraphModel(className)
 
-    val learner = new AutoOfflineLearner
+    val learner = new AutoOfflineLearner().init()
     //learner.addParam("continuous", "double", MLConf.ML_LEARN_RATE, "[0.1:1:100]")
 
     actionType match {

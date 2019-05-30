@@ -38,7 +38,7 @@ import scala.reflect.ClassTag
 import scala.util.Random
 
 class AutoOfflineLearner(var tuneIter: Int = 20, var minimize: Boolean = true, var surrogate: String = "GaussianProcess",
-                         var earlyStopping: EarlyStopping = new EarlyStopping(patience = 0)) {
+                         var earlyStopping: EarlyStopping = null) {
 
   // Shared configuration with Angel-PS
   val conf = SharedConf.get()
@@ -222,22 +222,21 @@ class AutoOfflineLearner(var tuneIter: Int = 20, var minimize: Boolean = true, v
         resetParam(paramMap)
         model.resetParam(paramMap).graph.init(0)
         val result = train(data, model)
-        if(earlyStopping.pat > 0){
-          earlyStopping.update(result._1)
-          if (earlyStopping.earlyStop) {
-            println("Early stopping")
-            val result: (Vector, Double) = solver.optimal
-            solver.stop
-            println(s"Best configuration ${result._1.toArray.mkString(",")}, best performance: ${result._2}")
-            return
-          }
-          else {
-            solver.feed(config, result._1)
-          }
-        }
-        else {
-          solver.feed(config, result._1)
-        }
+        solver.feed(config, result._1)
+//        if (earlyStopping.pat > 0){
+//          earlyStopping.update(result._1)
+//          if (earlyStopping.earlyStop) {
+//            println("Early stopping")
+//            val result: (Vector, Double) = solver.optimal
+//            solver.stop
+//            println(s"Best configuration ${result._1.toArray.mkString(",")}, best performance: ${result._2}")
+//            return
+//          } else {
+//            solver.feed(config, result._1)
+//          }
+//        } else {
+//          solver.feed(config, result._1)
+//        }
       }
     }
     val result: (Vector, Double) = solver.optimal

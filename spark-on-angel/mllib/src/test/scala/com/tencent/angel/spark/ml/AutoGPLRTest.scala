@@ -16,7 +16,7 @@ class AutoGPLRTest extends PSFunSuite with SharedPSContext {
   override def beforeAll(): Unit = {
     super.beforeAll()
 
-    input = "../../data/census/census_148d_train.libsvm"
+    input = "../data/census/census_148d_train.libsvm"
 
     // build SharedConf with params
     SharedConf.get()
@@ -39,8 +39,8 @@ class AutoGPLRTest extends PSFunSuite with SharedPSContext {
     SharedConf.get().set(MLConf.ML_AUTO_TUNER_MODEL, "GaussianProcess")
     SharedConf.get().set(MLConf.ML_AUTO_TUNER_PARAMS,
       "ml.learn.rate|C|double|0.1:1:100#ml.learn.decay|D|float|0,0.01,0.1")
-    val Earlystop = new EarlyStopping(patience = 5, minimize = false, minDelta = 0.01)
-    learner = new AutoOfflineLearner(earlyStopping = Earlystop).init()
+    //val Earlystop = new EarlyStopping(patience = 5, minimize = false, minDelta = 0.01)
+    learner = new AutoOfflineLearner().init()
   }
 
   override def afterAll(): Unit = {

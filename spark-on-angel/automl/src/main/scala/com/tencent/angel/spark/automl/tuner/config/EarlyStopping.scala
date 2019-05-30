@@ -26,51 +26,30 @@ package com.tencent.angel.spark.automl.tuner.config
   * @param minimize   : Whether to minimize or maximize the val_score
   *                 Default: false
   */
-class EarlyStopping(patience:Int=5,
-                    var minDelta:Double = 0.0,
-                    minimize:Boolean=false) {
+class EarlyStopping(patience: Int = 5,
+                    minDelta: Double = 0.0,
+                    minimize: Boolean = false) {
 
   var counter: Int = 0
-  var bestScore: Double = Double.NegativeInfinity
+  var bestScore: Double = if (minimize) Double.PositiveInfinity else Double.NegativeInfinity
   var earlyStop: Boolean = false
   val pat = patience
 
-  def greater(a: Double, b: Double): Boolean = {
-    if (a > b) {
-      return true
-    }
-    else {
-      return false
-    }
-  }
+  def greater(a: Double, b: Double): Boolean = a > b
+  def less(a: Double, b: Double): Boolean = a < b
 
-  var monitorOp = greater _
+  val monitorOp: (Double, Double) => Boolean = if (minimize) less else greater
 
-  def less(a: Double, b: Double): Boolean = {
-    if (a > b) {
-      return false
-    }
-    else {
-      return true
-    }
-  }
-
-  if (minimize) {
-    monitorOp = less _
-    minDelta = -minDelta
-    bestScore = Double.PositiveInfinity
-  }
-
+  def bound(score: Double): Double = if (minimize) score + minDelta else score - minDelta
 
   def update(val_score: Double): Unit = {
     val score = val_score
-    if (monitorOp(score - minDelta, bestScore)) {
+    if (monitorOp(bound(score), bestScore)) {
       bestScore = score
       counter = 0
-    }
-    else {
+    } else {
       counter += 1
-      println(s"EarlyStopping counter: ${counter} out of ${patience}")
+      println(s"EarlyStopping counter: $counter out of $patience")
       if (counter >= patience) {
         earlyStop = true
       }
