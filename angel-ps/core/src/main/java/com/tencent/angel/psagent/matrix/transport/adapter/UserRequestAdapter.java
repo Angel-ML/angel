@@ -218,11 +218,14 @@ public class UserRequestAdapter {
     MatrixMeta meta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
 
     // Distinct get row requests
-    FutureResult<Vector> result;
+    FutureResult<Vector> result = null;
     Integer requestId = getRowSubrespons.get(request);
-    if (requestId != null) {
-      return requestIdToResultMap.get(requestId);
-    } else {
+
+    if(requestId != null) {
+      result = requestIdToResultMap.get(requestId);
+    }
+
+    if(result == null) {
       requestId = request.getRequestId();
       result = new FutureResult<>();
       GetRowPipelineCache responseCache =
@@ -246,9 +249,9 @@ public class UserRequestAdapter {
           matrixClient.getRowSplit(requestId, partList.get(i), rowIndex, clock);
         }
       }
-
-      return result;
     }
+
+    return result;
   }
 
   /**
@@ -1098,7 +1101,7 @@ public class UserRequestAdapter {
       this.result = result;
     }
 
-    private void mergeRowPipeline(GetRowPipelineCache pipelineCache) {
+    private void merge(PartitionResponseCache cache) {
       try {
         result.set((request).getGetFunc().merge(cache.getSubResponses()));
       } catch (Exception x) {
@@ -1109,9 +1112,7 @@ public class UserRequestAdapter {
 
     @Override
     public void run() {
-      if (cache instanceof GetRowPipelineCache) {
-        mergeRowPipeline((GetRowPipelineCache) cache);
-      }
+      merge(cache);
     }
   }
 
