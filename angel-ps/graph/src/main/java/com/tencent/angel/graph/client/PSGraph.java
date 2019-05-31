@@ -58,8 +58,8 @@ public class PSGraph implements IGraph {
   }
 
   @Override
-  public int[][] getNodeType(long[] nodeIds) {
-    return new int[0][];
+  public int[] getNodeType(long[] nodeIds) {
+    return new int[0];
   }
 
   @Override

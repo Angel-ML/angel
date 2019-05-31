@@ -32,7 +32,7 @@ public interface IGraph {
 
   EdgeId[] sampleEdge(int edgeType, int count);
 
-  int[][] getNodeType(long[] nodeIds);
+  int[] getNodeType(long[] nodeIds);
 
   float[][] getNodeFloatFeature(long[] nodeIds, int[] fids);
 
