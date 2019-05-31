@@ -1,6 +1,7 @@
-package com.tencent.angel.ps.storage.vector.storage;
+package com.tencent.angel.graph.ps.storage.vector.storage;
 
 import com.tencent.angel.ps.storage.vector.element.IElement;
+import com.tencent.angel.ps.storage.vector.storage.LongElementStorage;
 import io.netty.buffer.ByteBuf;
 
 public class NodeArrayElementStorage extends LongElementStorage {

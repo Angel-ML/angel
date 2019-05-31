@@ -1,7 +1,8 @@
-package com.tencent.angel.ps.storage.partition.storage;
+package com.tencent.angel.graph.ps.storage.partition.storage;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ps.storage.partition.storage.DenseServerRowsStorage;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.ps.storage.vector.ServerRowFactory;
 import com.tencent.angel.ps.storage.vector.element.IElement;
