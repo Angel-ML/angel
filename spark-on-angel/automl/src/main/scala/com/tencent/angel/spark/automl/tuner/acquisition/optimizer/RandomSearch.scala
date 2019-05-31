@@ -17,12 +17,13 @@
 
 
 package com.tencent.angel.spark.automl.tuner.acquisition.optimizer
-
+import org.apache.spark.ml.linalg.Vectors
 import com.tencent.angel.spark.automl.tuner.TunerParam
 import com.tencent.angel.spark.automl.tuner.acquisition.Acquisition
 import com.tencent.angel.spark.automl.tuner.config.{Configuration, ConfigurationSpace}
 import org.apache.commons.logging.{Log, LogFactory}
 
+import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 /**
@@ -41,30 +42,64 @@ class RandomSearch(
 
   val rd = new Random(seed)
 
-  override def maximize(numPoints: Int, sorted: Boolean = true): Array[(Double, Configuration)] = {
+  override def maximize(numPoints: Int, sorted: Boolean = true): (Array[(Double, Configuration)],Array[Array[Double]]) = {
     //println(s"maximize RandomSearch")
-    val configs: Array[Configuration] = configSpace.sample(TunerParam.sampleSize)
+    val (configs: Array[Configuration],cateValues:Array[Array[Double]])  = configSpace.sample(TunerParam.sampleSize)
     if (configs.isEmpty) {
-      Array[(Double, Configuration)]()
+      (Array[(Double, Configuration)](),Array[Array[Double]]())
     } else {
       //configs.foreach { config =>
       //  println(s"sample a configuration: ${config.getVector.toArray.mkString(",")}")
       //}
       val retConfigs = if (sorted) {
         configs.map { config =>
-          (acqFunc.compute(config.getVector)._1, config)
+          val configArray = config.getVector.toArray
+          var oneHotConfig = new ArrayBuffer[Double]()
+          for ( (cate, config) <- (cateValues zip configArray)){
+            if (cate.contains(Double.MaxValue)){
+              oneHotConfig +=config
+            }
+            else {
+              cate.foreach{ value =>
+                if(value == config){
+                  oneHotConfig += 1.0
+                }
+                else {
+                  oneHotConfig += 0.0
+                }
+              }
+            }
+          }
+          (acqFunc.compute(Vectors.dense(oneHotConfig.toArray))._1, config)
         }.sortWith(_._1 > _._1).take(numPoints)
       }
       else {
         rd.shuffle(configs.map { config =>
-          (acqFunc.compute(config.getVector)._1, config)
+          val configArray = config.getVector.toArray
+          var oneHotConfig = new ArrayBuffer[Double]()
+          for ( (cate, config) <- (cateValues zip configArray)){
+            if (cate.contains(Double.MaxValue)){
+              oneHotConfig +=config
+            }
+            else {
+              cate.foreach{ value =>
+                if(value == config){
+                  oneHotConfig += 1.0
+                }
+                else {
+                  oneHotConfig += 0.0
+                }
+              }
+            }
+          }
+          (acqFunc.compute(Vectors.dense(oneHotConfig.toArray))._1, config)
         }.toTraversable).take(numPoints).toArray
       }
-      retConfigs
+      (retConfigs,cateValues)
     }
   }
 
-  override def maximize: (Double, Configuration) = {
-    maximize(1, true).head
+  override def maximize: (Array[(Double, Configuration)],Array[Array[Double]]) = {
+    maximize(1, true)
   }
 }

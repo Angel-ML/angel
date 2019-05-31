@@ -119,9 +119,9 @@ class ConfigurationSpace(
     if (hasInfinite) Int.MaxValue else size
   }
 
-  def sample(size: Int): Array[Configuration] = {
+  def sample(size: Int): (Array[Configuration],Array[Array[Double]])  = {
     var configs: ArrayBuffer[Configuration] = new ArrayBuffer[Configuration]
-
+    var cateValues:ArrayBuffer[Array[Double]] = new ArrayBuffer[Array[Double]]()
     var missing: Int = 0
     val left = if (spaceSize() == Int.MaxValue) Int.MaxValue else spaceSize - preX.size
     val trueSize = left min size
@@ -132,6 +132,12 @@ class ConfigurationSpace(
       param2Idx.foreach { case (paramName, paramIdx) =>
         paramDict.get(paramName) match {
           case Some(param) =>
+            val splits = param.getClass().getName().split('.')
+            if(splits(splits.length-1) == "ContinuousSpace"){
+              cateValues +=Array(Double.MaxValue)}
+            else {
+              cateValues +=param.getValues
+            }
             param.sample(missing).map(asDouble).zipWithIndex.foreach { case (f: Double, i: Int) =>
               vectors(i).toArray(paramIdx) = f
             }
@@ -144,12 +150,12 @@ class ConfigurationSpace(
       }
     } while (configs.length < trueSize)
 
-    configs.toArray
+    (configs.toArray,cateValues.toArray)
   }
 
-  def randomSample(size: Int): Array[Configuration] = {
+  def randomSample(size: Int): (Array[Configuration],Array[Array[Double]]) = {
     var configs: ArrayBuffer[Configuration] = new ArrayBuffer[Configuration]
-
+    var cateValues:ArrayBuffer[Array[Double]] = new ArrayBuffer[Array[Double]]()
     var missing: Int = 0
     val left = if (spaceSize() == Int.MaxValue) Int.MaxValue else spaceSize - preX.size
     val trueSize = left min size
@@ -160,6 +166,12 @@ class ConfigurationSpace(
       param2Idx.foreach { case (paramName, paramIdx) =>
         paramDict.get(paramName) match {
           case Some(param) =>
+            val splits = param.getClass().getName().split('.')
+            if(splits(splits.length-1) == "ContinuousSpace"){
+              cateValues +=Array(Double.MaxValue)}
+            else {
+              cateValues +=param.getValues
+            }
             param.sample(missing).map(asDouble).zipWithIndex.foreach { case (f: Double, i: Int) =>
               vectors(i).toArray(paramIdx) = f
             }
@@ -171,10 +183,26 @@ class ConfigurationSpace(
         configs += new Configuration(param2Idx, param2Doc, vec)
       }
     } while (configs.length < trueSize)
-    configs.toArray
+    (configs.toArray,cateValues.toArray)
   }
 
-  def gridSample(size: Int): Array[Configuration] = {
+  def gridSample(size: Int): (Array[Configuration],Array[Array[Double]]) = {
+    //get cateValues
+    var cateValues = new ArrayBuffer[Array[Double]]()
+    param2Idx.foreach { case (paramName, paramIdx) =>
+      paramDict.get(paramName) match {
+        case Some(param) =>
+          val splits = param.getClass().getName().split('.')
+          if(splits(splits.length-1) == "ContinuousSpace"){
+            cateValues +=Array(Double.MaxValue)
+          }
+          else {
+            cateValues +=param.getValues
+          }
+        case None => LOG.info(s"Cannot find $paramName.")
+      }
+    }
+
     if (gridValues.isEmpty) {
       gridValues = getGridConfigs()
     }
@@ -184,11 +212,11 @@ class ConfigurationSpace(
       s"remaining ${gridValues.size - startIndice}, sample from $startIndice to $endIndice")
     gridIndice = endIndice
     if (startIndice == gridValues.size) {
-      Array.empty
+      (Array.empty,cateValues.toArray)
     } else {
       val ret = new Array[Configuration](endIndice - startIndice)
       Array.copy(gridValues, startIndice, ret, 0, endIndice - startIndice)
-      ret
+      (ret,cateValues.toArray)
     }
   }
 
@@ -205,10 +233,13 @@ class ConfigurationSpace(
     }
 
     val paramsArray: Array[Array[Double]] = tmp.toArray
+    println("cccccccccc")
+    println(paramsArray.deep.mkString("\n"))
 
     if (numParams == 1) {
+      val paramsGrid: Array[Array[Double]] = paramsArray
       var tmp: ArrayBuffer[Vector] = new ArrayBuffer[Vector]
-      paramsArray.head.foreach {
+      paramsGrid.foreach {
         tmp += Vectors.dense(_)
       }
       val paramsVec = tmp.toArray
