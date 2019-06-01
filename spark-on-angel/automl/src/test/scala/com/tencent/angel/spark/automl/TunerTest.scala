@@ -100,28 +100,4 @@ class TunerTest {
     println(s"Best configuration ${result._1.toArray.mkString(",")}, best performance: ${result._2}")
   }
 
-  @Test def testZwt(): Unit = {
-    val cateValues = Array(Array(Double.MaxValue),Array(Double.MaxValue),Array(1.0,2.0,3.0))
-    val configVec = Array(4.0,5.0,2.0)
-    var oneHotConfig = new ArrayBuffer[Double]()
-    for ( (cate, config) <- (cateValues zip configVec)){
-      if (cate.contains(Double.MaxValue)){
-        oneHotConfig +=config
-      }
-      else {
-        cate.foreach{ value =>
-          if(value == config){
-            oneHotConfig += 1.0
-          }
-          else {
-            oneHotConfig += 0.0
-          }
-        }
-      }
-    }
-//    println(Vectors.dense(oneHotConfig.toArray))
-    val b = configVec.map(_+1.0)
-    println(b.toArray)
-  }
-
 }

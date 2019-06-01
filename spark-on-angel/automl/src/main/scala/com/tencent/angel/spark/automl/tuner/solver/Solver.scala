@@ -128,12 +128,12 @@ class Solver(
       configArrays.foreach{ config =>
         val configArray = config.toArray
         var oneHotConfig = new ArrayBuffer[Double]()
-        for ( (cate, config) <- (features zip configArray)){
-          if (cate.contains(Double.MaxValue)){
+        for ( (feature, config) <- (features zip configArray)){
+          if (feature.contains(Double.MaxValue)){
             oneHotConfig +=config
           }
           else {
-            cate.foreach{ value =>
+            feature.foreach{ value =>
               if(value == config){
                 oneHotConfig += 1.0
               }
@@ -158,12 +158,12 @@ class Solver(
   def feed(config: Configuration, y: Double): Unit = {
     val configArray = config.getVector.toArray
     var oneHotConfig = new ArrayBuffer[Double]()
-    for ( (cate, config) <- (features zip configArray)){
-      if (cate.contains(Double.MaxValue)){
+    for ( (feature, config) <- (features zip configArray)){
+      if (feature.contains(Double.MaxValue)){
         oneHotConfig +=config
       }
       else {
-        cate.foreach{ value =>
+        feature.foreach{ value =>
           if(value == config){
             oneHotConfig += 1.0
           }
@@ -181,12 +181,12 @@ class Solver(
 
   def optimal(): (Vector, Double) = {
     var configArray:ArrayBuffer[Double] = new ArrayBuffer[Double]()
-    for ((a,b) <- features.flatMap(_.toList) zip surrogate.curBest._1.toArray) {
-      if(a==Double.MaxValue) {
-        configArray +=  b
+    for ((feature,config) <- features.flatMap(_.toList) zip surrogate.curBest._1.toArray) {
+      if(feature==Double.MaxValue) {
+        configArray +=  config
       }
-      else if(b!=0.0) {
-        configArray += a
+      else if(config!=0.0) {
+        configArray += feature
       }
     }
     val configVec = Vectors.dense(configArray.toArray)
