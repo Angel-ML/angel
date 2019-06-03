@@ -71,9 +71,6 @@ public class GetFullNeighbor extends GetFunc {
 
   private NodeIDWeightPairs getNeighbors(Node node, int [] edgeTypes) {
     if(node != null) {
-      // Valid edge type for this node
-      int validEdgeTypeNum = 0;
-
       // Total neighbors number of valid edge types for this node
       int neighborsNum = 0;
 
@@ -81,7 +78,6 @@ public class GetFullNeighbor extends GetFunc {
       for(int i = 0; i < edgeTypes.length; i++) {
         int edgeType = edgeTypes[i];
         if(edgeType >= 0 && edgeType < node.getEdgeTypes().length) {
-          validEdgeTypeNum++;
           int startIndex = edgeType > 0 ? node.getNeigborGroupIndices()[i - 1] : 0;
           int endIndex = node.getNeigborGroupIndices()[edgeType];
           neighborsNum += (endIndex - startIndex);
