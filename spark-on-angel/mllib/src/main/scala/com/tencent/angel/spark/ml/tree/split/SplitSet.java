@@ -26,8 +26,6 @@ public class SplitSet extends SplitEntry {
 
   private float[] edges;
   private int firstFlow;
-  // edges=[x,...] firstFlow=1 => go to right if < x and go to left if > x
-  // edges=[x,...] firstFlow=0 => go to left if < x and go to right if > x
   private int defaultFlow;
 
   public SplitSet() {
