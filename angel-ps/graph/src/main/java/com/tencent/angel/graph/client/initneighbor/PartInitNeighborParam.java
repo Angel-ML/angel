@@ -12,14 +12,26 @@ import java.util.Map;
 public class PartInitNeighborParam extends PartitionUpdateParam {
     private NodeEdgesPair[] nodeEdgesPairs;
 
-    public PartInitNeighborParam(int matrixId, PartitionKey partKey,
-                                 NodeEdgesPair[] nodeEdgesPairs) {
+    /**
+     * Store position: start index in nodeIds
+     */
+    private int startIndex;
+
+    /**
+     * Store position: end index in nodeIds
+     */
+    private int endIndex;
+
+    public PartInitNeighborParam(int matrixId, PartitionKey partKey, NodeEdgesPair[] nodeEdgesPairs
+            , int startIndex, int endIndex) {
         super(matrixId, partKey);
         this.nodeEdgesPairs = nodeEdgesPairs;
+        this.startIndex = startIndex;
+        this.endIndex = endIndex;
     }
 
     public PartInitNeighborParam() {
-        this(0, null, null);
+        this(0, null, null, 0, 0);
     }
 
     public NodeEdgesPair[] getNodeEdgesPairs() {
@@ -30,9 +42,10 @@ public class PartInitNeighborParam extends PartitionUpdateParam {
     public void serialize(ByteBuf buf) {
         super.serialize(buf);
 
-        buf.writeInt(nodeEdgesPairs.length);
+        buf.writeInt(endIndex - startIndex);
 
-        for (NodeEdgesPair nodeEdgesPair : nodeEdgesPairs) {
+        for (int i = startIndex; i < endIndex; i++) {
+            NodeEdgesPair nodeEdgesPair = nodeEdgesPairs[i];
             nodeEdgesPair.getNode().serialize(buf);
 
             Edge[] edges = nodeEdgesPair.getEdges();

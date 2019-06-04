@@ -17,6 +17,8 @@
 
 package com.tencent.angel.graph.data;
 
+import java.util.Objects;
+
 public class EdgeId {
   private long fromNodeId;
   private long toNodeId;
@@ -38,5 +40,22 @@ public class EdgeId {
 
   public int getType() {
     return type;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+
+    if (o == null || getClass() != o.getClass()) return false;
+
+    EdgeId edgeId = (EdgeId) o;
+    return fromNodeId == edgeId.fromNodeId &&
+            toNodeId == edgeId.toNodeId &&
+            type == edgeId.type;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(fromNodeId, toNodeId, type);
   }
 }

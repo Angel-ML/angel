@@ -19,6 +19,7 @@ package com.tencent.angel.graph.client.sampleneighbor;
 
 import com.tencent.angel.graph.client.NodeIDWeightPairs;
 import com.tencent.angel.graph.data.Node;
+import com.tencent.angel.graph.ps.storage.vector.GraphServerRow;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
@@ -52,7 +53,7 @@ public class SampleNeighbor extends GetFunc {
         PartSampleNeighborParam param = (PartSampleNeighborParam) partParam;
         ServerMatrix matrix = psContext.getMatrixStorageManager().getMatrix(partParam.getMatrixId());
         RowBasedPartition part = (RowBasedPartition) matrix.getPartition(partParam.getPartKey().getPartitionId());
-        ServerLongAnyRow row = (ServerLongAnyRow) part.getRow(0);
+        GraphServerRow row = (GraphServerRow) part.getRow(0);
 
         // Results
         NodeIDWeightPairs[] results = new NodeIDWeightPairs[param.getNodeIds().length];
@@ -60,7 +61,7 @@ public class SampleNeighbor extends GetFunc {
         // Get neighbors for each node
         long[] nodeIds = param.getNodeIds();
         for (int i = 0; i < nodeIds.length; i++) {
-            results[i] = sampleNeighbor((Node) row.get(nodeIds[i]), param.getEdgeTypes(), param.getCount());
+            results[i] = sampleNeighbor(row.getNode(nodeIds[i]), param.getEdgeTypes(), param.getCount());
         }
 
         return new PartSampleNeighborResult(part.getPartitionKey().getPartitionId(), results);

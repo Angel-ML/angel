@@ -36,9 +36,8 @@ public class InitNeighborParam extends UpdateParam {
             }
 
             if (length > 0) {
-                NodeEdgesPair[] subNodeEdgesPairs = Arrays.copyOfRange(nodeEdgesPairs, nodeIndex - length, nodeIndex);
                 partParams.add(new PartInitNeighborParam(matrixId,
-                        partitions.get(partIndex), subNodeEdgesPairs));
+                        partitions.get(partIndex), nodeEdgesPairs, nodeIndex - length, nodeIndex));
             }
             partIndex++;
         }
