@@ -2,32 +2,24 @@ package com.tencent.angel.graph.client.initneighbor;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.graph.data.Node;
+import com.tencent.angel.graph.data.NodeEdgesPair;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.psagent.PSAgentContext;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class InitNeighborParam extends UpdateParam {
-    private Map<Long, Node> nodeIdToNode;
+    private NodeEdgesPair[] nodeEdgesPairs;
 
-    public InitNeighborParam(int matrixId, Map<Long, Node> nodeIdToNodes) {
+    public InitNeighborParam(int matrixId, NodeEdgesPair[] nodeEdgesPairs) {
         super(matrixId);
-        this.nodeIdToNode = nodeIdToNodes;
+        this.nodeEdgesPairs = nodeEdgesPairs;
     }
 
     @Override
     public List<PartitionUpdateParam> split() {
-        long[] nodeIndices = new long[nodeIdToNode.size()];
-        int i = 0;
-        for (long nodeId : nodeIdToNode.keySet()) {
-            nodeIndices[i++] = nodeId;
-        }
-
-        Arrays.sort(nodeIndices);
+        Arrays.sort(nodeEdgesPairs);
 
         List<PartitionUpdateParam> partParams = new ArrayList<>();
         List<PartitionKey> partitions =
@@ -35,17 +27,18 @@ public class InitNeighborParam extends UpdateParam {
 
         int nodeIndex = 0;
         int partIndex = 0;
-        while (nodeIndex < nodeIndices.length || partIndex < partitions.size()) {
+        while (nodeIndex < nodeEdgesPairs.length || partIndex < partitions.size()) {
             int length = 0;
             long endOffset = partitions.get(partIndex).getEndCol();
-            while (nodeIndex < nodeIndices.length && nodeIndices[nodeIndex] < endOffset) {
+            while (nodeIndex < nodeEdgesPairs.length && nodeEdgesPairs[nodeIndex].getNode().getId() < endOffset) {
                 nodeIndex++;
                 length++;
             }
 
             if (length > 0) {
+                NodeEdgesPair[] subNodeEdgesPairs = Arrays.copyOfRange(nodeEdgesPairs, nodeIndex - length, nodeIndex);
                 partParams.add(new PartInitNeighborParam(matrixId,
-                        partitions.get(partIndex), nodeIdToNode, nodeIndices, nodeIndex - length, nodeIndex));
+                        partitions.get(partIndex), subNodeEdgesPairs));
             }
             partIndex++;
         }

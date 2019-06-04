@@ -124,6 +124,9 @@ public class Node implements INode, IElement {
     this.binaryFeatures = binaryFeatures;
   }
 
+  public Node() {
+  }
+
   public long getId() {
     return id;
   }
@@ -247,10 +250,10 @@ public class Node implements INode, IElement {
     byte[] binaryFeaturesClone = Arrays.copyOf(binaryFeatures, binaryFeatures.length);
 
     return new Node(id, type, weight, edgeTypeClone, edgeAccSumWeightsClone,
-            edgeTotalSumWeights, neigborGroupIndicesClone,
-            neighborsClone, neighborAccSumWeightsClone,
-            longFeatureIndicesClone, longFeaturesClone, floatFeatureIndicesClone, floatFeaturesClone,
-            binaryFeatureIndicesClone, binaryFeaturesClone);
+      edgeTotalSumWeights, neigborGroupIndicesClone,
+      neighborsClone, neighborAccSumWeightsClone,
+      longFeatureIndicesClone, longFeaturesClone, floatFeatureIndicesClone, floatFeaturesClone,
+      binaryFeatureIndicesClone, binaryFeaturesClone);
   }
 
   @Override

@@ -111,7 +111,7 @@ public class SampleNeighbor extends GetFunc {
             int edgeType = subEdgeTypes[randomSelect(subEdgeAccSumWeights, 0, edgeTypeNum)];
 
             // sample neighbor
-            int startIndex = edgeType > 0 ? node.getNeigborGroupIndices()[i - 1] : 0;
+            int startIndex = edgeType > 0 ? node.getNeigborGroupIndices()[edgeType - 1] : 0;
             int endIndex = node.getNeigborGroupIndices()[edgeType];
             int neighborNodeId = randomSelect(node.getNeighborAccSumWeights(), startIndex, endIndex);
             float preSumWeight = neighborNodeId <= 0 ? 0 : node.getNeighborAccSumWeights()[neighborNodeId - 1];

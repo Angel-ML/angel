@@ -1,29 +1,85 @@
 package com.tencent.angel.graph.client.initneighbor;
 
 import com.tencent.angel.PartitionKey;
+import com.tencent.angel.graph.data.Edge;
 import com.tencent.angel.graph.data.Node;
+import com.tencent.angel.graph.data.NodeEdgesPair;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
+import io.netty.buffer.ByteBuf;
 
 import java.util.Map;
 
 public class PartInitNeighborParam extends PartitionUpdateParam {
-    private Map<Long, Node> nodeIdToNode;
-    private long[] nodeIds;
-    private transient int startIndex;
-    private transient int endIndex;
+    private NodeEdgesPair[] nodeEdgesPairs;
 
     public PartInitNeighborParam(int matrixId, PartitionKey partKey,
-                                 Map<Long, Node> nodeIdToNode, long[] nodeIds, int startIndex, int endIndex) {
+                                 NodeEdgesPair[] nodeEdgesPairs) {
         super(matrixId, partKey);
-        this.nodeIdToNode = nodeIdToNode;
-        this.nodeIds = nodeIds;
-        this.startIndex = startIndex;
-        this.endIndex = endIndex;
+        this.nodeEdgesPairs = nodeEdgesPairs;
     }
 
-    public Map<Long, Node> getNodeIdToNode() {
-        return nodeIdToNode;
+    public PartInitNeighborParam() {
+        this(0, null, null);
     }
 
+    public NodeEdgesPair[] getNodeEdgesPairs() {
+        return nodeEdgesPairs;
+    }
 
+    @Override
+    public void serialize(ByteBuf buf) {
+        super.serialize(buf);
+
+        buf.writeInt(nodeEdgesPairs.length);
+
+        for (NodeEdgesPair nodeEdgesPair : nodeEdgesPairs) {
+            nodeEdgesPair.getNode().serialize(buf);
+
+            Edge[] edges = nodeEdgesPair.getEdges();
+            int numEdges = edges.length;
+            buf.writeInt(numEdges);
+
+            for (Edge edge : edges) {
+                edge.serialize(buf);
+            }
+        }
+    }
+
+    @Override
+    public void deserialize(ByteBuf buf) {
+        super.deserialize(buf);
+
+        int nodeEdgesNum = buf.readInt();
+
+        nodeEdgesPairs = new NodeEdgesPair[nodeEdgesNum];
+        for (int i = 0; i < nodeEdgesNum; i++) {
+            Node node = new Node();
+            node.deserialize(buf);
+
+            int numEdges = buf.readInt();
+            Edge[] edges = new Edge[numEdges];
+
+            for (int j = 0; j < numEdges; j++) {
+                Edge edge = new Edge();
+                edge.deserialize(buf);
+                edges[j] = edge;
+            }
+            nodeEdgesPairs[i] = new NodeEdgesPair(node, edges);
+        }
+    }
+
+    @Override
+    public int bufferLen() {
+        int len = super.bufferLen();
+        len += 4;
+        for (NodeEdgesPair nodeEdgesPair : nodeEdgesPairs) {
+            len += nodeEdgesPair.getNode().bufferLen();
+
+            len += 4;
+            for (Edge edge : nodeEdgesPair.getEdges()) {
+                len += edge.bufferLen();
+            }
+        }
+        return len;
+    }
 }
