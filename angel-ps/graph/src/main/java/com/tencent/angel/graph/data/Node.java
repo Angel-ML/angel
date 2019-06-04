@@ -100,13 +100,13 @@ public class Node implements INode, IElement {
   /**
    * Binary feature values
    */
-  String binaryFeatures;
+  byte[] binaryFeatures;
 
   public Node(long id, int type, float weight, int[] edgeTypes, float[] edgeAccSumWeights,
       float edgeTotalSumWeights, int[] neigborGroupIndices, long[] neighbors, float[] neighborAccSumWeights,
       int[] longFeatureIndices, long[] longFeatures, int[] floatFeatureIndices,
       float[] floatFeatures,
-      int[] binaryFeatureIndices, String binaryFeatures) {
+      int[] binaryFeatureIndices, byte[] binaryFeatures) {
     this.id = id;
     this.type = type;
     this.weight = weight;
@@ -224,11 +224,11 @@ public class Node implements INode, IElement {
     this.binaryFeatureIndices = binaryFeatureIndices;
   }
 
-  public String getBinaryFeatures() {
+  public byte[] getBinaryFeatures() {
     return binaryFeatures;
   }
 
-  public void setBinaryFeatures(String binaryFeatures) {
+  public void setBinaryFeatures(byte[] binaryFeatures) {
     this.binaryFeatures = binaryFeatures;
   }
 
@@ -244,8 +244,7 @@ public class Node implements INode, IElement {
     int[] floatFeatureIndicesClone = Arrays.copyOf(floatFeatureIndices, floatFeatureIndices.length);
     float[] floatFeaturesClone = Arrays.copyOf(floatFeatures, floatFeatures.length);
     int[] binaryFeatureIndicesClone = Arrays.copyOf(binaryFeatureIndices, binaryFeatureIndices.length);
-    byte[] binaryFeaturesBytes = binaryFeatures.getBytes();
-    String binaryFeaturesClone = new String(Arrays.copyOf(binaryFeaturesBytes, binaryFeaturesBytes.length));
+    byte[] binaryFeaturesClone = Arrays.copyOf(binaryFeatures, binaryFeatures.length);
 
     return new Node(id, type, weight, edgeTypeClone, edgeAccSumWeightsClone,
             edgeTotalSumWeights, neigborGroupIndicesClone,
@@ -318,10 +317,9 @@ public class Node implements INode, IElement {
       buf.writeInt(binaryFeatureIndex);
     }
 
-    byte[] binaryFeaturesBytes = binaryFeatures.getBytes();
-    buf.writeInt(binaryFeaturesBytes.length);
+    buf.writeInt(binaryFeatures.length);
 
-    buf.writeBytes(binaryFeaturesBytes);
+    buf.writeBytes(binaryFeatures);
   }
 
   @Override
@@ -402,7 +400,7 @@ public class Node implements INode, IElement {
     }
 
     int binaryFeatureValueNum = buf.readInt();
-    binaryFeatures = new String(buf.readBytes(binaryFeatureValueNum).array());
+    binaryFeatures = buf.readBytes(binaryFeatureValueNum).array();
   }
 
   @Override
@@ -411,6 +409,6 @@ public class Node implements INode, IElement {
             (4 + edgeTypes.length * 4 + neighbors.length * 8 + neighborAccSumWeights.length * 4) +
             (8 + longFeatureIndices.length * 4 + longFeatures.length * 8) +
             (8 + floatFeatureIndices.length * 4 + floatFeatures.length * 4) +
-            (8 + binaryFeatureIndices.length * 4 + binaryFeatures.getBytes().length);
+            (8 + binaryFeatureIndices.length * 4 + binaryFeatures.length);
   }
 }

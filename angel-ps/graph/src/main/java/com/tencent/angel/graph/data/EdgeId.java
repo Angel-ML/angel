@@ -18,7 +18,25 @@
 package com.tencent.angel.graph.data;
 
 public class EdgeId {
-  long fromNodeId;
-  long toNodeId;
-  int type;
+  private long fromNodeId;
+  private long toNodeId;
+  private int type;
+
+  public EdgeId(long fromNodeId, long toNodeId, int type) {
+    this.fromNodeId = fromNodeId;
+    this.toNodeId = toNodeId;
+    this.type = type;
+  }
+
+  public long getFromNodeId() {
+    return fromNodeId;
+  }
+
+  public long getToNodeId() {
+    return toNodeId;
+  }
+
+  public int getType() {
+    return type;
+  }
 }

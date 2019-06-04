@@ -23,28 +23,20 @@ import io.netty.buffer.ByteBuf;
 public class Edge implements IEdge, IElement {
   EdgeId id;
   int type;
-
   float weight;
-  int [] neigborGroupIndices;
-  long [] neighbors;
-  float [] neighborsWeight;
   int [] longFeatureIndices;
   long [] longFeatures;
   int [] floatFeatureIndices;
   float [] floatFeatures;
   int [] binaryFeatureIndices;
-  String [] binaryFeatures;
+  byte [] binaryFeatures;
 
-  public Edge(EdgeId id, int type, float weight, int[] neigborGroupIndices, long[] neighbors,
-      float[] neighborsWeight, int[] longFeatureIndices, long[] longFeatures,
+  public Edge(EdgeId id, int type, float weight,  int[] longFeatureIndices, long[] longFeatures,
       int[] floatFeatureIndices, float[] floatFeatures, int[] binaryFeatureIndices,
-      String[] binaryFeatures) {
+      byte[] binaryFeatures) {
     this.id = id;
     this.type = type;
     this.weight = weight;
-    this.neigborGroupIndices = neigborGroupIndices;
-    this.neighbors = neighbors;
-    this.neighborsWeight = neighborsWeight;
     this.longFeatureIndices = longFeatureIndices;
     this.longFeatures = longFeatures;
     this.floatFeatureIndices = floatFeatureIndices;
@@ -75,30 +67,6 @@ public class Edge implements IEdge, IElement {
 
   public void setWeight(float weight) {
     this.weight = weight;
-  }
-
-  public int[] getNeigborGroupIndices() {
-    return neigborGroupIndices;
-  }
-
-  public void setNeigborGroupIndices(int[] neigborGroupIndices) {
-    this.neigborGroupIndices = neigborGroupIndices;
-  }
-
-  public long[] getNeighbors() {
-    return neighbors;
-  }
-
-  public void setNeighbors(long[] neighbors) {
-    this.neighbors = neighbors;
-  }
-
-  public float[] getNeighborsWeight() {
-    return neighborsWeight;
-  }
-
-  public void setNeighborsWeight(float[] neighborsWeight) {
-    this.neighborsWeight = neighborsWeight;
   }
 
   public int[] getLongFeatureIndices() {
@@ -141,11 +109,11 @@ public class Edge implements IEdge, IElement {
     this.binaryFeatureIndices = binaryFeatureIndices;
   }
 
-  public String[] getBinaryFeatures() {
+  public byte[] getBinaryFeatures() {
     return binaryFeatures;
   }
 
-  public void setBinaryFeatures(String[] binaryFeatures) {
+  public void setBinaryFeatures(byte[] binaryFeatures) {
     this.binaryFeatures = binaryFeatures;
   }
 
