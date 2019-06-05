@@ -22,7 +22,7 @@ abstract class JoinLayer(name: String, outputDim: Int, val inputLayers: Array[La
       val inputs = inputLayers.map { layer =>
         val name = layer.name
         val newName = if (usedNames.contains(name)) {
-          name + "xx"
+          name + "_x"
         } else {
           usedNames += name
           name
