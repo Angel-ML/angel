@@ -19,9 +19,11 @@ package com.tencent.angel.ml.core.network.layers
 
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.optimizer.Optimizer
-import com.tencent.angel.ml.core.utils.LayerKeys
+import com.tencent.angel.ml.core.utils.{LayerKeys, MLException}
 import com.tencent.angel.ml.core.variable.VariableManager
-import com.tencent.angel.ml.math2.matrix.Matrix
+import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, BlasMatrix, Matrix, RBCompIntDoubleMatrix, RBCompIntFloatMatrix}
+import com.tencent.angel.ml.math2.ufuncs.Ufuncs
+import com.tencent.angel.ml.math2.utils.MatrixUtils
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 import org.json4s.native.Serialization
@@ -110,7 +112,33 @@ abstract class Layer(val name: String, val outputDim: Int)(implicit val graph: G
       if (gradCollection == null) {
         gradCollection = csLayer.backward(this).copy()
       } else {
-        gradCollection.iadd(csLayer.backward(this))
+        val temp_ = csLayer.backward(this)
+        val temp = gradCollection match {
+          case x: BlasMatrix =>
+            temp_ match {
+              case y: BlasMatrix =>
+                y
+              case y: RBCompIntDoubleMatrix =>
+                MatrixUtils.rbCompDense2Blas(y.asInstanceOf[RBCompIntDoubleMatrix])
+              case y: RBCompIntFloatMatrix =>
+                MatrixUtils.rbCompDense2Blas(y.asInstanceOf[RBCompIntFloatMatrix])
+            }
+          case x: RBCompIntDoubleMatrix =>
+            temp_ match {
+              case y: BlasDoubleMatrix =>
+                MatrixUtils.blas2RBCompDense(y.asInstanceOf[BlasDoubleMatrix], gradCollection.asInstanceOf[RBCompIntDoubleMatrix].getSubDim)
+              case y: RBCompIntDoubleMatrix =>
+                y
+            }
+          case x: RBCompIntFloatMatrix =>
+            temp_ match {
+              case y: BlasFloatMatrix =>
+                MatrixUtils.blas2RBCompDense(y.asInstanceOf[BlasDoubleMatrix], gradCollection.asInstanceOf[RBCompIntDoubleMatrix].getSubDim)
+              case y: RBCompIntFloatMatrix =>
+                y
+            }
+        }
+        gradCollection.iadd(temp)
       }
     }
 

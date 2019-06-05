@@ -18,8 +18,16 @@ abstract class JoinLayer(name: String, outputDim: Int, val inputLayers: Array[La
     if (graph.isMatrixInCache(forwardKey)) {
       graph.getMatrixFromCache(forwardKey)
     } else {
+      var usedNames = Set[String]()
       val inputs = inputLayers.map { layer =>
-        layer.name -> layer.forward()
+        val name = layer.name
+        val newName = if (usedNames.contains(name)) {
+          name + "xx"
+        } else {
+          usedNames += name
+          name
+        }
+        newName -> layer.forward()
       }.toMap
       val forwardValue: Matrix = doForward(inputs)
       graph.put2Cache(forwardKey, forwardValue)
@@ -36,8 +44,16 @@ abstract class JoinLayer(name: String, outputDim: Int, val inputLayers: Array[La
       graph.getMatrixFromCache(key)
     } else {
       val gradInput = gatherGradInput()
+      var usedNames = Set[String]()
       val inputs = inputLayers.map { layer =>
-        layer.name -> layer.forward()
+        val name = layer.name
+        val newName = if (usedNames.contains(name)) {
+          name + "_x"
+        } else {
+          usedNames += name
+          name
+        }
+        newName -> layer.forward()
       }.toMap
       val matrixMap = doBackward(inputs, gradInput)
       graph.put2Cache(backwardKey, null.asInstanceOf[Matrix])

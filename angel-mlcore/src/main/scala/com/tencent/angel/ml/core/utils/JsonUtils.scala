@@ -34,6 +34,8 @@ object LayerKeys {
   val transFuncKey: String = "transfunc"
   val transFuncsKey: String = "transfuncs"
   val lossFuncKey: String = "lossfunc"
+  val weightDimKey: String = "weightdim"
+  val weightDimsKey: String = "weightdims"
 }
 
 object TransFuncKeys {
@@ -231,6 +233,20 @@ object JsonUtils {
               layerMap.put(name, newLayer)
               iter.remove()
             }
+          case JString(value) if matchClassName[ParamSharedFC](value) =>
+            val inputLayer = extract[String](obj, LayerKeys.inputLayerKey)
+            if (inputLayer.nonEmpty && layerMap.contains(inputLayer.get)) {
+              val newLayer = new ParamSharedFC(name,
+                extract[Int](obj, LayerKeys.outputDimKey).get,
+                layerMap(inputLayer.get),
+                TransFunc.fromJson(obj \ LayerKeys.transFuncKey),
+                extract[Int](obj, LayerKeys.weightDimKey).get,
+                optimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
+              )
+
+              layerMap.put(name, newLayer)
+              iter.remove()
+            }
           case JString(value) if matchClassName[BiInnerCross](value) =>
             val inputLayer = extract[String](obj, LayerKeys.inputLayerKey)
             if (inputLayer.nonEmpty && layerMap.contains(inputLayer.get)) {
@@ -264,6 +280,49 @@ object JsonUtils {
               layerMap.put(name, newLayer)
               iter.remove()
             }
+          case JString(value) if matchClassName[BiInteractionCrossTiled](value) =>
+            val inputLayer = extract[String](obj, LayerKeys.inputLayerKey)
+            if (inputLayer.nonEmpty && layerMap.contains(inputLayer.get)) {
+              val newLayer = new BiInteractionCrossTiled(name,
+                extract[Int](obj, LayerKeys.outputDimKey).get,
+                layerMap(inputLayer.get)
+              )
+
+              layerMap.put(name, newLayer)
+              iter.remove()
+            }
+          case JString(value) if matchClassName[SoftmaxLayer](value) =>
+            val inputLayer = extract[String](obj, LayerKeys.inputLayerKey)
+            if (inputLayer.nonEmpty && layerMap.contains(inputLayer.get)) {
+              val newLayer = new SoftmaxLayer(name,
+                extract[Int](obj, LayerKeys.outputDimKey).get,
+                layerMap(inputLayer.get)
+              )
+
+              layerMap.put(name, newLayer)
+              iter.remove()
+            }
+          case JString(value) if matchClassName[WeightedSumLayer](value) =>
+            val inputLayers = extract[Array[String]](obj, LayerKeys.inputLayersKey)
+            if (inputLayers.nonEmpty && inputLayers.get.forall(layer => layerMap.contains(layer))) {
+              val newLayer = new WeightedSumLayer(name,
+                extract[Int](obj, LayerKeys.outputDimKey).get,
+                inputLayers.get.map(layer => layerMap(layer))
+              )
+              layerMap.put(name, newLayer)
+              iter.remove()
+            }
+          case JString(value) if matchClassName[CrossLayer](value) =>
+            val inputLayers = extract[Array[String]](obj, LayerKeys.inputLayersKey)
+            if (inputLayers.nonEmpty && inputLayers.get.forall(layer => layerMap.contains(layer))) {
+              val newLayer = new CrossLayer(name,
+                extract[Int](obj, LayerKeys.outputDimKey).get,
+                inputLayers.get.map(layer => layerMap(layer)),
+                optimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
+              )
+              layerMap.put(name, newLayer)
+              iter.remove()
+            }
         }
       }
     }
@@ -272,6 +331,8 @@ object JsonUtils {
   // for compatible purpose -----------------------------------------------------------------------------------------
   private def jArray2JObject(jArray: JArray, default_trans: Option[JValue], default_optimizer: Option[JValue]): JObject = {
     val fields = jArray.arr.flatMap {
+      case obj: JObject if fieldEqualClassName[ParamSharedFC](obj) =>
+        extendParamSharedFC(obj, default_trans, default_optimizer)
       case obj: JObject if fieldEqualClassName[FCLayer](obj) =>
         extendFCLayer(obj, default_trans, default_optimizer)
       case obj: JObject if fieldEqualClassName[SimpleInputLayer](obj) =>
@@ -330,6 +391,78 @@ object JsonUtils {
       case _ => throw MLException("FCLayer Json error!")
     }
 
+  }
+
+  private def extendParamSharedFC(obj: JObject, default_trans: Option[JValue], default_optimizer: Option[JValue]): List[JField] = {
+    val name = (obj \ "name").asInstanceOf[JString].values
+    val lType = obj \ LayerKeys.typeKey
+    var inputLayer = obj \ LayerKeys.inputLayerKey
+    val outputDims = (obj \ LayerKeys.outputDimsKey).asInstanceOf[JArray].arr
+    val weightDims = (obj \ LayerKeys.weightDimsKey).asInstanceOf[JArray].arr
+
+    val transFuncs = (obj \ LayerKeys.transFuncsKey) match {
+      case JNothing => outputDims.indices.toList.map(_ => default_trans.getOrElse(TransFunc.defaultJson))
+      case arr: JArray => arr.arr
+      case _ => throw MLException("Json format error!")
+    }
+
+    assert(outputDims.size == transFuncs.size)
+    assert(weightDims.size == transFuncs.size)
+
+    val optimizer = (obj \ LayerKeys.optimizerKey) match {
+      case JNothing => default_optimizer.getOrElse(optimizerProvider.defaultOptJson())
+      case opt: JObject => opt
+      case opt: JString => opt
+      case _ => throw MLException("Json format error!")
+    }
+
+    var i: Int = 0
+
+//    outputDims.zip(transFuncs).map {
+//      case (outputDim: JInt, transFunc: JValue) =>
+//        val newName: String = if (i + 1 == outputDims.size) {
+//          name
+//        } else {
+//          s"${name}_$i"
+//        }
+//
+//        i += 1
+//
+//        val field = JField(newName, (LayerKeys.typeKey -> lType) ~
+//          (LayerKeys.inputLayerKey -> inputLayer) ~
+//          (LayerKeys.outputDimKey -> outputDim) ~
+//          (LayerKeys.transFuncKey -> transFunc) ~
+//          (LayerKeys.optimizerKey -> optimizer)
+//        )
+//
+//        inputLayer = JString(newName)
+//        field
+//      case _ => throw MLException("ParamSharedFC Json error!")
+//    }
+
+    val xxx = (outputDims zip transFuncs zip weightDims) map { case ((a, b), c) => (a, b, c)}
+    xxx.map {
+      case (outputDim: JInt, transFunc: JValue, weightDim: JValue) =>
+        val newName: String = if (i + 1 == outputDims.size) {
+          name
+        } else {
+          s"${name}_$i"
+        }
+
+        i += 1
+
+        val field = JField(newName, (LayerKeys.typeKey -> lType) ~
+          (LayerKeys.inputLayerKey -> inputLayer) ~
+          (LayerKeys.outputDimKey -> outputDim) ~
+          (LayerKeys.transFuncKey -> transFunc) ~
+          (LayerKeys.weightDimKey -> weightDim) ~
+          (LayerKeys.optimizerKey -> optimizer)
+        )
+
+        inputLayer = JString(newName)
+        field
+      case _ => throw MLException("ParamSharedFC Json error!")
+    }
   }
 
   private def extendSimpleInputLayer(obj: JObject, default_trans: Option[JValue], default_optimizer: Option[JValue]): List[JField] = {
