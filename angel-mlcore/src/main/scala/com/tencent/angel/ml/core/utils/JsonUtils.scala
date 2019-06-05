@@ -417,31 +417,8 @@ object JsonUtils {
     }
 
     var i: Int = 0
-
-//    outputDims.zip(transFuncs).map {
-//      case (outputDim: JInt, transFunc: JValue) =>
-//        val newName: String = if (i + 1 == outputDims.size) {
-//          name
-//        } else {
-//          s"${name}_$i"
-//        }
-//
-//        i += 1
-//
-//        val field = JField(newName, (LayerKeys.typeKey -> lType) ~
-//          (LayerKeys.inputLayerKey -> inputLayer) ~
-//          (LayerKeys.outputDimKey -> outputDim) ~
-//          (LayerKeys.transFuncKey -> transFunc) ~
-//          (LayerKeys.optimizerKey -> optimizer)
-//        )
-//
-//        inputLayer = JString(newName)
-//        field
-//      case _ => throw MLException("ParamSharedFC Json error!")
-//    }
-
-    val xxx = (outputDims zip transFuncs zip weightDims) map { case ((a, b), c) => (a, b, c)}
-    xxx.map {
+    val zipped = (outputDims zip transFuncs zip weightDims) map { case ((a, b), c) => (a, b, c)}
+    zipped.map {
       case (outputDim: JInt, transFunc: JValue, weightDim: JValue) =>
         val newName: String = if (i + 1 == outputDims.size) {
           name
