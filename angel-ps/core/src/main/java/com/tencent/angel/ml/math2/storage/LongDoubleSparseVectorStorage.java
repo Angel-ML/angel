@@ -1,19 +1,17 @@
 package com.tencent.angel.ml.math2.storage;
 
 import com.tencent.angel.ml.matrix.RowType;
-import it.unimi.dsi.fastutil.ints.*;
-import it.unimi.dsi.fastutil.longs.*;
-import it.unimi.dsi.fastutil.floats.*;
-import it.unimi.dsi.fastutil.doubles.*;
+import it.unimi.dsi.fastutil.doubles.DoubleIterator;
+import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
+import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-
 import java.util.Arrays;
-import java.util.Random;
 import java.util.HashSet;
-
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import java.util.Random;
 
 public class LongDoubleSparseVectorStorage implements LongDoubleVectorStorage {
+
   private Long2DoubleOpenHashMap map;
   private byte flag; // 001: dense; 010: sparse; 100: sorted
   private long dim;
@@ -33,39 +31,46 @@ public class LongDoubleSparseVectorStorage implements LongDoubleVectorStorage {
   }
 
   public LongDoubleSparseVectorStorage(long dim) {
-    this(dim, Math.max(128, (int) (dim / 1000)));
+    this(dim, (int) Math.min(64, Math.max(dim, 0)));
   }
 
   public LongDoubleSparseVectorStorage(long dim, long[] indices, double[] values) {
     this(dim, new Long2DoubleOpenHashMap(indices, values));
   }
 
-  @Override public double get(long idx) {
+  @Override
+  public double get(long idx) {
     return map.get(idx);
   }
 
-  @Override public void set(long idx, double value) {
+  @Override
+  public void set(long idx, double value) {
     map.put(idx, value);
   }
 
-  @Override public long[] getIndices() {
+  @Override
+  public long[] getIndices() {
     return map.keySet().toLongArray();
   }
 
-  @Override public ObjectIterator<Long2DoubleMap.Entry> entryIterator() {
+  @Override
+  public ObjectIterator<Long2DoubleMap.Entry> entryIterator() {
     return map.long2DoubleEntrySet().fastIterator();
   }
 
-  @Override public LongDoubleVectorStorage clone() {
+  @Override
+  public LongDoubleVectorStorage clone() {
     return new LongDoubleSparseVectorStorage(dim, map.clone());
   }
 
-  @Override public LongDoubleVectorStorage copy() {
+  @Override
+  public LongDoubleVectorStorage copy() {
     return new LongDoubleSparseVectorStorage(dim, map.clone());
   }
 
 
-  @Override public LongDoubleVectorStorage oneLikeSparse() {
+  @Override
+  public LongDoubleVectorStorage oneLikeSparse() {
     int capacity = map.size();
     double[] oneLikeValues = new double[capacity];
 
@@ -75,7 +80,8 @@ public class LongDoubleSparseVectorStorage implements LongDoubleVectorStorage {
     return new LongDoubleSparseVectorStorage(dim, map.keySet().toLongArray(), oneLikeValues);
   }
 
-  @Override public LongDoubleVectorStorage oneLikeSorted() {
+  @Override
+  public LongDoubleVectorStorage oneLikeSorted() {
     int capacity = map.size();
     double[] oneLikeValues = new double[capacity];
     long[] indices = map.keySet().toLongArray();
@@ -87,7 +93,8 @@ public class LongDoubleSparseVectorStorage implements LongDoubleVectorStorage {
   }
 
 
-  @Override public LongDoubleVectorStorage oneLikeSparse(long dim, int capacity) {
+  @Override
+  public LongDoubleVectorStorage oneLikeSparse(long dim, int capacity) {
     double[] oneLikeValues = new double[capacity];
     long[] indices = new long[capacity];
     HashSet set = new HashSet<Integer>();
@@ -107,7 +114,8 @@ public class LongDoubleSparseVectorStorage implements LongDoubleVectorStorage {
     return new LongDoubleSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public LongDoubleVectorStorage oneLikeSorted(long dim, int capacity) {
+  @Override
+  public LongDoubleVectorStorage oneLikeSorted(long dim, int capacity) {
     double[] oneLikeValues = new double[capacity];
     long[] indices = new long[capacity];
     HashSet set = new HashSet<Integer>();
@@ -128,7 +136,8 @@ public class LongDoubleSparseVectorStorage implements LongDoubleVectorStorage {
     return new LongDoubleSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public LongDoubleVectorStorage oneLikeSparse(int capacity) {
+  @Override
+  public LongDoubleVectorStorage oneLikeSparse(int capacity) {
     double[] oneLikeValues = new double[capacity];
     long[] indices = new long[capacity];
     HashSet set = new HashSet<Integer>();
@@ -148,7 +157,8 @@ public class LongDoubleSparseVectorStorage implements LongDoubleVectorStorage {
     return new LongDoubleSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public LongDoubleVectorStorage oneLikeSorted(int capacity) {
+  @Override
+  public LongDoubleVectorStorage oneLikeSorted(int capacity) {
     double[] oneLikeValues = new double[capacity];
     long[] indices = new long[capacity];
     HashSet set = new HashSet<Integer>();
@@ -170,68 +180,84 @@ public class LongDoubleSparseVectorStorage implements LongDoubleVectorStorage {
   }
 
 
-  @Override public LongDoubleVectorStorage emptySparse() {
+  @Override
+  public LongDoubleVectorStorage emptySparse() {
     return new LongDoubleSparseVectorStorage(dim, map.size());
   }
 
-  @Override public LongDoubleVectorStorage emptySorted() {
+  @Override
+  public LongDoubleVectorStorage emptySorted() {
     return new LongDoubleSortedVectorStorage(dim, map.size());
   }
 
 
-  @Override public LongDoubleVectorStorage emptySparse(long dim, int capacity) {
+  @Override
+  public LongDoubleVectorStorage emptySparse(long dim, int capacity) {
     return new LongDoubleSparseVectorStorage(dim, capacity);
   }
 
-  @Override public LongDoubleVectorStorage emptySorted(long dim, int capacity) {
+  @Override
+  public LongDoubleVectorStorage emptySorted(long dim, int capacity) {
     return new LongDoubleSortedVectorStorage(dim, capacity);
   }
 
-  @Override public LongDoubleVectorStorage emptySparse(int capacity) {
+  @Override
+  public LongDoubleVectorStorage emptySparse(int capacity) {
     return new LongDoubleSparseVectorStorage(dim, capacity);
   }
 
-  @Override public LongDoubleVectorStorage emptySorted(int capacity) {
+  @Override
+  public LongDoubleVectorStorage emptySorted(int capacity) {
     return new LongDoubleSortedVectorStorage(dim, capacity);
   }
 
-  @Override public LongSet indexIterator() {
+  @Override
+  public LongSet indexIterator() {
     return map.keySet();
   }
 
-  @Override public int size() {
+  @Override
+  public int size() {
     return map.size();
   }
 
-  @Override public boolean hasKey(long key) {
+  @Override
+  public boolean hasKey(long key) {
     return map.containsKey(key);
   }
 
-  @Override public RowType getType() {
+  @Override
+  public RowType getType() {
     return RowType.T_DOUBLE_SPARSE_LONGKEY;
   }
 
-  @Override public boolean isDense() {
+  @Override
+  public boolean isDense() {
     return flag == 1;
   }
 
-  @Override public boolean isSparse() {
+  @Override
+  public boolean isSparse() {
     return flag == 2;
   }
 
-  @Override public boolean isSorted() {
+  @Override
+  public boolean isSorted() {
     return flag == 4;
   }
 
-  @Override public void clear() {
+  @Override
+  public void clear() {
     map.clear();
   }
 
-  @Override public DoubleIterator valueIterator() {
+  @Override
+  public DoubleIterator valueIterator() {
     return map.values().iterator();
   }
 
-  @Override public double[] getValues() {
+  @Override
+  public double[] getValues() {
     return map.values().toDoubleArray();
   }
 }

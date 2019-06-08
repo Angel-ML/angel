@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -23,11 +23,13 @@ import it.unimi.dsi.fastutil.floats.FloatIterator;
 
 
 public abstract class FloatVector extends Vector {
+
   public abstract float max();
 
   public abstract float min();
 
-  @Override public double sum() {
+  @Override
+  public double sum() {
     FloatVectorStorage fstorage = (FloatVectorStorage) storage;
     double sumval = 0.0;
     if (fstorage.isSparse()) {
@@ -43,7 +45,8 @@ public abstract class FloatVector extends Vector {
     return sumval;
   }
 
-  @Override public double norm() {
+  @Override
+  public double norm() {
     FloatVectorStorage fstorage = (FloatVectorStorage) storage;
     double sumval2 = 0.0;
     if (fstorage.isSparse()) {

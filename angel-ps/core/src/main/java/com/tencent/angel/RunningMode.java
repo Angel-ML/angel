@@ -22,7 +22,6 @@ package com.tencent.angel;
  * The enum Running mode.
  *
  * @see com.tencent.angel.master.AngelApplicationMaster
- * @see com.tencent.angel.ps.impl.ParameterServer
  * @see com.tencent.angel.psagent.PSAgent
  * @see com.tencent.angel.worker.Worker
  */
@@ -35,5 +34,5 @@ public enum RunningMode {
   /**
    * Run ParameterServer & Worker(embedded ParameterServerAgent)
    */
-  ANGEL_PS_WORKER
+  ANGEL_PS_WORKER, ANGEL_LOCAL
 }

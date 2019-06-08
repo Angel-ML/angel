@@ -91,11 +91,11 @@ public class GBDTTest {
 
       // Set GBDT algorithm parameters
       conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
-      conf.set(MLConf.ML_NUM_TREE(), String.valueOf(treeNum));
-      conf.set(MLConf.ML_TREE_MAX_DEPTH(), String.valueOf(treeDepth));
-      conf.set(MLConf.ML_TREE_MAX_BIN(), String.valueOf(splitNum));
+      conf.set(MLConf.ML_GBDT_TREE_NUM(), String.valueOf(treeNum));
+      conf.set(MLConf.ML_GBDT_TREE_DEPTH(), String.valueOf(treeDepth));
+      conf.set(MLConf.ML_GBDT_SPLIT_NUM(), String.valueOf(splitNum));
       conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(validateRatio));
-      conf.set(MLConf.ML_TREE_FEATURE_SAMPLE_RATE(), String.valueOf(sampleRatio));
+      conf.set(MLConf.ML_GBDT_SAMPLE_RATIO(), String.valueOf(sampleRatio));
       conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
 
     } catch (Exception x) {

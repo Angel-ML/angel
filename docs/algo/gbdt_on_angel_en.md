@@ -94,7 +94,7 @@ Overall, Angel PS's advantage as stated above is demonstrated by GBDT's performa
 	* ml.learn.rate: learning rate
 	* ml.validate.ratio: proportion of data used for validation (no validation when set to 0)
 	* ml.gbdt.sample.ratio: proportion of features selected for training; default is 1
-	* ml.gbdt.server.split: if true, use two-stage tree splitting; default is true
+	* ml.gbdt.server.split: if true, use two-stage tree splitting; default is false
 	* ml.compress.bytes: low-precision compression; the size of each floating point can set to [1,8]
   * ml.gbdt.batch.size: batch size for parallel training
 	* angel.compress.bytes：bytes of low-precision compression (1 to 8)

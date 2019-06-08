@@ -21,10 +21,11 @@ package com.tencent.angel.ml.core.network.layers.verge
 import java.util.concurrent.Future
 
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.transfunc.TransFunc
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
+import com.tencent.angel.ml.core.utils.paramsutils.ParamKeys
 import com.tencent.angel.ml.core.utils.{NetUtils, PSMatrixUtils}
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
@@ -37,6 +38,8 @@ import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
+import org.json4s.JsonAST._
+import org.json4s.JsonDSL._
 
 
 class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, override val optimizer: Optimizer)(implicit graph: AngelGraph)
@@ -47,36 +50,37 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
 
   val sharedConf: SharedConf = graph.conf
 
+  val parallel = sharedConf.get(MLConf.ML_MATRIX_DOT_USE_PARALLEL_EXECUTOR).toBoolean
   val modelType: RowType = SharedConf.modelType
   val valueType: String = SharedConf.valueType()
   val inputDataFormat: String = SharedConf.inputDataFormat
   val mode = SharedConf.runningMode()
+  val modelsize = SharedConf.modelSize
 
 
-  private val multiplier = OptUtils.getOptMultiplier(optimizer)
-  private val validIndexNum = SharedConf.modelSize
+  private val numSlot = OptUtils.getSlotNum(optimizer)
 
   private val weightCtx: MatrixContext = (inputDataFormat, NetUtils.storageType(modelType)) match {
     case ("dense", "dense" | "component_dense") => // dense data, dense model
       // in this condition, all the parameters are stored in one row
-      val psRows: Int = multiplier
+      val psRows: Int = numSlot + 1
       val psCols = SharedConf.indexRange * outputDim
       PSMatrixUtils.createPSMatrixCtx(s"${name}_weight", psRows, psCols, modelType)
     // in this condition, the shape of weight matrix is (inputDim, outputDim)
     // and inputDim = SharedConf.indexRange
     case ("libsvm" | "dummy", "dense" | "component_dense") => // sparse data, dense model
-      val psRows: Int = outputDim * multiplier
+      val psRows: Int = outputDim * (numSlot + 1)
       val psCols = SharedConf.indexRange
       PSMatrixUtils.createPSMatrixCtx(s"${name}_weight", psRows, psCols, modelType)
     // in this condition, the shape of weight matrix is (outputDim, inputDim)
     // and inputDim = SharedConf.indexRange
     case ("libsvm" | "dummy", "sparse" | "component_sparse") => // sparse data, sparse model
-      val psRows: Int = outputDim * multiplier
+      val psRows: Int = outputDim * (numSlot + 1)
       val psCols = SharedConf.indexRange
       val wCtx = PSMatrixUtils.createPSMatrixCtx(s"${name}_weight", psRows, psCols, modelType)
       // in this condition, the shape of weight matrix is (outputDim, inputDim)
       // and inputDim = SharedConf.indexRange
-      wCtx.setValidIndexNum(validIndexNum)
+      wCtx.setValidIndexNum(modelsize)
       wCtx
     case _ => // dense data, sparse model
       throw new AngelException("Dense data, sparse model, pls. change model to dense")
@@ -106,7 +110,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
         // println(s"the status in SparseInputLayer($name)-calOutput is ${status.toString}")
         (inputDataFormat, valueType) match {
           case ("dense", "double" | "float") => // the shape of weight matrix is (inputDim, outputDim)
-            forward = graph.placeHolder.getFeats.dot(weight).iadd(bias)
+            forward = graph.placeHolder.getFeats.dot(weight, parallel).iadd(bias)
           case ("libsvm" | "dummy", "double") => // the shape of weight matrix is (outputDim, inputDim)
             forward = MFactory.denseDoubleMatrix(graph.placeHolder.getBatchSize, outputDim)
             (0 until outputDim).foreach { colId => // the shape of weight matrix is (outputDim, inputDim)
@@ -176,9 +180,9 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
       case STATUS.Backward =>
         (inputDataFormat, NetUtils.storageType(modelType)) match {
           case ("dense", "dense" | "component_dense") => // dense data, dense model
-            val weightGrad: Matrix = Ufuncs.dot(graph.placeHolder.getFeats, true, backward, false)
+            val weightGrad: Matrix = Ufuncs.dot(graph.placeHolder.getFeats, true, backward, false, parallel)
               .imul(normal)
-            PSMatrixUtils.incrementRowByMatrix(weightId, multiplier - 1, weightGrad)
+            PSMatrixUtils.incrementRowByMatrix(weightId, numSlot, weightGrad)
           case _ => // sparse data, dense or sparse model, note: dense data, sparse model is not allowed
             val vectors = (0 until outputDim).toArray.map { colId =>
               val weightRowGrad = valueType match {
@@ -191,7 +195,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
               }
 
               weightRowGrad.setMatrixId(weight.getMatrixId)
-              weightRowGrad.setRowId(outputDim * (multiplier - 1) + colId)
+              weightRowGrad.setRowId(outputDim * numSlot + colId)
               weightRowGrad.setClock(weight.getClock)
 
               weightRowGrad
@@ -201,7 +205,7 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
         }
 
 
-        PSMatrixUtils.incrementRow(biasId, 0, backward.average(0).imul(-optimizer.lr / graph.taskNum))
+        PSMatrixUtils.incrementRow(biasId, 0, backward.average(0).imul(-optimizer.getLR / graph.taskNum))
 
         status = STATUS.Gradient
       case _ =>
@@ -261,5 +265,13 @@ class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, overr
     weightMCS.addIndices((0 until outputDim).toArray)
     saveContext.addMatrix(weightMCS)
     saveContext.addMatrix(biasMCS)
+  }
+
+  override def toJson: JObject = {
+    (ParamKeys.name -> name) ~
+      (ParamKeys.typeName -> s"${this.getClass.getSimpleName}") ~
+      (ParamKeys.outputDim -> outputDim) ~
+      (ParamKeys.transFunc -> transFunc.toJson) ~
+      (ParamKeys.optimizer -> optimizer.toJson)
   }
 }

@@ -41,6 +41,7 @@ We welcome everyone interested in machine learning to contribute code, create is
 
 ## Algorithm
 
+* [**Algorithm Parameter Description**](./docs/algo/model_config_details.md)
 * [Logistic Regression](./docs/algo/lr_on_angel_en.md)
 * [Matrix Factorization](./docs/algo/mf_on_angel_en.md)
 * [SVM](./docs/algo/svm_on_angel_en.md)

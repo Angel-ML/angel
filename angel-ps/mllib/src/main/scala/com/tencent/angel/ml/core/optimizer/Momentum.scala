@@ -20,13 +20,18 @@ package com.tencent.angel.ml.core.optimizer
 
 import java.util.concurrent.Future
 
+import com.tencent.angel.ml.core.utils.paramsutils.ParamKeys
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.psf.optimizer.MomentumUpdateFunc
 import com.tencent.angel.psagent.PSAgentContext
+import org.json4s.JsonAST.JObject
+import org.json4s.JsonDSL._
 
 import scala.collection.mutable
 
-class Momentum(override val stepSize: Double, var momentum: Double = 0.9) extends GradientDescent(stepSize) {
+
+class Momentum(stepSize: Double, var momentum: Double) extends Optimizer(stepSize) {
+  override protected var numSlot: Int = 2
 
   override def resetParam(paramMap: mutable.Map[String, Double]): Unit = {
     super.resetParam(paramMap)
@@ -34,16 +39,20 @@ class Momentum(override val stepSize: Double, var momentum: Double = 0.9) extend
   }
 
   override def update(matrixId: Int, numFactors: Int, epoch: Int = 0): Future[VoidResult] = {
-    val func = new MomentumUpdateFunc(matrixId, numFactors, momentum, lr, regL2Param)
-    PSAgentContext.get().getUserRequestAdapter.update(func)
+    update(matrixId, numFactors, epoch, 1)
   }
 
-  override def update(matrixId: Int, numFactors: Int, epoch: Int, sampleNum: Int): Future[VoidResult] ={
-    val func = new MomentumUpdateFunc(matrixId, numFactors, momentum, lr, regL2Param, sampleNum)
+  override def update(matrixId: Int, numFactors: Int, epoch: Int, batchSize: Int): Future[VoidResult] = {
+    val func = new MomentumUpdateFunc(matrixId, numFactors, momentum, lr, regL2Param, batchSize)
     PSAgentContext.get().getUserRequestAdapter.update(func)
   }
 
   override def toString: String = {
     s"Momentum momentum=$momentum lr=$lr regL2=$regL2Param"
+  }
+
+  override def toJson: JObject = {
+    (ParamKeys.typeName -> s"${this.getClass.getSimpleName}") ~
+      (ParamKeys.momentum -> momentum)
   }
 }

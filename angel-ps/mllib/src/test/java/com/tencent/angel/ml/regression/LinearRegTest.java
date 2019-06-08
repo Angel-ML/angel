@@ -99,10 +99,9 @@ public class LinearRegTest {
       conf.set(MLConf.ML_BATCH_SAMPLE_RATIO(), String.valueOf(spRatio));
       conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
       conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
-      conf.set(MLConf.ML_LEARN_DECAY(), String.valueOf(decay));
+      conf.set(MLConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
       conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
       conf.setLong(MLConf.ML_MODEL_SIZE(), 124L);
-      conf.setLong(MLConf.ML_MINIBATCH_SIZE(), 1024);
       conf.set(MLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "LinearRegression");
     } catch (Exception e) {
       LOG.error("setup failed ", e);

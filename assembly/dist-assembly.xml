@@ -44,7 +44,7 @@
             <directory>${project.basedir}/../lib</directory>
             <outputDirectory>lib</outputDirectory>
             <includes>
-                <include>*.jar</include>
+                <include>*.*</include>
             </includes>
         </fileSet>
         <fileSet>

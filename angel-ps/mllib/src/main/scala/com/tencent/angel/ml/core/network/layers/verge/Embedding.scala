@@ -26,6 +26,7 @@ import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
+import com.tencent.angel.ml.core.utils.paramsutils.ParamKeys
 import com.tencent.angel.ml.core.utils.{NetUtils, PSMatrixUtils}
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.storage._
@@ -39,6 +40,9 @@ import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadC
 import com.tencent.angel.ps.server.data.request.RandomNormalInitFunc
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
+import org.json4s.JsonAST._
+import org.json4s.JsonDSL._
+
 
 class Embedding(name: String, outputDim: Int, val numFactors: Int, override val optimizer: Optimizer)(implicit graph: AngelGraph)
   extends InputLayer(name, outputDim)(graph) with Trainable {
@@ -52,9 +56,9 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
   val blockSize: Int = SharedConf.blockSize
   val mode = SharedConf.runningMode()
 
-  private val multiplier: Int = OptUtils.getOptMultiplier(optimizer)
+  private val numSlot: Int = OptUtils.getSlotNum(optimizer)
   private val indexRange: Long = SharedConf.indexRange
-  private val psRows: Int = multiplier * numFactors
+  private val psRows: Int = (numSlot + 1) * numFactors
   private val validIndexNum = SharedConf.modelSize
 
   private val embedMatCtx = PSMatrixUtils.createPSMatrixCtx(s"${name}_embedding", psRows, indexRange, modelType)
@@ -121,16 +125,48 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
             val batchData: Matrix = graph.placeHolder.getFeats
             val batchSize = graph.placeHolder.getBatchSize
             (0 until batchSize).foreach { idx =>
-              batchData.getRow(idx) match {
-                case v: IntDoubleVector =>
-                  v.getStorage.getIndices.zip(rows(idx).getPartitions).foreach { case (f, update) =>
-                    val value = v.get(f)
-                    mergeUpdate(map, f, update, value)
+              batchData.getRow(idx).getStorage match {
+                case s: IntDoubleSortedVectorStorage =>
+                  val values = s.getValues
+                  val index = s.getIndices
+                  var i = 0
+                  while (i < index.length) {
+                    val key = index(i)
+                    val value = values(i)
+                    val update = rows(idx).getPartitions()(i)
+                    mergeUpdate(map, key.toLong, update, value)
+                    i += 1
                   }
-                case v: LongDoubleVector =>
-                  v.getStorage.getIndices.zip(rows(idx).getPartitions).foreach { case (f, update) =>
-                    val value = v.get(f)
-                    mergeUpdate(map, f, update, value)
+                case s: LongDoubleSortedVectorStorage =>
+                  val values = s.getValues
+                  val index = s.getIndices
+                  var i = 0
+                  while (i < index.length) {
+                    val key = index(i)
+                    val value = values(i)
+                    val update = rows(idx).getPartitions()(i)
+                    mergeUpdate(map, key, update, value)
+                    i += 1
+                  }
+                case s: IntDoubleSparseVectorStorage =>
+                  var i = 0
+                  val indices = s.getIndices.sorted
+                  while (i < indices.length) {
+                    val key = indices(i)
+                    val value = s.get(key)
+                    val update = rows(idx).getPartitions()(i)
+                    mergeUpdate(map, key.toLong, update, value)
+                    i += 1
+                  }
+                case s: LongDoubleSparseVectorStorage =>
+                  var i = 0
+                  val indices = s.getIndices.sorted
+                  while (i < indices.length) {
+                    val key = indices(i)
+                    val value = s.get(key)
+                    val update = rows(idx).getPartitions()(i)
+                    mergeUpdate(map, key, update, value)
+                    i += 1
                   }
               }
             }
@@ -141,9 +177,20 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
             val batchData: Matrix = graph.placeHolder.getFeats
             val batchSize = graph.placeHolder.getBatchSize
 
-            (0 until batchSize).map { idx =>
+            (0 until batchSize).foreach { idx =>
               batchData.getRow(idx).getStorage match {
                 case s: IntFloatSortedVectorStorage =>
+                  val values = s.getValues
+                  val index = s.getIndices
+                  var i = 0
+                  while (i < index.length) {
+                    val key = index(i)
+                    val value = values(i)
+                    val update = rows(idx).getPartitions()(i)
+                    mergeUpdate(map, key.toLong, update, value)
+                    i += 1
+                  }
+                case s: LongFloatSortedVectorStorage =>
                   val values = s.getValues
                   val index = s.getIndices
                   var i = 0
@@ -156,17 +203,17 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
                   }
                 case s: IntFloatSparseVectorStorage =>
                   var i = 0
-                  val indices = s.getIndices
+                  val indices = s.getIndices.sorted
                   while (i < indices.length) {
                     val key = indices(i)
                     val value = s.get(key)
                     val update = rows(idx).getPartitions()(i)
-                    mergeUpdate(map, key, update, value)
+                    mergeUpdate(map, key.toLong, update, value)
                     i += 1
                   }
                 case s: LongFloatSparseVectorStorage =>
                   var i = 0
-                  val indices = s.getIndices
+                  val indices = s.getIndices.sorted
                   while (i < indices.length) {
                     val key = indices(i)
                     val value = s.get(key)
@@ -176,45 +223,6 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
                   }
               }
             }
-          //            (0 until batchSize).map { idx =>
-          //              batchData.getRow(idx) match {
-          //                case v: IntFloatVector =>
-          //                  v.getStorage.getIndices.zip(rows(idx).getPartitions).map { case (f, update) =>
-          //                    val value = v.get(f)
-          //                    if (!map.containsKey(f.toLong)) {
-          //                      if (value == 1) {
-          //                        map.put(f.toLong, update)
-          //                      } else {
-          //                        map.put(f.toLong, update.imul(value))
-          //                      }
-          //                    } else {
-          //                      if (value == 1) {
-          //                        map.get(f.toLong).iadd(update)
-          //                      } else {
-          //                        map.get(f.toLong).iadd(update.imul(v.get(f)))
-          //                      }
-          //                    }
-          //                  }
-          //
-          //                case v: LongFloatVector =>
-          //                  v.getStorage.getIndices.zip(rows(idx).getPartitions).map { case (f, update) =>
-          //                    val value = v.get(f)
-          //                    if (!map.containsKey(f)) {
-          //                      if (value == 1) {
-          //                        map.put(f, update)
-          //                      } else {
-          //                        map.put(f, update.imul(value))
-          //                      }
-          //                    } else {
-          //                      if (value == 1) {
-          //                        map.get(f).iadd(update)
-          //                      } else {
-          //                        map.get(f).iadd(update.imul(v.get(f)))
-          //                      }
-          //                    }
-          //                  }
-          //              }
-          //            }
 
           case _ =>
         }
@@ -228,7 +236,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
         }
 
         // Push Gradient
-        val rowNums = (numFactors * (multiplier - 1) until numFactors * multiplier).toArray
+        val rowNums = (numFactors * numSlot until numFactors * (numSlot + 1)).toArray
 
         val param = new UpdateColsParam(matrixId, rowNums, graph.placeHolder.getIndices, map)
         val func = new UpdateColsFunc(param)
@@ -260,7 +268,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
         val compRows = (0 until batchSize).toArray.map { idx =>
           batchData.getRow(idx).getStorage match {
             case s: IntFloatSparseVectorStorage =>
-              val index = s.getIndices
+              val index = s.getIndices.sorted
               VFactory.compIntFloatVector(
                 if (outputDim <= 0) outputDim else index.length * numFactors,
                 index.map { key =>
@@ -291,7 +299,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
                 vectors
               )
             case s: LongFloatSparseVectorStorage =>
-              val index = s.getIndices
+              val index = s.getIndices.sorted
               VFactory.compIntFloatVector(
                 if (outputDim <= 0) outputDim else index.length * numFactors,
                 index.map { key =>
@@ -304,7 +312,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
                   }
                 })
             case s: IntDoubleSparseVectorStorage =>
-              val index = s.getIndices
+              val index = s.getIndices.sorted
               VFactory.compIntDoubleVector(
                 if (outputDim <= 0) outputDim else index.length * numFactors,
                 index.map { key =>
@@ -317,7 +325,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
                   }
                 })
             case s: LongDoubleSparseVectorStorage =>
-              val index = s.getIndices
+              val index = s.getIndices.sorted
               VFactory.compIntDoubleVector(
                 if (outputDim <= 0) outputDim else index.length * numFactors,
                 index.map { key =>
@@ -378,5 +386,13 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
     val embedMatMCS: MatrixSaveContext = new MatrixSaveContext(embedMatCtx.getName, outputFormat)
     embedMatMCS.addIndices((0 until numFactors).toArray)
     saveContext.addMatrix(embedMatMCS)
+  }
+
+  override def toJson: JObject = {
+    (ParamKeys.name -> name) ~
+      (ParamKeys.typeName -> s"${this.getClass.getSimpleName}") ~
+      (ParamKeys.outputDim -> outputDim) ~
+      (ParamKeys.numFactors -> numFactors) ~
+      (ParamKeys.optimizer -> optimizer.toJson)
   }
 }

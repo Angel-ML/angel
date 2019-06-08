@@ -22,7 +22,7 @@
   <parent>
     <groupId>com.tencent.angel</groupId>
     <artifactId>angel</artifactId>
-    <version>2.0.0</version>
+    <version>2.2.0</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -95,8 +95,8 @@
     <dependency>
       <groupId>org.json4s</groupId>
       <artifactId>json4s-jackson_2.11</artifactId>
-      <version>3.2.11</version>
-      <!--version>3.4.2</version-->
+      <!--version>3.2.11</version-->
+      <version>3.4.2</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>

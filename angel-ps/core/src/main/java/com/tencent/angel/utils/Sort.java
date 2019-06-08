@@ -20,6 +20,7 @@ package com.tencent.angel.utils;
 
 import it.unimi.dsi.fastutil.doubles.DoubleComparator;
 import it.unimi.dsi.fastutil.ints.IntComparator;
+import java.util.Random;
 
 /**
  * Quick sort utils
@@ -435,6 +436,41 @@ public class Sort {
         y[i] = y[m];
         y[m] = temp;
       }
+    }
+  }
+
+  public static void main(String [] args) {
+    int len = 100000000;
+    double [] predicts = new double[len];
+    double [] labels = new double[len];
+
+    Random r = new Random();
+    for(int i = 0; i < len; i++) {
+      predicts[i] = 1.0;
+      labels[i] = 1.0;
+    }
+
+    DoubleComparator cmp = new DoubleComparator() {
+      @Override public int compare(double i, double i1) {
+        if (Math.abs(i - i1) < 10e-12) {
+          return 0;
+        } else {
+          return i - i1 > 10e-12 ? 1 : -1;
+        }
+      }
+
+      @Override public int compare(Double o1, Double o2) {
+        if (Math.abs(o1 - o2) < 10e-12) {
+          return 0;
+        } else {
+          return o1 - o2 > 10e-12 ? 1 : -1;
+        }
+      }
+    };
+
+    while(len-- > -10) {
+      System.out.println("len=" + len);
+      quickSort(predicts, labels, 0, len, cmp);
     }
   }
 }

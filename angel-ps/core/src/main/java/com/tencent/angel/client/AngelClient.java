@@ -258,6 +258,7 @@ public abstract class AngelClient implements AngelClientInterface {
    */
   public void saveMatrices(List<String> matrixNames) {
     ModelSaveContext saveContext = new ModelSaveContext();
+    saveContext.setSavePath(conf.get(AngelConf.ANGEL_JOB_OUTPUT_PATH));
     for (String name : matrixNames) {
       saveContext.addMatrix(new MatrixSaveContext(name));
     }
@@ -267,7 +268,7 @@ public abstract class AngelClient implements AngelClientInterface {
   @Override public void save(ModelSaveContext saveContext) throws AngelException {
     if (saveContext.getMatricesContext().size() == 0 || saveContext.getSavePath() == null
       || saveContext.getSavePath().isEmpty()) {
-      LOG.info("there is no matrices need save or save path is empty");
+      LOG.warn("there is no matrices need save or save path is empty");
       return;
     }
 
@@ -649,7 +650,7 @@ public abstract class AngelClient implements AngelClientInterface {
       LOG.debug("job stat = " + jobState.name());
     }
     if (jobState != JobStateProto.J_INITED && jobState != JobStateProto.J_NEW
-      && jobState != JobStateProto.J_RUNNING) {
+      && jobState != JobStateProto.J_PREPARE_WORKERS && jobState != JobStateProto.J_RUNNING) {
       isExecuteFinished = true;
       LOG.info("job is finished! status: " + jobState);
       if (jobState == JobStateProto.J_FAILED || jobState == JobStateProto.J_KILLED) {

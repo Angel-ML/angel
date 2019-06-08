@@ -120,7 +120,7 @@ public class GBDTController {
     this.sketches = new float[this.param.numFeature * this.param.numSplit];
 
     String cateFeatStr = this.taskContext.getConf()
-            .get(MLConf.ML_TREE_CATEGORICAL_FEATURE(), MLConf.DEFAULT_ML_TREE_CATEGORICAL_FEATURE());
+            .get(MLConf.ML_GBDT_CATE_FEAT(), MLConf.DEFAULT_ML_GBDT_CATE_FEAT());
     cateFeatList = new ArrayList<>();
     cateFeatNum = new HashMap<>();
     switch (cateFeatStr) {
@@ -630,7 +630,7 @@ public class GBDTController {
     boolean isServerSplit = taskContext.getConf()
             .getBoolean(MLConf.ML_GBDT_SERVER_SPLIT(), MLConf.DEFAULT_ML_GBDT_SERVER_SPLIT());
     int splitNum =
-            taskContext.getConf().getInt(MLConf.ML_TREE_MAX_BIN(), MLConf.DEFAULT_ML_TREE_MAX_BIN());
+            taskContext.getConf().getInt(MLConf.ML_GBDT_SPLIT_NUM(), MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
 
     for (int i = 0; i < tNodeId.length; i++) {
       int nid = tNodeId[i];

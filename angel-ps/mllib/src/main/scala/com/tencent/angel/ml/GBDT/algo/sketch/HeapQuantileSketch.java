@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -31,10 +31,10 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 /**
- * Implements a quantile sketch on the Java heap
- * bashed on `DataSketches` of Yahoo!
+ * Implements a quantile sketch on the Java heap bashed on `DataSketches` of Yahoo!
  */
 public class HeapQuantileSketch implements Serialize {
+
   private int k; // parameter that controls space usage
   public static final int DEFAULT_K = 128;
 
@@ -46,11 +46,11 @@ public class HeapQuantileSketch implements Serialize {
   private float maxValue;
 
   /**
-   * This single array contains the base buffer plus all levels some of which may not be used.
-   * A level is of size K and is either full and sorted, or not used. A "not used" buffer may have
-   * garbage. Whether a level buffer used or not is indicated by the bitPattern_.
-   * The base buffer has length 2*K but might not be full and isn't necessarily sorted.
-   * The base buffer precedes the level buffers.
+   * This single array contains the base buffer plus all levels some of which may not be used. A
+   * level is of size K and is either full and sorted, or not used. A "not used" buffer may have
+   * garbage. Whether a level buffer used or not is indicated by the bitPattern_. The base buffer
+   * has length 2*K but might not be full and isn't necessarily sorted. The base buffer precedes the
+   * level buffers.
    * <p>
    * The levels arrays require quite a bit of explanation, which we defer until later.
    */
@@ -95,12 +95,13 @@ public class HeapQuantileSketch implements Serialize {
 
   public void reset() {
     n = 0;
-    if (estimateN < 0)
+    if (estimateN < 0) {
       combinedBufferCapacity = Math.min(MIN_BASE_BUF_SIZE, k * 2);
-    else if (estimateN < k * 2)
+    } else if (estimateN < k * 2) {
       combinedBufferCapacity = k * 4;
-    else
+    } else {
       combinedBufferCapacity = SketchUtils.needBufferCapacity(k, estimateN);
+    }
     combinedBuffer = new float[combinedBufferCapacity];
     baseBufferCount = 0;
     bitPattern = 0L;
@@ -111,24 +112,28 @@ public class HeapQuantileSketch implements Serialize {
   }
 
   public void update(float value) {
-    if (Float.isNaN(value))
+    if (Float.isNaN(value)) {
       throw new QuantileSketchException("Encounter NaN value");
+    }
     maxValue = Math.max(maxValue, value);
     minValue = Math.min(minValue, value);
 
-    if (baseBufferCount + 1 > combinedBufferCapacity)
+    if (baseBufferCount + 1 > combinedBufferCapacity) {
       ensureBaseBuffer();
+    }
     combinedBuffer[baseBufferCount++] = value;
     n++;
-    if (baseBufferCount == (k * 2))
+    if (baseBufferCount == (k * 2)) {
       fullBaseBufferPropagation();
+    }
   }
 
   private void ensureBaseBuffer() {
     final float[] baseBuffer = combinedBuffer;
     int oldSize = combinedBufferCapacity;
-    if (oldSize >= k * 2)
+    if (oldSize >= k * 2) {
       throw new QuantileSketchException("Buffer over size");
+    }
     int newSize = Math.max(Math.min(k * 2, oldSize * 2), 1);
     combinedBufferCapacity = newSize;
     combinedBuffer = Arrays.copyOf(baseBuffer, newSize);
@@ -137,8 +142,9 @@ public class HeapQuantileSketch implements Serialize {
   private void ensureLevels(long newN) {
     int numLevels = 1 + (63 - Long.numberOfLeadingZeros(newN / (k * 2)));
     int spaceNeeded = k * (numLevels + 2);
-    if (spaceNeeded <= combinedBufferCapacity)
+    if (spaceNeeded <= combinedBufferCapacity) {
       return;
+    }
     final float[] baseBuffer = combinedBuffer;
     combinedBuffer = Arrays.copyOf(baseBuffer, spaceNeeded);
     combinedBufferCapacity = spaceNeeded;
@@ -164,7 +170,7 @@ public class HeapQuantileSketch implements Serialize {
     }
     SketchUtils.compactBuffer(buf, bufBeginPos, levelsArr, (endLevel + 2) * k, k);
     SketchUtils
-      .levelwisePropagation(bitPattern, k, beginLevel, endLevel, buf, bufBeginPos, levelsArr);
+        .levelwisePropagation(bitPattern, k, beginLevel, endLevel, buf, bufBeginPos, levelsArr);
     bitPattern += 1L << beginLevel;
   }
 
@@ -213,16 +219,19 @@ public class HeapQuantileSketch implements Serialize {
       cur++;
     }
     weightsArr[cur] = 0L;
-    if (cur != numSamples)
+    if (cur != numSamples) {
       throw new QuantileSketchException("Missing items when copying buffer to array");
+    }
     Arrays.sort(samplesArr, startBlk, cur);
   }
 
   public void merge(HeapQuantileSketch other) {
-    if (other == null || other.isEmpty())
+    if (other == null || other.isEmpty()) {
       return;
-    if (other.k != this.k)
+    }
+    if (other.k != this.k) {
       throw new QuantileSketchException("Merge sketches with different k");
+    }
     SketchUtils.checkBitPattern(other.bitPattern, other.n, other.k);
     if (this.isEmpty()) {
       this.copy(other);
@@ -252,7 +261,7 @@ public class HeapQuantileSketch implements Serialize {
   }
 
   private void inPlacePropagationMerge(int beginLevel, final float[] buf, int bufStart,
-    final float[] auxBuf, int auxBufStart) {
+      final float[] auxBuf, int auxBufStart) {
     final float[] levelsArr = combinedBuffer;
     int endLevel = beginLevel;
     long tmp = bitPattern >>> beginLevel;
@@ -262,7 +271,7 @@ public class HeapQuantileSketch implements Serialize {
     }
     System.arraycopy(buf, bufStart, levelsArr, k * (endLevel + 2), k);
     SketchUtils
-      .levelwisePropagation(bitPattern, k, beginLevel, endLevel, auxBuf, auxBufStart, levelsArr);
+        .levelwisePropagation(bitPattern, k, beginLevel, endLevel, auxBuf, auxBufStart, levelsArr);
     bitPattern += 1L << beginLevel;
   }
 
@@ -278,7 +287,7 @@ public class HeapQuantileSketch implements Serialize {
       this.combinedBuffer = other.combinedBuffer.clone();
     } else {
       System
-        .arraycopy(other.combinedBuffer, 0, this.combinedBuffer, 0, other.combinedBufferCapacity);
+          .arraycopy(other.combinedBuffer, 0, this.combinedBuffer, 0, other.combinedBufferCapacity);
     }
     this.baseBufferCount = other.baseBufferCount;
     this.bitPattern = other.bitPattern;
@@ -291,7 +300,8 @@ public class HeapQuantileSketch implements Serialize {
   /**
    * Serialize to and deserialize from the Netty ByteBuf
    */
-  @Override public void serialize(ByteBuf buf) {
+  @Override
+  public void serialize(ByteBuf buf) {
     buf.writeInt(k);
     buf.writeLong(n);
     buf.writeLong(estimateN);
@@ -300,11 +310,13 @@ public class HeapQuantileSketch implements Serialize {
     buf.writeInt(combinedBufferCapacity);
     buf.writeInt(baseBufferCount);
     buf.writeLong(bitPattern);
-    for (int i = 0; i < combinedBufferCapacity; i++)
+    for (int i = 0; i < combinedBufferCapacity; i++) {
       buf.writeFloat(combinedBuffer[i]);
+    }
   }
 
-  @Override public void deserialize(ByteBuf buf) {
+  @Override
+  public void deserialize(ByteBuf buf) {
     this.k = buf.readInt();
     this.n = buf.readLong();
     this.estimateN = buf.readLong();
@@ -315,13 +327,15 @@ public class HeapQuantileSketch implements Serialize {
     this.bitPattern = buf.readLong();
     SketchUtils.checkBitPattern(bitPattern, n, k);
     this.combinedBuffer = new float[combinedBufferCapacity];
-    for (int i = 0; i < combinedBufferCapacity; i++)
+    for (int i = 0; i < combinedBufferCapacity; i++) {
       combinedBuffer[i] = buf.readFloat();
+    }
     samplesArr = null;
     weightsArr = null;
   }
 
-  @Override public int bufferLen() {
+  @Override
+  public int bufferLen() {
     return 44 + combinedBufferCapacity * 4;
   }
 
@@ -337,8 +351,9 @@ public class HeapQuantileSketch implements Serialize {
     buf.putInt(combinedBufferCapacity);
     buf.putInt(baseBufferCount);
     buf.putLong(bitPattern);
-    for (int i = 0; i < combinedBufferCapacity; i++)
+    for (int i = 0; i < combinedBufferCapacity; i++) {
       buf.putFloat(combinedBuffer[i]);
+    }
   }
 
   public void deserialize(ByteBuffer buf) {
@@ -352,32 +367,37 @@ public class HeapQuantileSketch implements Serialize {
     this.bitPattern = buf.getLong();
     SketchUtils.checkBitPattern(bitPattern, n, k);
     this.combinedBuffer = new float[combinedBufferCapacity];
-    for (int i = 0; i < combinedBufferCapacity; i++)
+    for (int i = 0; i < combinedBufferCapacity; i++) {
       combinedBuffer[i] = buf.getFloat();
+    }
     samplesArr = null;
     weightsArr = null;
   }
 
   public float getQuantile(float fraction) {
     SketchUtils.checkFraction(fraction);
-    if (samplesArr == null || weightsArr == null)
+    if (samplesArr == null || weightsArr == null) {
       makeSummary();
+    }
 
-    if (samplesArr.length == 0)
+    if (samplesArr.length == 0) {
       return Float.NaN;
+    }
 
-    if (fraction == 0.0f)
+    if (fraction == 0.0f) {
       return minValue;
-    else if (fraction == 1.0f)
+    } else if (fraction == 1.0f) {
       return maxValue;
-    else
+    } else {
       return getQuantileFromArr(fraction);
+    }
   }
 
   public float[] getQuantiles(float[] fractions) {
     SketchUtils.checkFractions(fractions);
-    if (samplesArr == null || weightsArr == null)
+    if (samplesArr == null || weightsArr == null) {
       makeSummary();
+    }
 
     float[] res = new float[fractions.length];
     if (samplesArr.length == 0) {
@@ -386,20 +406,22 @@ public class HeapQuantileSketch implements Serialize {
     }
 
     for (int i = 0; i < fractions.length; i++) {
-      if (fractions[i] == 0.0f)
+      if (fractions[i] == 0.0f) {
         res[i] = minValue;
-      else if (fractions[i] == 1.0f)
+      } else if (fractions[i] == 1.0f) {
         res[i] = maxValue;
-      else
+      } else {
         res[i] = getQuantileFromArr(fractions[i]);
+      }
     }
     return res;
   }
 
   public float[] getQuantiles(int evenPartition) {
     SketchUtils.checkEvenPartiotion(evenPartition);
-    if (samplesArr == null || weightsArr == null)
+    if (samplesArr == null || weightsArr == null) {
       makeSummary();
+    }
 
     float[] res = new float[evenPartition];
     if (samplesArr.length == 0) {
@@ -418,10 +440,11 @@ public class HeapQuantileSketch implements Serialize {
       int left = index, right = weightsArr.length - 1;
       while (left + 1 < right) {
         int mid = left + ((right - left) >> 1);
-        if (weightsArr[mid] <= rank)
+        if (weightsArr[mid] <= rank) {
           left = mid;
-        else
+        } else {
           right = mid;
+        }
       }
       res[i] = samplesArr[left];
       index = left;
@@ -431,15 +454,17 @@ public class HeapQuantileSketch implements Serialize {
 
   private float getQuantileFromArr(float fraction) {
     long rank = (long) (n * fraction);
-    if (rank == n)
+    if (rank == n) {
       n--;
+    }
     int left = 0, right = weightsArr.length - 1;
     while (left + 1 < right) {
       int mid = left + ((right - left) >> 1);
-      if (weightsArr[mid] <= rank)
+      if (weightsArr[mid] <= rank) {
         left = mid;
-      else
+      } else {
         right = mid;
+      }
     }
     return samplesArr[left];
   }

@@ -62,11 +62,11 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
   var LOG = LogFactory.getLog(classOf[GBDTModel])
 
   var indexRange = conf.getInt(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
-  val maxTreeNum = conf.getInt(MLConf.ML_NUM_TREE, MLConf.DEFAULT_ML_NUM_TREE)
-  val maxTreeDepth = conf.getInt(MLConf.ML_TREE_MAX_DEPTH, MLConf.DEFAULT_ML_TREE_MAX_DEPTH)
-  val splitNum = conf.getInt(MLConf.ML_TREE_MAX_BIN, MLConf.DEFAULT_ML_TREE_MAX_BIN)
-  val featSampleRatio = conf.getFloat(MLConf.ML_TREE_FEATURE_SAMPLE_RATE, MLConf.DEFAULT_ML_TREE_FEATURE_SAMPLE_RATE)
-  val cateFeatStr = conf.get(MLConf.ML_TREE_CATEGORICAL_FEATURE, MLConf.DEFAULT_ML_TREE_CATEGORICAL_FEATURE)
+  val maxTreeNum = conf.getInt(MLConf.ML_GBDT_TREE_NUM, MLConf.DEFAULT_ML_GBDT_TREE_NUM)
+  val maxTreeDepth = conf.getInt(MLConf.ML_GBDT_TREE_DEPTH, MLConf.DEFAULT_ML_GBDT_TREE_DEPTH)
+  val splitNum = conf.getInt(MLConf.ML_GBDT_SPLIT_NUM, MLConf.DEFAULT_ML_GBDT_SPLIT_NUM)
+  val featSampleRatio = conf.getFloat(MLConf.ML_GBDT_SAMPLE_RATIO, MLConf.DEFAULT_ML_GBDT_SAMPLE_RATIO)
+  val cateFeatStr = conf.get(MLConf.ML_GBDT_CATE_FEAT, MLConf.DEFAULT_ML_GBDT_CATE_FEAT)
   val cateFeatNum = if (cateFeatStr.contains(",")) cateFeatStr.split(",").length else 1
 
   val maxTNodeNum: Int = Maths.pow(2, maxTreeDepth) - 1

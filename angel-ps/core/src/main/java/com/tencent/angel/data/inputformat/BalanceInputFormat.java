@@ -21,6 +21,8 @@ package com.tencent.angel.data.inputformat;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.*;
 import org.apache.hadoop.io.compress.CompressionCodec;
@@ -39,8 +41,9 @@ import java.io.IOException;
 import java.util.*;
 
 public class BalanceInputFormat extends CombineTextInputFormat {
-
+  private static final Log LOG = LogFactory.getLog(BalanceInputFormat.class);
   private HashMap<String, Set<String>> rackToNodes = new HashMap<String, Set<String>>();
+  private final String blockSplitSize = "angel.block.split.size";
 
 
   static class OneFileInfo {
@@ -617,8 +620,8 @@ public class BalanceInputFormat extends CombineTextInputFormat {
     //    long num = totLength / maxSize;
 
     for (int i = 0; i < num; i++) {
-      parts.put(i, new ArrayList<OneBlockInfo>());
-      locations.put(i, new HashSet<String>());
+      parts.put(i, new ArrayList<>());
+      locations.put(i, new HashSet<>());
     }
 
     for (OneBlockInfo blockInfo : blocks) {
@@ -638,9 +641,15 @@ public class BalanceInputFormat extends CombineTextInputFormat {
         locations.get(selectPart).add(host);
     }
 
+    int resultSplitNum = 0;
     for (Map.Entry<Integer, ArrayList<OneBlockInfo>> entry : parts.entrySet()) {
-      addCreatedSplit(splits, locations.get(entry.getKey()), entry.getValue());
+      if(entry.getValue().size() > 0) {
+        resultSplitNum++;
+        addCreatedSplit(splits, locations.get(entry.getKey()), entry.getValue());
+      }
     }
+
+    LOG.info("expect split number=" + num + ",actual split number=" + resultSplitNum);
   }
 
   public void getMoreSplits(Configuration conf, List<FileStatus> stats, long maxSize,
@@ -668,7 +677,7 @@ public class BalanceInputFormat extends CombineTextInputFormat {
     for (FileStatus stat : stats) {
       files[i] =
         new OneFileInfo(stat, conf, isSplitable(conf, stat.getPath()), rackToBlocks, blockToNodes,
-          nodeToBlocks, rackToNodes, 256 * 1024 * 1024);
+          nodeToBlocks, rackToNodes, Math.min(conf.getLong(blockSplitSize, maxSize), maxSize));
       totLength += files[i].getLength();
     }
 

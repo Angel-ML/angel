@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -20,10 +20,15 @@ package com.tencent.angel.ml.matrix;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
+import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.model.output.format.MatrixFilesMeta;
 import com.tencent.angel.ps.storage.partitioner.Partitioner;
 import com.tencent.angel.ps.storage.partitioner.RangePartitioner;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -40,6 +45,7 @@ import java.util.Map;
  * MatrixContext is used for user to set Matrix information.
  */
 public class MatrixContext implements Serializable {
+
   private final static Log LOG = LogFactory.getLog(MatrixContext.class);
 
   /**
@@ -56,6 +62,16 @@ public class MatrixContext implements Serializable {
    * Number of cols for this matrix
    */
   private long colNum;
+
+  /**
+   * Index range start
+   */
+  private long indexStart;
+
+  /**
+   * Index range end
+   */
+  private long indexEnd;
 
   /**
    * Number of valid indexes
@@ -78,6 +94,11 @@ public class MatrixContext implements Serializable {
   private Class<? extends Partitioner> partitionerClass;
 
   /**
+   * Matrix partitions
+   */
+  private List<PartContext> parts;
+
+  /**
    * Row type
    */
   private RowType rowType;
@@ -96,96 +117,154 @@ public class MatrixContext implements Serializable {
    * Creates a new MatrixContext by default.
    */
   public MatrixContext() {
-    this("", -1, -1, -1, -1, RowType.T_DOUBLE_DENSE);
+    this("", -1, -1);
   }
 
   /**
    * Create a new MatrixContext
    *
-   * @param name   matrix name
+   * @param name matrix name
    * @param rowNum matrix row number
    * @param colNum matrix column number
    */
   public MatrixContext(String name, int rowNum, long colNum) {
-    this(name, rowNum, colNum, -1, -1, -1, RowType.T_DOUBLE_DENSE);
+    this(name, rowNum, colNum, -1, -1);
   }
+
+  /**
+   * reate a new MatrixContext use column range
+   *
+   * @param name matrix name
+   * @param rowNum matrix row number
+   * @param start column index range start
+   * @param end column index range end
+   */
+  public MatrixContext(String name, int rowNum, long start, long end) {
+    this(name, rowNum, -1, start, end, -1, -1, -1, new ArrayList<>(), RowType.T_DOUBLE_DENSE);
+  }
+
 
   /**
    * Create a new MatrixContext
    *
-   * @param name   matrix name
+   * @param name matrix name
    * @param rowNum matrix row number
    * @param colNum matrix column number
-   */
-  public MatrixContext(String name, int rowNum, long colNum, long validIndexNum) {
-    this(name, rowNum, colNum, validIndexNum, -1, -1, RowType.T_DOUBLE_DENSE);
-  }
-
-
-  /**
-   * Create a new MatrixContext
-   *
-   * @param name             matrix name
-   * @param rowNum           matrix row number
-   * @param colNum           matrix column number
    * @param maxRowNumInBlock matrix block row number
    * @param maxColNumInBlock matrix block column number
    */
   public MatrixContext(String name, int rowNum, long colNum, int maxRowNumInBlock,
-    long maxColNumInBlock) {
-    this(name, rowNum, colNum, -1, maxRowNumInBlock, maxColNumInBlock, RowType.T_DOUBLE_DENSE);
+      long maxColNumInBlock) {
+    this(name, rowNum, colNum, -1, -1, -1, maxRowNumInBlock, maxColNumInBlock, new ArrayList<>(),
+        RowType.T_DOUBLE_DENSE);
   }
+
 
   /**
    * Create a new MatrixContext
    *
-   * @param name             matrix name
-   * @param rowNum           matrix row number
-   * @param colNum           matrix column number
-   * @param maxRowNumInBlock matrix block row number
-   * @param maxColNumInBlock matrix block column number
-   * @param rowType          matrix row type
-   */
-  public MatrixContext(String name, int rowNum, long colNum, int maxRowNumInBlock,
-    long maxColNumInBlock, RowType rowType) {
-    this(name, rowNum, colNum, -1, maxRowNumInBlock, maxColNumInBlock, rowType);
-  }
-
-  /**
-   * Create a new MatrixContext
-   *
-   * @param name             matrix name
-   * @param rowNum           matrix row number
-   * @param colNum           matrix column number
-   * @param validIndexNum    number of valid indexes
+   * @param name matrix name
+   * @param rowNum matrix row number
+   * @param colNum matrix column number
+   * @param validIndexNum number of valid indexes
    * @param maxRowNumInBlock matrix block row number
    * @param maxColNumInBlock matrix block column number
    */
   public MatrixContext(String name, int rowNum, long colNum, long validIndexNum,
-    int maxRowNumInBlock, long maxColNumInBlock) {
-    this(name, rowNum, colNum, validIndexNum, maxRowNumInBlock, maxColNumInBlock,
-      RowType.T_DOUBLE_DENSE);
+      int maxRowNumInBlock, long maxColNumInBlock) {
+    this(name, rowNum, colNum, -1, -1, validIndexNum, maxRowNumInBlock, maxColNumInBlock,
+        new ArrayList<>(), RowType.T_DOUBLE_DENSE);
   }
 
   /**
-   * Create a new MatrixContext
+   * Create a new MatrixContext use column size and partitioner parameters
    *
-   * @param name             matrix name
-   * @param rowNum           matrix row number
-   * @param colNum           matrix column number
-   * @param validIndexNum    number of valid indexes
+   * @param name matrix name
+   * @param rowNum matrix row number
+   * @param colNum matrix column number
+   * @param validIndexNum number of valid indexes
    * @param maxRowNumInBlock matrix block row number
    * @param maxColNumInBlock matrix block column number
-   * @param rowType          matrix row type
+   * @param rowType matrix row type
    */
   public MatrixContext(String name, int rowNum, long colNum, long validIndexNum,
-    int maxRowNumInBlock, long maxColNumInBlock, RowType rowType) {
+      int maxRowNumInBlock, long maxColNumInBlock, RowType rowType) {
+    this(name, rowNum, colNum, -1, -1, validIndexNum, maxRowNumInBlock, maxColNumInBlock,
+        new ArrayList<>(), rowType);
+  }
+
+  /**
+   * Create a new MatrixContext use column range and partitioner parameters
+   *
+   * @param name matrix name
+   * @param rowNum matrix row number
+   * @param indexStart column index range start
+   * @param indexEnd column index range end
+   * @param validIndexNum number of valid indexes
+   * @param maxRowNumInBlock matrix block row number
+   * @param maxColNumInBlock matrix block column number
+   * @param rowType matrix row type
+   */
+  public MatrixContext(String name, int rowNum, long indexStart, long indexEnd,
+      long validIndexNum, int maxRowNumInBlock, long maxColNumInBlock, RowType rowType) {
+    this(name, rowNum, -1, indexStart, indexEnd, validIndexNum, maxRowNumInBlock, maxColNumInBlock,
+        new ArrayList<>(), rowType);
+  }
+
+  /**
+   * Create a matrix context use column size and partitions
+   *
+   * @param name matrix name
+   * @param rowNum matrix row number
+   * @param colNum matrix column number
+   * @param validIndexNum number of column valid indexes
+   * @param parts matrix partitions
+   * @param rowType matrix row type
+   */
+  public MatrixContext(String name, int rowNum, long colNum,
+      long validIndexNum, List<PartContext> parts, RowType rowType) {
+    this(name, rowNum, colNum, -1, -1, validIndexNum, -1, -1, parts, rowType);
+  }
+
+  /**
+   * Create a matrix context use column range and partitions
+   *
+   * @param name matrix name
+   * @param rowNum matrix row number
+   * @param indexStart matrix column index start
+   * @param indexEnd matrix column index end
+   * @param validIndexNum valid index number in range
+   * @param parts matrix partitions
+   * @param rowType matrix row type
+   */
+  public MatrixContext(String name, int rowNum, long indexStart, long indexEnd,
+      long validIndexNum, List<PartContext> parts, RowType rowType) {
+    this(name, rowNum, -1, indexStart, indexEnd, validIndexNum, -1, -1, parts, rowType);
+  }
+
+  /**
+   * Create a matrix context use column range and partitions
+   *
+   * @param name matrix name
+   * @param rowNum matrix row number
+   * @param indexStart matrix column index start
+   * @param indexEnd matrix column index end
+   * @param validIndexNum valid index number in range
+   * @param parts matrix partitions
+   * @param rowType matrix row type
+   */
+  public MatrixContext(String name, int rowNum, long colNum, long indexStart, long indexEnd,
+      long validIndexNum, int maxRowNumInBlock, long maxColNumInBlock, List<PartContext> parts,
+      RowType rowType) {
     this.name = name;
     this.rowNum = rowNum;
     this.colNum = colNum;
+    this.indexStart = indexStart;
+    this.indexEnd = indexEnd;
     this.validIndexNum = validIndexNum;
     this.maxRowNumInBlock = maxRowNumInBlock;
     this.maxColNumInBlock = maxColNumInBlock;
+    this.parts = parts;
     this.rowType = rowType;
     this.attributes = new HashMap<>();
     this.matrixId = -1;
@@ -284,8 +363,6 @@ public class MatrixContext implements Serializable {
 
   /**
    * Set matrix id
-   *
-   * @param matrixId
    */
   public void setMatrixId(int matrixId) {
     this.matrixId = matrixId;
@@ -366,7 +443,7 @@ public class MatrixContext implements Serializable {
   /**
    * Set matrix context.
    *
-   * @param key   the key
+   * @param key the key
    * @param value the value
    * @return the matrix context
    */
@@ -384,6 +461,68 @@ public class MatrixContext implements Serializable {
   }
 
   /**
+   * Set index range start
+   *
+   * @param indexStart index range start
+   */
+  public void setIndexStart(long indexStart) {
+    this.indexStart = indexStart;
+  }
+
+  /**
+   * get index range start
+   */
+  public long getIndexStart() {
+    return indexStart;
+  }
+
+  /**
+   * Get index range end
+   *
+   * @return index range end
+   */
+  public long getIndexEnd() {
+    return indexEnd;
+  }
+
+  /**
+   * Set index range end
+   *
+   * @param indexEnd index range end
+   */
+  public void setIndexEnd(long indexEnd) {
+    this.indexEnd = indexEnd;
+  }
+
+  /**
+   * Get matrix partitions
+   *
+   * @return matrix partitions
+   */
+  public List<PartContext> getParts() {
+    return parts;
+  }
+
+  /**
+   * Set matrix partitions
+   *
+   * @param parts matrix partitions
+   */
+  public void setParts(List<PartContext> parts) {
+    this.parts = parts;
+  }
+
+  /**
+   * Add a partition context
+   *
+   * @param part partition context
+   */
+  public void addPart(PartContext part) {
+    parts.add(part);
+  }
+
+
+  /**
    * Get matrix id
    *
    * @return matrix id
@@ -394,18 +533,15 @@ public class MatrixContext implements Serializable {
 
   /**
    * Init matrix
-   *
-   * @param conf
-   * @throws IOException
    */
   public void init(Configuration conf) throws IOException {
     initPartitioner();
-    check();
+
     String loadPath = attributes.get(MatrixConf.MATRIX_LOAD_PATH);
-    if(loadPath == null) {
+    if (loadPath == null) {
       loadPath = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH);
       if (loadPath != null) {
-        if(matrixPathExist(loadPath, name, conf)) {
+        if (matrixPathExist(loadPath, name, conf)) {
           attributes.put(MatrixConf.MATRIX_LOAD_PATH, loadPath);
           loadMatrixMetaFromFile(name, loadPath, conf);
         }
@@ -413,23 +549,75 @@ public class MatrixContext implements Serializable {
     } else {
       loadMatrixMetaFromFile(name, loadPath, conf);
     }
+
+    adaptParams();
+    check();
   }
 
-  private boolean matrixPathExist(String loadPath, String name, Configuration conf) throws IOException {
+  private boolean matrixPathExist(String loadPath, String name, Configuration conf)
+      throws IOException {
     Path matrixPath = new Path(loadPath, name);
     FileSystem fs = matrixPath.getFileSystem(conf);
     return fs.exists(matrixPath);
   }
 
+  private void adaptParams() {
+    // If col == -1 and start/end not set
+    if (colNum <= 0 && indexEnd <= indexStart) {
+      if (rowType.isIntKey()) {
+        indexStart = Integer.MIN_VALUE;
+        indexEnd = Integer.MAX_VALUE;
+        colNum = indexEnd - indexStart;
+      } else {
+        indexStart = Long.MIN_VALUE;
+        indexEnd = Long.MAX_VALUE;
+      }
+    } else if (colNum <= 0 && indexEnd > indexStart) {
+      // start/end set
+      // for dense type, we need to set the colNum to set dim for vectors
+      if (rowType.isIntKey()) {
+        colNum = indexEnd - indexStart;
+      }
+    } else if (colNum > 0 && indexEnd <= indexStart) {
+      // colNum set, start/end not set
+      indexStart = 0;
+      indexEnd = colNum;
+    }
+
+    LOG.info("Matrix context " + name + " row=" + rowNum +
+        " col=" + colNum + " start=" + indexStart + " end=" + indexEnd);
+  }
+
   private void check() {
-    if (rowType == RowType.T_DOUBLE_DENSE || rowType == RowType.T_FLOAT_DENSE
-      || rowType == RowType.T_LONG_DENSE || rowType == RowType.T_INT_DENSE) {
-      assert colNum > 0;
+    // Row number must > 0
+    if (rowNum <= 0) {
+      throw new AngelException(
+          "matrix " + name + " parameter is invalid, row number must > 0, now is " + rowNum);
+    }
+
+    if (colNum > 0 && indexEnd > indexStart && (colNum != (indexEnd - indexStart))) {
+      // both set, check its valid
+      throw new AngelException("matrix " + name
+          + " parameter is invalid, column number must = (indexEnd - indexStart), now colNum = "
+          + colNum
+          + ", indexEnd = " + indexEnd + ", indexStart = " + indexStart);
+    }
+
+    if (colNum <= 0 && rowType.isLongKey() && rowType.isDense()) {
+      throw new AngelException(
+          "matrix " + name + " is dense and with longkey, might cost a lot of memory. " +
+              "Please considering to configure with sparse row type, like (T_FLOAT_SPARSE_LONGKEY)");
+    }
+
+    if (indexStart != 0 && (rowType.isDense() || rowType.isComp())) {
+      throw new AngelException("matrix " + name
+          + " parameter is invalid, nonzero index range start can only be use sparse model type now"
+          + ", but model type now is " + rowType + " with index range start value = " + indexStart);
     }
   }
 
   private void loadMatrixMetaFromFile(String name, String path, Configuration conf)
-    throws IOException {
+      throws IOException {
     Path meteFilePath = new Path(new Path(path, name), ModelFilesConstent.modelMetaFileName);
     MatrixFilesMeta meta = new MatrixFilesMeta();
 
@@ -453,6 +641,8 @@ public class MatrixContext implements Serializable {
     colNum = meta.getCol();
     maxRowNumInBlock = meta.getBlockRow();
     maxColNumInBlock = meta.getBlockCol();
+    indexStart = meta.getFeatureIndexStart();
+    indexEnd = meta.getFeatureIndexEnd();
     rowType = RowType.valueOf(meta.getRowType());
     Map<String, String> oldAttributes = meta.getOptions();
     if (oldAttributes != null && !oldAttributes.isEmpty()) {
@@ -462,11 +652,13 @@ public class MatrixContext implements Serializable {
     }
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     return "MatrixContext{" + "name='" + name + '\'' + ", rowNum=" + rowNum + ", colNum=" + colNum
-      + ", validIndexNum=" + validIndexNum + ", maxRowNumInBlock=" + maxRowNumInBlock
-      + ", maxColNumInBlock=" + maxColNumInBlock + ", partitionerClass=" + partitionerClass
-      + ", rowType=" + rowType + ", attributes=" + attributes + ", matrixId=" + matrixId + '}';
+        + ", validIndexNum=" + validIndexNum + ", maxRowNumInBlock=" + maxRowNumInBlock
+        + ", start=" + indexStart + ", end=" + indexEnd
+        + ", maxColNumInBlock=" + maxColNumInBlock + ", partitionerClass=" + partitionerClass
+        + ", rowType=" + rowType + ", attributes=" + attributes + ", matrixId=" + matrixId + '}';
   }
 
   /**
@@ -480,7 +672,7 @@ public class MatrixContext implements Serializable {
     } else {
       if (colNum <= 0) {
         if (rowType == RowType.T_DOUBLE_SPARSE || rowType == RowType.T_FLOAT_SPARSE
-          || rowType == RowType.T_LONG_SPARSE || rowType == RowType.T_INT_SPARSE) {
+            || rowType == RowType.T_LONG_SPARSE || rowType == RowType.T_INT_SPARSE) {
           return (double) validIndexNum / 2 / Integer.MAX_VALUE;
         } else {
           return (double) validIndexNum / 2 / Long.MAX_VALUE;

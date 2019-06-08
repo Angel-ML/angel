@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,17 +18,31 @@
 
 package com.tencent.angel.ml.math2.ufuncs.executor.matrix;
 
+import static com.tencent.angel.ml.math2.ufuncs.expression.OpType.ALL;
+import static com.tencent.angel.ml.math2.ufuncs.expression.OpType.INTERSECTION;
+
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.math2.matrix.*;
+import com.tencent.angel.ml.math2.matrix.BlasDoubleMatrix;
+import com.tencent.angel.ml.math2.matrix.BlasFloatMatrix;
+import com.tencent.angel.ml.math2.matrix.BlasMatrix;
+import com.tencent.angel.ml.math2.matrix.Matrix;
+import com.tencent.angel.ml.math2.matrix.RowBasedMatrix;
 import com.tencent.angel.ml.math2.ufuncs.expression.Binary;
 import com.tencent.angel.ml.math2.utils.ArrayCopy;
-import com.tencent.angel.ml.math2.vector.*;
-import it.unimi.dsi.fastutil.ints.*;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.IntDummyVector;
+import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.ml.math2.vector.IntIntVector;
+import com.tencent.angel.ml.math2.vector.IntLongVector;
+import com.tencent.angel.ml.math2.vector.Vector;
+import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import it.unimi.dsi.fastutil.ints.Int2FloatMap;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2LongMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
-import static com.tencent.angel.ml.math2.ufuncs.expression.OpType.*;
-
 public class BinaryMatrixExecutor {
+
   public static Matrix apply(Matrix mat, Vector v, int idx, boolean onCol, Binary op) {
     if (mat instanceof BlasDoubleMatrix && v instanceof IntDoubleVector) {
       return apply((BlasDoubleMatrix) mat, (IntDoubleVector) v, idx, onCol, op);
@@ -57,7 +71,7 @@ public class BinaryMatrixExecutor {
   }
 
   private static Matrix apply(BlasDoubleMatrix mat, IntDummyVector v, int idx, boolean onCol,
-    Binary op) {
+      Binary op) {
     double[] data = mat.getData();
     int m = mat.getNumRows(), n = mat.getNumCols();
 
@@ -159,7 +173,7 @@ public class BinaryMatrixExecutor {
   }
 
   private static Matrix apply(BlasDoubleMatrix mat, IntDoubleVector v, int idx, boolean onCol,
-    Binary op) {
+      Binary op) {
     double[] data = mat.getData();
     int m = mat.getNumRows(), n = mat.getNumCols();
 
@@ -354,7 +368,7 @@ public class BinaryMatrixExecutor {
   }
 
   private static Matrix apply(BlasDoubleMatrix mat, IntFloatVector v, int idx, boolean onCol,
-    Binary op) {
+      Binary op) {
     double[] data = mat.getData();
     int m = mat.getNumRows(), n = mat.getNumCols();
 
@@ -549,7 +563,7 @@ public class BinaryMatrixExecutor {
   }
 
   private static Matrix apply(BlasDoubleMatrix mat, IntLongVector v, int idx, boolean onCol,
-    Binary op) {
+      Binary op) {
     double[] data = mat.getData();
     int m = mat.getNumRows(), n = mat.getNumCols();
 
@@ -744,7 +758,7 @@ public class BinaryMatrixExecutor {
   }
 
   private static Matrix apply(BlasDoubleMatrix mat, IntIntVector v, int idx, boolean onCol,
-    Binary op) {
+      Binary op) {
     double[] data = mat.getData();
     int m = mat.getNumRows(), n = mat.getNumCols();
 
@@ -939,7 +953,7 @@ public class BinaryMatrixExecutor {
   }
 
   private static Matrix apply(BlasFloatMatrix mat, IntDummyVector v, int idx, boolean onCol,
-    Binary op) {
+      Binary op) {
     float[] data = mat.getData();
     int m = mat.getNumRows(), n = mat.getNumCols();
 
@@ -1041,7 +1055,7 @@ public class BinaryMatrixExecutor {
   }
 
   private static Matrix apply(BlasFloatMatrix mat, IntFloatVector v, int idx, boolean onCol,
-    Binary op) {
+      Binary op) {
     float[] data = mat.getData();
     int m = mat.getNumRows(), n = mat.getNumCols();
 
@@ -1236,7 +1250,7 @@ public class BinaryMatrixExecutor {
   }
 
   private static Matrix apply(BlasFloatMatrix mat, IntLongVector v, int idx, boolean onCol,
-    Binary op) {
+      Binary op) {
     float[] data = mat.getData();
     int m = mat.getNumRows(), n = mat.getNumCols();
 
@@ -1431,7 +1445,7 @@ public class BinaryMatrixExecutor {
   }
 
   private static Matrix apply(BlasFloatMatrix mat, IntIntVector v, int idx, boolean onCol,
-    Binary op) {
+      Binary op) {
     float[] data = mat.getData();
     int m = mat.getNumRows(), n = mat.getNumCols();
 
@@ -1659,7 +1673,6 @@ public class BinaryMatrixExecutor {
 
     int size = v.size();
     byte[] flag = new byte[v.getDim()];
-
 
     if (onCol && op.isInplace()) {
       int[] idxs = v.getIndices();
@@ -2739,7 +2752,6 @@ public class BinaryMatrixExecutor {
     int size = v.size();
     byte[] flag = new byte[v.getDim()];
 
-
     if (onCol && op.isInplace()) {
       int[] idxs = v.getIndices();
       for (int k = 0; k < size; k++) {
@@ -3573,7 +3585,6 @@ public class BinaryMatrixExecutor {
   }
 
 
-
   public static Matrix apply(Matrix mat1, boolean trans1, Matrix mat2, boolean trans2, Binary op) {
     if (mat1 instanceof BlasMatrix && mat2 instanceof BlasMatrix) {
       if (trans1 == trans2) {
@@ -3607,7 +3618,7 @@ public class BinaryMatrixExecutor {
   }
 
   private static Matrix apply(BlasDoubleMatrix mat1, boolean trans1, BlasDoubleMatrix mat2,
-    boolean trans2, Binary op) {
+      boolean trans2, Binary op) {
     double[] mat1Data = mat1.getData();
     double[] mat2Data = mat2.getData();
     int m = mat1.getNumRows(), n = mat1.getNumCols();
@@ -3664,7 +3675,7 @@ public class BinaryMatrixExecutor {
   }
 
   private static Matrix apply(BlasDoubleMatrix mat1, boolean trans1, BlasFloatMatrix mat2,
-    boolean trans2, Binary op) {
+      boolean trans2, Binary op) {
     double[] mat1Data = mat1.getData();
     float[] mat2Data = mat2.getData();
     int m = mat1.getNumRows(), n = mat1.getNumCols();
@@ -3721,7 +3732,7 @@ public class BinaryMatrixExecutor {
   }
 
   private static Matrix apply(BlasFloatMatrix mat1, boolean trans1, BlasFloatMatrix mat2,
-    boolean trans2, Binary op) {
+      boolean trans2, Binary op) {
     float[] mat1Data = mat1.getData();
     float[] mat2Data = mat2.getData();
     int m = mat1.getNumRows(), n = mat1.getNumCols();

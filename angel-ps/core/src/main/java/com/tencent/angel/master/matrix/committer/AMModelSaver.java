@@ -612,6 +612,9 @@ public class AMModelSaver extends AbstractService {
       new MatrixFilesMeta(matrixId, meta.getName(), matrixContext.getFormatClassName(), meta.getRowType().getNumber(), meta.getRowNum(),
         meta.getColNum(), meta.getBlockRowNum(), meta.getBlockColNum(), kvMap);
 
+    filesMeta.setFeatureIndexStart(meta.getIndexStart());
+    filesMeta.setFeatureIndexEnd(meta.getIndexEnd());
+
     try {
       // Move output files
       Path srcPath = new Path(saveContext.getTmpSavePath(), ModelFilesConstent.resultDirName);
