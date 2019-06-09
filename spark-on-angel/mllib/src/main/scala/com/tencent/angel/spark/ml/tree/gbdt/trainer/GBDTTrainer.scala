@@ -37,7 +37,7 @@ import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Partitioner, SparkConf, SparkContext, TaskContext}
 
-import scala.collection.mutable.{ArrayBuilder => AB}
+import scala.collection.mutable.{ArrayBuffer, ArrayBuilder => AB}
 
 
 object GBDTTrainer {
@@ -127,7 +127,8 @@ object GBDTTrainer {
     try {
       val trainer = new GBDTTrainer(param)
       trainer.initialize(trainPath, validPath)
-      val model = trainer.train()
+      val (model, metrics) = trainer.train()
+      metrics.foreach(println)
       trainer.save(model, modelPath)
     } catch {
       case e: Exception =>
@@ -424,12 +425,14 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
     println(s"Initialization done, cost ${System.currentTimeMillis() - initStart} ms in total")
   }
 
-  def train(): Seq[GBTTree] = {
+  def train(): (Seq[GBTTree], Array[Double]) = {
     val trainStart = System.currentTimeMillis()
 
     val loss = ObjectiveFactory.getLoss(param.lossFunc)
     val evalMetrics = ObjectiveFactory.getEvalMetricsOrDefault(param.evalMetrics, loss)
     //val multiStrategy = ObjectiveFactory.getMultiStrategy(param.multiStrategy)
+
+    val metrics: ArrayBuffer[Double] = new ArrayBuffer[Double]()
 
     LogHelper.setLogLevel("info")
 
@@ -510,17 +513,24 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
       })
       if (! (param.isMultiClassMultiTree && (treeId + 1) % param.numClass != 0) ) {
         val evalTrainMsg = (evalMetrics, trainMetrics).zipped.map {
-          case (evalMetric, trainSum) => evalMetric.getKind match {
-            case Kind.AUC => s"${evalMetric.getKind}[${evalMetric.avg(trainSum, workers.count.toInt)}]"
-            case _ => s"${evalMetric.getKind}[${evalMetric.avg(trainSum, numTrain)}]"
+          case (evalMetric, trainSum) => {
+            val metric: Double = evalMetric.getKind match {
+              case Kind.AUC => evalMetric.avg(trainSum, workers.count.toInt)
+              case _ => evalMetric.avg(trainSum, numTrain)
+            }
+            s"${evalMetric.getKind}[$metric]"
           }
         }.mkString(", ")
         val round = if (param.isMultiClassMultiTree) (treeId + 1) / param.numClass else (treeId + 1)
         println(s"Evaluation on train data after ${round} tree(s): $evalTrainMsg")
         val evalValidMsg = (evalMetrics, validMetrics).zipped.map {
-          case (evalMetric, validSum) => evalMetric.getKind match {
-            case Kind.AUC => s"${evalMetric.getKind}[${evalMetric.avg(validSum, workers.count.toInt)}]"
-            case _ => s"${evalMetric.getKind}[${evalMetric.avg(validSum, numValid)}]"
+          case (evalMetric, validSum) => {
+            val metric: Double = evalMetric.getKind match {
+              case Kind.AUC => evalMetric.avg(validSum, workers.count.toInt)
+              case _ => evalMetric.avg(validSum, numValid)
+            }
+            if (treeId == param.numTree - 1) metrics += metric
+            s"${evalMetric.getKind}[$metric]"
           }
         }.mkString(", ")
         println(s"Evaluation on valid data after ${round} tree(s): $evalValidMsg")
@@ -543,7 +553,7 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
         println(s"Tree[${treeId + 1}] contains ${tree.size} nodes " +
           s"(${(tree.size - 1) / 2 + 1} leaves)")
     }
-    forest
+    (forest, metrics.toArray)
   }
 
   def save(model: Seq[GBTTree], modelPath: String)(implicit sc: SparkContext): Unit = {
