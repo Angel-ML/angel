@@ -57,7 +57,7 @@ public interface MatrixInterface {
    * @param row   the update vector
    * @throws AngelException
    */
-  Future<VoidResult> asycIncrement(int rowId, Vector row) throws AngelException;
+  Future<VoidResult> asyncIncrement(int rowId, Vector row) throws AngelException;
 
   /**
    * Use a update vector which has same dimension with matrix row to increment the matrix row.
@@ -73,7 +73,7 @@ public interface MatrixInterface {
    * @param row the update vector
    * @throws AngelException
    */
-  Future<VoidResult> asycIncrement(Vector row) throws AngelException;
+  Future<VoidResult> asyncIncrement(Vector row) throws AngelException;
 
   /**
    * Use a update vector which has same dimension with matrix row to increment the matrix row.
@@ -108,7 +108,7 @@ public interface MatrixInterface {
    * @param delta the update matrix
    * @throws AngelException
    */
-  Future<VoidResult> asycIncrement(Matrix delta) throws AngelException;
+  Future<VoidResult> asyncIncrement(Matrix delta) throws AngelException;
 
   /**
    * Use a update matrix which has same dimension with the matrix to increment the matrix.
@@ -135,7 +135,7 @@ public interface MatrixInterface {
    * @param rows   the update rows
    * @throws AngelException
    */
-  Future<VoidResult> asycIncrement(int[] rowIds, Vector[] rows) throws AngelException;
+  Future<VoidResult> asyncIncrement(int[] rowIds, Vector[] rows) throws AngelException;
 
   /**
    * Use a update matrix which has same dimension with the matrix to increment the matrix.
@@ -168,7 +168,7 @@ public interface MatrixInterface {
    * @param row   the update vector
    * @throws AngelException
    */
-  Future<VoidResult> asycUpdate(int rowId, Vector row) throws AngelException;
+  Future<VoidResult> asyncUpdate(int rowId, Vector row) throws AngelException;
 
   /**
    * Use a update vector which has same dimension with matrix row to increment the matrix row.
@@ -184,7 +184,7 @@ public interface MatrixInterface {
    * @param row the update vector
    * @throws AngelException
    */
-  Future<VoidResult> asycUpdate(Vector row) throws AngelException;
+  Future<VoidResult> asyncUpdate(Vector row) throws AngelException;
 
   /**
    * Use a update matrix which has same dimension with the matrix to increment the matrix.
@@ -200,7 +200,7 @@ public interface MatrixInterface {
    * @param delta the update matrix
    * @throws AngelException
    */
-  Future<VoidResult> asycUpdate(Matrix delta) throws AngelException;
+  Future<VoidResult> asyncUpdate(Matrix delta) throws AngelException;
 
   /**
    * Use a update matrix which has same dimension with the matrix to increment the matrix.
@@ -218,7 +218,7 @@ public interface MatrixInterface {
    * @param rows   the update rows
    * @throws AngelException
    */
-  Future<VoidResult> asycUpdate(int[] rowIds, Vector[] rows) throws AngelException;
+  Future<VoidResult> asyncUpdate(int[] rowIds, Vector[] rows) throws AngelException;
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   /// Get values from pss use row/column indices
@@ -242,7 +242,7 @@ public interface MatrixInterface {
    * @return the Vector use sparse storage, contains indices and values
    * @throws AngelException
    */
-  Future<Vector> asycGet(int rowId, int[] indices) throws AngelException;
+  Future<Vector> asyncGet(int rowId, int[] indices) throws AngelException;
 
   /**
    * Get elements of the row use long indices, the row type should has "int" type indices
@@ -262,7 +262,7 @@ public interface MatrixInterface {
    * @return the Vector use sparse storage, contains indices and values
    * @throws AngelException
    */
-  Future<Vector> asycGet(int rowId, long[] indices) throws AngelException;
+  Future<Vector> asyncGet(int rowId, long[] indices) throws AngelException;
 
   /**
    * Get elements of the rows use int indices, the row type should has "int" type indices
@@ -282,7 +282,7 @@ public interface MatrixInterface {
    * @return the Vectors use sparse storage, contains indices and values
    * @throws AngelException
    */
-  Future<Vector[]> asycGet(int[] rowIds, int[] indices) throws AngelException;
+  Future<Vector[]> asyncGet(int[] rowIds, int[] indices) throws AngelException;
 
   /**
    * Get elements of the rows use long indices, the row type should has "long" type indices
@@ -302,7 +302,7 @@ public interface MatrixInterface {
    * @return the Vectors use sparse storage, contains indices and values
    * @throws AngelException
    */
-  Future<Vector[]> asycGet(int[] rowIds, long[] indices) throws AngelException;
+  Future<Vector[]> asyncGet(int[] rowIds, long[] indices) throws AngelException;
 
   /**
    * Get elements of the row use int indices, if the element does not exist, it will be initialized
@@ -326,7 +326,7 @@ public interface MatrixInterface {
    * @return the Vector use sparse storage, contains indices and values
    * @throws AngelException
    */
-  Future<Vector> asycInitAndGet(int rowId, int[] indices, InitFunc func) throws AngelException;
+  Future<Vector> asyncInitAndGet(int rowId, int[] indices, InitFunc func) throws AngelException;
 
   /**
    * Get elements of the row use long indices, if the element does not exist, it will be initialized
@@ -350,7 +350,7 @@ public interface MatrixInterface {
    * @return the Vector use sparse storage, contains indices and values
    * @throws AngelException
    */
-  Future<Vector> asycInitAndGet(int rowId, long[] indices, InitFunc func) throws AngelException;
+  Future<Vector> asyncInitAndGet(int rowId, long[] indices, InitFunc func) throws AngelException;
 
   /**
    * Get elements of the rows use int indices, if the element does not exist, it will be initialized
@@ -374,7 +374,7 @@ public interface MatrixInterface {
    * @return the Vectors use sparse storage, contains indices and values
    * @throws AngelException
    */
-  Future<Vector[]> asycInitAndGet(int[] rowIds, int[] indices, InitFunc func) throws AngelException;
+  Future<Vector[]> asyncInitAndGet(int[] rowIds, int[] indices, InitFunc func) throws AngelException;
 
   /**
    * Get elements of the rows use long indices, if the element does not exist, it will be initialized
@@ -398,7 +398,7 @@ public interface MatrixInterface {
    * @return the Vectors use sparse storage, contains indices and values
    * @throws AngelException
    */
-  Future<Vector[]> asycInitAndGet(int[] rowIds, long[] indices, InitFunc func) throws AngelException;
+  Future<Vector[]> asyncInitAndGet(int[] rowIds, long[] indices, InitFunc func) throws AngelException;
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   /// PSF get/update, use can implement their own psf
@@ -422,7 +422,7 @@ public interface MatrixInterface {
    * @return GetResult
    * @throws AngelException
    */
-  Future<GetResult> asycGet(GetFunc func) throws AngelException;
+  Future<GetResult> asyncGet(GetFunc func) throws AngelException;
 
   /**
    * Use the update function defined by user to update the matrix.
@@ -440,7 +440,7 @@ public interface MatrixInterface {
    * result
    * @throws AngelException
    */
-  Future<VoidResult> asycUpdate(UpdateFunc func) throws AngelException;
+  Future<VoidResult> asyncUpdate(UpdateFunc func) throws AngelException;
 
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -463,7 +463,7 @@ public interface MatrixInterface {
    * @return Vector matrix row
    * @throws AngelException
    */
-  Future<Vector> asycGetRow(int rowId) throws AngelException;
+  Future<Vector> asyncGetRow(int rowId) throws AngelException;
 
   /**
    * Get a matrix row.

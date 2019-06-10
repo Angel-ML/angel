@@ -82,7 +82,7 @@ class PSVectorImpl(val poolId: Int, val id: Int, val dimension: Long, val rowTyp
 
   override def psfUpdate(func: UpdateFunc): Future[VoidResult] = {
     assertValid()
-    vectorPoolClient.asycUpdate(func)
+    vectorPoolClient.asyncUpdate(func)
   }
 
   private[spark] def assertSuccess(result: Result): Unit = {
@@ -140,46 +140,46 @@ class PSVectorImpl(val poolId: Int, val id: Int, val dimension: Long, val rowTyp
     this
   }
 
-  override def asycPull(): Future[Vector] = {
-    vectorPoolClient.asycGetRow(id)
+  override def asyncPull(): Future[Vector] = {
+    vectorPoolClient.asyncGetRow(id)
   }
 
-  override def asycPull(indices: Array[Long]): Future[Vector] = {
+  override def asyncPull(indices: Array[Long]): Future[Vector] = {
     require(rowType.isLongKey, s"rowType=$rowType, use `pull(indices: Array[Int])` instead")
-    vectorPoolClient.asycGet(id, indices)
+    vectorPoolClient.asyncGet(id, indices)
   }
 
-  override def asycPull(indices: Array[Int]): Future[Vector] = {
+  override def asyncPull(indices: Array[Int]): Future[Vector] = {
     require(rowType.isIntKey, s"rowType=$rowType, use `pull(indices: Array[Long])` instead")
-    vectorPoolClient.asycGet(id, indices)
+    vectorPoolClient.asyncGet(id, indices)
   }
 
-  override def asycIncrement(delta: Vector): Future[VoidResult] = {
+  override def asyncIncrement(delta: Vector): Future[VoidResult] = {
     require(rowType.compatible(delta.getType), s"can't increment $rowType by ${delta.getType}")
-    vectorPoolClient.asycIncrement(id, delta)
+    vectorPoolClient.asyncIncrement(id, delta)
   }
 
-  override def asycUpdate(local: Vector): Future[VoidResult] = {
+  override def asyncUpdate(local: Vector): Future[VoidResult] = {
     require(rowType.compatible(local.getType), s"can't update $rowType by ${local.getType}")
-    vectorPoolClient.asycUpdate(id, local)
+    vectorPoolClient.asyncUpdate(id, local)
   }
 
-  override def asycPush(local: Vector): Future[VoidResult] = {
+  override def asyncPush(local: Vector): Future[VoidResult] = {
     require(rowType.compatible(local.getType), s"can't push $rowType by ${local.getType}")
-    assertValid().reset.asycUpdate(local)
+    assertValid().reset.asyncUpdate(local)
   }
 
-  override def asycReset: Future[VoidResult] = {
+  override def asyncReset: Future[VoidResult] = {
     psfUpdate(new Reset(poolId, id))
   }
 
-  override def asycFill(value: Double): Future[VoidResult] = {
+  override def asyncFill(value: Double): Future[VoidResult] = {
     assertValid()
     psfUpdate(new MapInPlace(poolId, id, new SetFunc(value)))
   }
 
-  override def asycPsfGet(func: GetFunc): Future[GetResult] = {
+  override def asyncPsfGet(func: GetFunc): Future[GetResult] = {
     assertValid()
-    vectorPoolClient.asycGet(func)
+    vectorPoolClient.asyncGet(func)
   }
 }

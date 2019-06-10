@@ -188,7 +188,7 @@ class PSMatrixImpl(
   }
 
   def psfUpdate(func: UpdateFunc): Future[VoidResult] = {
-    matrixClient.asycUpdate(func)
+    matrixClient.asyncUpdate(func)
   }
 
   def psfGet(func: GetFunc): GetResult = {
@@ -211,111 +211,111 @@ class PSMatrixImpl(
 
   private[spark] def assertRowIndexesValid(rowIds: Array[Int]): Unit = rowIds.foreach(assertRowIndexValid)
 
-  override def asycPull(rowIds: Array[Int], indexes: Array[Long]): Future[Array[Vector]] = {
+  override def asyncPull(rowIds: Array[Int], indexes: Array[Long]): Future[Array[Vector]] = {
     require(rowType.isLongKey, s"rowType=$rowType, use `pull(rowIds: Array[Int], indexes: Array[Int])` instead")
-    matrixClient.asycGet(rowIds, indexes)
+    matrixClient.asyncGet(rowIds, indexes)
   }
 
-  override def asycPull(rowIds: Array[Int], indexes: Array[Int]): Future[Array[Vector]] = {
+  override def asyncPull(rowIds: Array[Int], indexes: Array[Int]): Future[Array[Vector]] = {
     require(rowType.isIntKey, s"rowType=$rowType, use `pull(rowIds: Array[Int], indexes: Array[Long])` instead")
-    matrixClient.asycGet(rowIds, indexes)
+    matrixClient.asyncGet(rowIds, indexes)
   }
 
-  override def asycPull(rowId: Int, indexes: Array[Long]): Future[Vector] = {
+  override def asyncPull(rowId: Int, indexes: Array[Long]): Future[Vector] = {
     require(rowType.isLongKey, s"rowType=$rowType, use `pull(rowIds: Int, indexes: Array[Int])` instead")
-    matrixClient.asycGet(rowId, indexes)
+    matrixClient.asyncGet(rowId, indexes)
   }
 
-  override def asycPull(rowId: Int, indexes: Array[Int]): Future[Vector] = {
+  override def asyncPull(rowId: Int, indexes: Array[Int]): Future[Vector] = {
     require(rowType.isIntKey, s"rowType=$rowType, use `pull(rowIds: Int, indexes: Array[Long])` instead")
-    matrixClient.asycGet(rowId, indexes)
+    matrixClient.asyncGet(rowId, indexes)
   }
 
-  override def asycPull(rowId: Int): Future[Vector] = {
-    matrixClient.asycGetRow(rowId)
+  override def asyncPull(rowId: Int): Future[Vector] = {
+    matrixClient.asyncGetRow(rowId)
   }
 
-  override def asycIncrement(delta: Matrix): Future[VoidResult] = {
-    matrixClient.asycIncrement(delta)
+  override def asyncIncrement(delta: Matrix): Future[VoidResult] = {
+    matrixClient.asyncIncrement(delta)
   }
 
-  override def asycIncrement(delta: Vector): Future[VoidResult] = {
+  override def asyncIncrement(delta: Vector): Future[VoidResult] = {
     require(rowType.compatible(delta.getType), s"can't increment $rowType by ${delta.getType}")
-    matrixClient.asycIncrement(delta)
+    matrixClient.asyncIncrement(delta)
   }
 
-  override def asycIncrement(rowId: Int, delta: Vector): Future[VoidResult] = {
+  override def asyncIncrement(rowId: Int, delta: Vector): Future[VoidResult] = {
     require(rowType.compatible(delta.getType), s"can't increment $rowType by ${delta.getType}")
-    matrixClient.asycIncrement(rowId, delta)
+    matrixClient.asyncIncrement(rowId, delta)
   }
 
-  override def asycIncrement(rowIds: Array[Int], deltas: Array[Vector]): Future[VoidResult] = {
+  override def asyncIncrement(rowIds: Array[Int], deltas: Array[Vector]): Future[VoidResult] = {
     require(deltas.forall(_.getType.compatible(rowType)),
       s"can't increment $rowType by ${deltas.map(_.getType).mkString(",")}")
-    matrixClient.asycIncrement(rowIds, deltas)
+    matrixClient.asyncIncrement(rowIds, deltas)
   }
 
-  override def asycUpdate(delta: Matrix): Future[VoidResult] = {
-    matrixClient.asycUpdate(delta)
+  override def asyncUpdate(delta: Matrix): Future[VoidResult] = {
+    matrixClient.asyncUpdate(delta)
   }
 
-  override def asycUpdate(rowId: Int, row: Vector): Future[VoidResult] = {
+  override def asyncUpdate(rowId: Int, row: Vector): Future[VoidResult] = {
     require(rowType.compatible(row.getType), s"can't update $rowType by ${row.getType}")
-    matrixClient.asycUpdate(rowId, row)
+    matrixClient.asyncUpdate(rowId, row)
   }
 
-  override def asycUpdate(row: Vector): Future[VoidResult] = {
+  override def asyncUpdate(row: Vector): Future[VoidResult] = {
     require(rowType.compatible(row.getType), s"can't update $rowType by ${row.getType}")
-    matrixClient.asycUpdate(row)
+    matrixClient.asyncUpdate(row)
   }
 
-  override def asycUpdate(rowIds: Array[Int], rows: Array[Vector]): Future[VoidResult] = {
+  override def asyncUpdate(rowIds: Array[Int], rows: Array[Vector]): Future[VoidResult] = {
     require(rows.forall(_.getType.compatible(rowType)),
       s"can't update $rowType by ${rows.map(_.getType).mkString(",")}")
-    matrixClient.asycUpdate(rowIds, rows)
+    matrixClient.asyncUpdate(rowIds, rows)
   }
 
-  override def asycPush(matrix: Matrix): Future[VoidResult] = {
+  override def asyncPush(matrix: Matrix): Future[VoidResult] = {
     require(rows == matrix.getNumRows, "matrix dimension does not match!")
     reset()
-    asycUpdate(matrix)
+    asyncUpdate(matrix)
   }
 
-  override def asycPush(vector: Vector): Future[VoidResult] = {
-    asycPush(vector.getRowId, vector)
+  override def asyncPush(vector: Vector): Future[VoidResult] = {
+    asyncPush(vector.getRowId, vector)
   }
 
-  override def asycPush(rowId: Int, vector: Vector): Future[VoidResult] = {
+  override def asyncPush(rowId: Int, vector: Vector): Future[VoidResult] = {
     require(rowType.compatible(vector.getType), s"can't push $rowType by ${vector.getType}")
     assertRowIndexValid(rowId)
     reset(rowId)
-    asycUpdate(rowId, vector)
+    asyncUpdate(rowId, vector)
   }
 
-  override def asycPush(rowIds: Array[Int], rows: Array[Vector]): Future[VoidResult] = {
+  override def asyncPush(rowIds: Array[Int], rows: Array[Vector]): Future[VoidResult] = {
     require(rows.forall(_.getType.compatible(rowType)), s"can't push $rowType by ${rows.map(_.getType).mkString(",")}")
     assertRowIndexesValid(rowIds)
     reset(rowIds)
-    asycUpdate(rowIds, rows)
+    asyncUpdate(rowIds, rows)
   }
 
-  override def asycReset(): Future[VoidResult] = matrixClient.asycUpdate(new Zero(new Zero.ZeroParam(id, false)))
+  override def asyncReset(): Future[VoidResult] = matrixClient.asyncUpdate(new Zero(new Zero.ZeroParam(id, false)))
 
-  override def asycReset(rowId: Int): Future[VoidResult] = {
+  override def asyncReset(rowId: Int): Future[VoidResult] = {
     assertRowIndexValid(rowId)
-    asycPsfUpdate(new Reset(id, rowId))
+    asyncPsfUpdate(new Reset(id, rowId))
   }
 
-  override def asycReset(rowIds: Array[Int]): Future[VoidResult] = {
+  override def asyncReset(rowIds: Array[Int]): Future[VoidResult] = {
     assertRowIndexesValid(rowIds)
-    asycPsfUpdate(new Reset(id, rowIds))
+    asyncPsfUpdate(new Reset(id, rowIds))
   }
 
-  override def asycPsfGet(func: GetFunc): Future[GetResult] = {
-    matrixClient.asycGet(func)
+  override def asyncPsfGet(func: GetFunc): Future[GetResult] = {
+    matrixClient.asyncGet(func)
   }
 
-  override def asycPsfUpdate(func: UpdateFunc): Future[VoidResult] = {
-    matrixClient.asycUpdate(func)
+  override def asyncPsfUpdate(func: UpdateFunc): Future[VoidResult] = {
+    matrixClient.asyncUpdate(func)
   }
 }

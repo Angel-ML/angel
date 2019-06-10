@@ -67,8 +67,8 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<VoidResult> asycIncrement(Vector row) throws AngelException {
-    return asycIncrement(row.getRowId(), row);
+  public Future<VoidResult> asyncIncrement(Vector row) throws AngelException {
+    return asyncIncrement(row.getRowId(), row);
   }
 
   @Override
@@ -77,7 +77,7 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<VoidResult> asycIncrement(int rowId, Vector row) throws AngelException {
+  public Future<VoidResult> asyncIncrement(int rowId, Vector row) throws AngelException {
     checkRowId(rowId);
     checkNotNull(row, "row");
 
@@ -121,7 +121,7 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<VoidResult> asycIncrement(Matrix matrix) throws AngelException {
+  public Future<VoidResult> asyncIncrement(Matrix matrix) throws AngelException {
     checkNotNull(matrix, "matrix");
     matrix.setMatrixId(matrixId);
     return PSAgentContext.get().getUserRequestAdapter().update(matrixId, matrix, UpdateOp.PLUS);
@@ -150,7 +150,7 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<VoidResult> asycIncrement(int[] rowIds, Vector[] rows) throws AngelException {
+  public Future<VoidResult> asyncIncrement(int[] rowIds, Vector[] rows) throws AngelException {
     checkNotNull(rowIds, "rowIds");
     checkNotNull(rows, "rows");
 
@@ -208,7 +208,7 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<VoidResult> asycUpdate(int rowId, Vector row) throws AngelException {
+  public Future<VoidResult> asyncUpdate(int rowId, Vector row) throws AngelException {
     checkRowId(rowId);
     checkNotNull(row, "row");
 
@@ -227,8 +227,8 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<VoidResult> asycUpdate(Vector row) throws AngelException {
-    return asycUpdate(row.getRowId(), row);
+  public Future<VoidResult> asyncUpdate(Vector row) throws AngelException {
+    return asyncUpdate(row.getRowId(), row);
   }
 
   @Override
@@ -243,7 +243,7 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<VoidResult> asycUpdate(Matrix matrix) throws AngelException {
+  public Future<VoidResult> asyncUpdate(Matrix matrix) throws AngelException {
     checkNotNull(matrix, "matrix");
 
     try {
@@ -275,7 +275,7 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<VoidResult> asycUpdate(int[] rowIds, Vector[] rows) throws AngelException {
+  public Future<VoidResult> asyncUpdate(int[] rowIds, Vector[] rows) throws AngelException {
     checkNotNull(rowIds, "rowIds");
     checkNotNull(rows, "rows");
 
@@ -315,7 +315,7 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<Vector> asycGet(int rowId, int[] indices) throws AngelException {
+  public Future<Vector> asyncGet(int rowId, int[] indices) throws AngelException {
     checkRowId(rowId);
     checkNotNull(indices, "indices");
 
@@ -382,7 +382,7 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<Vector> asycGet(int rowId, long[] indices) throws AngelException {
+  public Future<Vector> asyncGet(int rowId, long[] indices) throws AngelException {
     checkRowId(rowId);
     checkNotNull(indices, "indices");
 
@@ -425,7 +425,7 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<Vector[]> asycGet(int[] rowIds, int[] indices) throws AngelException {
+  public Future<Vector[]> asyncGet(int[] rowIds, int[] indices) throws AngelException {
     checkNotNull(rowIds, "rowIds");
     checkNotNull(indices, "indices");
 
@@ -475,7 +475,7 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<Vector[]> asycGet(int[] rowIds, long[] indices) throws AngelException {
+  public Future<Vector[]> asyncGet(int[] rowIds, long[] indices) throws AngelException {
     checkNotNull(rowIds, "rowIds");
     checkNotNull(indices, "indices");
 
@@ -522,7 +522,7 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<Vector> asycInitAndGet(int rowId, int[] indices, InitFunc func)
+  public Future<Vector> asyncInitAndGet(int rowId, int[] indices, InitFunc func)
       throws AngelException {
     checkRowId(rowId);
     checkNotNull(indices, "indices");
@@ -564,7 +564,7 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<Vector> asycInitAndGet(int rowId, long[] indices, InitFunc func)
+  public Future<Vector> asyncInitAndGet(int rowId, long[] indices, InitFunc func)
       throws AngelException {
     checkRowId(rowId);
     checkNotNull(indices, "indices");
@@ -612,7 +612,7 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<Vector[]> asycInitAndGet(int[] rowIds, int[] indices, InitFunc func)
+  public Future<Vector[]> asyncInitAndGet(int[] rowIds, int[] indices, InitFunc func)
       throws AngelException {
     checkNotNull(rowIds, "rowIds");
     checkNotNull(indices, "indices");
@@ -667,7 +667,7 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<Vector[]> asycInitAndGet(int[] rowIds, long[] indices, InitFunc func)
+  public Future<Vector[]> asyncInitAndGet(int[] rowIds, long[] indices, InitFunc func)
       throws AngelException {
     checkNotNull(rowIds, "rowIds");
     checkNotNull(indices, "indices");
@@ -707,7 +707,7 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<VoidResult> asycUpdate(UpdateFunc func) throws AngelException {
+  public Future<VoidResult> asyncUpdate(UpdateFunc func) throws AngelException {
     checkNotNull(func, "func");
 
     try {
@@ -729,7 +729,7 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<GetResult> asycGet(GetFunc func) throws AngelException {
+  public Future<GetResult> asyncGet(GetFunc func) throws AngelException {
     checkNotNull(func, "func");
 
     try {
@@ -745,7 +745,7 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<Vector> asycGetRow(int rowId) throws AngelException {
+  public Future<Vector> asyncGetRow(int rowId) throws AngelException {
     checkRowId(rowId);
     return PSAgentContext.get().getUserRequestAdapter().getRow(matrixId, rowId);
   }
@@ -774,6 +774,7 @@ public class MatrixClientImpl extends MatrixClient {
   public Vector[] getRows(int[] rowIds) throws AngelException {
     return getRows(rowIds, false);
   }
+
 
   @Override
   public Vector[] getRows(int[] rowIds, boolean disableCache) throws AngelException {

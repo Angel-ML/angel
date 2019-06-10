@@ -30,6 +30,8 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.ml.matrix.psf.get.getrows.GetRows;
+import com.tencent.angel.ml.matrix.psf.get.getrows.GetRowsParam;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
@@ -383,7 +385,7 @@ public class UserRequestAdapter {
 
     // Filter the rowIds which are fetching now
     ReentrantLock lock = getLock(rowIndex.getMatrixId());
-    RowIndex needFetchRows = null;
+    RowIndex needFetchRows;
     try {
       lock.lock();
       resultsMap.put(rowIndex, result);

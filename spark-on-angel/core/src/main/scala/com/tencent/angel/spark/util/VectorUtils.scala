@@ -50,7 +50,7 @@ object VectorUtils {
 
   private[spark] def update(modelId: Int, func: UpdateFunc): Unit = {
     val client = MatrixClientFactory.get(modelId, PSContext.getTaskId)
-    val result = client.asycUpdate(func).get()
+    val result = client.asyncUpdate(func).get()
     assertSuccess(result)
   }
 
@@ -173,7 +173,7 @@ object VectorUtils {
    */
   private[spark] def psfUpdate(modelId: Int, func: UpdateFunc): Future[VoidResult] = {
     val client = MatrixClientFactory.get(modelId, PSContext.getTaskId)
-    client.asycUpdate(func)
+    client.asyncUpdate(func)
   }
 
 

@@ -70,29 +70,29 @@ abstract class PSVector extends PSModel {
 
 
 
-  def asycPull(): Future[Vector]
+  def asyncPull(): Future[Vector]
 
   /*
   note: calling this api would modify the indices array passed in
    */
-  def asycPull(indices: Array[Long]): Future[Vector]
+  def asyncPull(indices: Array[Long]): Future[Vector]
 
   /*
   note: calling this api would modify the indices array passed in
    */
-  def asycPull(indices: Array[Int]): Future[Vector]
+  def asyncPull(indices: Array[Int]): Future[Vector]
 
-  def asycIncrement(delta: Vector): Future[VoidResult]
+  def asyncIncrement(delta: Vector): Future[VoidResult]
 
-  def asycUpdate(local: Vector): Future[VoidResult]
+  def asyncUpdate(local: Vector): Future[VoidResult]
 
-  def asycPush(local: Vector): Future[VoidResult]
+  def asyncPush(local: Vector): Future[VoidResult]
 
-  def asycReset: Future[VoidResult]
+  def asyncReset: Future[VoidResult]
 
-  def asycFill(value: Double): Future[VoidResult]
+  def asyncFill(value: Double): Future[VoidResult]
 
-  def asycPsfGet(func: GetFunc): Future[GetResult]
+  def asyncPsfGet(func: GetFunc): Future[GetResult]
 
   def assertValid(): this.type = {
     if (deleted)
