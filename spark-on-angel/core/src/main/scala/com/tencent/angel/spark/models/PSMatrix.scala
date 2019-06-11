@@ -59,6 +59,16 @@ abstract class PSMatrix extends PSModel {
 
   def pull(rowIds: Array[Int], batchSize: Int = -1): Array[Vector]
 
+  def asyncPull(rowIds: Array[Int], indexes: Array[Long]): Future[Array[Vector]]
+
+  def asyncPull(rowIds: Array[Int], indexes: Array[Int]): Future[Array[Vector]]
+
+  def asyncPull(rowId: Int, indexes: Array[Long]): Future[Vector]
+
+  def asyncPull(rowId: Int, indexes: Array[Int]): Future[Vector]
+
+  def asyncPull(rowId: Int): Future[Vector]
+
 
   /*
    increment local matrix or vector(s) to ps
@@ -72,6 +82,14 @@ abstract class PSMatrix extends PSModel {
 
   def increment(rowIds: Array[Int], deltas: Array[Vector])
 
+  def asyncIncrement(delta: Matrix): Future[VoidResult]
+
+  def asyncIncrement(delta: Vector): Future[VoidResult]
+
+  def asyncIncrement(rowId: Int, delta: Vector): Future[VoidResult]
+
+  def asyncIncrement(rowIds: Array[Int], deltas: Array[Vector]): Future[VoidResult]
+
   /*
   update local matrix or vector(s) to ps
    */
@@ -83,6 +101,14 @@ abstract class PSMatrix extends PSModel {
   def update(row: Vector)
 
   def update(rowIds: Array[Int], rows: Array[Vector])
+
+  def asyncUpdate(delta: Matrix): Future[VoidResult]
+
+  def asyncUpdate(rowId: Int, row: Vector): Future[VoidResult]
+
+  def asyncUpdate(row: Vector): Future[VoidResult]
+
+  def asyncUpdate(rowIds: Array[Int], rows: Array[Vector]): Future[VoidResult]
 
 
   /*
@@ -97,6 +123,14 @@ abstract class PSMatrix extends PSModel {
 
   def push(rowIds: Array[Int], rows: Array[Vector])
 
+  def asyncPush(matrix: Matrix): Future[VoidResult]
+
+  def asyncPush(vector: Vector): Future[VoidResult]
+
+  def asyncPush(rowId: Int, vector: Vector): Future[VoidResult]
+
+  def asyncPush(rowIds: Array[Int], rows: Array[Vector]): Future[VoidResult]
+
   /*
   reset ps matrix or vector(s)
    */
@@ -106,6 +140,12 @@ abstract class PSMatrix extends PSModel {
 
   def reset(rowIds: Array[Int])
 
+  def asyncReset(): Future[VoidResult]
+
+  def asyncReset(rowId: Int): Future[VoidResult]
+
+  def asyncReset(rowIds: Array[Int]): Future[VoidResult]
+
   /**
    * fill `rows` with `values`
    */
@@ -113,7 +153,11 @@ abstract class PSMatrix extends PSModel {
 
   def psfGet(func: GetFunc): GetResult
 
+  def asyncPsfGet(func: GetFunc): Future[GetResult]
+
   def psfUpdate(func: UpdateFunc): Future[VoidResult]
+
+  def asyncPsfUpdate(func: UpdateFunc): Future[VoidResult]
 
   def destroy()
 }
@@ -196,7 +240,7 @@ object PSMatrix{
   def fill(rows: Int, cols: Long, x: Double, rowType: RowType = RowType.T_DOUBLE_DENSE): PSMatrix = {
     assert(rowType.isDense, "fill a sparse matrix is not supported")
     val mat = dense(rows, cols, rowType)
-    mat.psfUpdate(new FullFill(mat.id, x))
+    mat.psfUpdate(new FullFill(mat.id, x)).get()
     mat
   }
 }

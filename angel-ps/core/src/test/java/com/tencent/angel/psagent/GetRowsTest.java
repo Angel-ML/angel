@@ -95,8 +95,8 @@ public class GetRowsTest {
   private WorkerId workerId;
   private WorkerAttemptId workerAttempt0Id;
 
-  int feaNum = 10000;
-  int nnz = 1000;
+  int feaNum = 1000000;
+  int nnz = 10000;
   int rowNum = 5;
   int blockRowNum = 5;
   int blockColNum = 1000;

@@ -189,7 +189,7 @@ abstract class NEModel(numNode: Int,
   }
 
   protected def psfUpdate(func: UpdateFunc): VoidResult = {
-    psMatrix.psfUpdate(func).get
+    psMatrix.psfUpdate(func).get()
   }
 
   protected def psfGet(func: GetFunc): GetResult = {

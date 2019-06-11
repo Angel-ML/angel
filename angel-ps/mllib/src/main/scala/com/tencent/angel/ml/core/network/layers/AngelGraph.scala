@@ -21,20 +21,21 @@ package com.tencent.angel.ml.core.network.layers
 import java.util
 
 import com.tencent.angel.client.AngelClient
-import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.network.layers.verge.SimpleLossLayer
+import com.tencent.angel.ml.core.utils.PSMatrixUtils
+import com.tencent.angel.ml.core.utils.paramsutils.ParamKeys
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.Matrix
-import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.matrix.MatrixContext
-import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import org.apache.commons.logging.{Log, LogFactory}
+import org.json4s.DefaultFormats
+import org.json4s.JsonAST._
+import org.json4s.JsonDSL._
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
 
 class TimeStats(
                  var forwardTime: Long = 0,
@@ -61,6 +62,7 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
   def this(placeHolder: PlaceHolder) = this(placeHolder, SharedConf.get())
 
   val LOG: Log = LogFactory.getLog(classOf[AngelGraph])
+  @transient private implicit val formats: DefaultFormats.type = DefaultFormats
 
   private val inputLayers = new ListBuffer[InputLayer]()
   private var lossLayer: LossLayer = _
@@ -152,8 +154,8 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
 
   def update(epoch: Int, batchSize: Int): Unit = {
     val start = System.currentTimeMillis()
-    val updateFuture = trainableLayer.map (layer => layer.update(epoch, batchSize))
-    for(future <- updateFuture) future.get
+    val updateFuture = trainableLayer.map(layer => layer.update(epoch, batchSize))
+    for (future <- updateFuture) future.get
     timeStats.updateTime += (System.currentTimeMillis() - start)
   }
 
@@ -211,5 +213,104 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
     val str = new StringBuilder
     deepFirstDown(lossLayer.asInstanceOf[Layer])(_ => true, layer => str.append(layer.toString + "\n"))
     str.toString()
+  }
+
+  def toJson: JArray = {
+    val jarr = ArrayBuffer.empty[JValue]
+    val nameSet = new util.HashSet[String]
+    layer2Json(lossLayer.asInstanceOf[Layer], jarr, nameSet)
+
+    JArray(mergeFCLayer(jarr.toList))
+  }
+
+  private def layer2Json(layer: Layer, jarr: ArrayBuffer[JValue], nameSet: util.HashSet[String]): Unit = {
+    layer match {
+      case loss: SimpleLossLayer if !nameSet.contains(loss.name) =>
+        layer2Json(loss.inputLayer, jarr, nameSet)
+        val obj: JObject = loss.toJson
+        val name = (obj \ ParamKeys.name).extract[String]
+        nameSet.add(name)
+        jarr.append(obj)
+      case join: JoinLayer => !nameSet.contains(join.name)
+        join.inputLayers.foreach { l =>
+          layer2Json(l, jarr, nameSet)
+        }
+        val obj: JObject = join.toJson
+        val name = (obj \ ParamKeys.name).extract[String]
+        nameSet.add(name)
+        jarr.append(obj)
+      case ip: InputLayer if !nameSet.contains(ip.name) =>
+        val obj: JObject = ip.toJson
+        val name = (obj \ ParamKeys.name).extract[String]
+        nameSet.add(name)
+        jarr.append(obj)
+      case linear: LinearLayer if !nameSet.contains(linear.name) =>
+        layer2Json(linear.inputLayer, jarr, nameSet)
+        val obj: JObject = linear.toJson
+        val name = (obj \ ParamKeys.name).extract[String]
+        nameSet.add(name)
+        jarr.append(obj)
+      case _ =>
+    }
+  }
+
+  private def mergeFCLayer(jarr: List[JValue]): List[JValue] = {
+    val abuf = ArrayBuffer.empty[JValue]
+    val fcLayer = ArrayBuffer.empty[JValue]
+
+    jarr.foreach {
+      case jobj: JObject =>
+        if (!(jobj \ ParamKeys.typeName).extract[String].equalsIgnoreCase("FCLayer")) {
+          if (fcLayer.nonEmpty) {
+            abuf.append(doMerge(fcLayer))
+            fcLayer.clear()
+          }
+          abuf.append(jobj)
+        } else {
+          fcLayer.append(jobj)
+        }
+    }
+
+    abuf.toList
+  }
+
+  private def doMerge(abuf: ArrayBuffer[JValue]): JValue = {
+    val names = mutable.HashSet[String]()
+    val inputlayers = mutable.HashSet[String]()
+
+    abuf.foreach {
+      case jobj: JObject =>
+        names.add((jobj \ ParamKeys.name).extract[String])
+        inputlayers.add((jobj \ ParamKeys.inputLayer).extract[String])
+      case _ =>
+    }
+
+    val input = inputlayers.toSet.diff(names).head
+    val output = names.toSet.diff(inputlayers).head
+
+    var currInput = input
+    val outputdims = mutable.ListBuffer[JValue]()
+    val transfuncs = mutable.ListBuffer[JValue]()
+
+    abuf.indices.foreach { _ =>
+      abuf.collectFirst { case jobj: JObject if (jobj \ ParamKeys.inputLayer).extract[String] == currInput =>
+        val name_ = (jobj \ ParamKeys.name).extract[String]
+        val input_ = (jobj \ ParamKeys.inputLayer).extract[String]
+        assert(input_ == currInput)
+        val outputDim = jobj \ ParamKeys.outputDim
+        outputdims.append(outputDim)
+
+        val transFunc = jobj \ ParamKeys.transFunc
+        transfuncs.append(transFunc)
+        currInput = name_
+      }
+    }
+
+    (ParamKeys.name -> output) ~ (ParamKeys.typeName -> "FCLayer") ~
+      (ParamKeys.outputDims -> JArray(outputdims.toList)) ~
+      (ParamKeys.inputLayer, JString(input)) ~
+      (ParamKeys.transFuncs -> JArray(transfuncs.toList)) ~
+      (ParamKeys.optimizer -> (abuf.head \ ParamKeys.optimizer))
+
   }
 }

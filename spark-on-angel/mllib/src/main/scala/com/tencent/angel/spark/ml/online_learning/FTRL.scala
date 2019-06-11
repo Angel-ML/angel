@@ -34,13 +34,24 @@ import com.tencent.angel.spark.models.impl.{PSMatrixImpl, PSVectorImpl}
 import com.tencent.angel.spark.models.{PSMatrix, PSVector}
 import org.apache.spark.rdd.RDD
 
-class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extends Serializable {
+class FTRL() extends Serializable {
 
+  var lambda1: Double = 0
+  var lambda2: Double = 0
+  var alpha: Double = 0
+  var beta: Double = 0
   var wPS: PSVector = _
   var name = "weights"
   var possionRate: Float = 1.0f
   var matrix: PSMatrix = _
 
+  def this(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) {
+    this()
+    this.lambda1 = lambda1
+    this.lambda2 = lambda2
+    this.alpha = alpha
+    this.beta = beta
+  }
 
   /** Init with `dim` given, the default start index is 0
     *
@@ -71,6 +82,20 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extend
   }
 
   /**
+    * create the model with a matrix-context and init three PSVector
+    *
+    * @param ctx , matrix context
+    */
+  def init(ctx: MatrixContext): Unit = {
+    val matId = PSMatrixUtils.createPSMatrix(ctx)
+    wPS = new PSVectorImpl(matId, 2, ctx.getColNum, ctx.getRowType)
+    matrix = new PSMatrixImpl(matId, ctx.getRowNum, ctx.getColNum, ctx.getRowType)
+  }
+
+  def init(start: Long, end: Long): Unit =
+    init(start, end, -1, RowType.T_FLOAT_SPARSE_LONGKEY)
+
+  /**
     * Init with start and end given
     *
     * @param start   , the start index
@@ -81,9 +106,6 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extend
   def init(start: Long, end: Long, nnz: Long, rowType: RowType): Unit = {
     init(start, end, nnz, rowType, new ColumnRangePartitioner())
   }
-
-  def init(start: Long, end: Long): Unit =
-    init(start, end, -1, RowType.T_FLOAT_SPARSE_LONGKEY)
 
   def init(start: Long, end: Long, nnz: Long, rowType: RowType,
            partitioner: Partitioner): Unit = {
@@ -110,17 +132,6 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extend
     ctx.setRowType(rowType)
     partitioner.partition(data, ctx)
     init(ctx)
-  }
-
-  /**
-    * create the model with a matrix-context and init three PSVector
-    *
-    * @param ctx , matrix context
-    */
-  def init(ctx: MatrixContext): Unit = {
-    val matId = PSMatrixUtils.createPSMatrix(ctx)
-    wPS = new PSVectorImpl(matId, 2, ctx.getColNum, ctx.getRowType)
-    matrix = new PSMatrixImpl(matId, ctx.getRowNum, ctx.getColNum, ctx.getRowType)
   }
 
   def setPossionRate(possionRate: Float): Unit =
@@ -212,13 +223,21 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extend
     lossSum
   }
 
+  def log1pExp(x: Double): Double = {
+    if (x > 0) {
+      x + math.log1p(math.exp(-x))
+    } else {
+      math.log1p(math.exp(x))
+    }
+  }
+
   /**
     * Predict with weight
     *
     * @param batch
     * @return
     */
-  def predict(batch: Array[LabeledData]): Array[(Double, Double)] = {
+  def predict(batch: Array[LabeledData], isTraining: Boolean = true): Array[(Double, Double)] = {
     val indices = batch.flatMap {
       case point =>
         point.getX match {
@@ -228,10 +247,15 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extend
         }
     }.distinct
 
+    val weight = isTraining match {
+      case true =>
+        val vectors = matrix.pull(Array(0, 1), indices)
+        val (localZ, localN) = (vectors(0), vectors(1))
+        Ufuncs.ftrlthreshold(localZ, localN, alpha, beta, lambda1, lambda2)
+      case false =>
+        matrix.pull(Array(2), indices)(0)
+    }
     // Fetch the dimensions of n/z
-    val vectors = matrix.pull(Array(0, 1), indices)
-    val (localZ, localN) = (vectors(0), vectors(1))
-    val weight = Ufuncs.ftrlthreshold(localZ, localN, alpha, beta, lambda1, lambda2)
 
     batch.map {
       case point =>
@@ -241,7 +265,6 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extend
         (label, score)
     }
   }
-
 
   /**
     * calculate w from z and n and store it in the w row
@@ -254,18 +277,10 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extend
     wPS
   }
 
-  def log1pExp(x: Double): Double = {
-    if (x > 0) {
-      x + math.log1p(math.exp(-x))
-    } else {
-      math.log1p(math.exp(x))
-    }
-  }
-
   /**
     * Save z and n for increment training
     *
-    * @param path, output path
+    * @param path , output path
     */
   def save(path: String): Unit = {
     val format = classOf[RowIdColIdValueTextRowFormat].getCanonicalName
@@ -279,7 +294,7 @@ class FTRL(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extend
   /**
     * Save w for model serving
     *
-    * @param path, output path
+    * @param path , output path
     */
   def saveWeight(path: String): Unit = {
     val format = classOf[ColIdValueTextRowFormat].getCanonicalName

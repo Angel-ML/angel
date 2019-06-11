@@ -24,6 +24,7 @@ import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
+import com.tencent.angel.ml.matrix.psf.update.zero.Zero
 import com.tencent.angel.ml.matrix.psf.update.{Fill, Reset}
 import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory}
 import com.tencent.angel.spark.context.PSContext
@@ -31,10 +32,10 @@ import com.tencent.angel.spark.models.PSMatrix
 import com.tencent.angel.spark.util.PSMatrixUtils
 
 class PSMatrixImpl(
-    override val id: Int,
-    override val rows: Int,
-    override val columns: Long,
-    override val rowType: RowType)
+                    override val id: Int,
+                    override val rows: Int,
+                    override val columns: Long,
+                    override val rowType: RowType)
   extends PSMatrix {
 
   override def toString: String = {
@@ -95,17 +96,17 @@ class PSMatrixImpl(
     matrixClient.increment(rowId, delta, true)
   }
 
-  def increment(rowIds: Array[Int], deltas: Array[Vector]): Unit ={
+  def increment(rowIds: Array[Int], deltas: Array[Vector]): Unit = {
     require(deltas.forall(_.getType.compatible(rowType)),
       s"can't increment $rowType by ${deltas.map(_.getType).mkString(",")}")
     matrixClient.increment(rowIds, deltas, true)
   }
 
   /**
-   * get matrixClient
-   *
-   * @return MatrixClient
-   */
+    * get matrixClient
+    *
+    * @return MatrixClient
+    */
   private def matrixClient: MatrixClient = {
     assertValid()
     PSContext.instance()
@@ -169,25 +170,25 @@ class PSMatrixImpl(
 
   def reset(rowId: Int): Unit = {
     assertRowIndexValid(rowId)
-    psfUpdate(new Reset(id, rowId)).get
+    psfUpdate(new Reset(id, rowId)).get()
   }
 
   def reset(rowIds: Array[Int]): Unit = {
     assertRowIndexesValid(rowIds)
-    psfUpdate(new Reset(id, rowIds)).get
+    psfUpdate(new Reset(id, rowIds)).get()
   }
 
   /**
-   * fill `rows` with `values`
-   */
+    * fill `rows` with `values`
+    */
   def fill(rows: Array[Int], values: Array[Double]): PSMatrix = {
     require(rowType.isDense, "fill a sparse matrix is not supported")
-    this.psfUpdate(new Fill(id, rows, values)).get
+    this.psfUpdate(new Fill(id, rows, values)).get()
     this
   }
 
   def psfUpdate(func: UpdateFunc): Future[VoidResult] = {
-    matrixClient.update(func)
+    matrixClient.asyncUpdate(func)
   }
 
   def psfGet(func: GetFunc): GetResult = {
@@ -195,19 +196,126 @@ class PSMatrixImpl(
   }
 
   /**
-   * Destroy this Matrix.
-   * Notice: developers must call `destroy` function to release deserted Matrix in PS, otherwise
-   * this matrix will occupy the PS resource all the time.
-   */
+    * Destroy this Matrix.
+    * Notice: developers must call `destroy` function to release deserted Matrix in PS, otherwise
+    * this matrix will occupy the PS resource all the time.
+    */
   override def destroy(): Unit = {
     PSContext.instance().destroyMatrix(id)
     this.deleted = true
   }
 
-  private[spark] def assertRowIndexValid(rowId: Int): Unit ={
+  private[spark] def assertRowIndexValid(rowId: Int): Unit = {
     require(rowId >= 0 && rowId < rows, s"rowId out of bound, 0 <= rowId < $rows required, $rowId given")
   }
 
   private[spark] def assertRowIndexesValid(rowIds: Array[Int]): Unit = rowIds.foreach(assertRowIndexValid)
 
+  override def asyncPull(rowIds: Array[Int], indexes: Array[Long]): Future[Array[Vector]] = {
+    require(rowType.isLongKey, s"rowType=$rowType, use `pull(rowIds: Array[Int], indexes: Array[Int])` instead")
+    matrixClient.asyncGet(rowIds, indexes)
+  }
+
+  override def asyncPull(rowIds: Array[Int], indexes: Array[Int]): Future[Array[Vector]] = {
+    require(rowType.isIntKey, s"rowType=$rowType, use `pull(rowIds: Array[Int], indexes: Array[Long])` instead")
+    matrixClient.asyncGet(rowIds, indexes)
+  }
+
+  override def asyncPull(rowId: Int, indexes: Array[Long]): Future[Vector] = {
+    require(rowType.isLongKey, s"rowType=$rowType, use `pull(rowIds: Int, indexes: Array[Int])` instead")
+    matrixClient.asyncGet(rowId, indexes)
+  }
+
+  override def asyncPull(rowId: Int, indexes: Array[Int]): Future[Vector] = {
+    require(rowType.isIntKey, s"rowType=$rowType, use `pull(rowIds: Int, indexes: Array[Long])` instead")
+    matrixClient.asyncGet(rowId, indexes)
+  }
+
+  override def asyncPull(rowId: Int): Future[Vector] = {
+    matrixClient.asyncGetRow(rowId)
+  }
+
+  override def asyncIncrement(delta: Matrix): Future[VoidResult] = {
+    matrixClient.asyncIncrement(delta)
+  }
+
+  override def asyncIncrement(delta: Vector): Future[VoidResult] = {
+    require(rowType.compatible(delta.getType), s"can't increment $rowType by ${delta.getType}")
+    matrixClient.asyncIncrement(delta)
+  }
+
+  override def asyncIncrement(rowId: Int, delta: Vector): Future[VoidResult] = {
+    require(rowType.compatible(delta.getType), s"can't increment $rowType by ${delta.getType}")
+    matrixClient.asyncIncrement(rowId, delta)
+  }
+
+  override def asyncIncrement(rowIds: Array[Int], deltas: Array[Vector]): Future[VoidResult] = {
+    require(deltas.forall(_.getType.compatible(rowType)),
+      s"can't increment $rowType by ${deltas.map(_.getType).mkString(",")}")
+    matrixClient.asyncIncrement(rowIds, deltas)
+  }
+
+  override def asyncUpdate(delta: Matrix): Future[VoidResult] = {
+    matrixClient.asyncUpdate(delta)
+  }
+
+  override def asyncUpdate(rowId: Int, row: Vector): Future[VoidResult] = {
+    require(rowType.compatible(row.getType), s"can't update $rowType by ${row.getType}")
+    matrixClient.asyncUpdate(rowId, row)
+  }
+
+  override def asyncUpdate(row: Vector): Future[VoidResult] = {
+    require(rowType.compatible(row.getType), s"can't update $rowType by ${row.getType}")
+    matrixClient.asyncUpdate(row)
+  }
+
+  override def asyncUpdate(rowIds: Array[Int], rows: Array[Vector]): Future[VoidResult] = {
+    require(rows.forall(_.getType.compatible(rowType)),
+      s"can't update $rowType by ${rows.map(_.getType).mkString(",")}")
+    matrixClient.asyncUpdate(rowIds, rows)
+  }
+
+  override def asyncPush(matrix: Matrix): Future[VoidResult] = {
+    require(rows == matrix.getNumRows, "matrix dimension does not match!")
+    reset()
+    asyncUpdate(matrix)
+  }
+
+  override def asyncPush(vector: Vector): Future[VoidResult] = {
+    asyncPush(vector.getRowId, vector)
+  }
+
+  override def asyncPush(rowId: Int, vector: Vector): Future[VoidResult] = {
+    require(rowType.compatible(vector.getType), s"can't push $rowType by ${vector.getType}")
+    assertRowIndexValid(rowId)
+    reset(rowId)
+    asyncUpdate(rowId, vector)
+  }
+
+  override def asyncPush(rowIds: Array[Int], rows: Array[Vector]): Future[VoidResult] = {
+    require(rows.forall(_.getType.compatible(rowType)), s"can't push $rowType by ${rows.map(_.getType).mkString(",")}")
+    assertRowIndexesValid(rowIds)
+    reset(rowIds)
+    asyncUpdate(rowIds, rows)
+  }
+
+  override def asyncReset(): Future[VoidResult] = matrixClient.asyncUpdate(new Zero(new Zero.ZeroParam(id, false)))
+
+  override def asyncReset(rowId: Int): Future[VoidResult] = {
+    assertRowIndexValid(rowId)
+    asyncPsfUpdate(new Reset(id, rowId))
+  }
+
+  override def asyncReset(rowIds: Array[Int]): Future[VoidResult] = {
+    assertRowIndexesValid(rowIds)
+    asyncPsfUpdate(new Reset(id, rowIds))
+  }
+
+  override def asyncPsfGet(func: GetFunc): Future[GetResult] = {
+    matrixClient.asyncGet(func)
+  }
+
+  override def asyncPsfUpdate(func: UpdateFunc): Future[VoidResult] = {
+    matrixClient.asyncUpdate(func)
+  }
 }

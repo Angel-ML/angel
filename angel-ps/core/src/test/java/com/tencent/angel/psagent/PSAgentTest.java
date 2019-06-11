@@ -27,7 +27,6 @@ import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.localcluster.LocalClusterContext;
 import com.tencent.angel.master.AngelApplicationMaster;
-
 import com.tencent.angel.master.task.AMTaskManager;
 import com.tencent.angel.master.worker.WorkerManager;
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;

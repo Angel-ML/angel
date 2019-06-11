@@ -32,8 +32,6 @@ import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
-import com.tencent.angel.ps.storage.partition.storage.DenseServerRowsStorage;
-import com.tencent.angel.ps.storage.partition.storage.SparseServerRowsStorage;
 import com.tencent.angel.psagent.matrix.MatrixClient;
 import com.tencent.angel.psagent.matrix.oplog.cache.MatrixOpLog;
 import com.tencent.angel.worker.Worker;
@@ -144,7 +142,6 @@ public class GetRowTest {
     dMat.setColNum(feaNum);
     dMat.setMaxColNumInBlock(feaNum / 3);
     dMat.setRowType(RowType.T_DOUBLE_DENSE);
-    dMat.setPartitionStorageClass(SparseServerRowsStorage.class);
     angelClient.addMatrix(dMat);
 
     // add comp dense double matrix
@@ -406,11 +403,11 @@ public class GetRowTest {
   }
 
   @Test public void test() throws Exception {
-    testDenseDoubleUDF();
-    testSparseDoubleUDF();
+    //testDenseDoubleUDF();
+    //testSparseDoubleUDF();
 
     testDenseDoubleCompUDF();
-    testSparseDoubleCompUDF();
+    /*testSparseDoubleCompUDF();
 
     testDenseFloatUDF();
     testSparseFloatUDF();
@@ -440,7 +437,7 @@ public class GetRowTest {
     testSparseIntLongKeyCompUDF();
 
     testSparseLongLongKeyUDF();
-    testSparseLongLongKeyCompUDF();
+    testSparseLongLongKeyCompUDF();*/
   }
 
 

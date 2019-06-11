@@ -2,9 +2,9 @@ package com.tencent.angel.spark.ml.online_learning
 
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math2.storage.{IntKeyVectorStorage}
+import com.tencent.angel.ml.math2.storage.LongKeyVectorStorage
 import com.tencent.angel.ml.math2.ufuncs.{OptFuncs, Ufuncs}
-import com.tencent.angel.ml.math2.vector.{IntDummyVector, IntKeyVector, Vector}
+import com.tencent.angel.ml.math2.vector.{LongDummyVector, LongKeyVector, Vector}
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.model.output.format.RowIdColIdValueTextRowFormat
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
@@ -14,16 +14,28 @@ import com.tencent.angel.spark.ml.psf.ftrl.ComputeW
 import com.tencent.angel.spark.models.PSMatrix
 import com.tencent.angel.spark.models.impl.PSMatrixImpl
 
-class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) extends Serializable {
+class FtrlFM() extends Serializable {
 
   val firstName = "first"
   val secondName = "second"
+  var lambda1: Double = 0
+  var lambda2: Double = 0
+  var alpha: Double = 0
+  var beta: Double = 0
   var first: PSMatrix = _
   var second: PSMatrix = _
   var factor: Int = 0
 
+  def this(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) {
+    this()
+    this.lambda1 = lambda1
+    this.lambda2 = lambda2
+    this.alpha = alpha
+    this.beta = beta
+  }
+
   def init(dim: Long, factor: Int): Unit = {
-    init(dim, RowType.T_FLOAT_SPARSE, factor)
+    init(dim, RowType.T_FLOAT_SPARSE_LONGKEY, factor)
   }
 
   def init(dim: Long, rowType: RowType, factor: Int): Unit = {
@@ -37,9 +49,9 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
   /**
     * Init with dim, nnz, rowType, factor and partitioner
     *
-    * @param dim        , the index range is [0, dim) if dim>0, else [int.min, int.max) if dim=-1 and rowType is sparse
+    * @param dim         , the index range is [0, dim) if dim>0, else [long.min, long.max) if dim=-1 and rowType is sparse
     * @param nnz         , number-of-non-zero elements in model
-    * @param rowType     , default is T_FLOAT_SPARSE
+    * @param rowType     , default is T_FLOAT_SPARSE_LONGKEY
     * @param factor      , num of factors
     * @param partitioner , default is column-range-partitioner
     */
@@ -58,8 +70,18 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
     this.factor = factor
   }
 
+  /**
+    * create the model with a matrix-context and init three PSVector
+    *
+    * @param ctx , matrix context
+    */
+  def init(ctx: MatrixContext): PSMatrix = {
+    val matId = PSMatrixUtils.createPSMatrix(ctx)
+    new PSMatrixImpl(matId, ctx.getRowNum, ctx.getColNum, ctx.getRowType)
+  }
+
   def init(start: Long, end: Long, factor: Int): Unit = {
-    init(start, end, -1, RowType.T_FLOAT_SPARSE, factor)
+    init(start, end, -1, RowType.T_FLOAT_SPARSE_LONGKEY, factor)
   }
 
   def init(start: Long, end: Long, nnz: Long, rowType: RowType, factor: Int): Unit = {
@@ -84,16 +106,6 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
     this.factor = factor
   }
 
-  /**
-    * create the model with a matrix-context and init three PSVector
-    *
-    * @param ctx , matrix context
-    */
-  def init(ctx: MatrixContext): PSMatrix = {
-    val matId = PSMatrixUtils.createPSMatrix(ctx)
-    new PSMatrixImpl(matId, ctx.getRowNum, ctx.getColNum, ctx.getRowType)
-  }
-
   def optimize(index: Int, batch: Array[LabeledData]): Double = {
 
     var (start, end) = (0L, 0L)
@@ -102,9 +114,9 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
     val indices = batch.flatMap {
       case point =>
         point.getX match {
-          case intDummy: IntDummyVector => intDummy.getIndices
-          case intKey: IntKeyVector => intKey.getStorage
-            .asInstanceOf[IntKeyVectorStorage].getIndices
+          case dummy: LongDummyVector => dummy.getIndices
+          case longKey: LongKeyVector => longKey.getStorage
+            .asInstanceOf[LongKeyVectorStorage].getIndices
         }
     }.distinct
 
@@ -122,7 +134,6 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
 
     end = System.currentTimeMillis()
     val pullTime = end - start
-
 
 
     val deltaZ = localZ.emptyLike()
@@ -159,60 +170,12 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
     lossSum
   }
 
-  def weight(): Unit = {
-    val func1 = new ComputeW(first.id, alpha, beta, lambda1, lambda2, 1.0)
-    first.psfUpdate(func1).get()
-
-    val func2 = new ComputeW(second.id, alpha, beta, lambda1, lambda2, factor)
-    second.psfUpdate(func2).get()
-  }
-
   def delta(grad: Vector, localN: Vector, weight: Vector,
             deltaZ: Vector, deltaN: Vector): Unit = {
     deltaZ.iadd(grad)
     Ufuncs.iaxpy2(deltaN, grad, 1)
     OptFuncs.iftrldetalintersect(grad, localN, alpha)
     deltaZ.isub(grad.imul(weight))
-  }
-
-  def predict(w: Vector, v: Array[Vector], v2: Array[Vector], feature: Vector): Double = {
-    val sumW = w.dot(feature)
-    val f2 = feature.mul(feature)
-    val sumV = v.zip(v2).map { case (v0, v2) =>
-      val t1 = v0.dot(feature)
-      t1*t1 - v2.dot(f2)
-    }
-    return sumW + sumV.sum / 2.0
-  }
-
-  def predict(batch: Array[LabeledData]): Array[(Double, Double)] = {
-    val indices = batch.flatMap {
-      case point =>
-        point.getX match {
-          case intDummy: IntDummyVector => intDummy.getIndices
-          case intKey: IntKeyVector => intKey.getStorage
-            .asInstanceOf[IntKeyVectorStorage].getIndices
-        }
-    }.distinct
-
-    // fetch first
-    val firsts = first.pull(Array(0, 1), indices)
-    val (localZ, localN) = (firsts(0), firsts(1))
-    val localW = Ufuncs.ftrlthreshold(localZ, localN, alpha, beta, lambda1, lambda2)
-
-    // fetch second
-    val seconds = second.pull((0 until factor * 2).toArray, indices)
-    val localV = (0 until factor).map(idx => Ufuncs.ftrlthresholdinit(seconds(idx), seconds(idx + factor),
-      alpha, beta, lambda1, lambda2, 0.0, 0.01)).toArray
-
-    val localV2 = localV.map(v => v.mul(v))
-
-    batch.map { point =>
-      val (feature, label) = (point.getX, point.getY)
-      val p = predict(localW, localV, localV2, feature)
-      val score = 1 / (1 + math.exp(-p))
-      (label, score)
-    }
   }
 
   def gradient(w: Vector, v: Array[Vector], v2: Array[Vector],
@@ -222,8 +185,8 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
     val marginW = w.dot(feature)
     val vdot = v.map(v0 => v0.dot(feature))
     val f2 = feature.mul(feature)
-    val marginV = v.zip(vdot).zip(v2).map { case ((v0, dot),v2) =>
-      dot*dot - v2.dot(f2)
+    val marginV = v.zip(vdot).zip(v2).map { case ((v0, dot), v2) =>
+      dot * dot - v2.dot(f2)
     }
 
     val margin = -(marginW + marginV.sum / 2.0)
@@ -241,13 +204,69 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
     (gradW, gradV, loss)
   }
 
-
   def log1pExp(x: Double): Double = {
     if (x > 0) {
       x + math.log1p(math.exp(-x))
     } else {
       math.log1p(math.exp(x))
     }
+  }
+
+  def weight(): Unit = {
+    val func1 = new ComputeW(first.id, alpha, beta, lambda1, lambda2, 1.0)
+    first.psfUpdate(func1).get()
+
+    val func2 = new ComputeW(second.id, alpha, beta, lambda1, lambda2, factor)
+    second.psfUpdate(func2).get()
+  }
+
+  def predict(batch: Array[LabeledData], isTraining: Boolean = true): Array[(Double, Double)] = {
+    val indices = batch.flatMap {
+      case point =>
+        point.getX match {
+          case dummy: LongDummyVector => dummy.getIndices
+          case longKey: LongKeyVector => longKey.getStorage
+            .asInstanceOf[LongKeyVectorStorage].getIndices
+        }
+    }.distinct
+
+    val (localW: Vector, localV: Array[Vector]) = isTraining match {
+      case true =>
+        // fetch first
+        val firsts = first.pull(Array(0, 1), indices)
+        val (localZ, localN) = (firsts(0), firsts(1))
+        val localW = Ufuncs.ftrlthreshold(localZ, localN, alpha, beta, lambda1, lambda2)
+
+        // fetch second
+        val seconds = second.pull((0 until factor * 2).toArray, indices)
+        val localV = (0 until factor).map(idx => Ufuncs.ftrlthresholdinit(seconds(idx), seconds(idx + factor),
+          alpha, beta, lambda1, lambda2, 0.0, 0.01)).toArray
+        (localW, localV)
+
+      case false =>
+        val localW = first.pull(Array(2), indices)(0)
+        val localV = second.pull((factor * 2 until factor * 3).toArray, indices)
+        (localW, localV)
+    }
+
+    val localV2 = localV.map(v => v.mul(v))
+
+    batch.map { point =>
+      val (feature, label) = (point.getX, point.getY)
+      val p = predict(localW, localV, localV2, feature)
+      val score = 1 / (1 + math.exp(-p))
+      (label, score)
+    }
+  }
+
+  def predict(w: Vector, v: Array[Vector], v2: Array[Vector], feature: Vector): Double = {
+    val sumW = w.dot(feature)
+    val f2 = feature.mul(feature)
+    val sumV = v.zip(v2).map { case (v0, v2) =>
+      val t1 = v0.dot(feature)
+      t1 * t1 - v2.dot(f2)
+    }
+    return sumW + sumV.sum / 2.0
   }
 
   def save(path: String): Unit = {
@@ -269,7 +288,7 @@ class FtrlFM(lambda1: Double, lambda2: Double, alpha: Double, beta: Double) exte
   /**
     * Save w, v for model serving
     *
-    * @param path, output path
+    * @param path , output path
     */
   def saveWeight(path: String): Unit = {
     val format = classOf[RowIdColIdValueTextRowFormat].getCanonicalName

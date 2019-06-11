@@ -27,14 +27,17 @@ public class Histogram implements Serializable {
   private int numBin;
   private int numClass;
   private boolean fullHessian;
+  private boolean multiClassMultiTree;
   private double[] gradients;
   private double[] hessians;
 
-  public Histogram(int numBin, int numClass, boolean fullHessian) {
+  public Histogram(int numBin, int numClass, boolean fullHessian, boolean multiClassMultiTree) {
     this.numBin = numBin;
     this.numClass = numClass;
     this.fullHessian = fullHessian;
-    if (numClass == 2) {
+    this.multiClassMultiTree = multiClassMultiTree;
+
+    if (numClass == 2 || multiClassMultiTree) {
       this.gradients = new double[numBin];
       this.hessians = new double[numBin];
     } else if (!fullHessian) {
@@ -80,7 +83,7 @@ public class Histogram implements Serializable {
   }
 
   public void accumulate(int index, GradPair gradPair) {
-    if (numClass == 2) {
+    if (numClass == 2 || multiClassMultiTree) {
       BinaryGradPair binary = (BinaryGradPair) gradPair;
       gradients[index] += binary.getGrad();
       hessians[index] += binary.getHess();
@@ -109,8 +112,8 @@ public class Histogram implements Serializable {
   }
 
   public Histogram plus(Histogram other) {
-    Histogram res = new Histogram(numBin, numClass, fullHessian);
-    if (numClass == 2 || !fullHessian) {
+    Histogram res = new Histogram(numBin, numClass, fullHessian, multiClassMultiTree);
+    if (numClass == 2 || multiClassMultiTree || !fullHessian) {
       for (int i = 0; i < this.gradients.length; i++) {
         res.gradients[i] = this.gradients[i] + other.gradients[i];
         res.hessians[i] = this.hessians[i] + other.hessians[i];
@@ -127,8 +130,8 @@ public class Histogram implements Serializable {
   }
 
   public Histogram subtract(Histogram other) {
-    Histogram res = new Histogram(numBin, numClass, fullHessian);
-    if (numClass == 2 || !fullHessian) {
+    Histogram res = new Histogram(numBin, numClass, fullHessian, multiClassMultiTree);
+    if (numClass == 2 || multiClassMultiTree || !fullHessian) {
       for (int i = 0; i < this.gradients.length; i++) {
         res.gradients[i] = this.gradients[i] - other.gradients[i];
         res.hessians[i] = this.hessians[i] - other.hessians[i];
@@ -145,7 +148,7 @@ public class Histogram implements Serializable {
   }
 
   public void plusBy(Histogram other) {
-    if (numClass == 2 || !fullHessian) {
+    if (numClass == 2 || multiClassMultiTree || !fullHessian) {
       for (int i = 0; i < this.gradients.length; i++) {
         this.gradients[i] += other.gradients[i];
         this.hessians[i] += other.hessians[i];
@@ -161,7 +164,7 @@ public class Histogram implements Serializable {
   }
 
   public void subtractBy(Histogram other) {
-    if (numClass == 2 || !fullHessian) {
+    if (numClass == 2 || multiClassMultiTree || !fullHessian) {
       for (int i = 0; i < this.gradients.length; i++) {
         this.gradients[i] -= other.gradients[i];
         this.hessians[i] -= other.hessians[i];
@@ -181,7 +184,7 @@ public class Histogram implements Serializable {
   }
 
   public GradPair sum(int start, int end) {
-    if (numClass == 2) {
+    if (numClass == 2 || multiClassMultiTree) {
       double sumGrad = 0.0;
       double sumHess = 0.0;
       for (int i = start; i < end; i++) {
@@ -221,7 +224,7 @@ public class Histogram implements Serializable {
   }
 
   public GradPair get(int index) {
-    if (numClass == 2) {
+    if (numClass == 2 || multiClassMultiTree) {
       return new BinaryGradPair(gradients[index], hessians[index]);
     } else {
       double[] grad = Arrays.copyOfRange(gradients,
@@ -234,7 +237,7 @@ public class Histogram implements Serializable {
   }
 
   public void put(int index, GradPair gp) {
-    if (numClass == 2) {
+    if (numClass == 2 || multiClassMultiTree) {
       ((BinaryGradPair) gp).set(gradients[index], hessians[index]);
     } else if (!fullHessian) {
       ((MultiGradPair) gp).set(gradients, hessians, index * numClass);
@@ -246,7 +249,7 @@ public class Histogram implements Serializable {
   }
 
   public void plusTo(GradPair gp, int index) {
-    if (numClass == 2) {
+    if (numClass == 2 || multiClassMultiTree) {
       ((BinaryGradPair) gp).plusBy(gradients[index], hessians[index]);
     } else if (!fullHessian) {
       MultiGradPair multi = (MultiGradPair) gp;
@@ -273,7 +276,7 @@ public class Histogram implements Serializable {
   }
 
   public void subtractTo(GradPair gp, int index) {
-    if (numClass == 2) {
+    if (numClass == 2 || multiClassMultiTree) {
       ((BinaryGradPair) gp).subtractBy(gradients[index], hessians[index]);
     } else if (!fullHessian) {
       MultiGradPair multi = (MultiGradPair) gp;
@@ -300,7 +303,7 @@ public class Histogram implements Serializable {
   }
 
   public void scan(int index, GradPair left, GradPair right) {
-    if (numClass == 2) {
+    if (numClass == 2 || multiClassMultiTree) {
       ((BinaryGradPair) left).plusBy(gradients[index], hessians[index]);
       ((BinaryGradPair) right).subtractBy(gradients[index], hessians[index]);
     } else if (!fullHessian) {

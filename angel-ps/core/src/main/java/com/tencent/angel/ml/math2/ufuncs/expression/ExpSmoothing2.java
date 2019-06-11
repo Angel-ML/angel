@@ -24,16 +24,22 @@ import com.tencent.angel.ml.math2.utils.Constant;
 public class ExpSmoothing2 extends Binary {
 
   private double factor;
+  private OpType type;
 
   public ExpSmoothing2(boolean inplace, double factor) {
+    this(inplace, factor, OpType.UNION);
+  }
+
+  public ExpSmoothing2(boolean inplace, double factor, OpType type) {
     setInplace(inplace);
     setKeepStorage(Constant.keepStorage);
     this.factor = factor;
+    this.type = type;
   }
 
   @Override
   public OpType getOpType() {
-    return OpType.UNION;
+    return type;
   }
 
   @Override

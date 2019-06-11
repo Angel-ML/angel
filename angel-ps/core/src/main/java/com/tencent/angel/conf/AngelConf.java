@@ -77,6 +77,13 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_VALIDATE_DATA_PATH = "angel.validate.data.path";
 
   /**
+   * kerberos config
+   */
+  public static final String ANGEL_KERBEROS_KEYTAB = "angel.kerberos.keytab";
+  public static final String ANGEL_KERBEROS_PRINCIPAL = "angel.kerberos.principal";
+  public static final String ANGEL_KERBEROS_KEYTAB_NAME="angel.kerberos.keytab.name";
+
+  /**
    * Predict data path.
    */
   public static final String ANGEL_PREDICT_DATA_PATH = "angel.predict.data.path";
@@ -406,7 +413,7 @@ public class AngelConf extends Configuration {
    * of control commands from AngelClient.
    */
   public static final String ANGEL_AM_APPSTATE_TIMEOUT_MS = ANGEL_AM_PREFIX + "appstate.timeout.ms";
-  public static final long DEFAULT_ANGEL_AM_APPSTATE_TIMEOUT_MS = 600000;
+  public static final long DEFAULT_ANGEL_AM_APPSTATE_TIMEOUT_MS = 3000000;
 
   /**
    * The time interval in milliseconds of AppMaster writing application states to hdfs.

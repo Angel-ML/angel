@@ -19,7 +19,7 @@
 package com.tencent.angel.spark.ml.tree.gbdt.tree;
 
 
-import com.tencent.angel.spark.ml.tree.tree.basic.TNodeStat;
+import com.tencent.angel.spark.ml.tree.basic.TNodeStat;
 
 public class GBTNodeStat extends TNodeStat {
     /*private GradPair sumGradPair;

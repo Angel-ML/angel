@@ -24,7 +24,7 @@ import com.tencent.angel.spark.ml.tree.data.FeatureRow;
 import com.tencent.angel.spark.ml.tree.data.InstanceRow;
 import com.tencent.angel.spark.ml.tree.gbdt.metadata.DataInfo;
 import com.tencent.angel.spark.ml.tree.gbdt.metadata.FeatureInfo;
-import com.tencent.angel.spark.ml.tree.tree.param.GBDTParam;
+import com.tencent.angel.spark.ml.tree.param.GBDTParam;
 import com.tencent.angel.spark.ml.tree.util.Maths;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
@@ -96,7 +96,7 @@ public class HistBuilder {
     for (int i = 0; i < isFeatUsed.length; i++) {
       if (isFeatUsed[i]) {
         histograms[i] = new Histogram(featureInfo.getNumBin(featLo + i),
-            param.numClass, param.fullHessian);
+            param.numClass, param.fullHessian, param.isMultiClassMultiTree());
       }
     }
     for (int posId = from; posId < to; posId++) {
@@ -148,7 +148,7 @@ public class HistBuilder {
     for (int i = 0; i < isFeatUsed.length; i++) {
       if (isFeatUsed[i]) {
         histograms[i] = new Histogram(featureInfo.getNumBin(featLo + i),
-            param.numClass, param.fullHessian);
+            param.numClass, param.fullHessian, param.isMultiClassMultiTree());
       }
     }
     for (int posId = from; posId < to; posId++) {
@@ -309,7 +309,7 @@ public class HistBuilder {
         if (nnz > 0) {
           int fid = featLo + i;
           int numBin = featureInfo.getNumBin(fid);
-          histograms[i] = new Histogram(numBin, param.numClass, param.fullHessian);
+          histograms[i] = new Histogram(numBin, param.numClass, param.fullHessian, param.isMultiClassMultiTree());
         }
       }
     }
@@ -415,7 +415,7 @@ public class HistBuilder {
           if (nnz != 0) {
             // 1. allocate histogram
             int numBin = featureInfo.getNumBin(fid);
-            Histogram hist = new Histogram(numBin, param.numClass, param.fullHessian);
+            Histogram hist = new Histogram(numBin, param.numClass, param.fullHessian, param.isMultiClassMultiTree());
             // 2. loop non-zero instances, accumulate to histogram
             if (true) {
               //if (nnz <= nodeEnd - nodeStart + 1) { // loop all nnz of current feature

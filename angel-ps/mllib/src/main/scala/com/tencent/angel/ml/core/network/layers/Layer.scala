@@ -20,12 +20,14 @@ package com.tencent.angel.ml.core.network.layers
 
 import java.util.concurrent.Future
 
-import com.google.gson.Gson
-import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
+import com.tencent.angel.ml.core.utils.paramsutils.ParamKeys
+import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
+import org.json4s.JsonAST._
+import org.json4s.JsonDSL._
 
 import scala.collection.mutable.ListBuffer
 
@@ -56,6 +58,8 @@ trait LossLayer {
   def calLoss(): Double
 
   def getLossFunc(): LossFunc
+
+  def toJson: JObject
 }
 
 abstract class Layer(val name: String, val outputDim: Int)(implicit val graph: AngelGraph)
@@ -117,16 +121,13 @@ abstract class Layer(val name: String, val outputDim: Int)(implicit val graph: A
     }
   }
 
-  def toMeta(): LayerMeta = ???
-}
-
-abstract class LayerMeta(name: String, outputDim: Int) extends Serializable {
-
-  def toJson(): String = {
-    new Gson().toJson(this)
+  def toJson: JObject = {
+    (ParamKeys.name -> name) ~
+      (ParamKeys.typeName -> s"${this.getClass.getSimpleName}") ~
+      (ParamKeys.outputDim -> outputDim)
   }
-
 }
+
 
 abstract class InputLayer(name: String, outputDim: Int)(implicit graph: AngelGraph)
   extends Layer(name, outputDim)(graph) {
@@ -135,9 +136,6 @@ abstract class InputLayer(name: String, outputDim: Int)(implicit graph: AngelGra
   def calBackward(): Matrix
 }
 
-abstract class InputLayerMeta(name: String, outputDim: Int) extends LayerMeta(name, outputDim) {
-
-}
 
 abstract class JoinLayer(name: String, outputDim: Int, val inputLayers: Array[Layer])(implicit graph: AngelGraph)
   extends Layer(name, outputDim)(graph) {
@@ -147,10 +145,13 @@ abstract class JoinLayer(name: String, outputDim: Int, val inputLayers: Array[La
   }
 
   def calGradOutput(idx: Int): Matrix
-}
 
-abstract class JoinLayerMeta(name: String, outputDim: Int, inputLayers: Array[String]) extends LayerMeta(name, outputDim) {
-
+  override def toJson: JObject = {
+    (ParamKeys.name -> name) ~
+      (ParamKeys.typeName -> s"${this.getClass.getSimpleName}") ~
+      (ParamKeys.outputDim -> outputDim) ~
+      (ParamKeys.inputLayers -> JArray(inputLayers.toList.map(layer => JString(layer.name))))
+  }
 }
 
 
@@ -160,8 +161,11 @@ abstract class LinearLayer(name: String, outputDim: Int, val inputLayer: Layer)(
   this.addInput(inputLayer)
 
   def calGradOutput(): Matrix
-}
 
-abstract class LinearLayerMeta(name: String, outputDim: Int, inputLayer: String) extends LayerMeta(name, outputDim) {
-
+  override def toJson: JObject = {
+    (ParamKeys.name -> name) ~
+      (ParamKeys.typeName -> s"${this.getClass.getSimpleName}") ~
+      (ParamKeys.outputDim -> outputDim) ~
+      (ParamKeys.inputLayer, JString(inputLayer.name))
+  }
 }

@@ -3,6 +3,7 @@
 配置项名称 | 默认值 | 配置项含义
 ---------------- | --------------- | ---------------
 action.type | train | Angel task的运行方式，目前主要有两种“train”和“predict”，分别表示模型训练和使用模型进行预测
+angel.output.path.deleteonexist | false | 当输出路径存在时，是否直接覆盖
 angel.train.data.path | 无 | 训练数据所在路径，该选项用于“train”运行方式下
 angel.predict.data.path | 无 | 预测数据所在路径，该选项用于“predict”运行方式下
 angel.input.format | com.tencent.angel.data.inputformat.BalanceInputFormat | 训练数据文件格式，主要用于训练数据划分和读取，可支持自定义格式

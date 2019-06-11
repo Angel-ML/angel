@@ -62,6 +62,7 @@ public class ModelTools {
         throw new IOException("Can not find meta file for matrix " + loadContext.getMatrixName() + " on path " + loadContext.getLoadPath());
       }
       MatrixFilesMeta matrixFilesMeta;
+      fs.setVerifyChecksum(false);
       FSDataInputStream input = fs.open(metaFilePath);
       matrixFilesMeta = new MatrixFilesMeta();
       try {

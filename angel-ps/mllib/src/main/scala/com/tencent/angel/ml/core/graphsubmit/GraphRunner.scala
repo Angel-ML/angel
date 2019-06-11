@@ -63,6 +63,8 @@ class GraphRunner extends MLRunner {
 
       if (!saveModelPath.isEmpty)
         model.saveModel(client, saveModelPath)
+        LOG.info(s"Start to save graph.json is $saveModelPath")
+        model.saveJson(saveModelPath)
     } finally {
       client.stop()
     }

@@ -439,7 +439,7 @@ public class BlasDoubleMatrix extends BlasMatrix {
     }
 
     IntDoubleDenseVectorStorage storage = new IntDoubleDenseVectorStorage(col);
-    return new IntDoubleVector(getMatrixId(), getClock(), 0, numRows, storage);
+    return new IntDoubleVector(getMatrixId(), 0, getClock(), numRows, storage);
   }
 
   public Matrix setRow(int i, Vector v) {

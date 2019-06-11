@@ -22,7 +22,9 @@ import org.apache.spark.ml.linalg.Vector
 import com.tencent.angel.spark.ml.tree.exception.GBDTException
 
 object Instance {
-  def ensureLabel(labels: Array[Float], numLabel: Int): Unit = {
+
+  def ensureLabel(labels: Array[Float], numLabel: Int): Boolean = {
+    var needTrans: Boolean = false
     if (numLabel == 2) {
       val distinct = labels.distinct
       if (distinct.length < 2)
@@ -34,6 +36,7 @@ object Instance {
         for (i <- labels.indices)
           if (labels(i) == -1f)
             labels(i) = 0f
+        needTrans = true
       }
     } else {
       var min = Integer.MAX_VALUE
@@ -49,11 +52,30 @@ object Instance {
         throw new GBDTException(s"Invalid range for labels: [$min, $max]")
       } else if (max == numLabel) {
         println(s"[WARN] Change range of labels from [1, $numLabel] to [0, ${numLabel - 1}]")
-        for (i <- labels.indices)
+        for (i <- labels.indices) {
           labels(i) -= 1f
+        }
+        needTrans = true
+      }
+    }
+    needTrans
+  }
+
+  def changeLabel(labels: Array[Float], numLabel: Int): Unit = {
+    if (numLabel == 2) {
+      println("[WARN] Change labels from -1 to 0")
+      for (i <- labels.indices) {
+        if (labels(i) == -1f)
+          labels(i) = 0f
+      }
+    } else {
+      println(s"[WARN] Change range of labels from [1, $numLabel] to [0, ${numLabel - 1}]")
+      for (i <- labels.indices) {
+        labels(i) -= 1f
       }
     }
   }
+
 }
 
 case class Instance(label: Double, feature: Vector) {

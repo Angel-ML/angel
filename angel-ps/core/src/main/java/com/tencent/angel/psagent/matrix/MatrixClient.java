@@ -22,7 +22,6 @@ import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.matrix.psf.update.zero.Zero;
 import com.tencent.angel.psagent.task.TaskContext;
 
-import java.util.concurrent.ExecutionException;
 
 /**
  * The base class of matrix client used by ps client. It contains a task context which use to SSP
@@ -76,11 +75,6 @@ public abstract class MatrixClient implements MatrixInterface {
   }
 
   public void zero() throws AngelException {
-    Zero updater = new Zero(new Zero.ZeroParam(getMatrixId(), false));
-    try {
-      update(updater).get();
-    } catch (InterruptedException | ExecutionException e) {
-      throw new AngelException(e);
-    }
+    update(new Zero(new Zero.ZeroParam(getMatrixId(), false)));
   }
 }
