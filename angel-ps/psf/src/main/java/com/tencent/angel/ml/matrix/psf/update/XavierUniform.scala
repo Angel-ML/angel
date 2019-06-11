@@ -1,9 +1,10 @@
 package com.tencent.angel.ml.matrix.psf.update
 
-import com.tencent.angel.ml.matrix.psf.update.enhance.{MMUpdateFunc, MMUpdateParam}
-import com.tencent.angel.ps.storage.vector.func.{DoubleElemUpdateFunc, FloatElemUpdateFunc}
-import com.tencent.angel.ps.storage.vector.{ServerDoubleRow, ServerFloatRow, ServerRow}
 import java.util.{Random => JRandom}
+
+import com.tencent.angel.ml.matrix.psf.update.enhance.{MMUpdateFunc, MMUpdateParam}
+import com.tencent.angel.ps.storage.vector._
+import com.tencent.angel.ps.storage.vector.func.{DoubleElemUpdateFunc, FloatElemUpdateFunc}
 
 class XavierUniform(param: MMUpdateParam) extends MMUpdateFunc(param) {
 
@@ -19,14 +20,28 @@ class XavierUniform(param: MMUpdateParam) extends MMUpdateFunc(param) {
     val a = scalars(0)
     val rand = new JRandom(System.currentTimeMillis())
     rows.foreach {
-      case r: ServerDoubleRow =>
+      case r: ServerIntDoubleRow =>
         r.elemUpdate(new DoubleElemUpdateFunc {
           override def update(): Double = {
             rand.nextDouble() * 2 * a - a
           }
         })
 
-      case r: ServerFloatRow =>
+      case r: ServerLongDoubleRow =>
+        r.elemUpdate(new DoubleElemUpdateFunc {
+          override def update(): Double = {
+            rand.nextDouble() * 2 * a - a
+          }
+        })
+
+      case r: ServerIntFloatRow =>
+        r.elemUpdate(new FloatElemUpdateFunc {
+          override def update(): Float = {
+            (rand.nextFloat() * 2 * a - a).toFloat
+          }
+        })
+
+      case r: ServerLongFloatRow =>
         r.elemUpdate(new FloatElemUpdateFunc {
           override def update(): Float = {
             (rand.nextFloat() * 2 * a - a).toFloat
