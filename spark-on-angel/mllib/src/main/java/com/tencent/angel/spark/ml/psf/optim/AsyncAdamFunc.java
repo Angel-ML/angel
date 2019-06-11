@@ -1,14 +1,9 @@
 package com.tencent.angel.spark.ml.psf.optim;
 
-import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage;
-import com.tencent.angel.ml.math2.storage.IntFloatSparseVectorStorage;
 import com.tencent.angel.ml.math2.ufuncs.OptFuncs;
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs;
-import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
-import it.unimi.dsi.fastutil.ints.Int2FloatMap;
-import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 public class AsyncAdamFunc extends AsyncOptimFunc {
 
@@ -38,7 +33,6 @@ public class AsyncAdamFunc extends AsyncOptimFunc {
     OptFuncs.iexpsmoothing2(square, grad, gamma);
 
     velocity = Ufuncs.indexget(velocity, grad);
-//    square = Ufuncs.indexget(square, grad);
 
     Vector delta = OptFuncs.adamdelta(velocity, square, powBeta, powGamma);
     delta.imul(eta);
