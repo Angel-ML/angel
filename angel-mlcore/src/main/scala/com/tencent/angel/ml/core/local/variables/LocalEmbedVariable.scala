@@ -3,7 +3,7 @@ package com.tencent.angel.ml.core.local.variables
 import java.lang.{Long => JLong}
 import java.util.{HashMap => JHashMap, Map => JMap}
 
-import com.tencent.angel.ml.core.network.layers.PlaceHolder
+import com.tencent.angel.ml.core.network.PlaceHolder
 import com.tencent.angel.ml.core.utils.ValueNotAllowed
 import com.tencent.angel.ml.core.variable.{EmbedUtils, EmbedVariable, Updater, VariableManager}
 import com.tencent.angel.ml.math2.matrix.{MapMatrix, Matrix}

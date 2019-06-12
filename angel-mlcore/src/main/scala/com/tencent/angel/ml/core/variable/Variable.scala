@@ -100,13 +100,11 @@ trait VecTrainCycle extends TrainCycle {
   }
 }
 
-
 trait MatVariable extends MatTrainCycle
 
 object MatVariable {
   implicit def toMatrix(v: MatVariable): Matrix = v.snapshot()
 }
-
 
 trait EmbedVariable extends MatVariable {
   var assembleHint: String = EmbedUtils.OneHot
@@ -117,20 +115,17 @@ object EmbedVariable {
   implicit def toMatrix(v: EmbedVariable): Matrix = v.snapshot()
 }
 
-
 trait BlasMatVariable extends MatVariable
 
 object BlasMatVariable {
   implicit def toMatrix(v: BlasMatVariable): Matrix = v.snapshot()
 }
 
-
 trait VecVariable extends VecTrainCycle
 
 object VecVariable {
   implicit def toVector(v: VecVariable): Vector = v.snapshot()
 }
-
 
 abstract class Variable(val name: String,
                         val rowType: RowType,

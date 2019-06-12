@@ -35,7 +35,7 @@
     <dist.deps.scope>provided</dist.deps.scope>
     <scalatest.version>3.0.3</scalatest.version>
     <main.basedir>${project.basedir}</main.basedir>
-    <json4s.version>3.2.11</json4s.version>
+    <!--json4s.version>3.2.11</json4s.version-->
   </properties>
 
 
@@ -169,6 +169,29 @@
               </execution>
             </executions>
           </plugin-->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <version>3.1.0</version>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <goals>
+                  <goal>shade</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <shadedClassifierName>angel</shadedClassifierName>
+              <relocations>
+                <relocation>
+                  <pattern>org.json4s:json4s-*</pattern>
+                  <shadedPattern>org.json4s:json4s-angel-*</shadedPattern>
+                </relocation>
+              </relocations>
+            </configuration>
+          </plugin>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>

@@ -3,7 +3,7 @@ package com.tencent.angel.ml.core.variable
 import java.lang.{Long => JLong}
 import java.util.{Map => JMap}
 
-import com.tencent.angel.ml.core.network.layers.PlaceHolder
+import com.tencent.angel.ml.core.network.PlaceHolder
 import com.tencent.angel.ml.math2.matrix.{MapMatrix, Matrix}
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector._

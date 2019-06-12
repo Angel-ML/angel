@@ -22,8 +22,7 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core._
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.data.DataBlock
-import com.tencent.angel.ml.core.network.Graph
-import com.tencent.angel.ml.core.network.layers.PlaceHolder
+import com.tencent.angel.ml.core.network.{Graph, PlaceHolder}
 import com.tencent.angel.ml.core.utils.JsonUtils
 import com.tencent.angel.ml.core.variable.{AngelCILSImpl, CILSImpl, VariableManager, VariableProvider}
 import com.tencent.angel.ml.math2.utils.LabeledData
@@ -35,18 +34,18 @@ class AngelModel(conf: Configuration, _ctx: TaskContext) extends GraphModel {
   lazy val batchSize: Int = SharedConf.batchSize
   lazy val blockSize: Int = SharedConf.blockSize
 
-  override protected val placeHolder: PlaceHolder = new PlaceHolder(sharedConf)
+  //override protected val placeHolder: PlaceHolder = new PlaceHolder(sharedConf)
   override protected implicit val variableManager: VariableManager = PSVariableManager.get(isSparseFormat)
   protected implicit val cilsImpl: CILSImpl = new AngelCILSImpl()
-  override protected val variableProvider: VariableProvider = new PSVariableProvider(dataFormat, modelType, placeHolder)
+  override protected val variableProvider: VariableProvider = new PSVariableProvider(dataFormat, modelType)
 
   implicit lazy val graph: Graph = if (_ctx != null) {
-    new Graph(variableProvider, placeHolder, sharedConf, _ctx.getTotalTaskNum)
+    new Graph(variableProvider, sharedConf, _ctx.getTotalTaskNum)
   } else {
     val totalTaskNum: Int = sharedConf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER,
       AngelConf.DEFAULT_ANGEL_WORKERGROUP_NUMBER) * sharedConf.getInt(
       AngelConf.ANGEL_TASK_ACTUAL_NUM, default = 1)
-    new Graph(variableProvider, placeHolder, sharedConf, totalTaskNum)
+    new Graph(variableProvider, sharedConf, totalTaskNum)
   }
 
   override def buildNetwork(): this.type = {
@@ -65,14 +64,15 @@ class AngelModel(conf: Configuration, _ctx: TaskContext) extends GraphModel {
   // def predict(storage: DataBlock[LabeledData]): List[PredictResult]
   override def predict(storage: DataBlock[LabeledData]): List[PredictResult] = {
     // new MemoryDataBlock[PredictResult](storage.size())
-
     val numSamples = storage.size()
     val batchData = new Array[LabeledData](numSamples)
     (0 until numSamples).foreach { idx => batchData(idx) = storage.loopingRead() }
     graph.feedData(batchData)
 
+    val indices = graph.placeHolder.getIndices
+
     if (isSparseFormat) {
-      pullParams(-1, placeHolder.getIndices)
+      pullParams(-1, indices)
     } else {
       pullParams(-1)
     }

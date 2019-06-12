@@ -23,9 +23,9 @@ import com.tencent.angel.ml.core.conf.MLCoreConf
 import com.tencent.angel.ml.core.graphsubmit.AngelModel
 import com.tencent.angel.ml.core.network.{Identity, TransFunc}
 import com.tencent.angel.ml.core.network.layers.{Layer, LossLayer}
-import com.tencent.angel.ml.core.network.layers.join.{ConcatLayer, SumPooling}
-import com.tencent.angel.ml.core.network.layers.linear.{BiInnerCross, FCLayer}
-import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer}
+import com.tencent.angel.ml.core.network.layers.multiary.{ConcatLayer, SumPooling}
+import com.tencent.angel.ml.core.network.layers.unary.{BiInnerCross, FCLayer}
+import com.tencent.angel.ml.core.network.layers.leaf.{Embedding, SimpleInputLayer}
 import com.tencent.angel.ml.core.optimizer.loss.LogLoss
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration

@@ -12,7 +12,7 @@ abstract class InputLayer(name: String, outputDim: Int)(implicit graph: Graph)
     if (graph.isMatrixInCache(forwardKey)) {
       graph.getMatrixFromCache(forwardKey)
     } else {
-      val forwardValue: Matrix = doForward(graph.placeHolder.getFeats)
+      val forwardValue: Matrix = doForward(placeHolder.getFeats)
       graph.put2Cache(forwardKey, forwardValue)
       forwardValue
     }
@@ -25,7 +25,7 @@ abstract class InputLayer(name: String, outputDim: Int)(implicit graph: Graph)
       graph.getMatrixFromCache(backwardKey)
     } else {
       val gradInput = gatherGradInput()
-      doBackward(graph.placeHolder.getFeats, gradInput)
+      doBackward(placeHolder.getFeats, gradInput)
 
       graph.put2Cache(backwardKey, null.asInstanceOf[Matrix])
 

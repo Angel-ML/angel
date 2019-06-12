@@ -5,16 +5,16 @@ import com.tencent.angel.ml.core.local.optimizer.{Adam, Momentum, SGD}
 import com.tencent.angel.ml.core.local.{LocalVariableManager, LocalVariableProvider}
 import com.tencent.angel.ml.core.network._
 import com.tencent.angel.ml.core.network.layers._
-import com.tencent.angel.ml.core.network.layers.join.SumPooling
-import com.tencent.angel.ml.core.network.layers.linear.FCLayer
-import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer}
+import com.tencent.angel.ml.core.network.layers.multiary.SumPooling
+import com.tencent.angel.ml.core.network.layers.unary.FCLayer
+import com.tencent.angel.ml.core.network.layers.leaf.{Embedding, SimpleInputLayer}
 import com.tencent.angel.ml.core.optimizer.loss._
 import com.tencent.angel.ml.core.utils.JsonUtils
 import com.tencent.angel.ml.core.variable.{VariableManager, VariableProvider}
 import org.apache.hadoop.conf.Configuration
+import org.scalatest.FunSuite
 import org.json4s._
 import org.json4s.native.JsonMethods._
-import org.scalatest.FunSuite
 
 
 class JsonTest extends FunSuite {
@@ -106,8 +106,8 @@ class JsonTest extends FunSuite {
     val modelType = SharedConf.modelType
     val placeHolder: PlaceHolder = new PlaceHolder(conf)
     implicit val variableManager: VariableManager = LocalVariableManager.get(true)
-    val variableProvider: VariableProvider = new LocalVariableProvider(dataFormat, modelType, placeHolder)
-    implicit val graph: Graph = new Graph(variableProvider, placeHolder, conf, 1)
+    val variableProvider: VariableProvider = new LocalVariableProvider(dataFormat, modelType)
+    implicit val graph: Graph = new Graph(variableProvider, conf, 1)
     val opt = new Adam(0.01, 0.9, 0.99)
     // 20: field, 10 output
     val ipLayer = new SimpleInputLayer("inputLayer", 10, new Identity, opt)
@@ -190,8 +190,8 @@ class JsonTest extends FunSuite {
     val modelType = SharedConf.modelType
     val placeHolder: PlaceHolder = new PlaceHolder(conf)
     implicit val variableManager: VariableManager = LocalVariableManager.get(true)
-    val variableProvider: VariableProvider = new LocalVariableProvider(dataFormat, modelType, placeHolder)
-    implicit val graph: Graph = new Graph(variableProvider, placeHolder, conf, 1)
+    val variableProvider: VariableProvider = new LocalVariableProvider(dataFormat, modelType)
+    implicit val graph: Graph = new Graph(variableProvider, conf, 1)
     JsonUtils.layerFromJson(layers)
 
     val topLayer = graph.getLossLayer

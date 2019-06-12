@@ -3,8 +3,7 @@ package com.tencent.angel.ml.core.variable
 import java.lang.{Long => JLong}
 import java.util.{HashMap => JHashMap, Map => JMap}
 
-import com.tencent.angel.ml.core.network.Graph
-import com.tencent.angel.ml.core.network.layers.PlaceHolder
+import com.tencent.angel.ml.core.network.{Graph, PlaceHolder}
 import com.tencent.angel.ml.core.utils.MLException
 import com.tencent.angel.ml.math2.matrix.{MapMatrix, Matrix}
 import com.tencent.angel.ml.math2.storage._
@@ -27,6 +26,7 @@ object EmbedUtils {
       val row = features.getRow(rId)
       val partitions = if (assembleHint == MultiHot && placeHolder.hasFieldKeyMap) {
         val fieldKeyMap = placeHolder.getFieldKeyMap
+        assert(fieldKeyMap != null, "fieldKeyMap cannot be null")
         val (parts, stats) = multiHotAssemble(row, embeddings, fieldKeyMap)
         arrBuf.append(stats)
         parts

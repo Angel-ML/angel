@@ -1,15 +1,15 @@
 package com.tencent.angel.ml.core.utils
 
-import java.io.{BufferedReader, File, IOException, InputStreamReader}
+import java.io.{BufferedReader, FileInputStream, IOException, InputStreamReader}
 import java.net.URI
 import java.util
 
 import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.network.{Graph, TransFunc}
-import com.tencent.angel.ml.core.network.layers.join._
-import com.tencent.angel.ml.core.network.layers.linear._
-import com.tencent.angel.ml.core.network.layers.verge._
 import com.tencent.angel.ml.core.network.layers._
+import com.tencent.angel.ml.core.network.layers.multiary._
+import com.tencent.angel.ml.core.network.layers.unary._
+import com.tencent.angel.ml.core.network.layers.leaf._
+import com.tencent.angel.ml.core.network.{Graph, TransFunc}
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
 import org.apache.hadoop.conf.Configuration
@@ -20,8 +20,8 @@ import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods._
 
 import scala.collection.mutable
-import scala.reflect.ClassTag
 import scala.io.Source
+import scala.reflect.ClassTag
 
 object LayerKeys {
   val typeKey: String = "type"
@@ -197,7 +197,7 @@ object JsonUtils {
 
             layerMap.put(name, newLayer)
             iter.remove()
-          case JString(value) if matchClassName[LossLayer](value) || value.equalsIgnoreCase("SimpleLossLayer")=>
+          case JString(value) if matchClassName[LossLayer](value) || value.equalsIgnoreCase("SimpleLossLayer") =>
             val inputLayer = extract[String](obj, LayerKeys.inputLayerKey)
             if (inputLayer.nonEmpty && layerMap.contains(inputLayer.get)) {
               val newLayer = new LossLayer(name,
@@ -235,17 +235,6 @@ object JsonUtils {
             val inputLayer = extract[String](obj, LayerKeys.inputLayerKey)
             if (inputLayer.nonEmpty && layerMap.contains(inputLayer.get)) {
               val newLayer = new BiInnerCross(name,
-                extract[Int](obj, LayerKeys.outputDimKey).get,
-                layerMap(inputLayer.get)
-              )
-
-              layerMap.put(name, newLayer)
-              iter.remove()
-            }
-          case JString(value) if matchClassName[BiOutterCross](value) =>
-            val inputLayer = extract[String](obj, LayerKeys.inputLayerKey)
-            if (inputLayer.nonEmpty && layerMap.contains(inputLayer.get)) {
-              val newLayer = new BiOutterCross(name,
                 extract[Int](obj, LayerKeys.outputDimKey).get,
                 layerMap(inputLayer.get)
               )
@@ -361,11 +350,12 @@ object JsonUtils {
 
     List(JField(name, obj))
   }
+
   //-----------------------------------------------------------------------------------------------------------------
 
   def parseAndUpdateJson(jsonFileName: String, conf: SharedConf, hadoopConf: Configuration): JObject = {
     val sb = new mutable.StringBuilder()
-    if(jsonFileName.startsWith("hdfs://")) {
+    if (jsonFileName.startsWith("hdfs://")) {
       println("jsonFileName is " + jsonFileName)
       var inputStream: FSDataInputStream = null
       var bufferedReader: BufferedReader = null
@@ -373,7 +363,7 @@ object JsonUtils {
         inputStream = HDFSUtil.getFSDataInputStream(jsonFileName, hadoopConf)
         bufferedReader = new BufferedReader(new InputStreamReader(inputStream))
         var lineTxt: String = bufferedReader.readLine()
-        while(lineTxt != null) {
+        while (lineTxt != null) {
           sb.append(lineTxt.trim)
           lineTxt = bufferedReader.readLine()
         }
@@ -388,12 +378,15 @@ object JsonUtils {
         }
       }
     } else {
-      val source = Source.fromFile(jsonFileName, "UTF-8")
-      val iter = source.getLines()
-      while(iter.hasNext) {
-        val line = iter.next()
-        sb.append(line.trim)
+      val reader = new BufferedReader(new InputStreamReader(new FileInputStream(jsonFileName)))
+
+      var line = reader.readLine()
+      while (line != null) {
+        sb.append(line)
+        line = reader.readLine()
       }
+
+      reader.close()
     }
     val jsonStr = sb.toString()
 

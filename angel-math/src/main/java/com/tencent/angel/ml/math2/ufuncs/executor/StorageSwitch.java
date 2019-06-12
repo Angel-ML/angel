@@ -23,12 +23,15 @@ import com.tencent.angel.ml.math2.storage.Storage;
 import com.tencent.angel.ml.math2.ufuncs.expression.Binary;
 import com.tencent.angel.ml.math2.ufuncs.expression.OpType;
 import com.tencent.angel.ml.math2.utils.Constant;
-import com.tencent.angel.ml.math2.vector.ComponentVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 public class StorageSwitch {
+
+  private enum StorageMethod {
+    emptyDense, emptySparse, emptySorted
+  }
 
   private static Storage emptyStorage(Storage target, StorageMethod method, long capacity) {
     try {
@@ -47,14 +50,7 @@ public class StorageSwitch {
   }
 
   private static Storage emptyStorage(Storage target, StorageMethod method) {
-    try {
-      Method m = target.getClass().getDeclaredMethod(method.toString());
-      return (Storage) m.invoke(target);
-    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-      e.printStackTrace();
-    }
-
-    return null;
+    return emptyStorage(target, method, -1);
   }
 
   private static long allocSize(long v1Size, long v2Size, long dim) {
@@ -289,125 +285,4 @@ public class StorageSwitch {
       return all(v1, v2, op);
     }
   }
-
-  public static Storage[] applyComp(ComponentVector v1, Vector v2, Binary op) {
-    Vector[] parts = v1.getPartitions();
-    Storage[] resParts = new Storage[parts.length];
-    int k = 0;
-    if (op.getOpType() == OpType.UNION) {
-      if (v2.isDense()) {
-        for (Vector part : parts) {
-          if (part.isDense()) {
-            if (op.isInplace()) {
-              resParts[k] = part.getStorage();
-            } else {
-              resParts[k] = part.copy().getStorage();
-            }
-          } else if (part.isSparse()) {
-            if (op.isKeepStorage()) {
-              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySparse, part.dim());
-            } else {
-              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptyDense);
-            }
-          } else {
-            if (op.isKeepStorage()) {
-              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySorted, part.dim());
-            } else {
-              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptyDense);
-            }
-          }
-          k++;
-        }
-      } else {
-        for (Vector part : parts) {
-          if (op.isInplace()) {
-            resParts[k] = part.getStorage();
-          } else {
-            resParts[k] = part.copy().getStorage();
-          }
-          k++;
-        }
-      }
-    } else if (op.getOpType() == OpType.INTERSECTION) {
-      if (v2.isDense()) {
-        for (Vector part : parts) {
-          if (part.isDense()) {
-            resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptyDense);
-          } else if (part.isSparse()) {
-            resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySparse);
-          } else {
-            if (op.isKeepStorage()) {
-              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySorted);
-            } else {
-              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySparse);
-            }
-          }
-          k++;
-        }
-      } else {
-        if (((Vector) v1).getSize() > v2.getSize()) {
-          for (Vector part : parts) {
-            if (op.isKeepStorage()) {
-              if (part.isDense()) {
-                resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptyDense);
-              } else if (part.isSparse()) {
-                resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySparse);
-              } else {
-                resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySorted);
-              }
-            } else {
-              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySparse);
-            }
-            k++;
-          }
-        } else {
-          for (Vector part : parts) {
-            if (part.isDense()) {
-              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptyDense);
-            } else if (part.isSparse()) {
-              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySparse);
-            } else {
-              if (op.isKeepStorage()) {
-                resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySorted);
-              } else {
-                resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySparse);
-              }
-            }
-            k++;
-          }
-        }
-      }
-    } else {//OpType.ALL
-      for (Vector part : parts) {
-        if (part.isDense()) {
-          if (op.isInplace()) {
-            resParts[k] = part.getStorage();
-          } else {
-            resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptyDense);
-          }
-        } else {
-          if (op.isKeepStorage()) {
-            if (part.isSparse()) {
-              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySparse, part.dim());
-            } else { // sorted
-              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySorted, part.dim());
-            }
-          } else {
-            if (part.getStorage() instanceof LongKeyVectorStorage) {
-              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySparse, part.dim());
-            } else {
-              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptyDense);
-            }
-          }
-        }
-        k++;
-      }
-    }
-    return resParts;
-  }
-
-  private enum StorageMethod {
-    emptyDense, emptySparse, emptySorted
-  }
-
 }

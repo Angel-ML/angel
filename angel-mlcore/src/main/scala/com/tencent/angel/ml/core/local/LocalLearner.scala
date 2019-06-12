@@ -42,10 +42,11 @@ class LocalLearner(conf: SharedConf) extends Learner {
     while (iter.hasNext) {
       // LOG.info("start to feedData ...")
       graph.feedData(iter.next())
+      val placeHolder = graph.placeHolder
 
       // LOG.info("start to pullParams ...")
       if (model.isSparseFormat) {
-        model.pullParams(epoch, graph.placeHolder.getIndices)
+        model.pullParams(epoch, placeHolder.getIndices)
       } else {
         model.pullParams(epoch)
       }
@@ -66,7 +67,7 @@ class LocalLearner(conf: SharedConf) extends Learner {
       // barrier(0, graph)
       graph.setLR(ssScheduler.next())
       // LOG.info("start to update ...")
-      model.update[VoidType](epoch * numBatch + batchCount, graph.placeHolder.getBatchSize) // update parameters on PS
+      model.update[VoidType](epoch * numBatch + batchCount, placeHolder.getBatchSize) // update parameters on PS
 
       // waiting all gradient update finished
       // LOG.info("waiting for update barrier ...")

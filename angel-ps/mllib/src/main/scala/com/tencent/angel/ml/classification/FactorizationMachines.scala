@@ -22,9 +22,9 @@ import com.tencent.angel.ml.core.PSOptimizerProvider
 import com.tencent.angel.ml.core.conf.MLCoreConf
 import com.tencent.angel.ml.core.graphsubmit.AngelModel
 import com.tencent.angel.ml.core.network.Identity
-import com.tencent.angel.ml.core.network.layers.join.SumPooling
-import com.tencent.angel.ml.core.network.layers.linear.BiInnerSumCross
-import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer}
+import com.tencent.angel.ml.core.network.layers.multiary.SumPooling
+import com.tencent.angel.ml.core.network.layers.unary.BiInnerSumCross
+import com.tencent.angel.ml.core.network.layers.leaf.{Embedding, SimpleInputLayer}
 import com.tencent.angel.ml.core.network.layers.{Layer, LossLayer}
 import com.tencent.angel.ml.core.optimizer.loss.LogLoss
 import com.tencent.angel.worker.task.TaskContext

@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ml.math2.vector;
 
-import com.tencent.angel.ml.math2.ufuncs.executor.comp.CompReduceExecutor;
+import com.tencent.angel.ml.math2.exceptions.MathNotImplementedException;
 import com.tencent.angel.ml.math2.utils.RowType;
 
 public class CompIntDoubleVector extends DoubleVector implements IntKeyVector, ComponentVector {
@@ -143,36 +143,36 @@ public class CompIntDoubleVector extends DoubleVector implements IntKeyVector, C
   }
 
   public double max() {
-    return (double) CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Max);
+    throw new MathNotImplementedException("Math Not Implemented Method For Component Vectors");
   }
 
   public double min() {
-    return (double) CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Min);
+    throw new MathNotImplementedException("Math Not Implemented Method For Component Vectors");
   }
 
   public double sum() {
-    return CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Sum);
+    throw new MathNotImplementedException("Math Not Implemented Method For Component Vectors");
   }
 
   public double average() {
-    return CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Avg);
+    throw new MathNotImplementedException("Math Not Implemented Method For Component Vectors");
   }
 
   public double std() {
-    return CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Std);
+    throw new MathNotImplementedException("Math Not Implemented Method For Component Vectors");
   }
 
   public double norm() {
-    return CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Norm);
+    throw new MathNotImplementedException("Math Not Implemented Method For Component Vectors");
   }
 
   @Override
   public int numZeros() {
-    return (int) CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Numzeros);
+    throw new MathNotImplementedException("Math Not Implemented Method For Component Vectors");
   }
 
   public int size() {
-    return (int) CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Size);
+    throw new MathNotImplementedException("Math Not Implemented Method For Component Vectors");
   }
 
   public void clear() {

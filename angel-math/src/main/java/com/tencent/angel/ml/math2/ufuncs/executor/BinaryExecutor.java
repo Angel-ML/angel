@@ -19,45 +19,20 @@
 package com.tencent.angel.ml.math2.ufuncs.executor;
 
 import com.tencent.angel.ml.math2.exceptions.MathException;
-import com.tencent.angel.ml.math2.ufuncs.executor.comp.*;
-import com.tencent.angel.ml.math2.ufuncs.executor.mixed.*;
 import com.tencent.angel.ml.math2.ufuncs.executor.simple.*;
 import com.tencent.angel.ml.math2.ufuncs.expression.Binary;
-import com.tencent.angel.ml.math2.vector.ComponentVector;
 import com.tencent.angel.ml.math2.vector.SimpleVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 
 public class BinaryExecutor {
-
   public static Vector apply(Vector v1, Vector v2, Binary op) {
     assert v1 != null && v2 != null && op != null;
-    if (v1 instanceof ComponentVector && v2 instanceof ComponentVector) {
-      return CompBinaryExecutor.apply((ComponentVector) v1, (ComponentVector) v2, op);
-    } else if (v1 instanceof ComponentVector && v2 instanceof SimpleVector) {
-      if (op.isInplace()) {
-        switch (op.getOpType()) {
-          case INTERSECTION:
-            return MixedBinaryInZAExecutor.apply((ComponentVector) v1, v2, op);
-          case UNION:
-            return MixedBinaryInNonZAExecutor.apply((ComponentVector) v1, v2, op);
-          case ALL:
-            return MixedBinaryInAllExecutor.apply((ComponentVector) v1, v2, op);
-        }
-      } else {
-        switch (op.getOpType()) {
-          case INTERSECTION:
-            return MixedBinaryOutZAExecutor.apply((ComponentVector) v1, v2, op);
-          case UNION:
-            return MixedBinaryOutNonZAExecutor.apply((ComponentVector) v1, v2, op);
-          case ALL:
-            return MixedBinaryOutAllExecutor.apply((ComponentVector) v1, v2, op);
-        }
-      }
-    } else if (v1 instanceof SimpleVector && v2 instanceof SimpleVector) {
+    if (v1 instanceof SimpleVector && v2 instanceof SimpleVector) {
       if (op.isInplace()) {
         switch (op.getOpType()) {
           case INTERSECTION:
             return SimpleBinaryInZAExecutor.apply(v1, v2, op);
+            // throw new MathException("intersection and Inplace is not supported !");
           case UNION:
             return SimpleBinaryInNonZAExecutor.apply(v1, v2, op);
           case ALL:

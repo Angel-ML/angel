@@ -19,20 +19,32 @@
 package com.tencent.angel.ml.core.optimizer.loss
 
 import com.tencent.angel.ml.core.PredictResult
-import com.tencent.angel.ml.math2.vector.IntDoubleVector
+import com.tencent.angel.ml.core.network.Graph
+import com.tencent.angel.ml.core.network.layers.LossLayer
+import com.tencent.angel.ml.core.utils.JsonUtils.{extract, fieldEqualClassName, matchClassName}
+import com.tencent.angel.ml.core.utils.LossFuncKeys
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, BlasMatrix, Matrix}
 import com.tencent.angel.ml.math2.ufuncs.{LossFuncs, Ufuncs}
-import com.tencent.angel.ml.core.network.Graph
+import com.tencent.angel.ml.math2.vector.IntDoubleVector
 import org.json4s.JsonAST.{JField, JObject, JString, JValue}
 import org.json4s.JsonDSL._
-import com.tencent.angel.ml.core.utils.JsonUtils.extract
-import com.tencent.angel.ml.core.utils.LossFuncKeys
-import com.tencent.angel.ml.core.utils.JsonUtils.{fieldEqualClassName, matchClassName}
 
 import scala.collection.mutable
 
 
 trait LossFunc extends Serializable {
+  var lossLayer: LossLayer = _
+
+  def getLabels: Array[Float] = lossLayer.getLabel.asInstanceOf[BlasFloatMatrix].getData
+
+  def getAttachedArr: Array[String] = lossLayer.getAttached
+
+  def setLossLayer(layer: LossLayer): this.type = {
+    lossLayer = layer
+
+    this
+  }
+
   def calLoss(modelOut: Matrix, graph: Graph): Double
 
   def loss(pred: Double, label: Double): Double
@@ -76,13 +88,26 @@ object LossFunc {
       case _ => new LogLoss()
     }
   }
+
+  def getSid(idx: Int, attachedArr: Array[String]): String = {
+    if (attachedArr != null) {
+      val attached = attachedArr(idx)
+      if (attached == null || attached.isEmpty) {
+        s"$idx"
+      } else {
+        attached
+      }
+    } else {
+      s"$idx"
+    }
+  }
 }
 
 class L2Loss extends LossFunc {
   override def calLoss(modelOut: Matrix, graph: Graph): Double = {
     modelOut match {
       case mat: BlasMatrix =>
-        0.5 * Ufuncs.pow(mat.sub(graph.placeHolder.getLabel), 2.0).average()
+        0.5 * Ufuncs.pow(mat.sub(lossLayer.getLabel), 2.0).average()
     }
   }
 
@@ -92,47 +117,32 @@ class L2Loss extends LossFunc {
   }
 
   override def calGrad(modelOut: Matrix, graph: Graph): Matrix = {
-    modelOut.sub(graph.placeHolder.getLabel)
+    modelOut.sub(lossLayer.getLabel)
   }
 
   override def predict(modelOut: Matrix, graph: Graph): List[PredictResult] = {
     val result = new mutable.ListBuffer[PredictResult]()
 
-    val data = graph.placeHolder.data
+    val labels = getLabels
+    val attachedArr = getAttachedArr
     modelOut match {
       case m: BlasDoubleMatrix =>
         (0 until m.getNumRows).foreach { idx =>
-          val labeledData = data(idx)
-          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
-            s"$idx"
-          } else {
-            labeledData.getAttach
-          }
-
           val pred = m.get(idx, 0)
           val proba = Double.NaN
           val predLabel = pred
-          val trueLabel = labeledData.getY
-          val attached = Double.NaN
+          val trueLabel = labels(idx)
 
-          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+          result.append(PredictResult(LossFunc.getSid(idx, attachedArr), pred, proba, predLabel, trueLabel))
         }
       case m: BlasFloatMatrix =>
         (0 until m.getNumRows).foreach { idx =>
-          val labeledData = data(idx)
-          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
-            s"$idx"
-          } else {
-            labeledData.getAttach
-          }
-
           val pred = m.get(idx, 0)
           val proba = Double.NaN
           val predLabel = pred
-          val trueLabel = labeledData.getY
-          val attached = Double.NaN
+          val trueLabel = labels(idx)
 
-          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+          result.append(PredictResult(LossFunc.getSid(idx, attachedArr), pred, proba, predLabel, trueLabel))
         }
     }
 
@@ -144,7 +154,7 @@ class L2Loss extends LossFunc {
 
 class LogLoss extends LossFunc {
   override def calLoss(modelOut: Matrix, graph: Graph): Double = {
-    LossFuncs.logloss(modelOut, graph.placeHolder.getLabel).average()
+    LossFuncs.logloss(modelOut, lossLayer.getLabel).average()
   }
 
   override def loss(pred: Double, label: Double): Double = {
@@ -152,43 +162,30 @@ class LogLoss extends LossFunc {
   }
 
   override def calGrad(modelOut: Matrix, graph: Graph): Matrix = {
-    LossFuncs.gradlogloss(modelOut, graph.placeHolder.getLabel)
+    LossFuncs.gradlogloss(modelOut, lossLayer.getLabel)
   }
 
   override def predict(modelOut: Matrix, graph: Graph): List[PredictResult] = {
     val result = new mutable.ListBuffer[PredictResult]()
 
-    val data = graph.placeHolder.data
+    val labels = getLabels
+    val attachedArr = getAttachedArr
     modelOut match {
       case m: BlasDoubleMatrix =>
         m.getData.zipWithIndex.foreach { case (pred, idx) =>
-          val labeledData = data(idx)
-          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
-            s"$idx"
-          } else {
-            labeledData.getAttach
-          }
           val proba = 1.0 / (1.0 + Math.exp(-pred))
           val predLabel = if (pred > 0) 1.0 else -1.0
-          val trueLabel = labeledData.getY
-          val attached = Double.NaN
+          val trueLabel = labels(idx)
 
-          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+          result.append(PredictResult(LossFunc.getSid(idx, attachedArr), pred, proba, predLabel, trueLabel))
         }
       case m: BlasFloatMatrix =>
         m.getData.zipWithIndex.foreach { case (pred, idx) =>
-          val labeledData = data(idx)
-          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
-            s"$idx"
-          } else {
-            labeledData.getAttach
-          }
           val proba = 1.0 / (1.0 + Math.exp(-pred))
           val predLabel = if (pred > 0) 1.0 else -1.0
-          val trueLabel = labeledData.getY
-          val attached = Double.NaN
+          val trueLabel = labels(idx)
 
-          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+          result.append(PredictResult(LossFunc.getSid(idx, attachedArr), pred, proba, predLabel, trueLabel))
         }
     }
 
@@ -200,7 +197,7 @@ class LogLoss extends LossFunc {
 
 class HingeLoss extends LossFunc {
   override def calLoss(modelOut: Matrix, graph: Graph): Double = {
-    LossFuncs.hingeloss(modelOut, graph.placeHolder.getLabel).average()
+    LossFuncs.hingeloss(modelOut, lossLayer.getLabel).average()
   }
 
   override def loss(pred: Double, label: Double): Double = {
@@ -208,44 +205,30 @@ class HingeLoss extends LossFunc {
   }
 
   override def calGrad(modelOut: Matrix, graph: Graph): Matrix = {
-    LossFuncs.gradhingeloss(modelOut, graph.placeHolder.getLabel)
+    LossFuncs.gradhingeloss(modelOut, lossLayer.getLabel)
   }
 
   override def predict(modelOut: Matrix, graph: Graph): List[PredictResult] = {
     val result = new mutable.ListBuffer[PredictResult]()
 
-    val data = graph.placeHolder.data
-
+    val labels = getLabels
+    val attachedArr = getAttachedArr
     modelOut match {
       case m: BlasDoubleMatrix =>
         m.getData.zipWithIndex.foreach { case (pred, idx) =>
-          val labeledData = data(idx)
-          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
-            s"$idx"
-          } else {
-            labeledData.getAttach
-          }
           val proba = 1.0 / (1.0 + Math.exp(-pred))
           val predLabel = if (pred > 0) 1.0 else -1.0
-          val trueLabel = labeledData.getY
-          val attached = Double.NaN
+          val trueLabel = labels(idx)
 
-          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+          result.append(PredictResult(LossFunc.getSid(idx, attachedArr), pred, proba, predLabel, trueLabel))
         }
       case m: BlasFloatMatrix =>
         m.getData.zipWithIndex.foreach { case (pred, idx) =>
-          val labeledData = data(idx)
-          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
-            s"$idx"
-          } else {
-            labeledData.getAttach
-          }
           val proba = 1.0 / (1.0 + Math.exp(-pred))
           val predLabel = if (pred > 0) 1.0 else -1.0
-          val trueLabel = labeledData.getY
-          val attached = Double.NaN
+          val trueLabel = labels(idx)
 
-          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+          result.append(PredictResult(LossFunc.getSid(idx, attachedArr), pred, proba, predLabel, trueLabel))
         }
     }
 
@@ -259,7 +242,7 @@ class CrossEntropyLoss extends LossFunc {
   val eps = 10e-10
 
   override def calLoss(modelOut: Matrix, graph: Graph): Double = {
-    LossFuncs.entropyloss(modelOut, graph.placeHolder.getLabel).average()
+    LossFuncs.entropyloss(modelOut, lossLayer.getLabel).average()
   }
 
   override def loss(pred: Double, label: Double): Double = {
@@ -279,22 +262,18 @@ class CrossEntropyLoss extends LossFunc {
   }
 
   override def calGrad(modelOut: Matrix, graph: Graph): Matrix = {
-    LossFuncs.gradentropyloss(modelOut, graph.placeHolder.getLabel)
+    LossFuncs.gradentropyloss(modelOut, lossLayer.getLabel)
   }
 
   override def predict(modelOut: Matrix, graph: Graph): List[PredictResult] = {
     val result = new mutable.ListBuffer[PredictResult]()
 
-    val data = graph.placeHolder.data
+    val labels = getLabels
+    val attachedArr = getAttachedArr
     modelOut match {
       case m: BlasDoubleMatrix =>
         m.getData.zipWithIndex.foreach { case (proba, idx) =>
-          val labeledData = data(idx)
-          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
-            s"$idx"
-          } else {
-            labeledData.getAttach
-          }
+
           val ord = proba / (1 - proba)
           val pred = if (ord < 0.000001) {
             Math.log(0.000001)
@@ -304,19 +283,12 @@ class CrossEntropyLoss extends LossFunc {
             Math.log(ord)
           }
           val predLabel = if (proba >= 0.5) 1.0 else -1.0
-          val trueLabel = labeledData.getY
-          val attached = Double.NaN
+          val trueLabel = labels(idx)
 
-          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+          result.append(PredictResult(LossFunc.getSid(idx, attachedArr), pred, proba, predLabel, trueLabel))
         }
       case m: BlasFloatMatrix =>
         m.getData.zipWithIndex.foreach { case (proba, idx) =>
-          val labeledData = data(idx)
-          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
-            s"$idx"
-          } else {
-            labeledData.getAttach
-          }
           val ord = proba / (1 - proba)
           val pred = if (ord < 0.000001) {
             Math.log(0.000001)
@@ -326,10 +298,9 @@ class CrossEntropyLoss extends LossFunc {
             Math.log(ord)
           }
           val predLabel = if (proba >= 0.5) 1.0 else -1.0
-          val trueLabel = labeledData.getY
-          val attached = Double.NaN
+          val trueLabel = labels(idx)
 
-          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+          result.append(PredictResult(LossFunc.getSid(idx, attachedArr), pred, proba, predLabel, trueLabel))
         }
     }
 
@@ -344,7 +315,7 @@ class SoftmaxLoss extends LossFunc {
     val mat = Ufuncs.exp(modelOut)
     Ufuncs.idiv(mat, mat.sum(1), true)
 
-    val labels = graph.placeHolder.getLabel.asInstanceOf[BlasFloatMatrix].getData
+    val labels = getLabels
     var loss: Double = 0
     mat match {
       case m: BlasDoubleMatrix =>
@@ -364,14 +335,13 @@ class SoftmaxLoss extends LossFunc {
     val mat = Ufuncs.exp(modelOut)
     Ufuncs.idiv(mat, mat.sum(1), true)
 
-    val labels = graph.placeHolder.getLabel.asInstanceOf[BlasFloatMatrix].getData
     mat match {
       case m: BlasDoubleMatrix =>
-        labels.zipWithIndex.foreach { case (j: Float, i: Int) =>
+        getLabels.zipWithIndex.foreach { case (j: Float, i: Int) =>
           m.set(i, j.toInt, m.get(i, j.toInt) - 1)
         }
       case m: BlasFloatMatrix =>
-        labels.zipWithIndex.foreach { case (j: Float, i: Int) =>
+        getLabels.zipWithIndex.foreach { case (j: Float, i: Int) =>
           m.set(i, j.toInt, m.get(i, j.toInt) - 1)
         }
     }
@@ -384,42 +354,30 @@ class SoftmaxLoss extends LossFunc {
   override def predict(modelOut: Matrix, graph: Graph): List[PredictResult] = {
     val result = new mutable.ListBuffer[PredictResult]()
 
-    val data = graph.placeHolder.data
-
     val mat = Ufuncs.exp(modelOut)
     Ufuncs.idiv(mat, mat.sum(1), true)
+    val labels = getLabels
+    val attachedArr = getAttachedArr
     mat match {
       case m: BlasDoubleMatrix =>
-        val labels = m.argmax(1).asInstanceOf[IntDoubleVector]
-        labels.getStorage.getValues.zipWithIndex.foreach { case (label, idx) =>
-          val labeledData = data(idx)
-          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
-            s"$idx"
-          } else {
-            labeledData.getAttach
-          }
+        val predlabels = m.argmax(1).asInstanceOf[IntDoubleVector]
+        predlabels.getStorage.getValues.zipWithIndex.foreach { case (label, idx) =>
           val pred = modelOut.asInstanceOf[BlasDoubleMatrix].get(idx, label.toInt)
           val proba = m.get(idx, label.toInt)
-          val attached =  m.get(idx, labeledData.getY.toInt)
-          val trueLabel = labeledData.getY
+          val attached = m.get(idx, labels(idx).toInt)
+          val trueLabel = labels(idx)
 
-          result.append(PredictResult(sid, pred, proba, label, trueLabel, attached))
+          result.append(PredictResult(LossFunc.getSid(idx, attachedArr), pred, proba, label, trueLabel, attached))
         }
       case m: BlasFloatMatrix =>
-        val labels = m.argmax(1).asInstanceOf[IntDoubleVector]
-        labels.getStorage.getValues.zipWithIndex.foreach { case (label, idx) =>
-          val labeledData = data(idx)
-          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
-            s"$idx"
-          } else {
-            labeledData.getAttach
-          }
+        val predlabels = m.argmax(1).asInstanceOf[IntDoubleVector]
+        predlabels.getStorage.getValues.zipWithIndex.foreach { case (label, idx) =>
           val pred = modelOut.asInstanceOf[BlasDoubleMatrix].get(idx, label.toInt)
           val proba = m.get(idx, label.toInt)
-          val attached =  m.get(idx, labeledData.getY.toInt)
-          val trueLabel = labeledData.getY
+          val attached = m.get(idx, labels(idx).toInt)
+          val trueLabel = labels(idx)
 
-          result.append(PredictResult(sid, pred, proba, label, trueLabel, attached))
+          result.append(PredictResult(LossFunc.getSid(idx, attachedArr), pred, proba, label, trueLabel, attached))
         }
     }
 
@@ -431,7 +389,7 @@ class SoftmaxLoss extends LossFunc {
 
 class HuberLoss(delta: Double) extends LossFunc {
   override def calLoss(modelOut: Matrix, graph: Graph): Double = {
-    LossFuncs.huberloss(modelOut, graph.placeHolder.getLabel, delta).average()
+    LossFuncs.huberloss(modelOut, lossLayer.getLabel, delta).average()
   }
 
   override def loss(pred: Double, label: Double): Double = {
@@ -444,47 +402,32 @@ class HuberLoss(delta: Double) extends LossFunc {
   }
 
   override def calGrad(modelOut: Matrix, graph: Graph): Matrix = {
-    LossFuncs.gradhuberloss(modelOut, graph.placeHolder.getLabel, delta)
+    LossFuncs.gradhuberloss(modelOut, lossLayer.getLabel, delta)
   }
 
   override def predict(modelOut: Matrix, graph: Graph): List[PredictResult] = {
     val result = new mutable.ListBuffer[PredictResult]()
 
-    val data = graph.placeHolder.data
+    val labels = getLabels
+    val attachedArr = getAttachedArr
     modelOut match {
       case m: BlasDoubleMatrix =>
         (0 until m.getNumRows).foreach { idx =>
-          val labeledData = data(idx)
-          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
-            s"$idx"
-          } else {
-            labeledData.getAttach
-          }
-
           val pred = m.get(idx, 0)
           val proba = Double.NaN
           val predLabel = pred
-          val trueLabel = labeledData.getY
-          val attached = Double.NaN
+          val trueLabel = labels(idx)
 
-          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+          result.append(PredictResult(LossFunc.getSid(idx, attachedArr), pred, proba, predLabel, trueLabel))
         }
       case m: BlasFloatMatrix =>
         (0 until m.getNumRows).foreach { idx =>
-          val labeledData = data(idx)
-          val sid = if (labeledData.getAttach == null || labeledData.getAttach.isEmpty) {
-            s"$idx"
-          } else {
-            labeledData.getAttach
-          }
-
           val pred = m.get(idx, 0)
           val proba = Double.NaN
           val predLabel = pred
-          val trueLabel = labeledData.getY
-          val attached = Double.NaN
+          val trueLabel = labels(idx)
 
-          result.append(PredictResult(sid, pred, proba, predLabel, trueLabel, attached))
+          result.append(PredictResult(LossFunc.getSid(idx, attachedArr), pred, proba, predLabel, trueLabel))
         }
     }
 

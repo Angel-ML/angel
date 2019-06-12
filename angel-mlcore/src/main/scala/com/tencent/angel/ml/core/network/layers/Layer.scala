@@ -17,11 +17,11 @@
 
 package com.tencent.angel.ml.core.network.layers
 
-import com.tencent.angel.ml.core.network.Graph
+import com.tencent.angel.ml.core.network.{Graph, PlaceHolder}
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.utils.LayerKeys
-import com.tencent.angel.ml.core.variable.VariableManager
-import com.tencent.angel.ml.math2.matrix.Matrix
+import com.tencent.angel.ml.core.variable.{VariableManager, VariableProvider}
+import com.tencent.angel.ml.math2.matrix.{Matrix, RBCompIntDoubleMatrix, RBCompIntFloatMatrix}
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 import org.json4s.native.Serialization
@@ -29,15 +29,15 @@ import org.json4s.{Formats, ShortTypeHints}
 
 import scala.collection.mutable
 
-trait Trainable {
-  def optimizer: Optimizer
-}
+
 
 abstract class Layer(val name: String, val outputDim: Int)(implicit val graph: Graph) extends Serializable {
   private val inputs = new mutable.HashMap[String, Layer]()
   private val consumer = new mutable.HashMap[String, Layer]()
 
-  protected val variableManager: VariableManager = graph.provider.variableManager
+  protected val placeHolder: PlaceHolder = graph.placeHolder
+  protected val provider: VariableProvider =  graph.provider
+  protected val variableManager: VariableManager = provider.variableManager
 
   protected val forwardKey: String = s"$name/forward"
   protected val backwardKey: String = s"$name/backward"
@@ -107,10 +107,34 @@ abstract class Layer(val name: String, val outputDim: Int)(implicit val graph: G
   protected def gatherGradInput(): Matrix = {
     var gradCollection: Matrix = null
     getAllConsumers.foreach { csLayer =>
+      val grad = csLayer.backward(this)
       if (gradCollection == null) {
-        gradCollection = csLayer.backward(this).copy()
+        gradCollection = grad.copy()
       } else {
-        gradCollection.iadd(csLayer.backward(this))
+        (gradCollection, grad) match {
+          case (left: RBCompIntFloatMatrix, right: RBCompIntFloatMatrix) => // embedding
+            assert(left.getNumRows == right.getNumRows)
+            (0 until left.getNumRows).foreach{rowId =>
+              val lparts = left.getRow(rowId).getPartitions
+              val rparts = right.getRow(rowId).getPartitions
+
+              lparts.indices.foreach{partId =>
+                lparts(partId).iadd(rparts(partId))
+              }
+            }
+          case (left: RBCompIntDoubleMatrix, right: RBCompIntDoubleMatrix) => // embedding
+            assert(left.getNumRows == right.getNumRows)
+            (0 until left.getNumRows).foreach{rowId =>
+              val lparts = left.getRow(rowId).getPartitions
+              val rparts = right.getRow(rowId).getPartitions
+
+              lparts.indices.foreach{partId =>
+                lparts(partId).iadd(rparts(partId))
+              }
+            }
+          case (left, right) => // non embedding
+            left.iadd(right)
+        }
       }
     }
 
