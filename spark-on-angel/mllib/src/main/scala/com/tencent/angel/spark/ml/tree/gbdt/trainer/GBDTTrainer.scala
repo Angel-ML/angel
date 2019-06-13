@@ -223,6 +223,15 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
   private[gbdt] var numTrain: Int = _
   private[gbdt] var numValid: Int = _
 
+  def clear(): Unit = {
+    workers.map { wrapper =>
+      FPGBDTTrainerWrapper.clear()
+      Iterator.empty
+    }.collect()
+    workers.unpersist()
+    FPGBDTTrainerWrapper.clear()
+  }
+
   def initialize(trainInput: String, validInput: String)
                 (implicit sc: SparkContext): Unit = {
     val initStart = System.currentTimeMillis()

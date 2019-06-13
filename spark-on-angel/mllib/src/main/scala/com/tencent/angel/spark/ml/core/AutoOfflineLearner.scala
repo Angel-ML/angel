@@ -239,15 +239,11 @@ class AutoOfflineLearner(var tuneIter: Int = 20, var minimize: Boolean = true, v
 //        }
       }
     }
-    val result: (Vector, Double) = solver.optimal
-    solver.stop
+    val result: (Vector, Double) = solver.optimal()
+    solver.stop()
     println(s"Best configuration ${result._1.toArray.mkString(",")}, best performance: ${result._2}")
 
-    //if (modelOutput.length > 0) model.save(modelOutput)
-
   }
-
-
 
   def predict(input: String,
               output: String,

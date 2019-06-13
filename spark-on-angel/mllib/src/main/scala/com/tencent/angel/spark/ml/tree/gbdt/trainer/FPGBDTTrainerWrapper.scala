@@ -29,10 +29,16 @@ private object FPGBDTTrainerWrapper {
 
   private[trainer] def apply(workerId: Int, trainer: FPGBDTTrainer): FPGBDTTrainerWrapper = {
     trainer.synchronized {
+      if (trainers.contains(workerId)) trainers.remove(workerId)
       require(!trainers.contains(workerId), s"Id $workerId already exists")
       trainers += workerId -> trainer
       new FPGBDTTrainerWrapper(workerId)
     }
+  }
+
+  private[trainer] def clear(): Unit = {
+    println(s"trainers size ${trainers.size}")
+    trainers.clear()
   }
 }
 

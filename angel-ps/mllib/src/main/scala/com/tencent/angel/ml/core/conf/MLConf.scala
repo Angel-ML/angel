@@ -216,7 +216,7 @@ object MLConf {
   val ML_GBDT_MIN_CHILD_WEIGHT = "ml.gbdt.min.child.weight"
   val DEFAULT_ML_GBDT_MIN_CHILD_WEIGHT = 0.01
   val ML_GBDT_REG_ALPHA = "ml.gbdt.reg.alpha"
-  val DEFAULT_ML_GBDT_REG_ALPHA = 0
+  val DEFAULT_ML_GBDT_REG_ALPHA = 0.0
   val ML_GBDT_REG_LAMBDA = "ml.gbdt.reg.lambda"
   val DEFAULT_ML_GBDT_REG_LAMBDA = 1.0
   val ML_GBDT_THREAD_NUM = "ml.gbdt.thread.num"
