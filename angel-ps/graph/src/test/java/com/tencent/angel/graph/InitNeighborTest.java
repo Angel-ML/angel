@@ -8,6 +8,9 @@ import com.tencent.angel.graph.client.initneighbor.InitNeighbor;
 import com.tencent.angel.graph.client.initneighbor.InitNeighborOver;
 import com.tencent.angel.graph.client.initneighbor.InitNeighborOverParam;
 import com.tencent.angel.graph.client.initneighbor.InitNeighborParam;
+import com.tencent.angel.graph.client.sampleneighbor.SampleNeighbor;
+import com.tencent.angel.graph.client.sampleneighbor.SampleNeighborParam;
+import com.tencent.angel.graph.client.sampleneighbor.SampleNeighborResult;
 import com.tencent.angel.localcluster.LocalClusterContext;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.RowType;
@@ -15,11 +18,15 @@ import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.storage.partition.CSRPartition;
 import com.tencent.angel.psagent.matrix.MatrixClient;
+import com.tencent.angel.utils.StringUtils;
 import com.tencent.angel.worker.Worker;
 import com.tencent.angel.worker.WorkerAttemptId;
 import com.tencent.angel.worker.WorkerGroupId;
 import com.tencent.angel.worker.WorkerId;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import java.util.Arrays;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -146,6 +153,7 @@ public class InitNeighborTest {
     MatrixClient client = worker.getPSAgent().getMatrixClient(SPARSE_INT_MAT, 0);
     int matrixId = client.getMatrixId();
 
+    // Init node neighbors
     Int2ObjectOpenHashMap<int []> nodeIdToNeighbors = new Int2ObjectOpenHashMap<>();
 
     nodeIdToNeighbors.put(1, new int[]{2, 3});
@@ -154,7 +162,7 @@ public class InitNeighborTest {
     client.asyncUpdate(func).get();
     nodeIdToNeighbors.clear();
 
-    nodeIdToNeighbors.put(1, new int[]{4});
+    nodeIdToNeighbors.put(1, new int[]{4, 5, 6});
     nodeIdToNeighbors.put(2, new int[]{5});
     nodeIdToNeighbors.put(4, new int[]{5, 6});
     func = new InitNeighbor(new InitNeighborParam(matrixId, nodeIdToNeighbors));
@@ -168,6 +176,21 @@ public class InitNeighborTest {
     nodeIdToNeighbors.clear();
 
     client.asyncUpdate(new InitNeighborOver(new InitNeighborOverParam(matrixId))).get();
+
+    // Sample the neighbors
+    int [] nodeIds = new int[] {1, 2, 3, 4, 5};
+    SampleNeighborParam param = new SampleNeighborParam(matrixId, nodeIds, -1);
+    Int2ObjectOpenHashMap<int[]> result = ((SampleNeighborResult) (client
+        .get(new SampleNeighbor(param)))).getNodeIdToNeighbors();
+    ObjectIterator<Entry<int[]>> iter = result
+        .int2ObjectEntrySet().fastIterator();
+
+    LOG.info("==============================sample neighbors result============================");
+    Entry<int[]> entry;
+    while(iter.hasNext()) {
+      entry = iter.next();
+      LOG.info("node id = " + entry.getIntKey() + ", neighbors = " + Arrays.toString(entry.getValue()));
+    }
   }
 
   @After
