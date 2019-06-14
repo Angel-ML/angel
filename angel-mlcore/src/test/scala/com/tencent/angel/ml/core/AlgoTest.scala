@@ -42,8 +42,7 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
   def init1(jsonFile: String, sourceFile: String): Unit = {
     conf = SharedConf.get()
     conf.set(MLCoreConf.ML_JSON_CONF_FILE, jsonFile)
-    val json = JsonUtils.parseAndUpdateJson(jsonFile, conf, new Configuration())
-    conf.setJson(json)
+    JsonUtils.parseAndUpdateJson(jsonFile, conf, new Configuration())
 
     reader = new LocalDataReader(conf)
     val iter = reader.sourceIter(sourceFile)
@@ -57,8 +56,7 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
   def init2(jsonFile: String, sourceFile: String): Unit = {
     conf = SharedConf.get()
     conf.set(MLCoreConf.ML_JSON_CONF_FILE, jsonFile)
-    val json = JsonUtils.parseAndUpdateJson(jsonFile, conf, new Configuration())
-    conf.setJson(json)
+    JsonUtils.parseAndUpdateJson(jsonFile, conf, new Configuration())
 
     reader = new LocalDataReader(conf)
     val iter = reader.sourceIter(sourceFile)

@@ -2,7 +2,7 @@ package com.tencent.angel.ml.core
 
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.local.optimizer.{Adam, Momentum, SGD}
-import com.tencent.angel.ml.core.local.{LocalVariableManager, LocalVariableProvider}
+import com.tencent.angel.ml.core.local.{LocalOptimizerProvider, LocalVariableManager, LocalVariableProvider}
 import com.tencent.angel.ml.core.network._
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.layers.multiary.SumPooling
@@ -27,8 +27,7 @@ class JsonTest extends FunSuite {
     println(jsonStr)
 
     val jsonRe = parse(jsonStr).asInstanceOf[JObject]
-
-    Adam.fromJson(jsonRe)
+    Adam.fromJson(jsonRe, new LocalOptimizerProvider())
   }
 
   test("Momentum") {
@@ -41,7 +40,7 @@ class JsonTest extends FunSuite {
 
     val jsonRe = parse(jsonStr).asInstanceOf[JObject]
 
-    Momentum.fromJson(jsonRe)
+    Momentum.fromJson(jsonRe, new LocalOptimizerProvider())
   }
 
   test("SGD") {
@@ -54,7 +53,7 @@ class JsonTest extends FunSuite {
 
     val jsonRe = parse(jsonStr).asInstanceOf[JObject]
 
-    SGD.fromJson(jsonRe)
+    SGD.fromJson(jsonRe, new LocalOptimizerProvider())
   }
 
   test("TransFunc") {
@@ -185,14 +184,14 @@ class JsonTest extends FunSuite {
     val conf = SharedConf.get()
     val json = "deepfm"
     val jsonPath = s"E:\\github\\fitzwang\\angel\\angel-mlcore\\src\\test\\jsons\\$json.json"
-    val layers = JsonUtils.parseAndUpdateJson(jsonPath, conf, new Configuration())
+    JsonUtils.parseAndUpdateJson(jsonPath, conf, new Configuration())
     val dataFormat = "libsvm"
     val modelType = SharedConf.modelType
     val placeHolder: PlaceHolder = new PlaceHolder(conf)
     implicit val variableManager: VariableManager = LocalVariableManager.get(true)
     val variableProvider: VariableProvider = new LocalVariableProvider(dataFormat, modelType)
     implicit val graph: Graph = new Graph(variableProvider, conf, 1)
-    JsonUtils.layerFromJson(layers)
+    JsonUtils.layerFromJson(conf)
 
     val topLayer = graph.getLossLayer
     println(JsonUtils.layer2JsonPretty(topLayer.asInstanceOf[Layer]))

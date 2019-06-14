@@ -35,7 +35,7 @@
     <dist.deps.scope>provided</dist.deps.scope>
     <scalatest.version>3.0.3</scalatest.version>
     <main.basedir>${project.basedir}</main.basedir>
-    <!--json4s.version>3.2.11</json4s.version-->
+    <json4s.version>3.2.11</json4s.version>
   </properties>
 
 

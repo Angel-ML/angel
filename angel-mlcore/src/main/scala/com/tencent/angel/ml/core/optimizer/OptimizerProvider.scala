@@ -1,9 +1,11 @@
 package com.tencent.angel.ml.core.optimizer
 
-import org.json4s.JsonAST.{JObject, JValue}
+import com.tencent.angel.ml.core.conf.SharedConf
 
 trait OptimizerProvider {
-  def optFromJson(json: JValue): Optimizer
+  val conf: SharedConf = SharedConf.get()
 
-  def defaultOptJson(): JObject
+  def optFromJson(jsonStr: String): Optimizer
+
+  def setRegParams[T <: Optimizer](opt: T, jastStr: String): T
 }

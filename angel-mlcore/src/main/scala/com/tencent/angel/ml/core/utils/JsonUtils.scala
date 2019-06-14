@@ -4,7 +4,7 @@ import java.io.{BufferedReader, FileInputStream, IOException, InputStreamReader}
 import java.net.URI
 import java.util
 
-import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.layers.multiary._
 import com.tencent.angel.ml.core.network.layers.unary._
@@ -17,10 +17,10 @@ import org.apache.hadoop.fs.{FSDataInputStream, FileSystem, Path}
 import org.json4s.DefaultFormats
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
+import org.json4s.ParserUtil.ParseException
 import org.json4s.native.JsonMethods._
 
 import scala.collection.mutable
-import scala.io.Source
 import scala.reflect.ClassTag
 
 object LayerKeys {
@@ -66,7 +66,6 @@ object OptimizerKeys {
   val reg2Key: String = "reg2"
 }
 
-
 object JsonUtils {
   private implicit val formats: DefaultFormats.type = DefaultFormats
   private lazy val optimizerProvider = Optimizer.getOptimizerProvider(SharedConf.optJsonProvider())
@@ -97,6 +96,28 @@ object JsonUtils {
 
   def J2Pretty(json: JValue): String = pretty(render(json))
 
+  def json2String(obj: JValue): String = {
+    obj \ LayerKeys.optimizerKey match {
+      case JString(opt) => opt
+      case opt: JObject => J2Pretty(opt)
+      case _ => "Momentum"
+    }
+  }
+
+  def string2Json(jsonstr: String): JValue = {
+    try {
+      parse(jsonstr)
+    } catch {
+      case _: ParseException =>
+        if (jsonstr.startsWith("\"")) {
+          JString(jsonstr.substring(1, jsonstr.length - 1))
+        } else {
+          JString(jsonstr)
+        }
+      case e: Exception => JNothing
+    }
+  }
+
   def layer2Json(topLayer: Layer)(implicit jMap: mutable.HashMap[String, JField]): Unit = {
     topLayer match {
       case l: InputLayer =>
@@ -124,6 +145,10 @@ object JsonUtils {
     implicit val jsonMap: mutable.HashMap[String, JField] = new mutable.HashMap[String, JField]()
     layer2Json(topLayer: Layer)
     J2Pretty(JObject(jsonMap.values.toList))
+  }
+
+  def layerFromJson(conf: SharedConf)(implicit graph: Graph): Unit = {
+    layerFromJson(conf.getJson)
   }
 
   def layerFromJson(jast: JObject)(implicit graph: Graph): Unit = {
@@ -183,7 +208,7 @@ object JsonUtils {
             val newLayer = new Embedding(name,
               extract[Int](obj, LayerKeys.outputDimKey).get,
               extract[Int](obj, LayerKeys.numFactorsKey).get,
-              optimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
+              optimizerProvider.optFromJson(getOptimizerString(obj))
             )
 
             layerMap.put(name, newLayer)
@@ -192,7 +217,7 @@ object JsonUtils {
             val newLayer = new SimpleInputLayer(name,
               extract[Int](obj, LayerKeys.outputDimKey).get,
               TransFunc.fromJson(obj \ LayerKeys.transFuncKey),
-              optimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
+              optimizerProvider.optFromJson(getOptimizerString(obj))
             )
 
             layerMap.put(name, newLayer)
@@ -225,7 +250,7 @@ object JsonUtils {
                 extract[Int](obj, LayerKeys.outputDimKey).get,
                 layerMap(inputLayer.get),
                 TransFunc.fromJson(obj \ LayerKeys.transFuncKey),
-                optimizerProvider.optFromJson(obj \ LayerKeys.optimizerKey)
+                optimizerProvider.optFromJson(getOptimizerString(obj))
               )
 
               layerMap.put(name, newLayer)
@@ -289,7 +314,7 @@ object JsonUtils {
     assert(outputDims.size == transFuncs.size)
 
     val optimizer = (obj \ LayerKeys.optimizerKey) match {
-      case JNothing => default_optimizer.getOrElse(optimizerProvider.defaultOptJson())
+      case JNothing => default_optimizer.getOrElse(defaultOptJson())
       case opt: JObject => opt
       case opt: JString => opt
       case _ => throw MLException("Json format error!")
@@ -324,7 +349,7 @@ object JsonUtils {
   private def extendSimpleInputLayer(obj: JObject, default_trans: Option[JValue], default_optimizer: Option[JValue]): List[JField] = {
     val name = (obj \ "name").asInstanceOf[JString].values
     val addOpt = (obj \ LayerKeys.optimizerKey) match {
-      case JNothing => obj ~ (LayerKeys.optimizerKey, default_optimizer.getOrElse(optimizerProvider.defaultOptJson()))
+      case JNothing => obj ~ (LayerKeys.optimizerKey, default_optimizer.getOrElse(defaultOptJson()))
       case _ => obj
     }
     val addTrans = (obj \ LayerKeys.transFuncKey) match {
@@ -338,7 +363,7 @@ object JsonUtils {
   private def extendEmbeddingLayer(obj: JObject, default_trans: Option[JValue], default_optimizer: Option[JValue]): List[JField] = {
     val name = (obj \ "name").asInstanceOf[JString].values
     val addOpt = (obj \ LayerKeys.optimizerKey) match {
-      case JNothing => obj ~ (LayerKeys.optimizerKey, default_optimizer.getOrElse(optimizerProvider.defaultOptJson()))
+      case JNothing => obj ~ (LayerKeys.optimizerKey, default_optimizer.getOrElse(defaultOptJson()))
       case _ => obj
     }
 
@@ -351,9 +376,24 @@ object JsonUtils {
     List(JField(name, obj))
   }
 
+  private def defaultOptJson(): JObject = {
+    val conf: SharedConf = SharedConf.get()
+    val momentum: Double = conf.getDouble(MLCoreConf.ML_OPT_MOMENTUM_MOMENTUM,
+      MLCoreConf.DEFAULT_ML_OPT_MOMENTUM_MOMENTUM)
+
+    (OptimizerKeys.typeKey -> JString("Momentum")) ~ (OptimizerKeys.momentumKey -> JDouble(momentum))
+  }
+
+  private def getOptimizerString(obj: JValue): String = {
+    obj \ LayerKeys.optimizerKey match {
+      case JString(opt) => opt
+      case opt: JObject => J2Pretty(opt)
+      case _ => "Momentum"
+    }
+  }
   //-----------------------------------------------------------------------------------------------------------------
 
-  def parseAndUpdateJson(jsonFileName: String, conf: SharedConf, hadoopConf: Configuration): JObject = {
+  def parseAndUpdateJson(jsonFileName: String, conf: SharedConf, hadoopConf: Configuration): Unit = {
     val sb = new mutable.StringBuilder()
     if (jsonFileName.startsWith("hdfs://")) {
       println("jsonFileName is " + jsonFileName)
@@ -424,11 +464,13 @@ object JsonUtils {
       case _ => throw MLException("Json format error!")
     }
 
-    (jast \ JsonTopKeys.layers) match {
+    val json = (jast \ JsonTopKeys.layers) match {
       case arr: JArray => jArray2JObject(arr, default_trandfunc, default_optimizer)
       case obj: JObject => obj
       case _ => throw MLException("Json format error!")
     }
+
+    conf.setJson(json)
   }
 }
 

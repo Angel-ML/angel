@@ -3,9 +3,9 @@ package com.tencent.angel.ml.core.local.optimizer
 import java.util.concurrent.Future
 
 import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.core.local.LocalOptimizerProvider
 import com.tencent.angel.ml.core.local.variables.{LocalBlasMatVariable, LocalMatVariable, LocalVecVariable}
-import com.tencent.angel.ml.core.optimizer.{Optimizer, OptimizerHelper}
-import com.tencent.angel.ml.core.utils.JsonUtils.{extract, fieldEqualClassName}
+import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.utils.{OptUtils, OptimizerKeys}
 import com.tencent.angel.ml.core.variable.Variable
 import com.tencent.angel.ml.math2.ufuncs.OptFuncs
@@ -83,10 +83,12 @@ class Momentum(override var lr: Double, val momentum: Double = 0.9) extends Opti
 
 object Momentum {
   private val conf: SharedConf = SharedConf.get()
-  def fromJson(jast: JObject): Momentum = {
-    assert(fieldEqualClassName[Momentum](jast, OptimizerKeys.typeKey))
+
+  def fromJson(jast: JObject, provider: LocalOptimizerProvider): Momentum = {
+    val laProvider = provider.asInstanceOf[LocalOptimizerProvider]
+    assert(laProvider.fieldEqualClassName[Momentum](jast, OptimizerKeys.typeKey))
     val moment = conf.getDouble(MLCoreConf.ML_OPT_MOMENTUM_MOMENTUM, MLCoreConf.DEFAULT_ML_OPT_MOMENTUM_MOMENTUM)
 
-    new Momentum(1.0, extract[Double](jast, OptimizerKeys.momentumKey, Some(moment)).get)
+    new Momentum(1.0, laProvider.extract[Double](jast, OptimizerKeys.momentumKey, Some(moment)).get)
   }
 }

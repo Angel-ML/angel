@@ -10,9 +10,6 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>angel-mlcore</artifactId>
-    <properties>
-        <json4s.version>3.5.3</json4s.version>
-    </properties>
 
     <dependencies>
         <dependency>
@@ -20,21 +17,25 @@
             <artifactId>json4s-core_2.11</artifactId>
             <version>${json4s.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s-ast_2.11</artifactId>
             <version>${json4s.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s-native_2.11</artifactId>
             <version>${json4s.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.json4s</groupId>
             <artifactId>json4s-jackson_2.11</artifactId>
             <version>${json4s.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
@@ -60,12 +61,6 @@
             <version>1.1.1</version>
         </dependency>
 
-        <!--dependency>
-            <groupId>com.esotericsoftware</groupId>
-            <artifactId>kryo</artifactId>
-            <version>4.0.0</version>
-        </dependency-->
-
         <dependency>
             <groupId>org.ehcache</groupId>
             <artifactId>sizeof</artifactId>
@@ -86,6 +81,8 @@
     </dependencies>
 
     <build>
+        <outputDirectory>target/classes</outputDirectory>
+        <testOutputDirectory>target/test-classes</testOutputDirectory>
         <plugins>
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
@@ -187,6 +184,11 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>2.3.1</version>
+                <configuration>
+                    <archive>
+                        <addMavenDescriptor>false</addMavenDescriptor>
+                    </archive>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -204,19 +206,21 @@
                 <configuration>
                     <artifactSet>
                         <includes>
-                            <include>org.json4s:json4s-*</include>
-                        </includes>
-                        <includes>
+                            <include>org.json4s:json4s-**</include>
                             <include>com.tencent.angel:angel-mlcore</include>
                         </includes>
                     </artifactSet>
-                    <!--minimizeJar>true</minimizeJar-->
                     <shadedArtifactAttached>false</shadedArtifactAttached>
-                    <shadedClassifierName>angel</shadedClassifierName>
-                    <relocations>
+                    <createDependencyReducedPom>false</createDependencyReducedPom>
+                    <shadeTestJar>false</shadeTestJar>
+                    <relocations combine.children="append">
                         <relocation>
                             <pattern>org.json4s</pattern>
-                            <shadedPattern>org.json4s.angel</shadedPattern>
+                            <shadedPattern>angel.json4s</shadedPattern>
+                            <includes>
+                                <include>org.json4s.**</include>
+                                <include>com.tencent.angel.ml.core.**</include>
+                            </includes>
                         </relocation>
                     </relocations>
                     <filters>

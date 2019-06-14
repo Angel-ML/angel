@@ -3,9 +3,9 @@ package com.tencent.angel.ml.core.local.optimizer
 import java.util.concurrent.Future
 
 import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.core.local.LocalOptimizerProvider
 import com.tencent.angel.ml.core.local.variables.{LocalBlasMatVariable, LocalMatVariable, LocalVecVariable}
-import com.tencent.angel.ml.core.optimizer.{Optimizer, OptimizerHelper}
-import com.tencent.angel.ml.core.utils.JsonUtils.fieldEqualClassName
+import com.tencent.angel.ml.core.optimizer.{Optimizer, OptimizerProvider}
 import com.tencent.angel.ml.core.utils.{OptUtils, OptimizerKeys}
 import com.tencent.angel.ml.core.variable.Variable
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
@@ -74,8 +74,9 @@ class SGD(override var lr: Double) extends Optimizer {
 object SGD  {
   private val conf: SharedConf = SharedConf.get()
 
-  def fromJson(jast: JObject): SGD = {
-    assert(fieldEqualClassName[SGD](jast, OptimizerKeys.typeKey))
+  def fromJson(jast: JObject, provider: OptimizerProvider): SGD = {
+    val laProvider = provider.asInstanceOf[LocalOptimizerProvider]
+    assert(laProvider.fieldEqualClassName[SGD](jast, OptimizerKeys.typeKey))
     val lr = conf.getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)
     new SGD(lr)
   }
