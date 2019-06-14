@@ -19,8 +19,8 @@ package com.tencent.angel.ml.core.optimizer
 
 import java.util.concurrent.Future
 
+import com.tencent.angel.ml.core.PSOptimizerProvider
 import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
-import com.tencent.angel.ml.core.utils.JsonUtils.{extract, fieldEqualClassName}
 import com.tencent.angel.ml.core.utils.OptimizerKeys
 import com.tencent.angel.ml.core.variable.{PSVariable, Variable}
 import com.tencent.angel.ml.psf.optimizer.AdaGradUpdateFunc
@@ -54,9 +54,10 @@ class AdaGrad(override var lr: Double, val beta: Double) extends Optimizer {
 object AdaGrad {
   private val conf: SharedConf = SharedConf.get()
 
-  def fromJson(jast: JObject): AdaGrad = {
-    assert(fieldEqualClassName[AdaGrad](jast, OptimizerKeys.typeKey))
+  def fromJson(jast: JObject, provider: OptimizerProvider): AdaGrad = {
+    val psProvider = provider.asInstanceOf[PSOptimizerProvider]
+    assert(psProvider.fieldEqualClassName[AdaGrad](jast, OptimizerKeys.typeKey))
     val beta = conf.getDouble(MLCoreConf.ML_OPT_ADAGRAD_BETA, MLCoreConf.DEFAULT_ML_OPT_ADAGRAD_BETA)
-    new AdaGrad(1.0, extract[Double](jast, OptimizerKeys.betaKey, Some(beta)).get)
+    new AdaGrad(1.0, psProvider.extract[Double](jast, OptimizerKeys.betaKey, Some(beta)).get)
   }
 }

@@ -1,5 +1,7 @@
 package com.tencent.angel.ml.core
 
+import java.io.FileWriter
+
 import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.core.local.LocalLearner
@@ -18,7 +20,7 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
   var validDataBlock: DataBlock[LabeledData] = _
 
   def getJson(name: String): String = {
-    s"E:\\github\\fitzwang\\angel\\angel-mlcore\\src\\test\\jsons\\$name.json"
+    s"./src/test/jsons/$name.json"
   }
 
   def getDataFile(name: String, format: String = "libsvm", aType: String = "train"): String = {
@@ -34,14 +36,13 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
       case _ => throw new Exception("Cannot find data set!")
     }
 
-    s"E:\\github\\fitzwang\\angel\\data\\$name\\${name}_${dim}d_$aType.$format"
+    s"../data/$name/${name}_${dim}d_$aType.$format"
   }
 
   def init1(jsonFile: String, sourceFile: String): Unit = {
     conf = SharedConf.get()
     conf.set(MLCoreConf.ML_JSON_CONF_FILE, jsonFile)
-    val json = JsonUtils.parseAndUpdateJson(jsonFile, conf, new Configuration())
-    conf.setJson(json)
+    JsonUtils.parseAndUpdateJson(jsonFile, conf, new Configuration())
 
     reader = new LocalDataReader(conf)
     val iter = reader.sourceIter(sourceFile)
@@ -55,8 +56,7 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
   def init2(jsonFile: String, sourceFile: String): Unit = {
     conf = SharedConf.get()
     conf.set(MLCoreConf.ML_JSON_CONF_FILE, jsonFile)
-    val json = JsonUtils.parseAndUpdateJson(jsonFile, conf, new Configuration())
-    conf.setJson(json)
+    JsonUtils.parseAndUpdateJson(jsonFile, conf, new Configuration())
 
     reader = new LocalDataReader(conf)
     val iter = reader.sourceIter(sourceFile)

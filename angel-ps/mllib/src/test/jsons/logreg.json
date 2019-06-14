@@ -1,7 +1,7 @@
 {
   "data": {
     "format": "libsvm",
-    "indexrange": -1,
+    "indexrange": 8,
     "validateratio": 0.1,
     "sampleratio": 1.0
   },
@@ -27,7 +27,7 @@
     {
       "name": "simplelosslayer",
       "type": "losslayer",
-      "lossfunc": "logloss",
+      "lossfunc": "",
       "inputlayer": "wide"
     }
   ]

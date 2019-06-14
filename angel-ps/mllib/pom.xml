@@ -61,4 +61,54 @@
             <version>2.0.1</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+
+                <configuration>
+                    <artifactSet>
+                        <includes>
+                            <include>org.json4s:json4s-**</include>
+                            <include>com.tencent.angel:angel-ps-mllib</include>
+                        </includes>
+                    </artifactSet>
+                    <shadedArtifactAttached>false</shadedArtifactAttached>
+                    <createDependencyReducedPom>false</createDependencyReducedPom>
+                    <shadeTestJar>false</shadeTestJar>
+                    <relocations combine.children="append">
+                        <relocation>
+                            <pattern>org.json4s</pattern>
+                            <shadedPattern>angel.json4s</shadedPattern>
+                            <includes>
+                                <include>org.json4s.**</include>
+                                <include>com.tencent.angel.ml.**</include>
+                            </includes>
+                        </relocation>
+                    </relocations>
+                    <filters>
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <excludes>
+                                <exclude>META-INF/*.SF</exclude>
+                                <exclude>META-INF/*.DSA</exclude>
+                                <exclude>META-INF/*.RSA</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

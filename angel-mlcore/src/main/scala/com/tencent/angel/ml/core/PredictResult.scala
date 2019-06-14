@@ -1,7 +1,7 @@
 package com.tencent.angel.ml.core
 
 class PredictResult(val sid: String, val pred: Double, val proba: Double, val predLabel: Double,
-                    val trueLabel: Double, val attached: Double) {
+                    val trueLabel: Double, val attached: Double = Double.NaN) {
   var separator = ", "
 
   def getText: String = {
@@ -14,7 +14,7 @@ class PredictResult(val sid: String, val pred: Double, val proba: Double, val pr
 
 object PredictResult {
   def apply(sid: String, pred: Double, proba: Double, predLabel: Double,
-            trueLabel: Double, attached: Double): PredictResult = {
+            trueLabel: Double, attached: Double = Double.NaN): PredictResult = {
     new PredictResult(sid, pred, proba, predLabel, trueLabel, attached)
   }
 }

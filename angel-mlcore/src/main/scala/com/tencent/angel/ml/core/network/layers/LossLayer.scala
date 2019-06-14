@@ -14,6 +14,21 @@ class LossLayer(name: String, inputLayer: Layer, val lossFunc: LossFunc)(implici
   inputLayer.addConsumer(this)
   this.addInput(inputLayer)
   graph.setLossLayer(this)
+  lossFunc.setLossLayer(this)
+
+  def getLabel: Matrix = {
+    if (placeHolder == null) {
+      throw new Exception("placeHolder is empty, pls. set first!")
+    }
+    placeHolder.getLabel
+  }
+
+  def getAttached: Array[String] = {
+    if (placeHolder == null) {
+      throw new Exception("placeHolder is empty, pls. set first!")
+    }
+    placeHolder.getAttached
+  }
 
   def predict(): List[PredictResult] = {
     lossFunc.predict(forward(), graph)

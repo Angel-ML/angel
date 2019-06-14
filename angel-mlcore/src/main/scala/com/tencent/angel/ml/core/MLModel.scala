@@ -3,7 +3,6 @@ package com.tencent.angel.ml.core
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.core.network.EnvContext
-import com.tencent.angel.ml.core.network.layers.PlaceHolder
 import com.tencent.angel.ml.core.utils.RowTypeUtils
 import com.tencent.angel.ml.core.variable.VarState.VarState
 import com.tencent.angel.ml.core.variable.{Variable, VariableManager, VariableProvider}
@@ -20,7 +19,7 @@ abstract class MLModel {
   val modelType: RowType = SharedConf.modelType
   val isSparseFormat: Boolean = dataFormat == "libsvm" || dataFormat == "dummy"
 
-  protected val placeHolder: PlaceHolder
+  //  protected val placeHolder: PlaceHolder
   protected val variableManager: VariableManager
   protected val variableProvider: VariableProvider
 
@@ -79,11 +78,11 @@ abstract class MLModel {
 
   def hasGradient(name: String): Boolean = hasSlot(name)
 
-  def feedData(data: Array[LabeledData]): this.type = {
-    placeHolder.feedData(data)
-
-    this
-  }
+  //  def feedData(data: Array[LabeledData]): this.type = {
+  //    placeHolder.asInstanceOf[FeaturePlaceHolder].feedData(data)
+  //
+  //    this
+  //  }
 
   //---------------------Training Cycle
   def createMatrices[T](envCtx: EnvContext[T]): this.type = {

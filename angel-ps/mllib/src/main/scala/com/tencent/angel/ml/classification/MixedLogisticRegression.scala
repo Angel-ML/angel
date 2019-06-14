@@ -23,8 +23,8 @@ import com.tencent.angel.ml.core.conf.{AngelMLConf, MLCoreConf}
 import com.tencent.angel.ml.core.graphsubmit.AngelModel
 import com.tencent.angel.ml.core.network.{Sigmoid, Softmax}
 import com.tencent.angel.ml.core.network.layers.{Layer, LossLayer}
-import com.tencent.angel.ml.core.network.layers.join.DotPooling
-import com.tencent.angel.ml.core.network.layers.verge.SimpleInputLayer
+import com.tencent.angel.ml.core.network.layers.multiary.DotPooling
+import com.tencent.angel.ml.core.network.layers.leaf.SimpleInputLayer
 import com.tencent.angel.ml.core.optimizer.loss.CrossEntropyLoss
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration

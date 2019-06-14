@@ -20,8 +20,8 @@ package com.tencent.angel.ml.core.optimizer
 
 import java.util.concurrent.Future
 
+import com.tencent.angel.ml.core.PSOptimizerProvider
 import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
-import com.tencent.angel.ml.core.utils.JsonUtils.fieldEqualClassName
 import com.tencent.angel.ml.core.utils.OptimizerKeys
 import com.tencent.angel.ml.core.variable.{PSVariable, Variable}
 import com.tencent.angel.ml.psf.optimizer.PGDUpdateFunc
@@ -54,8 +54,9 @@ class SGD(override var lr: Double) extends Optimizer {
 object SGD {
   private val conf: SharedConf = SharedConf.get()
 
-  def fromJson(jast: JObject): SGD = {
-    assert(fieldEqualClassName[SGD](jast, OptimizerKeys.typeKey))
+  def fromJson(jast: JObject, provider: OptimizerProvider): SGD = {
+    val psProvider = provider.asInstanceOf[PSOptimizerProvider]
+    assert(psProvider.fieldEqualClassName[SGD](jast, OptimizerKeys.typeKey))
 
     val lr = conf.getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)
     new SGD(lr)

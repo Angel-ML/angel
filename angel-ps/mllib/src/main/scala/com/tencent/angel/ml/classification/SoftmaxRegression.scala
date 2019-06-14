@@ -23,7 +23,7 @@ import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.graphsubmit.AngelModel
 import com.tencent.angel.ml.core.network.Identity
 import com.tencent.angel.ml.core.network.layers.LossLayer
-import com.tencent.angel.ml.core.network.layers.verge.SimpleInputLayer
+import com.tencent.angel.ml.core.network.layers.leaf.SimpleInputLayer
 import com.tencent.angel.ml.core.optimizer.loss.SoftmaxLoss
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration

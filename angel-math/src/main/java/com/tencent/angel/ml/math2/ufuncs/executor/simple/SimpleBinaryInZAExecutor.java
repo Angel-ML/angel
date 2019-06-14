@@ -96,11 +96,12 @@ public class SimpleBinaryInZAExecutor {
   private static Vector apply(IntDoubleVector v1, IntDoubleVector v2, Binary op) {
     IntDoubleVectorStorage newStorage = (IntDoubleVectorStorage) StorageSwitch.apply(v1, v2, op);
     if (v1.isDense() && v2.isDense()) {
-      double[] v1Values = newStorage.getValues();
+      double[] v1Values = v1.getStorage().getValues();
       double[] v2Values = v2.getStorage().getValues();
       for (int idx = 0; idx < v1Values.length; idx++) {
-        v1Values[idx] = op.apply(v1Values[idx], v2Values[idx]);
+        newStorage.set(idx, op.apply(v1Values[idx], v2Values[idx]));
       }
+      v1.setStorage(newStorage);
       return v1;
     } else if (v1.isDense() && v2.isSparse()) {
       double[] v1Values = newStorage.getValues();
@@ -8982,7 +8983,6 @@ public class SimpleBinaryInZAExecutor {
 
     return v1;
   }
-
 
   public static Vector apply(IntDoubleVector v1, IntDummyVector v2, Binary op) {
     IntDoubleVectorStorage newStorage = (IntDoubleVectorStorage) StorageSwitch.apply(v1, v2, op);

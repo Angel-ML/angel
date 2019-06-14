@@ -5,8 +5,8 @@ import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.layers.{Trainable, _}
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
 import com.tencent.angel.ml.core.utils.JsonUtils.{J2Pretty, layer2Json}
-import com.tencent.angel.ml.core.utils.{DataCache, TimeStats}
-import com.tencent.angel.ml.core.variable.{VariableManager, VariableProvider}
+import com.tencent.angel.ml.core.utils.{DataCache, MLException, TimeStats}
+import com.tencent.angel.ml.core.variable.VariableProvider
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.ml.math2.vector.Vector
@@ -17,22 +17,25 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 
-trait EnvContext[T] {
-  def client: T
-}
-
-
-class Graph(val provider: VariableProvider, val placeHolder: PlaceHolder, val conf: SharedConf, val taskNum: Int) {
+class Graph(val provider: VariableProvider, val conf: SharedConf, val taskNum: Int) {
   private val LOG: Log = LogFactory.getLog(classOf[Graph])
 
   protected val inputLayers = new ListBuffer[InputLayer]()
   protected var lossLayer: LossLayer = _
   protected val trainableLayer = new ListBuffer[Trainable]()
   private val dataCache: ThreadLocal[DataCache] = new ThreadLocal[DataCache]()
+  private var batchSize: Int = -1
+  val placeHolder = new PlaceHolder(conf)
 
   val timeStats = new TimeStats()
 
-  def normalFactor: Double = 1.0 / (placeHolder.getBatchSize * taskNum)
+  def normalFactor: Double = {
+    if (batchSize == -1) {
+      throw MLException("batchSize not set, feed data will set batchSize automatic")
+    }
+
+    1.0 / (batchSize * taskNum)
+  }
 
   protected var lr: Double = SharedConf.learningRate
 
@@ -107,8 +110,18 @@ class Graph(val provider: VariableProvider, val placeHolder: PlaceHolder, val co
 
   def getLR: Double = this.lr
 
+  def getBatchSize: Int = {
+    if (batchSize == -1) {
+      throw MLException("batchSize not set, please feed data first!")
+    }
+
+    batchSize
+  }
+
   def feedData(data: Array[LabeledData]): this.type = {
+    batchSize = data.length
     placeHolder.feedData(data)
+
     this
   }
 

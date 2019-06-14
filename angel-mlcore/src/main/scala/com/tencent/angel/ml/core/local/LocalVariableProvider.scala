@@ -1,15 +1,16 @@
 package com.tencent.angel.ml.core.local
 
 import com.tencent.angel.ml.core.local.variables._
-import com.tencent.angel.ml.core.network.layers.PlaceHolder
+import com.tencent.angel.ml.core.network.PlaceHolder
 import com.tencent.angel.ml.core.utils.{MLException, RowTypeUtils}
 import com.tencent.angel.ml.core.variable._
 import com.tencent.angel.ml.math2.utils.RowType
 
 
-class LocalVariableProvider(dataFormat: String, modelType: RowType, placeHolder: PlaceHolder)(
+class LocalVariableProvider(dataFormat: String, modelType: RowType)(
   implicit variableManager: VariableManager) extends VariableProvider {
-  override def getEmbedVariable(name: String, numRows: Long, numCols: Long, updater: Updater, formatClassName: String, taskNum: Int = 1): EmbedVariable = {
+  override def getEmbedVariable(name: String, numRows: Long, numCols: Long, updater: Updater,
+                                formatClassName: String, placeHolder: PlaceHolder, taskNum: Int = 1): EmbedVariable = {
     new LocalEmbedVariable(name, numRows.toInt, numCols, updater,
       RowTypeUtils.getDenseModelType(modelType), formatClassName, true, placeHolder)
   }

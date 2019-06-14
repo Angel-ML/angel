@@ -13,6 +13,7 @@ import com.tencent.angel.ml.math2.vector
 import com.tencent.angel.ml.math2.vector.Vector
 import org.apache.hadoop.conf.Configuration
 
+import scala.collection.mutable
 import scala.language.implicitConversions
 
 object VarState extends Enumeration {
@@ -99,20 +100,20 @@ trait VecTrainCycle extends TrainCycle {
   }
 }
 
-
 trait MatVariable extends MatTrainCycle
 
 object MatVariable {
   implicit def toMatrix(v: MatVariable): Matrix = v.snapshot()
 }
 
-
-trait EmbedVariable extends MatVariable
+trait EmbedVariable extends MatVariable {
+  var assembleHint: String = EmbedUtils.OneHot
+  var assembleStats: List[mutable.HashMap[Int, Int]] = _
+}
 
 object EmbedVariable {
   implicit def toMatrix(v: EmbedVariable): Matrix = v.snapshot()
 }
-
 
 trait BlasMatVariable extends MatVariable
 
@@ -120,13 +121,11 @@ object BlasMatVariable {
   implicit def toMatrix(v: BlasMatVariable): Matrix = v.snapshot()
 }
 
-
 trait VecVariable extends VecTrainCycle
 
 object VecVariable {
   implicit def toVector(v: VecVariable): Vector = v.snapshot()
 }
-
 
 abstract class Variable(val name: String,
                         val rowType: RowType,

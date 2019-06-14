@@ -3,19 +3,17 @@ package com.tencent.angel.ml.core.local
 import com.tencent.angel.ml.core.{GraphModel, PredictResult}
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.data.DataBlock
-import com.tencent.angel.ml.core.network.Graph
-import com.tencent.angel.ml.core.network.layers.PlaceHolder
+import com.tencent.angel.ml.core.network.{Graph, PlaceHolder}
 import com.tencent.angel.ml.core.utils.JsonUtils
 import com.tencent.angel.ml.core.variable.{VariableManager, VariableProvider}
 import com.tencent.angel.ml.math2.utils.LabeledData
 
 
 class LocalModel(conf: SharedConf) extends GraphModel {
-  override protected val placeHolder: PlaceHolder = new PlaceHolder(conf)
   override protected implicit val variableManager: VariableManager = LocalVariableManager.get(isSparseFormat)
-  override protected val variableProvider: VariableProvider = new LocalVariableProvider(dataFormat, modelType, placeHolder)
+  override protected val variableProvider: VariableProvider = new LocalVariableProvider(dataFormat, modelType)
 
-  override implicit val graph: Graph = new Graph(variableProvider, placeHolder, conf, 1)
+  override implicit val graph: Graph = new Graph(variableProvider, conf, 1)
 
   override def buildNetwork(): this.type = {
     JsonUtils.layerFromJson(conf.getJson)

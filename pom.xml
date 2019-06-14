@@ -171,6 +171,29 @@
           </plugin-->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <version>3.1.0</version>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <goals>
+                  <goal>shade</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <shadedClassifierName>angel</shadedClassifierName>
+              <relocations>
+                <relocation>
+                  <pattern>org.json4s:json4s-*</pattern>
+                  <shadedPattern>org.json4s:json4s-angel-*</shadedPattern>
+                </relocation>
+              </relocations>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
             <version>1.5</version>
             <executions>

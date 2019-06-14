@@ -30,8 +30,7 @@ trait SConfHelper {
       }
 
       if (!validateFileName.isEmpty) {
-        val json = JsonUtils.parseAndUpdateJson(validateFileName, sharedConf, conf)
-        sharedConf.setJson(json)
+        JsonUtils.parseAndUpdateJson(validateFileName, sharedConf, conf)
       }
     }
 

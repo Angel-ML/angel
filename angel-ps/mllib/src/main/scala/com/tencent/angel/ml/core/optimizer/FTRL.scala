@@ -20,8 +20,8 @@ package com.tencent.angel.ml.core.optimizer
 
 import java.util.concurrent.Future
 
+import com.tencent.angel.ml.core.PSOptimizerProvider
 import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
-import com.tencent.angel.ml.core.utils.JsonUtils.{extract, fieldEqualClassName}
 import com.tencent.angel.ml.core.utils.OptimizerKeys
 import com.tencent.angel.ml.core.variable.{PSVariable, Variable}
 import com.tencent.angel.ml.psf.optimizer.FTRLUpdateFunc
@@ -57,13 +57,14 @@ class FTRL(override var lr: Double, val alpha: Double, val beta: Double) extends
 object FTRL {
   private val conf: SharedConf = SharedConf.get()
 
-  def fromJson(jast: JObject): FTRL = {
-    assert(fieldEqualClassName[FTRL](jast, OptimizerKeys.typeKey))
+  def fromJson(jast: JObject, provider: OptimizerProvider): FTRL = {
+    val psProvider = provider.asInstanceOf[PSOptimizerProvider]
+    assert(psProvider.fieldEqualClassName[FTRL](jast, OptimizerKeys.typeKey))
     val alpha = conf.getDouble(MLCoreConf.ML_OPT_FTRL_ALPHA, MLCoreConf.DEFAULT_ML_OPT_FTRL_ALPHA)
     val beta = conf.getDouble(MLCoreConf.ML_OPT_FTRL_BETA, MLCoreConf.DEFAULT_ML_OPT_FTRL_BETA)
 
-    new FTRL(1.0, extract[Double](jast, OptimizerKeys.betaKey, Some(alpha)).get,
-      extract[Double](jast, OptimizerKeys.gammaKey, Some(beta)).get
+    new FTRL(1.0, psProvider.extract[Double](jast, OptimizerKeys.betaKey, Some(alpha)).get,
+      psProvider.extract[Double](jast, OptimizerKeys.gammaKey, Some(beta)).get
     )
   }
 }
