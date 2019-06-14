@@ -28,17 +28,13 @@ import io.netty.buffer.ByteBuf;
 public abstract class CSRStorage extends ServerPartitionStorage implements ICSRStorageOp {
   int [] rowOffsets;
   int [] columnIndices;
-  transient int [] rowLens;
 
   public CSRStorage(int rowIdOffset) {
     super(rowIdOffset);
   }
 
   public void init(PartitionKey partKey) {
-    rowLens = new int[partKey.getEndRow() - partKey.getStartRow()];
-    for(int i = 0; i < rowLens.length; i++) {
-      rowLens[i] = 0;
-    }
+    rowOffsets = new int[(int)(partKey.getEndCol() - partKey.getStartCol() + 1)];
   }
 
   @Override
@@ -50,7 +46,6 @@ public abstract class CSRStorage extends ServerPartitionStorage implements ICSRS
   public void reset() {
     rowOffsets = new int[0];
     columnIndices = new int[0];
-    rowLens = new int[0];
   }
 
   @Override

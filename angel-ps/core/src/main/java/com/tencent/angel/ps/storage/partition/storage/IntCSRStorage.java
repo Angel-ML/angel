@@ -18,12 +18,18 @@
 package com.tencent.angel.ps.storage.partition.storage;
 
 import io.netty.buffer.ByteBuf;
+import java.util.List;
 
 /**
  * CSR storage with int values
  */
 public class IntCSRStorage extends CSRStorage {
   int [] values;
+
+  private List<int[]> tempRowIds;
+  private List<int[]> tempRowLens;
+  private List<int[]> tempColumnIndices;
+
   public IntCSRStorage(int rowIdOffset) {
     super(rowIdOffset);
   }
@@ -62,5 +68,29 @@ public class IntCSRStorage extends CSRStorage {
 
   public void setValues(int[] values) {
     this.values = values;
+  }
+
+  public List<int[]> getTempRowIds() {
+    return tempRowIds;
+  }
+
+  public void setTempRowIds(List<int[]> tempRowIds) {
+    this.tempRowIds = tempRowIds;
+  }
+
+  public List<int[]> getTempRowLens() {
+    return tempRowLens;
+  }
+
+  public void setTempRowLens(List<int[]> tempRowLens) {
+    this.tempRowLens = tempRowLens;
+  }
+
+  public List<int[]> getTempColumnIndices() {
+    return tempColumnIndices;
+  }
+
+  public void setTempColumnIndices(List<int[]> tempColumnIndices) {
+    this.tempColumnIndices = tempColumnIndices;
   }
 }
