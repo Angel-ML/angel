@@ -85,6 +85,8 @@ public class SnapshotDumper {
    */
   private final RunningMode mode;
 
+  private final int dumpParallel;
+
   /**
    * Create a SnapshotDumper
    *
@@ -100,11 +102,13 @@ public class SnapshotDumper {
         .getInt(AngelConf.ANGEL_PS_BACKUP_INTERVAL_MS,
             AngelConf.DEFAULT_ANGEL_PS_BACKUP_INTERVAL_MS);
 
+    dumpParallel = context.getConf()
+        .getInt(AngelConf.ANGEL_PS_BACKUP_PARALLEL, AngelConf.DEFAULT_ANGEL_PS_BACKUP_PARALLEL);
+
     outputDir = context.getConf().get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
     baseDirPath = new Path(
         outputDir + Path.SEPARATOR + ModelFilesConstent.snapshotDirName + Path.SEPARATOR + context
-            .getPSAttemptId().getPsId() + Path.SEPARATOR + String
-            .valueOf(context.getPSAttemptId().getIndex()));
+            .getPSAttemptId().getPsId() + Path.SEPARATOR + context.getPSAttemptId().getIndex());
 
     String matricesStr = context.getConf().get(AngelConf.ANGEL_PS_BACKUP_MATRICES);
     if (matricesStr == null) {
@@ -186,7 +190,8 @@ public class SnapshotDumper {
                   true, false));
         }
 
-        context.getIOExecutors().save(new PSMatricesSaveContext(-1, -1, saveContexts));
+        context.getIOExecutors()
+            .save(new PSMatricesSaveContext(-1, -1, saveContexts), dumpParallel);
         HdfsUtil.rename(tmpPath, baseDirPath, fs);
       }
     }
