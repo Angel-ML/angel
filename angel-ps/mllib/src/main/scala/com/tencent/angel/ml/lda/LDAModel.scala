@@ -85,7 +85,7 @@ object LDAModel {
 
   val WORD_NUM_PATH = "word.num.path"
 
-  val SAVE_PATH = "save.path"
+  val SAVE_PATH = "modelPath"
 }
 
 class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
