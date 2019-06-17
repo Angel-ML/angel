@@ -9,7 +9,7 @@ import org.apache.hadoop.conf.Configuration
 trait SConfHelper {
 
   def initConf(conf: Configuration): SharedConf = {
-    val sharedConf = SharedConf.get()
+    val sharedConf = new SharedConf
 
     // 1. parse json and update conf
     if (conf.get(AngelConf.ANGEL_ML_CONF) != null) {

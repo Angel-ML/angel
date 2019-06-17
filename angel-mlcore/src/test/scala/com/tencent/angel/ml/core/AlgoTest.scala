@@ -1,7 +1,5 @@
 package com.tencent.angel.ml.core
 
-import java.io.FileWriter
-
 import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.core.local.LocalLearner
@@ -12,7 +10,7 @@ import org.apache.hadoop.conf.Configuration
 import org.scalatest.{BeforeAndAfter, FunSuite}
 
 class AlgoTest extends FunSuite with BeforeAndAfter {
-  var conf: SharedConf = _
+  var conf: SharedConf = new SharedConf
   var reader: LocalDataReader = _
   var taskDataBlock: DataBlock[LabeledData] = _
   var posDataBlock: DataBlock[LabeledData] = _
@@ -24,7 +22,7 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
   }
 
   def getDataFile(name: String, format: String = "libsvm", aType: String = "train"): String = {
-    SharedConf.get().set(MLCoreConf.ML_DATA_INPUT_FORMAT, format)
+    conf.set(MLCoreConf.ML_DATA_INPUT_FORMAT, format)
     val dim: Int = name match {
       case "a9a" => 123
       case "abalone" => 8
@@ -40,7 +38,6 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
   }
 
   def init1(jsonFile: String, sourceFile: String): Unit = {
-    conf = SharedConf.get()
     conf.set(MLCoreConf.ML_JSON_CONF_FILE, jsonFile)
     JsonUtils.parseAndUpdateJson(jsonFile, conf, new Configuration())
 
@@ -54,7 +51,6 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
   }
 
   def init2(jsonFile: String, sourceFile: String): Unit = {
-    conf = SharedConf.get()
     conf.set(MLCoreConf.ML_JSON_CONF_FILE, jsonFile)
     JsonUtils.parseAndUpdateJson(jsonFile, conf, new Configuration())
 
@@ -89,7 +85,7 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
   }
 
   test("DNN") {
-    SharedConf.get().set(MLCoreConf.ML_LEARN_RATE, "0.001")
+    conf.set(MLCoreConf.ML_LEARN_RATE, "0.001")
     init2(getJson("dnn"), getDataFile("census"))
     train2()
   }

@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.core.network.layers.leaf
 
 
-import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.core.conf.MLCoreConf
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.{Graph, TransFunc}
 import com.tencent.angel.ml.core.optimizer.Optimizer
@@ -41,11 +41,11 @@ class SimpleInputLayer(name: String,
 
   private val LOG = LogFactory.getLog(classOf[SimpleInputLayer])
 
-  private val formatClassName = SharedConf.get().getString(
+  private val formatClassName = conf.getString(
     MLCoreConf.ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT,
     MLCoreConf.DEFAULT_ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT)
   private val weight: MatVariable = provider.getMatVariable(s"${name}_weight", outputDim,
-    SharedConf.indexRange, optimizer, formatClassName, allowPullWithIndex = true)
+    conf.indexRange, optimizer, formatClassName, allowPullWithIndex = true)
   private val bias: VecVariable = provider.getVecVariable(s"${name}_bias", outputDim,
     null, formatClassName, allowPullWithIndex = false)
 

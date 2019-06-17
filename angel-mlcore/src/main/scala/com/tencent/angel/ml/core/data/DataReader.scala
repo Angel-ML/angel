@@ -10,7 +10,7 @@ abstract class DataReader(conf: SharedConf) {
 
   private val LOG = LogFactory.getLog(classOf[DataReader])
 
-  private val valiRat = SharedConf.validateRatio
+  private val valiRat = conf.validateRatio
 
   private val transLabel: TransLabel = TransLabel.get(
     conf.getString(MLCoreConf.ML_DATA_LABEL_TRANS, MLCoreConf.DEFAULT_ML_DATA_LABEL_TRANS),
@@ -21,9 +21,9 @@ abstract class DataReader(conf: SharedConf) {
     case _ => false
   }
   private val parser: DataParser = DataParser(
-    SharedConf.indexRange, SharedConf.inputDataFormat,
+    conf.indexRange, conf.inputDataFormat,
     conf.getString(MLCoreConf.ML_DATA_SPLITOR, MLCoreConf.DEFAULT_ML_DATA_SPLITOR),
-    SharedConf.modelType,
+    conf.modelType,
     conf.getBoolean(MLCoreConf.ML_DATA_HAS_LABEL, MLCoreConf.DEFAULT_ML_DATA_HAS_LABEL),
     isTraining, transLabel)
 
@@ -139,8 +139,8 @@ object DataReader {
     val Memory, Disk, DiskAndMemory = Value
   }
 
-  def getBlockType(conf: SharedConf): BlockType.BlockType = {
-    val storageLevel = SharedConf.storageLevel
+  def getBlockType(implicit conf: SharedConf): BlockType.BlockType = {
+    val storageLevel = conf.storageLevel
 
     if (storageLevel.equalsIgnoreCase("memory")) {
       BlockType.Memory
@@ -152,7 +152,7 @@ object DataReader {
   }
 
   def getBathDataIterator(trainData: DataBlock[LabeledData],
-                          batchData: Array[LabeledData], numBatch: Int): Iterator[Array[LabeledData]] = {
+                          batchData: Array[LabeledData], numBatch: Int)(implicit conf: SharedConf): Iterator[Array[LabeledData]] = {
     trainData.resetReadIndex()
     assert(batchData.length > 1)
 
@@ -171,14 +171,14 @@ object DataReader {
 
   def getBathDataIterator(posData: DataBlock[LabeledData],
                           negData: DataBlock[LabeledData],
-                          batchData: Array[LabeledData], numBatch: Int): Iterator[Array[LabeledData]] = {
+                          batchData: Array[LabeledData], numBatch: Int)(implicit conf: SharedConf): Iterator[Array[LabeledData]] = {
     posData.resetReadIndex()
     negData.resetReadIndex()
     assert(batchData.length > 1)
 
     new Iterator[Array[LabeledData]] {
       private var count = 0
-      val posnegRatio: Double = SharedConf.posnegRatio()
+      val posnegRatio: Double = conf.posnegRatio()
       val posPreNum: Int = Math.max((posData.size() + numBatch - 1) / numBatch,
         batchData.length * posnegRatio / (1.0 + posnegRatio)).toInt
 

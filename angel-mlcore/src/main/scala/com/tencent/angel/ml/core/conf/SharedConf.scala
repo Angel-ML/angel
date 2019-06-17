@@ -28,8 +28,7 @@ import org.json4s.jackson.JsonMethods.{compact, parse, render}
 
 import scala.collection.mutable
 
-class SharedConf private() extends Serializable {
-
+class SharedConf extends Serializable {
   private val dataMap: mutable.HashMap[String, String] = mutable.HashMap[String, String]()
   private var graphJson: JObject = _
 
@@ -215,6 +214,132 @@ class SharedConf private() extends Serializable {
     graphJson
   }
 
+  def addMap(map: Map[String, String]): Unit = {
+    map.foreach {
+      case (key: String, value: String) if key.startsWith("angel.") || key.startsWith("ml.") =>
+        dataMap(key) = value
+      case _ =>
+    }
+  }
+
+  def keyType(): String = {
+    RowTypeUtils.keyType(RowType.valueOf(
+      get(MLCoreConf.ML_MODEL_TYPE, MLCoreConf.DEFAULT_ML_MODEL_TYPE)
+    ))
+  }
+
+  def valueType(): String = {
+    RowTypeUtils.valueType(RowType.valueOf(
+      get(MLCoreConf.ML_MODEL_TYPE, MLCoreConf.DEFAULT_ML_MODEL_TYPE)
+    ))
+  }
+
+  def storageType: String = {
+    RowTypeUtils.storageType(RowType.valueOf(
+      get(MLCoreConf.ML_MODEL_TYPE, MLCoreConf.DEFAULT_ML_MODEL_TYPE)
+    ))
+  }
+
+  def denseModelType: RowType = {
+    RowTypeUtils.getDenseModelType(RowType.valueOf(
+      get(MLCoreConf.ML_MODEL_TYPE, MLCoreConf.DEFAULT_ML_MODEL_TYPE)
+    ))
+  }
+
+  def numClass: Int = {
+    getInt(MLCoreConf.ML_NUM_CLASS, MLCoreConf.DEFAULT_ML_NUM_CLASS)
+  }
+
+  def modelType: RowType = {
+    RowType.valueOf(get(MLCoreConf.ML_MODEL_TYPE, MLCoreConf.DEFAULT_ML_MODEL_TYPE))
+  }
+
+  def indexRange: Long = {
+    getLong(MLCoreConf.ML_FEATURE_INDEX_RANGE, MLCoreConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
+  }
+
+  def inputDataFormat: String = {
+    getString(MLCoreConf.ML_DATA_INPUT_FORMAT,
+      MLCoreConf.DEFAULT_ML_DATA_INPUT_FORMAT)
+  }
+
+  def batchSize: Int = {
+    getInt(MLCoreConf.ML_MINIBATCH_SIZE, MLCoreConf.DEFAULT_ML_MINIBATCH_SIZE)
+  }
+
+  def numUpdatePerEpoch: Int = {
+    getInt(MLCoreConf.ML_NUM_UPDATE_PER_EPOCH, MLCoreConf.DEFAULT_ML_NUM_UPDATE_PER_EPOCH)
+  }
+
+  def blockSize: Int = {
+    getInt(MLCoreConf.ML_BLOCK_SIZE, MLCoreConf.DEFAULT_ML_BLOCK_SIZE)
+  }
+
+  def epochNum: Int = {
+    getInt(MLCoreConf.ML_EPOCH_NUM, MLCoreConf.DEFAULT_ML_EPOCH_NUM)
+  }
+
+  def modelSize: Long = {
+    val ms = getLong(MLCoreConf.ML_MODEL_SIZE, MLCoreConf.DEFAULT_ML_MODEL_SIZE)
+    if (ms == -1) {
+      indexRange
+    } else {
+      ms
+    }
+  }
+
+  def validateRatio: Double = {
+    getDouble(MLCoreConf.ML_VALIDATE_RATIO, MLCoreConf.DEFAULT_ML_VALIDATE_RATIO)
+  }
+
+  def decay: Double = {
+    getDouble(MLCoreConf.ML_LEARN_DECAY, MLCoreConf.DEFAULT_ML_LEARN_DECAY)
+  }
+
+  def learningRate: Double = {
+    getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)
+  }
+
+  def modelClassName: String = {
+    val modelClass = getString(MLCoreConf.ML_MODEL_CLASS_NAME, MLCoreConf.DEFAULT_ML_MODEL_CLASS_NAME)
+    if (modelClass == "") {
+      throw MLException("ml.model.class.name must be set for graph based algorithms!")
+    } else {
+      modelClass
+    }
+  }
+
+  def useShuffle: Boolean = {
+    getBoolean(MLCoreConf.ML_DATA_USE_SHUFFLE, MLCoreConf.DEFAULT_ML_DATA_USE_SHUFFLE)
+  }
+
+  def posnegRatio(): Double = {
+    getDouble(MLCoreConf.ML_DATA_POSNEG_RATIO, MLCoreConf.DEFAULT_ML_DATA_POSNEG_RATIO)
+  }
+
+  def optJsonProvider(): String = {
+    getString(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER,
+      MLCoreConf.DEFAULT_ML_OPTIMIZER_JSON_PROVIDER
+    )
+  }
+
+  def storageLevel: String = {
+    get(MLCoreConf.ML_DATA_STORAGE_LEVEL,
+      MLCoreConf.DEFAULT_ML_DATA_STORAGE_LEVEL)
+  }
+
+  def stepSizeScheduler: String = {
+    get(MLCoreConf.ML_OPT_DECAY_CLASS_NAME,
+      MLCoreConf.DEFAULT_ML_OPT_DECAY_CLASS_NAME)
+  }
+
+  def isSparse: Boolean = {
+    val ipFormat = inputDataFormat
+    getBoolean(MLCoreConf.ML_IS_DATA_SPARSE,
+      ipFormat == "libsvm" || ipFormat == "dummy"
+    )
+  }
+
   override def toString: String = {
     val fields = dataMap.toList.map{ case (key: String, value: String) =>
       JField(key, JString(value))
@@ -230,17 +355,9 @@ class SharedConf private() extends Serializable {
 }
 
 object SharedConf {
-  val LOG: Log = LogFactory.getLog("SharedConfObject")
-
-  private val sctl: ThreadLocal[SharedConf] = new ThreadLocal[SharedConf]()
-
   def fromString(confString: String): SharedConf = synchronized {
 
-    if (sctl.get() == null) {
-      sctl.set(new SharedConf)
-    }
-
-    val sc = sctl.get()
+    val sc = new SharedConf
 
     parse(confString) match {
       case JObject(obj: List[JField]) =>
@@ -254,200 +371,5 @@ object SharedConf {
     }
 
     sc
-  }
-
-  def get(): SharedConf = synchronized {
-    if (sctl.get() == null) {
-      sctl.set(new SharedConf)
-    }
-
-    sctl.get()
-  }
-
-  def addMap(map: Map[String, String]): Unit = {
-    val sc = get()
-
-    map.map {
-      case (key: String, value: String) if key.startsWith("angel.") || key.startsWith("ml.") =>
-        sc(key) = value
-      case _ =>
-    }
-  }
-
-  def actionType(): String = {
-    val sc = get()
-
-    "Train"
-  }
-
-  def keyType(): String = {
-    val sc = get()
-
-    RowTypeUtils.keyType(RowType.valueOf(
-      sc.get(MLCoreConf.ML_MODEL_TYPE, MLCoreConf.DEFAULT_ML_MODEL_TYPE)
-    ))
-  }
-
-  def valueType(): String = {
-    val sc = get()
-
-    RowTypeUtils.valueType(RowType.valueOf(
-      sc.get(MLCoreConf.ML_MODEL_TYPE, MLCoreConf.DEFAULT_ML_MODEL_TYPE)
-    ))
-  }
-
-  def storageType: String = {
-    val sc = get()
-
-    RowTypeUtils.storageType(RowType.valueOf(
-      sc.get(MLCoreConf.ML_MODEL_TYPE, MLCoreConf.DEFAULT_ML_MODEL_TYPE)
-    ))
-  }
-
-  def denseModelType: RowType = {
-    val sc = get()
-
-    RowTypeUtils.getDenseModelType(RowType.valueOf(
-      sc.get(MLCoreConf.ML_MODEL_TYPE, MLCoreConf.DEFAULT_ML_MODEL_TYPE)
-    ))
-  }
-
-  def numClass: Int = {
-    val sc = get()
-
-    sc.getInt(MLCoreConf.ML_NUM_CLASS, MLCoreConf.DEFAULT_ML_NUM_CLASS)
-  }
-
-  def modelType: RowType = {
-    val sc = get()
-
-    RowType.valueOf(sc.get(MLCoreConf.ML_MODEL_TYPE, MLCoreConf.DEFAULT_ML_MODEL_TYPE))
-  }
-
-  def indexRange: Long = {
-    val sc = get()
-
-    val ir = sc.getLong(MLCoreConf.ML_FEATURE_INDEX_RANGE, MLCoreConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
-
-    //    if (ir == -1) {
-    //      throw MLException("ML_FEATURE_INDEX_RANGE must be set!")
-    //    } else {
-    //      ir
-    //    }
-    ir
-  }
-
-  def inputDataFormat: String = {
-    val sc = get()
-
-    sc.getString(MLCoreConf.ML_DATA_INPUT_FORMAT,
-      MLCoreConf.DEFAULT_ML_DATA_INPUT_FORMAT)
-  }
-
-  def batchSize: Int = {
-    val sc = get()
-
-    sc.getInt(MLCoreConf.ML_MINIBATCH_SIZE, MLCoreConf.DEFAULT_ML_MINIBATCH_SIZE)
-  }
-
-  def numUpdatePerEpoch: Int = {
-    val sc = get()
-
-    sc.getInt(MLCoreConf.ML_NUM_UPDATE_PER_EPOCH, MLCoreConf.DEFAULT_ML_NUM_UPDATE_PER_EPOCH)
-  }
-
-  def blockSize: Int = {
-    val sc = get()
-
-    sc.getInt(MLCoreConf.ML_BLOCK_SIZE, MLCoreConf.DEFAULT_ML_BLOCK_SIZE)
-  }
-
-  def epochNum: Int = {
-    val sc = get()
-
-    sc.getInt(MLCoreConf.ML_EPOCH_NUM, MLCoreConf.DEFAULT_ML_EPOCH_NUM)
-  }
-
-  def modelSize: Long = {
-    val sc = get()
-
-    val ms = sc.getLong(MLCoreConf.ML_MODEL_SIZE, MLCoreConf.DEFAULT_ML_MODEL_SIZE)
-    if (ms == -1) {
-      indexRange
-    } else {
-      ms
-    }
-  }
-
-  def validateRatio: Double = {
-    val sc = get()
-
-    sc.getDouble(MLCoreConf.ML_VALIDATE_RATIO, MLCoreConf.DEFAULT_ML_VALIDATE_RATIO)
-  }
-
-  def decay: Double = {
-    val sc = get()
-
-    sc.getDouble(MLCoreConf.ML_LEARN_DECAY, MLCoreConf.DEFAULT_ML_LEARN_DECAY)
-  }
-
-  def learningRate: Double = {
-    val sc = get()
-
-    sc.getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)
-  }
-
-  def modelClassName: String = {
-    val sc = get()
-
-    val modelClass = sc.getString(MLCoreConf.ML_MODEL_CLASS_NAME, MLCoreConf.DEFAULT_ML_MODEL_CLASS_NAME)
-    if (modelClass == "") {
-      throw MLException("ml.model.class.name must be set for graph based algorithms!")
-    } else {
-      modelClass
-    }
-  }
-
-  def useShuffle: Boolean = {
-    val sc = get()
-
-    sc.getBoolean(MLCoreConf.ML_DATA_USE_SHUFFLE, MLCoreConf.DEFAULT_ML_DATA_USE_SHUFFLE)
-  }
-
-  def posnegRatio(): Double = {
-    val sc = get()
-
-    sc.getDouble(MLCoreConf.ML_DATA_POSNEG_RATIO, MLCoreConf.DEFAULT_ML_DATA_POSNEG_RATIO)
-  }
-
-  def optJsonProvider(): String = {
-    val sc = get()
-
-    sc.getString(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER,
-      MLCoreConf.DEFAULT_ML_OPTIMIZER_JSON_PROVIDER
-    )
-  }
-
-  def storageLevel: String = {
-    val sc = get()
-
-    sc.get(MLCoreConf.ML_DATA_STORAGE_LEVEL,
-      MLCoreConf.DEFAULT_ML_DATA_STORAGE_LEVEL)
-  }
-
-  def stepSizeScheduler: String = {
-    val sc = get()
-
-    sc.get(MLCoreConf.ML_OPT_DECAY_CLASS_NAME,
-      MLCoreConf.DEFAULT_ML_OPT_DECAY_CLASS_NAME)
-  }
-
-  def isSparse: Boolean = {
-    val sc = get()
-
-    val ipFormat = inputDataFormat
-    sc.getBoolean(MLCoreConf.ML_IS_DATA_SPARSE,
-      ipFormat == "libsvm" || ipFormat == "dummy"
-    )
   }
 }

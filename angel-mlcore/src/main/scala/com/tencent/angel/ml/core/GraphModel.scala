@@ -3,12 +3,12 @@ package com.tencent.angel.ml.core
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
-import com.tencent.angel.ml.core.utils.MethodNotImplement
+import com.tencent.angel.ml.core.utils.{DataCache, MethodNotImplement}
 import com.tencent.angel.ml.core.variable.Variable
 import com.tencent.angel.ml.math2.matrix.Matrix
 
 
-abstract class GraphModel extends MLModel {
+abstract class GraphModel(conf: SharedConf) extends MLModel(conf) {
   val graph: Graph
 
   def buildNetwork(): this.type

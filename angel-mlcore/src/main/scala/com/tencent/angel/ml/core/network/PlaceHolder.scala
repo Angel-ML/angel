@@ -35,15 +35,13 @@ import scala.util.Sorting.quickSort
 class PlaceHolder(val conf: SharedConf) extends Serializable {
   private val LOG: Log = LogFactory.getLog(classOf[PlaceHolder])
 
-  def this() = this(SharedConf.get())
-
   private var data: Array[LabeledData] = _
   private var feats: Matrix = _
   private var labels: Matrix = _
   private var indices: Vector = _
   private var attached: Array[String] = _
-  private val keyType: String = SharedConf.keyType()
-  private val inputDataFormat: String = SharedConf.inputDataFormat
+  private val keyType: String = conf.keyType()
+  private val inputDataFormat: String = conf.inputDataFormat
   private var fieldKeyMap: Map[Long, Int] = _
   var hasFieldKeyMap: Boolean = false
 

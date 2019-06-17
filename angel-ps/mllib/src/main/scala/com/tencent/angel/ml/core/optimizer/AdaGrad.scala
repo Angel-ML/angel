@@ -29,7 +29,7 @@ import org.apache.commons.logging.LogFactory
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 
-class AdaGrad(override var lr: Double, val beta: Double) extends Optimizer {
+class AdaGrad(override var lr: Double, val beta: Double)(implicit val conf: SharedConf) extends Optimizer {
   private val LOG = LogFactory.getLog(classOf[AdaGrad])
 
   override val numSlot: Int = 2
@@ -52,9 +52,8 @@ class AdaGrad(override var lr: Double, val beta: Double) extends Optimizer {
 }
 
 object AdaGrad {
-  private val conf: SharedConf = SharedConf.get()
 
-  def fromJson(jast: JObject, provider: OptimizerProvider): AdaGrad = {
+  def fromJson(jast: JObject, provider: OptimizerProvider)(implicit conf:SharedConf): AdaGrad = {
     val psProvider = provider.asInstanceOf[PSOptimizerProvider]
     assert(psProvider.fieldEqualClassName[AdaGrad](jast, OptimizerKeys.typeKey))
     val beta = conf.getDouble(MLCoreConf.ML_OPT_ADAGRAD_BETA, MLCoreConf.DEFAULT_ML_OPT_ADAGRAD_BETA)

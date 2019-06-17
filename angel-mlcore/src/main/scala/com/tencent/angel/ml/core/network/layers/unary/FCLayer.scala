@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.core.network.layers.unary
 
 
-import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.core.conf.MLCoreConf
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.network.{Graph, TransFunc}
 import com.tencent.angel.ml.core.optimizer.Optimizer
@@ -39,7 +39,7 @@ class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransF
   graph.addTrainableLayer(this)
   private val LOG = LogFactory.getLog(classOf[FCLayer])
 
-  private val formatClassName = SharedConf.get().getString(
+  private val formatClassName = conf.getString(
     MLCoreConf.ML_FCLAYER_MATRIX_OUTPUT_FORMAT,
     MLCoreConf.DEFAULT_ML_FCLAYER_MATRIX_OUTPUT_FORMAT)
   private val weight: MatVariable = provider.getMatVariable(s"${name}_weight", outputDim,

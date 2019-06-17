@@ -3,6 +3,7 @@ package com.tencent.angel.ml.core.local.variables
 import java.lang.{Long => JLong}
 import java.util.{HashMap => JHashMap, Map => JMap}
 
+import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.PlaceHolder
 import com.tencent.angel.ml.core.utils.ValueNotAllowed
 import com.tencent.angel.ml.core.variable.{EmbedUtils, EmbedVariable, Updater, VariableManager}
@@ -20,7 +21,7 @@ class LocalEmbedVariable(name: String,
                          formatClassName: String,
                          allowPullWithIndex: Boolean,
                          placeHolder: PlaceHolder)
-                        (implicit variableManager: VariableManager)
+                        (implicit  conf: SharedConf, variableManager: VariableManager)
   extends LocalMatVariable(name, numRows, numCols, updater, rowType, formatClassName, allowPullWithIndex) with EmbedVariable {
   private val embeddings: JMap[JLong, Vector] = new JHashMap[JLong, Vector]()
 

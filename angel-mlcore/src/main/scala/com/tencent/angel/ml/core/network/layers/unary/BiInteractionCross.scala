@@ -18,7 +18,6 @@
 
 package com.tencent.angel.ml.core.network.layers.unary
 
-import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.utils.MLException
@@ -72,7 +71,7 @@ class BiInteractionCross(name: String, outputDim: Int, inputLayer: Layer)(implic
   }
 
   override protected def doBackward(input: Matrix, gradInput: Matrix): Matrix = {
-    SharedConf.valueType() match {
+    conf.valueType() match {
       case "double" =>
         val inputData = input.asInstanceOf[RBCompIntDoubleMatrix]
 

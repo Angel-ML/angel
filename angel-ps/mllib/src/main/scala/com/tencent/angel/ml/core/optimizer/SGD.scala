@@ -29,7 +29,7 @@ import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
 import org.json4s.JsonAST.{JField, JObject, JString}
 
-class SGD(override var lr: Double) extends Optimizer {
+class SGD(override var lr: Double)(implicit val conf: SharedConf) extends Optimizer {
   private val LOG = LogFactory.getLog(classOf[SGD])
 
   override val numSlot: Int = 0
@@ -52,9 +52,7 @@ class SGD(override var lr: Double) extends Optimizer {
 
 
 object SGD {
-  private val conf: SharedConf = SharedConf.get()
-
-  def fromJson(jast: JObject, provider: OptimizerProvider): SGD = {
+  def fromJson(jast: JObject, provider: OptimizerProvider)(implicit conf: SharedConf): SGD = {
     val psProvider = provider.asInstanceOf[PSOptimizerProvider]
     assert(psProvider.fieldEqualClassName[SGD](jast, OptimizerKeys.typeKey))
 

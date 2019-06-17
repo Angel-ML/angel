@@ -50,7 +50,8 @@ abstract class DataParser(val splitter: String) {
   }
 }
 
-case class DummyDataParser(override val splitter: String, featRange: Long, hasLabel: Boolean, isTraining: Boolean, transLabel: TransLabel, rowType: RowType) extends DataParser(splitter) {
+case class DummyDataParser(override val splitter: String, featRange: Long, hasLabel: Boolean, isTraining: Boolean,
+                           transLabel: TransLabel, rowType: RowType) extends DataParser(splitter) {
   override def parse(value: String): LabeledData = {
 
     val (y, attached, splits) = processLabel(value, hasLabel, isTraining, transLabel)
@@ -82,7 +83,8 @@ case class DummyDataParser(override val splitter: String, featRange: Long, hasLa
   }
 }
 
-case class LibSVMDataParser(override val splitter: String, featRange: Long, hasLabel: Boolean, isTraining: Boolean, transLabel: TransLabel, rowType: RowType) extends DataParser(splitter) {
+case class LibSVMDataParser(override val splitter: String, featRange: Long, hasLabel: Boolean, isTraining: Boolean,
+                            transLabel: TransLabel, rowType: RowType) extends DataParser(splitter) {
   // type V = IntDoubleVector
 
   override def parse(value: String): LabeledData = {

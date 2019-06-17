@@ -22,34 +22,32 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core._
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.data.DataBlock
-import com.tencent.angel.ml.core.network.{Graph, PlaceHolder}
+import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.utils.JsonUtils
 import com.tencent.angel.ml.core.variable.{AngelCILSImpl, CILSImpl, VariableManager, VariableProvider}
 import com.tencent.angel.ml.math2.utils.LabeledData
-import com.tencent.angel.worker.task.TaskContext
-import org.apache.hadoop.conf.Configuration
 
-class AngelModel(conf: Configuration, _ctx: TaskContext) extends GraphModel {
-  lazy val sharedConf: SharedConf = SharedConf.get()
-  lazy val batchSize: Int = SharedConf.batchSize
-  lazy val blockSize: Int = SharedConf.blockSize
 
-  //override protected val placeHolder: PlaceHolder = new PlaceHolder(sharedConf)
-  override protected implicit val variableManager: VariableManager = PSVariableManager.get(isSparseFormat)
-  protected implicit val cilsImpl: CILSImpl = new AngelCILSImpl()
+class AngelModel(conf: SharedConf, taskNum: Int = -1) extends GraphModel(conf) {
+  lazy val batchSize: Int = conf.batchSize
+  lazy val blockSize: Int = conf.blockSize
+  private implicit val sharedConf: SharedConf = conf
+
+  override protected implicit val variableManager: VariableManager = new PSVariableManager(isSparseFormat, conf)
+  protected implicit val cilsImpl: CILSImpl = new AngelCILSImpl(conf)
   override protected val variableProvider: VariableProvider = new PSVariableProvider(dataFormat, modelType)
 
-  implicit lazy val graph: Graph = if (_ctx != null) {
-    new Graph(variableProvider, sharedConf, _ctx.getTotalTaskNum)
+  implicit lazy val graph: Graph = if (taskNum != -1) {
+    new Graph(variableProvider, conf, taskNum)
   } else {
-    val totalTaskNum: Int = sharedConf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER,
-      AngelConf.DEFAULT_ANGEL_WORKERGROUP_NUMBER) * sharedConf.getInt(
+    val _taskNum: Int = conf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER,
+      AngelConf.DEFAULT_ANGEL_WORKERGROUP_NUMBER) * conf.getInt(
       AngelConf.ANGEL_TASK_ACTUAL_NUM, default = 1)
-    new Graph(variableProvider, sharedConf, totalTaskNum)
+    new Graph(variableProvider, conf, _taskNum)
   }
 
   override def buildNetwork(): this.type = {
-    JsonUtils.layerFromJson(sharedConf.getJson)
+    JsonUtils.layerFromJson(conf.getJson)
 
     this
   }
@@ -61,7 +59,6 @@ class AngelModel(conf: Configuration, _ctx: TaskContext) extends GraphModel {
     * @param storage predict data
     * @return predict result
     */
-  // def predict(storage: DataBlock[LabeledData]): List[PredictResult]
   override def predict(storage: DataBlock[LabeledData]): List[PredictResult] = {
     // new MemoryDataBlock[PredictResult](storage.size())
     val numSamples = storage.size()
@@ -81,18 +78,4 @@ class AngelModel(conf: Configuration, _ctx: TaskContext) extends GraphModel {
   }
 
   override def predict(storage: LabeledData): PredictResult = ???
-}
-
-object AngelModel {
-  def apply(className: String, conf: Configuration): AngelModel = {
-    val cls = Class.forName(className)
-    val cstr = cls.getConstructor(classOf[Configuration], classOf[TaskContext])
-    cstr.newInstance(conf, null).asInstanceOf[AngelModel]
-  }
-
-  def apply(className: String, conf: Configuration, ctx: TaskContext): AngelModel = {
-    val cls = Class.forName(className)
-    val cstr = cls.getConstructor(classOf[Configuration], classOf[TaskContext])
-    cstr.newInstance(conf, ctx).asInstanceOf[AngelModel]
-  }
 }

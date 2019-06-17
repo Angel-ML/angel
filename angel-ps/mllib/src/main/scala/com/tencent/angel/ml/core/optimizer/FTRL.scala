@@ -31,7 +31,7 @@ import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 
 
-class FTRL(override var lr: Double, val alpha: Double, val beta: Double) extends Optimizer {
+class FTRL(override var lr: Double, val alpha: Double, val beta: Double)(implicit val conf: SharedConf) extends Optimizer {
   private val LOG = LogFactory.getLog(classOf[FTRL])
 
   override val numSlot: Int = 3
@@ -55,9 +55,7 @@ class FTRL(override var lr: Double, val alpha: Double, val beta: Double) extends
 }
 
 object FTRL {
-  private val conf: SharedConf = SharedConf.get()
-
-  def fromJson(jast: JObject, provider: OptimizerProvider): FTRL = {
+  def fromJson(jast: JObject, provider: OptimizerProvider)(implicit conf: SharedConf): FTRL = {
     val psProvider = provider.asInstanceOf[PSOptimizerProvider]
     assert(psProvider.fieldEqualClassName[FTRL](jast, OptimizerKeys.typeKey))
     val alpha = conf.getDouble(MLCoreConf.ML_OPT_FTRL_ALPHA, MLCoreConf.DEFAULT_ML_OPT_FTRL_ALPHA)

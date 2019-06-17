@@ -10,8 +10,7 @@ import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.model._
 
-class AngelCILSImpl extends CILSImpl {
-  val conf: SharedConf = SharedConf.get()
+class AngelCILSImpl(val conf: SharedConf) extends CILSImpl {
 
   def doCreate[T](mCtx: MatrixContext, envCtx: EnvContext[T]): Unit = {
     envCtx match {

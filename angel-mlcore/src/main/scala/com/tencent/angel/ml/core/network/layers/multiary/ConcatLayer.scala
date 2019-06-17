@@ -18,7 +18,6 @@
 
 package com.tencent.angel.ml.core.network.layers.multiary
 
-import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.utils.MLException
@@ -38,7 +37,7 @@ class ConcatLayer(name: String, outputDim: Int, inputLayers: Array[Layer])(impli
     var start = 0
     val batchSize = graph.placeHolder.getBatchSize
 
-    SharedConf.valueType() match {
+    conf.valueType() match {
       case "double" =>
         val outTemp = MFactory.denseDoubleMatrix(batchSize, outputDim)
         val outData = outTemp.getData
@@ -103,7 +102,7 @@ class ConcatLayer(name: String, outputDim: Int, inputLayers: Array[Layer])(impli
     val batchSize = graph.placeHolder.getBatchSize
     val gradOutput = inputs.map { case (layerName, mat) => layerName -> MatrixUtils.emptyLike(mat) }
 
-    SharedConf.valueType() match {
+    conf.valueType() match {
       case "double" =>
         val grad = gradInput.asInstanceOf[BlasDoubleMatrix].getData
         (0 until batchSize).foreach { row =>

@@ -13,6 +13,7 @@ import org.apache.hadoop.conf.Configuration
 
 class LocalLearner(conf: SharedConf) extends Learner {
   private val LOG: Log = LogFactory.getLog(classOf[LocalLearner])
+  private implicit val sharedConf: SharedConf = conf
 
   // 1. initial model, model can be view as a proxy of graph
   val model: LocalModel = new LocalModel(conf)
@@ -32,7 +33,7 @@ class LocalLearner(conf: SharedConf) extends Learner {
     model.loadModel(env, modelPath, new Configuration())
   }
 
-  private val lr0 = SharedConf.learningRate
+  private val lr0 = conf.learningRate
   override protected val ssScheduler: StepSizeScheduler = new WarmRestarts(lr0, lr0/100, 0.001)
 
   override protected def trainOneEpoch(epoch: Int, iter: Iterator[Array[LabeledData]], numBatch: Int): Double = {
@@ -81,13 +82,13 @@ class LocalLearner(conf: SharedConf) extends Learner {
   }
 
   override def train(posTrainData: DataBlock[LabeledData], negTrainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData]): GraphModel = {
-    val numBatch: Int = SharedConf.numUpdatePerEpoch
+    val numBatch: Int = conf.numUpdatePerEpoch
     val batchSize: Int = if (negTrainData == null) {
       (posTrainData.size() + numBatch - 1) / numBatch
     } else {
       (posTrainData.size() + negTrainData.size() + numBatch - 1) / numBatch
     }
-    val numEpoch: Int = SharedConf.epochNum
+    val numEpoch: Int = conf.epochNum
     val batchData: Array[LabeledData] = new Array[LabeledData](batchSize)
 
     var loss: Double = 0.0

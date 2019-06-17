@@ -2,6 +2,7 @@ package com.tencent.angel.ml.core.local.variables
 
 import java.io.File
 
+import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.variable.{Updater, VarState, Variable, VariableManager}
 import com.tencent.angel.ml.math2.matrix.Matrix
@@ -15,7 +16,7 @@ abstract class LocalVariable(name: String,
                              updater: Updater,
                              formatClassName: String,
                              allowPullWithIndex: Boolean)
-                            (implicit variableManager: VariableManager)
+                            (implicit conf: SharedConf, variableManager: VariableManager)
   extends Variable(name, rowType, updater, formatClassName, allowPullWithIndex) {
   var storage: Matrix = _
 

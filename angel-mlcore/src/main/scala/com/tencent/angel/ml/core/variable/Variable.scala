@@ -131,13 +131,12 @@ abstract class Variable(val name: String,
                         val rowType: RowType,
                         val updater: Updater,
                         val formatClassName: String,
-                        val allowPullWithIndex: Boolean)
-                       (implicit variableManager: VariableManager)
+                        val allowPullWithIndex: Boolean
+                       )(implicit val conf: SharedConf, val variableManager: VariableManager)
   extends TrainCycle {
   variableManager.addVariable(this)
   protected var mean: Double = 0.0
   protected var stddev: Double = 0.000001
-  protected val conf: SharedConf = SharedConf.get()
 
   protected val numSlot: Int = if (updater == null) {
     0

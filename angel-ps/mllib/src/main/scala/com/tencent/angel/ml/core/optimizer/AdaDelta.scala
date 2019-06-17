@@ -30,7 +30,7 @@ import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 
 
-class AdaDelta(override var lr: Double, val alpha: Double, val beta: Double) extends Optimizer {
+class AdaDelta(override var lr: Double, val alpha: Double, val beta: Double)(implicit val conf: SharedConf) extends Optimizer {
   private val LOG = LogFactory.getLog(classOf[AdaDelta])
 
   override val numSlot: Int = 3
@@ -54,9 +54,7 @@ class AdaDelta(override var lr: Double, val alpha: Double, val beta: Double) ext
 }
 
 object AdaDelta {
-  private val conf: SharedConf = SharedConf.get()
-
-  def fromJson(jast: JObject, provider: OptimizerProvider): AdaDelta = {
+  def fromJson(jast: JObject, provider: OptimizerProvider)(implicit conf: SharedConf): AdaDelta = {
     val psProvider = provider.asInstanceOf[PSOptimizerProvider]
     assert(psProvider.fieldEqualClassName[AdaDelta](jast, OptimizerKeys.typeKey))
     val alpha = conf.getDouble(MLCoreConf.ML_OPT_ADADELTA_ALPHA, MLCoreConf.DEFAULT_ML_OPT_ADADELTA_ALPHA)

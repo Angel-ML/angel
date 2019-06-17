@@ -12,7 +12,7 @@ import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import org.json4s.JsonAST.{JField, JObject, JString}
 
 
-class SGD(override var lr: Double) extends Optimizer {
+class SGD(override var lr: Double)(implicit val conf: SharedConf) extends Optimizer {
   override val numSlot: Int = 1
 
   override def update[T](variable: Variable, epoch: Int, batchSize: Int): Future[T] = {
@@ -72,9 +72,7 @@ class SGD(override var lr: Double) extends Optimizer {
 
 
 object SGD  {
-  private val conf: SharedConf = SharedConf.get()
-
-  def fromJson(jast: JObject, provider: OptimizerProvider): SGD = {
+  def fromJson(jast: JObject, provider: OptimizerProvider)(implicit conf: SharedConf): SGD = {
     val laProvider = provider.asInstanceOf[LocalOptimizerProvider]
     assert(laProvider.fieldEqualClassName[SGD](jast, OptimizerKeys.typeKey))
     val lr = conf.getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)

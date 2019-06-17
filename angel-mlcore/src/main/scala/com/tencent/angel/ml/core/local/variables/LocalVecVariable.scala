@@ -2,6 +2,7 @@ package com.tencent.angel.ml.core.local.variables
 
 import java.util.Random
 
+import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.utils.ValueNotAllowed
 import com.tencent.angel.ml.core.variable.{Updater, VarState, VariableManager, VecVariable}
@@ -18,7 +19,7 @@ class LocalVecVariable(name: String,
                        rowType: RowType,
                        formatClassName: String,
                        allowPullWithIndex: Boolean)
-                      (implicit variableManager: VariableManager)
+                      (implicit  conf: SharedConf, variableManager: VariableManager)
   extends LocalVariable(name, rowType, updater, formatClassName, allowPullWithIndex) with VecVariable {
   override protected var vector: Vector = _
 

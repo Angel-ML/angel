@@ -13,7 +13,7 @@ import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
 
-class Adam(override var lr: Double, beta: Double, gamma: Double) extends Optimizer {
+class Adam(override var lr: Double, beta: Double, gamma: Double)(implicit val conf: SharedConf) extends Optimizer {
   override val numSlot: Int = 3
 
   override def update[T](variable: Variable, epoch: Int, batchSize: Int): Future[T] = {
@@ -77,9 +77,7 @@ class Adam(override var lr: Double, beta: Double, gamma: Double) extends Optimiz
 }
 
 object Adam {
-  private val conf: SharedConf = SharedConf.get()
-
-  def fromJson(jast: JObject, provider: LocalOptimizerProvider): Adam = {
+  def fromJson(jast: JObject, provider: LocalOptimizerProvider)(implicit conf: SharedConf): Adam = {
     val laProvider = provider.asInstanceOf[LocalOptimizerProvider]
     assert(laProvider.fieldEqualClassName[Adam](jast, OptimizerKeys.typeKey))
     val beta = conf.getDouble(MLCoreConf.ML_OPT_ADAM_BETA, MLCoreConf.DEFAULT_ML_OPT_ADAM_BETA)
