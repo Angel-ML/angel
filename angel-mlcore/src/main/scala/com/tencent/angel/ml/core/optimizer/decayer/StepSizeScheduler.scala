@@ -36,8 +36,7 @@ object StepSizeScheduler {
     cls.getSimpleName.equalsIgnoreCase(name)
   }
 
-  def apply(name: String, eta: Double): StepSizeScheduler = {
-    val conf = SharedConf.get()
+  def apply(name: String, eta: Double)(implicit conf: SharedConf): StepSizeScheduler = {
     name match {
       case clsName if matchName[StandardDecay](clsName) =>
         val alpha = conf.getDouble(MLCoreConf.ML_LEARN_DECAY,

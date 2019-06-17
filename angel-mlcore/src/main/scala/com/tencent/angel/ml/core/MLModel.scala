@@ -12,11 +12,11 @@ import com.tencent.angel.ml.math2.vector.Vector
 import org.apache.hadoop.conf.Configuration
 
 
-abstract class MLModel {
-  val dataFormat: String = SharedConf.inputDataFormat
-  val indexRange: Long = SharedConf.indexRange
-  val validIndexNum: Long = SharedConf.modelSize
-  val modelType: RowType = SharedConf.modelType
+abstract class MLModel(val conf: SharedConf) {
+  val dataFormat: String = conf.inputDataFormat
+  val indexRange: Long = conf.indexRange
+  val validIndexNum: Long = conf.modelSize
+  val modelType: RowType = conf.modelType
   val isSparseFormat: Boolean = dataFormat == "libsvm" || dataFormat == "dummy"
 
   //  protected val placeHolder: PlaceHolder

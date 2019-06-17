@@ -10,8 +10,9 @@ import org.json4s.native.JsonMethods._
 
 import scala.reflect.ClassTag
 
-class PSOptimizerProvider extends OptimizerProvider {
+class PSOptimizerProvider(conf: SharedConf) extends OptimizerProvider {
   private implicit val formats: DefaultFormats.type = DefaultFormats
+  private implicit val sharedConf: SharedConf = conf
 
   def extract[T: Manifest](jast: JValue, key: String, default: Option[T] = None): Option[T] = {
     jast \ key match {
@@ -60,7 +61,6 @@ class PSOptimizerProvider extends OptimizerProvider {
   }
 
   def getOptimizer(name: String): Optimizer = {
-    val conf: SharedConf = SharedConf.get()
     val lr0: Double = conf.getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)
 
     name match {
@@ -95,7 +95,6 @@ class PSOptimizerProvider extends OptimizerProvider {
   }
 
   def getDefaultOptimizer(): Optimizer = {
-    val conf: SharedConf = SharedConf.get()
     val lr0: Double = conf.getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)
     val momentum: Double = conf.getDouble(MLCoreConf.ML_OPT_MOMENTUM_MOMENTUM,
       MLCoreConf.DEFAULT_ML_OPT_MOMENTUM_MOMENTUM)
@@ -103,7 +102,6 @@ class PSOptimizerProvider extends OptimizerProvider {
   }
 
   override def optFromJson(jsonstr: String): Optimizer = {
-    val conf: SharedConf = SharedConf.get()
     val lr0: Double = conf.getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)
 
     val json = string2Json(jsonstr)

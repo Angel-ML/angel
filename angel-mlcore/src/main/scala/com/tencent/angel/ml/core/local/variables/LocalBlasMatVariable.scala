@@ -20,13 +20,13 @@ class LocalBlasMatVariable(name: String,
                            rowType: RowType,
                            formatClassName: String,
                            allowPullWithIndex: Boolean)
-                          (implicit variableManager: VariableManager)
+                          (implicit  conf: SharedConf, variableManager: VariableManager)
   extends LocalVariable(name, rowType, updater, formatClassName, allowPullWithIndex) with BlasMatVariable {
   override protected var matrix: Matrix = _
 
   protected override def doCreate[T](envCtx: EnvContext[T]): Unit = {
     assert(envCtx == null || envCtx.client == null)
-    storage = SharedConf.valueType() match {
+    storage = conf.valueType() match {
       case "float" =>
         MFactory.rbIntFloatMatrix(numSlot + 1, (numRows * numCols).toInt, StorageType.DENSE)
       case "double" =>

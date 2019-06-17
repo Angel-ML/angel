@@ -17,13 +17,13 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 
-class Graph(val provider: VariableProvider, val conf: SharedConf, val taskNum: Int) {
+class Graph(val provider: VariableProvider, val conf: SharedConf, val taskNum: Int){
   private val LOG: Log = LogFactory.getLog(classOf[Graph])
 
   protected val inputLayers = new ListBuffer[InputLayer]()
   protected var lossLayer: LossLayer = _
   protected val trainableLayer = new ListBuffer[Trainable]()
-  private val dataCache: ThreadLocal[DataCache] = new ThreadLocal[DataCache]()
+  protected val dataCache: DataCache = new DataCache()
   private var batchSize: Int = -1
   val placeHolder = new PlaceHolder(conf)
 
@@ -37,7 +37,7 @@ class Graph(val provider: VariableProvider, val conf: SharedConf, val taskNum: I
     1.0 / (batchSize * taskNum)
   }
 
-  protected var lr: Double = SharedConf.learningRate
+  protected var lr: Double = conf.learningRate
 
   def addInputLayer(layer: InputLayer): this.type = {
     inputLayers.append(layer)
@@ -166,61 +166,33 @@ class Graph(val provider: VariableProvider, val conf: SharedConf, val taskNum: I
     */
 
   def put2Cache(name: String, mat: Matrix): this.type = {
-    if (dataCache.get() == null) {
-      dataCache.set(new DataCache())
-    }
-
-    dataCache.get.addMatrix(name, mat)
+    dataCache.addMatrix(name, mat)
     this
   }
 
   def put2Cache(name: String, vec: Vector): this.type = {
-    if (dataCache.get() == null) {
-      dataCache.set(new DataCache())
-    }
-
-    dataCache.get.addVector(name, vec)
+    dataCache.addVector(name, vec)
     this
   }
 
   def isMatrixInCache(name: String): Boolean = {
-    if (dataCache.get() == null) {
-      dataCache.set(new DataCache())
-    }
-
-    dataCache.get.hasMatrix(name)
+    dataCache.hasMatrix(name)
   }
 
   def isVectorInCache(name: String): Boolean = {
-    if (dataCache.get() == null) {
-      dataCache.set(new DataCache())
-    }
-
-    dataCache.get.hasVector(name)
+    dataCache.hasVector(name)
   }
 
   def getMatrixFromCache(name: String): Matrix = {
-    if (dataCache.get() == null) {
-      dataCache.set(new DataCache())
-    }
-
-    dataCache.get.getMatrix(name)
+    dataCache.getMatrix(name)
   }
 
   def getVectorFromCache(name: String): Vector = {
-    if (dataCache.get() == null) {
-      dataCache.set(new DataCache())
-    }
-
-    dataCache.get.getVector(name)
+    dataCache.getVector(name)
   }
 
   def clearCache(): this.type = {
-    if (dataCache.get() == null) {
-      dataCache.set(new DataCache())
-    } else {
-      dataCache.get.clearAll()
-    }
+    dataCache.clearAll()
     this
   }
 

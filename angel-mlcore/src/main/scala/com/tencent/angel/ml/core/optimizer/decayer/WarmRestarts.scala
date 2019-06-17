@@ -19,12 +19,12 @@ package com.tencent.angel.ml.core.optimizer.decayer
 
 import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 
-class WarmRestarts(var etaMax: Double, etaMin: Double, alpha: Double) extends StepSizeScheduler {
+class WarmRestarts(var etaMax: Double, etaMin: Double, alpha: Double)(implicit conf: SharedConf) extends StepSizeScheduler {
 
   var current: Double = 0
   var numRestart: Int = 0
-  var interval: Int =  SharedConf.get().getInt(MLCoreConf.ML_OPT_DECAY_INTERVALS,
-      MLCoreConf.DEFAULT_ML_OPT_DECAY_INTERVALS)
+  var interval: Int = conf.getInt(MLCoreConf.ML_OPT_DECAY_INTERVALS,
+    MLCoreConf.DEFAULT_ML_OPT_DECAY_INTERVALS)
 
   override def next(): Double = {
     current += 1

@@ -2,6 +2,7 @@ package com.tencent.angel.ml.core.local.variables
 
 import java.util.Random
 
+import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.utils.{OptUtils, ValueNotAllowed}
 import com.tencent.angel.ml.core.variable.{MatVariable, Updater, VariableManager}
@@ -19,7 +20,7 @@ class LocalMatVariable(name: String,
                        rowType: RowType,
                        formatClassName: String,
                        allowPullWithIndex: Boolean)
-                      (implicit variableManager: VariableManager)
+                      (implicit  conf: SharedConf, variableManager: VariableManager)
   extends LocalVariable(name, rowType, updater, formatClassName, allowPullWithIndex) with MatVariable {
   override protected var matrix: Matrix = _
 

@@ -2,6 +2,7 @@ package com.tencent.angel.ml.core.variable
 
 import java.util.concurrent
 
+import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.variable.VarState.VarState
 import com.tencent.angel.ml.math2.matrix.Matrix
@@ -9,9 +10,8 @@ import com.tencent.angel.ml.math2.vector._
 import org.apache.hadoop.conf.Configuration
 
 import scala.collection.JavaConversions._
-import scala.reflect.runtime.{universe => ru}
 
-abstract class VariableManager {
+abstract class VariableManager(val isSparseFormat: Boolean, val conf: SharedConf) {
   protected val variables = new concurrent.ConcurrentHashMap[String, Variable]()
   protected val slots = new concurrent.ConcurrentHashMap[String, Matrix]()
 
@@ -158,29 +158,5 @@ abstract class VariableManager {
     if (variable != null) {
       variable.save(envCtx, path)
     }
-  }
-}
-
-
-object VariableManager {
-  private var vmtl: ThreadLocal[VariableManager] = new ThreadLocal[VariableManager]()
-
-  def get(name: String, isSparseFormat: Boolean): VariableManager = synchronized {
-    if (vmtl.get() == null) {
-      val rtMirror = ru.runtimeMirror(getClass.getClassLoader)
-      val objModuleSymbol = rtMirror.staticModule(name)
-      val objModuleMirror = rtMirror.reflectModule(objModuleSymbol)
-      val method = objModuleMirror.symbol.typeSignature.member(ru.TermName("get")).asMethod
-      val objMirror = rtMirror.reflect(objModuleMirror.instance)
-      val result = objMirror.reflectMethod(method)(isSparseFormat)
-      vmtl.set(result.asInstanceOf[VariableManager])
-    }
-
-    vmtl.get()
-  }
-
-  def addVariable(v: Variable): Unit = {
-    assert(vmtl.get() != null)
-    vmtl.get().addVariable(v)
   }
 }

@@ -17,6 +17,7 @@
 
 package com.tencent.angel.ml.core.network.layers
 
+import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.{Graph, PlaceHolder}
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.utils.LayerKeys
@@ -30,19 +31,19 @@ import org.json4s.{Formats, ShortTypeHints}
 import scala.collection.mutable
 
 
-
 abstract class Layer(val name: String, val outputDim: Int)(implicit val graph: Graph) extends Serializable {
   private val inputs = new mutable.HashMap[String, Layer]()
   private val consumer = new mutable.HashMap[String, Layer]()
 
   protected val placeHolder: PlaceHolder = graph.placeHolder
-  protected val provider: VariableProvider =  graph.provider
+  protected val provider: VariableProvider = graph.provider
   protected val variableManager: VariableManager = provider.variableManager
 
   protected val forwardKey: String = s"$name/forward"
   protected val backwardKey: String = s"$name/backward"
 
   protected implicit val formats: Formats = Serialization.formats(ShortTypeHints(List()))
+  protected implicit val conf: SharedConf = graph.conf
 
   def addInput(layer: Layer): Unit = {
     inputs.put(layer.name, layer)
@@ -114,21 +115,21 @@ abstract class Layer(val name: String, val outputDim: Int)(implicit val graph: G
         (gradCollection, grad) match {
           case (left: RBCompIntFloatMatrix, right: RBCompIntFloatMatrix) => // embedding
             assert(left.getNumRows == right.getNumRows)
-            (0 until left.getNumRows).foreach{rowId =>
+            (0 until left.getNumRows).foreach { rowId =>
               val lparts = left.getRow(rowId).getPartitions
               val rparts = right.getRow(rowId).getPartitions
 
-              lparts.indices.foreach{partId =>
+              lparts.indices.foreach { partId =>
                 lparts(partId).iadd(rparts(partId))
               }
             }
           case (left: RBCompIntDoubleMatrix, right: RBCompIntDoubleMatrix) => // embedding
             assert(left.getNumRows == right.getNumRows)
-            (0 until left.getNumRows).foreach{rowId =>
+            (0 until left.getNumRows).foreach { rowId =>
               val lparts = left.getRow(rowId).getPartitions
               val rparts = right.getRow(rowId).getPartitions
 
-              lparts.indices.foreach{partId =>
+              lparts.indices.foreach { partId =>
                 lparts(partId).iadd(rparts(partId))
               }
             }

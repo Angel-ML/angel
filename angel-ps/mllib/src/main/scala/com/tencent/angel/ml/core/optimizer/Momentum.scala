@@ -31,7 +31,7 @@ import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 
 
-class Momentum(override var lr: Double, val momentum: Double) extends Optimizer {
+class Momentum(override var lr: Double, val momentum: Double)(implicit val conf: SharedConf) extends Optimizer {
   private val LOG = LogFactory.getLog(classOf[Momentum])
 
   override val numSlot: Int = 2
@@ -54,9 +54,7 @@ class Momentum(override var lr: Double, val momentum: Double) extends Optimizer 
 }
 
 object Momentum {
-  private val conf: SharedConf = SharedConf.get()
-
-  def fromJson(jast: JObject, provider: OptimizerProvider): Momentum = {
+  def fromJson(jast: JObject, provider: OptimizerProvider)(implicit conf: SharedConf): Momentum = {
     val psProvider = provider.asInstanceOf[PSOptimizerProvider]
     assert(psProvider.fieldEqualClassName[Momentum](jast, OptimizerKeys.typeKey))
     val lr = conf.getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)

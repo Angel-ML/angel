@@ -1,6 +1,6 @@
 package com.tencent.angel.ml.core.local
 
-import com.tencent.angel.ml.core.conf.MLCoreConf
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.local.optimizer.{Adam, Momentum, SGD}
 import com.tencent.angel.ml.core.optimizer.{Optimizer, OptimizerProvider}
 import com.tencent.angel.ml.core.utils.{LayerKeys, OptimizerKeys}
@@ -11,8 +11,9 @@ import org.json4s.native.JsonMethods._
 
 import scala.reflect.ClassTag
 
-class LocalOptimizerProvider extends OptimizerProvider {
+class LocalOptimizerProvider(conf: SharedConf) extends OptimizerProvider {
   private implicit val formats: DefaultFormats.type = DefaultFormats
+  private implicit val sharedConf: SharedConf = conf
 
   def json2String(obj: JValue): String = {
     obj \ LayerKeys.optimizerKey match {
@@ -47,11 +48,11 @@ class LocalOptimizerProvider extends OptimizerProvider {
       case JString(s) if matchClassName[Momentum](s) =>
         new Momentum(lr = 0.0001, momentum = 0.9)
       case obj: JObject if fieldEqualClassName[SGD](obj) =>
-        SGD.fromJson(obj, this)
+        SGD.fromJson(obj, this)(conf)
       case obj: JObject if fieldEqualClassName[Adam](obj) =>
-        Adam.fromJson(obj, this)
+        Adam.fromJson(obj, this)(conf)
       case obj: JObject if fieldEqualClassName[Momentum](obj) =>
-        Momentum.fromJson(obj, this)
+        Momentum.fromJson(obj, this)(conf)
       case _ => new Momentum(lr = 0.0001, momentum = 0.9)
     }
 

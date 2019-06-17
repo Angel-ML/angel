@@ -10,7 +10,7 @@ import com.tencent.angel.ml.core.network.layers.multiary._
 import com.tencent.angel.ml.core.network.layers.unary._
 import com.tencent.angel.ml.core.network.layers.leaf._
 import com.tencent.angel.ml.core.network.{Graph, TransFunc}
-import com.tencent.angel.ml.core.optimizer.Optimizer
+import com.tencent.angel.ml.core.optimizer.{Optimizer, OptimizerProvider}
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FSDataInputStream, FileSystem, Path}
@@ -68,7 +68,6 @@ object OptimizerKeys {
 
 object JsonUtils {
   private implicit val formats: DefaultFormats.type = DefaultFormats
-  private lazy val optimizerProvider = Optimizer.getOptimizerProvider(SharedConf.optJsonProvider())
 
   def extract[T: Manifest](jast: JValue, key: String, default: Option[T] = None): Option[T] = {
     jast \ key match {
@@ -147,11 +146,13 @@ object JsonUtils {
     J2Pretty(JObject(jsonMap.values.toList))
   }
 
-  def layerFromJson(conf: SharedConf)(implicit graph: Graph): Unit = {
-    layerFromJson(conf.getJson)
+  def layerFromJson(implicit graph: Graph): Unit = {
+    layerFromJson(graph.conf.getJson)
   }
 
   def layerFromJson(jast: JObject)(implicit graph: Graph): Unit = {
+    val optimizerProvider: OptimizerProvider = Optimizer.getOptimizerProvider(graph.conf.optJsonProvider(), graph.conf)
+
     val layerMap = new mutable.HashMap[String, Layer]()
     val fieldList = new util.ArrayList[JField]()
     jast.obj.foreach(field => fieldList.add(field))
@@ -284,7 +285,7 @@ object JsonUtils {
   }
 
   // for compatible purpose -----------------------------------------------------------------------------------------
-  private def jArray2JObject(jArray: JArray, default_trans: Option[JValue], default_optimizer: Option[JValue]): JObject = {
+  private def jArray2JObject(jArray: JArray, default_trans: Option[JValue], default_optimizer: Option[JValue])(implicit conf: SharedConf): JObject = {
     val fields = jArray.arr.flatMap {
       case obj: JObject if fieldEqualClassName[FCLayer](obj) =>
         extendFCLayer(obj, default_trans, default_optimizer)
@@ -299,7 +300,7 @@ object JsonUtils {
     JObject(fields)
   }
 
-  private def extendFCLayer(obj: JObject, default_trans: Option[JValue], default_optimizer: Option[JValue]): List[JField] = {
+  private def extendFCLayer(obj: JObject, default_trans: Option[JValue], default_optimizer: Option[JValue])(implicit conf: SharedConf): List[JField] = {
     val name = (obj \ "name").asInstanceOf[JString].values
     val lType = obj \ LayerKeys.typeKey
     var inputLayer = obj \ LayerKeys.inputLayerKey
@@ -314,7 +315,7 @@ object JsonUtils {
     assert(outputDims.size == transFuncs.size)
 
     val optimizer = (obj \ LayerKeys.optimizerKey) match {
-      case JNothing => default_optimizer.getOrElse(defaultOptJson())
+      case JNothing => default_optimizer.getOrElse(defaultOptJson(conf))
       case opt: JObject => opt
       case opt: JString => opt
       case _ => throw MLException("Json format error!")
@@ -346,10 +347,10 @@ object JsonUtils {
 
   }
 
-  private def extendSimpleInputLayer(obj: JObject, default_trans: Option[JValue], default_optimizer: Option[JValue]): List[JField] = {
+  private def extendSimpleInputLayer(obj: JObject, default_trans: Option[JValue], default_optimizer: Option[JValue])(implicit conf: SharedConf): List[JField] = {
     val name = (obj \ "name").asInstanceOf[JString].values
     val addOpt = (obj \ LayerKeys.optimizerKey) match {
-      case JNothing => obj ~ (LayerKeys.optimizerKey, default_optimizer.getOrElse(defaultOptJson()))
+      case JNothing => obj ~ (LayerKeys.optimizerKey, default_optimizer.getOrElse(defaultOptJson(conf)))
       case _ => obj
     }
     val addTrans = (obj \ LayerKeys.transFuncKey) match {
@@ -360,10 +361,10 @@ object JsonUtils {
     List(JField(name, addTrans))
   }
 
-  private def extendEmbeddingLayer(obj: JObject, default_trans: Option[JValue], default_optimizer: Option[JValue]): List[JField] = {
+  private def extendEmbeddingLayer(obj: JObject, default_trans: Option[JValue], default_optimizer: Option[JValue])(implicit conf: SharedConf): List[JField] = {
     val name = (obj \ "name").asInstanceOf[JString].values
     val addOpt = (obj \ LayerKeys.optimizerKey) match {
-      case JNothing => obj ~ (LayerKeys.optimizerKey, default_optimizer.getOrElse(defaultOptJson()))
+      case JNothing => obj ~ (LayerKeys.optimizerKey, default_optimizer.getOrElse(defaultOptJson(conf)))
       case _ => obj
     }
 
@@ -376,8 +377,7 @@ object JsonUtils {
     List(JField(name, obj))
   }
 
-  private def defaultOptJson(): JObject = {
-    val conf: SharedConf = SharedConf.get()
+  private def defaultOptJson(conf: SharedConf): JObject = {
     val momentum: Double = conf.getDouble(MLCoreConf.ML_OPT_MOMENTUM_MOMENTUM,
       MLCoreConf.DEFAULT_ML_OPT_MOMENTUM_MOMENTUM)
 
@@ -465,7 +465,7 @@ object JsonUtils {
     }
 
     val json = (jast \ JsonTopKeys.layers) match {
-      case arr: JArray => jArray2JObject(arr, default_trandfunc, default_optimizer)
+      case arr: JArray => jArray2JObject(arr, default_trandfunc, default_optimizer)(conf)
       case obj: JObject => obj
       case _ => throw MLException("Json format error!")
     }

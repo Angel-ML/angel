@@ -26,7 +26,7 @@ import org.json4s.JsonAST.JObject
 trait Optimizer extends Updater with Serializable {
   var lr: Double
   val epsilon: Double = 1e-10
-  val conf: SharedConf = SharedConf.get()
+  implicit val conf: SharedConf
 
   protected var regL1Param: Double = conf.getDouble(MLCoreConf.ML_REG_L1, MLCoreConf.DEFAULT_ML_REG_L1)
   protected var regL2Param: Double = conf.getDouble(MLCoreConf.ML_REG_L2, MLCoreConf.DEFAULT_ML_REG_L2)
@@ -56,13 +56,10 @@ trait Optimizer extends Updater with Serializable {
 }
 
 object Optimizer {
-  def getOptimizerProvider(className: String): OptimizerProvider = {
+  def getOptimizerProvider(className: String, conf: SharedConf): OptimizerProvider = {
     val cls = Class.forName(className)
-    cls.newInstance().asInstanceOf[OptimizerProvider]
-  }
-
-  def getOptimizerProvider(cls: Class[_ <: OptimizerProvider]): OptimizerProvider = {
-    cls.newInstance()
+    val constructor = cls.getConstructor(classOf[SharedConf])
+    constructor.newInstance(conf).asInstanceOf[OptimizerProvider]
   }
 }
 

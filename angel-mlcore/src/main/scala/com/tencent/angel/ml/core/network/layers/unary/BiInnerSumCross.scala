@@ -18,7 +18,6 @@
 
 package com.tencent.angel.ml.core.network.layers.unary
 
-import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.utils.MLException
@@ -74,7 +73,7 @@ class BiInnerSumCross(name: String, inputLayer: Layer)(implicit graph: Graph)
   }
 
   override protected def doBackward(input: Matrix, gradInput: Matrix): Matrix = {
-    SharedConf.valueType() match {
+    conf.valueType() match {
       case "double" =>
         val inputData = input.asInstanceOf[RBCompIntDoubleMatrix]
         val sumVector = VFactory.denseDoubleVector(inputData.getSubDim)

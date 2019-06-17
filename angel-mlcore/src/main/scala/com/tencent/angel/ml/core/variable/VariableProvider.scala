@@ -1,8 +1,9 @@
 package com.tencent.angel.ml.core.variable
 
+import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.PlaceHolder
 
-abstract class VariableProvider(implicit val variableManager: VariableManager) {
+abstract class VariableProvider(implicit val conf: SharedConf, val variableManager: VariableManager) {
   def getMatVariable(name: String, numRows: Long, numCols: Long, updater: Updater,
                      formatClassName: String, allowPullWithIndex: Boolean): MatVariable
 

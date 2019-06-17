@@ -1,5 +1,6 @@
 package com.tencent.angel.ml.core.local
 
+import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.variable.VariableManager
 import com.tencent.angel.ml.math2.vector.Vector
@@ -7,7 +8,8 @@ import org.apache.hadoop.conf.Configuration
 
 import scala.collection.JavaConversions._
 
-class LocalVariableManager private(isSparseFormat: Boolean) extends VariableManager {
+class LocalVariableManager(isSparseFormat: Boolean, conf: SharedConf)
+  extends VariableManager(isSparseFormat, conf) {
 
   override def createALL[T](envCtx: EnvContext[T]): Unit = {
     variables.values().foreach { variable => variable.create(envCtx) }
@@ -46,14 +48,3 @@ class LocalVariableManager private(isSparseFormat: Boolean) extends VariableMana
   }
 }
 
-object LocalVariableManager {
-  private var vmtl: ThreadLocal[VariableManager] = new ThreadLocal[VariableManager]()
-
-  def get(isSparseFormat: Boolean): VariableManager = synchronized {
-    if (vmtl.get() == null) {
-      vmtl.set(new LocalVariableManager(isSparseFormat))
-    }
-
-    vmtl.get()
-  }
-}

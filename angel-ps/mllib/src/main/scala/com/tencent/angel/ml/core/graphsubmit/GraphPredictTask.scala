@@ -28,8 +28,7 @@ import org.apache.hadoop.io.{LongWritable, Text}
 class GraphPredictTask(ctx: TaskContext) extends PredictTask[LongWritable, Text](ctx) {
 
   def predict(ctx: TaskContext): Unit = {
-    val modelClassName = SharedConf.modelClassName
-    val model: AngelModel = AngelModel(modelClassName, conf, ctx)
+    val model: AngelModel = new AngelModel(sharedConf, ctx.getTotalTaskNum)
     model.buildNetwork()
     model.createMatrices(AngelEnvContext(null))
     predict(ctx, model, taskDataBlock)
