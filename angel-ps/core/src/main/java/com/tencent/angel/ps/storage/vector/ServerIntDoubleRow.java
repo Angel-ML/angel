@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,6 +18,7 @@
 
 package com.tencent.angel.ps.storage.vector;
 
+import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.RowType;
@@ -28,13 +29,13 @@ import com.tencent.angel.ps.storage.vector.func.DoubleElemUpdateFunc;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-
 import java.io.IOException;
 
 /**
  * The row with "int" index type and "double" value type in PS
  */
 public class ServerIntDoubleRow extends ServerDoubleRow {
+
   /**
    * Just a view of "row" in ServerRow
    */
@@ -53,15 +54,15 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
   /**
    * Create a new ServerIntDoubleRow
    *
-   * @param rowId      row index
-   * @param rowType    row type
-   * @param startCol   start position
-   * @param endCol     end position
+   * @param rowId row index
+   * @param rowType row type
+   * @param startCol start position
+   * @param endCol end position
    * @param estElemNum the estimate element number
-   * @param innerRow   inner row
+   * @param innerRow inner row
    */
   public ServerIntDoubleRow(int rowId, RowType rowType, int startCol, int endCol, int estElemNum,
-    IntDoubleVector innerRow) {
+      IntDoubleVector innerRow) {
     super(rowId, rowType, startCol, endCol, estElemNum, innerRow);
     this.startColInt = startCol;
     this.endColInt = endCol;
@@ -71,10 +72,10 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
   /**
    * Create a new ServerIntDoubleRow
    *
-   * @param rowId      row index
-   * @param rowType    row type
-   * @param startCol   start position
-   * @param endCol     end position
+   * @param rowId row index
+   * @param rowType row type
+   * @param startCol start position
+   * @param endCol end position
    * @param estElemNum the estimate element number
    */
   public ServerIntDoubleRow(int rowId, RowType rowType, int startCol, int endCol, int estElemNum) {
@@ -133,7 +134,7 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
    * Set a batch elements values without lock
    *
    * @param indices elements indices
-   * @param values  elements values
+   * @param values elements values
    */
   public void set(int[] indices, double[] values) {
     assert indices.length == values.length;
@@ -156,7 +157,7 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
    * Add a batch elements values without lock
    *
    * @param indices elements indices
-   * @param values  elements plus values
+   * @param values elements plus values
    */
   public void addTo(int[] indices, double[] values) {
     assert indices.length == values.length;
@@ -175,8 +176,8 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
   }
 
   /**
-   * Get all element indices and values without lock, you must check the storage is sparse first use "isSparse";
-   * if you want use original indices, you must plus with "startCol" first
+   * Get all element indices and values without lock, you must check the storage is sparse first use
+   * "isSparse"; if you want use original indices, you must plus with "startCol" first
    *
    * @return all element values
    */
@@ -184,7 +185,8 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
     return intDoubleRow.getStorage().entryIterator();
   }
 
-  @Override public void update(RowType updateType, ByteBuf buf, UpdateOp op) {
+  @Override
+  public void update(RowType updateType, ByteBuf buf, UpdateOp op) {
     startWrite();
     try {
       switch (updateType) {
@@ -230,7 +232,7 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
 
         default: {
           throw new UnsupportedOperationException(
-            "Unsupport operation: update " + updateType + " to " + this.getClass().getName());
+              "Unsupport operation: update " + updateType + " to " + this.getClass().getName());
         }
       }
 
@@ -349,7 +351,8 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
   }
 
 
-  @Override public int size() {
+  @Override
+  public int size() {
     return intDoubleRow.size();
   }
 
@@ -379,7 +382,8 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
     }
   }
 
-  @Override protected void serializeRow(ByteBuf buf) {
+  @Override
+  protected void serializeRow(ByteBuf buf) {
     if (useDenseSerialize()) {
       double[] values = getValues();
       for (int i = 0; i < values.length; i++) {
@@ -396,7 +400,8 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
     }
   }
 
-  @Override protected void deserializeRow(ByteBuf buf) {
+  @Override
+  protected void deserializeRow(ByteBuf buf) {
     startColInt = (int) startCol;
     endColInt = (int) endCol;
     intDoubleRow = (IntDoubleVector) row;
@@ -411,7 +416,8 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
     }
   }
 
-  @Override protected int getRowSpace() {
+  @Override
+  protected int getRowSpace() {
     if (useDenseSerialize()) {
       return 8 * size();
     } else {
@@ -419,11 +425,31 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
     }
   }
 
-  @Override public ServerRow clone() {
+  @Override
+  public ServerRow clone() {
     startRead();
     try {
       return new ServerIntDoubleRow(rowId, rowType, startColInt, endColInt, (int) estElemNum,
-        intDoubleRow.clone());
+          intDoubleRow.clone());
+    } finally {
+      endRead();
+    }
+  }
+
+  @Override
+  public ServerRow
+adaptiveClone() {
+    startRead();
+    try {
+      if (intDoubleRow.isSparse()) {
+        return new ServerIntDoubleRow(rowId, rowType, startColInt, endColInt, (int) estElemNum,
+            VFactory
+                .sortedDoubleVector(endColInt - startColInt, intDoubleRow.getStorage().getIndices(),
+                    intDoubleRow.getStorage().getValues()));
+      } else {
+        return new ServerIntDoubleRow(rowId, rowType, startColInt, endColInt, (int) estElemNum,
+            intDoubleRow);
+      }
     } finally {
       endRead();
     }
@@ -455,7 +481,7 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
 
   @Override
   public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
-    throws IOException {
+      throws IOException {
     if (func != null) {
       if (indexType == IndexType.INT) {
         for (int i = 0; i < indexSize; i++) {
@@ -475,7 +501,8 @@ public class ServerIntDoubleRow extends ServerDoubleRow {
     }
   }
 
-  @Override public void setSplit(Vector row) {
+  @Override
+  public void setSplit(Vector row) {
     super.setSplit(row);
     intDoubleRow = (IntDoubleVector) row;
   }
