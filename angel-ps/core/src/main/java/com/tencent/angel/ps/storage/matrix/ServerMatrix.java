@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -23,13 +23,14 @@ import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.PartitionMeta;
 import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.storage.vector.ServerRow;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.*;
-
 /**
- * The Server matrix on parameter server,assigned by {@link com.tencent.angel.master.AngelApplicationMaster},which represents a set of partitions of matrix
+ * The Server matrix on parameter server,assigned by {@link com.tencent.angel.master.AngelApplicationMaster},which
+ * represents a set of partitions of matrix
  */
 public class ServerMatrix {
 
@@ -54,13 +55,14 @@ public class ServerMatrix {
   /**
    * Create a new Server matrix by matrix partition.
    *
-   * @param matrixMeta the matrix partition contains a set of partitions, which need to load on Parameter Server
+   * @param matrixMeta the matrix partition contains a set of partitions, which need to load on
+   * Parameter Server
    */
   public ServerMatrix(MatrixMeta matrixMeta, PSContext context) {
     this.context = context;
 
     LOG.info(
-      "Creating a Server Matrix, id: " + matrixMeta.getId() + ", name: " + matrixMeta.getName());
+        "Creating a Server Matrix, id: " + matrixMeta.getId() + ", name: " + matrixMeta.getName());
     partitionMaps = new HashMap<>(matrixMeta.getPartitionMetas().size());
     matrixId = matrixMeta.getId();
     matrixName = matrixMeta.getName();
@@ -74,7 +76,8 @@ public class ServerMatrix {
         AngelConf.DEFAULT_ANGEL_PS_PARTITION_SOURCE_CLASS);
 
     for (PartitionMeta partMeta : partMetas.values()) {
-      ServerPartition part = new ServerPartition(partMeta.getPartitionKey(), matrixMeta.getRowType(),
+      ServerPartition part = new ServerPartition(partMeta.getPartitionKey(),
+          matrixMeta.getRowType(),
           matrixMeta.getEstSparsity(), sourceClass);
       partitionMaps.put(partMeta.getPartId(), part);
       part.init();
@@ -115,8 +118,7 @@ public class ServerMatrix {
    * Get row split
    *
    * @param partId partition id
-   * @param rowId  row index
-   * @return
+   * @param rowId row index
    */
   public ServerRow getRow(int partId, int rowId) {
     ServerPartition part = getPartition(partId);
@@ -128,6 +130,7 @@ public class ServerMatrix {
 
   /**
    * Get all partitions in this ServerMatrix
+   *
    * @return all partitions in this ServerMatrix
    */
   public Map<Integer, ServerPartition> getPartitions() {
