@@ -249,6 +249,15 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
   }
 
   private[spark] def conf: Map[String, String] = angelConf
+
+  override def createMatrix(mc: MatrixContext): MatrixMeta = {
+    //assertCallByDriver("The operation of creating a matrix can only be called on the driver side.")
+    psAgent.createMatrix(mc, 5000L)
+    val meta = psAgent.getMatrix(mc.getName)
+    matrixCounter += 1
+    matrixMetaMap(meta.getId) = meta
+    meta
+  }
 }
 
 private[spark] object AngelPSContext {

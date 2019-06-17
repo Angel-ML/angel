@@ -153,7 +153,7 @@ public class ComplexMatrixTest {
 
     // Init graph adj table
     InitNeighbor func = new InitNeighbor(new InitNeighborParam(matrixW1Id, adjMap));
-    client1.update(func).get();
+    client1.update(func);
 
     int [] nodeIds = new int[adjMap.size()];
     int i = 0;
