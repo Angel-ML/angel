@@ -127,7 +127,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
 
     partMeta.setSaveRowNum(rowIds.size());
     for (int rowId : rowIds) {
-      ServerRow row = rows.getRow(rowId).clone();
+      ServerRow row = rows.getRow(rowId);
       RowPartitionMeta rowMeta = new RowPartitionMeta(rowId, 0, 0);
       if (row != null) {
         rowMeta.setElementNum(row.size());
