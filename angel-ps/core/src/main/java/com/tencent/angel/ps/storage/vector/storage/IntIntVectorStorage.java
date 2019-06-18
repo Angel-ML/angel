@@ -18,6 +18,7 @@
 
 package com.tencent.angel.ps.storage.vector.storage;
 
+import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.IntIntVector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
@@ -32,6 +33,7 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
  * A int key double value storage: use a IntIntVector as storage
  */
 public class IntIntVectorStorage extends IntIntStorage {
+
   /**
    * A vector storage: it can use DENSE,SPARSE and SORTED storage type
    */
@@ -42,7 +44,7 @@ public class IntIntVectorStorage extends IntIntStorage {
     this.vector = vector;
   }
 
-  public IntIntVectorStorage(){
+  public IntIntVectorStorage() {
     this(null, 0L);
   }
 
@@ -56,7 +58,7 @@ public class IntIntVectorStorage extends IntIntStorage {
 
   @Override
   public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func) {
-    if(indexType != IndexType.INT) {
+    if (indexType != IndexType.INT) {
       throw new UnsupportedOperationException(
           this.getClass().getName() + " only support int type index now");
     }
@@ -180,6 +182,17 @@ public class IntIntVectorStorage extends IntIntStorage {
   @Override
   public boolean isSorted() {
     return VectorStorageUtils.isSorted(vector);
+  }
+
+  @Override
+  public IntIntVectorStorage adaptiveClone() {
+    if(isSparse()) {
+      return new IntIntVectorStorage(VFactory
+          .sortedIntVector(vector.getDim(), vector.getStorage().getIndices(),
+              vector.getStorage().getValues()), indexOffset);
+    } else {
+      return this;
+    }
   }
 
   @Override

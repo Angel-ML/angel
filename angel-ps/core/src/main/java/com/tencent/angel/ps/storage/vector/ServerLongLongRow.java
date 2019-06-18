@@ -18,11 +18,11 @@
 
 package com.tencent.angel.ps.storage.vector;
 
-import com.tencent.angel.ml.math2.vector.*;
+import com.tencent.angel.ml.math2.vector.IntLongVector;
+import com.tencent.angel.ml.math2.vector.LongLongVector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
 import com.tencent.angel.ps.server.data.request.InitFunc;
-import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.func.LongElemUpdateFunc;
 import com.tencent.angel.ps.storage.vector.op.ILongLongOp;
 import com.tencent.angel.ps.storage.vector.storage.LongLongStorage;
@@ -32,27 +32,28 @@ import io.netty.buffer.ByteBuf;
  * The row with "long" index type and "long" value type in PS
  */
 public class ServerLongLongRow extends ServerBasicTypeRow implements ILongLongOp {
+
   /**
    * Create a new ServerIntDoubleRow
    *
-   * @param rowId      row index
-   * @param rowType    row type
-   * @param startCol   start position
-   * @param endCol     end position
+   * @param rowId row index
+   * @param rowType row type
+   * @param startCol start position
+   * @param endCol end position
    * @param estElemNum the estimate element number
    */
   public ServerLongLongRow(int rowId, RowType rowType, long startCol, long endCol, int estElemNum,
-    LongLongStorage storage) {
+      LongLongStorage storage) {
     super(rowId, rowType, startCol, endCol, estElemNum, storage);
   }
 
   /**
    * Create a new ServerIntDoubleRow
    *
-   * @param rowId      row index
-   * @param rowType    row type
-   * @param startCol   start position
-   * @param endCol     end position
+   * @param rowId row index
+   * @param rowType row type
+   * @param startCol start position
+   * @param endCol end position
    * @param estElemNum the estimate element number
    */
   public ServerLongLongRow(int rowId, RowType rowType, long startCol, long endCol, int estElemNum) {
@@ -110,7 +111,8 @@ public class ServerLongLongRow extends ServerBasicTypeRow implements ILongLongOp
     getStorage().addTo(indices, values);
   }
 
-  @Override public int size() {
+  @Override
+  public int size() {
     return getStorage().size();
   }
 
@@ -124,7 +126,8 @@ public class ServerLongLongRow extends ServerBasicTypeRow implements ILongLongOp
     }
   }
 
-  @Override public ServerRow deepClone() {
+  @Override
+  public ServerRow deepClone() {
     startRead();
     try {
       return new ServerLongLongRow(rowId, rowType, startCol, endCol, (int) estElemNum,
@@ -135,6 +138,23 @@ public class ServerLongLongRow extends ServerBasicTypeRow implements ILongLongOp
   }
 
   @Override
+  public ServerRow
+  adaptiveClone() {
+    startRead();
+    try {
+      return new ServerLongLongRow(rowId, rowType, startCol, endCol, (int) estElemNum,
+          (LongLongStorage) storage.adaptiveClone());
+    } finally {
+      endRead();
+    }
+  }
+
+  /**
+   * Check the vector contains the index or not
+   *
+   * @param index element index
+   * @return true means exist
+   */
   public boolean exist(long index) {
     return getStorage().exist(index);
   }

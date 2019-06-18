@@ -32,6 +32,7 @@ public abstract class ObjectTypeStorage extends Storage {
    * Object class
    */
   protected Class<? extends IElement> objectClass;
+
   public ObjectTypeStorage(Class<? extends IElement> objectClass, long indexOffset) {
     super(indexOffset);
     this.objectClass = objectClass;

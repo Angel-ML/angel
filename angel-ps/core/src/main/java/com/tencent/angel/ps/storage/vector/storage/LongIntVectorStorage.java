@@ -18,6 +18,7 @@
 
 package com.tencent.angel.ps.storage.vector.storage;
 
+import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.IntIntVector;
 import com.tencent.angel.ml.math2.vector.IntVector;
 import com.tencent.angel.ml.math2.vector.LongIntVector;
@@ -38,8 +39,8 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 public class LongIntVectorStorage extends LongIntStorage {
 
   /**
-   * A vector storage: it can be IntIntVector or LongIntVector and can use DENSE,SPARSE and
-   * SORTED storage type
+   * A vector storage: it can be IntIntVector or LongIntVector and can use DENSE,SPARSE and SORTED
+   * storage type
    */
   private IntVector vector;
 
@@ -294,6 +295,23 @@ public class LongIntVectorStorage extends LongIntStorage {
   @Override
   public boolean isSorted() {
     return VectorStorageUtils.isSorted(vector);
+  }
+
+  @Override
+  public LongIntVectorStorage adaptiveClone() {
+    if (isSparse()) {
+      if (VectorStorageUtils.useIntKey(vector)) {
+        return new LongIntVectorStorage(VFactory.sortedIntVector((int) vector.dim(),
+            ((IntIntVector) vector).getStorage().getIndices(),
+            ((IntIntVector) vector).getStorage().getValues()), indexOffset);
+      } else {
+        return new LongIntVectorStorage(VFactory.sortedLongKeyIntVector(vector.dim(),
+            ((LongIntVector) vector).getStorage().getIndices(),
+            ((LongIntVector) vector).getStorage().getValues()), indexOffset);
+      }
+    } else {
+      return this;
+    }
   }
 
   @Override

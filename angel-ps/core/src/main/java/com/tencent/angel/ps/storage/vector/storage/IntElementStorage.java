@@ -24,6 +24,7 @@ import com.tencent.angel.ps.storage.vector.op.IIntElementOp;
  * Base class for int key complex value storage
  */
 public abstract class IntElementStorage extends ObjectTypeStorage implements IIntElementOp {
+
   public IntElementStorage(Class<? extends IElement> objectClass, long indexOffset) {
     super(objectClass, indexOffset);
     this.objectClass = objectClass;

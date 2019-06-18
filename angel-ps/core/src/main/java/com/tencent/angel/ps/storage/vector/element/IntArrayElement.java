@@ -27,7 +27,7 @@ public class IntArrayElement implements IElement {
 
   private int[] data;
 
-  public IntArrayElement(int [] data) {
+  public IntArrayElement(int[] data) {
     this.data = data;
   }
 
@@ -42,7 +42,7 @@ public class IntArrayElement implements IElement {
   @Override
   public void serialize(ByteBuf buf) {
     buf.writeInt(data.length);
-    for(int i = 0; i < data.length; i++) {
+    for (int i = 0; i < data.length; i++) {
       buf.writeInt(data[i]);
     }
   }
@@ -50,7 +50,7 @@ public class IntArrayElement implements IElement {
   @Override
   public void deserialize(ByteBuf buf) {
     data = new int[buf.readInt()];
-    for(int i = 0; i < data.length; i++) {
+    for (int i = 0; i < data.length; i++) {
       data[i] = buf.readInt();
     }
   }
@@ -62,7 +62,7 @@ public class IntArrayElement implements IElement {
 
   @Override
   public IntArrayElement deepClone() {
-    int [] newData = new int[data.length];
+    int[] newData = new int[data.length];
     System.arraycopy(data, 0, newData, 0, data.length);
     return new IntArrayElement(newData);
   }

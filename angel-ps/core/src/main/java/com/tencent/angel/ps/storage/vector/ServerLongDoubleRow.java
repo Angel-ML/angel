@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,13 +18,12 @@
 
 package com.tencent.angel.ps.storage.vector;
 
-import com.tencent.angel.ml.math2.vector.*;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.LongDoubleVector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
 import com.tencent.angel.ps.server.data.request.InitFunc;
-import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.func.DoubleElemUpdateFunc;
-import com.tencent.angel.ps.storage.vector.op.BasicTypePipelineOp;
 import com.tencent.angel.ps.storage.vector.op.ILongDoubleOp;
 import com.tencent.angel.ps.storage.vector.storage.LongDoubleStorage;
 import io.netty.buffer.ByteBuf;
@@ -33,39 +32,38 @@ import io.netty.buffer.ByteBuf;
  * The row with "long" index type and "double" value type in PS
  */
 public class ServerLongDoubleRow extends ServerBasicTypeRow implements ILongDoubleOp {
+
   /**
    * Create a new ServerIntDoubleRow
    *
-   * @param rowId      row index
-   * @param rowType    row type
-   * @param startCol   start position
-   * @param endCol     end position
+   * @param rowId row index
+   * @param rowType row type
+   * @param startCol start position
+   * @param endCol end position
    * @param estElemNum the estimate element number
-   * @param storage   the inner row
+   * @param storage the inner row
    */
   public ServerLongDoubleRow(int rowId, RowType rowType, long startCol, long endCol, int estElemNum,
-    LongDoubleStorage storage) {
+      LongDoubleStorage storage) {
     super(rowId, rowType, startCol, endCol, estElemNum, storage);
   }
 
   /**
    * Create a new ServerIntDoubleRow
    *
-   * @param rowId      row index
-   * @param rowType    row type
-   * @param startCol   start position
-   * @param endCol     end position
+   * @param rowId row index
+   * @param rowType row type
+   * @param startCol start position
+   * @param endCol end position
    * @param estElemNum the estimate element number
    */
   public ServerLongDoubleRow(int rowId, RowType rowType, long startCol, long endCol,
-    int estElemNum) {
+      int estElemNum) {
     this(rowId, rowType, startCol, endCol, estElemNum, null);
   }
 
   /**
    * Create a new ServerLongDoubleRow
-   *
-   * @param rowType
    */
   public ServerLongDoubleRow(RowType rowType) {
     this(0, rowType, 0, 0, 0);
@@ -113,7 +111,8 @@ public class ServerLongDoubleRow extends ServerBasicTypeRow implements ILongDoub
     getStorage().addTo(indices, values);
   }
 
-  @Override public int size() {
+  @Override
+  public int size() {
     return getStorage().size();
   }
 
@@ -127,7 +126,8 @@ public class ServerLongDoubleRow extends ServerBasicTypeRow implements ILongDoub
     }
   }
 
-  @Override public ServerRow deepClone() {
+  @Override
+  public ServerRow deepClone() {
     startRead();
     try {
       return new ServerLongDoubleRow(rowId, rowType, startCol, endCol, (int) estElemNum,
@@ -138,6 +138,22 @@ public class ServerLongDoubleRow extends ServerBasicTypeRow implements ILongDoub
   }
 
   @Override
+  public ServerRow adaptiveClone() {
+    startRead();
+    try {
+      return new ServerLongDoubleRow(rowId, rowType, startCol, endCol, (int) estElemNum,
+          (LongDoubleStorage) storage.adaptiveClone());
+    } finally {
+      endRead();
+    }
+  }
+
+  /**
+   * Check the vector contains the index or not
+   *
+   * @param index element index
+   * @return true means exist
+   */
   public boolean exist(long index) {
     return getStorage().exist(index);
   }

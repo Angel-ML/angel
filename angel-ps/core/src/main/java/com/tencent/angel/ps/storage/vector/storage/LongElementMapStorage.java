@@ -110,6 +110,11 @@ public class LongElementMapStorage extends LongElementStorage {
   }
 
   @Override
+  public LongElementMapStorage adaptiveClone() {
+    return this;
+  }
+
+  @Override
   public void serialize(ByteBuf buf) {
     super.serialize(buf);
     // Valid element number

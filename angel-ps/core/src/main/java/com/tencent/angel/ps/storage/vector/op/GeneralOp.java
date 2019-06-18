@@ -62,6 +62,12 @@ public interface GeneralOp extends DeepClone, Serialize {
   boolean isSorted();
 
   /**
+   * Use different clone method as storage method
+   * @return clone object
+   */
+  Object adaptiveClone();
+
+  /**
    * Pipeline update interface
    *
    * @param updateType update data storage method

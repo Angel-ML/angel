@@ -27,6 +27,7 @@ public abstract class BasicTypeStorage extends Storage implements BasicTypePipel
   public BasicTypeStorage(long indexOffset) {
     super(indexOffset);
   }
+
   public BasicTypeStorage() {
     this(0L);
   }

@@ -25,13 +25,11 @@ import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.op.GeneralOp;
 import com.tencent.angel.ps.storage.vector.storage.IStorage;
 import com.tencent.angel.utils.StringUtils;
-
 import io.netty.buffer.ByteBuf;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * ServerRow is the storage unit at PS Server when using RowBlock as storage format. Each Row from
@@ -95,7 +93,7 @@ public abstract class ServerRow implements Serialize, GeneralOp {
   }
 
   public void init() {
-    if(storage == null) {
+    if (storage == null) {
       initStorage();
     }
   }

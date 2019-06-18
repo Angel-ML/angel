@@ -17,6 +17,7 @@
 
 package com.tencent.angel.ps.storage.vector.storage;
 
+import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
@@ -57,7 +58,7 @@ public class IntDoubleVectorStorage extends IntDoubleStorage {
 
   @Override
   public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func) {
-    if(indexType != IndexType.INT) {
+    if (indexType != IndexType.INT) {
       throw new UnsupportedOperationException(
           this.getClass().getName() + " only support int type index now");
     }
@@ -397,6 +398,17 @@ public class IntDoubleVectorStorage extends IntDoubleStorage {
   @Override
   public boolean isSorted() {
     return VectorStorageUtils.isSorted(vector);
+  }
+
+  @Override
+  public IntDoubleVectorStorage adaptiveClone() {
+    if(isSparse()) {
+      return new IntDoubleVectorStorage(VFactory
+          .sortedDoubleVector(vector.getDim(), vector.getStorage().getIndices(),
+              vector.getStorage().getValues()), indexOffset);
+    } else {
+      return this;
+    }
   }
 
   @Override

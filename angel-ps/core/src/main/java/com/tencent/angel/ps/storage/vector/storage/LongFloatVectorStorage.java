@@ -18,6 +18,7 @@
 
 package com.tencent.angel.ps.storage.vector.storage;
 
+import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.FloatVector;
 import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.ml.math2.vector.LongFloatVector;
@@ -625,6 +626,23 @@ public class LongFloatVectorStorage extends LongFloatStorage {
   @Override
   public boolean isSorted() {
     return VectorStorageUtils.isSorted(vector);
+  }
+
+  @Override
+  public LongFloatVectorStorage adaptiveClone() {
+    if (isSparse()) {
+      if (VectorStorageUtils.useIntKey(vector)) {
+        return new LongFloatVectorStorage(VFactory.sortedFloatVector((int) vector.dim(),
+            ((IntFloatVector) vector).getStorage().getIndices(),
+            ((IntFloatVector) vector).getStorage().getValues()), indexOffset);
+      } else {
+        return new LongFloatVectorStorage(VFactory.sortedLongKeyFloatVector(vector.dim(),
+            ((LongFloatVector) vector).getStorage().getIndices(),
+            ((LongFloatVector) vector).getStorage().getValues()), indexOffset);
+      }
+    } else {
+      return this;
+    }
   }
 
   @Override

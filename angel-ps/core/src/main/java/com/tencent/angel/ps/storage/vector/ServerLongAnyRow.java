@@ -74,6 +74,12 @@ public class ServerLongAnyRow extends ServerComplexTypeRow implements ILongEleme
   }
 
   @Override
+  public ServerRow adaptiveClone() {
+    return new ServerLongAnyRow(valueType, rowId, rowType, startCol, endCol, estElemNum,
+        (LongElementStorage) getStorage().adaptiveClone());
+  }
+
+  @Override
   public ServerRow deepClone() {
     return new ServerLongAnyRow(valueType, rowId, rowType, startCol, endCol, estElemNum,
         (LongElementStorage) getStorage().deepClone());
