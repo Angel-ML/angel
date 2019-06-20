@@ -22,6 +22,7 @@ angel-ps/tools/target/
 angel-ps/mllib/target/
 angel-ps/tools/target/
 angel-ps/serving/target/
+angel-ps/graph/target/
 angel-ps/target/
 angel-ps/core/log/
 angel-ps/psf/log/

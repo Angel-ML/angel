@@ -17,6 +17,7 @@
 
 package com.tencent.angel.spark.ml.graph.commonfriends
 
+import com.tencent.angel.spark.ml.graph.utils.PartitionTools
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 
@@ -26,12 +27,12 @@ import scala.collection.mutable.ArrayBuffer
 object CommonFriendsGraph{
 
   def edgeTupleRDD2GraphPartitions(tupleRdd: RDD[(Int, Int)],
-                                   model: CommonFriendsPSModel = null,
+                                   maxNodeId: Int,
                                    numPartition: Option[Int] = None,
                                    storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
   : RDD[CommonFriendsPartition] = {
-
     val partNum = numPartition.getOrElse(tupleRdd.getNumPartitions)
+    val partitioner = PartitionTools.rangePartitioner(maxNodeId, partNum)
     tupleRdd.groupByKey(partNum).mapPartitions { iter =>
       if (iter.nonEmpty) {
         val keys = new ArrayBuffer[Int]()
@@ -40,19 +41,35 @@ object CommonFriendsGraph{
           keys += key
           neighbors += group.toArray
         }
-        Iterator.single((keys.toArray, neighbors.toArray))
+        Iterator.single(new CommonFriendsPartition(keys.toArray, neighbors.toArray))
       } else {
         Iterator.empty
       }
-    }.map { case (keys, neighbors) =>
-      new CommonFriendsPartition(keys, neighbors)
     }.persist(storageLevel)
   }
 
 }
 
 
-class CommonFriendsGraph(@transient val graph: CommonFriendsGraph,
-                         cfPSModel: CommonFriendsPSModel) {
+class CommonFriendsGraph(@transient val graphParts: RDD[CommonFriendsPartition],
+                         cfPSModel: CommonFriendsPSModel) extends Serializable {
 
+  def getDegree(): RDD[Int] = {
+    graphParts.map(_.totalDegree())
+  }
+
+  def run(): RDD[((Int, Int), Int)] = {
+    val result = graphParts.flatMap(_.runEachPartition(cfPSModel))
+    println(s"======results with encoded node index======")
+    result.take(10).foreach{ item =>
+      println(s"src = ${item._1._1}, ds = ${item._1._2}, num of common friends = ${item._2}")
+    }
+    result
+  }
+
+  def save(path: String, cfRDD: RDD[((Int, Int), Int)]): Unit = {
+    cfRDD.map { case ((srcNode, dstNode), numFriends) =>
+        s"($srcNode,$dstNode), $numFriends "
+    }.saveAsTextFile(path)
+  }
 }
