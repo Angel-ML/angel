@@ -18,6 +18,7 @@
 package com.tencent.angel.ps.storage.vector.storage;
 
 
+import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.IntLongVector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
@@ -307,6 +308,17 @@ public class IntLongVectorStorage extends IntLongStorage {
   }
 
   @Override
+  public IntLongVectorStorage adaptiveClone() {
+    if(isSparse()) {
+      return new IntLongVectorStorage(VFactory
+          .sortedLongVector(vector.getDim(), vector.getStorage().getIndices(),
+              vector.getStorage().getValues()), indexOffset);
+    } else {
+      return this;
+    }
+  }
+
+  @Override
   public void serialize(ByteBuf buf) {
     super.serialize(buf);
     VectorStorageUtils.serialize(buf, vector);
@@ -325,7 +337,7 @@ public class IntLongVectorStorage extends IntLongStorage {
 
   @Override
   public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func) {
-    if(indexType != IndexType.INT) {
+    if (indexType != IndexType.INT) {
       throw new UnsupportedOperationException(
           this.getClass().getName() + " only support int type index now");
     }

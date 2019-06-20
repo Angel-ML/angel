@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -22,10 +22,7 @@ import com.tencent.angel.ml.math2.vector.IntIntVector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
 import com.tencent.angel.ps.server.data.request.InitFunc;
-import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.func.IntElemUpdateFunc;
-
-import com.tencent.angel.ps.storage.vector.op.BasicTypePipelineOp;
 import com.tencent.angel.ps.storage.vector.op.IIntIntOp;
 import com.tencent.angel.ps.storage.vector.storage.IntIntStorage;
 import io.netty.buffer.ByteBuf;
@@ -39,25 +36,25 @@ public class ServerIntIntRow extends ServerBasicTypeRow implements IIntIntOp {
   /**
    * Create a new ServerIntDoubleRow
    *
-   * @param rowId      row index
-   * @param rowType    row type
-   * @param startCol   start position
-   * @param endCol     end position
+   * @param rowId row index
+   * @param rowType row type
+   * @param startCol start position
+   * @param endCol end position
    * @param estElemNum the estimate element number
-   * @param storage   vector storage
+   * @param storage vector storage
    */
   public ServerIntIntRow(int rowId, RowType rowType, int startCol, int endCol, int estElemNum,
-    IntIntStorage storage) {
+      IntIntStorage storage) {
     super(rowId, rowType, startCol, endCol, estElemNum, storage);
   }
 
   /**
    * Create a new ServerIntDoubleRow
    *
-   * @param rowId      row index
-   * @param rowType    row type
-   * @param startCol   start position
-   * @param endCol     end position
+   * @param rowId row index
+   * @param rowType row type
+   * @param startCol start position
+   * @param endCol end position
    * @param estElemNum the estimate element number
    */
   public ServerIntIntRow(int rowId, RowType rowType, int startCol, int endCol, int estElemNum) {
@@ -116,7 +113,8 @@ public class ServerIntIntRow extends ServerBasicTypeRow implements IIntIntOp {
     getStorage().addTo(indices, values);
   }
 
-  @Override public int size() {
+  @Override
+  public int size() {
     return getStorage().size();
   }
 
@@ -130,22 +128,35 @@ public class ServerIntIntRow extends ServerBasicTypeRow implements IIntIntOp {
     }
   }
 
-  @Override public ServerRow deepClone() {
+  @Override
+  public ServerRow deepClone() {
     startRead();
     try {
-      return new ServerIntIntRow(rowId, rowType, (int)startCol, (int)endCol, (int) estElemNum,
+      return new ServerIntIntRow(rowId, rowType, (int) startCol, (int) endCol, (int) estElemNum,
           (IntIntStorage) storage.deepClone());
     } finally {
       endRead();
     }
   }
 
-  @Override
-  public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func) {
-    getStorage().indexGet(indexType, indexSize, in, out, func);
-  }
 
   @Override
+  public ServerRow adaptiveClone() {
+    startRead();
+    try {
+      return new ServerIntIntRow(rowId, rowType, (int) startCol, (int) endCol, (int) estElemNum,
+          (IntIntStorage) storage.adaptiveClone());
+    } finally {
+      endRead();
+    }
+  }
+
+  /**
+   * Check the vector contains the index or not
+   *
+   * @param index element index
+   * @return true means exist
+   */
   public boolean exist(int index) {
     return getStorage().exist(index);
   }
@@ -153,6 +164,11 @@ public class ServerIntIntRow extends ServerBasicTypeRow implements IIntIntOp {
   @Override
   public int initAndGet(int index, InitFunc func) {
     return getStorage().initAndGet(index, func);
+  }
+
+  @Override
+  public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func) {
+    getStorage().indexGet(indexType, indexSize, in, out, func);
   }
 
   @Override

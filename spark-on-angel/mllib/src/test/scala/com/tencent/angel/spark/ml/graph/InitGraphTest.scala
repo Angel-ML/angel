@@ -53,6 +53,19 @@ class InitGraphTest extends PSFunSuite with SharedPSContext {
     val maxNodeId = data.map { case (src, dst) => math.max(src, dst) }.max().toLong + 1
     println(s"numEdge=$numEdge maxNodeId=$maxNodeId")
 
+    /*data = sc.textFile(input).mapPartitions { iter =>
+      iter.map {
+        line => {
+          val arr = line.split(" ")
+          val src = arr(0).toInt
+          val dst = arr(1).toInt
+          (src -> dst)
+        }
+      }
+    }*/
+
+    //data.groupBy()
+
     param = new Param()
     param.initBatchSize = initBatchSize
     param.maxIndex = maxNodeId.toInt
@@ -65,10 +78,12 @@ class InitGraphTest extends PSFunSuite with SharedPSContext {
     // Init neighbor table
     neighborTable.initNeighbor(data, param)
 
+    neighborTable.sampleNeighborsTest(data, 5, 10, -1)
+
     // Sample neighbors for some nodes
     val nodeIds = new Array[Int](1)
     nodeIds(0) = 5988
-    val nodeIdToNeighbors = neighborTable.sampleNeighbors(nodeIds, 10)
+    val nodeIdToNeighbors = neighborTable.sampleNeighbors(nodeIds, -1)
     val iter = nodeIdToNeighbors.int2ObjectEntrySet().fastIterator()
     while(iter.hasNext) {
       printNeighbors(iter.next())
@@ -76,6 +91,6 @@ class InitGraphTest extends PSFunSuite with SharedPSContext {
   }
 
   def printNeighbors(v:Int2ObjectMap.Entry[Array[Int]]) = {
-    println(s"node id = ${v.getIntKey}, neighbors = ${v.getValue.mkString(",")}")
+    println(s"node id = ${v.getIntKey}, neighbor len = ${v.getValue.size} neighbors = ${v.getValue.mkString(",")}")
   }
 }

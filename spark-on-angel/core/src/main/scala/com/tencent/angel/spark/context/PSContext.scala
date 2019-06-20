@@ -24,6 +24,7 @@ import org.apache.spark._
 
 import scala.collection.Map
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.spark.models.PSVector
 
 
@@ -59,6 +60,10 @@ abstract class PSContext {
   def refreshMatrix(): Unit
 
   def getMatrixMeta(matrixId: Int): Option[MatrixMeta]
+
+  def save(ctx: ModelSaveContext)
+
+  def load(ctx: ModelLoadContext)
 }
 
 object PSContext {

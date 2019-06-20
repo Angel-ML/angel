@@ -74,7 +74,14 @@ public class ServerIntAnyRow extends ServerComplexTypeRow implements IIntElement
   }
 
   @Override
-  public ServerRow deepClone() {
+  public ServerIntAnyRow adaptiveClone() {
+    return new ServerIntAnyRow(valueType, rowId, rowType, (int) startCol, (int) endCol,
+        (int) estElemNum,
+        (IntElementStorage) getStorage().adaptiveClone());
+  }
+
+  @Override
+  public ServerIntAnyRow deepClone() {
     return new ServerIntAnyRow(valueType, rowId, rowType, (int) startCol, (int) endCol,
         (int) estElemNum,
         (IntElementStorage) getStorage().deepClone());

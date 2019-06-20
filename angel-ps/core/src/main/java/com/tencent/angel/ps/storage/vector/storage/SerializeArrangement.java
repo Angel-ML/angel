@@ -32,15 +32,19 @@ public enum SerializeArrangement {
   VALUE(1);
 
   private final int value;
+
   SerializeArrangement(int value) {
     this.value = value;
   }
 
   public static SerializeArrangement valuesOf(int value) {
     switch (value) {
-      case 0: return KEY_VALUE;
-      case 1: return VALUE;
-      default: return KEY_VALUE;
+      case 0:
+        return KEY_VALUE;
+      case 1:
+        return VALUE;
+      default:
+        return KEY_VALUE;
     }
   }
 

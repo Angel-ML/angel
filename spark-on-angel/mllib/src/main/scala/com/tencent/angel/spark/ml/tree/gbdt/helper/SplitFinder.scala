@@ -99,6 +99,7 @@ object SplitFinder {
     var curSplitId = 0
     val edges = ArrayBuffer[Float]()
     edges.sizeHint(FeatureInfo.ENUM_THRESHOLD)
+    edges += splits(0)
     val binGradPair = if (param.numClass == 2 || param.isMultiClassMultiTree) {
       new BinaryGradPair()
     } else {

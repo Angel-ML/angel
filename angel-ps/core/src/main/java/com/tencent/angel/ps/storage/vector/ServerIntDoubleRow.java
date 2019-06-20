@@ -22,9 +22,7 @@ import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
 import com.tencent.angel.ps.server.data.request.InitFunc;
-import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.func.DoubleElemUpdateFunc;
-
 import com.tencent.angel.ps.storage.vector.op.IIntDoubleOp;
 import com.tencent.angel.ps.storage.vector.storage.IntDoubleStorage;
 import io.netty.buffer.ByteBuf;
@@ -140,6 +138,22 @@ public class ServerIntDoubleRow extends ServerBasicTypeRow implements IIntDouble
   }
 
   @Override
+  public ServerRow adaptiveClone() {
+    startRead();
+    try {
+      return new ServerIntDoubleRow(rowId, rowType, (int) startCol, (int) endCol, (int) estElemNum,
+          (IntDoubleStorage) storage.adaptiveClone());
+    } finally {
+      endRead();
+    }
+  }
+
+  /**
+   * Check the vector contains the index or not
+   *
+   * @param index element index
+   * @return true means exist
+   */
   public boolean exist(int index) {
     return getStorage().exist(index);
   }

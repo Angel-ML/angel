@@ -22,13 +22,10 @@ import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
 import com.tencent.angel.ps.server.data.request.InitFunc;
-import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.func.FloatElemUpdateFunc;
-import com.tencent.angel.ps.storage.vector.op.BasicTypePipelineOp;
 import com.tencent.angel.ps.storage.vector.op.IIntFloatOp;
 import com.tencent.angel.ps.storage.vector.storage.IntFloatStorage;
 import io.netty.buffer.ByteBuf;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -145,6 +142,22 @@ public class ServerIntFloatRow extends ServerBasicTypeRow implements IIntFloatOp
   }
 
   @Override
+  public ServerRow adaptiveClone() {
+    startRead();
+    try {
+      return new ServerIntFloatRow(rowId, rowType, (int) startCol, (int) endCol, (int) estElemNum,
+          (IntFloatStorage) getStorage().adaptiveClone());
+    } finally {
+      endRead();
+    }
+  }
+
+  /**
+   * Check the vector contains the index or not
+   *
+   * @param index element index
+   * @return true means exist
+   */
   public boolean exist(int index) {
     return getStorage().exist(index);
   }

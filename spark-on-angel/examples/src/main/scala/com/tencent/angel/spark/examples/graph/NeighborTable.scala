@@ -15,7 +15,7 @@
  *
  */
 
-package com.tencent.angel.spark.ml.graph
+package com.tencent.angel.spark.examples.graph
 
 import java.util.Random
 
@@ -24,16 +24,17 @@ import com.tencent.angel.graph.client.sampleneighbor.{SampleNeighbor, SampleNeig
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.ps.storage.partition.CSRPartition
 import com.tencent.angel.spark.models.PSMatrix
-import it.unimi.dsi.fastutil.ints.{Int2ObjectMap, Int2ObjectOpenHashMap}
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import org.apache.spark.rdd.RDD
 
 import scala.collection.mutable.ArrayBuffer
 
 /**
   * A simple neighbor table tool
+  *
   * @param param neighbor table param
   */
-class NeighborTable(param:Param) extends Serializable {
+class NeighborTable(param: Param) extends Serializable {
   val neighborTableName = "neighbor.table"
   var psMatrix: PSMatrix = _
 
@@ -45,26 +46,31 @@ class NeighborTable(param:Param) extends Serializable {
     mc.setPartitionClass(classOf[CSRPartition])
     psMatrix = PSMatrix.matrix(mc)
 
+    var startTs = System.currentTimeMillis()
     data.mapPartitions {
       case iter => {
         // Init the neighbor table use many mini-batch to avoid big object
         iter.sliding(param.initBatchSize, param.initBatchSize).map(pairs => initNeighbors(psMatrix, pairs))
       }
     }.collect()
+    val initTime = System.currentTimeMillis() - startTs
 
     // Merge the temp data to generate final neighbor table
+    startTs = System.currentTimeMillis()
     psMatrix.psfUpdate(new InitNeighborOver(new InitNeighborOverParam(psMatrix.id))).get()
+    println(s"init neighbor time = ${initTime} transfer to csr format use time ${System.currentTimeMillis() - startTs}")
     this
   }
 
   // TODO: optimize
   def initNeighbors(psMatrix: PSMatrix, pairs: Seq[(Int, Int)]) = {
     // Group By source node id
+    var startTs = System.currentTimeMillis()
     val aggrResult = scala.collection.mutable.Map[Int, ArrayBuffer[Int]]()
     pairs.foreach(pair => {
-      var neighbors:ArrayBuffer[Int] = aggrResult.get(pair._1) match {
+      var neighbors: ArrayBuffer[Int] = aggrResult.get(pair._1) match {
         case None => {
-          aggrResult += (pair._1 ->new ArrayBuffer[Int]())
+          aggrResult += (pair._1 -> new ArrayBuffer[Int]())
           aggrResult.get(pair._1).get
         }
         case Some(x) => x
@@ -72,54 +78,46 @@ class NeighborTable(param:Param) extends Serializable {
 
       neighbors += pair._2
     })
+    val groupByTime = System.currentTimeMillis() - startTs
 
+    startTs = System.currentTimeMillis()
     // Call initNeighbor psf to update neighbor table in PS
     val nodeIdToNeighbors = new Int2ObjectOpenHashMap[Array[Int]](aggrResult.size)
     aggrResult.foreach(nodeIdToNeighbor => nodeIdToNeighbors.put(nodeIdToNeighbor._1, nodeIdToNeighbor._2.toArray))
     aggrResult.clear()
 
     psMatrix.psfUpdate(new InitNeighbor(new InitNeighborParam(psMatrix.id, nodeIdToNeighbors))).get()
+    val pushTime = System.currentTimeMillis() - startTs
+    println(s"groupByTime = ${groupByTime} pushTime = ${pushTime} node number = ${nodeIdToNeighbors.size()}")
     this
-  }
-
-  // TODO: Optimize
-  def sampleNeighbors(nodeIds: Array[Int], count: Int) = {
-    psMatrix.psfGet(new SampleNeighbor(new SampleNeighborParam(psMatrix.id, nodeIds, count)))
-      .asInstanceOf[SampleNeighborResult].getNodeIdToNeighbors
-  }
-
-  def sampleNeighborsTest(batchItemNum: Int, processNum: Int, count: Int): Unit = {
-    for (i <- (0 until processNum)) {
-      var startTs = System.currentTimeMillis()
-      val nodeIds = genIndexs(param.maxIndex, batchItemNum)
-      val genNodeIdsTime = System.currentTimeMillis() - startTs
-
-      startTs = System.currentTimeMillis()
-      val result = psMatrix.psfGet(new SampleNeighbor(new SampleNeighborParam(psMatrix.id, nodeIds, count)))
-        .asInstanceOf[SampleNeighborResult].getNodeIdToNeighbors
-      val getTime = System.currentTimeMillis() - startTs
-      println(s"batch index = ${i} batchItemNum = ${batchItemNum} count = ${count} genNodeIdsTime=${genNodeIdsTime} getTime=${getTime}")
-
-      val iter = result.int2ObjectEntrySet().fastIterator()
-      while(iter.hasNext) {
-        printNeighbors(iter.next())
-      }
-    }
   }
 
   def sampleNeighborsTest(data: RDD[(Int, Int)], batchItemNum: Int, processNum: Int, count: Int): Unit = {
     data.mapPartitions {
       case iter => {
         // Init the neighbor table use many mini-batch to avoid big object
-        sampleNeighborsTest(batchItemNum, processNum, count)
-        iter
+        iter.sliding(10, 10).map(pairs => {
+          println(pairs.mkString(","))
+          sampleNeighborsTest(batchItemNum, processNum, count)
+        })
       }
     }.collect()
   }
 
+  def sampleNeighborsTest(batchItemNum: Int, processNum: Int, count: Int): NeighborTable = {
+    for (i <- (0 until processNum)) {
+      var startTs = System.currentTimeMillis()
+      val nodeIds = genIndexs(param.maxIndex, batchItemNum)
+      val genNodeIdsTime = System.currentTimeMillis() - startTs
 
-  def printNeighbors(v:Int2ObjectMap.Entry[Array[Int]]) = {
-    println(s"node id = ${v.getIntKey}, neighbor len = ${v.getValue.size} neighbors = ${v.getValue.mkString(",")}")
+      startTs = System.currentTimeMillis()
+      psMatrix.psfGet(new SampleNeighbor(new SampleNeighborParam(psMatrix.id, nodeIds, count)))
+        .asInstanceOf[SampleNeighborResult].getNodeIdToNeighbors
+      val getTime = System.currentTimeMillis() - startTs
+      println(s"batch index = ${i} batchItemNum = ${batchItemNum} count = ${count} genNodeIdsTime=${genNodeIdsTime} getTime=${getTime}")
+
+    }
+    this
   }
 
   def genIndexs(feaNum: Int, nnz: Int): Array[Int] = {
@@ -127,11 +125,16 @@ class NeighborTable(param:Param) extends Serializable {
     val random = new Random(System.currentTimeMillis)
     sortedIndex(0) = random.nextInt(feaNum / nnz)
     for (i <- (1 until nnz)) {
-      println(s"i = ${i}")
       var rand = random.nextInt((feaNum - sortedIndex(i - 1)) / (nnz - i))
       if (rand == 0) rand = 1
       sortedIndex(i) = rand + sortedIndex(i - 1)
     }
     sortedIndex
+  }
+
+  // TODO: Optimize
+  def sampleNeighbors(nodeIds: Array[Int], count: Int) = {
+    psMatrix.psfGet(new SampleNeighbor(new SampleNeighborParam(psMatrix.id, nodeIds, count)))
+      .asInstanceOf[SampleNeighborResult].getNodeIdToNeighbors
   }
 }

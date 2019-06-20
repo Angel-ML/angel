@@ -34,13 +34,14 @@ public class IntArrayElementStorage extends IntElementStorage {
     this(objectClass, new IElement[len], indexOffset);
   }
 
-  public IntArrayElementStorage(Class<? extends IElement> objectClass, IElement[] data, long indexOffset) {
+  public IntArrayElementStorage(Class<? extends IElement> objectClass, IElement[] data,
+      long indexOffset) {
     super(objectClass, indexOffset);
     this.data = data;
   }
 
   public IntArrayElementStorage() {
-    this(null , 0, 0L);
+    this(null, 0, 0L);
   }
 
   @Override
@@ -60,8 +61,8 @@ public class IntArrayElementStorage extends IntElementStorage {
 
   @Override
   public IElement[] get(int[] indices) {
-    IElement [] result = new IElement[indices.length];
-    for(int i = 0; i < indices.length; i++) {
+    IElement[] result = new IElement[indices.length];
+    for (int i = 0; i < indices.length; i++) {
       result[i] = get(indices[i]);
     }
     return result;
@@ -70,23 +71,23 @@ public class IntArrayElementStorage extends IntElementStorage {
   @Override
   public void set(int[] indices, IElement[] values) {
     assert indices.length == values.length;
-    for(int i = 0; i < indices.length; i++) {
+    for (int i = 0; i < indices.length; i++) {
       set(indices[i], values[i]);
     }
   }
 
   @Override
   public void clear() {
-    for(int i = 0; i < data.length; i++) {
+    for (int i = 0; i < data.length; i++) {
       data[i] = null;
     }
   }
 
   @Override
   public IntArrayElementStorage deepClone() {
-    IElement [] cloneData = new IElement[data.length];
-    for(int i = 0; i < data.length; i++) {
-      if(data[i] != null) {
+    IElement[] cloneData = new IElement[data.length];
+    for (int i = 0; i < data.length; i++) {
+      if (data[i] != null) {
         cloneData[i] = (IElement) data[i].deepClone();
       }
     }
@@ -114,6 +115,11 @@ public class IntArrayElementStorage extends IntElementStorage {
   }
 
   @Override
+  public IntArrayElementStorage adaptiveClone() {
+    return this;
+  }
+
+  @Override
   public void serialize(ByteBuf buf) {
     super.serialize(buf);
     // Use sparse storage method, as some elements in the array maybe null
@@ -126,8 +132,8 @@ public class IntArrayElementStorage extends IntElementStorage {
 
     // Element data
     int writeNum = 0;
-    for(int i = 0; i < data.length; i++) {
-      if(data[i] != null) {
+    for (int i = 0; i < data.length; i++) {
+      if (data[i] != null) {
         buf.writeInt(i);
         data[i].serialize(buf);
         writeNum++;
@@ -146,7 +152,7 @@ public class IntArrayElementStorage extends IntElementStorage {
     // Valid element number
     int elementNum = buf.readInt();
 
-    for(int i = 0; i < elementNum; i++) {
+    for (int i = 0; i < elementNum; i++) {
       IElement element = newElement();
       data[buf.readInt()] = element;
       element.deserialize(buf);
@@ -154,11 +160,10 @@ public class IntArrayElementStorage extends IntElementStorage {
   }
 
 
-
   @Override
   public int bufferLen() {
     int dataLen = 0;
-    for(int i = 0; i < data.length; i++) {
+    for (int i = 0; i < data.length; i++) {
       dataLen += (4 + data[i].bufferLen());
     }
     return super.bufferLen() + 8 + dataLen;

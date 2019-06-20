@@ -18,6 +18,7 @@
 
 package com.tencent.angel.ps.storage.vector.storage;
 
+import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.DoubleVector;
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.math2.vector.LongDoubleVector;
@@ -735,6 +736,23 @@ public class LongDoubleVectorStorage extends LongDoubleStorage {
   @Override
   public boolean isSorted() {
     return VectorStorageUtils.isSorted(vector);
+  }
+
+  @Override
+  public LongDoubleVectorStorage adaptiveClone() {
+    if (isSparse()) {
+      if (VectorStorageUtils.useIntKey(vector)) {
+        return new LongDoubleVectorStorage(VFactory.sortedDoubleVector((int) vector.dim(),
+            ((IntDoubleVector) vector).getStorage().getIndices(),
+            ((IntDoubleVector) vector).getStorage().getValues()), indexOffset);
+      } else {
+        return new LongDoubleVectorStorage(VFactory.sortedLongKeyDoubleVector(vector.dim(),
+            ((LongDoubleVector) vector).getStorage().getIndices(),
+            ((LongDoubleVector) vector).getStorage().getValues()), indexOffset);
+      }
+    } else {
+      return this;
+    }
   }
 
   @Override

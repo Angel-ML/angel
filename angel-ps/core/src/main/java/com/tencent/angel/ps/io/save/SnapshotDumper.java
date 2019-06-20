@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -30,19 +30,19 @@ import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.client.MasterClient;
 import com.tencent.angel.ps.server.data.ServerState;
 import com.tencent.angel.utils.HdfsUtil;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 /**
  * Snapshot dumper, it dump the matrices to hdfs once in a while
  */
 public class SnapshotDumper {
+
   private static final Log LOG = LogFactory.getLog(SnapshotDumper.class);
   /**
    * PS context
@@ -85,6 +85,8 @@ public class SnapshotDumper {
    */
   private final RunningMode mode;
 
+  private final int dumpParallel;
+
   /**
    * Create a SnapshotDumper
    *
@@ -97,13 +99,16 @@ public class SnapshotDumper {
     mode = context.getRunningMode();
 
     backupIntervalMs = context.getConf()
-      .getInt(AngelConf.ANGEL_PS_BACKUP_INTERVAL_MS, AngelConf.DEFAULT_ANGEL_PS_BACKUP_INTERVAL_MS);
+        .getInt(AngelConf.ANGEL_PS_BACKUP_INTERVAL_MS,
+            AngelConf.DEFAULT_ANGEL_PS_BACKUP_INTERVAL_MS);
+
+    dumpParallel = context.getConf()
+        .getInt(AngelConf.ANGEL_PS_BACKUP_PARALLEL, AngelConf.DEFAULT_ANGEL_PS_BACKUP_PARALLEL);
 
     outputDir = context.getConf().get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
     baseDirPath = new Path(
-      outputDir + Path.SEPARATOR + ModelFilesConstent.snapshotDirName + Path.SEPARATOR + context
-        .getPSAttemptId().getPsId() + Path.SEPARATOR + String
-        .valueOf(context.getPSAttemptId().getIndex()));
+        outputDir + Path.SEPARATOR + ModelFilesConstent.snapshotDirName + Path.SEPARATOR + context
+            .getPSAttemptId().getPsId() + Path.SEPARATOR + context.getPSAttemptId().getIndex());
 
     String matricesStr = context.getConf().get(AngelConf.ANGEL_PS_BACKUP_MATRICES);
     if (matricesStr == null) {
@@ -150,8 +155,6 @@ public class SnapshotDumper {
 
   /**
    * Write snapshot
-   *
-   * @throws Exception
    */
   private void writeSnapshots() throws Exception {
     List<Integer> matrixIds = null;
@@ -180,12 +183,15 @@ public class SnapshotDumper {
         for (int i = 0; i < size; i++) {
           MatrixMeta meta = context.getMatrixMetaManager().getMatrixMeta(ids.get(i));
           saveContexts.add(
-            new PSMatrixSaveContext(ids.get(i), new ArrayList<>(meta.getPartitionMetas().keySet()),
-              null, SnapshotFormat.class.getName(), new Path(tmpPath, meta.getName()).toString(),
-              true, false));
+              new PSMatrixSaveContext(ids.get(i),
+                  new ArrayList<>(meta.getPartitionMetas().keySet()),
+                  null, SnapshotFormat.class.getName(),
+                  new Path(tmpPath, meta.getName()).toString(),
+                  true, false));
         }
 
-        context.getIOExecutors().save(new PSMatricesSaveContext(-1, -1, saveContexts));
+        context.getIOExecutors()
+            .save(new PSMatricesSaveContext(-1, -1, saveContexts), dumpParallel);
         HdfsUtil.rename(tmpPath, baseDirPath, fs);
       }
     }
@@ -196,7 +202,6 @@ public class SnapshotDumper {
    *
    * @param matrixIds all matrices
    * @return the matrices that need dump
-   * @throws ServiceException
    */
   private List<Integer> filter(List<Integer> matrixIds) throws ServiceException {
     int size = matrixIds.size();
@@ -215,7 +220,6 @@ public class SnapshotDumper {
    *
    * @param matrixId matrix id
    * @return true mean need dump
-   * @throws ServiceException
    */
   private boolean checkNeedDump(int matrixId) throws ServiceException {
     if (mode == RunningMode.ANGEL_PS) {

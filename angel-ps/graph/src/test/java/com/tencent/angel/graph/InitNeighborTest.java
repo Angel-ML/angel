@@ -171,6 +171,7 @@ public class InitNeighborTest {
 
     nodeIdToNeighbors.put(3, new int[]{4, 5, 6});
     nodeIdToNeighbors.put(5, new int[]{6});
+    nodeIdToNeighbors.put(8, new int[]{3, 4});
     func = new InitNeighbor(new InitNeighborParam(matrixId, nodeIdToNeighbors));
     client.asyncUpdate(func).get();
     nodeIdToNeighbors.clear();
@@ -178,7 +179,7 @@ public class InitNeighborTest {
     client.asyncUpdate(new InitNeighborOver(new InitNeighborOverParam(matrixId))).get();
 
     // Sample the neighbors
-    int [] nodeIds = new int[] {1, 2, 3, 4, 5};
+    int [] nodeIds = new int[] {1, 2, 3, 4, 5, 6, 7, 8};
     SampleNeighborParam param = new SampleNeighborParam(matrixId, nodeIds, -1);
     Int2ObjectOpenHashMap<int[]> result = ((SampleNeighborResult) (client
         .get(new SampleNeighbor(param)))).getNodeIdToNeighbors();

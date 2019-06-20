@@ -27,7 +27,7 @@ public class LongArrayElement implements IElement {
 
   private long[] data;
 
-  public LongArrayElement(long [] data) {
+  public LongArrayElement(long[] data) {
     this.data = data;
   }
 
@@ -41,7 +41,7 @@ public class LongArrayElement implements IElement {
 
   @Override
   public LongArrayElement deepClone() {
-    long [] newData = new long[data.length];
+    long[] newData = new long[data.length];
     System.arraycopy(data, 0, newData, 0, data.length);
     return new LongArrayElement(newData);
   }
@@ -49,7 +49,7 @@ public class LongArrayElement implements IElement {
   @Override
   public void serialize(ByteBuf buf) {
     buf.writeInt(data.length);
-    for(int i = 0; i < data.length; i++) {
+    for (int i = 0; i < data.length; i++) {
       buf.writeLong(data[i]);
     }
   }
@@ -57,7 +57,7 @@ public class LongArrayElement implements IElement {
   @Override
   public void deserialize(ByteBuf buf) {
     data = new long[buf.readInt()];
-    for(int i = 0; i < data.length; i++) {
+    for (int i = 0; i < data.length; i++) {
       data[i] = buf.readLong();
     }
   }

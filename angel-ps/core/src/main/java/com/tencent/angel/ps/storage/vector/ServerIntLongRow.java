@@ -22,12 +22,10 @@ import com.tencent.angel.ml.math2.vector.IntLongVector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
 import com.tencent.angel.ps.server.data.request.InitFunc;
-import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.func.LongElemUpdateFunc;
 import com.tencent.angel.ps.storage.vector.op.IIntLongOp;
 import com.tencent.angel.ps.storage.vector.storage.IntLongStorage;
 import io.netty.buffer.ByteBuf;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -140,6 +138,24 @@ public class ServerIntLongRow extends ServerBasicTypeRow implements IIntLongOp {
   }
 
   @Override
+  public ServerRow
+  adaptiveClone() {
+    startRead();
+    try {
+      return new ServerIntLongRow(rowId, rowType, (int) startCol, (int) endCol, (int) estElemNum,
+          (IntLongStorage) getStorage().adaptiveClone());
+    } finally {
+      endRead();
+    }
+  }
+
+
+  /**
+   * Check the vector contains the index or not
+   *
+   * @param index element index
+   * @return true means exist
+   */
   public boolean exist(int index) {
     return getStorage().exist(index);
   }

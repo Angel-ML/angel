@@ -127,6 +127,15 @@ public class ParameterServerJVM {
     float youngFator = conf
       .getFloat(AngelConf.ANGEL_PS_JVM_YOUNG_FACTOR, AngelConf.DEFAULT_ANGEL_PS_JVM_YOUNG_FACTOR);
 
+    boolean useG1 = conf.getBoolean("angel.ps.use.g1", false);
+    long maxPauseTimeTs = conf.getLong("angel.ps.g1.maxpausetime", 1000);
+    long minNewRatio = conf.getLong("angel.ps.g1.minnewratio", 5);
+    int regionSizeMB = conf.getInt("angel.ps.g1.regionsize", 32);
+    int ihop = conf.getInt("angel.ps.g1.ihop", 45);
+    int workerNum = conf.getInt("angel.ps.g1.worker.number", 4);
+    int concWorkerNum = conf.getInt("angel.ps.g1.conc.worker.number", 4);
+    int reservePercent = conf.getInt("angel.ps.g1.reserve.percent", 20);
+
     int useMax = psMemSizeInMB - 512;
     int directRegionSize = 0;
     if (isUseDirect) {
@@ -139,16 +148,36 @@ public class ParameterServerJVM {
     int youngRegionSize = (int) (heapMax * youngFator);
     int survivorRatio = 4;
 
-    String ret = new StringBuilder().append(" -Xmx").append(heapMax).append("M").append(" -Xmn")
-      .append(youngRegionSize).append("M").append(" -XX:MaxDirectMemorySize=")
-      .append(directRegionSize).append("M").append(" -XX:SurvivorRatio=").append(survivorRatio)
-      .append(" -XX:PermSize=100M -XX:MaxPermSize=200M").append(" -XX:+AggressiveOpts")
-      .append(" -XX:+UseLargePages").append(" -XX:+UseConcMarkSweepGC")
-      .append(" -XX:CMSInitiatingOccupancyFraction=70")
-      .append(" -XX:+UseCMSInitiatingOccupancyOnly").append(" -XX:+CMSScavengeBeforeRemark")
-      .append(" -XX:+UseCMSCompactAtFullCollection").append(" -verbose:gc")
-      .append(" -XX:+PrintGCDateStamps").append(" -XX:+PrintGCDetails")
-      .append(" -Xloggc:<LOG_DIR>/gc.log").toString();
+    String ret;
+    if(useG1) {
+      ret = new StringBuilder().append(" -Xmx").append(heapMax).append("M").append(" -XX:MaxDirectMemorySize=")
+          .append(directRegionSize).append("M")
+          .append(" -XX:+AggressiveOpts")
+          .append(" -XX:+UseLargePages")
+          .append(" -XX:+UseG1GC")
+          .append(" -XX:+UnlockExperimentalVMOptions")
+          .append(" -XX:MaxGCPauseMillis=").append(maxPauseTimeTs)
+          .append(" -XX:G1NewSizePercent=").append(minNewRatio)
+          .append(" -XX:G1HeapRegionSize=").append(regionSizeMB).append("m")
+          .append(" -XX:InitiatingHeapOccupancyPercent=").append(ihop)
+          .append(" -XX:ConcGCThreads=").append(concWorkerNum)
+          .append(" -XX:ParallelGCThreads=").append(workerNum)
+          .append(" -XX:G1ReservePercent=").append(reservePercent)
+          .append(" -verbose:gc")
+          .append(" -XX:+PrintGCDateStamps").append(" -XX:+PrintGCDetails")
+          .append(" -Xloggc:<LOG_DIR>/gc.log").toString();
+    } else {
+      ret = new StringBuilder().append(" -Xmx").append(heapMax).append("M").append(" -Xmn")
+          .append(youngRegionSize).append("M").append(" -XX:MaxDirectMemorySize=")
+          .append(directRegionSize).append("M").append(" -XX:SurvivorRatio=").append(survivorRatio)
+          .append(" -XX:PermSize=100M -XX:MaxPermSize=200M").append(" -XX:+AggressiveOpts")
+          .append(" -XX:+UseLargePages").append(" -XX:+UseConcMarkSweepGC")
+          .append(" -XX:CMSInitiatingOccupancyFraction=70")
+          .append(" -XX:+UseCMSInitiatingOccupancyOnly").append(" -XX:+CMSScavengeBeforeRemark")
+          .append(" -XX:+UseCMSCompactAtFullCollection").append(" -verbose:gc")
+          .append(" -XX:+PrintGCDateStamps").append(" -XX:+PrintGCDetails")
+          .append(" -Xloggc:<LOG_DIR>/gc.log").toString();
+    }
 
     return ret;
   }

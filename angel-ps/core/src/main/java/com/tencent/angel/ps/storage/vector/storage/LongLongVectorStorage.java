@@ -18,6 +18,7 @@
 
 package com.tencent.angel.ps.storage.vector.storage;
 
+import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.IntLongVector;
 import com.tencent.angel.ml.math2.vector.LongLongVector;
 import com.tencent.angel.ml.math2.vector.LongVector;
@@ -26,7 +27,6 @@ import com.tencent.angel.ps.server.data.request.IndexType;
 import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.func.LongElemUpdateFunc;
-
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2LongMap;
 import it.unimi.dsi.fastutil.longs.Long2LongMap;
@@ -36,9 +36,10 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
  * A long key long value storage: use a LongVector as storage
  */
 public class LongLongVectorStorage extends LongLongStorage {
+
   /**
-   * A vector storage: it can be LongLongVector or IntLongVector and can use DENSE,SPARSE and
-   * SORTED storage type
+   * A vector storage: it can be LongLongVector or IntLongVector and can use DENSE,SPARSE and SORTED
+   * storage type
    */
   private LongVector vector;
 
@@ -521,6 +522,23 @@ public class LongLongVectorStorage extends LongLongStorage {
   @Override
   public boolean isSorted() {
     return VectorStorageUtils.isSorted(vector);
+  }
+
+  @Override
+  public LongLongVectorStorage adaptiveClone() {
+    if (isSparse()) {
+      if (VectorStorageUtils.useIntKey(vector)) {
+        return new LongLongVectorStorage(VFactory.sortedLongVector((int) vector.dim(),
+            ((IntLongVector) vector).getStorage().getIndices(),
+            ((IntLongVector) vector).getStorage().getValues()), indexOffset);
+      } else {
+        return new LongLongVectorStorage(VFactory.sortedLongKeyLongVector(vector.dim(),
+            ((LongLongVector) vector).getStorage().getIndices(),
+            ((LongLongVector) vector).getStorage().getValues()), indexOffset);
+      }
+    } else {
+      return this;
+    }
   }
 
   @Override

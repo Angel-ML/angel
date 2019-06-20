@@ -723,6 +723,9 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_PS_BACKUP_INTERVAL_MS = ANGEL_PS_PREFIX + "backup.interval.ms";
   public static final int DEFAULT_ANGEL_PS_BACKUP_INTERVAL_MS = 300000;
 
+  public static final String ANGEL_PS_BACKUP_PARALLEL = ANGEL_PS_PREFIX + "backup.parallel";
+  public static final int DEFAULT_ANGEL_PS_BACKUP_PARALLEL = 4;
+
   /**
    * The matrices that need to backup in SnapshotDumper
    */

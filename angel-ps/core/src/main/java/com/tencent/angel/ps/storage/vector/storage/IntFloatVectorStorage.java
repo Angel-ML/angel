@@ -17,6 +17,7 @@
 
 package com.tencent.angel.ps.storage.vector.storage;
 
+import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
@@ -57,7 +58,7 @@ public class IntFloatVectorStorage extends IntFloatStorage {
 
   @Override
   public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func) {
-    if(indexType != IndexType.INT) {
+    if (indexType != IndexType.INT) {
       throw new UnsupportedOperationException(
           this.getClass().getName() + " only support int type index now");
     }
@@ -360,6 +361,17 @@ public class IntFloatVectorStorage extends IntFloatStorage {
   @Override
   public boolean isSorted() {
     return VectorStorageUtils.isSorted(vector);
+  }
+
+  @Override
+  public IntFloatVectorStorage adaptiveClone() {
+    if(isSparse()) {
+      return new IntFloatVectorStorage(VFactory
+          .sortedFloatVector(vector.getDim(), vector.getStorage().getIndices(),
+              vector.getStorage().getValues()), indexOffset);
+    } else {
+      return this;
+    }
   }
 
 
