@@ -61,7 +61,7 @@ object PSMatrixUtils {
   }
 
   def getRow(epoch: Int, matrixId: Int, rowId: Int): Vector = {
-    PSAgentContext.get.getUserRequestAdapter.getRow(matrixId, rowId, 0)
+    PSAgentContext.get.getUserRequestAdapter.getRow(matrixId, rowId, 0).get()
   }
 
   def getRowWithIndex(epoch: Int, matrixId: Int, rowId: Int, index: Vector): Vector = {
@@ -139,7 +139,7 @@ object PSMatrixUtils {
     val idxArr = (startRowId until endRowId).toArray
     val param = new GetRowsParam(matrixId, idxArr)
     val func = new GetRows(param)
-    val vectorMap = PSAgentContext.get.getUserRequestAdapter.get(func)
+    val vectorMap = PSAgentContext.get.getUserRequestAdapter.get(func).get()
       .asInstanceOf[GetRowsResult].getRows
 
     val vectors = idxArr.map { rowId => vectorMap.get(rowId) }

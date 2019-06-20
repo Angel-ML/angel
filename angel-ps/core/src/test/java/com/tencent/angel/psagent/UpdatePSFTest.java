@@ -58,8 +58,8 @@ import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.RowType;
-import com.tencent.angel.ml.matrix.psf.update.update.UpdateRows;
-import com.tencent.angel.ml.matrix.psf.update.update.UpdateRowsParam;
+import com.tencent.angel.ml.matrix.psf.update.update.IncrementRows;
+import com.tencent.angel.ml.matrix.psf.update.update.IncrementRowsParam;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.matrix.MatrixClient;
@@ -117,7 +117,7 @@ public class UpdatePSFTest {
   public static String SPARSE_LONG_LONG_MAT = "sparse_long_long_mat";
   public static String SPARSE_LONG_LONG_MAT_COMP = "sparse_long_long_mat_comp";
 
-  private static final Log LOG = LogFactory.getLog(GetRowTest.class);
+  private static final Log LOG = LogFactory.getLog(UpdatePSFTest.class);
   private static final String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
   private static final String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
   private AngelClient angelClient;
@@ -433,41 +433,41 @@ public class UpdatePSFTest {
 
   @Test
   public void test() throws Exception {
-    //testDenseDoubleUDF();
-    /*testSparseDoubleUDF();
+    testDenseDoubleUDF();
+    testSparseDoubleUDF();
 
-    //testDenseDoubleCompUDF();
-    //testSparseDoubleCompUDF();
+    testDenseDoubleCompUDF();
+    testSparseDoubleCompUDF();
 
     testDenseFloatUDF();
     testSparseFloatUDF();
 
-    //testDenseFloatCompUDF();
-    //testSparseFloatCompUDF();
+    testDenseFloatCompUDF();
+    testSparseFloatCompUDF();
 
     testDenseIntUDF();
     testSparseIntUDF();
 
-    //testDenseIntCompUDF();
-    //testSparseIntCompUDF();
+    testDenseIntCompUDF();
+    testSparseIntCompUDF();
 
     testDenseLongUDF();
     testSparseLongUDF();
 
-    //testDenseLongCompUDF();
-    //testSparseLongCompUDF();*/
+    testDenseLongCompUDF();
+    testSparseLongCompUDF();
 
     testSparseDoubleLongKeyUDF();
-    //testSparseDoubleLongKeyCompUDF();
+    testSparseDoubleLongKeyCompUDF();
 
     testSparseFloatLongKeyUDF();
-    //testSparseFloatLongKeyCompUDF();
+    testSparseFloatLongKeyCompUDF();
 
     testSparseIntLongKeyUDF();
-    //testSparseIntLongKeyCompUDF();
+    testSparseIntLongKeyCompUDF();
 
     testSparseLongLongKeyUDF();
-    //testSparseLongLongKeyCompUDF();
+    testSparseLongLongKeyCompUDF();
   }
 
 
@@ -488,7 +488,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     //client1.clock().get();
 
@@ -525,7 +525,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     CompLongDoubleVector row = (CompLongDoubleVector) client1.getRow(0);
     for (long id : index) {
@@ -553,7 +553,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
     //client1.clock().get();
 
     LongFloatVector row = (LongFloatVector) client1.getRow(0);
@@ -589,7 +589,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     CompLongFloatVector row = (CompLongFloatVector) client1.getRow(0);
     for (long id : index) {
@@ -617,7 +617,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     LongLongVector row = (LongLongVector) client1.getRow(0);
     for (long id : index) {
@@ -651,7 +651,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     CompLongLongVector row = (CompLongLongVector) client1.getRow(0);
     for (long id : index) {
@@ -678,7 +678,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     LongIntVector row = (LongIntVector) client1.getRow(0);
     for (long id : index) {
@@ -712,7 +712,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     CompLongIntVector row = (CompLongIntVector) client1.getRow(0);
     for (long id : index) {
@@ -739,7 +739,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     IntDoubleVector row = (IntDoubleVector) client1.getRow(0);
     for (int id : index) {
@@ -772,7 +772,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     IntDoubleVector row = (IntDoubleVector) client1.getRow(0);
     for (int id : index) {
@@ -806,7 +806,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     CompIntDoubleVector row = (CompIntDoubleVector) client1.getRow(0);
     for (int id : index) {
@@ -842,7 +842,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     CompIntDoubleVector row = (CompIntDoubleVector) client1.getRow(0);
     for (int id : index) {
@@ -868,7 +868,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     IntFloatVector row = (IntFloatVector) client1.getRow(0);
     for (int id : index) {
@@ -898,7 +898,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     IntFloatVector row = (IntFloatVector) client1.getRow(0);
     for (int id : index) {
@@ -932,7 +932,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     CompIntFloatVector row = (CompIntFloatVector) client1.getRow(0);
     for (int id : index) {
@@ -968,7 +968,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     CompIntFloatVector row = (CompIntFloatVector) client1.getRow(0);
     for (int id : index) {
@@ -995,7 +995,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     IntIntVector row = (IntIntVector) client1.getRow(0);
     for (int id : index) {
@@ -1024,7 +1024,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     IntIntVector row = (IntIntVector) client1.getRow(0);
     for (int id : index) {
@@ -1060,7 +1060,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     CompIntIntVector row = (CompIntIntVector) client1.getRow(0);
     for (int id : index) {
@@ -1095,7 +1095,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     CompIntLongVector row = (CompIntLongVector) client1.getRow(0);
     for (int id : index) {
@@ -1130,7 +1130,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     CompIntLongVector row = (CompIntLongVector) client1.getRow(0);
     for (int id : index) {
@@ -1154,7 +1154,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     IntLongVector row = (IntLongVector) client1.getRow(0);
     for (int id : index) {
@@ -1184,7 +1184,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     IntLongVector row = (IntLongVector) client1.getRow(0);
     for (int id : index) {
@@ -1219,7 +1219,7 @@ public class UpdatePSFTest {
 
     Vector[] updates = new Vector[1];
     updates[0] = deltaVec;
-    client1.update(new UpdateRows(new UpdateRowsParam(matrixW1Id, updates))).get();
+    client1.asyncUpdate(new IncrementRows(new IncrementRowsParam(matrixW1Id, updates))).get();
 
     CompIntIntVector row = (CompIntIntVector) client1.getRow(0);
     for (int id : index) {

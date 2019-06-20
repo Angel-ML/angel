@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -26,6 +26,7 @@ import io.netty.buffer.ByteBuf;
  * Row split of dense int row update.
  */
 public class DenseIntRowUpdateSplit extends RowUpdateSplit {
+
   /**
    * values of row
    */
@@ -34,8 +35,8 @@ public class DenseIntRowUpdateSplit extends RowUpdateSplit {
   /**
    * Create a new dense int row split update
    *
-   * @param start  start position
-   * @param end    end position
+   * @param start start position
+   * @param end end position
    * @param values values of row update
    */
   public DenseIntRowUpdateSplit(int rowIndex, int start, int end, int[] values) {
@@ -56,7 +57,8 @@ public class DenseIntRowUpdateSplit extends RowUpdateSplit {
     return values;
   }
 
-  @Override public void serialize(ByteBuf buf) {
+  @Override
+  public void serialize(ByteBuf buf) {
     super.serialize(buf);
     buf.writeInt(end - start);
     for (int i = start; i < end; i++) {
@@ -64,17 +66,19 @@ public class DenseIntRowUpdateSplit extends RowUpdateSplit {
     }
   }
 
-  @Override public void deserialize(ByteBuf buf) {
+  @Override
+  public void deserialize(ByteBuf buf) {
     super.deserialize(buf);
-    int [] data = new int[buf.readInt()];
-    for(int i = 0; i < data.length; i++) {
+    int[] data = new int[buf.readInt()];
+    for (int i = 0; i < data.length; i++) {
       data[i] = buf.readInt();
     }
     vector = VFactory.denseIntVector(data);
   }
 
 
-  @Override public int bufferLen() {
+  @Override
+  public int bufferLen() {
     return 4 + super.bufferLen() + (end - start) * 4;
   }
 }

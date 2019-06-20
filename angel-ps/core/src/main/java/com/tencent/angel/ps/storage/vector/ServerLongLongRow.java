@@ -18,12 +18,19 @@
 
 package com.tencent.angel.ps.storage.vector;
 
-import com.tencent.angel.ml.math2.vector.*;
+import com.tencent.angel.ml.math2.VFactory;
+import com.tencent.angel.ml.math2.vector.IntLongVector;
+import com.tencent.angel.ml.math2.vector.LongLongVector;
+import com.tencent.angel.ml.math2.vector.LongVector;
+import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
 import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
+import com.tencent.angel.ps.storage.vector.func.LongElemUpdateFunc;
+
 import io.netty.buffer.ByteBuf;
+
 import it.unimi.dsi.fastutil.ints.Int2LongMap;
 import it.unimi.dsi.fastutil.longs.Long2LongMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
@@ -33,28 +40,29 @@ import java.io.IOException;
 /**
  * The row with "long" index type and "long" value type in PS
  */
-public class ServerLongLongRow extends ServerRow {
+public class ServerLongLongRow extends ServerLongRow {
+
   /**
    * Create a new ServerIntDoubleRow
    *
-   * @param rowId      row index
-   * @param rowType    row type
-   * @param startCol   start position
-   * @param endCol     end position
+   * @param rowId row index
+   * @param rowType row type
+   * @param startCol start position
+   * @param endCol end position
    * @param estElemNum the estimate element number
    */
   public ServerLongLongRow(int rowId, RowType rowType, long startCol, long endCol, int estElemNum,
-    LongVector innerRow) {
+      LongVector innerRow) {
     super(rowId, rowType, startCol, endCol, estElemNum, innerRow);
   }
 
   /**
    * Create a new ServerIntDoubleRow
    *
-   * @param rowId      row index
-   * @param rowType    row type
-   * @param startCol   start position
-   * @param endCol     end position
+   * @param rowId row index
+   * @param rowType row type
+   * @param startCol start position
+   * @param endCol end position
    * @param estElemNum the estimate element number
    */
   public ServerLongLongRow(int rowId, RowType rowType, long startCol, long endCol, int estElemNum) {
@@ -128,7 +136,7 @@ public class ServerLongLongRow extends ServerRow {
    * Set a batch elements values without lock
    *
    * @param indices elements indices
-   * @param values  elements values
+   * @param values elements values
    */
   public void set(long[] indices, long[] values) {
     assert indices.length == values.length;
@@ -157,7 +165,7 @@ public class ServerLongLongRow extends ServerRow {
    * Add a batch elements values without lock
    *
    * @param indices elements indices
-   * @param values  elements plus values
+   * @param values elements plus values
    */
   public void addTo(long[] indices, long[] values) {
     assert indices.length == values.length;
@@ -180,15 +188,16 @@ public class ServerLongLongRow extends ServerRow {
   }
 
   /**
-   * Get all element indices and values without lock, you must check the storage is sparse first use "isSparse";
-   * if you want use original indices, you must plus with "startCol" first
+   * Get all element indices and values without lock, you must check the storage is sparse first use
+   * "isSparse"; if you want use original indices, you must plus with "startCol" first
    *
    * @return all element values
    */
   //public ObjectIterator<Long2LongMap.Entry> getIter() {
   //  return ((LongLongVector) row).getStorage().entryIterator();
   //}
-  @Override public void update(RowType updateType, ByteBuf buf, UpdateOp op) {
+  @Override
+  public void update(RowType updateType, ByteBuf buf, UpdateOp op) {
     startWrite();
     try {
       switch (updateType) {
@@ -224,7 +233,7 @@ public class ServerLongLongRow extends ServerRow {
 
         default: {
           throw new UnsupportedOperationException(
-            "Unsupport operation: update " + updateType + " to " + this.getClass().getName());
+              "Unsupport operation: update " + updateType + " to " + this.getClass().getName());
         }
       }
 
@@ -396,7 +405,8 @@ public class ServerLongLongRow extends ServerRow {
     }
   }
 
-  @Override public int size() {
+  @Override
+  public int size() {
     if (useIntKey) {
       return ((IntLongVector) row).size();
     } else {
@@ -415,7 +425,7 @@ public class ServerLongLongRow extends ServerRow {
       } else {
         if (useIntKey) {
           ObjectIterator<Int2LongMap.Entry> iter =
-            ((IntLongVector) row).getStorage().entryIterator();
+              ((IntLongVector) row).getStorage().entryIterator();
           Int2LongMap.Entry entry;
           while (iter.hasNext()) {
             entry = iter.next();
@@ -423,7 +433,7 @@ public class ServerLongLongRow extends ServerRow {
           }
         } else {
           ObjectIterator<Long2LongMap.Entry> iter =
-            ((LongLongVector) row).getStorage().entryIterator();
+              ((LongLongVector) row).getStorage().entryIterator();
           Long2LongMap.Entry entry;
           while (iter.hasNext()) {
             entry = iter.next();
@@ -436,7 +446,8 @@ public class ServerLongLongRow extends ServerRow {
     }
   }
 
-  @Override protected void serializeRow(ByteBuf buf) {
+  @Override
+  protected void serializeRow(ByteBuf buf) {
     if (useIntKeySerialize()) {
       if (useDenseSerialize()) {
         long[] values = getValues();
@@ -463,7 +474,8 @@ public class ServerLongLongRow extends ServerRow {
     }
   }
 
-  @Override protected void deserializeRow(ByteBuf buf) {
+  @Override
+  protected void deserializeRow(ByteBuf buf) {
     if (useIntKeySerialize()) {
       IntLongVector IntLongRow = (IntLongVector) row;
       if (useDenseSerialize()) {
@@ -483,19 +495,48 @@ public class ServerLongLongRow extends ServerRow {
     }
   }
 
-  @Override protected int getRowSpace() {
+  @Override
+  protected int getRowSpace() {
     return size() * 12;
   }
 
-  @Override public ServerRow clone() {
+  @Override
+  public ServerRow clone() {
     startRead();
     try {
       if (useIntKey) {
         return new ServerLongLongRow(rowId, rowType, startCol, endCol, (int) estElemNum,
-          ((IntLongVector) row).clone());
+            ((IntLongVector) row).clone());
       } else {
         return new ServerLongLongRow(rowId, rowType, startCol, endCol, (int) estElemNum,
-          ((LongLongVector) row).clone());
+            ((LongLongVector) row).clone());
+      }
+    } finally {
+      endRead();
+    }
+  }
+
+  @Override
+  public ServerRow
+adaptiveClone() {
+    startRead();
+    try {
+      if (useIntKey) {
+        if (row.isSparse()) {
+          return new ServerLongLongRow(rowId, rowType, startCol, endCol, (int) estElemNum,
+              VFactory.sortedLongVector((int) (endCol - startCol),
+                  ((IntLongVector) row).getStorage().getIndices(),
+                  ((IntLongVector) row).getStorage().getValues()));
+        } else {
+          return new ServerLongLongRow(rowId, rowType, startCol, endCol, (int) estElemNum,
+              ((IntLongVector) row));
+        }
+
+      } else {
+        return new ServerLongLongRow(rowId, rowType, startCol, endCol, (int) estElemNum,
+            VFactory.sortedLongKeyLongVector((int) (endCol - startCol),
+                ((LongLongVector) row).getStorage().getIndices(),
+                ((LongLongVector) row).getStorage().getValues()));
       }
     } finally {
       endRead();
@@ -536,7 +577,7 @@ public class ServerLongLongRow extends ServerRow {
 
   @Override
   public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
-    throws IOException {
+      throws IOException {
     if (func != null) {
       if (indexType == IndexType.INT) {
         for (int i = 0; i < indexSize; i++) {
@@ -560,7 +601,34 @@ public class ServerLongLongRow extends ServerRow {
     }
   }
 
-  @Override public void setSplit(Vector row) {
+  @Override
+  public void setSplit(Vector row) {
     super.setSplit(row);
+  }
+
+  @Override
+  public void elemUpdate(LongElemUpdateFunc func) {
+    if (isDense()) {
+      long[] values = getValues();
+      for (int i = 0; i < values.length; i++) {
+        values[i] = func.update();
+      }
+    } else {
+      if (useIntKey) {
+        ObjectIterator<Int2LongMap.Entry> iter = ((IntLongVector) row).getStorage().entryIterator();
+        Int2LongMap.Entry entry;
+        while (iter.hasNext()) {
+          entry = iter.next();
+          entry.setValue(func.update());
+        }
+      } else {
+        ObjectIterator<Long2LongMap.Entry> iter = ((LongLongVector) row).getStorage().entryIterator();
+        Long2LongMap.Entry entry;
+        while (iter.hasNext()) {
+          entry = iter.next();
+          entry.setValue(func.update());
+        }
+      }
+    }
   }
 }

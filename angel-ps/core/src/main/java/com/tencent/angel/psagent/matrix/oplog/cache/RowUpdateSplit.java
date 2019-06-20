@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -29,6 +29,7 @@ import org.apache.commons.logging.LogFactory;
  * Row update split
  */
 public abstract class RowUpdateSplit implements Serialize {
+
   protected final static Log LOG = LogFactory.getLog(RowUpdateSplit.class);
   /**
    * split start position
@@ -50,17 +51,23 @@ public abstract class RowUpdateSplit implements Serialize {
    */
   protected volatile RowType rowType;
 
+  /**
+   * Split context
+   */
   protected RowUpdateSplitContext splitContext;
 
+  /**
+   * Deserialize inner vector, it is initialized if the update split been deserialized
+   */
   protected Vector vector;
 
   /**
    * Create a new RowUpdateSplit.
    *
    * @param rowIndex row index
-   * @param rowType  row type
-   * @param start    split start position
-   * @param end      split end position
+   * @param rowType row type
+   * @param start split start position
+   * @param end split end position
    */
   public RowUpdateSplit(int rowIndex, RowType rowType, int start, int end) {
     this.rowId = rowIndex;
@@ -123,17 +130,20 @@ public abstract class RowUpdateSplit implements Serialize {
     return end - start;
   }
 
-  @Override public void serialize(ByteBuf buf) {
+  @Override
+  public void serialize(ByteBuf buf) {
     buf.writeInt(rowId);
     buf.writeInt(rowType.getNumber());
   }
 
-  @Override public void deserialize(ByteBuf buf) {
+  @Override
+  public void deserialize(ByteBuf buf) {
     rowId = buf.readInt();
     rowType = RowType.valueOf(buf.readInt());
   }
 
-  @Override public int bufferLen() {
+  @Override
+  public int bufferLen() {
     return 8;
   }
 
@@ -155,22 +165,38 @@ public abstract class RowUpdateSplit implements Serialize {
     this.splitContext = splitContext;
   }
 
+  /**
+   * Set row id
+   *
+   * @param rowId row id
+   */
   public void setRowId(int rowId) {
     this.rowId = rowId;
   }
 
+  /**
+   * Get inner vector
+   *
+   * @return inner vector
+   */
   public Vector getVector() {
     return vector;
   }
 
-  public void setVector(Vector vector) {
-    this.vector = vector;
-  }
-
+  /**
+   * Is use int key in serialization
+   *
+   * @return true means use int key in serialization
+   */
   public boolean isUseIntKey() {
     return true;
   }
 
+  /**
+   * Set use the int key in serialization
+   *
+   * @param useIntKey true means use int key in serialization
+   */
   public void setUseIntKey(boolean useIntKey) {
 
   }

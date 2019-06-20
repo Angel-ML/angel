@@ -19,8 +19,17 @@ package com.tencent.angel.psagent.matrix.oplog.cache;
 
 import com.tencent.angel.ml.matrix.RowType;
 
+/**
+ * Row update split factory
+ */
 public class RowUpdateSplitFactory {
 
+  /**
+   * Get empty row update split use update split storage type
+   *
+   * @param rowType update split storage type
+   * @return empty row update split
+   */
   public static RowUpdateSplit get(RowType rowType) {
     switch (rowType) {
       case T_DOUBLE_DENSE:
@@ -58,6 +67,34 @@ public class RowUpdateSplitFactory {
 
       case T_LONG_SPARSE_LONGKEY:
         return new LongKeySparseLongRowUpdateSplit();
+
+      case T_DOUBLE_DENSE_COMPONENT:
+      case T_DOUBLE_SPARSE_COMPONENT:
+        return new CompIntDoubleRowUpdateSplit();
+
+      case T_FLOAT_DENSE_COMPONENT:
+      case T_FLOAT_SPARSE_COMPONENT:
+        return new CompIntFloatRowUpdateSplit();
+
+      case T_INT_DENSE_COMPONENT:
+      case T_INT_SPARSE_COMPONENT:
+        return new CompIntIntRowUpdateSplit();
+
+      case T_LONG_DENSE_COMPONENT:
+      case T_LONG_SPARSE_COMPONENT:
+        return new CompIntLongRowUpdateSplit();
+
+      case T_DOUBLE_SPARSE_LONGKEY_COMPONENT:
+        return new CompLongDoubleRowUpdateSplit();
+
+      case T_FLOAT_SPARSE_LONGKEY_COMPONENT:
+        return new CompLongFloatRowUpdateSplit();
+
+      case T_INT_SPARSE_LONGKEY_COMPONENT:
+        return new CompLongIntRowUpdateSplit();
+
+      case T_LONG_SPARSE_LONGKEY_COMPONENT:
+        return new CompLongLongRowUpdateSplit();
 
       default:
         throw new UnsupportedOperationException("Unknown row type " + rowType);

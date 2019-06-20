@@ -248,6 +248,11 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
   }
 
   private[spark] def conf: Map[String, String] = angelConf
+
+  override def save(ctx: ModelSaveContext): Unit = AngelPSContext.save(ctx)
+
+  override def load(ctx: ModelLoadContext): Unit = AngelPSContext.load(ctx)
+
 }
 
 private[spark] object AngelPSContext {

@@ -98,7 +98,7 @@ class Embedding(name: String, outputDim: Int, val numFactors: Int, override val 
     }
 
     val func = new GetColsFunc(param)
-    val result = PSAgentContext.get.getUserRequestAdapter.get(func).asInstanceOf[GetColsResult]
+    val result = PSAgentContext.get.getUserRequestAdapter.get(func).get().asInstanceOf[GetColsResult]
     embeddings = result.results
     val end = System.currentTimeMillis()
   }

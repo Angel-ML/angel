@@ -31,17 +31,24 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+/**
+ * Int key double value vector splitter
+ */
 public class IntDoubleVectorSplitter implements ISplitter {
+
   protected final static Log LOG = LogFactory.getLog(RowUpdateSplitUtils.class);
+
   @Override
   public Map<PartitionKey, RowUpdateSplit> split(Vector vector, List<PartitionKey> parts) {
-    IntDoubleVectorStorage storage = ((IntDoubleVector)vector).getStorage();
+    IntDoubleVectorStorage storage = ((IntDoubleVector) vector).getStorage();
     if (storage instanceof IntDoubleDenseVectorStorage) {
       return RowUpdateSplitUtils.split(vector.getRowId(), storage.getValues(), parts);
     } else if (storage instanceof IntDoubleSparseVectorStorage) {
-      return RowUpdateSplitUtils.split(vector.getRowId(), storage.getIndices(), storage.getValues(), parts, false);
+      return RowUpdateSplitUtils
+          .split(vector.getRowId(), storage.getIndices(), storage.getValues(), parts, false);
     } else if (storage instanceof IntDoubleSortedVectorStorage) {
-      return RowUpdateSplitUtils.split(vector.getRowId(), storage.getIndices(), storage.getValues(), parts, true);
+      return RowUpdateSplitUtils
+          .split(vector.getRowId(), storage.getIndices(), storage.getValues(), parts, true);
     } else {
       throw new UnsupportedOperationException(
           "unsupport split for storage type:" + storage.getClass().getName());
