@@ -33,5 +33,7 @@ public interface LongKeyVectorStorage {
 
   int size();
 
+  void setSize(int size);
+
   boolean hasKey(long key);
 }

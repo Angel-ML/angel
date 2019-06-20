@@ -32,9 +32,14 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 #end
 
 public class ${itype}${dtype}SparseVectorStorage implements ${itype}${dtype}VectorStorage {
+
     private ${itype}2${dtype}OpenHashMap map;
     private byte flag; // 001: dense; 010: sparse; 100: sorted
     private $itype.toLowerCase() dim;
+
+    public ${itype}${dtype}SparseVectorStorage() {
+		super();
+	}
 
     public ${itype}${dtype}SparseVectorStorage($itype.toLowerCase() dim, ${itype}2${dtype}OpenHashMap map) {
         this.flag = 2;
@@ -268,6 +273,8 @@ public class ${itype}${dtype}SparseVectorStorage implements ${itype}${dtype}Vect
     public int size() {
         return map.size();
     }
+
+    public void setSize(int size) {}
 
     @Override
     public boolean hasKey($itype.toLowerCase() key) {
