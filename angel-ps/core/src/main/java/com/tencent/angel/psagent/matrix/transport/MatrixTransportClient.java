@@ -26,7 +26,7 @@ import com.tencent.angel.common.transport.ChannelPoolParam;
 import com.tencent.angel.common.transport.NettyChannel;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.matrix.PartitionLocation;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.servingmath2.utils.RowType;
 import com.tencent.angel.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.matrix.psf.get.base.PartitionGetResult;

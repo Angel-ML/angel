@@ -18,9 +18,9 @@
 
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
-import com.tencent.angel.ml.math2.MFactory;
-import com.tencent.angel.ml.math2.matrix.*;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.servingmath2.MFactory;
+import com.tencent.angel.ml.servingmath2.matrix.*;
+import com.tencent.angel.ml.servingmath2.utils.RowType;
 
 public class MatrixFactory {
   public static Matrix createRBMatrix(RowType rowType, int rowNum, long colNum, long subDim) {

@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.core.conf
 
 import com.tencent.angel.ml.core.local.{LocalOptimizerProvider, LocalVariableProvider}
-import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.servingmath2.utils.RowType
 import com.tencent.angel.model.output.format.{ColIdValueTextRowFormat, RowIdColIdValueTextRowFormat, TextColumnFormat}
 // import com.tencent.angel.model.output.format.{ColIdValueTextRowFormat, RowIdColIdValueTextRowFormat, TextColumnFormat}
 

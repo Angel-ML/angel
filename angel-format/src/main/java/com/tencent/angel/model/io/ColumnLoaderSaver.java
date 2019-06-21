@@ -17,15 +17,15 @@
 
 package com.tencent.angel.model.io;
 
-import com.tencent.angel.ml.math2.MFactory;
-import com.tencent.angel.ml.math2.VFactory;
-import com.tencent.angel.ml.math2.matrix.MapMatrix;
-import com.tencent.angel.ml.math2.matrix.Matrix;
-import com.tencent.angel.ml.math2.utils.RowType;
-import com.tencent.angel.ml.math2.vector.IntDoubleVector;
-import com.tencent.angel.ml.math2.vector.IntFloatVector;
-import com.tencent.angel.ml.math2.vector.IntIntVector;
-import com.tencent.angel.ml.math2.vector.IntLongVector;
+import com.tencent.angel.ml.servingmath2.MFactory;
+import com.tencent.angel.ml.servingmath2.VFactory;
+import com.tencent.angel.ml.servingmath2.matrix.MapMatrix;
+import com.tencent.angel.ml.servingmath2.matrix.Matrix;
+import com.tencent.angel.ml.servingmath2.utils.RowType;
+import com.tencent.angel.ml.servingmath2.vector.IntDoubleVector;
+import com.tencent.angel.ml.servingmath2.vector.IntFloatVector;
+import com.tencent.angel.ml.servingmath2.vector.IntIntVector;
+import com.tencent.angel.ml.servingmath2.vector.IntLongVector;
 import com.tencent.angel.model.MatrixLoadContext;
 import com.tencent.angel.model.output.element.IntDoublesCol;
 import com.tencent.angel.model.output.element.IntFloatsCol;

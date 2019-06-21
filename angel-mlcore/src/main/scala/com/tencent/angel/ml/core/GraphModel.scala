@@ -5,7 +5,7 @@ import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
 import com.tencent.angel.ml.core.utils.{DataCache, MethodNotImplement}
 import com.tencent.angel.ml.core.variable.Variable
-import com.tencent.angel.ml.math2.matrix.Matrix
+import com.tencent.angel.ml.servingmath2.matrix.Matrix
 
 
 abstract class GraphModel(conf: SharedConf) extends MLModel(conf) {

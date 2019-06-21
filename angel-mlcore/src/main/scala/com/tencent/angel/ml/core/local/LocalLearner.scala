@@ -7,7 +7,7 @@ import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.variable.VoidType
 import com.tencent.angel.ml.core.optimizer.decayer.{StepSizeScheduler, WarmRestarts}
 import com.tencent.angel.ml.core.utils.ValidationUtils
-import com.tencent.angel.ml.math2.utils.LabeledData
+import com.tencent.angel.ml.servingmath2.utils.LabeledData
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.hadoop.conf.Configuration
 

@@ -1,10 +1,10 @@
 package com.tencent.angel.ml.core.utils
 
-import com.tencent.angel.ml.math2.MFactory
-import com.tencent.angel.ml.math2.matrix.Matrix
-import com.tencent.angel.ml.math2.storage._
-import com.tencent.angel.ml.math2.utils.RowType
-import com.tencent.angel.ml.math2.vector._
+import com.tencent.angel.ml.servingmath2.MFactory
+import com.tencent.angel.ml.servingmath2.matrix.Matrix
+import com.tencent.angel.ml.servingmath2.storage._
+import com.tencent.angel.ml.servingmath2.utils.RowType
+import com.tencent.angel.ml.servingmath2.vector._
 
 object OptUtils {
 

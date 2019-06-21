@@ -23,9 +23,9 @@ import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.network.layers.LossLayer
 import com.tencent.angel.ml.core.utils.JsonUtils.{extract, fieldEqualClassName, matchClassName}
 import com.tencent.angel.ml.core.utils.LossFuncKeys
-import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, BlasMatrix, Matrix}
-import com.tencent.angel.ml.math2.ufuncs.{LossFuncs, Ufuncs}
-import com.tencent.angel.ml.math2.vector.IntDoubleVector
+import com.tencent.angel.ml.servingmath2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, BlasMatrix, Matrix}
+import com.tencent.angel.ml.servingmath2.ufuncs.{LossFuncs, Ufuncs}
+import com.tencent.angel.ml.servingmath2.vector.IntDoubleVector
 import org.json4s.JsonAST.{JField, JObject, JString, JValue}
 import org.json4s.JsonDSL._
 

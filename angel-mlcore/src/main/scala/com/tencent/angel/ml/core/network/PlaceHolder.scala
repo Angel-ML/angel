@@ -20,11 +20,11 @@ package com.tencent.angel.ml.core.network
 
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.utils.MLException
-import com.tencent.angel.ml.math2.matrix._
-import com.tencent.angel.ml.math2.storage._
-import com.tencent.angel.ml.math2.utils.LabeledData
-import com.tencent.angel.ml.math2.vector._
-import com.tencent.angel.ml.math2.{MFactory, VFactory}
+import com.tencent.angel.ml.servingmath2.matrix._
+import com.tencent.angel.ml.servingmath2.storage._
+import com.tencent.angel.ml.servingmath2.utils.LabeledData
+import com.tencent.angel.ml.servingmath2.vector._
+import com.tencent.angel.ml.servingmath2.{MFactory, VFactory}
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet
 import org.apache.commons.logging.{Log, LogFactory}

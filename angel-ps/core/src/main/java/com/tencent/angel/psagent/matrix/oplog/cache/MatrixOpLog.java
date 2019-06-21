@@ -20,11 +20,11 @@ package com.tencent.angel.psagent.matrix.oplog.cache;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.MatrixConf;
-import com.tencent.angel.ml.math2.matrix.Matrix;
-import com.tencent.angel.ml.math2.matrix.RowBasedMatrix;
-import com.tencent.angel.ml.math2.vector.Vector;
+import com.tencent.angel.ml.servingmath2.matrix.Matrix;
+import com.tencent.angel.ml.servingmath2.matrix.RowBasedMatrix;
+import com.tencent.angel.ml.servingmath2.vector.Vector;
 import com.tencent.angel.matrix.MatrixMeta;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.servingmath2.utils.RowType;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.storage.MatrixStorage;
 import org.apache.commons.logging.Log;

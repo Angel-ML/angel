@@ -20,7 +20,7 @@ package com.tencent.angel.matrix.psf.update.enhance.map.func
 
 import io.netty.buffer.ByteBuf
 
-import com.tencent.angel.ml.math2.ufuncs.expression
+import com.tencent.angel.ml.servingmath2.ufuncs.expression
 
 class SubS(scalar: Double, inplace: Boolean) extends expression.SSub(inplace, scalar) with MapFunc {
   def this() = this(Double.NaN, false)

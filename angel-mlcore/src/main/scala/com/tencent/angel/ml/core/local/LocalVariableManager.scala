@@ -3,7 +3,7 @@ package com.tencent.angel.ml.core.local
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.variable.VariableManager
-import com.tencent.angel.ml.math2.vector.Vector
+import com.tencent.angel.ml.servingmath2.vector.Vector
 import org.apache.hadoop.conf.Configuration
 
 import scala.collection.JavaConversions._

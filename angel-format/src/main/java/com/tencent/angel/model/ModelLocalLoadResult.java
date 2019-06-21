@@ -17,7 +17,7 @@
 
 package com.tencent.angel.model;
 
-import com.tencent.angel.ml.math2.matrix.Matrix;
+import com.tencent.angel.ml.servingmath2.matrix.Matrix;
 import java.util.Map;
 
 /**

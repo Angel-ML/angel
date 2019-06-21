@@ -19,8 +19,8 @@
 package com.tencent.angel.ml.core.network
 
 import com.tencent.angel.ml.core.utils.{MLException, TransFuncKeys}
-import com.tencent.angel.ml.math2.matrix.Matrix
-import com.tencent.angel.ml.math2.ufuncs.{TransFuncs, Ufuncs}
+import com.tencent.angel.ml.servingmath2.matrix.Matrix
+import com.tencent.angel.ml.servingmath2.ufuncs.{TransFuncs, Ufuncs}
 import org.json4s.JsonAST.{JField, JObject, JString, JValue}
 import org.json4s.JsonDSL._
 import com.tencent.angel.ml.core.utils.JsonUtils.extract

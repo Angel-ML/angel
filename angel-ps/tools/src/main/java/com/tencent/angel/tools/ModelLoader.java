@@ -19,7 +19,7 @@
 package com.tencent.angel.tools;
 
 import com.google.common.base.Preconditions;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.servingmath2.utils.RowType;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.model.output.format.MatrixFilesMeta;
 import com.tencent.angel.model.output.format.MatrixPartitionMeta;

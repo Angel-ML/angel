@@ -4,9 +4,9 @@ import com.tencent.angel.matrix.MatrixContext
 import com.tencent.angel.matrix.psf.update.RandomNormal
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.utils.{PSMatrixUtils, RowTypeUtils}
-import com.tencent.angel.ml.math2.matrix.Matrix
-import com.tencent.angel.ml.math2.utils.RowType
-import com.tencent.angel.ml.math2.vector.Vector
+import com.tencent.angel.ml.servingmath2.matrix.Matrix
+import com.tencent.angel.ml.servingmath2.utils.RowType
+import com.tencent.angel.ml.servingmath2.vector.Vector
 import com.tencent.angel.psagent.PSAgentContext
 
 

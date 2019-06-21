@@ -5,7 +5,7 @@ import com.tencent.angel.ml.core.local.variables._
 import com.tencent.angel.ml.core.network.PlaceHolder
 import com.tencent.angel.ml.core.utils.{MLException, RowTypeUtils}
 import com.tencent.angel.ml.core.variable._
-import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.servingmath2.utils.RowType
 
 
 class LocalVariableProvider(dataFormat: String, modelType: RowType)(

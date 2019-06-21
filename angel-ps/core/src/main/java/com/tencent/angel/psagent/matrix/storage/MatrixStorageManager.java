@@ -18,7 +18,7 @@
 
 package com.tencent.angel.psagent.matrix.storage;
 
-import com.tencent.angel.ml.math2.vector.Vector;
+import com.tencent.angel.ml.servingmath2.vector.Vector;
 
 import java.util.concurrent.ConcurrentHashMap;
 

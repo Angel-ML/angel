@@ -23,7 +23,7 @@ import com.tencent.angel.matrix.psf.get.base.GetResult;
 import com.tencent.angel.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.matrix.psf.get.getrow.GetRowResult;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.servingmath2.utils.RowType;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.ps.storage.vector.*;
 import com.tencent.angel.psagent.PSAgentContext;

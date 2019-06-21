@@ -18,7 +18,7 @@
 
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
-import com.tencent.angel.ml.math2.matrix.Matrix;
+import com.tencent.angel.ml.servingmath2.matrix.Matrix;
 import com.tencent.angel.psagent.task.TaskContext;
 
 public class MatrixMergeMessage extends OpLogMessage {

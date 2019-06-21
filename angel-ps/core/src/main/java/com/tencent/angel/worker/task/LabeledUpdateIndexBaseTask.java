@@ -19,10 +19,10 @@
 package com.tencent.angel.worker.task;
 
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.math2.storage.IntKeyVectorStorage;
-import com.tencent.angel.ml.math2.utils.LabeledData;
-import com.tencent.angel.ml.math2.vector.IntDummyVector;
-import com.tencent.angel.ml.math2.vector.Vector;
+import com.tencent.angel.ml.servingmath2.storage.IntKeyVectorStorage;
+import com.tencent.angel.ml.servingmath2.utils.LabeledData;
+import com.tencent.angel.ml.servingmath2.vector.IntDummyVector;
+import com.tencent.angel.ml.servingmath2.vector.Vector;
 import com.tencent.angel.matrix.MatrixMeta;
 import com.tencent.angel.worker.storage.Reader;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;

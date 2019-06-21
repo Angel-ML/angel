@@ -10,7 +10,7 @@ import com.tencent.angel.ml.core.AngelEnvContext
 import com.tencent.angel.ml.core.conf.{AngelMLConf, SharedConf}
 import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
-import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.servingmath2.utils.RowType
 import com.tencent.angel.model._
 import org.apache.hadoop.conf.Configuration
 

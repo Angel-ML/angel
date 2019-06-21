@@ -7,10 +7,10 @@ import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.PlaceHolder
 import com.tencent.angel.ml.core.utils.ValueNotAllowed
 import com.tencent.angel.ml.core.variable.{EmbedUtils, EmbedVariable, Updater, VariableManager}
-import com.tencent.angel.ml.math2.matrix.{MapMatrix, Matrix}
-import com.tencent.angel.ml.math2.storage._
-import com.tencent.angel.ml.math2.utils.RowType
-import com.tencent.angel.ml.math2.vector.Vector
+import com.tencent.angel.ml.servingmath2.matrix.{MapMatrix, Matrix}
+import com.tencent.angel.ml.servingmath2.storage._
+import com.tencent.angel.ml.servingmath2.utils.RowType
+import com.tencent.angel.ml.servingmath2.vector.Vector
 
 
 class LocalEmbedVariable(name: String,

@@ -21,7 +21,7 @@ package com.tencent.angel.matrix.psf.update.enhance.zip2
 import com.tencent.angel.common.Serialize
 import com.tencent.angel.matrix.psf.update.enhance.{MFUpdateFunc, MFUpdateParam}
 import com.tencent.angel.matrix.psf.update.enhance.zip2.func.Zip2MapFunc
-import com.tencent.angel.ml.math2.ufuncs.executor.BinaryExecutor
+import com.tencent.angel.ml.servingmath2.ufuncs.executor.BinaryExecutor
 import com.tencent.angel.ps.storage.vector.ServerRow
 
 

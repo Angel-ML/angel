@@ -20,7 +20,7 @@ package com.tencent.angel.ml.core.network.layers.multiary
 
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.network.layers._
-import com.tencent.angel.ml.math2.matrix.Matrix
+import com.tencent.angel.ml.servingmath2.matrix.Matrix
 import org.apache.commons.logging.LogFactory
 
 

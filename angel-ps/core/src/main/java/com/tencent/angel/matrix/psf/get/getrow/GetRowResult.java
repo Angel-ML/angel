@@ -19,7 +19,7 @@
 package com.tencent.angel.matrix.psf.get.getrow;
 
 import com.tencent.angel.matrix.psf.get.base.GetResult;
-import com.tencent.angel.ml.math2.vector.Vector;
+import com.tencent.angel.ml.servingmath2.vector.Vector;
 import com.tencent.angel.psagent.matrix.ResponseType;
 
 public class GetRowResult extends GetResult {

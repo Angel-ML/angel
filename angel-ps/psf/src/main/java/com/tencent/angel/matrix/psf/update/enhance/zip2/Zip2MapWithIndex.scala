@@ -21,9 +21,9 @@ package com.tencent.angel.matrix.psf.update.enhance.zip2
 import com.tencent.angel.common.Serialize
 import com.tencent.angel.matrix.psf.update.enhance.MFUpdateFunc
 import com.tencent.angel.matrix.psf.update.enhance.zip2.func.Zip2MapWithIndexFunc
-import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.storage._
-import com.tencent.angel.ml.math2.vector._
+import com.tencent.angel.ml.servingmath2.VFactory
+import com.tencent.angel.ml.servingmath2.storage._
+import com.tencent.angel.ml.servingmath2.vector._
 import com.tencent.angel.ps.storage.vector._
 
 
