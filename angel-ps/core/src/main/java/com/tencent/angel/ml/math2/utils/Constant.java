@@ -24,6 +24,8 @@ public class Constant {
   public static double sparseDenseStorageThreshold = 0.35;
   public static double sortedDenseStorageThreshold = 0.50;
   public static double sparseSortedThreshold = 0.40;
+  public static double sparseSortedStorageThreshold = 0.25;
+  public static double sortedThreshold = 0.2;
   public static double intersectionCoeff = 0.75;
   public static double denseLoopThreshold = 0.3;
   public static double denseStorageThreshold = Math.pow(2, 10);
