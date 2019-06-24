@@ -17,22 +17,23 @@
 
 package com.tencent.angel.spark.ml.graph.commonfriends
 
-import com.tencent.angel.spark.ml.graph.utils.PartitionTools
+import org.apache.spark.graphx.PartitionStrategy
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 
 import scala.collection.mutable.ArrayBuffer
 
 
-object CommonFriendsGraph{
+object CommonFriendsGraph {
 
-  def edgeTupleRDD2GraphPartitions(tupleRdd: RDD[(Int, Int)],
-                                   maxNodeId: Int,
-                                   numPartition: Option[Int] = None,
-                                   storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
+  def edgeRDD2GraphPartitions(tupleRdd: RDD[(Int, Int)],
+                              maxNodeId: Int,
+                              numPartition: Option[Int] = None,
+                              storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
   : RDD[CommonFriendsPartition] = {
     val partNum = numPartition.getOrElse(tupleRdd.getNumPartitions)
-    val partitioner = PartitionTools.rangePartitioner(maxNodeId, partNum)
+    //val partitioner = PartitionTools.rangePartitioner(maxNodeId, partNum)
+    val partitioner = PartitionStrategy.EdgePartition2D
     tupleRdd.groupByKey(partNum).mapPartitions { iter =>
       if (iter.nonEmpty) {
         val keys = new ArrayBuffer[Int]()
@@ -47,7 +48,6 @@ object CommonFriendsGraph{
       }
     }.persist(storageLevel)
   }
-
 }
 
 

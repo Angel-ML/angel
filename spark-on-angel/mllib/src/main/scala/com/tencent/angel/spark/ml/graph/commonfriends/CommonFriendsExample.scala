@@ -38,7 +38,7 @@ object CommonFriendsExample {
     val psPartitionNum = 2
 
     start(mode)
-    val commonfriends = new CommonFriends()
+    val commonfriends = new CommonFriendsV2()
       .setPartitionNum(partitionNum)
       .setStorageLevel(storageLevel)
       .setBatchSize(batchSize)

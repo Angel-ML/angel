@@ -78,8 +78,6 @@ class InitGraphTest extends PSFunSuite with SharedPSContext {
     // Init neighbor table
     neighborTable.initNeighbor(data, param)
 
-    neighborTable.sampleNeighborsTest(data, 5, 10, -1)
-
     // Sample neighbors for some nodes
     val nodeIds = new Array[Int](1)
     nodeIds(0) = 5988

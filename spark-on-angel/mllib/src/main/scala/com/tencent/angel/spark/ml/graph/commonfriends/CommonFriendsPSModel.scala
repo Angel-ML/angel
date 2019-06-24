@@ -24,7 +24,7 @@ import org.apache.spark.rdd.RDD
 
 class CommonFriendsPSModel(val neiborTable: NeighborTable) extends Serializable {
 
-  def initNeigborTable(data: RDD[(Int, Int)]): Unit = {
+  def initNeighborTable(data: RDD[(Int, Int)]): Unit = {
     neiborTable.initNeighbor(data)
   }
 

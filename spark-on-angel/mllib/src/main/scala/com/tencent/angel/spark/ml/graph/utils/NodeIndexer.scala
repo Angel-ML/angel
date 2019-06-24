@@ -81,6 +81,7 @@ class NodeIndexer extends Serializable {
 
   def encode[C: ClassTag, U: ClassTag](rdd: RDD[C], batchSize: Int)(
     func: (Array[C], PSVector) => Iterator[U]): RDD[U] = {
+    println(s"batch size during node encoding: ${batchSize}")
     rdd.mapPartitions { iter =>
       BatchIter(iter, batchSize).flatMap { batch =>
         func(batch, long2int)

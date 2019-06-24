@@ -20,6 +20,7 @@ package com.tencent.angel.spark.ml.graph.commonfriends
 import com.tencent.angel.ml.math2.vector.{IntLongVector, LongIntVector}
 import com.tencent.angel.spark.ml.graph.params._
 import com.tencent.angel.spark.ml.graph.utils.NodeIndexer
+import org.apache.spark.graphx.PartitionStrategy
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.util.Identifiable
@@ -28,8 +29,7 @@ import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.sql.types.{IntegerType, LongType, StructField, StructType}
 import org.apache.spark.storage.StorageLevel
 
-
-class CommonFriends(override val uid: String) extends Transformer
+class CommonFriendsV2(override val uid: String) extends Transformer
   with HasWeightCol with HasSrcNodeIdCol with HasDstNodeIdCol
   with HasIsWeighted with HasPartitionNum with HasPSPartitionNum
   with HasStorageLevel with HasBatchSize with HasBufferSize
@@ -40,20 +40,50 @@ class CommonFriends(override val uid: String) extends Transformer
   override def transform(dataset: Dataset[_]): DataFrame = {
 
     assert(dataset.sparkSession.sparkContext.getCheckpointDir.nonEmpty, "set checkpoint dir first")
-    val rawEdges: RDD[(Long, Long)] = {
+
+    var numPart = dataset.sparkSession.sparkContext.getConf.getInt("spark.default.parallelism", $(partitionNum))
+
+    println(s"default parallelism: $numPart")
+
+    //val partitioner = PartitionStrategy.EdgePartition2D
+    val edgesFromFiles: RDD[(Long, Long)] = {
       dataset.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd.map { row =>
         (row.getLong(0), row.getLong(1))
       }
-    }.repartition($(partitionNum)).persist(StorageLevel.DISK_ONLY)
+    }
 
-    val nodes = rawEdges.flatMap { case (src, dst) =>
-      Iterator(src, dst)
+    val numEdges = edgesFromFiles.count()
+    println(s"numEdge=$numEdges")
+    numPart = (numEdges / $(batchSize)).toInt
+    setPartitionNum(numPart)
+
+    val nodes = edgesFromFiles.mapPartitions { iter =>
+      val distinctNodes = collection.mutable.HashSet[Long]()
+      iter.foreach { case (src, dst) =>
+          distinctNodes.add(src)
+          distinctNodes.add(dst)
+      }
+      distinctNodes.toIterator
     }.distinct($(partitionNum))
+
+    val rawEdges = edgesFromFiles.coalesce($(partitionNum), shuffle = false)
+      .persist(StorageLevel.DISK_ONLY)
+
+    nodes.foreachPartition(_ => null)
+
+    println(s"rawedges partition number: ${rawEdges.getNumPartitions}")
+    println(s"nodes partition number: ${nodes.getNumPartitions}")
+
+    nodes.foreachPartition(_ => Unit)
 
     val reIndexer = new NodeIndexer()
     reIndexer.train($(psPartitionNum), nodes)
 
-    val edges: RDD[(Int, Int)] = reIndexer.encode(rawEdges, 100) { case (iter, ps) =>
+    val numNodes = reIndexer.getNumNodes
+    println(s"maxNodeId=$numNodes")
+
+    val edges: RDD[(Int, Int)] = reIndexer.encode(rawEdges, $(batchSize)) { case (iter, ps) =>
+      println(s"build edges RDD, size = ${iter.length}")
       val keys = iter.flatMap { case (src, dst) => Iterator(src, dst) }.distinct
       val map = ps.pull(keys).asInstanceOf[LongIntVector]
       iter.map { case (src, dst) =>
@@ -61,24 +91,23 @@ class CommonFriends(override val uid: String) extends Transformer
       }.toIterator
     }
 
-    //val numEdges = edges.mapPartitions( iter => Iterator.single(iter.length)).sum()
-    val numNodes = reIndexer.getNumNodes
-    //println(s"numEdge=$numEdges")
-    println(s"maxNodeId=$numNodes")
+    edges.foreachPartition(_ => Unit)
 
-    val partitions: RDD[CommonFriendsPartition] =
-      CommonFriendsGraph.edgeRDD2GraphPartitions(edges, numNodes, Some($(partitionNum)),storageLevel = $(storageLevel))
+    println(s"edges partition number: ${edges.getNumPartitions}")
+
+    edges.foreachPartition(_ => Unit)
+
+    val partitions: RDD[CommonFriendsPartitionV2] =
+      CommonFriendsGraphV2.edgeRDD2GraphPartitions(edges, storageLevel = $(storageLevel))
 
     // destroys the lineage and close encoder of node indexer
     partitions.checkpoint()
     partitions.foreachPartition(_ => Unit)
     //reIndexer.destroyEncoder()
-
     rawEdges.unpersist()
 
     val psModel = CommonFriendsPSModel(numNodes, $(batchSize), $(psPartitionNum))
     psModel.initNeighborTable(edges)
-    val graph = new CommonFriendsGraph(partitions, psModel)
 
     val nodeIds= Array(1,2,3)
     val nodeNeighbors = psModel.getNeighborTable(nodeIds)
@@ -88,12 +117,16 @@ class CommonFriends(override val uid: String) extends Transformer
       println(s"node id = ${entry.getIntKey}, neighbors = ${entry.getValue.mkString(",")}")
     }
 
-    println(s"total degree: ${graph.getDegree().sum()}")
+    val graph = new CommonFriendsGraphV2(partitions, psModel)
+    val rawResult: RDD[((Int, Int), Int)] = graph.run($(batchSize)).persist(StorageLevel.DISK_ONLY)
 
-    val rawResult: RDD[((Int, Int), Int)] = graph.run()
+    println(s"======results with encoded node index======")
+    rawResult.take(10).foreach{ item =>
+      println(s"src = ${item._1._1}, ds = ${item._1._2}, num of common friends = ${item._2}")
+    }
 
-    val decodeResult: RDD[Row] = reIndexer.decode(rawResult, 100) { case (iter, ps) =>
-      val keys = iter.flatMap { case ((src, dst), numFriends) => Iterator(src, dst) }.distinct
+    val decodeResult: RDD[Row] = reIndexer.decode(rawResult, $(batchSize)) { case (iter, ps) =>
+      val keys = iter.flatMap { case ((src, dst), _) => Iterator(src, dst) }.distinct
       val map = ps.pull(keys).asInstanceOf[IntLongVector]
       iter.map { case ((src, dst), numFriends) =>
         Row(map.get(src), map.get(dst), numFriends.toInt)
@@ -101,7 +134,12 @@ class CommonFriends(override val uid: String) extends Transformer
     }
 
     println(s"======results with original node index======")
-    decodeResult.take(10).foreach( triple => println(triple.mkString(",")))
+    decodeResult.take(10).foreach{ triple =>
+        println(s"src = ${triple.getLong(0)}, " +
+          s"dst = ${triple.getLong(1)}, " +
+          s"num of common friends = ${triple.getInt(2)}")
+    }
+
     val outputSchema = transformSchema(dataset.schema)
     dataset.sparkSession.createDataFrame(decodeResult, outputSchema)
   }
@@ -117,7 +155,7 @@ class CommonFriends(override val uid: String) extends Transformer
   override def copy(extra: ParamMap): Transformer = defaultCopy(extra)
 }
 
-object CommonFriends {
-
+object CommonFriendsV2 {
 
 }
+

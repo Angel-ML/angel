@@ -93,7 +93,7 @@ class CommonFriendsPartition(val srcNodes: Array[Int],
       Array.fill(adjNodes.length)(srcNode).zip(adjNodes)
         .flatMap { case (srcNode, dstNode) =>
           val neighborsOfDst = neighborsNodesMap.get(dstNode)
-          if (idx % 100000 == 0) {
+          if (idx % 100000000 == 0) {
             println(s"src node = $srcNode, dst node = $dstNode")
             println(s"neighbors of src node = ${adjNodes.mkString(",")}")
             println(s"neighbors of dst node = ${neighborsOfDst.mkString(",")}")

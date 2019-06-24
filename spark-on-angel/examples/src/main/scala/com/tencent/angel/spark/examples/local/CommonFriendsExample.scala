@@ -19,7 +19,7 @@ package com.tencent.angel.spark.examples.local
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.ml.graph.commonfriends.CommonFriends
+import com.tencent.angel.spark.ml.graph.commonfriends.{CommonFriends, CommonFriendsV2}
 import com.tencent.angel.spark.ml.graph.utils.GraphIO
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.storage.StorageLevel

@@ -51,7 +51,7 @@ class NeighborTable(@BeanProperty param: Param) extends Serializable {
         // Init the neighbor table use many mini-batch to avoid big object
         iter.sliding(param.initBatchSize, param.initBatchSize).map(pairs => initNeighbors(psMatrix, pairs))
       }
-    }.foreachPartition(_ => Unit)
+    }.collect()
 
     // Merge the temp data to generate final neighbor table
     psMatrix.psfUpdate(new InitNeighborOver(new InitNeighborOverParam(psMatrix.id))).get()
