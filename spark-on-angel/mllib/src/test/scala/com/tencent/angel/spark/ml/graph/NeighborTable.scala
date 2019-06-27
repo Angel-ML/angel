@@ -33,7 +33,7 @@ import scala.collection.mutable.ArrayBuffer
   * A simple neighbor table tool
   * @param param neighbor table param
   */
-class NeighborTable(param:Param) extends Serializable {
+class NeighborTable(param: Param) extends Serializable {
   val neighborTableName = "neighbor.table"
   var psMatrix: PSMatrix = _
 

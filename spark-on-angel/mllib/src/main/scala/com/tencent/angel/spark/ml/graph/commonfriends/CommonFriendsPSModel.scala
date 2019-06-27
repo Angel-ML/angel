@@ -22,22 +22,22 @@ import com.tencent.angel.spark.ml.graph.NeighborTable
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import org.apache.spark.rdd.RDD
 
-class CommonFriendsPSModel(val neiborTable: NeighborTable) extends Serializable {
+class CommonFriendsPSModel(val neighborTable: NeighborTable) extends Serializable {
 
   def initNeighborTable(data: RDD[(Int, Int)]): Unit = {
-    neiborTable.initNeighbor(data)
+    neighborTable.initNeighbor(data)
   }
 
   def getNeighborTable(nodeIds: Array[Int]): Int2ObjectOpenHashMap[Array[Int]] = {
-    val neighborsMap= neiborTable.sampleNeighbors(nodeIds, -1)
+    val neighborsMap = neighborTable.sampleNeighbors(nodeIds, -1)
     neighborsMap
   }
 }
 
 object CommonFriendsPSModel {
 
-  def apply(maxIndex: Int, initBatchSize: Int, psPartNum: Int): CommonFriendsPSModel = {
-    val param = new Param(maxIndex, initBatchSize, psPartNum)
+  def apply(maxIndex: Int, batchSize: Int, psPartNum: Int): CommonFriendsPSModel = {
+    val param = new Param(maxIndex, batchSize, psPartNum)
     val neighborTable = new NeighborTable(param)
     new CommonFriendsPSModel(neighborTable)
   }

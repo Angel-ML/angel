@@ -32,7 +32,7 @@ import scala.collection.mutable.ArrayBuffer
   * A simple neighbor table tool
   * @param param neighbor table param
   */
-class NeighborTable(@BeanProperty param: Param) extends Serializable {
+class NeighborTable(@BeanProperty val param: Param) extends Serializable {
   val neighborTableName = "neighbor.table"
   var psMatrix: PSMatrix = _
 
@@ -49,7 +49,7 @@ class NeighborTable(@BeanProperty param: Param) extends Serializable {
     data.mapPartitions {
       case iter => {
         // Init the neighbor table use many mini-batch to avoid big object
-        iter.sliding(param.initBatchSize, param.initBatchSize).map(pairs => initNeighbors(psMatrix, pairs))
+        iter.sliding(param.batchSize, param.batchSize).map(pairs => initNeighbors(psMatrix, pairs))
       }
     }.collect()
 

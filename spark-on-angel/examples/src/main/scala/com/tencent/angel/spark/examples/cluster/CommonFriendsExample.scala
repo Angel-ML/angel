@@ -20,7 +20,7 @@ package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.spark.ml.graph.commonfriends.{CommonFriends, CommonFriendsV2}
+import com.tencent.angel.spark.ml.graph.commonfriends.{CommonFriends, CommonFriendsV2, CommonFriendsV3}
 import com.tencent.angel.spark.ml.graph.utils.GraphIO
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
@@ -51,7 +51,7 @@ object CommonFriendsExample {
     sc.setCheckpointDir(cpDir)
 
     start(mode)
-    val commonfriends = new CommonFriendsV2()
+    val commonfriends = new CommonFriendsV3()
       .setPartitionNum(partitionNum)
       .setStorageLevel(storageLevel)
       .setBatchSize(batchSize)

@@ -19,8 +19,7 @@ package com.tencent.angel.spark.ml.graph.commonfriends
 
 import com.tencent.angel.ml.math2.vector.{IntLongVector, LongIntVector}
 import com.tencent.angel.spark.ml.graph.params._
-import com.tencent.angel.spark.ml.graph.utils.NodeIndexer
-import org.apache.spark.graphx.PartitionStrategy
+import com.tencent.angel.spark.ml.graph.utils.{BatchIter, NodeIndexer}
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.util.Identifiable
@@ -29,7 +28,11 @@ import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.sql.types.{IntegerType, LongType, StructField, StructType}
 import org.apache.spark.storage.StorageLevel
 
-class CommonFriendsV2(override val uid: String) extends Transformer
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
+
+class CommonFriendsV3(override val uid: String) extends Transformer
   with HasWeightCol with HasSrcNodeIdCol with HasDstNodeIdCol
   with HasIsWeighted with HasPartitionNum with HasPSPartitionNum
   with HasStorageLevel with HasBatchSize with HasBufferSize
@@ -44,35 +47,31 @@ class CommonFriendsV2(override val uid: String) extends Transformer
     var numPart = dataset.sparkSession.sparkContext.getConf.getInt("spark.default.parallelism", $(partitionNum))
 
     println(s"default parallelism: $numPart")
-    setPartitionNum(numPart)
+    //setPartitionNum(numPart)
 
     //val partitioner = PartitionStrategy.EdgePartition2D
-    val edgesFromFiles: RDD[(Long, Long)] = {
+    val rawEdges: RDD[(Long, Long)] = {
       dataset.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd.map { row =>
         (row.getLong(0), row.getLong(1))
       }
-    }
+    }.coalesce($(partitionNum), shuffle = false)
+      .persist(StorageLevel.DISK_ONLY)
 
-    val numEdges = edgesFromFiles.count()
+    val numEdges = rawEdges.count()
     println(s"numEdge=$numEdges")
-    //numPart = (numEdges.toDouble / 10 / $(batchSize)).toInt
-    //setPartitionNum(numPart)
 
-    val nodes = edgesFromFiles.mapPartitions { iter =>
+    val nodes = rawEdges.mapPartitions { iter =>
       val distinctNodes = collection.mutable.HashSet[Long]()
       iter.foreach { case (src, dst) =>
-          distinctNodes.add(src)
-          distinctNodes.add(dst)
+        distinctNodes.add(src)
+        distinctNodes.add(dst)
       }
       distinctNodes.toIterator
     }.distinct($(partitionNum))
 
-    val rawEdges = edgesFromFiles.coalesce($(partitionNum), shuffle = false)
-      .persist(StorageLevel.DISK_ONLY)
-
     nodes.foreachPartition(_ => null)
 
-    println(s"rawedges partition number: ${rawEdges.getNumPartitions}")
+    println(s"raw edges partition number: ${rawEdges.getNumPartitions}")
     println(s"nodes partition number: ${nodes.getNumPartitions}")
 
     nodes.foreachPartition(_ => Unit)
@@ -83,10 +82,10 @@ class CommonFriendsV2(override val uid: String) extends Transformer
     val numNodes = reIndexer.getNumNodes
     println(s"maxNodeId=$numNodes")
 
-    val partSize = (numEdges / $(partitionNum)).toInt
+    val partSize = (numEdges / $(partitionNum)).toInt + (if (numEdges % $(partitionNum) == 0) 0 else 1)
+    println(s"partition size = ${partSize}")
 
     val edges: RDD[(Int, Int)] = reIndexer.encode(rawEdges, partSize) { case (iter, ps) =>
-      println(s"build edges RDD, size = ${iter.length}")
       val keys = iter.flatMap { case (src, dst) => Iterator(src, dst) }.distinct
       val map = ps.pull(keys).asInstanceOf[LongIntVector]
       iter.map { case (src, dst) =>
@@ -95,19 +94,12 @@ class CommonFriendsV2(override val uid: String) extends Transformer
     }
 
     edges.foreachPartition(_ => Unit)
-    println(s"edges partition number: ${edges.getNumPartitions}")
-
-    val partitions: RDD[CommonFriendsPartitionV2] =
-      CommonFriendsGraphV2.edgeRDD2GraphPartitions(edges, storageLevel = $(storageLevel))
-
-    // destroys the lineage and close encoder of node indexer
-    partitions.checkpoint()
-    partitions.foreachPartition(_ => Unit)
-    //reIndexer.destroyEncoder()
+    println(s"edges has ${edges.getNumPartitions} partitions")
     rawEdges.unpersist()
 
     val psModel = CommonFriendsPSModel(numNodes, $(batchSize), $(psPartitionNum))
     psModel.initNeighborTable(edges)
+    val bcPSModel = dataset.sparkSession.sparkContext.broadcast(psModel)
 
     val nodeIds= Array(1,2,3)
     val nodeNeighbors = psModel.getNeighborTable(nodeIds)
@@ -117,8 +109,34 @@ class CommonFriendsV2(override val uid: String) extends Transformer
       println(s"node id = ${entry.getIntKey}, neighbors = ${entry.getValue.mkString(",")}")
     }
 
-    val graph = new CommonFriendsGraphV2(partitions, psModel)
-    val rawResult: RDD[((Int, Int), Int)] = graph.run($(batchSize))
+    val rawResult: RDD[((Int, Int), Int)] = edges.mapPartitions { iter =>
+      CommonFriendsV3.runEdgePartition(iter, psModel)
+    }
+
+//    val rawResult: RDD[((Int, Int), Int)] = edges.mapPartitions { iter =>
+//      val psCopy = bcPSModel.value
+//      val batchSize = psCopy.neighborTable.param.batchSize
+//      BatchIter(iter, batchSize).flatMap { batch =>
+//        val edgeBuffer: ArrayBuffer[(Int, Int)] = new ArrayBuffer[(Int, Int)]()
+//        val pullNodes: mutable.HashSet[Int] = new mutable.HashSet[Int]()
+//        batch.foreach { curEdge =>
+//          pullNodes.add(curEdge._1)
+//          pullNodes.add(curEdge._2)
+//          edgeBuffer += curEdge
+//        }
+//        val neighborsNodesMap = psCopy.getNeighborTable(pullNodes.toArray)
+//        edgeBuffer.toIterator.flatMap { case (src, dst) =>
+//          val srcNeighbors = neighborsNodesMap.get(src)
+//          val dstNeighbors = neighborsNodesMap.get(dst)
+//          if (src % 10000 == 0) {
+//            println(s"src = $src, dst = $dst, number of neighbors = ${srcNeighbors.intersect(dstNeighbors).length}")
+//          }
+//          Iterator.single(((src, dst), srcNeighbors.intersect(dstNeighbors).length))
+//        }
+//      }
+//    }
+
+    rawResult.foreachPartition(_ => Unit)
 
     println(s"======results with encoded node index======")
     rawResult.take(10).foreach{ item =>
@@ -135,9 +153,9 @@ class CommonFriendsV2(override val uid: String) extends Transformer
 
     println(s"======results with original node index======")
     decodeResult.take(10).foreach{ triple =>
-        println(s"src = ${triple.getLong(0)}, " +
-          s"dst = ${triple.getLong(1)}, " +
-          s"num of common friends = ${triple.getInt(2)}")
+      println(s"src = ${triple.getLong(0)}, " +
+        s"dst = ${triple.getLong(1)}, " +
+        s"num of common friends = ${triple.getInt(2)}")
     }
 
     val outputSchema = transformSchema(dataset.schema)
@@ -155,7 +173,27 @@ class CommonFriendsV2(override val uid: String) extends Transformer
   override def copy(extra: ParamMap): Transformer = defaultCopy(extra)
 }
 
-object CommonFriendsV2 {
+object CommonFriendsV3 {
+
+  def runEdgePartition(iter: Iterator[(Int, Int)], psModel: CommonFriendsPSModel): Iterator[((Int, Int), Int)] = {
+    //val psModel = bcPSModel.value
+    val batchSize = psModel.neighborTable.param.batchSize
+    BatchIter(iter, batchSize).flatMap { batch =>
+      val edgeBuffer: ArrayBuffer[(Int, Int)] = new ArrayBuffer[(Int, Int)]()
+      val pullNodes: mutable.HashSet[Int] = new mutable.HashSet[Int]()
+      batch.foreach { curEdge =>
+        pullNodes.add(curEdge._1)
+        pullNodes.add(curEdge._2)
+        edgeBuffer += curEdge
+      }
+      val neighborsNodesMap = psModel.getNeighborTable(pullNodes.toArray)
+      edgeBuffer.toIterator.flatMap { case (src, dst) =>
+        val srcNeighbors = neighborsNodesMap.get(src)
+        val dstNeighbors = neighborsNodesMap.get(dst)
+        Iterator.single(((src, dst), srcNeighbors.intersect(dstNeighbors).length))
+      }
+    }
+  }
 
 }
 

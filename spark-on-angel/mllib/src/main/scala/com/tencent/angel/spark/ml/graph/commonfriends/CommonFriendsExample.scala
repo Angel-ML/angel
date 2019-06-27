@@ -31,14 +31,14 @@ object CommonFriendsExample {
     val output = "model/commonfriends"
     val partitionNum = 4
     val storageLevel = StorageLevel.MEMORY_ONLY
-    val batchSize = 100
+    val batchSize = 10000
     val enableCheck = true
     val bufferSize = 100000
     val isWeighted = false
     val psPartitionNum = 2
 
     start(mode)
-    val commonfriends = new CommonFriendsV2()
+    val commonfriends = new CommonFriendsV3()
       .setPartitionNum(partitionNum)
       .setStorageLevel(storageLevel)
       .setBatchSize(batchSize)

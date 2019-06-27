@@ -17,8 +17,10 @@
 
 package com.tencent.angel.spark.ml.graph
 
-class Param(var maxIndex: Int,
-            var initBatchSize: Int,
-            var psPartNum: Int
+import scala.beans.BeanProperty
+
+class Param(@BeanProperty val maxIndex: Int,
+            @BeanProperty val batchSize: Int,
+            @BeanProperty val psPartNum: Int
             ) extends Serializable {
 }
