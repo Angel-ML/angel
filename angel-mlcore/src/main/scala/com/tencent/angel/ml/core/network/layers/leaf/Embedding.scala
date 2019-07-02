@@ -25,7 +25,7 @@ import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.utils.LayerKeys
 import com.tencent.angel.ml.core.variable.{EmbedUtils, EmbedVariable, Variable}
-import com.tencent.angel.ml.math2.matrix._
+import com.tencent.angel.ml.servingmath2.matrix._
 import org.apache.commons.logging.LogFactory
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._

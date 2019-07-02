@@ -20,7 +20,7 @@ package com.tencent.angel.matrix.psf.update.enhance.map.func
 
 import io.netty.buffer.ByteBuf
 
-import com.tencent.angel.ml.math2.ufuncs.expression
+import com.tencent.angel.ml.servingmath2.ufuncs.expression
 
 class AddS(scalar: Double, inplace: Boolean) extends expression.SAdd(inplace, scalar) with MapFunc {
 

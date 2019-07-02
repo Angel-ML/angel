@@ -1,7 +1,7 @@
 package com.tencent.angel.ml.core.network.layers
 
 import com.tencent.angel.ml.core.network.Graph
-import com.tencent.angel.ml.math2.matrix.Matrix
+import com.tencent.angel.ml.servingmath2.matrix.Matrix
 
 
 abstract class InputLayer(name: String, outputDim: Int)(implicit graph: Graph)

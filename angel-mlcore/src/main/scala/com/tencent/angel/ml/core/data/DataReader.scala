@@ -1,7 +1,7 @@
 package com.tencent.angel.ml.core.data
 
 import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
-import com.tencent.angel.ml.math2.utils.LabeledData
+import com.tencent.angel.ml.servingmath2.utils.LabeledData
 import org.apache.commons.logging.LogFactory
 
 

@@ -21,7 +21,7 @@ package com.tencent.angel.matrix.psf.aggr
 
 import com.tencent.angel.matrix.psf.aggr.enhance.{ScalarAggrResult, ScalarPartitionAggrResult, UnaryAggrFunc}
 import com.tencent.angel.matrix.psf.get.base.{GetResult, PartitionGetResult}
-import com.tencent.angel.ml.math2.vector.{DoubleVector, FloatVector, IntVector, LongVector}
+import com.tencent.angel.ml.servingmath2.vector.{DoubleVector, FloatVector, IntVector, LongVector}
 import com.tencent.angel.ps.storage.vector.ServerRow
 
 /**

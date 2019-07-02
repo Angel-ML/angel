@@ -4,7 +4,7 @@ import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.core.network.Graph
 import org.apache.commons.logging.LogFactory
 import com.tencent.angel.ml.core.optimizer.decayer.StepSizeScheduler
-import com.tencent.angel.ml.math2.utils.LabeledData
+import com.tencent.angel.ml.servingmath2.utils.LabeledData
 
 import scala.collection.mutable
 

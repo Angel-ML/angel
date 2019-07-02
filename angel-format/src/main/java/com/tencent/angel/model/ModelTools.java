@@ -17,7 +17,7 @@
 
 package com.tencent.angel.model;
 
-import com.tencent.angel.ml.math2.matrix.Matrix;
+import com.tencent.angel.ml.servingmath2.matrix.Matrix;
 import com.tencent.angel.model.io.MatrixLoaderSaver;
 import com.tencent.angel.model.output.format.Format;
 import com.tencent.angel.model.output.format.MatrixFilesMeta;

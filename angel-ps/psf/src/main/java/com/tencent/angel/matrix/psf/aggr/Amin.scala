@@ -19,7 +19,7 @@
 package com.tencent.angel.matrix.psf.aggr
 
 import com.tencent.angel.matrix.psf.aggr.enhance.UnaryAggrFunc
-import com.tencent.angel.ml.math2.storage.{DoubleVectorStorage, FloatVectorStorage, IntVectorStorage, LongVectorStorage}
+import com.tencent.angel.ml.servingmath2.storage.{DoubleVectorStorage, FloatVectorStorage, IntVectorStorage, LongVectorStorage}
 import com.tencent.angel.ps.storage.vector.ServerRow
 
 /**

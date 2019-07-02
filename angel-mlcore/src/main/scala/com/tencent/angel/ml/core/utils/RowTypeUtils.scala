@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ml.core.utils
 
-import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.servingmath2.utils.RowType
 
 
 object RowTypeUtils {

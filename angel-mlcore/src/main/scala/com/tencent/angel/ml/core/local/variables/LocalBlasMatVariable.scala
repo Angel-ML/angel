@@ -6,11 +6,11 @@ import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.utils.{OptUtils, ValueNotAllowed}
 import com.tencent.angel.ml.core.variable.{BlasMatVariable, Updater, VariableManager}
-import com.tencent.angel.ml.math2.matrix.Matrix
-import com.tencent.angel.ml.math2.storage.{IntDoubleDenseVectorStorage, IntFloatDenseVectorStorage}
-import com.tencent.angel.ml.math2.utils.RowType
-import com.tencent.angel.ml.math2.vector.Vector
-import com.tencent.angel.ml.math2.{MFactory, StorageType}
+import com.tencent.angel.ml.servingmath2.matrix.Matrix
+import com.tencent.angel.ml.servingmath2.storage.{IntDoubleDenseVectorStorage, IntFloatDenseVectorStorage}
+import com.tencent.angel.ml.servingmath2.utils.RowType
+import com.tencent.angel.ml.servingmath2.vector.Vector
+import com.tencent.angel.ml.servingmath2.{MFactory, StorageType}
 
 
 class LocalBlasMatVariable(name: String,

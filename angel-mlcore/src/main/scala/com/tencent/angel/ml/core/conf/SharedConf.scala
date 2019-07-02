@@ -20,7 +20,7 @@ package com.tencent.angel.ml.core.conf
 
 
 import com.tencent.angel.ml.core.utils.{MLException, RowTypeUtils}
-import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.servingmath2.utils.RowType
 import org.apache.commons.logging.{Log, LogFactory}
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._

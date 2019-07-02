@@ -21,8 +21,8 @@ package com.tencent.angel.matrix.psf.update
 import scala.collection.JavaConversions._
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.matrix.psf.update.enhance.{MMUpdateFunc, MMUpdateParam}
-import com.tencent.angel.ml.math2.utils.VectorUtils
-import com.tencent.angel.ml.math2.vector._
+import com.tencent.angel.ml.servingmath2.utils.VectorUtils
+import com.tencent.angel.ml.servingmath2.vector._
 import com.tencent.angel.ps.storage.vector._
 
 class Compress(param: MMUpdateParam) extends MMUpdateFunc(param) {

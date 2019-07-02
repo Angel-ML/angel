@@ -18,6 +18,6 @@
 
 package com.tencent.angel.matrix.psf.update.enhance.zip2.func
 
-import com.tencent.angel.ml.math2.ufuncs.expression.Min
+import com.tencent.angel.ml.servingmath2.ufuncs.expression.Min
 
 class MinVFunc extends Min(false) with Zip2MapFunc

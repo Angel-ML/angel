@@ -17,11 +17,11 @@
 
 package com.tencent.angel.model.io;
 
-import com.tencent.angel.ml.math2.MFactory;
-import com.tencent.angel.ml.math2.VFactory;
-import com.tencent.angel.ml.math2.matrix.Matrix;
-import com.tencent.angel.ml.math2.matrix.RowBasedMatrix;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.servingmath2.MFactory;
+import com.tencent.angel.ml.servingmath2.VFactory;
+import com.tencent.angel.ml.servingmath2.matrix.Matrix;
+import com.tencent.angel.ml.servingmath2.matrix.RowBasedMatrix;
+import com.tencent.angel.ml.servingmath2.utils.RowType;
 import com.tencent.angel.model.MatrixLoadContext;
 import com.tencent.angel.model.MatrixSaveContext;
 import com.tencent.angel.model.output.format.MatrixFilesMeta;
@@ -219,9 +219,9 @@ public abstract class MatrixLoaderSaverImpl implements MatrixLoaderSaver {
     }
   }
 
-  public static com.tencent.angel.ml.math2.vector.Vector initRow(RowType rowType, long dim,
-      long estElemNum) {
-    com.tencent.angel.ml.math2.vector.Vector ret;
+  public static com.tencent.angel.ml.servingmath2.vector.Vector initRow(RowType rowType, long dim,
+                                                                        long estElemNum) {
+    com.tencent.angel.ml.servingmath2.vector.Vector ret;
     switch (rowType) {
       case T_DOUBLE_SPARSE:
       case T_DOUBLE_SPARSE_COMPONENT:

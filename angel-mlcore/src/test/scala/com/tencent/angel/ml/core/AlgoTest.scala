@@ -5,7 +5,7 @@ import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.core.local.LocalLearner
 import com.tencent.angel.ml.core.local.data.LocalDataReader
 import com.tencent.angel.ml.core.utils.JsonUtils
-import com.tencent.angel.ml.math2.utils.LabeledData
+import com.tencent.angel.ml.servingmath2.utils.LabeledData
 import org.apache.hadoop.conf.Configuration
 import org.scalatest.{BeforeAndAfter, FunSuite}
 

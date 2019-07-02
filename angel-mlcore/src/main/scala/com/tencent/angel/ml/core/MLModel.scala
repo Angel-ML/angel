@@ -6,9 +6,9 @@ import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.utils.RowTypeUtils
 import com.tencent.angel.ml.core.variable.VarState.VarState
 import com.tencent.angel.ml.core.variable.{Variable, VariableManager, VariableProvider}
-import com.tencent.angel.ml.math2.matrix.Matrix
-import com.tencent.angel.ml.math2.utils.{LabeledData, RowType}
-import com.tencent.angel.ml.math2.vector.Vector
+import com.tencent.angel.ml.servingmath2.matrix.Matrix
+import com.tencent.angel.ml.servingmath2.utils.{LabeledData, RowType}
+import com.tencent.angel.ml.servingmath2.vector.Vector
 import org.apache.hadoop.conf.Configuration
 
 

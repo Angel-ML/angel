@@ -5,8 +5,8 @@ import java.util.concurrent
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.variable.VarState.VarState
-import com.tencent.angel.ml.math2.matrix.Matrix
-import com.tencent.angel.ml.math2.vector._
+import com.tencent.angel.ml.servingmath2.matrix.Matrix
+import com.tencent.angel.ml.servingmath2.vector._
 import org.apache.hadoop.conf.Configuration
 
 import scala.collection.JavaConversions._

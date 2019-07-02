@@ -7,9 +7,9 @@ import com.tencent.angel.ml.core.optimizer.loss.LossFunc
 import com.tencent.angel.ml.core.utils.JsonUtils.{J2Pretty, layer2Json}
 import com.tencent.angel.ml.core.utils.{DataCache, MLException, TimeStats}
 import com.tencent.angel.ml.core.variable.VariableProvider
-import com.tencent.angel.ml.math2.matrix.Matrix
-import com.tencent.angel.ml.math2.utils.LabeledData
-import com.tencent.angel.ml.math2.vector.Vector
+import com.tencent.angel.ml.servingmath2.matrix.Matrix
+import com.tencent.angel.ml.servingmath2.utils.LabeledData
+import com.tencent.angel.ml.servingmath2.vector.Vector
 import org.apache.commons.logging.{Log, LogFactory}
 import org.json4s.JsonAST.{JField, JObject}
 

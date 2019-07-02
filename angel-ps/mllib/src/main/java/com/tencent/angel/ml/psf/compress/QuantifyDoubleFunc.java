@@ -20,9 +20,9 @@ package com.tencent.angel.ml.psf.compress;
 
 
 import com.tencent.angel.ml.psf.compress.QuantifyDoubleParam.QuantifyDoublePartUParam;
-import com.tencent.angel.ml.math2.storage.IntDoubleDenseVectorStorage;
-import com.tencent.angel.ml.math2.vector.IntDoubleVector;
-import com.tencent.angel.ml.math2.vector.Vector;
+import com.tencent.angel.ml.servingmath2.storage.IntDoubleDenseVectorStorage;
+import com.tencent.angel.ml.servingmath2.vector.IntDoubleVector;
+import com.tencent.angel.ml.servingmath2.vector.Vector;
 import com.tencent.angel.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;

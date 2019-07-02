@@ -22,7 +22,7 @@ import com.tencent.angel.ml.core.network.{Graph, PlaceHolder}
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.utils.LayerKeys
 import com.tencent.angel.ml.core.variable.{VariableManager, VariableProvider}
-import com.tencent.angel.ml.math2.matrix.{Matrix, RBCompIntDoubleMatrix, RBCompIntFloatMatrix}
+import com.tencent.angel.ml.servingmath2.matrix.{Matrix, RBCompIntDoubleMatrix, RBCompIntFloatMatrix}
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 import org.json4s.native.Serialization

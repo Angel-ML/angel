@@ -8,7 +8,7 @@ import com.tencent.angel.ml.core.local.variables.{LocalBlasMatVariable, LocalMat
 import com.tencent.angel.ml.core.variable.Variable
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.utils.{OptUtils, OptimizerKeys}
-import com.tencent.angel.ml.math2.ufuncs.OptFuncs
+import com.tencent.angel.ml.servingmath2.ufuncs.OptFuncs
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 

@@ -21,7 +21,7 @@ package com.tencent.angel.ml.core.graphsubmit
 import com.tencent.angel.ml.core.{AngelEnvContext, PredictTask}
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.variable.VarState
-import com.tencent.angel.ml.math2.utils.LabeledData
+import com.tencent.angel.ml.servingmath2.utils.LabeledData
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.io.{LongWritable, Text}
 

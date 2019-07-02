@@ -20,9 +20,9 @@ package com.tencent.angel.ml.psf.columns;
 
 
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.math2.vector.CompIntDoubleVector;
-import com.tencent.angel.ml.math2.vector.CompIntFloatVector;
-import com.tencent.angel.ml.math2.vector.Vector;
+import com.tencent.angel.ml.servingmath2.vector.CompIntDoubleVector;
+import com.tencent.angel.ml.servingmath2.vector.CompIntFloatVector;
+import com.tencent.angel.ml.servingmath2.vector.Vector;
 import com.tencent.angel.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;

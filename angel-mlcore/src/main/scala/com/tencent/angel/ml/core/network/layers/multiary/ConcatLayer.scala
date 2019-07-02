@@ -21,10 +21,10 @@ package com.tencent.angel.ml.core.network.layers.multiary
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.core.utils.MLException
-import com.tencent.angel.ml.math2.MFactory
-import com.tencent.angel.ml.math2.matrix._
-import com.tencent.angel.ml.math2.utils.MatrixUtils
-import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector}
+import com.tencent.angel.ml.servingmath2.MFactory
+import com.tencent.angel.ml.servingmath2.matrix._
+import com.tencent.angel.ml.servingmath2.utils.MatrixUtils
+import com.tencent.angel.ml.servingmath2.vector.{IntDoubleVector, IntFloatVector}
 import org.apache.commons.logging.LogFactory
 
 

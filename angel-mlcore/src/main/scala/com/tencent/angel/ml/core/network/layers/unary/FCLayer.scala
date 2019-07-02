@@ -25,9 +25,9 @@ import com.tencent.angel.ml.core.network.{Graph, TransFunc}
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.utils.{LayerKeys, MLException, OptUtils}
 import com.tencent.angel.ml.core.variable.{MatVariable, Variable, VecVariable}
-import com.tencent.angel.ml.math2.matrix._
-import com.tencent.angel.ml.math2.ufuncs.Ufuncs
-import com.tencent.angel.ml.math2.utils.MatrixUtils
+import com.tencent.angel.ml.servingmath2.matrix._
+import com.tencent.angel.ml.servingmath2.ufuncs.Ufuncs
+import com.tencent.angel.ml.servingmath2.utils.MatrixUtils
 import org.apache.commons.logging.LogFactory
 import org.json4s.JsonAST.{JField, JString}
 import org.json4s.JsonDSL._

@@ -5,8 +5,8 @@ import java.io.File
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.variable.{Updater, VarState, Variable, VariableManager}
-import com.tencent.angel.ml.math2.matrix.Matrix
-import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.servingmath2.matrix.Matrix
+import com.tencent.angel.ml.servingmath2.utils.RowType
 import com.tencent.angel.model.{MatrixLoadContext, ModelTools}
 import org.apache.hadoop.conf.Configuration
 

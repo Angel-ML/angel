@@ -5,10 +5,10 @@ import java.util.{HashMap => JHashMap, Map => JMap}
 
 import com.tencent.angel.ml.core.network.{Graph, PlaceHolder}
 import com.tencent.angel.ml.core.utils.MLException
-import com.tencent.angel.ml.math2.matrix.{MapMatrix, Matrix}
-import com.tencent.angel.ml.math2.storage._
-import com.tencent.angel.ml.math2.vector._
-import com.tencent.angel.ml.math2.{MFactory, VFactory}
+import com.tencent.angel.ml.servingmath2.matrix.{MapMatrix, Matrix}
+import com.tencent.angel.ml.servingmath2.storage._
+import com.tencent.angel.ml.servingmath2.vector._
+import com.tencent.angel.ml.servingmath2.{MFactory, VFactory}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

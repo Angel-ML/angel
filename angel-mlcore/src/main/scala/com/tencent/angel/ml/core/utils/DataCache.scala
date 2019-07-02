@@ -3,8 +3,8 @@ package com.tencent.angel.ml.core.utils
 import java.util
 import java.util.concurrent.locks.ReentrantReadWriteLock
 
-import com.tencent.angel.ml.math2.vector.Vector
-import com.tencent.angel.ml.math2.matrix.Matrix
+import com.tencent.angel.ml.servingmath2.vector.Vector
+import com.tencent.angel.ml.servingmath2.matrix.Matrix
 
 class DataCache() {
   private val matCache = new util.HashMap[String, Matrix]()

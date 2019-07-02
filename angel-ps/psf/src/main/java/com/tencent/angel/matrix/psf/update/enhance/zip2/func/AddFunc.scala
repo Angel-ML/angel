@@ -18,6 +18,6 @@
 
 package com.tencent.angel.matrix.psf.update.enhance.zip2.func
 
-import com.tencent.angel.ml.math2.ufuncs.expression.Add
+import com.tencent.angel.ml.servingmath2.ufuncs.expression.Add
 
 class AddFunc extends Add(false) with Zip2MapFunc

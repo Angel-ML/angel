@@ -20,8 +20,8 @@ package com.tencent.angel.matrix.psf.get.indexed;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.matrix.psf.get.base.PartitionGetResult;
-import com.tencent.angel.ml.math2.VFactory;
-import com.tencent.angel.ml.math2.vector.*;
+import com.tencent.angel.ml.servingmath2.VFactory;
+import com.tencent.angel.ml.servingmath2.vector.*;
 import com.tencent.angel.matrix.MatrixMeta;
 import com.tencent.angel.psagent.PSAgentContext;
 import org.apache.commons.logging.Log;

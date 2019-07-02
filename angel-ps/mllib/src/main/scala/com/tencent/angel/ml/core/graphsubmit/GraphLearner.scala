@@ -26,7 +26,7 @@ import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.optimizer.decayer.StepSizeScheduler
 import com.tencent.angel.ml.core.utils.ValidationUtils
 import com.tencent.angel.ml.core.{AngelEnvContext, MLLearner, MLModel}
-import com.tencent.angel.ml.math2.utils.LabeledData
+import com.tencent.angel.ml.servingmath2.utils.LabeledData
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.{Log, LogFactory}
 

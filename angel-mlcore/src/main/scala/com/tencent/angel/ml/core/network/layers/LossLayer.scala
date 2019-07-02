@@ -4,7 +4,7 @@ import com.tencent.angel.ml.core.PredictResult
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.optimizer.loss.LossFunc
 import com.tencent.angel.ml.core.utils.LayerKeys
-import com.tencent.angel.ml.math2.matrix.Matrix
+import com.tencent.angel.ml.servingmath2.matrix.Matrix
 import org.json4s.JsonAST.{JField, JString}
 import org.json4s.JsonDSL._
 
