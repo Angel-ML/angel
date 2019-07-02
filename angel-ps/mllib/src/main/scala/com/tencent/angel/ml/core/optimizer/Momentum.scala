@@ -31,7 +31,7 @@ import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 
 
-class Momentum(override var lr: Double, val momentum: Double)(implicit val conf: SharedConf) extends Optimizer {
+class Momentum(override var lr: Double, val momentum: Double) extends Optimizer {
   private val LOG = LogFactory.getLog(classOf[Momentum])
 
   override val numSlot: Int = 2
@@ -60,7 +60,10 @@ object Momentum {
     val lr = conf.getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)
     val moment = conf.getDouble(MLCoreConf.ML_OPT_MOMENTUM_MOMENTUM, MLCoreConf.DEFAULT_ML_OPT_MOMENTUM_MOMENTUM)
 
-    new Momentum(lr, psProvider.extract[Double](jast, OptimizerKeys.momentumKey, Some(moment)).get)
+    val regL1Param: Double = conf.getDouble(MLCoreConf.ML_REG_L1, MLCoreConf.DEFAULT_ML_REG_L1)
+    val regL2Param: Double = conf.getDouble(MLCoreConf.ML_REG_L2, MLCoreConf.DEFAULT_ML_REG_L2)
+    val opt = new Momentum(lr, psProvider.extract[Double](jast, OptimizerKeys.momentumKey, Some(moment)).get)
+    opt.setRegL1Param(regL1Param).setRegL2Param(regL2Param)
   }
 }
 

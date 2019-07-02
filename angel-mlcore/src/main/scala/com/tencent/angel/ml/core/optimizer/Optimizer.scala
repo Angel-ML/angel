@@ -26,10 +26,9 @@ import org.json4s.JsonAST.JObject
 trait Optimizer extends Updater with Serializable {
   var lr: Double
   val epsilon: Double = 1e-10
-  implicit val conf: SharedConf
 
-  protected var regL1Param: Double = conf.getDouble(MLCoreConf.ML_REG_L1, MLCoreConf.DEFAULT_ML_REG_L1)
-  protected var regL2Param: Double = conf.getDouble(MLCoreConf.ML_REG_L2, MLCoreConf.DEFAULT_ML_REG_L2)
+  protected var regL1Param: Double = 0.0
+  protected var regL2Param: Double = 0.0
 
   def setLR(lr: Double): this.type = {
     this.lr = lr
