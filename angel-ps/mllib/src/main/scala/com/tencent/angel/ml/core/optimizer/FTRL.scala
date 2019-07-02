@@ -31,7 +31,7 @@ import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 
 
-class FTRL(override var lr: Double, val alpha: Double, val beta: Double)(implicit val conf: SharedConf) extends Optimizer {
+class FTRL(override var lr: Double, val alpha: Double, val beta: Double) extends Optimizer {
   private val LOG = LogFactory.getLog(classOf[FTRL])
 
   override val numSlot: Int = 3
@@ -61,8 +61,10 @@ object FTRL {
     val alpha = conf.getDouble(MLCoreConf.ML_OPT_FTRL_ALPHA, MLCoreConf.DEFAULT_ML_OPT_FTRL_ALPHA)
     val beta = conf.getDouble(MLCoreConf.ML_OPT_FTRL_BETA, MLCoreConf.DEFAULT_ML_OPT_FTRL_BETA)
 
-    new FTRL(1.0, psProvider.extract[Double](jast, OptimizerKeys.betaKey, Some(alpha)).get,
-      psProvider.extract[Double](jast, OptimizerKeys.gammaKey, Some(beta)).get
-    )
+    val regL1Param: Double  = conf.getDouble(MLCoreConf.ML_REG_L1, MLCoreConf.DEFAULT_ML_REG_L1)
+    val regL2Param: Double  = conf.getDouble(MLCoreConf.ML_REG_L2, MLCoreConf.DEFAULT_ML_REG_L2)
+    val opt = new FTRL(1.0, psProvider.extract[Double](jast, OptimizerKeys.betaKey, Some(alpha)).get,
+      psProvider.extract[Double](jast, OptimizerKeys.gammaKey, Some(beta)).get)
+    opt.setRegL1Param(regL1Param).setRegL2Param(regL2Param)
   }
 }

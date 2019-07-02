@@ -13,7 +13,7 @@ import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
 
-class Momentum(override var lr: Double, val momentum: Double = 0.9)(implicit val conf: SharedConf) extends Optimizer {
+class Momentum(override var lr: Double, val momentum: Double) extends Optimizer {
   override val numSlot: Int = 2
 
   override def update[T](variable: Variable, epoch: Int, batchSize: Int): Future[T] = {
@@ -88,6 +88,9 @@ object Momentum {
     assert(laProvider.fieldEqualClassName[Momentum](jast, OptimizerKeys.typeKey))
     val moment = conf.getDouble(MLCoreConf.ML_OPT_MOMENTUM_MOMENTUM, MLCoreConf.DEFAULT_ML_OPT_MOMENTUM_MOMENTUM)
 
-    new Momentum(1.0, laProvider.extract[Double](jast, OptimizerKeys.momentumKey, Some(moment)).get)
+    val regL1Param: Double  = conf.getDouble(MLCoreConf.ML_REG_L1, MLCoreConf.DEFAULT_ML_REG_L1)
+    val regL2Param: Double  = conf.getDouble(MLCoreConf.ML_REG_L2, MLCoreConf.DEFAULT_ML_REG_L2)
+    val opt = new Momentum(1.0, laProvider.extract[Double](jast, OptimizerKeys.momentumKey, Some(moment)).get)
+    opt.setRegL1Param(regL1Param).setRegL2Param(regL2Param)
   }
 }

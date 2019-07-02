@@ -13,7 +13,7 @@ import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
 
-class Adam(override var lr: Double, beta: Double, gamma: Double)(implicit val conf: SharedConf) extends Optimizer {
+class Adam(override var lr: Double, beta: Double, gamma: Double) extends Optimizer {
   override val numSlot: Int = 3
 
   override def update[T](variable: Variable, epoch: Int, batchSize: Int): Future[T] = {
@@ -83,8 +83,10 @@ object Adam {
     val beta = conf.getDouble(MLCoreConf.ML_OPT_ADAM_BETA, MLCoreConf.DEFAULT_ML_OPT_ADAM_BETA)
     val gamma = conf.getDouble(MLCoreConf.ML_OPT_ADAM_GAMMA, MLCoreConf.DEFAULT_ML_OPT_ADAM_GAMMA)
 
-    new Adam(1.0, laProvider.extract[Double](jast, OptimizerKeys.betaKey, Some(beta)).get,
-      laProvider.extract[Double](jast, OptimizerKeys.gammaKey, Some(gamma)).get
-    )
+    val regL1Param: Double  = conf.getDouble(MLCoreConf.ML_REG_L1, MLCoreConf.DEFAULT_ML_REG_L1)
+    val regL2Param: Double  = conf.getDouble(MLCoreConf.ML_REG_L2, MLCoreConf.DEFAULT_ML_REG_L2)
+    val opt = new Adam(1.0, laProvider.extract[Double](jast, OptimizerKeys.betaKey, Some(beta)).get,
+      laProvider.extract[Double](jast, OptimizerKeys.gammaKey, Some(gamma)).get)
+    opt.setRegL1Param(regL1Param).setRegL2Param(regL2Param)
   }
 }

@@ -31,7 +31,7 @@ import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 
 
-class Adam(override var lr: Double, val beta: Double, val gamma: Double)(implicit val conf: SharedConf) extends Optimizer {
+class Adam(override var lr: Double, val beta: Double, val gamma: Double) extends Optimizer {
   private val LOG = LogFactory.getLog(classOf[Adam])
 
   override val numSlot: Int = 3
@@ -61,8 +61,10 @@ object Adam {
     val beta = conf.getDouble(MLCoreConf.ML_OPT_ADAM_BETA, MLCoreConf.DEFAULT_ML_OPT_ADAM_BETA)
     val gamma = conf.getDouble(MLCoreConf.ML_OPT_ADAM_GAMMA, MLCoreConf.DEFAULT_ML_OPT_ADAM_GAMMA)
 
-    new Adam(1.0, psProvider.extract[Double](jast, OptimizerKeys.betaKey, Some(beta)).get,
-      psProvider.extract[Double](jast, OptimizerKeys.gammaKey, Some(gamma)).get
-    )
+    val regL1Param: Double  = conf.getDouble(MLCoreConf.ML_REG_L1, MLCoreConf.DEFAULT_ML_REG_L1)
+    val regL2Param: Double  = conf.getDouble(MLCoreConf.ML_REG_L2, MLCoreConf.DEFAULT_ML_REG_L2)
+    val opt = new Adam(1.0, psProvider.extract[Double](jast, OptimizerKeys.betaKey, Some(beta)).get,
+      psProvider.extract[Double](jast, OptimizerKeys.gammaKey, Some(gamma)).get)
+    opt.setRegL1Param(regL1Param).setRegL2Param(regL2Param)
   }
 }

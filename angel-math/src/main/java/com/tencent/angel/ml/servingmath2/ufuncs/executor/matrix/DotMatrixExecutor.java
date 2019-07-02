@@ -950,8 +950,29 @@ public class DotMatrixExecutor {
         rows[i] = (IntDoubleVector) mat2.transDot(row);
       }
       return MFactory.rbIntDoubleMatrix(rows);
-    } else {
-      throw new MathException("the operation is not supported!");
+    } else if (!trans1) { // trans1 = false && trans2 = true
+      int outputRows = mat1.getNumRows();
+      int outputCols = mat2.getNumRows();
+      double[] data = new double[outputRows*outputCols];
+
+      for (int i = 0; i < outputRows; i++) {
+        Vector row = mat1.getRow(i);
+        double[] values = ((IntDoubleVector) mat2.dot(row)).getStorage().getValues();
+        assert values.length == outputCols;
+        System.arraycopy(values, 0, data, i*outputCols, outputCols);
+      }
+      return MFactory.denseDoubleMatrix(outputRows, outputCols, data);
+    } else { // trans1 = true && trans2 = true
+      int outputRows = mat1.getNumCols();
+      int outputCols = mat2.getNumRows();
+      double[] data = new double[outputRows*outputCols];
+
+      for (int i = 0; i < outputRows; i++) {
+        Vector col = mat1.getCol(i);
+        double[] values = ((IntDoubleVector) mat2.dot(col)).getStorage().getValues();
+        System.arraycopy(values, 0, data, i*outputCols, outputCols);
+      }
+      return MFactory.denseDoubleMatrix(outputRows, outputCols, data);
     }
   }
 
@@ -980,7 +1001,7 @@ public class DotMatrixExecutor {
 
   private static Matrix apply(BlasFloatMatrix mat1, boolean trans1, RBIntFloatMatrix mat2,
       boolean trans2) {
-    if (trans1 && !trans2) {
+    if (trans1 && !trans2) { // trans1 = true && trans2 = false
       int outputRows = mat1.getNumCols();
       IntFloatVector[] rows = new IntFloatVector[outputRows];
       for (int i = 0; i < outputRows; i++) {
@@ -988,7 +1009,7 @@ public class DotMatrixExecutor {
         rows[i] = (IntFloatVector) mat2.transDot(col);
       }
       return MFactory.rbIntFloatMatrix(rows);
-    } else if (!trans1 && !trans2) {
+    } else if (!trans1 && !trans2) { // trans1 = false && trans2 = false
       int outputRows = mat1.getNumRows();
       IntFloatVector[] rows = new IntFloatVector[outputRows];
       for (int i = 0; i < outputRows; i++) {
@@ -996,8 +1017,29 @@ public class DotMatrixExecutor {
         rows[i] = (IntFloatVector) mat2.transDot(row);
       }
       return MFactory.rbIntFloatMatrix(rows);
-    } else {
-      throw new MathException("the operation is not supported!");
+    } else if (!trans1) { // trans1 = false && trans2 = true
+      int outputRows = mat1.getNumRows();
+      int outputCols = mat2.getNumRows();
+      float[] data = new float[outputRows*outputCols];
+
+      for (int i = 0; i < outputRows; i++) {
+        Vector row = mat1.getRow(i);
+        float[] values = ((IntFloatVector) mat2.dot(row)).getStorage().getValues();
+        assert values.length == outputCols;
+        System.arraycopy(values, 0, data, i*outputCols, outputCols);
+      }
+      return MFactory.denseFloatMatrix(outputRows, outputCols, data);
+    } else { // trans1 = true && trans2 = true
+      int outputRows = mat1.getNumCols();
+      int outputCols = mat2.getNumRows();
+      float[] data = new float[outputRows*outputCols];
+
+      for (int i = 0; i < outputRows; i++) {
+        Vector col = mat1.getCol(i);
+        float[] values = ((IntFloatVector) mat2.dot(col)).getStorage().getValues();
+        System.arraycopy(values, 0, data, i*outputCols, outputCols);
+      }
+      return MFactory.denseFloatMatrix(outputRows, outputCols, data);
     }
   }
 
