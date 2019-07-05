@@ -208,6 +208,8 @@ public class PSAgentMatrixMetaManager {
         && partitionKey.getEndRow() > rowIndex)
         partitionKeys.add(partitionKey);
     }
+
+    // Sort the partitions by start column index
     partitionKeys.sort(new Comparator<PartitionKey>() {
       @Override public int compare(PartitionKey p1, PartitionKey p2) {
         if (p1.getStartCol() < p2.getStartCol()) {

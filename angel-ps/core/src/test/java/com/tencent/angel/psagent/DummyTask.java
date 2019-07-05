@@ -16,27 +16,38 @@
  */
 
 
-package com.tencent.angel.ml.matrix.psf.update.updaterow;
+package com.tencent.angel.psagent;
 
-import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.math2.vector.IntDoubleVector;
-import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
-import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
-import com.tencent.angel.psagent.PSAgentContext;
+import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.worker.task.BaseTask;
+import com.tencent.angel.worker.task.TaskContext;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
 
-public class IncrementRowParam extends UpdateRowParam {
-  private final Vector incrementVec;
+public class DummyTask extends BaseTask<Long, Long, Long> {
 
-  public IncrementRowParam(int matrixId, int rowId, Vector incrementVec) {
-    super(matrixId, rowId);
-    this.incrementVec = incrementVec;
+  public DummyTask(TaskContext taskContext) throws IOException {
+    super(taskContext);
+    // TODO Auto-generated constructor stub
   }
 
-  @Override public List<PartitionUpdateParam> split() {
+  @Override public Long parse(Long key, Long value) {
     return null;
   }
+
+  @Override public void run(TaskContext taskContext) throws AngelException {
+    try {
+      while (true) {
+        Thread.sleep(10000);
+      }
+    } catch (InterruptedException ie) {
+
+    }
+
+  }
+
+  @Override public void preProcess(TaskContext taskContext) {
+
+  }
+
 }

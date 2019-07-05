@@ -267,6 +267,17 @@ public class ServerCompDenseLongDoubleRow extends ServerRow {
     }
   }
 
+  @Override public ServerRow
+adaptiveClone() {
+    startRead();
+    try {
+      return new ServerCompDenseLongDoubleRow(rowId, rowType, startCol, endCol, (int) estElemNum,
+          intDoubleRow);
+    } finally {
+      endRead();
+    }
+  }
+
   @Override
   public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
     throws IOException {

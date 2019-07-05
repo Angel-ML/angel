@@ -2,23 +2,23 @@ package com.tencent.angel.ml.math2.matrix;
 
 import com.tencent.angel.ml.math2.vector.Vector;
 
-public abstract class CooMatrix extends Matrix{
+public abstract class CooLongMatrix extends Matrix {
 
-  protected int [] rowIndices;
-  protected int [] colIndices;
+  protected long [] rowIndices;
+  protected long [] colIndices;
   protected int [] shape;
 
-  public CooMatrix() {}
+  public CooLongMatrix() {}
 
   public abstract Vector getRow(int idx);
 
   public abstract Vector getCol(int idx);
 
-  public int[] getRowIndices() {
+  public long[] getRowIndices() {
     return rowIndices;
   }
 
-  public int[] getColIndices() {
+  public long[] getColIndices() {
     return colIndices;
   }
 
@@ -281,3 +281,4 @@ public abstract class CooMatrix extends Matrix{
     throw new UnsupportedOperationException("this operation is not support!");
   }
 }
+

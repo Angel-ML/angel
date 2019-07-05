@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -29,15 +29,15 @@ import com.tencent.angel.psagent.matrix.cache.DefaultPolicy;
 import com.tencent.angel.utils.DefaultAppSubmitter;
 import com.tencent.angel.worker.Worker;
 import com.tencent.angel.worker.task.BaseTask;
-import org.apache.hadoop.conf.Configuration;
-
 import java.util.Map;
 import java.util.Properties;
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * Angel system parameters.
  */
 public class AngelConf extends Configuration {
+
   public AngelConf(Configuration conf) {
     super(conf);
   }
@@ -81,7 +81,7 @@ public class AngelConf extends Configuration {
    */
   public static final String ANGEL_KERBEROS_KEYTAB = "angel.kerberos.keytab";
   public static final String ANGEL_KERBEROS_PRINCIPAL = "angel.kerberos.principal";
-  public static final String ANGEL_KERBEROS_KEYTAB_NAME="angel.kerberos.keytab.name";
+  public static final String ANGEL_KERBEROS_KEYTAB_NAME = "angel.kerberos.keytab.name";
 
   /**
    * Predict data path.
@@ -123,14 +123,15 @@ public class AngelConf extends Configuration {
    * Enable epoch trigger model save
    */
   public static final String ANGEL_SAVE_MODEL_EPOCH_TIGGER_ENABLE =
-    "angel.save.model.epoch.trigger.enable";
+      "angel.save.model.epoch.trigger.enable";
   public static final boolean DEFAULT_ANGEL_SAVE_MODEL_EPOCH_TIGGER_ENABLE = false;
 
   /**
-   * Save model every how many epochs, it is effective only as "angel.save.model.epoch.trigger.enable" is set to true
+   * Save model every how many epochs, it is effective only as "angel.save.model.epoch.trigger.enable"
+   * is set to true
    */
   public static final String ANGEL_SAVE_MODEL_EVERY_HOWMANY_EPOCHS =
-    "angel.save.model.every.howmany.epochs";
+      "angel.save.model.every.howmany.epochs";
   public static final int DEFAULT_ANGEL_SAVE_MODEL_EVERY_HOWMANY_EPOCHS = 1;
 
   /**
@@ -180,7 +181,8 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_JOB_LIBJARS = ANGEL_PREFIX + "job.libjars";
 
   /**
-   * The resource pool of application, it is used by YARN to allocate resources for the application.
+   * The resource pool of application, it is used by YARN to allocate resources for the
+   * application.
    */
   public static final String ANGEL_QUEUE = "queue";
 
@@ -194,14 +196,14 @@ public class AngelConf extends Configuration {
    * Weather delete the output directory if it exists.
    */
   public static final String ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST =
-    ANGEL_PREFIX + "output.path.deleteonexist";
+      ANGEL_PREFIX + "output.path.deleteonexist";
   public static final boolean DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST = false;
 
   /**
    * Weather delete the stage directory when Angel application exit.
    */
   public static final String ANGEL_JOB_REMOVE_STAGING_DIR_ENABLE =
-    ANGEL_PREFIX + "remove.staging.dir.enable";
+      ANGEL_PREFIX + "remove.staging.dir.enable";
   public static final boolean DEFAULT_ANGEL_JOB_REMOVE_STAGING_DIR_ENABLE = true;
 
   /**
@@ -238,7 +240,7 @@ public class AngelConf extends Configuration {
    * The completion cancel token for the application, it is used for YARN.
    */
   public static final String JOB_CANCEL_DELEGATION_TOKEN =
-    ANGEL_PREFIX + "job.complete.cancel.delegation.tokens";
+      ANGEL_PREFIX + "job.complete.cancel.delegation.tokens";
 
   /**
    * The hostname of machine that sumbits the application.
@@ -286,7 +288,7 @@ public class AngelConf extends Configuration {
    * Angel application temporary result output directory, this parameter is used by Angel itself.
    */
   public static final String ANGEL_JOB_TMP_OUTPUT_PATH_PREFIX =
-    ANGEL_PREFIX + "tmp.output.path.prefix";
+      ANGEL_PREFIX + "tmp.output.path.prefix";
 
   /**
    * Angel application temporary result output directory, this parameter is used by Angel itself.
@@ -320,11 +322,11 @@ public class AngelConf extends Configuration {
   public static final String LOCAL_DIR = "angel.cluster.local.dir";
 
   public static final String ANGEL_CLIENT_HEARTBEAT_INTERVAL_MS =
-    "angel.client.heartbeat.interval.ms";
+      "angel.client.heartbeat.interval.ms";
   public static final int DEFAULT_ANGEL_CLIENT_HEARTBEAT_INTERVAL_MS = 5000;
 
   public static final String ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS =
-    "angel.client.heartbeat.interval.timeout.ms";
+      "angel.client.heartbeat.interval.timeout.ms";
   public static final int DEFAULT_ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS = 30000;
 
   // //////////////////////////////
@@ -334,8 +336,10 @@ public class AngelConf extends Configuration {
   /**
    * Memory quota for AppMaster in MB.
    */
-  @Deprecated public static final String ANGEL_AM_MEMORY_MB = ANGEL_AM_PREFIX + "memory.mb";
-  @Deprecated public static final int DEFAULT_ANGEL_AM_MEMORY_MB = 1280;
+  @Deprecated
+  public static final String ANGEL_AM_MEMORY_MB = ANGEL_AM_PREFIX + "memory.mb";
+  @Deprecated
+  public static final int DEFAULT_ANGEL_AM_MEMORY_MB = 1280;
 
   /**
    * Memory quota for AppMaster in GB.
@@ -360,7 +364,7 @@ public class AngelConf extends Configuration {
    * If there is no training data, workers are also started, just for test.
    */
   public static final String ANGEL_AM_USE_DUMMY_DATASPLITER =
-    ANGEL_AM_PREFIX + "use.dummy.dataspliter";
+      ANGEL_AM_PREFIX + "use.dummy.dataspliter";
   public static final boolean DEFAULT_ANGEL_AM_USE_DUMMY_DATASPLITER = false;
 
   /**
@@ -398,14 +402,14 @@ public class AngelConf extends Configuration {
    * Maximum number of threads used in yarn containers launching.
    */
   public static final String ANGEL_AM_CONTAINERLAUNCHER_THREAD_COUNT_LIMIT =
-    ANGEL_AM_PREFIX + "containerlauncher.thread.count";
+      ANGEL_AM_PREFIX + "containerlauncher.thread.count";
   public static final int DEFAULT_ANGEL_AM_CONTAINERLAUNCHER_THREAD_COUNT_LIMIT = 24;
 
   /**
    * The time interval in milliseconds of AppMaster heartbeat to YARN RM.
    */
   public static final String ANGEL_AM_HEARTBEAT_INTERVAL_MS =
-    ANGEL_AM_PREFIX + "heartbeat.interval.ms";
+      ANGEL_AM_PREFIX + "heartbeat.interval.ms";
   public static final int DEFAULT_ANGEL_AM_HEARTBEAT_INTERVAL_MS = 5000;
 
   /**
@@ -419,7 +423,7 @@ public class AngelConf extends Configuration {
    * The time interval in milliseconds of AppMaster writing application states to hdfs.
    */
   public static final String ANGEL_AM_WRITE_STATE_INTERVAL_MS =
-    ANGEL_AM_PREFIX + "write.state.interval.ms";
+      ANGEL_AM_PREFIX + "write.state.interval.ms";
   public static final int DEFAULT_ANGEL_AM_WRITE_STATE_INTERVAL_MS = 10000;
 
   /**
@@ -427,7 +431,7 @@ public class AngelConf extends Configuration {
    */
   public static final String ANGEL_AM_SLOW_CHECK_POLICES = ANGEL_AM_PREFIX + "slow.check.polices";
   public static final String DEFAULT_ANGEL_AM_SLOW_CHECK_POLICES =
-    TaskCalPerfChecker.class.getName();
+      TaskCalPerfChecker.class.getName();
 
   /**
    * Slow ps/worker check enable
@@ -439,35 +443,35 @@ public class AngelConf extends Configuration {
    * Slow ps/worker check interval in milliseconds
    */
   public static final String ANGEL_AM_SLOW_CHECK_INTERVAL_MS =
-    ANGEL_AM_PREFIX + "slow.check.interval.ms";
+      ANGEL_AM_PREFIX + "slow.check.interval.ms";
   public static final int DEFAULT_ANGEL_AM_SLOW_CHECK_INTERVAL_MS = 60000;
 
   /**
-   * Task slowest discount, if a task calculate rate is slow than average rate * discount, the worker
-   * the task is running on will be  considered to be a slow worker
+   * Task slowest discount, if a task calculate rate is slow than average rate * discount, the
+   * worker the task is running on will be  considered to be a slow worker
    */
   public static final String ANGEL_AM_TASK_SLOWEST_DISCOUNT =
-    ANGEL_AM_PREFIX + "task.slowest.discount";
+      ANGEL_AM_PREFIX + "task.slowest.discount";
   public static final double DEFAULT_ANGEL_AM_TASK_SLOWEST_DISCOUNT = 0.7;
 
   /**
    * The worker pool size for HDFS operation in Master
    */
   public static final String ANGEL_AM_MATRIX_DISKIO_WORKER_POOL_SIZE =
-    ANGEL_AM_PREFIX + "matrix.diskio.worker.pool.size";
+      ANGEL_AM_PREFIX + "matrix.diskio.worker.pool.size";
   public static final int DEFAULT_ANGEL_AM_MATRIX_DISKIO_WORKER_POOL_SIZE =
-    Math.max(8, (int) (Runtime.getRuntime().availableProcessors() * 0.25));
+      Math.max(8, (int) (Runtime.getRuntime().availableProcessors() * 0.25));
 
   public static final String ANGEL_MODEL_PARTITIONER_PARTITION_SIZE =
-    "angel.model.partitioner.partition.size";
+      "angel.model.partitioner.partition.size";
   public static final long DEFAULT_ANGEL_MODEL_PARTITIONER_PARTITION_SIZE = 500000;
 
   public static final String ANGEL_MODEL_PARTITIONER_MAX_PARTITION_NUM =
-    "angel.model.partitioner.max.partition.number";
+      "angel.model.partitioner.max.partition.number";
   public static final int DEFAULT_ANGEL_MODEL_PARTITIONER_MAX_PARTITION_NUM = 10000;
 
   public static final String ANGEL_MODEL_PARTITIONER_PARTITION_NUM_PERSERVER =
-    "angel.model.partitioner.partition.number.perserver";
+      "angel.model.partitioner.partition.number.perserver";
   public static final int DEFAULT_ANGEL_MODEL_PARTITIONER_PARTITION_NUM_PERSERVER = 1;
 
   // //////////////////////////////
@@ -485,13 +489,13 @@ public class AngelConf extends Configuration {
    * may be adjusted to an approximate value.
    */
   public static final String ANGEL_WORKERGROUP_ACTUAL_NUM =
-    ANGEL_WORKERGROUP_PREFIX + "actual.number";
+      ANGEL_WORKERGROUP_PREFIX + "actual.number";
 
   /**
    * The number of workers in a workergroup, now just support a worker in a workergroup.
    */
   public static final String ANGEL_WORKERGROUP_WORKER_NUMBER =
-    ANGEL_WORKERGROUP_PREFIX + "worker.number";
+      ANGEL_WORKERGROUP_PREFIX + "worker.number";
   public static final int DEFAULT_ANGEL_WORKERGROUP_WORKER_NUMBER = 1;
 
   /**
@@ -503,8 +507,10 @@ public class AngelConf extends Configuration {
   /**
    * The memory quota for a single worker in MB.
    */
-  @Deprecated public static final String ANGEL_WORKER_MEMORY_MB = ANGEL_WORKER_PREFIX + "memory.mb";
-  @Deprecated public static final int DEFAULT_ANGEL_WORKER_MEMORY_MB = 4096;
+  @Deprecated
+  public static final String ANGEL_WORKER_MEMORY_MB = ANGEL_WORKER_PREFIX + "memory.mb";
+  @Deprecated
+  public static final int DEFAULT_ANGEL_WORKER_MEMORY_MB = 4096;
 
   /**
    * The memory quota for a single worker in GB.
@@ -557,7 +563,7 @@ public class AngelConf extends Configuration {
    * The time interval in milliseconds of worker heartbeats to AppMaster.
    */
   public static final String ANGEL_WORKER_HEARTBEAT_INTERVAL_MS =
-    ANGEL_WORKER_PREFIX + "heartbeat.interval.ms";
+      ANGEL_WORKER_PREFIX + "heartbeat.interval.ms";
   public static final int DEFAULT_ANGEL_WORKER_HEARTBEAT_INTERVAL = 5000;
 
   /**
@@ -566,11 +572,11 @@ public class AngelConf extends Configuration {
    * worker has been down.
    */
   public static final String ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS =
-    ANGEL_WORKER_PREFIX + "heartbeat.timeout.ms";
+      ANGEL_WORKER_PREFIX + "heartbeat.timeout.ms";
   public static final long DEFAULT_ANGEL_WORKER_HEARTBEAT_TIMEOUT_MS = 600000;
 
   public static final String ANGEL_WORKERGROUP_FAILED_TOLERATE =
-    ANGEL_WORKERGROUP_PREFIX + "failed.tolerate";
+      ANGEL_WORKERGROUP_PREFIX + "failed.tolerate";
   public static final double DEFAULT_WORKERGROUP_FAILED_TOLERATE = 0.1;
 
   public static final String ANGEL_TASK_ERROR_TOLERATE = ANGEL_PREFIX + "task.error.tolerate";
@@ -583,23 +589,23 @@ public class AngelConf extends Configuration {
   public static final int DEFAULT_WORKER_MAX_ATTEMPTS = 4;
 
   public static final String ANGEL_WORKER_JVM_DIRECT_FACTOR_USE_DIRECT_BUFF =
-    ANGEL_WORKER_PREFIX + "jvm.direct.factor.use.direct.buff";
+      ANGEL_WORKER_PREFIX + "jvm.direct.factor.use.direct.buff";
   public static final float DEFAULT_ANGEL_WORKER_JVM_DIRECT_FACTOR_USE_DIRECT_BUFF = 0.3f;
 
   public static final String ANGEL_WORKER_JVM_DIRECT_FACTOR_USE_HEAP_BUFF =
-    ANGEL_WORKER_PREFIX + "jvm.direct.factor.use.direct.buff";
+      ANGEL_WORKER_PREFIX + "jvm.direct.factor.use.direct.buff";
   public static final float DEFAULT_ANGEL_WORKER_JVM_DIRECT_FACTOR_USE_HEAP_BUFF = 0.2f;
 
-  public static final String ANGEL_WORKER_JVM_YOUNG_FACTOR = ANGEL_WORKER_PREFIX + "jvm.young.factor";
+  public static final String ANGEL_WORKER_JVM_YOUNG_FACTOR =
+      ANGEL_WORKER_PREFIX + "jvm.young.factor";
   public static final float DEFAULT_ANGEL_WORKER_JVM_YOUNG_FACTOR = 0.4f;
 
   /**
    * The workers number for matrix operations
    */
   public static final String ANGEL_WORKER_MATRIX_EXECUTORS_NUM =
-    ANGEL_WORKER_PREFIX + "matrix.executors.num";
+      ANGEL_WORKER_PREFIX + "matrix.executors.num";
   public static final int DEFAULT_ANGEL_WORKER_MATRIX_EXECUTORS_NUM = 16;
-
 
   // //////////////////////////////
   // Task Configs
@@ -636,42 +642,42 @@ public class AngelConf extends Configuration {
    * disk:all data blocks are stored in disk.
    */
   public static final String ANGEL_TASK_DATA_STORAGE_LEVEL =
-    ANGEL_TASK_PREFIX + "data.storage.level";
+      ANGEL_TASK_PREFIX + "data.storage.level";
   public static final String DEFAULT_ANGEL_TASK_DATA_STORAGE_LEVEL = "memory_disk";
 
   /**
    * The read buffer size for reading data from disk.
    */
   public static final String ANGEL_TASK_DISK_READ_BUFFER_SIZE =
-    ANGEL_TASK_PREFIX + "disk.read.buffer.size";
+      ANGEL_TASK_PREFIX + "disk.read.buffer.size";
   public static final int DEFAULT_ANGEL_TASK_DISK_READ_BUFFER_SIZE = 4 * 1024 * 1024;
 
   /**
    * The maximum allowed memory in MB used in memory_disk level storage for every task.
    */
   public static final String ANGEL_TASK_MEMORYSTORAGE_USE_MAX_MEMORY_MB =
-    ANGEL_TASK_PREFIX + "memory.storage.max.mb";
+      ANGEL_TASK_PREFIX + "memory.storage.max.mb";
   public static final int DEFAULT_ANGEL_TASK_MEMORYSTORAGE_USE_MAX_MEMORY_MB = 1000;
 
   /**
    * The number of samples used to estimate average size.
    */
   public static final String ANGEL_TASK_ESTIMIZE_SAMPLE_NUMBER =
-    ANGEL_TASK_PREFIX + "estimize.sample.number";
+      ANGEL_TASK_PREFIX + "estimize.sample.number";
   public static final int DEFAULT_ANGEL_TASK_ESTIMIZE_SAMPLE_NUMBER = 100;
 
   /**
    * The write buffer size for writing data to disk.
    */
   public static final String ANGEL_TASK_DISK_WRITE_BUFFER_SIZE =
-    ANGEL_TASK_PREFIX + "writer.buffer.size";
+      ANGEL_TASK_PREFIX + "writer.buffer.size";
   public static final int DEFAULT_ANGEL_TASK_DISK_WRITE_BUFFER_SIZE = 4 * 1024 * 1024;
 
   /**
    * The maximum size in MB of a disk file.
    */
   public static final String ANGEL_TASK_RECORD_FILE_MAXSIZE_MB =
-    ANGEL_TASK_PREFIX + "record.file.maxsize.mb";
+      ANGEL_TASK_PREFIX + "record.file.maxsize.mb";
   public static final int DEFAULT_ANGEL_TASK_RECORD_FILE_MAXSIZE_MB = 1024;
 
   // //////////////////////////////
@@ -687,7 +693,7 @@ public class AngelConf extends Configuration {
    * The number of ps.
    */
   public static final String ANGEL_PS_HA_REPLICATION_NUMBER =
-    ANGEL_PS_PREFIX + "ha.replication.number";
+      ANGEL_PS_PREFIX + "ha.replication.number";
   public static final int DEFAULT_ANGEL_PS_HA_REPLICATION_NUMBER = 1;
 
   public static final String ANGEL_PS_HA_USE_EVENT_PUSH = ANGEL_PS_PREFIX + "ha.use.event.push";
@@ -708,8 +714,10 @@ public class AngelConf extends Configuration {
   /**
    * The memory quota for a single worker in MB.
    */
-  @Deprecated public static final String ANGEL_PS_MEMORY_MB = ANGEL_PS_PREFIX + "memory.mb";
-  @Deprecated public static final int DEFAULT_ANGEL_PS_MEMORY_MB = 4096;
+  @Deprecated
+  public static final String ANGEL_PS_MEMORY_MB = ANGEL_PS_PREFIX + "memory.mb";
+  @Deprecated
+  public static final int DEFAULT_ANGEL_PS_MEMORY_MB = 4096;
 
   /**
    * The memory quota for a single worker in GB.
@@ -722,6 +730,9 @@ public class AngelConf extends Configuration {
    */
   public static final String ANGEL_PS_BACKUP_INTERVAL_MS = ANGEL_PS_PREFIX + "backup.interval.ms";
   public static final int DEFAULT_ANGEL_PS_BACKUP_INTERVAL_MS = 300000;
+
+  public static final String ANGEL_PS_BACKUP_PARALLEL = ANGEL_PS_PREFIX + "backup.parallel";
+  public static final int DEFAULT_ANGEL_PS_BACKUP_PARALLEL = 4;
 
   /**
    * The matrices that need to backup in SnapshotDumper
@@ -761,22 +772,22 @@ public class AngelConf extends Configuration {
    * The time interval in milliseconds of ps heartbeats to AppMaster.
    */
   public static final String ANGEL_PS_HEARTBEAT_INTERVAL_MS =
-    ANGEL_PS_PREFIX + "heartbeat.interval.ms";
+      ANGEL_PS_PREFIX + "heartbeat.interval.ms";
   public static final int DEFAULT_ANGEL_PS_HEARTBEAT_INTERVAL_MS = 5000;
 
   /**
    * PS HA update sync worker number
    */
   public static final String ANGEL_PS_HA_SYNC_WORKER_NUM =
-    ANGEL_PS_PREFIX + "ha.sync.worker.number";
+      ANGEL_PS_PREFIX + "ha.sync.worker.number";
   public static final int DEFAULT_ANGEL_PS_HA_SYNC_WORKER_NUM =
-    Math.max(8, (int) (Runtime.getRuntime().availableProcessors() * 0.25));
+      Math.max(8, (int) (Runtime.getRuntime().availableProcessors() * 0.25));
 
   /**
    * PS HA update sync worker send buffer size
    */
   public static final String ANGEL_PS_HA_SYNC_SEND_BUFFER_SIZE =
-    ANGEL_PS_PREFIX + "ha.sync.send.buffer.size";
+      ANGEL_PS_PREFIX + "ha.sync.send.buffer.size";
   public static final int DEFAULT_ANGEL_PS_HA_SYNC_SEND_BUFFER_SIZE = 1024 * 1024;
 
   /**
@@ -792,32 +803,32 @@ public class AngelConf extends Configuration {
    * down.
    */
   public static final String ANGEL_PS_HEARTBEAT_TIMEOUT_MS =
-    ANGEL_PS_PREFIX + "heartbeat.timeout.ms";
+      ANGEL_PS_PREFIX + "heartbeat.timeout.ms";
   public static final long DEFAULT_ANGEL_PS_HEARTBEAT_TIMEOUT_MS = 600000;
 
   /**
    * PS executors thread pool size
    */
   public static final String ANGEL_PS_MATRIX_DISKIO_WORKER_POOL_SIZE =
-    ANGEL_PS_PREFIX + "matrix.diskio.worker.pool.size";
+      ANGEL_PS_PREFIX + "matrix.diskio.worker.pool.size";
 
   /**
    * Default PS executors thread pool size
    */
   public static final int DEFAULT_ANGEL_PS_MATRIX_DISKIO_WORKER_POOL_SIZE =
-    Math.max(16, (int) (Runtime.getRuntime().availableProcessors() * 0.25));
+      Math.max(16, (int) (Runtime.getRuntime().availableProcessors() * 0.25));
 
   public static final String ANGEL_PS_MAX_PARTITION_NUM_SINGLE_FILE =
-    ANGEL_PS_PREFIX + "max.partition.number.single.file";
+      ANGEL_PS_PREFIX + "max.partition.number.single.file";
   public static final int DEFAULT_ANGEL_PS_MAX_PARTITION_NUM_SINGLE_FILE = 100;
 
   /**
    * Server Partition source data Class
    */
   public static final String ANGEL_PS_PARTITION_SOURCE_CLASS =
-    ANGEL_PS_PREFIX + "partition.source.class";
+      ANGEL_PS_PREFIX + "partition.source.class";
   public static final String DEFAULT_ANGEL_PS_PARTITION_SOURCE_CLASS =
-    PartitionSourceMap.class.getName();
+      PartitionSourceMap.class.getName();
 
   /**
    * partitionClass for matrix
@@ -831,23 +842,62 @@ public class AngelConf extends Configuration {
   public static final int DEFAULT_ANGEL_PS_MAX_LOCK_WAITTIME_MS = 10000;
 
   public static final String ANGEL_PS_USE_ADAPTIVE_STORAGE_ENABLE =
-    ANGEL_PS_PREFIX + "use.adaptive.storage.enable";
+      ANGEL_PS_PREFIX + "use.adaptive.storage.enable";
   public static final boolean DEFAULT_ANGEL_PS_USE_ADAPTIVE_STORAGE_ENABLE = true;
 
   public static final String ANGEL_PS_SPARSE_TO_DENSE_FACTOR =
-    ANGEL_PS_PREFIX + "sparse.to.dense.factor";
+      ANGEL_PS_PREFIX + "sparse.to.dense.factor";
   public static final float DEFAULT_ANGEL_PS_SPARSE_TO_DENSE_FACTOR = 0.25f;
 
   public static final String ANGEL_PS_JVM_DIRECT_FACTOR_USE_DIRECT_BUFF =
-    ANGEL_PS_PREFIX + "jvm.direct.factor.use.direct.buff";
-  public static final float DEFAULT_ANGEL_PS_JVM_DIRECT_FACTOR_USE_DIRECT_BUFF = 0.45f;
+      ANGEL_PS_PREFIX + "jvm.direct.factor.use.direct.buff";
+  public static final float DEFAULT_ANGEL_PS_JVM_DIRECT_FACTOR_USE_DIRECT_BUFF = 0.25f;
 
   public static final String ANGEL_PS_JVM_DIRECT_FACTOR_USE_HEAP_BUFF =
-    ANGEL_PS_PREFIX + "jvm.direct.factor.use.direct.buff";
-  public static final float DEFAULT_ANGEL_PS_JVM_DIRECT_FACTOR_USE_HEAP_BUFF = 0.25f;
+      ANGEL_PS_PREFIX + "jvm.direct.factor.use.direct.buff";
+  public static final float DEFAULT_ANGEL_PS_JVM_DIRECT_FACTOR_USE_HEAP_BUFF = 0.20f;
 
   public static final String ANGEL_PS_JVM_YOUNG_FACTOR = ANGEL_PS_PREFIX + "jvm.young.factor";
   public static final float DEFAULT_ANGEL_PS_JVM_YOUNG_FACTOR = 0.4f;
+
+  public static final String ANGEL_PS_JVM_USE_G1 = ANGEL_PS_PREFIX + "jvm.use.g1";
+  public static final boolean DEFAULT_ANGEL_PS_JVM_USE_G1 = false;
+
+  public static final String ANGEL_PS_JVM_G1_MAXPAUSETIME_MS =
+      ANGEL_PS_PREFIX + "jvm.g1.maxpausetime.ms";
+  public static final int DEFAULT_ANGEL_PS_JVM_G1_MAXPAUSETIME_MS = 500;
+
+  public static final String ANGEL_PS_JVM_G1_MIN_NEWRATIO = ANGEL_PS_PREFIX + "jvm.g1.min.newratio";
+  public static final int DEFAULT_ANGEL_PS_JVM_G1_MIN_NEWRATIO = 5;
+
+  public static final String ANGEL_PS_JVM_G1_MAX_NEWRATIO = ANGEL_PS_PREFIX + "jvm.g1.max.newratio";
+  public static final int DEFAULT_ANGEL_PS_JVM_G1_MAX_NEWRATIO = 60;
+
+  public static final String ANGEL_PS_JVM_G1_REGIONSIZE_MB =
+      ANGEL_PS_PREFIX + "jvm.g1.regionsize.mb";
+  public static final int DEFAULT_ANGEL_PS_JVM_G1_REGIONSIZE_MB = 16;
+
+  public static final String ANGEL_PS_JVM_G1_IHOP = ANGEL_PS_PREFIX + "jvm.g1.ihop";
+  public static final int DEFAULT_ANGEL_PS_JVM_G1_IHOP = 60;
+
+  public static final String ANGEL_PS_JVM_G1_MIXGC_LIVE_THRESHOLD_PERCENT =
+      ANGEL_PS_PREFIX + "jvm.g1.mixgc.live.threshold.percent";
+  public static final int DEFAULT_ANGEL_PS_JVM_G1_MIXGC_LIVE_THRESHOLD_PERCENT = 65;
+
+  public static final String ANGEL_PS_JVM_G1_MIXGC_TARGET_COUNT =
+      ANGEL_PS_PREFIX + "jvm.g1.mixgc.target.count";
+  public static final int DEFAULT_ANGEL_PS_JVM_G1_MIXGC_TARGET_COUNT = 8;
+
+  public static final String ANGEL_PS_JVM_G1_WORKER_NUM = ANGEL_PS_PREFIX + "jvm.g1.worker.num";
+  public static final int DEFAULT_ANGEL_PS_JVM_G1_WORKER_NUM = 4;
+
+  public static final String ANGEL_PS_JVM_G1_CONC_WORKER_NUM =
+      ANGEL_PS_PREFIX + "jvm.g1.conc.worker.num";
+  public static final int DEFAULT_ANGEL_PS_JVM_G1_CONC_WORKER_NUM = 4;
+
+  public static final String ANGEL_PS_JVM_G1_RESERVE_PERCENT =
+      ANGEL_PS_PREFIX + "jvm.g1.reserve.percent";
+  public static final int DEFAULT_ANGEL_PS_JVM_G1_RESERVE_PERCENT = 10;
 
   // ////////////////// IPC //////////////////////////
   /**
@@ -882,7 +932,7 @@ public class AngelConf extends Configuration {
    * The maximum message size in a matrix transfer rpc.
    */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_MAX_MESSAGE_SIZE =
-    "angel.netty.matrixtransfer.max.message.size";
+      "angel.netty.matrixtransfer.max.message.size";
   public static final int DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_MAX_MESSAGE_SIZE = 100 * 1024 * 1024;
   ;
 
@@ -890,109 +940,109 @@ public class AngelConf extends Configuration {
    * The eventgroup thread number for netty client for matrix transfer.
    */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_CLIENT_EVENTGROUP_THREADNUM =
-    "angel.netty.matrixtransfer.client.eventgroup.threadnum";
+      "angel.netty.matrixtransfer.client.eventgroup.threadnum";
   public static final int DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_EVENTGROUP_THREADNUM =
-    Runtime.getRuntime().availableProcessors() * 2;
+      Runtime.getRuntime().availableProcessors() * 2;
 
   /**
    * The send buffer size for netty client for matrix transfer.
    */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_CLIENT_SNDBUF =
-    "angel.netty.matrixtransfer.client.sndbuf";
+      "angel.netty.matrixtransfer.client.sndbuf";
   public static final int DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_SNDBUF = 1024 * 1024;
 
   /**
    * The receive buffer size for netty client for matrix transfer.
    */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_CLIENT_RCVBUF =
-    "angel.netty.matrixtransfer.client.rcvbuf";
+      "angel.netty.matrixtransfer.client.rcvbuf";
   public static final int DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_RCVBUF = 1024 * 1024;
 
   /**
    * The max number of channels to a ps.
    */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_CLIENT_MAX_CONN_PERSERVER =
-    "angel.netty.matrixtransfer.client.max.connect.perserver";
+      "angel.netty.matrixtransfer.client.max.connect.perserver";
   public static final int DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_MAX_CONN_PERSERVER = 5;
 
   /**
    * The min number of channels to a ps.
    */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_CLIENT_MIN_CONN_PERSERVER =
-    "angel.netty.matrixtransfer.client.min.connect.perserver";
+      "angel.netty.matrixtransfer.client.min.connect.perserver";
   public static final int DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_MIN_CONN_PERSERVER = 5;
 
   /**
    * The get channel timeout in milliseconds.
    */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_CLIENT_GET_CONN_TIMEOUT_MS =
-    "angel.netty.matrixtransfer.client.max.get.connect.timeout.ms";
+      "angel.netty.matrixtransfer.client.max.get.connect.timeout.ms";
   public static final int DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_GET_CONN_TIMEOUT_MS = 10000;
 
   /**
    * The max idle time for a channel
    */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_CLIENT_MAX_CONN_IDLETIME_MS =
-    "angel.netty.matrixtransfer.client.max.connect.idletime.ms";
+      "angel.netty.matrixtransfer.client.max.connect.idletime.ms";
   public static final int DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_MAX_CONN_IDLETIME_MS = 60000;
 
   /**
    * Netty channel io ratio
    */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_CLIENT_IORATIO =
-    "angel.netty.matrixtransfer.client.ioratio";
+      "angel.netty.matrixtransfer.client.ioratio";
   public static final int DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_IORATIO = 50;
 
   /**
    * Netty Channel Type: nio or epoll
    */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_CLIENT_CHANNEL_TYPE =
-    "angel.netty.matrixtransfer.client.channel.type";
+      "angel.netty.matrixtransfer.client.channel.type";
   public static final String DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_CHANNEL_TYPE = "nio";
 
   /**
    * Netty channel io ratio
    */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_SERVER_IORATIO =
-    "angel.netty.matrixtransfer.server.ioratio";
+      "angel.netty.matrixtransfer.server.ioratio";
   public static final int DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_IORATIO = 50;
 
   /**
    * Netty Channel Type: nio or epoll
    */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_SERVER_CHANNEL_TYPE =
-    "angel.netty.matrixtransfer.server.channel.type";
+      "angel.netty.matrixtransfer.server.channel.type";
   public static final String DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_CHANNEL_TYPE = "nio";
 
   /**
    * The eventgroup thread number for netty server for matrix transfer.
    */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_SERVER_EVENTGROUP_THREADNUM =
-    "angel.netty.matrixtransfer.server.eventgroup.threadnum";
+      "angel.netty.matrixtransfer.server.eventgroup.threadnum";
   public static final int DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_EVENTGROUP_THREADNUM =
-    Runtime.getRuntime().availableProcessors() * 2;
+      Runtime.getRuntime().availableProcessors() * 2;
 
 
   /**
    * The eventgroup thread number for netty server for serving transfer.
    */
   public static final String ANGEL_NETTY_SERVING_TRANSFER_SERVER_EVENTGROUP_THREADNUM =
-    "angel.netty.serving.transfer.server.eventgroup.threadnum";
+      "angel.netty.serving.transfer.server.eventgroup.threadnum";
   public static final int DEFAULT_ANGEL_NETTY_SERVING_TRANSFER_SERVER_EVENTGROUP_THREADNUM =
-    Runtime.getRuntime().availableProcessors() * 2;
+      Runtime.getRuntime().availableProcessors() * 2;
 
   /**
    * The send buffer size for netty server for matrix transfer.
    */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_SERVER_SNDBUF =
-    "angel.netty.matrixtransfer.server.sndbuf";
+      "angel.netty.matrixtransfer.server.sndbuf";
   public static final int DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_SNDBUF = 1024 * 1024;
 
   /**
    * The receive buffer size for netty server for matrix transfer.
    */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_SERVER_RCVBUF =
-    "angel.netty.matrixtransfer.server.rcvbuf";
+      "angel.netty.matrixtransfer.server.rcvbuf";
   public static final int DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_RCVBUF = 1024 * 1024;
 
   /**
@@ -1000,59 +1050,59 @@ public class AngelConf extends Configuration {
    * server(ps). It used to flow-control between psagent and ps.
    */
   public static final String ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM_PERSERVER =
-    ANGEL_PREFIX + "matrixtransfer.max.requestnum.perserver";
+      ANGEL_PREFIX + "matrixtransfer.max.requestnum.perserver";
   public static final int DEFAULT_ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM_PERSERVER = 16;
 
   public static final String ANGEL_MATRIXTRANSFER_CLIENT_REQUESTER_POOL_SIZE =
-    ANGEL_PREFIX + "matrixtransfer.client.requester.pool.size";
+      ANGEL_PREFIX + "matrixtransfer.client.requester.pool.size";
   public static final int DEFAULT_ANGEL_MATRIXTRANSFER_CLIENT_REQUESTER_POOL_SIZE =
-    Math.max(16, (int) (Runtime.getRuntime().availableProcessors() * 0.5));
+      Math.max(16, (int) (Runtime.getRuntime().availableProcessors() * 0.5));
 
   public static final String ANGEL_MATRIXTRANSFER_CLIENT_RESPONSER_POOL_SIZE =
-    ANGEL_PREFIX + "matrixtransfer.client.responser.pool.size";
+      ANGEL_PREFIX + "matrixtransfer.client.responser.pool.size";
   public static final int DEFAULT_ANGEL_MATRIXTRANSFER_CLIENT_RESPONSER_POOL_SIZE =
-    Math.max(16, (int) (Runtime.getRuntime().availableProcessors() * 0.5));
+      Math.max(16, (int) (Runtime.getRuntime().availableProcessors() * 0.5));
 
 
   public static final String ANGEL_MATRIXTRANSFER_SERVER_WORKER_POOL_SIZE =
-    ANGEL_PREFIX + "matrixtransfer.server.worker.pool.size";
+      ANGEL_PREFIX + "matrixtransfer.server.worker.pool.size";
   public static final int DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_WORKER_POOL_SIZE =
-    Runtime.getRuntime().availableProcessors();
+      Runtime.getRuntime().availableProcessors();
 
   public static final String ANGEL_MATRIXTRANSFER_SERVER_TOKEN_TIMEOUT_MS =
-    ANGEL_PREFIX + "matrixtransfer.server.token.timeout.ms";
+      ANGEL_PREFIX + "matrixtransfer.server.token.timeout.ms";
 
   public static final int DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_TOKEN_TIMEOUT_MS = 10000;
 
   public static final String ANGEL_MATRIXTRANSFER_SERVER_RPC_LIMIT_FACTOR =
-    ANGEL_PREFIX + "matrixtransfer.server.rpc.limit.factor";
+      ANGEL_PREFIX + "matrixtransfer.server.rpc.limit.factor";
   public static final float DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_RPC_LIMIT_FACTOR = 64.0f;
 
   public static final String ANGEL_MATRIXTRANSFER_SERVER_RPC_LIMIT_GENERAL_FACTOR =
-    ANGEL_PREFIX + "matrixtransfer.server.rpc.limit.general.factor";
+      ANGEL_PREFIX + "matrixtransfer.server.rpc.limit.general.factor";
   public static float DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_RPC_LIMIT_GENERAL_FACTOR = 0.0f;
 
   public static final String ANGEL_MATRIXTRANSFER_SERVER_SENDER_POOL_SIZE =
-    ANGEL_PREFIX + "matrixtransfer.server.sender.pool.size";
+      ANGEL_PREFIX + "matrixtransfer.server.sender.pool.size";
   public static final int DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_SENDER_POOL_SIZE =
-    Math.max(8, (int) (Runtime.getRuntime().availableProcessors() * 0.25));
+      Math.max(8, (int) (Runtime.getRuntime().availableProcessors() * 0.25));
 
   public static final String ANGEL_MATRIXTRANSFER_SERVER_USE_ASYNC_HANDLER =
-    ANGEL_PREFIX + "matrixtransfer.server.use.async.handler";
+      ANGEL_PREFIX + "matrixtransfer.server.use.async.handler";
   public static final boolean DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_USE_ASYNC_HANDLER = true;
 
   public static final String ANGEL_MATRIX_OPLOG_MERGER_POOL_SIZE =
-    ANGEL_PREFIX + "matrix.oplog.merger.pool.size";
+      ANGEL_PREFIX + "matrix.oplog.merger.pool.size";
 
   public static final int DEFAULT_ANGEL_MATRIX_OPLOG_MERGER_POOL_SIZE =
-    Math.max(8, (int) (Runtime.getRuntime().availableProcessors() * 0.25));
+      Math.max(8, (int) (Runtime.getRuntime().availableProcessors() * 0.25));
 
   /**
    * The maximum allowed number of matrix transfer requests which are sending to the servers(ps). It
    * used to flow-control between psagent and ps.
    */
   public static final String ANGEL_MATRIXTRANSFER_MAX_REQUESTNUM =
-    ANGEL_PREFIX + "matrixtransfer.max.requestnum";
+      ANGEL_PREFIX + "matrixtransfer.max.requestnum";
   public static final int DEFAULT_ANGEL_MATRIXTRANSFER_MAX = 1024;
 
   /**
@@ -1067,14 +1117,14 @@ public class AngelConf extends Configuration {
    * location for the ps from AppMaster.
    */
   public static final String ANGEL_REFRESH_SERVERLOCATION_THRESHOLD =
-    ANGEL_PREFIX + "refresh.serverlocation.threshold";
+      ANGEL_PREFIX + "refresh.serverlocation.threshold";
   public static final int DEFAULT_ANGEL_REFRESH_SERVERLOCATION_THRESHOLD = 5;
 
   /**
    * The time interval in milliseconds for failed matrix transfer requests.
    */
   public static final String ANGEL_MATRIXTRANSFER_RETRY_INTERVAL_MS =
-    ANGEL_PREFIX + "matrixtransfer.retry.interval.ms";
+      ANGEL_PREFIX + "matrixtransfer.retry.interval.ms";
   public static final int DEFAULT_ANGEL_MATRIXTRANSFER_RETRY_INTERVAL_MS = 10000;
 
   /**
@@ -1088,28 +1138,28 @@ public class AngelConf extends Configuration {
    * Weather we need use direct buffer in netty client.
    */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_CLIENT_USEDIRECTBUFFER =
-    "angel.netty.matrixtransfer.client.usedirectbuffer";
+      "angel.netty.matrixtransfer.client.usedirectbuffer";
   public static final boolean DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_USEDIRECTBUFFER = true;
 
   /**
    * Weather we need use pooled buffer in netty server.
    */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_CLIENT_USEPOOL =
-    "angel.netty.matrixtransfer.client.usepool";
+      "angel.netty.matrixtransfer.client.usepool";
   public static final boolean DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_USEPOOL = false;
 
   /**
    * Weather we need use direct buffer in netty server.
    */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER =
-    "angel.netty.matrixtransfer.server.usedirectbuffer";
+      "angel.netty.matrixtransfer.server.usedirectbuffer";
   public static final boolean DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER = true;
 
   /**
    * Weather we need use direct buffer in netty server.
    */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEPOOL =
-    "angel.netty.matrixtransfer.server.usepool";
+      "angel.netty.matrixtransfer.server.usepool";
   public static final boolean DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEPOOL = false;
 
   /**
@@ -1118,7 +1168,7 @@ public class AngelConf extends Configuration {
    * later.
    */
   public static final String ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS =
-    ANGEL_PREFIX + "matrixtransfer.request.timeout.ms";
+      ANGEL_PREFIX + "matrixtransfer.request.timeout.ms";
   public static final int DEFAULT_ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS = 30000;
 
   /**
@@ -1126,7 +1176,7 @@ public class AngelConf extends Configuration {
    * failed requests when clock event happened.
    */
   public static final String ANGEL_MATRIXTRANSFER_CHECK_INTERVAL_MS =
-    ANGEL_PREFIX + "matrixtransfer.check.interval.ms";
+      ANGEL_PREFIX + "matrixtransfer.check.interval.ms";
   public static final int DEFAULT_ANGEL_MATRIXTRANSFER_CHECK_INTERVAL_MS = 100;
 
   // //////////////////////////////
@@ -1139,31 +1189,31 @@ public class AngelConf extends Configuration {
    * matrix data splits. Clock caches are used to cache the clock values of all matrix partitions.
    */
   public static final String ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS =
-    ANGEL_PSAGENT_PREFIX + "cache.sync.timeinterval.ms";
+      ANGEL_PSAGENT_PREFIX + "cache.sync.timeinterval.ms";
   public static final int DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS = 200;
 
   /**
    * The matrix caches synchronization policy
    */
   public static final String ANGEL_PSAGENT_CACHE_SYNC_POLICY_CLASS =
-    ANGEL_PSAGENT_PREFIX + "sync.policy.class";
+      ANGEL_PSAGENT_PREFIX + "sync.policy.class";
   public static final String DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_POLICY_CLASS =
-    DefaultPolicy.class.getName();
+      DefaultPolicy.class.getName();
 
   public static final String ANGEL_PSAGENT_TO_PS_HEARTBEAT_INTERVAL_MS =
-    ANGEL_PSAGENT_PREFIX + "to.ps.heartbeat.interval.ms";
+      ANGEL_PSAGENT_PREFIX + "to.ps.heartbeat.interval.ms";
   public static final int DEFAULT_ANGEL_PSAGENT_TO_PS_HEARTBEAT_INTERVAL_MS = 5000;
 
   public static final String ANGEL_PSAGENT_TO_PS_HEARTBEAT_TIMEOUT_MS =
-    ANGEL_PSAGENT_PREFIX + "to.ps.heartbeat.timeout.ms";
+      ANGEL_PSAGENT_PREFIX + "to.ps.heartbeat.timeout.ms";
   public static final int DEFAULT_ANGEL_PSAGENT_TO_PS_HEARTBEAT_TIMEOUT_MS = 20000;
 
   public static final String ANGEL_PSAGENT_UPDATE_SPLIT_ADAPTION_ENABLE =
-    ANGEL_PSAGENT_PREFIX + "update.split.adaption.enable";
+      ANGEL_PSAGENT_PREFIX + "update.split.adaption.enable";
   public static final boolean DEFAULT_ANGEL_PSAGENT_UPDATE_SPLIT_ADAPTION_ENABLE = true;
 
   public static final String ANGEL_PSAGENT_UPDATE_SPLIT_VIEW_ENABLE =
-    ANGEL_PSAGENT_PREFIX + "update.split.view.enable";
+      ANGEL_PSAGENT_PREFIX + "update.split.view.enable";
   public static final boolean DEFAULT_ANGEL_PSAGENT_UPDATE_SPLIT_VIEW_ENABLE = true;
 
   /**
@@ -1176,7 +1226,7 @@ public class AngelConf extends Configuration {
    * Weather we need update the matrix clock and task iteration to master synchronously.
    */
   public static final String ANGEL_PSAGENT_SYNC_CLOCK_ENABLE =
-    ANGEL_PSAGENT_PREFIX + "sync.clock.enable";
+      ANGEL_PSAGENT_PREFIX + "sync.clock.enable";
   public static final boolean DEFAULT_ANGEL_PSAGENT_SYNC_CLOCK_ENABLE = true;
 
   // Configs used to ANGEL_PS_PSAGENT running mode future.
@@ -1199,7 +1249,7 @@ public class AngelConf extends Configuration {
   public static final String DEFAULT_ANGEL_PSAGENT_CLASS = PSAgent.class.getName();
   public static final String ANGEL_PSAGENT_IPLIST = ANGEL_PSAGENT_PREFIX + "iplist";
   public static final String ANGEL_PSAGENT_HEARTBEAT_TIMEOUT_MS =
-    ANGEL_PSAGENT_PREFIX + "heartbeat.timeout.ms";
+      ANGEL_PSAGENT_PREFIX + "heartbeat.timeout.ms";
   public static final long DEFAULT_ANGEL_PSAGENT_HEARTBEAT_TIMEOUT_MS = 60000;
 
   // model parse
@@ -1243,19 +1293,19 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_PLUGIN_SERVICE_ENABLE = "angel.plugin.service.enable";
   public static final String ANGEL_SERVING_SHARDING_NUM = "angel.serving.sharding.num";
   public static final String ANGEL_SERVING_SHARDING_CONCURRENT_CAPACITY =
-    "angel.serving.sharding.concurrent.capacity";
+      "angel.serving.sharding.concurrent.capacity";
   public static final String ANGEL_SERVING_SHARDING_MODEL_CLASS =
-    "angel.serving.sharding.model.class";
+      "angel.serving.sharding.model.class";
   public static final String ANGEL_SERVING_MASTER_IP = "angel.serving.master.ip";
   public static final String ANGEL_SERVING_MASTER_PORT = "angel.serving.master.port";
   public static final String ANGEL_SERVING_MODEL_NAME = "angel.serving.model.name";
   public static final String ANGEL_SERVING_MODEL_LOAD_TIMEOUT_MINUTE =
-    "angel.serving.model.load.timeout.minute";
+      "angel.serving.model.load.timeout.minute";
   public static final String ANGEL_SERVING_MODEL_LOAD_CHECK_INTEVAL_SECOND =
-    "angel.serving.model.load.check.inteval.second";
+      "angel.serving.model.load.check.inteval.second";
   public static final String ANGEL_SERVING_MODEL_LOAD_TYPE = "angel.serving.model.load.type";
   public static final String ANGEL_SERVING_PREDICT_LOCAL_OUTPUT =
-    "angel.serving.predict.local.output";
+      "angel.serving.predict.local.output";
 
   /**
    * Default value of {@link #ML_CLIENT_RPC_MAXATTEMPTS}.
@@ -1294,7 +1344,7 @@ public class AngelConf extends Configuration {
    * Merge two configurations.
    *
    * @param destConf the configuration that will be overwritten with items from the srcConf
-   * @param srcConf  the source configuration
+   * @param srcConf the source configuration
    **/
   public static void merge(Configuration destConf, Configuration srcConf) {
     for (Map.Entry<String, String> e : srcConf) {
@@ -1303,5 +1353,6 @@ public class AngelConf extends Configuration {
   }
 
   public class ANGEL_MODEL_PARTITIONER_DEFAULT_PARTITION_SIZE {
+
   }
 }

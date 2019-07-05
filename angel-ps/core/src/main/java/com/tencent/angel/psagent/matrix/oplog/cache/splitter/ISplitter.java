@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -15,21 +15,26 @@
  *
  */
 
+package com.tencent.angel.psagent.matrix.oplog.cache.splitter;
 
-package com.tencent.angel.ml.matrix.psf.update.indexed;
-
+import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
-import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
-
+import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplit;
 import java.util.List;
+import java.util.Map;
 
-public class IndexedIncrementRowParam extends UpdateParam {
-  public IndexedIncrementRowParam(int matrixId, int rowId, Vector update) {
-    super(matrixId);
-  }
+/**
+ * Vector split interface
+ */
+public interface ISplitter {
 
-  @Override public List<PartitionUpdateParam> split() {
-    return null;
-  }
+  /**
+   * Split the vector to ps vector splits
+   *
+   * @param vector the vector need split
+   * @param parts the ps partitions that contains this row, the partitions are sorted by start
+   * column index
+   * @return ps vector list
+   */
+  Map<PartitionKey, RowUpdateSplit> split(Vector vector, List<PartitionKey> parts);
 }

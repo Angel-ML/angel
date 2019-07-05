@@ -68,6 +68,32 @@ abstract class PSVector extends PSModel {
 
   def delete(): Unit
 
+
+
+  def asyncPull(): Future[Vector]
+
+  /*
+  note: calling this api would modify the indices array passed in
+   */
+  def asyncPull(indices: Array[Long]): Future[Vector]
+
+  /*
+  note: calling this api would modify the indices array passed in
+   */
+  def asyncPull(indices: Array[Int]): Future[Vector]
+
+  def asyncIncrement(delta: Vector): Future[VoidResult]
+
+  def asyncUpdate(local: Vector): Future[VoidResult]
+
+  def asyncPush(local: Vector): Future[VoidResult]
+
+  def asyncReset: Future[VoidResult]
+
+  def asyncFill(value: Double): Future[VoidResult]
+
+  def asyncPsfGet(func: GetFunc): Future[GetResult]
+
   def assertValid(): this.type = {
     if (deleted)
       throw new SparkException("This vector has been deleted!")

@@ -24,17 +24,23 @@ import com.tencent.angel.ml.math2.utils.Constant;
 public class FtrlDelta extends Binary {
 
   private double alpha;
+  private OpType type;
 
   public FtrlDelta(boolean inplace, double alpha) {
+    this(inplace, alpha, OpType.UNION);
+  }
+
+  public FtrlDelta(boolean inplace, double alpha, OpType type) {
     setInplace(inplace);
     setKeepStorage(Constant.keepStorage);
     this.alpha = alpha;
+    this.type = type;
   }
 
 
   @Override
   public OpType getOpType() {
-    return OpType.UNION;
+    return this.type;
   }
 
   @Override

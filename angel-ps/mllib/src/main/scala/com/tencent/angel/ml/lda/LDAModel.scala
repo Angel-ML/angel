@@ -85,14 +85,14 @@ object LDAModel {
 
   val WORD_NUM_PATH = "word.num.path"
 
-  val SAVE_PATH = "save.path"
+  val SAVE_PATH = "modelPath"
 }
 
 class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
 
   val LOG = LogFactory.getLog(classOf[LDAModel])
 
-  val numTasks = conf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, -1)
+  val numTasks = conf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 10)
 
   // Initializing parameters
   //  var V: Int = 0

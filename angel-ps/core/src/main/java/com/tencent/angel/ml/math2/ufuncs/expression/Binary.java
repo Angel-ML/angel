@@ -18,9 +18,11 @@
 
 package com.tencent.angel.ml.math2.ufuncs.expression;
 
+import com.tencent.angel.ml.math2.utils.Constant;
+
 public abstract class Binary extends Operation {
 
-  private boolean keepStorage;
+  private boolean keepStorage = Constant.keepStorage;
   private boolean isCompare = false;
 
   public boolean isKeepStorage() {

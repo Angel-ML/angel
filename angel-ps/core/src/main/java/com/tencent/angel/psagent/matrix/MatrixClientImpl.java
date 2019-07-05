@@ -31,6 +31,7 @@ import com.tencent.angel.ml.matrix.psf.update.base.VoidResult;
 import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.psagent.PSAgentContext;
+import com.tencent.angel.psagent.matrix.transport.FutureResult;
 import com.tencent.angel.psagent.matrix.transport.adapter.GetRowsResult;
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex;
 
@@ -66,8 +67,24 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
+  public Future<VoidResult> asyncIncrement(Vector row) throws AngelException {
+    return asyncIncrement(row.getRowId(), row);
+  }
+
+  @Override
   public void increment(int rowId, Vector row) throws AngelException {
     increment(rowId, row, false);
+  }
+
+  @Override
+  public Future<VoidResult> asyncIncrement(int rowId, Vector row) throws AngelException {
+    checkRowId(rowId);
+    checkNotNull(row, "row");
+
+    row.setMatrixId(matrixId);
+    row.setRowId(rowId);
+
+    return PSAgentContext.get().getUserRequestAdapter().update(matrixId, rowId, row, UpdateOp.PLUS);
   }
 
   @Override
@@ -76,6 +93,7 @@ public class MatrixClientImpl extends MatrixClient {
 
     increment(row.getRowId(), row, disableCache);
   }
+
 
   @Override
   public void increment(int rowId, Vector row, boolean disableCache)
@@ -103,6 +121,13 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
+  public Future<VoidResult> asyncIncrement(Matrix matrix) throws AngelException {
+    checkNotNull(matrix, "matrix");
+    matrix.setMatrixId(matrixId);
+    return PSAgentContext.get().getUserRequestAdapter().update(matrixId, matrix, UpdateOp.PLUS);
+  }
+
+  @Override
   public void increment(Matrix matrix, boolean disableCache) throws AngelException {
     checkNotNull(matrix, "matrix");
 
@@ -118,9 +143,28 @@ public class MatrixClientImpl extends MatrixClient {
     }
   }
 
+
   @Override
   public void increment(int[] rowIds, Vector[] rows) throws AngelException {
     increment(rowIds, rows, false);
+  }
+
+  @Override
+  public Future<VoidResult> asyncIncrement(int[] rowIds, Vector[] rows) throws AngelException {
+    checkNotNull(rowIds, "rowIds");
+    checkNotNull(rows, "rows");
+
+    assert rowIds.length == rows.length;
+
+    // Just return
+    if (rowIds.length == 0) {
+      LOG.warn("parameter rowIds is empty, you should check it, just return now!!!");
+      FutureResult result = new FutureResult<VoidResult>();
+      result.set(new VoidResult(ResponseType.SUCCESS));
+      return result;
+    }
+
+    return PSAgentContext.get().getUserRequestAdapter().update(matrixId, rowIds, rows, UpdateOp.PLUS);
   }
 
   @Override
@@ -149,6 +193,7 @@ public class MatrixClientImpl extends MatrixClient {
     }
   }
 
+
   @Override
   public void update(int rowId, Vector row) throws AngelException {
     checkRowId(rowId);
@@ -163,10 +208,27 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
+  public Future<VoidResult> asyncUpdate(int rowId, Vector row) throws AngelException {
+    checkRowId(rowId);
+    checkNotNull(row, "row");
+
+    try {
+      return PSAgentContext.get().getUserRequestAdapter().update(matrixId, rowId, row, UpdateOp.REPLACE);
+    } catch (Throwable e) {
+      throw new AngelException(e);
+    }
+  }
+
+  @Override
   public void update(Vector row) throws AngelException {
     checkNotNull(row, "row");
 
     update(row.getRowId(), row);
+  }
+
+  @Override
+  public Future<VoidResult> asyncUpdate(Vector row) throws AngelException {
+    return asyncUpdate(row.getRowId(), row);
   }
 
   @Override
@@ -175,6 +237,17 @@ public class MatrixClientImpl extends MatrixClient {
 
     try {
       PSAgentContext.get().getUserRequestAdapter().update(matrixId, matrix, UpdateOp.REPLACE).get();
+    } catch (Throwable e) {
+      throw new AngelException(e);
+    }
+  }
+
+  @Override
+  public Future<VoidResult> asyncUpdate(Matrix matrix) throws AngelException {
+    checkNotNull(matrix, "matrix");
+
+    try {
+      return PSAgentContext.get().getUserRequestAdapter().update(matrixId, matrix, UpdateOp.REPLACE);
     } catch (Throwable e) {
       throw new AngelException(e);
     }
@@ -202,6 +275,28 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
+  public Future<VoidResult> asyncUpdate(int[] rowIds, Vector[] rows) throws AngelException {
+    checkNotNull(rowIds, "rowIds");
+    checkNotNull(rows, "rows");
+
+    assert rowIds.length == rows.length;
+
+    // Just return
+    if (rowIds.length == 0) {
+      LOG.warn("parameter rowIds is empty, you should check it, just return now!!!");
+      FutureResult<VoidResult> result = new FutureResult<>();
+      result.set(new VoidResult(ResponseType.SUCCESS));
+      return result;
+    }
+
+    try {
+      return PSAgentContext.get().getUserRequestAdapter().update(matrixId, rowIds, rows, UpdateOp.REPLACE);
+    } catch (Throwable e) {
+      throw new AngelException(e);
+    }
+  }
+
+  @Override
   public Vector get(int rowId, int[] indices) throws AngelException {
     checkRowId(rowId);
     checkNotNull(indices, "indices");
@@ -218,6 +313,27 @@ public class MatrixClientImpl extends MatrixClient {
       throw new AngelException(x);
     }
   }
+
+  @Override
+  public Future<Vector> asyncGet(int rowId, int[] indices) throws AngelException {
+    checkRowId(rowId);
+    checkNotNull(indices, "indices");
+
+    // Return a empty vector
+    if (indices.length == 0) {
+      LOG.warn("parameter indices is empty, you should check it, just return a empty vector now!!!");
+      FutureResult<Vector> result = new FutureResult<>();
+      result.set(generateEmptyVec(rowId));
+      return result;
+    }
+
+    try {
+      return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowId, indices);
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
 
   private Vector generateEmptyVec(int rowId) {
     MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
@@ -266,6 +382,26 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
+  public Future<Vector> asyncGet(int rowId, long[] indices) throws AngelException {
+    checkRowId(rowId);
+    checkNotNull(indices, "indices");
+
+    // Return a empty vector
+    if (indices.length == 0) {
+      LOG.warn("parameter indices is empty, you should check it, just return a empty vector now!!!");
+      FutureResult<Vector> result = new FutureResult<>();
+      result.set(generateEmptyVec(rowId));
+      return result;
+    }
+
+    try {
+      return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowId, indices);
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  @Override
   public Vector[] get(int[] rowIds, int[] indices) throws AngelException {
     checkNotNull(rowIds, "rowIds");
     checkNotNull(indices, "indices");
@@ -283,6 +419,33 @@ public class MatrixClientImpl extends MatrixClient {
 
     try {
       return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowIds, indices).get();
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  @Override
+  public Future<Vector[]> asyncGet(int[] rowIds, int[] indices) throws AngelException {
+    checkNotNull(rowIds, "rowIds");
+    checkNotNull(indices, "indices");
+
+    if (rowIds.length == 0) {
+      LOG.warn("parameter rowIds is empty, you should check it, just return a empty vector array now!!!");
+      FutureResult<Vector[]> result = new FutureResult<>();
+      result.set(new Vector[0]);
+      return result;
+    }
+
+    // Return a empty vector
+    if (indices.length == 0) {
+      LOG.warn("parameter indices is empty, you should check it, just return empty vectors now!!!");
+      FutureResult<Vector[]> result = new FutureResult<>();
+      result.set(generateEmptyVecs(rowIds));
+      return result;
+    }
+
+    try {
+      return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowIds, indices);
     } catch (Throwable x) {
       throw new AngelException(x);
     }
@@ -312,6 +475,33 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
+  public Future<Vector[]> asyncGet(int[] rowIds, long[] indices) throws AngelException {
+    checkNotNull(rowIds, "rowIds");
+    checkNotNull(indices, "indices");
+
+    if (rowIds.length == 0) {
+      LOG.warn("parameter rowIds is empty, you should check it, just return a empty vector array now!!!");
+      FutureResult<Vector[]> result = new FutureResult<>();
+      result.set(new Vector[0]);
+      return result;
+    }
+
+    // Return a empty vector
+    if (indices.length == 0) {
+      LOG.warn("parameter indices is empty, you should check it, just return empty vectors now!!!");
+      FutureResult<Vector[]> result = new FutureResult<>();
+      result.set(generateEmptyVecs(rowIds));
+      return result;
+    }
+
+    try {
+      return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowIds, indices);
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  @Override
   public Vector initAndGet(int rowId, int[] indices, InitFunc func)
       throws AngelException {
     checkRowId(rowId);
@@ -332,6 +522,28 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
+  public Future<Vector> asyncInitAndGet(int rowId, int[] indices, InitFunc func)
+      throws AngelException {
+    checkRowId(rowId);
+    checkNotNull(indices, "indices");
+    //checkNotNull(func, "func");
+
+    // Return a empty vector
+    if (indices.length == 0) {
+      LOG.warn("parameter indices is empty, you should check it, just return a empty vector now!!!");
+      FutureResult<Vector> result = new FutureResult<>();
+      result.set(generateEmptyVec(rowId));
+      return result;
+    }
+
+    try {
+      return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowId, indices, func);
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  @Override
   public Vector initAndGet(int rowId, long[] indices, InitFunc func)
       throws AngelException {
     checkRowId(rowId);
@@ -346,6 +558,28 @@ public class MatrixClientImpl extends MatrixClient {
 
     try {
       return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowId, indices, func).get();
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  @Override
+  public Future<Vector> asyncInitAndGet(int rowId, long[] indices, InitFunc func)
+      throws AngelException {
+    checkRowId(rowId);
+    checkNotNull(indices, "indices");
+    //checkNotNull(func, "func");
+
+    // Return a empty vector
+    if (indices.length == 0) {
+      LOG.warn("parameter indices is empty, you should check it, just return a empty vector now!!!");
+      FutureResult<Vector> result = new FutureResult<>();
+      result.set(generateEmptyVec(rowId));
+      return result;
+    }
+
+    try {
+      return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowId, indices, func);
     } catch (Throwable x) {
       throw new AngelException(x);
     }
@@ -378,6 +612,35 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
+  public Future<Vector[]> asyncInitAndGet(int[] rowIds, int[] indices, InitFunc func)
+      throws AngelException {
+    checkNotNull(rowIds, "rowIds");
+    checkNotNull(indices, "indices");
+    //checkNotNull(func, "func");
+
+    if (rowIds.length == 0) {
+      LOG.warn("parameter rowIds is empty, you should check it, just return a empty vector array now!!!");
+      FutureResult<Vector[]> result = new FutureResult<>();
+      result.set(new Vector[0]);
+      return result;
+    }
+
+    // Return a empty vector
+    if (indices.length == 0) {
+      LOG.warn("parameter indices is empty, you should check it, just return empty vectors now!!!");
+      FutureResult<Vector[]> result = new FutureResult<>();
+      result.set(generateEmptyVecs(rowIds));
+      return result;
+    }
+
+    try {
+      return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowIds, indices, func);
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  @Override
   public Vector[] initAndGet(int[] rowIds, long[] indices, InitFunc func)
       throws AngelException {
     checkNotNull(rowIds, "rowIds");
@@ -404,7 +667,47 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public Future<VoidResult> update(UpdateFunc func) throws AngelException {
+  public Future<Vector[]> asyncInitAndGet(int[] rowIds, long[] indices, InitFunc func)
+      throws AngelException {
+    checkNotNull(rowIds, "rowIds");
+    checkNotNull(indices, "indices");
+    //checkNotNull(func, "func");
+
+    if (rowIds.length == 0) {
+      LOG.warn("parameter rowIds is empty, you should check it, just return a empty vector array now!!!");
+      FutureResult<Vector[]> result = new FutureResult<>();
+      result.set(new Vector[0]);
+      return result;
+    }
+
+    // Return a empty vector
+    if (indices.length == 0) {
+      LOG.warn("parameter indices is empty, you should check it, just return empty vectors now!!!");
+      FutureResult<Vector[]> result = new FutureResult<>();
+      result.set(generateEmptyVecs(rowIds));
+      return result;
+    }
+
+    try {
+      return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowIds, indices, func);
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  @Override
+  public void update(UpdateFunc func) throws AngelException {
+    checkNotNull(func, "func");
+
+    try {
+      PSAgentContext.get().getUserRequestAdapter().update(func).get();
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  @Override
+  public Future<VoidResult> asyncUpdate(UpdateFunc func) throws AngelException {
     checkNotNull(func, "func");
 
     try {
@@ -416,6 +719,17 @@ public class MatrixClientImpl extends MatrixClient {
 
   @Override
   public GetResult get(GetFunc func) throws AngelException {
+    checkNotNull(func, "func");
+
+    try {
+      return PSAgentContext.get().getUserRequestAdapter().get(func).get();
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  @Override
+  public Future<GetResult> asyncGet(GetFunc func) throws AngelException {
     checkNotNull(func, "func");
 
     try {
@@ -431,12 +745,18 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
+  public Future<Vector> asyncGetRow(int rowId) throws AngelException {
+    checkRowId(rowId);
+    return PSAgentContext.get().getUserRequestAdapter().getRow(matrixId, rowId);
+  }
+
+  @Override
   public Vector getRow(int rowId, boolean disableCache) throws AngelException {
     checkRowId(rowId);
 
     try {
       if (disableCache) {
-        return PSAgentContext.get().getUserRequestAdapter().getRow(matrixId, rowId);
+        return PSAgentContext.get().getUserRequestAdapter().getRow(matrixId, rowId).get();
       } else {
         return PSAgentContext.get().getConsistencyController().getRow(taskContext, matrixId, rowId);
       }
@@ -454,6 +774,7 @@ public class MatrixClientImpl extends MatrixClient {
   public Vector[] getRows(int[] rowIds) throws AngelException {
     return getRows(rowIds, false);
   }
+
 
   @Override
   public Vector[] getRows(int[] rowIds, boolean disableCache) throws AngelException {
