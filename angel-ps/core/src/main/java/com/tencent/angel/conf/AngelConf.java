@@ -937,6 +937,13 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_KUBERNETES_CONTAINER_IMAGE = ANGEL_KUBERNETES_PREFIX + "container.image";
 
   /**
+   * master and executor pods extra classpath
+   */
+  public static final String ANGEL_KUBERNETES_MASTER_EXTRA_CALSSPATH = ANGEL_KUBERNETES_PREFIX + "master.extraClassPath";
+
+  public static final String ANGEL_KUBERNETES_EXECUTOR_EXTRA_CALSSPATH = ANGEL_KUBERNETES_PREFIX + "executor.extraClassPath";
+
+  /**
    * Specify the hard cpu limit for the angel pods
    */
   public static final String ANGEL_KUBERNETES_MASTER_LIMIT_CORES = ANGEL_KUBERNETES_PREFIX + "master.limit.cores";

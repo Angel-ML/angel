@@ -12,6 +12,8 @@ private[angel] class BasicAngelMasterFeatureStep(
 
   private val masterPodName = s"${conf.appResourceNamePrefix}-master"
 
+  private val masterExtraClasspath = Option(conf.angelConf.get(AngelConf.ANGEL_KUBERNETES_MASTER_EXTRA_CALSSPATH))
+
   private val masterContainerImage = Option(conf.angelConf.get(AngelConf.ANGEL_KUBERNETES_CONTAINER_IMAGE))
     .getOrElse(throw new Exception("Must specify the container image"))
 
@@ -34,16 +36,12 @@ private[angel] class BasicAngelMasterFeatureStep(
           .build()
       }
 
-    /*
-    val angelConfToEnvs = conf.angelConf.iterator().asScala.map(x => (x.getKey, x.getValue))
-      .toSeq
-      .map { env =>
+    val masterExtraClasspathEnv = masterExtraClasspath.map { cp =>
       new EnvVarBuilder()
-        .withName(env._1)
-        .withValue(env._2)
+        .withName(Constants.ENV_CLASSPATH)
+        .withValue(cp)
         .build()
     }
-    */
 
     val masterCpuQuantity = new QuantityBuilder(false)
       .withAmount(masterCpuCores.toString)
@@ -65,7 +63,7 @@ private[angel] class BasicAngelMasterFeatureStep(
         .withContainerPort(masterPort)
         .withProtocol("TCP")
         .endPort()
-      .addAllToEnv(masterCustomEnvs.asJava)
+      .addAllToEnv((masterCustomEnvs ++ masterExtraClasspathEnv.toSeq).asJava)
       .addNewEnv()
         .withName(Constants.ENV_MASTER_BIND_ADDRESS)
         .withValueFrom(new EnvVarSourceBuilder()

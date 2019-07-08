@@ -375,8 +375,10 @@ private[spark] object AngelPSContext {
     hadoopConf.setInt(ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 100000000)
     hadoopConf.set(ANGEL_LOG_PATH, tempPath)
 
-    // add user resource files
-   addUserResourceFiles(conf, hadoopConf)
+    if (deployMode != "KUBERNETES") {
+      // add user resource files
+      addUserResourceFiles(conf, hadoopConf)
+    }
 
     // Some other settings
     conf.getAllWithPrefix("spark.angel").foreach {

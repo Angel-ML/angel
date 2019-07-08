@@ -15,6 +15,8 @@ private[angel] class BasicAngelExecutorFeatureStep(
   private val executorRole = kubernetesConf.angelConf.get(AngelConf.ANGEL_KUBERNETES_EXECUTOR_ROLE,
     AngelConf.DEFAULT_ANGEL_KUBERNETES_EXECUTOR_ROLE)
 
+  private val executorExtraClasspath = Option(kubernetesConf.angelConf.get(AngelConf.ANGEL_KUBERNETES_EXECUTOR_EXTRA_CALSSPATH))
+
   private val executorContainerImage = Option(kubernetesConf.angelConf.get(AngelConf.ANGEL_KUBERNETES_CONTAINER_IMAGE))
     .getOrElse("Must specify the executor container image")
 
@@ -48,6 +50,12 @@ private[angel] class BasicAngelExecutorFeatureStep(
     val executorCpuQuantity = new QuantityBuilder(false)
       .withAmount(executorCores.toString)
       .build()
+    val executorExtraClasspathEnv = executorExtraClasspath.map { cp =>
+      new EnvVarBuilder()
+        .withName(Constants.ENV_CLASSPATH)
+        .withValue(cp)
+        .build()
+    }
     val executorEnv = (Seq(
       (Constants.ENV_MASTER_BIND_ADDRESS, kubernetesConf.angelConf.get(AngelConf.ANGEL_KUBERNETES_MASTER_POD_IP)),
       (Constants.ENV_MASTER_BIND_PORT, kubernetesConf.angelConf.getInt(AngelConf.ANGEL_KUBERNETES_MASTER_PORT,
@@ -74,7 +82,7 @@ private[angel] class BasicAngelExecutorFeatureStep(
           .withNewFieldRef("v1", "status.podIP")
           .build())
         .build()
-    )
+    ) ++ executorExtraClasspathEnv.toSeq
 
     val executorContainer = new ContainerBuilder(pod.container)
       .withName(executorRole)
