@@ -117,6 +117,25 @@ public enum RowType {
     return value < 28 && value % 7 < 3;
   }
 
+  public final boolean isComp() {
+    return value == T_DOUBLE_DENSE_COMPONENT_VALUE ||
+        value == T_DOUBLE_DENSE_LONGKEY_COMPONENT_VALUE ||
+        value == T_DOUBLE_SPARSE_COMPONENT_VALUE ||
+        value == T_DOUBLE_SPARSE_LONGKEY_COMPONENT_VALUE ||
+        value == T_FLOAT_DENSE_COMPONENT_VALUE ||
+        value == T_FLOAT_DENSE_LONGKEY_COMPONENT_VALUE ||
+        value == T_FLOAT_SPARSE_COMPONENT_VALUE ||
+        value == T_FLOAT_SPARSE_LONGKEY_COMPONENT_VALUE ||
+        value == T_LONG_DENSE_COMPONENT_VALUE ||
+        value == T_LONG_DENSE_LONGKEY_COMPONENT_VALUE ||
+        value == T_LONG_SPARSE_COMPONENT_VALUE ||
+        value == T_LONG_SPARSE_LONGKEY_COMPONENT_VALUE ||
+        value == T_INT_DENSE_COMPONENT_VALUE ||
+        value == T_INT_DENSE_LONGKEY_COMPONENT_VALUE ||
+        value == T_INT_SPARSE_COMPONENT_VALUE ||
+        value == T_INT_SPARSE_LONGKEY_COMPONENT_VALUE;
+  }
+
   public final boolean isLongKey(){
     int r = value % 7;
     return value < 28 && (r == 2 || r == 5 || r == 6);

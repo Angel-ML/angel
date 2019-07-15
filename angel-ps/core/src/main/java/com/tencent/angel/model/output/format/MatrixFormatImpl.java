@@ -256,6 +256,7 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
       throw new IOException("Can not find meta file for matrix " + loadContext.getMatrixName() + " on path " + loadContext.getLoadPath());
     }
     MatrixFilesMeta matrixFilesMeta;
+    fs.setVerifyChecksum(false);
     FSDataInputStream input = fs.open(metaFilePath);
     matrixFilesMeta = new MatrixFilesMeta();
     List<MatrixPartitionMeta> partFileMetas = new ArrayList<>();
@@ -300,6 +301,7 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
           if (input != null) {
             input.close();
           }
+          fs.setVerifyChecksum(false);
           input = fs.open(new Path(loadContext.getLoadPath(), currentFileName));
         }
         input.seek(offset);
@@ -335,7 +337,7 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
       matrix.setRow(entry.getIntKey(), initRow(rowType, matrixFilesMeta.getCol(), entry.getLongValue()));
     }
 
-    return rbMatrix(rowType, matrixFilesMeta.getRow(), matrixFilesMeta.getCol());
+    return matrix;
   }
 
   private static RowBasedMatrix rbMatrix(RowType rowType, int rowNum, long colNum) {

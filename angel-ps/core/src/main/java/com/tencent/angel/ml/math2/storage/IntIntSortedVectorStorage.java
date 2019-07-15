@@ -1,15 +1,32 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
+
 package com.tencent.angel.ml.math2.storage;
 
-import java.util.Arrays;
-
-import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ml.math2.utils.ArrayCopy;
+import com.tencent.angel.ml.matrix.RowType;
 
 import java.util.Arrays;
-import java.util.Random;
 import java.util.HashSet;
+import java.util.Random;
 
 public class IntIntSortedVectorStorage implements IntIntVectorStorage {
+
   private int[] indices;
   private int[] values;
   private byte flag; // 001: dense; 010: sparse; 100: sorted
@@ -37,10 +54,11 @@ public class IntIntSortedVectorStorage implements IntIntVectorStorage {
   }
 
   public IntIntSortedVectorStorage(int dim) {
-    this(dim, Math.max(128, (int) (dim / 1000)));
+    this(dim, (int) Math.min(64, Math.max(dim, 0)));
   }
 
-  @Override public int get(int idx) {
+  @Override
+  public int get(int idx) {
     if (idx < 0 || idx > dim - 1) {
       throw new ArrayIndexOutOfBoundsException();
     } else if (size == 0 || idx > indices[size - 1] || idx < indices[0]) {
@@ -51,7 +69,8 @@ public class IntIntSortedVectorStorage implements IntIntVectorStorage {
     }
   }
 
-  @Override public void set(int idx, int value) {
+  @Override
+  public void set(int idx, int value) {
     if (idx < 0 || idx > dim - 1) {
       throw new ArrayIndexOutOfBoundsException();
     }
@@ -105,17 +124,18 @@ public class IntIntSortedVectorStorage implements IntIntVectorStorage {
     size++;
   }
 
-  @Override public IntIntVectorStorage clone() {
-    return new IntIntSortedVectorStorage(dim, size, ArrayCopy.copy(indices),
-      ArrayCopy.copy(values));
+  @Override
+  public IntIntVectorStorage clone() {
+    return new IntIntSortedVectorStorage(dim, size, ArrayCopy.copy(indices), ArrayCopy.copy(values));
   }
 
-  @Override public IntIntVectorStorage copy() {
-    return new IntIntSortedVectorStorage(dim, size, ArrayCopy.copy(indices),
-      ArrayCopy.copy(values));
+  @Override
+  public IntIntVectorStorage copy() {
+    return new IntIntSortedVectorStorage(dim, size, ArrayCopy.copy(indices), ArrayCopy.copy(values));
   }
 
-  @Override public IntIntVectorStorage oneLikeDense() {
+  @Override
+  public IntIntVectorStorage oneLikeDense() {
     int[] oneLikeValues = new int[dim];
     for (int i = 0; i < dim; i++) {
       oneLikeValues[i] = 1;
@@ -123,7 +143,8 @@ public class IntIntSortedVectorStorage implements IntIntVectorStorage {
     return new IntIntDenseVectorStorage(oneLikeValues);
   }
 
-  @Override public IntIntVectorStorage oneLikeSparse() {
+  @Override
+  public IntIntVectorStorage oneLikeSparse() {
     int[] oneLikeValues = new int[size];
     for (int i = 0; i < size; i++) {
       oneLikeValues[i] = 1;
@@ -131,7 +152,8 @@ public class IntIntSortedVectorStorage implements IntIntVectorStorage {
     return new IntIntSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public IntIntVectorStorage oneLikeSorted() {
+  @Override
+  public IntIntVectorStorage oneLikeSorted() {
     int[] oneLikeValues = new int[size];
     for (int i = 0; i < size; i++) {
       oneLikeValues[i] = 1;
@@ -139,7 +161,8 @@ public class IntIntSortedVectorStorage implements IntIntVectorStorage {
     return new IntIntSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public IntIntVectorStorage oneLikeDense(int dim) {
+  @Override
+  public IntIntVectorStorage oneLikeDense(int dim) {
     int[] oneLikeValues = new int[dim];
     for (int i = 0; i < dim; i++) {
       oneLikeValues[i] = 1;
@@ -147,7 +170,8 @@ public class IntIntSortedVectorStorage implements IntIntVectorStorage {
     return new IntIntDenseVectorStorage(oneLikeValues);
   }
 
-  @Override public IntIntVectorStorage oneLikeSparse(int dim, int capacity) {
+  @Override
+  public IntIntVectorStorage oneLikeSparse(int dim, int capacity) {
     int[] oneLikeValues = new int[capacity];
     int[] indices = new int[capacity];
     HashSet set = new HashSet<Integer>();
@@ -167,7 +191,8 @@ public class IntIntSortedVectorStorage implements IntIntVectorStorage {
     return new IntIntSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public IntIntVectorStorage oneLikeSorted(int dim, int capacity) {
+  @Override
+  public IntIntVectorStorage oneLikeSorted(int dim, int capacity) {
     int[] oneLikeValues = new int[capacity];
     int[] indices = new int[capacity];
     HashSet set = new HashSet<Integer>();
@@ -188,7 +213,8 @@ public class IntIntSortedVectorStorage implements IntIntVectorStorage {
     return new IntIntSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public IntIntVectorStorage oneLikeSparse(int capacity) {
+  @Override
+  public IntIntVectorStorage oneLikeSparse(int capacity) {
     int[] oneLikeValues = new int[capacity];
     int[] indices = new int[capacity];
     HashSet set = new HashSet<Integer>();
@@ -208,7 +234,8 @@ public class IntIntSortedVectorStorage implements IntIntVectorStorage {
     return new IntIntSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public IntIntVectorStorage oneLikeSorted(int capacity) {
+  @Override
+  public IntIntVectorStorage oneLikeSorted(int capacity) {
     int[] oneLikeValues = new int[capacity];
     int[] indices = new int[capacity];
     HashSet set = new HashSet<Integer>();
@@ -229,73 +256,94 @@ public class IntIntSortedVectorStorage implements IntIntVectorStorage {
     return new IntIntSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public IntIntVectorStorage emptyDense() {
+  @Override
+  public IntIntVectorStorage emptyDense() {
     return new IntIntDenseVectorStorage(dim);
   }
 
-  @Override public IntIntVectorStorage emptySparse() {
+  @Override
+  public IntIntVectorStorage emptySparse() {
     return new IntIntSparseVectorStorage(dim, indices.length);
   }
 
-  @Override public IntIntVectorStorage emptySorted() {
+  @Override
+  public IntIntVectorStorage emptySorted() {
     return new IntIntSortedVectorStorage(dim, indices.length);
   }
 
-  @Override public IntIntVectorStorage emptyDense(int length) {
+  @Override
+  public IntIntVectorStorage emptyDense(int length) {
     return new IntIntDenseVectorStorage(length);
   }
 
-  @Override public IntIntVectorStorage emptySparse(int dim, int capacity) {
+  @Override
+  public IntIntVectorStorage emptySparse(int dim, int capacity) {
     return new IntIntSparseVectorStorage(dim, capacity);
   }
 
-  @Override public IntIntVectorStorage emptySorted(int dim, int capacity) {
+  @Override
+  public IntIntVectorStorage emptySorted(int dim, int capacity) {
     return new IntIntSortedVectorStorage(dim, capacity);
   }
 
-  @Override public IntIntVectorStorage emptySparse(int capacity) {
+  @Override
+  public IntIntVectorStorage emptySparse(int capacity) {
     return new IntIntSparseVectorStorage(dim, capacity);
   }
 
-  @Override public IntIntVectorStorage emptySorted(int capacity) {
+  @Override
+  public IntIntVectorStorage emptySorted(int capacity) {
     return new IntIntSortedVectorStorage(dim, capacity);
   }
 
-  @Override public int[] getIndices() {
+  @Override
+  public int[] getIndices() {
     return indices;
   }
 
-  @Override public int size() {
+  @Override
+  public int size() {
     return size;
   }
 
-  @Override public boolean hasKey(int key) {
-    return (size != 0 && key <= indices[size - 1] && key >= indices[0]
-      && Arrays.binarySearch(indices, key) > 0);
+  public void setSize(int size) {
+    this.size = size;
   }
 
-  @Override public RowType getType() {
+  @Override
+  public boolean hasKey(int key) {
+    return (size != 0 && key <= indices[size - 1] && key >= indices[0] &&
+        Arrays.binarySearch(indices, key) > 0);
+  }
+
+  @Override
+  public RowType getType() {
     return RowType.T_INT_SPARSE;
   }
 
-  @Override public boolean isDense() {
+  @Override
+  public boolean isDense() {
     return flag == 1;
   }
 
-  @Override public boolean isSparse() {
+  @Override
+  public boolean isSparse() {
     return flag == 2;
   }
 
-  @Override public boolean isSorted() {
+  @Override
+  public boolean isSorted() {
     return flag == 4;
   }
 
-  @Override public void clear() {
+  @Override
+  public void clear() {
     Arrays.parallelSetAll(indices, (int value) -> 0);
     Arrays.parallelSetAll(values, (int value) -> 0);
   }
 
-  @Override public int[] getValues() {
+  @Override
+  public int[] getValues() {
     return values;
   }
 }

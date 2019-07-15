@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -19,12 +19,20 @@
 package com.tencent.angel.ml.math2.ufuncs.executor.simple;
 
 import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.math2.utils.Constant;
 import com.tencent.angel.ml.math2.vector.*;
-import it.unimi.dsi.fastutil.ints.*;
-import it.unimi.dsi.fastutil.longs.*;
+import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import it.unimi.dsi.fastutil.ints.Int2FloatMap;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2LongMap;
+import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
+import it.unimi.dsi.fastutil.longs.Long2FloatMap;
+import it.unimi.dsi.fastutil.longs.Long2IntMap;
+import it.unimi.dsi.fastutil.longs.Long2LongMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 public class SimpleDotExecutor {
+
   public static double apply(Vector v1, Vector v2) {
     if (v1 instanceof IntDoubleVector && v2 instanceof IntDoubleVector) {
       return apply((IntDoubleVector) v1, (IntDoubleVector) v2);
@@ -117,8 +125,46 @@ public class SimpleDotExecutor {
     assert v1.getDim() == v2.getDim();
     double dot = 0.0;
     int[] idxs = v2.getIndices();
-    for (int idx : idxs) {
-      dot += v1.get(idx);
+    if (v1.isDense()) {
+      double[] v1Values = v1.getStorage().getValues();
+      int size = v2.size();
+      for (int i = 0; i < size; i++) {
+        dot += v1Values[idxs[i]];
+      }
+    } else if (v1.isSparse()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Int2DoubleMap.Entry entry = iter.next();
+          dot += entry.getDoubleValue() * v2.get(entry.getIntKey());
+        }
+      } else {
+        int size = v2.size();
+        for (int i = 0; i < size; i++) {
+          dot += v1.get(idxs[i]);
+        }
+      }
+    } else {
+      int[] keys1 = v1.getStorage().getIndices();
+      double[] v1Values = v1.getStorage().getValues();
+
+      int v1Pointor = 0;
+      int v2Pointor = 0;
+      int size1 = v1.size();
+      int size2 = v2.size();
+
+      while (v1Pointor < size1 && v2Pointor < size2) {
+        if (keys1[v1Pointor] == idxs[v2Pointor]) {
+          dot += v1Values[v1Pointor];
+          v2Pointor++;
+          v1Pointor++;
+        } else if (keys1[v1Pointor] > idxs[v2Pointor]) {
+          v2Pointor++;
+        } else {
+          v1Pointor++;
+        }
+      }
     }
     return dot;
   }
@@ -177,7 +223,8 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
         ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
@@ -192,18 +239,19 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
+          && v1.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Int2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Int2DoubleMap.Entry entry = iter.next();
+          dot += entry.getDoubleValue() * v1.get(entry.getIntKey());
+        }
+      } else {
         int[] keys = v1.getStorage().getIndices();
         double[] v1Values = v1.getStorage().getValues();
         int size = v1.size();
         for (int i = 0; i < size; i++) {
           dot += v1Values[i] * v2.get(keys[i]);
-        }
-      } else {
-        ObjectIterator<Int2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Int2DoubleMap.Entry entry = iter.next();
-          dot += entry.getDoubleValue() * v1.get(entry.getIntKey());
         }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
@@ -289,7 +337,8 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
         ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
@@ -304,18 +353,19 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
+          && v1.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Int2FloatMap.Entry entry = iter.next();
+          dot += entry.getFloatValue() * v1.get(entry.getIntKey());
+        }
+      } else {
         int[] keys = v1.getStorage().getIndices();
         double[] v1Values = v1.getStorage().getValues();
         int size = v1.size();
         for (int i = 0; i < size; i++) {
           dot += v1Values[i] * v2.get(keys[i]);
-        }
-      } else {
-        ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Int2FloatMap.Entry entry = iter.next();
-          dot += entry.getFloatValue() * v1.get(entry.getIntKey());
         }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
@@ -401,7 +451,8 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
         ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
@@ -416,18 +467,19 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
+          && v1.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Int2LongMap.Entry entry = iter.next();
+          dot += entry.getLongValue() * v1.get(entry.getIntKey());
+        }
+      } else {
         int[] keys = v1.getStorage().getIndices();
         double[] v1Values = v1.getStorage().getValues();
         int size = v1.size();
         for (int i = 0; i < size; i++) {
           dot += v1Values[i] * v2.get(keys[i]);
-        }
-      } else {
-        ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Int2LongMap.Entry entry = iter.next();
-          dot += entry.getLongValue() * v1.get(entry.getIntKey());
         }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
@@ -513,7 +565,8 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
         ObjectIterator<Int2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Int2DoubleMap.Entry entry = iter.next();
@@ -528,18 +581,19 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
+          && v1.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Int2IntMap.Entry entry = iter.next();
+          dot += entry.getIntValue() * v1.get(entry.getIntKey());
+        }
+      } else {
         int[] keys = v1.getStorage().getIndices();
         double[] v1Values = v1.getStorage().getValues();
         int size = v1.size();
         for (int i = 0; i < size; i++) {
           dot += v1Values[i] * v2.get(keys[i]);
-        }
-      } else {
-        ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Int2IntMap.Entry entry = iter.next();
-          dot += entry.getIntValue() * v1.get(entry.getIntKey());
         }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
@@ -575,8 +629,46 @@ public class SimpleDotExecutor {
     assert v1.getDim() == v2.getDim();
     double dot = 0.0;
     int[] idxs = v2.getIndices();
-    for (int idx : idxs) {
-      dot += v1.get(idx);
+    if (v1.isDense()) {
+      float[] v1Values = v1.getStorage().getValues();
+      int size = v2.size();
+      for (int i = 0; i < size; i++) {
+        dot += v1Values[idxs[i]];
+      }
+    } else if (v1.isSparse()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Int2FloatMap.Entry entry = iter.next();
+          dot += entry.getFloatValue() * v2.get(entry.getIntKey());
+        }
+      } else {
+        int size = v2.size();
+        for (int i = 0; i < size; i++) {
+          dot += v1.get(idxs[i]);
+        }
+      }
+    } else {
+      int[] keys1 = v1.getStorage().getIndices();
+      float[] v1Values = v1.getStorage().getValues();
+
+      int v1Pointor = 0;
+      int v2Pointor = 0;
+      int size1 = v1.size();
+      int size2 = v2.size();
+
+      while (v1Pointor < size1 && v2Pointor < size2) {
+        if (keys1[v1Pointor] == idxs[v2Pointor]) {
+          dot += v1Values[v1Pointor];
+          v2Pointor++;
+          v1Pointor++;
+        } else if (keys1[v1Pointor] > idxs[v2Pointor]) {
+          v2Pointor++;
+        } else {
+          v1Pointor++;
+        }
+      }
     }
     return dot;
   }
@@ -635,7 +727,8 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
         ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Int2FloatMap.Entry entry = iter.next();
@@ -650,18 +743,19 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
+          && v1.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Int2FloatMap.Entry entry = iter.next();
+          dot += entry.getFloatValue() * v1.get(entry.getIntKey());
+        }
+      } else {
         int[] keys = v1.getStorage().getIndices();
         float[] v1Values = v1.getStorage().getValues();
         int size = v1.size();
         for (int i = 0; i < size; i++) {
           dot += v1Values[i] * v2.get(keys[i]);
-        }
-      } else {
-        ObjectIterator<Int2FloatMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Int2FloatMap.Entry entry = iter.next();
-          dot += entry.getFloatValue() * v1.get(entry.getIntKey());
         }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
@@ -747,7 +841,8 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
         ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Int2FloatMap.Entry entry = iter.next();
@@ -762,18 +857,19 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
+          && v1.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Int2LongMap.Entry entry = iter.next();
+          dot += entry.getLongValue() * v1.get(entry.getIntKey());
+        }
+      } else {
         int[] keys = v1.getStorage().getIndices();
         float[] v1Values = v1.getStorage().getValues();
         int size = v1.size();
         for (int i = 0; i < size; i++) {
           dot += v1Values[i] * v2.get(keys[i]);
-        }
-      } else {
-        ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Int2LongMap.Entry entry = iter.next();
-          dot += entry.getLongValue() * v1.get(entry.getIntKey());
         }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
@@ -859,7 +955,8 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
         ObjectIterator<Int2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Int2FloatMap.Entry entry = iter.next();
@@ -874,18 +971,19 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
+          && v1.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Int2IntMap.Entry entry = iter.next();
+          dot += entry.getIntValue() * v1.get(entry.getIntKey());
+        }
+      } else {
         int[] keys = v1.getStorage().getIndices();
         float[] v1Values = v1.getStorage().getValues();
         int size = v1.size();
         for (int i = 0; i < size; i++) {
           dot += v1Values[i] * v2.get(keys[i]);
-        }
-      } else {
-        ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Int2IntMap.Entry entry = iter.next();
-          dot += entry.getIntValue() * v1.get(entry.getIntKey());
         }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
@@ -921,8 +1019,46 @@ public class SimpleDotExecutor {
     assert v1.getDim() == v2.getDim();
     double dot = 0.0;
     int[] idxs = v2.getIndices();
-    for (int idx : idxs) {
-      dot += v1.get(idx);
+    if (v1.isDense()) {
+      long[] v1Values = v1.getStorage().getValues();
+      int size = v2.size();
+      for (int i = 0; i < size; i++) {
+        dot += v1Values[idxs[i]];
+      }
+    } else if (v1.isSparse()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Int2LongMap.Entry entry = iter.next();
+          dot += entry.getLongValue() * v2.get(entry.getIntKey());
+        }
+      } else {
+        int size = v2.size();
+        for (int i = 0; i < size; i++) {
+          dot += v1.get(idxs[i]);
+        }
+      }
+    } else {
+      int[] keys1 = v1.getStorage().getIndices();
+      long[] v1Values = v1.getStorage().getValues();
+
+      int v1Pointor = 0;
+      int v2Pointor = 0;
+      int size1 = v1.size();
+      int size2 = v2.size();
+
+      while (v1Pointor < size1 && v2Pointor < size2) {
+        if (keys1[v1Pointor] == idxs[v2Pointor]) {
+          dot += v1Values[v1Pointor];
+          v2Pointor++;
+          v1Pointor++;
+        } else if (keys1[v1Pointor] > idxs[v2Pointor]) {
+          v2Pointor++;
+        } else {
+          v1Pointor++;
+        }
+      }
     }
     return dot;
   }
@@ -981,7 +1117,8 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
         ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Int2LongMap.Entry entry = iter.next();
@@ -996,18 +1133,19 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
+          && v1.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Int2LongMap.Entry entry = iter.next();
+          dot += entry.getLongValue() * v1.get(entry.getIntKey());
+        }
+      } else {
         int[] keys = v1.getStorage().getIndices();
         long[] v1Values = v1.getStorage().getValues();
         int size = v1.size();
         for (int i = 0; i < size; i++) {
           dot += v1Values[i] * v2.get(keys[i]);
-        }
-      } else {
-        ObjectIterator<Int2LongMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Int2LongMap.Entry entry = iter.next();
-          dot += entry.getLongValue() * v1.get(entry.getIntKey());
         }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
@@ -1093,7 +1231,8 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
         ObjectIterator<Int2LongMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Int2LongMap.Entry entry = iter.next();
@@ -1108,18 +1247,19 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
+          && v1.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Int2IntMap.Entry entry = iter.next();
+          dot += entry.getIntValue() * v1.get(entry.getIntKey());
+        }
+      } else {
         int[] keys = v1.getStorage().getIndices();
         long[] v1Values = v1.getStorage().getValues();
         int size = v1.size();
         for (int i = 0; i < size; i++) {
           dot += v1Values[i] * v2.get(keys[i]);
-        }
-      } else {
-        ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Int2IntMap.Entry entry = iter.next();
-          dot += entry.getIntValue() * v1.get(entry.getIntKey());
         }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
@@ -1155,8 +1295,46 @@ public class SimpleDotExecutor {
     assert v1.getDim() == v2.getDim();
     double dot = 0.0;
     int[] idxs = v2.getIndices();
-    for (int idx : idxs) {
-      dot += v1.get(idx);
+    if (v1.isDense()) {
+      int[] v1Values = v1.getStorage().getValues();
+      int size = v2.size();
+      for (int i = 0; i < size; i++) {
+        dot += v1Values[idxs[i]];
+      }
+    } else if (v1.isSparse()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Int2IntMap.Entry> iter = v1.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Int2IntMap.Entry entry = iter.next();
+          dot += entry.getIntValue() * v2.get(entry.getIntKey());
+        }
+      } else {
+        int size = v2.size();
+        for (int i = 0; i < size; i++) {
+          dot += v1.get(idxs[i]);
+        }
+      }
+    } else {
+      int[] keys1 = v1.getStorage().getIndices();
+      int[] v1Values = v1.getStorage().getValues();
+
+      int v1Pointor = 0;
+      int v2Pointor = 0;
+      int size1 = v1.size();
+      int size2 = v2.size();
+
+      while (v1Pointor < size1 && v2Pointor < size2) {
+        if (keys1[v1Pointor] == idxs[v2Pointor]) {
+          dot += v1Values[v1Pointor];
+          v2Pointor++;
+          v1Pointor++;
+        } else if (keys1[v1Pointor] > idxs[v2Pointor]) {
+          v2Pointor++;
+        } else {
+          v1Pointor++;
+        }
+      }
     }
     return dot;
   }
@@ -1215,7 +1393,8 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
         ObjectIterator<Int2IntMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Int2IntMap.Entry entry = iter.next();
@@ -1230,18 +1409,19 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
+          && v1.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Int2IntMap.Entry entry = iter.next();
+          dot += entry.getIntValue() * v1.get(entry.getIntKey());
+        }
+      } else {
         int[] keys = v1.getStorage().getIndices();
         int[] v1Values = v1.getStorage().getValues();
         int size = v1.size();
         for (int i = 0; i < size; i++) {
           dot += v1Values[i] * v2.get(keys[i]);
-        }
-      } else {
-        ObjectIterator<Int2IntMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Int2IntMap.Entry entry = iter.next();
-          dot += entry.getIntValue() * v1.get(entry.getIntKey());
         }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
@@ -1299,8 +1479,40 @@ public class SimpleDotExecutor {
     assert v1.getDim() == v2.getDim();
     double dot = 0.0;
     long[] idxs = v2.getIndices();
-    for (long idx : idxs) {
-      dot += v1.get(idx);
+    if (v1.isSparse()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Long2DoubleMap.Entry entry = iter.next();
+          dot += entry.getDoubleValue() * v2.get(entry.getLongKey());
+        }
+      } else {
+        long size = v2.size();
+        for (int i = 0; i < size; i++) {
+          dot += v1.get(idxs[i]);
+        }
+      }
+    } else {
+      long[] keys1 = v1.getStorage().getIndices();
+      double[] v1Values = v1.getStorage().getValues();
+
+      int v1Pointor = 0;
+      int v2Pointor = 0;
+      long size1 = v1.size();
+      long size2 = v2.size();
+
+      while (v1Pointor < size1 && v2Pointor < size2) {
+        if (keys1[v1Pointor] == idxs[v2Pointor]) {
+          dot += v1Values[v1Pointor];
+          v2Pointor++;
+          v1Pointor++;
+        } else if (keys1[v1Pointor] > idxs[v2Pointor]) {
+          v2Pointor++;
+        } else {
+          v1Pointor++;
+        }
+      }
     }
     return dot;
   }
@@ -1322,7 +1534,8 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
         ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Long2DoubleMap.Entry entry = iter.next();
@@ -1337,18 +1550,19 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
+          && v1.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Long2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Long2DoubleMap.Entry entry = iter.next();
+          dot += entry.getDoubleValue() * v1.get(entry.getLongKey());
+        }
+      } else {
         long[] keys = v1.getStorage().getIndices();
         double[] v1Values = v1.getStorage().getValues();
         long size = v1.size();
         for (int i = 0; i < size; i++) {
           dot += v1Values[i] * v2.get(keys[i]);
-        }
-      } else {
-        ObjectIterator<Long2DoubleMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Long2DoubleMap.Entry entry = iter.next();
-          dot += entry.getDoubleValue() * v1.get(entry.getLongKey());
         }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
@@ -1397,7 +1611,8 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
         ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Long2DoubleMap.Entry entry = iter.next();
@@ -1412,18 +1627,19 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
+          && v1.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Long2FloatMap.Entry entry = iter.next();
+          dot += entry.getFloatValue() * v1.get(entry.getLongKey());
+        }
+      } else {
         long[] keys = v1.getStorage().getIndices();
         double[] v1Values = v1.getStorage().getValues();
         long size = v1.size();
         for (int i = 0; i < size; i++) {
           dot += v1Values[i] * v2.get(keys[i]);
-        }
-      } else {
-        ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Long2FloatMap.Entry entry = iter.next();
-          dot += entry.getFloatValue() * v1.get(entry.getLongKey());
         }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
@@ -1472,7 +1688,8 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
         ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Long2DoubleMap.Entry entry = iter.next();
@@ -1487,18 +1704,19 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
+          && v1.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Long2LongMap.Entry entry = iter.next();
+          dot += entry.getLongValue() * v1.get(entry.getLongKey());
+        }
+      } else {
         long[] keys = v1.getStorage().getIndices();
         double[] v1Values = v1.getStorage().getValues();
         long size = v1.size();
         for (int i = 0; i < size; i++) {
           dot += v1Values[i] * v2.get(keys[i]);
-        }
-      } else {
-        ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Long2LongMap.Entry entry = iter.next();
-          dot += entry.getLongValue() * v1.get(entry.getLongKey());
         }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
@@ -1547,7 +1765,8 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
         ObjectIterator<Long2DoubleMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Long2DoubleMap.Entry entry = iter.next();
@@ -1562,18 +1781,19 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
+          && v1.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Long2IntMap.Entry entry = iter.next();
+          dot += entry.getIntValue() * v1.get(entry.getLongKey());
+        }
+      } else {
         long[] keys = v1.getStorage().getIndices();
         double[] v1Values = v1.getStorage().getValues();
         long size = v1.size();
         for (int i = 0; i < size; i++) {
           dot += v1Values[i] * v2.get(keys[i]);
-        }
-      } else {
-        ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Long2IntMap.Entry entry = iter.next();
-          dot += entry.getIntValue() * v1.get(entry.getLongKey());
         }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
@@ -1609,8 +1829,40 @@ public class SimpleDotExecutor {
     assert v1.getDim() == v2.getDim();
     double dot = 0.0;
     long[] idxs = v2.getIndices();
-    for (long idx : idxs) {
-      dot += v1.get(idx);
+    if (v1.isSparse()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Long2FloatMap.Entry entry = iter.next();
+          dot += entry.getFloatValue() * v2.get(entry.getLongKey());
+        }
+      } else {
+        long size = v2.size();
+        for (int i = 0; i < size; i++) {
+          dot += v1.get(idxs[i]);
+        }
+      }
+    } else {
+      long[] keys1 = v1.getStorage().getIndices();
+      float[] v1Values = v1.getStorage().getValues();
+
+      int v1Pointor = 0;
+      int v2Pointor = 0;
+      long size1 = v1.size();
+      long size2 = v2.size();
+
+      while (v1Pointor < size1 && v2Pointor < size2) {
+        if (keys1[v1Pointor] == idxs[v2Pointor]) {
+          dot += v1Values[v1Pointor];
+          v2Pointor++;
+          v1Pointor++;
+        } else if (keys1[v1Pointor] > idxs[v2Pointor]) {
+          v2Pointor++;
+        } else {
+          v1Pointor++;
+        }
+      }
     }
     return dot;
   }
@@ -1632,7 +1884,8 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
         ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Long2FloatMap.Entry entry = iter.next();
@@ -1647,18 +1900,19 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
+          && v1.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Long2FloatMap.Entry entry = iter.next();
+          dot += entry.getFloatValue() * v1.get(entry.getLongKey());
+        }
+      } else {
         long[] keys = v1.getStorage().getIndices();
         float[] v1Values = v1.getStorage().getValues();
         long size = v1.size();
         for (int i = 0; i < size; i++) {
           dot += v1Values[i] * v2.get(keys[i]);
-        }
-      } else {
-        ObjectIterator<Long2FloatMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Long2FloatMap.Entry entry = iter.next();
-          dot += entry.getFloatValue() * v1.get(entry.getLongKey());
         }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
@@ -1707,7 +1961,8 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
         ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Long2FloatMap.Entry entry = iter.next();
@@ -1722,18 +1977,19 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
+          && v1.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Long2LongMap.Entry entry = iter.next();
+          dot += entry.getLongValue() * v1.get(entry.getLongKey());
+        }
+      } else {
         long[] keys = v1.getStorage().getIndices();
         float[] v1Values = v1.getStorage().getValues();
         long size = v1.size();
         for (int i = 0; i < size; i++) {
           dot += v1Values[i] * v2.get(keys[i]);
-        }
-      } else {
-        ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Long2LongMap.Entry entry = iter.next();
-          dot += entry.getLongValue() * v1.get(entry.getLongKey());
         }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
@@ -1782,7 +2038,8 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
         ObjectIterator<Long2FloatMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Long2FloatMap.Entry entry = iter.next();
@@ -1797,18 +2054,19 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
+          && v1.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Long2IntMap.Entry entry = iter.next();
+          dot += entry.getIntValue() * v1.get(entry.getLongKey());
+        }
+      } else {
         long[] keys = v1.getStorage().getIndices();
         float[] v1Values = v1.getStorage().getValues();
         long size = v1.size();
         for (int i = 0; i < size; i++) {
           dot += v1Values[i] * v2.get(keys[i]);
-        }
-      } else {
-        ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Long2IntMap.Entry entry = iter.next();
-          dot += entry.getIntValue() * v1.get(entry.getLongKey());
         }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
@@ -1844,8 +2102,40 @@ public class SimpleDotExecutor {
     assert v1.getDim() == v2.getDim();
     double dot = 0.0;
     long[] idxs = v2.getIndices();
-    for (long idx : idxs) {
-      dot += v1.get(idx);
+    if (v1.isSparse()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Long2LongMap.Entry> iter = v1.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Long2LongMap.Entry entry = iter.next();
+          dot += entry.getLongValue() * v2.get(entry.getLongKey());
+        }
+      } else {
+        long size = v2.size();
+        for (int i = 0; i < size; i++) {
+          dot += v1.get(idxs[i]);
+        }
+      }
+    } else {
+      long[] keys1 = v1.getStorage().getIndices();
+      long[] v1Values = v1.getStorage().getValues();
+
+      int v1Pointor = 0;
+      int v2Pointor = 0;
+      long size1 = v1.size();
+      long size2 = v2.size();
+
+      while (v1Pointor < size1 && v2Pointor < size2) {
+        if (keys1[v1Pointor] == idxs[v2Pointor]) {
+          dot += v1Values[v1Pointor];
+          v2Pointor++;
+          v1Pointor++;
+        } else if (keys1[v1Pointor] > idxs[v2Pointor]) {
+          v2Pointor++;
+        } else {
+          v1Pointor++;
+        }
+      }
     }
     return dot;
   }
@@ -1867,7 +2157,8 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
         ObjectIterator<Long2LongMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Long2LongMap.Entry entry = iter.next();
@@ -1882,18 +2173,19 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
+          && v1.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Long2LongMap.Entry entry = iter.next();
+          dot += entry.getLongValue() * v1.get(entry.getLongKey());
+        }
+      } else {
         long[] keys = v1.getStorage().getIndices();
         long[] v1Values = v1.getStorage().getValues();
         long size = v1.size();
         for (int i = 0; i < size; i++) {
           dot += v1Values[i] * v2.get(keys[i]);
-        }
-      } else {
-        ObjectIterator<Long2LongMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Long2LongMap.Entry entry = iter.next();
-          dot += entry.getLongValue() * v1.get(entry.getLongKey());
         }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
@@ -1942,7 +2234,8 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
         ObjectIterator<Long2LongMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Long2LongMap.Entry entry = iter.next();
@@ -1957,18 +2250,19 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
+          && v1.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Long2IntMap.Entry entry = iter.next();
+          dot += entry.getIntValue() * v1.get(entry.getLongKey());
+        }
+      } else {
         long[] keys = v1.getStorage().getIndices();
         long[] v1Values = v1.getStorage().getValues();
         long size = v1.size();
         for (int i = 0; i < size; i++) {
           dot += v1Values[i] * v2.get(keys[i]);
-        }
-      } else {
-        ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Long2IntMap.Entry entry = iter.next();
-          dot += entry.getIntValue() * v1.get(entry.getLongKey());
         }
       }
     } else if (v1.isSorted() && v2.isSorted()) {
@@ -2004,8 +2298,40 @@ public class SimpleDotExecutor {
     assert v1.getDim() == v2.getDim();
     double dot = 0.0;
     long[] idxs = v2.getIndices();
-    for (long idx : idxs) {
-      dot += v1.get(idx);
+    if (v1.isSparse()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Long2IntMap.Entry> iter = v1.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Long2IntMap.Entry entry = iter.next();
+          dot += entry.getIntValue() * v2.get(entry.getLongKey());
+        }
+      } else {
+        long size = v2.size();
+        for (int i = 0; i < size; i++) {
+          dot += v1.get(idxs[i]);
+        }
+      }
+    } else {
+      long[] keys1 = v1.getStorage().getIndices();
+      int[] v1Values = v1.getStorage().getValues();
+
+      int v1Pointor = 0;
+      int v2Pointor = 0;
+      long size1 = v1.size();
+      long size2 = v2.size();
+
+      while (v1Pointor < size1 && v2Pointor < size2) {
+        if (keys1[v1Pointor] == idxs[v2Pointor]) {
+          dot += v1Values[v1Pointor];
+          v2Pointor++;
+          v1Pointor++;
+        } else if (keys1[v1Pointor] > idxs[v2Pointor]) {
+          v2Pointor++;
+        } else {
+          v1Pointor++;
+        }
+      }
     }
     return dot;
   }
@@ -2027,7 +2353,8 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSparse() && v2.isSorted()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
+          && v2.size() > Constant.sortedThreshold * v1.dim()) {
         ObjectIterator<Long2IntMap.Entry> iter = v1.getStorage().entryIterator();
         while (iter.hasNext()) {
           Long2IntMap.Entry entry = iter.next();
@@ -2042,18 +2369,19 @@ public class SimpleDotExecutor {
         }
       }
     } else if (v1.isSorted() && v2.isSparse()) {
-      if (v1.size() < v2.size()) {
+      if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
+          && v1.size() > Constant.sortedThreshold * v1.dim()) {
+        ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
+        while (iter.hasNext()) {
+          Long2IntMap.Entry entry = iter.next();
+          dot += entry.getIntValue() * v1.get(entry.getLongKey());
+        }
+      } else {
         long[] keys = v1.getStorage().getIndices();
         int[] v1Values = v1.getStorage().getValues();
         long size = v1.size();
         for (int i = 0; i < size; i++) {
           dot += v1Values[i] * v2.get(keys[i]);
-        }
-      } else {
-        ObjectIterator<Long2IntMap.Entry> iter = v2.getStorage().entryIterator();
-        while (iter.hasNext()) {
-          Long2IntMap.Entry entry = iter.next();
-          dot += entry.getIntValue() * v1.get(entry.getLongKey());
         }
       }
     } else if (v1.isSorted() && v2.isSorted()) {

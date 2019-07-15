@@ -380,7 +380,7 @@ class CompUnaryOPTest {
         Ufuncs.pow(llist.get(i), 2.0)
       } catch {
         case e: AngelException => {
-          println(e)
+          e
         }
       }
     }
@@ -410,7 +410,7 @@ class CompUnaryOPTest {
         Ufuncs.sqrt(llist.get(i))
       } catch {
         case e: AngelException => {
-          println(e)
+          e
         }
       }
     }
@@ -444,7 +444,7 @@ class CompUnaryOPTest {
         Ufuncs.smul(llist.get(i), 2.0)
       } catch {
         case e: AngelException => {
-          println(e)
+          e
         }
       }
     }
@@ -474,7 +474,7 @@ class CompUnaryOPTest {
         Ufuncs.sdiv(llist.get(i), 2.0)
       } catch {
         case e: AngelException => {
-          println(e)
+          e
         }
       }
     }

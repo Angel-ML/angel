@@ -145,6 +145,10 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
     meta
   }
 
+  def getMatrixMeta(matrixId: Int): Option[MatrixMeta] = {
+    matrixMetaMap.get(matrixId)
+  }
+
   /**
     * create a sparse long key matrix
     *
@@ -244,6 +248,11 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
   }
 
   private[spark] def conf: Map[String, String] = angelConf
+
+  override def save(ctx: ModelSaveContext): Unit = AngelPSContext.save(ctx)
+
+  override def load(ctx: ModelLoadContext): Unit = AngelPSContext.load(ctx)
+
 }
 
 private[spark] object AngelPSContext {
@@ -300,7 +309,7 @@ private[spark] object AngelPSContext {
   /**
     * Convert SparkConf to Angel Configuration.
     */
-  private def convertToHadoop(conf: SparkConf): Configuration = {
+  def convertToHadoop(conf: SparkConf): Configuration = {
     val appName = conf.get("spark.app.name") + "-ps"
     val queue = conf.get("spark.yarn.queue", "root.default")
 

@@ -21,8 +21,10 @@ package com.tencent.angel.spark.context
 import com.tencent.angel.AngelDeployMode
 import com.tencent.angel.ml.matrix.{MatrixMeta, RowType}
 import org.apache.spark._
-import scala.collection.Map
 
+import scala.collection.Map
+import com.tencent.angel.exception.AngelException
+import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.spark.models.PSVector
 
 
@@ -54,6 +56,12 @@ abstract class PSContext {
   def destroyVectorPool(vector: PSVector): Unit
 
   def refreshMatrix(): Unit
+
+  def getMatrixMeta(matrixId: Int): Option[MatrixMeta]
+
+  def save(ctx: ModelSaveContext)
+
+  def load(ctx: ModelLoadContext)
 }
 
 object PSContext {
@@ -83,7 +91,8 @@ object PSContext {
           } catch {
             case e: Exception =>
               _instance = null
-              failCause = e
+              e.printStackTrace()
+              throw new AngelException("init AngelPSContext fail, please check logs of master of angel")
           }
         }
       }

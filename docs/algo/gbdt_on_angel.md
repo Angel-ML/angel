@@ -87,33 +87,32 @@ GBDT的流程包括几大步骤
 ### 参数
 
 * **算法参数**
-	* ml.gbdt.task.type：任务类型，classification或者regression
 	* ml.gbdt.tree.num：树的数量
 	* ml.gbdt.tree.depth：树的最大高度
-	* ml.gbdt.split.num：每个特征的梯度直方图的大小
+	* ml.gbdt.split.num：每个特征的分裂点的数量
 	* ml.learn.rate：学习速率
 	* ml.data.validate.ratio：每次validation的样本比率，设为0时不做validation
 	* ml.gbdt.sample.ratio：特征下采样的比率，默认为1
-	* ml.gbdt.server.split：两阶段分裂算法开关，默认为true
-	* ml.compress.bytes：低精度压缩，每个浮点数的大小，可设为[1,8]
+	* ml.gbdt.server.split：两阶段分裂算法开关，默认为false
+	* ml.gbdt.batch.size: 并行训练时一个批量的数量
+	* angel.compress.bytes：低精度压缩，每个浮点数的大小，可设为[1,8]
 
 
 * **输入输出参数**
 	* angel.train.data.path：训练数据的输入路径
 	* angel.predict.data.path：预测数据的输入路径
-	* ml.feature.index.range：数据的特征个数
-	* ml.gbdt.cate.feat：离散特征，"特征id:特征数量"的格式，以逗号分隔，例如"0:2,1:3"。设为"none"表示没有离散特征，设为"all"表示全部为离散特征。
-	* ml.data.type：数据格式，支持"dummy"、"libsvm"
+	* ml.gbdt.cate.feat：类别特征，"特征id:特征范围"的格式，以逗号分隔，例如"0:2,1:3"。设为"none"表示没有离散特征，设为"all"表示全部为离散特征。
+	* ml.model.type: 模型类型，默认为T_FLOAT_DENSE
 	* angel.save.model.path：训练完成后，模型的保存路径
 	* angel.predict.out.path：预测结果的保存路径
 	* angel.log.path：日志文件的保存路径
 
 * **资源参数**
 	* angel.workergroup.number：Worker个数
-	* angel.worker.memory.mb：Worker申请内存大小
+	* angel.worker.memory.gb：Worker申请内存大小 (单位为GB)
 	* angel.worker.task.number：每个Worker上的task的个数，默认为1
 	* angel.ps.number：PS个数
-	* angel.ps.memory.mb：PS申请内存大小
+	* angel.ps.memory.gb：PS申请内存大小 (单位为GB)
 
 * 训练任务启动命令示例
 
@@ -124,24 +123,25 @@ angel-submit \
     -Dangel.app.submit.class=com.tencent.angel.ml.GBDT.GBDTRunner  \
     -Daction.type=train \
     -Dml.data.type=libsvm \
+    -Dml.model.type=T_FLOAT_DENSE \
     -Dml.data.validate.ratio=0.1 \
     -Dml.feature.index.range=10000 \
-	-Dml.gbdt.cate.feat=none \
-	-Dml.gbdt.tree.num=20 \
-	-Dml.gbdt.tree.depth=7 \
-	-Dml.gbdt.split.num=10 \
-	-Dml.gbdt.sample.ratio=1.0 \
+	  -Dml.gbdt.cate.feat=none \
+	  -Dml.gbdt.tree.num=20 \
+	  -Dml.gbdt.tree.depth=7 \
+	  -Dml.gbdt.split.num=10 \
+	  -Dml.gbdt.sample.ratio=1.0 \
     -Dml.learn.rate=0.01 \
     -Dml.gbdt.server.split=true \
-    -Dml.compress.bytes=2 \
+    -Dangel.compress.bytes=2 \
     -Dangel.train.data.path=$input_path \
     -Dangel.save.model.path=$model_path \
     -Dangel.workergroup.number=50 \
-    -Dangel.worker.memory.mb=1000 \
+    -Dangel.worker.memory.gb=10 \
     -Dangel.task.data.storage.level=memory \
     -Dangel.worker.task.number=1 \
     -Dangel.ps.number=50 \
-    -Dangel.ps.memory.mb=1000
+    -Dangel.ps.memory.gb=10
 
 
 * 预测任务启动命令示例
@@ -153,21 +153,22 @@ angel-submit \
     -Dangel.app.submit.class=com.tencent.angel.ml.GBDT.GBDTRunner  \
     -Daction.type=predict \
     -Dml.data.type=libsvm \
+    -Dml.model.type=T_FLOAT_DENSE \
     -Dml.data.validate.ratio=0.1 \
     -Dml.feature.index.range=10000 \
-	-Dml.gbdt.tree.num=20 \
-	-Dml.gbdt.tree.depth=7 \
-	-Dml.gbdt.sample.ratio=1.0 \
+	  -Dml.gbdt.tree.num=20 \
+	  -Dml.gbdt.tree.depth=7 \
+	  -Dml.gbdt.sample.ratio=1.0 \
     -Dml.learn.rate=0.01 \
     -Dangel.predict.data.path=$input_path \
     -Dangel.save.model.path=$model_path \
     -Dangel.predict.out.path=$predict_path \
     -Dangel.workergroup.number=50 \
-    -Dangel.worker.memory.mb=1000 \
+    -Dangel.worker.memory.gb=10 \
     -Dangel.task.data.storage.level=memory \
     -Dangel.worker.task.number=1 \
     -Dangel.ps.number=50 \
-    -Dangel.ps.memory.mb=1000
+    -Dangel.ps.memory.gb=10
 
 ### 性能
 
@@ -211,3 +212,8 @@ angel-submit \
 	| Angel  | UserGender1 | 25min 22s  |   76s    |  0.154160  |
 	| XGBoost| UserGender2 | 2h 25min   |  435s    |  0.232039  |
 	| Angel  | UserGender2 | 58min 39s  |  175s    |  0.243316  |
+
+* **参考文献**
+1. Jiawei Jiang, Bin Cui, Ce Zhang and Fangcheng Fu. [DimBoost: Boosting Gradient Boosting Decision Tree to Higher Dimensions](https://dl.acm.org/citation.cfm?id=3196892). SIGMOD, 2018.
+2. Tianqi Chen and Carlos Guestrin. [XGBoost: A Scalable Tree Boosting System](https://dl.acm.org/citation.cfm?id=2939785). KDD, 2016.
+3. Michael Greenwald and Sanjeev Khanna. [Space-efficient Online Computation of Quantile Summaries](https://dl.acm.org/citation.cfm?id=375670). SIGMOD, 2001.

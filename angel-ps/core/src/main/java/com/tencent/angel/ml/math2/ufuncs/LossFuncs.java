@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -19,12 +19,18 @@
 package com.tencent.angel.ml.math2.ufuncs;
 
 import com.tencent.angel.ml.math2.matrix.Matrix;
-import com.tencent.angel.ml.math2.ufuncs.executor.BinaryExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.matrix.BinaryMatrixExecutor;
-import com.tencent.angel.ml.math2.ufuncs.expression.*;
-import com.tencent.angel.ml.math2.vector.Vector;
+import com.tencent.angel.ml.math2.ufuncs.expression.CrossEntropyLoss;
+import com.tencent.angel.ml.math2.ufuncs.expression.GradCrossEntropyLoss;
+import com.tencent.angel.ml.math2.ufuncs.expression.GradHingeLoss;
+import com.tencent.angel.ml.math2.ufuncs.expression.GradHuberLoss;
+import com.tencent.angel.ml.math2.ufuncs.expression.GradLogLoss;
+import com.tencent.angel.ml.math2.ufuncs.expression.HingeLoss;
+import com.tencent.angel.ml.math2.ufuncs.expression.HuberLoss;
+import com.tencent.angel.ml.math2.ufuncs.expression.LogLoss;
 
 public class LossFuncs {
+
   public static Matrix hingeloss(Matrix m1, Matrix m2) {
     return BinaryMatrixExecutor.apply(m1, false, m2, false, new HingeLoss(false));
   }

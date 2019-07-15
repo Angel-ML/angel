@@ -33,9 +33,7 @@ object MLConf {
   val ML_DATA_INPUT_FORMAT = "ml.data.type"
   val DEFAULT_ML_DATA_INPUT_FORMAT = "libsvm"
   val ML_DATA_SPLITOR = "ml.data.splitor"
-  val DEFAULT_ML_DATA_SPLITOR = " "
-  val ML_DATA_IS_NEGY = "ml.data.is.negy"
-  val DEFAULT_ML_DATA_IS_NEGY = true
+  val DEFAULT_ML_DATA_SPLITOR = "\\s+"
   val ML_DATA_HAS_LABEL = "ml.data.has.label"
   val DEFAULT_ML_DATA_HAS_LABEL = true
   val ML_DATA_LABEL_TRANS = "ml.data.label.trans.class"
@@ -78,12 +76,9 @@ object MLConf {
   val DEFAULT_ML_BATCH_SAMPLE_RATIO = 1.0
   val ML_LEARN_RATE = "ml.learn.rate"
   val DEFAULT_ML_LEARN_RATE = 0.5
-  val ML_LEARN_DECAY = "ml.learn.decay"
-  val DEFAULT_ML_LEARN_DECAY = 0.5
+
   val ML_NUM_UPDATE_PER_EPOCH = "ml.num.update.per.epoch"
   val DEFAULT_ML_NUM_UPDATE_PER_EPOCH = 10
-  val ML_DECAY_INTERVALS = "ml.decay.intervals"
-  val DEFAULT_ML_DECAY_INTERVALS = 50
 
   val ML_MINIBATCH_SIZE = "ml.minibatch.size"
   val DEFAULT_ML_MINIBATCH_SIZE = 128
@@ -104,10 +99,20 @@ object MLConf {
   val ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT = "ml.simpleinputlayer.matrix.output.format"
   val DEFAULT_ML_SIMPLEINPUTLAYER_MATRIX_OUTPUT_FORMAT: String = classOf[ColIdValueTextRowFormat].getCanonicalName
 
+  val ML_LOSSFUNCTION_HUBER_DELTA = "ml.lossfunction.huber.delta"
+  val DEFAULT_ML_LOSSFUNCTION_HUBER_DELTA = 1.0
 
   // Momentum
   val ML_OPT_MOMENTUM_MOMENTUM = "ml.opt.momentum.momentum"
   val DEFAULT_ML_OPT_MOMENTUM_MOMENTUM = 0.9
+  // AdaDelta
+  val ML_OPT_ADADELTA_ALPHA = "ml.opt.adadelta.alpha"
+  val DEFAULT_ML_OPT_ADADELTA_ALPHA = 0.9
+  val ML_OPT_ADADELTA_BETA = "ml.opt.adadelta.beta"
+  val DEFAULT_ML_OPT_ADADELTA_BETA = 0.9
+  // AdaGrad
+  val ML_OPT_ADAGRAD_BETA = "ml.opt.adagrad.beta"
+  val DEFAULT_ML_OPT_ADAGRAD_BETA = 0.9
   // Adam
   val ML_OPT_ADAM_GAMMA = "ml.opt.adam.gamma"
   val DEFAULT_ML_OPT_ADAM_GAMMA = 0.99
@@ -119,9 +124,25 @@ object MLConf {
   val ML_OPT_FTRL_BETA = "ml.opt.ftrl.beta"
   val DEFAULT_ML_OPT_FTRL_BETA = 1.0
 
+  // Decays
+  val ML_OPT_DECAY_CLASS_NAME = "ml.opt.decay.class.name"
+  val DEFAULT_ML_OPT_DECAY_CLASS_NAME = "StandardDecay"
+  val ML_OPT_DECAY_ON_BATCH = "ml.opt.decay.on.batch"
+  val DEFAULT_ML_OPT_DECAY_ON_BATCH = false
+  val ML_OPT_DECAY_INTERVALS = "ml.opt.decay.intervals"
+  val DEFAULT_ML_OPT_DECAY_INTERVALS = 100
+  @Deprecated val ML_DECAY_INTERVALS = "ml.decay.intervals"
+  @Deprecated val DEFAULT_ML_DECAY_INTERVALS = DEFAULT_ML_OPT_DECAY_INTERVALS
+  val ML_OPT_DECAY_ALPHA = "ml.opt.decay.alpha"
+  val DEFAULT_ML_OPT_DECAY_ALPHA = 0.001
+  @Deprecated val ML_LEARN_DECAY = "ml.learn.decay"
+  @Deprecated val DEFAULT_ML_LEARN_DECAY = 0.5
+  val ML_OPT_DECAY_BETA = "ml.opt.decay.beta"
+  val DEFAULT_ML_OPT_DECAY_BETA = 0.001
+
   // Reg param
   val ML_REG_L2 = "ml.reg.l2"
-  val DEFAULT_ML_REG_L2 = 0.005
+  val DEFAULT_ML_REG_L2 = 0.0
   val ML_REG_L1 = "ml.reg.l1"
   val DEFAULT_ML_REG_L1 = 0.0
 
@@ -132,12 +153,6 @@ object MLConf {
   val DEFAULT_ML_RANK_NUM = 8
 
   // (MLP) Layer params
-  val ML_MLP_INPUT_LAYER_PARAMS = "ml.mlp.input.layer.params"
-  val DEFAULT_ML_MLP_INPUT_LAYER_PARAMS = "100,identity"
-  val ML_MLP_HIDEN_LAYER_PARAMS = "ml.mlp.hidden.layer.params"
-  val DEFAULT_ML_MLP_HIDEN_LAYER_PARAMS = "100,relu|100,relu|1,identity"
-  val ML_MLP_LOSS_LAYER_PARAMS = "ml.mlp.loss.layer.params"
-  val DEFAULT_ML_MLP_LOSS_LAYER_PARAMS = "logloss"
   val ML_NUM_CLASS = "ml.num.class"
   val DEFAULT_ML_NUM_CLASS = 2
 
@@ -152,8 +167,6 @@ object MLConf {
   // Kmeans params
   val KMEANS_CENTER_NUM = "ml.kmeans.center.num"
   val DEFAULT_KMEANS_CENTER_NUM = 5
-  val KMEANS_SAMPLE_RATIO_PERBATCH = "ml.kmeans.sample.ratio.perbath"
-  val DEFAULT_KMEANS_SAMPLE_RATIO_PERBATCH = 0.5
   val KMEANS_C = "ml.kmeans.c"
   val DEFAULT_KMEANS_C = 0.1
 
@@ -170,7 +183,7 @@ object MLConf {
   val DEFAULT_ML_GBDT_TREE_DEPTH = 5
   val ML_GBDT_MAX_NODE_NUM = "ml.gbdt.max.node.num"
   val ML_GBDT_SPLIT_NUM = "ml.gbdt.split.num"
-  val DEFAULT_ML_GBDT_SPLIT_NUM = 5
+  val DEFAULT_ML_GBDT_SPLIT_NUM = 10
   val ML_GBDT_ROW_SAMPLE_RATIO = "ml.gbdt.row.sample.ratio"
   val DEFAULT_ML_GBDT_ROW_SAMPLE_RATIO = 1
   val ML_GBDT_SAMPLE_RATIO = "ml.gbdt.sample.ratio"
@@ -190,6 +203,32 @@ object MLConf {
   val ML_GBDT_CATE_FEAT = "ml.gbdt.cate.feat"
   val DEFAULT_ML_GBDT_CATE_FEAT = "none"
 
+  val ML_GBDT_LOSS_FUNCTION: String = "ml.gbdt.loss.func"
+  val DEFAULT_ML_GBDT_LOSS_FUNCTION: String = "binary:logistic"
+  val ML_GBDT_EVAL_METRIC = "ml.gbdt.eval.metric"
+  val DEFAULT_ML_GBDT_EVAL_METRIC = "error"
+  val ML_GBDT_MULTI_CLASS_STRATEGY = "ml.gbdt.multi.class.strategy"
+  val ML_GBDT_MULTI_CLASS_GRAD_CACHE = "ml.gbdt.multi.class.grad.cache"
+
+  val ML_GBDT_FEATURE_SAMPLE_RATIO = "ml.gbdt.feature.sample.ratio"
+  val DEFAULT_ML_GBDT_FEATURE_SAMPLE_RATIO = 1.0
+
+  val ML_GBDT_HIST_SUBTRACTION = "ml.gbdt.hist.subtraction"
+  val DEFAULT_ML_GBDT_HIST_SUBTRACTION = true
+  val ML_GBDT_LIGHTER_CHILD_FIRST = "ml.gbdt.lighter.child.first"
+  val DEFAULT_ML_GBDT_LIGHTER_CHILD_FIRST = true
+  val ML_GBDT_FULL_HESSIAN = "ml.gbdt.full.hessian"
+  val DEFAULT_ML_GBDT_FULL_HESSIAN = false
+
+  val ML_GBDT_MIN_NODE_INSTANCE = "ml.gbdt.min.node.instance"
+  val DEFAULT_ML_GBDT_MIN_NODE_INSTANCE = 1024
+  val ML_GBDT_MIN_SPLIT_GAIN = "ml.gbdt.min.split.gain"
+  val DEFAULT_ML_GBDT_MIN_SPLIT_GAIN = 0.0
+
+  val ML_GBDT_MAX_LEAF_WEIGHT = "ml.gbdt.max.leaf.weight"
+  val DEFAULT_ML_GBDT_MAX_LEAF_WEIGHT = 0.0
+
+
   /** The loss sum of all samples */
   val TRAIN_LOSS = "train.loss"
   val VALID_LOSS = "validate.loss"
@@ -198,6 +237,11 @@ object MLConf {
   /** The predict error of all samples */
   val TRAIN_ERROR = "train.error"
   val VALID_ERROR = "validate.error"
+
+  /** The predict error of all samples */
+  val ML_MATRIX_DOT_USE_PARALLEL_EXECUTOR = "ml.matrix.dot.use.parallel.executor"
+  val DEFAULT_ML_MATRIX_DOT_USE_PARALLEL_EXECUTOR = false
+
 }
 
 class MLConf {}

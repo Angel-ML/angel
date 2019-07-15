@@ -45,13 +45,17 @@ softmax算法仅由单个输入层组成，该输入层可为“dense”或“sp
 
 ### 参数
 * 参数说明           
-	* ml.epoch.num：迭代轮数
+    * ml.epoch.num：迭代轮数
     * ml.feature.index.range:特征索引范围
     * ml.feature.num：特征维数
     * ml.data.validate.ratio：验证集采样率
     * ml.data.type：数据类型，分“libsvm”和“dummy”两种
     * ml.learn.rate：学习率
-    * ml.learn.decay：学习率衰减系数
+    * ml.opt.decay.class.name：学习率衰减系类
+    * ml.opt.decay.on.batch: 是否对每个mini batch衰减
+    * ml.opt.decay.alpha: 学习率衰减参数alpha
+    * ml.opt.decay.beta: 学习率衰减参数beta
+    * ml.opt.decay.intervals: 学习率衰减参数intervals
     * ml.reg.l2:l2正则项系数
     * action.type：任务类型，训练用"train",增量训练用"inctrain", 预测用"predict"
     * ml.num.class：输入数据的类别个数
@@ -60,9 +64,9 @@ softmax算法仅由单个输入层组成，该输入层可为“dense”或“sp
     * ml.data.label.trans.threshold: "ZeroOneTrans"(转为0-1), "PosNegTrans"(转为正负1)这两种转还要以设一个阈值, 大于阈值的为1, 阈值默认为0
     * ml.data.posneg.ratio: 正负样本重采样比例, 对于正负样本相差较大的情况有用(如5倍以上)
  
-###提交命令
+### 提交命令
 * 
-    *可以通过下面的命令提交Softmax算法训练任务：
+    * 可以通过下面的命令提交Softmax算法训练任务：
 	```java
 	../../bin/angel-submit \
 		-Dml.epoch.num=20 \
@@ -76,7 +80,6 @@ softmax算法仅由单个输入层组成，该输入层可为“dense”或“sp
 		-Dml.data.label.trans.class="SubOneTrans" \
 		-Dml.data.type=libsvm \
 		-Dml.learn.rate=0.1 \
-		-Dml.learn.decay=0.5 \
 		-Dml.reg.l2=0.03 \
 		-Daction.type=train \
 		-Dml.num.class=$classNum \
@@ -89,7 +92,7 @@ softmax算法仅由单个输入层组成，该输入层可为“dense”或“sp
 		-Dangel.job.name=angel_train
 	```
 
-	*可以通过下面的命令提交Softmax算法增量训练任务：
+	* 可以通过下面的命令提交Softmax算法增量训练任务：
 	```java
 	../../bin/angel-submit \
 		-Dml.epoch.num=20 \
@@ -104,7 +107,6 @@ softmax算法仅由单个输入层组成，该输入层可为“dense”或“sp
 		-Dml.data.label.trans.class="SubOneTrans" \
 		-Dml.data.type=libsvm \
 		-Dml.learn.rate=0.1 \
-		-Dml.learn.decay=0.5 \
 		-Dml.reg.l2=0.03 \
 		-Daction.type=inctrain \
 		-Dml.num.class=$classNum \
@@ -117,7 +119,7 @@ softmax算法仅由单个输入层组成，该输入层可为“dense”或“sp
 		-Dangel.job.name=angel_inctrain
 	```
 
-	*可以通过下面的命令提交Softmax算法预测训练任务：
+	* 可以通过下面的命令提交Softmax算法预测训练任务：
 	```java
 	../../bin/angel-submit \
 		-Dml.epoch.num=20 \

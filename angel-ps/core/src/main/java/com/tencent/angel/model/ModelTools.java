@@ -62,6 +62,7 @@ public class ModelTools {
         throw new IOException("Can not find meta file for matrix " + loadContext.getMatrixName() + " on path " + loadContext.getLoadPath());
       }
       MatrixFilesMeta matrixFilesMeta;
+      fs.setVerifyChecksum(false);
       FSDataInputStream input = fs.open(metaFilePath);
       matrixFilesMeta = new MatrixFilesMeta();
       try {
@@ -77,5 +78,18 @@ public class ModelTools {
     } catch (Throwable e) {
       throw new AngelException(e);
     }
+  }
+
+  public static void main(String [] args) {
+    String LOCAL_FS = FileSystem.DEFAULT_FS;
+    String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
+    String savePath = LOCAL_FS + TMP_PATH + "/FMmodel";
+
+    ModelLoadContext loadContext = new ModelLoadContext(savePath);
+    loadContext.addMatrix(new MatrixLoadContext("embedding_embedding"));
+    loadContext.addMatrix(new MatrixLoadContext("input_bias"));
+    loadContext.addMatrix(new MatrixLoadContext("input_weight"));
+    ModelLocalLoadResult result = loadToLocal(loadContext, new Configuration());
+    result.getNameToMatrixMap();
   }
 }

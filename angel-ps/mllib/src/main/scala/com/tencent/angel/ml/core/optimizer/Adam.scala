@@ -20,30 +20,36 @@ package com.tencent.angel.ml.core.optimizer
 
 import java.util.concurrent.Future
 
+import com.tencent.angel.ml.core.utils.paramsutils.ParamKeys
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.psf.optimizer.AdamUpdateFunc
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
+import org.json4s.JsonAST._
+import org.json4s.JsonDSL._
 
-class Adam(override val stepSize: Double,
-           val gamma: Double = 0.99,
-           val beta: Double = 0.9,
-           val epsilon: Double = 1e-7) extends GradientDescent(stepSize) {
 
-  val LOG = LogFactory.getLog(classOf[Adam])
+class Adam(stepSize: Double, val gamma: Double, val beta: Double) extends Optimizer(stepSize) {
+  private val LOG = LogFactory.getLog(classOf[Adam])
+
+  override protected var numSlot: Int = 3
 
   override def update(matrixId: Int, numFactors: Int, epoch: Int): Future[VoidResult] = {
-
-    val func = new AdamUpdateFunc(matrixId, numFactors, gamma, epsilon, beta, lr, regL2Param, epoch)
-    PSAgentContext.get().getUserRequestAdapter.update(func)
+    update(matrixId, numFactors, epoch, 1)
   }
 
-  override def update(matrixId: Int, numFactors: Int, epoch: Int, sampleNum: Int): Future[VoidResult] = {
-    val func = new AdamUpdateFunc(matrixId, numFactors, gamma, epsilon, beta, lr, regL2Param, epoch, sampleNum)
+  override def update(matrixId: Int, numFactors: Int, epoch: Int, batchSize: Int): Future[VoidResult] = {
+    val func = new AdamUpdateFunc(matrixId, numFactors, gamma, epsilon, beta, lr, regL2Param, epoch, batchSize)
     PSAgentContext.get().getUserRequestAdapter.update(func)
   }
 
   override def toString: String = {
-    s"Adam gamma=$gamma beta=$beta epsilon=$epsilon"
+    s"Adam gamma=$gamma beta=$beta lr=$lr regL2=$regL2Param epsilon=$epsilon"
+  }
+
+  override def toJson: JObject = {
+    (ParamKeys.typeName -> s"${this.getClass.getSimpleName}") ~
+      (ParamKeys.beta-> beta) ~
+      (ParamKeys.gamma -> gamma)
   }
 }

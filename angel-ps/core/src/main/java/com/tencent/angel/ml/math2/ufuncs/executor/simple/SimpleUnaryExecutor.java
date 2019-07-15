@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -19,14 +19,32 @@
 package com.tencent.angel.ml.math2.ufuncs.executor.simple;
 
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.storage.IntDoubleVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntFloatVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntIntVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntLongVectorStorage;
 import com.tencent.angel.ml.math2.ufuncs.expression.Unary;
-import com.tencent.angel.ml.math2.vector.*;
-import it.unimi.dsi.fastutil.ints.*;
-import it.unimi.dsi.fastutil.longs.*;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.ml.math2.vector.IntIntVector;
+import com.tencent.angel.ml.math2.vector.IntLongVector;
+import com.tencent.angel.ml.math2.vector.LongDoubleVector;
+import com.tencent.angel.ml.math2.vector.LongFloatVector;
+import com.tencent.angel.ml.math2.vector.LongIntVector;
+import com.tencent.angel.ml.math2.vector.LongLongVector;
+import com.tencent.angel.ml.math2.vector.Vector;
+import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import it.unimi.dsi.fastutil.ints.Int2FloatMap;
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2LongMap;
+import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
+import it.unimi.dsi.fastutil.longs.Long2FloatMap;
+import it.unimi.dsi.fastutil.longs.Long2IntMap;
+import it.unimi.dsi.fastutil.longs.Long2LongMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 public class SimpleUnaryExecutor {
+
   public static Vector apply(Vector v1, Unary op) {
     if (v1 instanceof IntDoubleVector) {
       return apply((IntDoubleVector) v1, op);
@@ -106,7 +124,7 @@ public class SimpleUnaryExecutor {
         res = v1;
       } else {
         res = new IntDoubleVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newstorage);
+            newstorage);
       }
     }
     return res;
@@ -169,7 +187,7 @@ public class SimpleUnaryExecutor {
         res = v1;
       } else {
         res = new IntFloatVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newstorage);
+            newstorage);
       }
     }
     return res;
@@ -232,7 +250,7 @@ public class SimpleUnaryExecutor {
         res = v1;
       } else {
         res = new IntLongVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
-          newstorage);
+            newstorage);
       }
     }
     return res;
@@ -295,7 +313,8 @@ public class SimpleUnaryExecutor {
         res = v1;
       } else {
         res =
-          new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(), newstorage);
+            new IntIntVector(v1.getMatrixId(), v1.getRowId(), v1.getClock(), v1.getDim(),
+                newstorage);
       }
     }
     return res;

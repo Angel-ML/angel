@@ -18,26 +18,23 @@
 
 package com.tencent.angel.ml.core.optimizer
 
+import com.tencent.angel.RunningMode
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.network.layers.AngelGraph
 
 object OptUtils {
-  def getOptMultiplier(optimizer: Optimizer): Int = {
-    optimizer match {
-      case _: Momentum => 3
-      case _: Adam => 4
-      case _: FTRL => 4
-      case _ => 2
-    }
-  }
+  def getSlotNum(optimizer: Optimizer): Int = optimizer.getNumSlot
 
-  def getOptMultiplier(optimizer: String): Int = {
+  def getSlotNum(optimizer: String): Int = {
     optimizer.toLowerCase match {
-      case "momentum" => 3
-      case "adam" => 4
-      case "ftrl" => 4
-      case _ => 2
+      case "sgd" => 1
+      case "momentum" => 2
+      case "adam" => 3
+      case "ftrl" => 3
+      case "adagrad" => 2
+      case "adadelta" => 3
+      case _ => 1
     }
   }
 
@@ -47,26 +44,40 @@ object OptUtils {
 
     name.toLowerCase().trim() match {
       case "momentum" =>
-        val momentum: Double = conf.getDouble(MLConf.ML_OPT_MOMENTUM_MOMENTUM, 0.9)
+        val momentum: Double = conf.getDouble(MLConf.ML_OPT_MOMENTUM_MOMENTUM,
+          MLConf.DEFAULT_ML_OPT_MOMENTUM_MOMENTUM)
         new Momentum(lr0, momentum)
       case "adam" =>
-        val gamma: Double = conf.getDouble(MLConf.ML_OPT_ADAM_GAMMA, 0.99)
-        val beta: Double = conf.getDouble(MLConf.ML_OPT_ADAM_BETA, 0.9)
+        val gamma: Double = conf.getDouble(MLConf.ML_OPT_ADAM_GAMMA,
+          MLConf.DEFAULT_ML_OPT_ADAM_GAMMA)
+        val beta: Double = conf.getDouble(MLConf.ML_OPT_ADAM_BETA, MLConf.DEFAULT_ML_OPT_ADAM_BETA)
         new Adam(lr0, gamma, beta)
       case "ftrl" =>
-        val alpha: Double = conf.getDouble(MLConf.ML_OPT_FTRL_ALPHA, 0.1)
-        val beta: Double = conf.getDouble(MLConf.ML_OPT_FTRL_BETA, 1.0)
+        val alpha: Double = conf.getDouble(MLConf.ML_OPT_FTRL_ALPHA,
+          MLConf.DEFAULT_ML_OPT_FTRL_ALPHA)
+        val beta: Double = conf.getDouble(MLConf.ML_OPT_FTRL_BETA,
+          MLConf.DEFAULT_ML_OPT_FTRL_BETA)
         new FTRL(lr0, alpha, beta)
+      case "adagrad" =>
+        val beta: Double = conf.getDouble(MLConf.ML_OPT_ADAGRAD_BETA,
+          MLConf.DEFAULT_ML_OPT_ADAGRAD_BETA)
+        new AdaGrad(lr0, beta)
+      case "adadelta" =>
+        val alpha: Double = conf.getDouble(MLConf.ML_OPT_ADADELTA_ALPHA,
+          MLConf.DEFAULT_ML_OPT_ADADELTA_ALPHA)
+        val beta: Double = conf.getDouble(MLConf.ML_OPT_ADADELTA_BETA,
+          MLConf.DEFAULT_ML_OPT_ADADELTA_BETA)
+        new AdaDelta(lr0, alpha, beta)
       case _ =>
         new SGD(lr0)
     }
   }
 
-  def getNormal(conf: SharedConf, graph: AngelGraph): Double = {
-    conf.get(AngelConf.ANGEL_RUNNING_MODE) match {
-      case "ANGEL_PS" => 1.0
-      case "ANGEL_PS_WORKER" => graph.placeHolder.getBatchSize * graph.taskNum
+  def getNormal(mode: RunningMode, graph: AngelGraph): Double = {
+    mode match {
+      case RunningMode.ANGEL_PS => 1.0
+      case RunningMode.ANGEL_PS_WORKER => graph.placeHolder.getBatchSize * graph.taskNum
+      case RunningMode.ANGEL_LOCAL => graph.placeHolder.getBatchSize
     }
   }
-
 }

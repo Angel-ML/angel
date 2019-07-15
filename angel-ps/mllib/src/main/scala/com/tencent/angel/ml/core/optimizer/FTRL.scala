@@ -20,16 +20,32 @@ package com.tencent.angel.ml.core.optimizer
 
 import java.util.concurrent.Future
 
+import com.tencent.angel.ml.core.utils.paramsutils.ParamKeys
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.psf.optimizer.FTRLUpdateFunc
 import com.tencent.angel.psagent.PSAgentContext
+import org.json4s.JsonAST._
+import org.json4s.JsonDSL._
 
-class FTRL(override val stepSize: Double, alpha: Double, beta: Double) extends GradientDescent(stepSize) {
+class FTRL(stepSize: Double, val alpha: Double, val beta: Double) extends Optimizer(stepSize) {
+  override protected var numSlot: Int = 3
 
-  override def update(matrixId: Int, numFactors: Int, epoch: Int = 0): Future[VoidResult] = {
+  override def update(matrixId: Int, numFactors: Int, epoch: Int): Future[VoidResult] = {
+    update(matrixId, numFactors, epoch, 1)
+  }
 
-    val func = new FTRLUpdateFunc(matrixId, numFactors, alpha, beta, regL1Param, regL2Param)
+  override def update(matrixId: Int, numFactors: Int, epoch: Int, batchSize: Int): Future[VoidResult] = {
+    val func = new FTRLUpdateFunc(matrixId, numFactors, alpha, beta, regL1Param, regL2Param, epoch, batchSize)
     PSAgentContext.get().getUserRequestAdapter.update(func)
   }
 
+  override def toString: String = {
+    s"FTRL alpha=$alpha beta=$beta lr=$lr regL1=$regL1Param regL2=$regL2Param"
+  }
+
+  override def toJson: JObject = {
+    (ParamKeys.typeName -> s"${this.getClass.getSimpleName}") ~
+      (ParamKeys.alpha -> alpha) ~
+      (ParamKeys.beta -> beta)
+  }
 }

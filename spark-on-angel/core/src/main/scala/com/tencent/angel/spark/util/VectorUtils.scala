@@ -50,7 +50,7 @@ object VectorUtils {
 
   private[spark] def update(modelId: Int, func: UpdateFunc): Unit = {
     val client = MatrixClientFactory.get(modelId, PSContext.getTaskId)
-    val result = client.update(func).get
+    val result = client.asyncUpdate(func).get()
     assertSuccess(result)
   }
 
@@ -152,10 +152,10 @@ object VectorUtils {
   /**
    * Count the number of non-zero element in `vector`
    */
-  def nnz(vector: PSVector): Int = {
+  def nnz(vector: PSVector): Long = {
     vector.assertValid()
     psfGet(vector.poolId, new Nnz(vector.poolId, vector.id))
-      .asInstanceOf[ScalarAggrResult].getResult.toInt
+      .asInstanceOf[ScalarAggrResult].getResult.toLong
   }
 
   /**
@@ -173,7 +173,7 @@ object VectorUtils {
    */
   private[spark] def psfUpdate(modelId: Int, func: UpdateFunc): Future[VoidResult] = {
     val client = MatrixClientFactory.get(modelId, PSContext.getTaskId)
-    client.update(func)
+    client.asyncUpdate(func)
   }
 
 

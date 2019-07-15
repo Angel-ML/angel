@@ -1,15 +1,32 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
+
 package com.tencent.angel.ml.math2.storage;
 
-import java.util.Arrays;
-
-import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ml.math2.utils.ArrayCopy;
+import com.tencent.angel.ml.matrix.RowType;
 
 import java.util.Arrays;
-import java.util.Random;
 import java.util.HashSet;
+import java.util.Random;
 
 public class IntFloatSortedVectorStorage implements IntFloatVectorStorage {
+
   private int[] indices;
   private float[] values;
   private byte flag; // 001: dense; 010: sparse; 100: sorted
@@ -37,10 +54,11 @@ public class IntFloatSortedVectorStorage implements IntFloatVectorStorage {
   }
 
   public IntFloatSortedVectorStorage(int dim) {
-    this(dim, Math.max(128, (int) (dim / 1000)));
+    this(dim, (int) Math.min(64, Math.max(dim, 0)));
   }
 
-  @Override public float get(int idx) {
+  @Override
+  public float get(int idx) {
     if (idx < 0 || idx > dim - 1) {
       throw new ArrayIndexOutOfBoundsException();
     } else if (size == 0 || idx > indices[size - 1] || idx < indices[0]) {
@@ -51,7 +69,8 @@ public class IntFloatSortedVectorStorage implements IntFloatVectorStorage {
     }
   }
 
-  @Override public void set(int idx, float value) {
+  @Override
+  public void set(int idx, float value) {
     if (idx < 0 || idx > dim - 1) {
       throw new ArrayIndexOutOfBoundsException();
     }
@@ -105,17 +124,18 @@ public class IntFloatSortedVectorStorage implements IntFloatVectorStorage {
     size++;
   }
 
-  @Override public IntFloatVectorStorage clone() {
-    return new IntFloatSortedVectorStorage(dim, size, ArrayCopy.copy(indices),
-      ArrayCopy.copy(values));
+  @Override
+  public IntFloatVectorStorage clone() {
+    return new IntFloatSortedVectorStorage(dim, size, ArrayCopy.copy(indices), ArrayCopy.copy(values));
   }
 
-  @Override public IntFloatVectorStorage copy() {
-    return new IntFloatSortedVectorStorage(dim, size, ArrayCopy.copy(indices),
-      ArrayCopy.copy(values));
+  @Override
+  public IntFloatVectorStorage copy() {
+    return new IntFloatSortedVectorStorage(dim, size, ArrayCopy.copy(indices), ArrayCopy.copy(values));
   }
 
-  @Override public IntFloatVectorStorage oneLikeDense() {
+  @Override
+  public IntFloatVectorStorage oneLikeDense() {
     float[] oneLikeValues = new float[dim];
     for (int i = 0; i < dim; i++) {
       oneLikeValues[i] = 1;
@@ -123,7 +143,8 @@ public class IntFloatSortedVectorStorage implements IntFloatVectorStorage {
     return new IntFloatDenseVectorStorage(oneLikeValues);
   }
 
-  @Override public IntFloatVectorStorage oneLikeSparse() {
+  @Override
+  public IntFloatVectorStorage oneLikeSparse() {
     float[] oneLikeValues = new float[size];
     for (int i = 0; i < size; i++) {
       oneLikeValues[i] = 1;
@@ -131,7 +152,8 @@ public class IntFloatSortedVectorStorage implements IntFloatVectorStorage {
     return new IntFloatSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public IntFloatVectorStorage oneLikeSorted() {
+  @Override
+  public IntFloatVectorStorage oneLikeSorted() {
     float[] oneLikeValues = new float[size];
     for (int i = 0; i < size; i++) {
       oneLikeValues[i] = 1;
@@ -139,7 +161,8 @@ public class IntFloatSortedVectorStorage implements IntFloatVectorStorage {
     return new IntFloatSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public IntFloatVectorStorage oneLikeDense(int dim) {
+  @Override
+  public IntFloatVectorStorage oneLikeDense(int dim) {
     float[] oneLikeValues = new float[dim];
     for (int i = 0; i < dim; i++) {
       oneLikeValues[i] = 1;
@@ -147,7 +170,8 @@ public class IntFloatSortedVectorStorage implements IntFloatVectorStorage {
     return new IntFloatDenseVectorStorage(oneLikeValues);
   }
 
-  @Override public IntFloatVectorStorage oneLikeSparse(int dim, int capacity) {
+  @Override
+  public IntFloatVectorStorage oneLikeSparse(int dim, int capacity) {
     float[] oneLikeValues = new float[capacity];
     int[] indices = new int[capacity];
     HashSet set = new HashSet<Integer>();
@@ -167,7 +191,8 @@ public class IntFloatSortedVectorStorage implements IntFloatVectorStorage {
     return new IntFloatSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public IntFloatVectorStorage oneLikeSorted(int dim, int capacity) {
+  @Override
+  public IntFloatVectorStorage oneLikeSorted(int dim, int capacity) {
     float[] oneLikeValues = new float[capacity];
     int[] indices = new int[capacity];
     HashSet set = new HashSet<Integer>();
@@ -188,7 +213,8 @@ public class IntFloatSortedVectorStorage implements IntFloatVectorStorage {
     return new IntFloatSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public IntFloatVectorStorage oneLikeSparse(int capacity) {
+  @Override
+  public IntFloatVectorStorage oneLikeSparse(int capacity) {
     float[] oneLikeValues = new float[capacity];
     int[] indices = new int[capacity];
     HashSet set = new HashSet<Integer>();
@@ -208,7 +234,8 @@ public class IntFloatSortedVectorStorage implements IntFloatVectorStorage {
     return new IntFloatSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public IntFloatVectorStorage oneLikeSorted(int capacity) {
+  @Override
+  public IntFloatVectorStorage oneLikeSorted(int capacity) {
     float[] oneLikeValues = new float[capacity];
     int[] indices = new int[capacity];
     HashSet set = new HashSet<Integer>();
@@ -229,75 +256,96 @@ public class IntFloatSortedVectorStorage implements IntFloatVectorStorage {
     return new IntFloatSparseVectorStorage(dim, indices, oneLikeValues);
   }
 
-  @Override public IntFloatVectorStorage emptyDense() {
+  @Override
+  public IntFloatVectorStorage emptyDense() {
     return new IntFloatDenseVectorStorage(dim);
   }
 
-  @Override public IntFloatVectorStorage emptySparse() {
+  @Override
+  public IntFloatVectorStorage emptySparse() {
     return new IntFloatSparseVectorStorage(dim, indices.length);
   }
 
-  @Override public IntFloatVectorStorage emptySorted() {
+  @Override
+  public IntFloatVectorStorage emptySorted() {
     return new IntFloatSortedVectorStorage(dim, indices.length);
   }
 
-  @Override public IntFloatVectorStorage emptyDense(int length) {
+  @Override
+  public IntFloatVectorStorage emptyDense(int length) {
     return new IntFloatDenseVectorStorage(length);
   }
 
-  @Override public IntFloatVectorStorage emptySparse(int dim, int capacity) {
+  @Override
+  public IntFloatVectorStorage emptySparse(int dim, int capacity) {
     return new IntFloatSparseVectorStorage(dim, capacity);
   }
 
-  @Override public IntFloatVectorStorage emptySorted(int dim, int capacity) {
+  @Override
+  public IntFloatVectorStorage emptySorted(int dim, int capacity) {
     return new IntFloatSortedVectorStorage(dim, capacity);
   }
 
-  @Override public IntFloatVectorStorage emptySparse(int capacity) {
+  @Override
+  public IntFloatVectorStorage emptySparse(int capacity) {
     return new IntFloatSparseVectorStorage(dim, capacity);
   }
 
-  @Override public IntFloatVectorStorage emptySorted(int capacity) {
+  @Override
+  public IntFloatVectorStorage emptySorted(int capacity) {
     return new IntFloatSortedVectorStorage(dim, capacity);
   }
 
-  @Override public int[] getIndices() {
+  @Override
+  public int[] getIndices() {
     return indices;
   }
 
-  @Override public int size() {
+  @Override
+  public int size() {
     return size;
   }
 
-  @Override public boolean hasKey(int key) {
-    return (size != 0 && key <= indices[size - 1] && key >= indices[0]
-      && Arrays.binarySearch(indices, key) > 0);
+  public void setSize(int size) {
+    this.size = size;
   }
 
-  @Override public RowType getType() {
+  @Override
+  public boolean hasKey(int key) {
+    return (size != 0 && key <= indices[size - 1] && key >= indices[0] &&
+        Arrays.binarySearch(indices, key) > 0);
+  }
+
+  @Override
+  public RowType getType() {
     return RowType.T_FLOAT_SPARSE;
   }
 
-  @Override public boolean isDense() {
+  @Override
+  public boolean isDense() {
     return flag == 1;
   }
 
-  @Override public boolean isSparse() {
+  @Override
+  public boolean isSparse() {
     return flag == 2;
   }
 
-  @Override public boolean isSorted() {
+  @Override
+  public boolean isSorted() {
     return flag == 4;
   }
 
-  @Override public void clear() {
+  @Override
+  public void clear() {
     Arrays.parallelSetAll(indices, (int value) -> 0);
     for (int i = 0; i < values.length; i++) {
       values[i] = 0;
     }
   }
 
-  @Override public float[] getValues() {
+  @Override
+  public float[] getValues() {
     return values;
   }
 }

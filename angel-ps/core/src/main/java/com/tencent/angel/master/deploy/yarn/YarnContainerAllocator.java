@@ -261,8 +261,8 @@ public class YarnContainerAllocator extends ContainerAllocator {
             Thread.sleep(rmPollInterval);
             try {
               heartbeat();
-            } catch (YarnRuntimeException e) {
-              //catch YarnRuntimeException, we should exit and need not retry
+            } catch (YarnException | YarnRuntimeException e) {
+              //catch YarnException or YarnRuntimeException, we should exit and need not retry
               LOG.fatal("send heartbeat to rm failed. " + e);
               context.getEventHandler().handle(new InternalErrorEvent(context.getApplicationId(),
                 "send heartbeat to rm failed. " + e.getMessage(), false));
@@ -293,7 +293,7 @@ public class YarnContainerAllocator extends ContainerAllocator {
     allocatorThread.start();
   }
 
-  private void heartbeat() throws IOException {
+  private void heartbeat() throws YarnException, IOException {
     try {
       writeLock.lock();
       ResourceBlacklistRequest blacklistRequest =
@@ -311,13 +311,7 @@ public class YarnContainerAllocator extends ContainerAllocator {
       LOG.debug("heartbeat, allocateRequest = " + allocateRequest.toString());
 
       //send heartbeat request to rm
-      AllocateResponse allocateResponse;
-      try {
-        allocateResponse = amRmProtocol.allocate(allocateRequest);
-        LOG.debug("heartbeat, allocateResponse = " + allocateResponse.toString());
-      } catch (YarnException e) {
-        throw new IOException(e);
-      }
+      AllocateResponse allocateResponse = amRmProtocol.allocate(allocateRequest);
 
       lastResponseId = allocateResponse.getResponseId();
 

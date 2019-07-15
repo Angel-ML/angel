@@ -22,11 +22,11 @@ import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.optimizer.loss.{L2Loss, LogLoss}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
+import com.tencent.angel.spark.context.AngelPSContext.convertToHadoop
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.metric.{AUC, Precision}
 import com.tencent.angel.spark.ml.util.{DataLoader, SparkUtils}
 import org.apache.spark.SparkContext
-import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 
 import scala.reflect.ClassTag
@@ -35,18 +35,17 @@ import scala.util.Random
 class OfflineLearner {
 
   // Shared configuration with Angel-PS
-  val conf = SharedConf.get()
+  val sharedConf: SharedConf = SharedConf.get()
 
   // Some params
-  var numEpoch: Int = conf.getInt(MLConf.ML_EPOCH_NUM)
-  var fraction: Double = conf.getDouble(MLConf.ML_BATCH_SAMPLE_RATIO)
-  var validationRatio: Double = conf.getDouble(MLConf.ML_VALIDATE_RATIO)
+  var numEpoch: Int = sharedConf.getInt(MLConf.ML_EPOCH_NUM)
+  var fraction: Double = sharedConf.getDouble(MLConf.ML_BATCH_SAMPLE_RATIO)
+  var validationRatio: Double = sharedConf.getDouble(MLConf.ML_VALIDATE_RATIO)
 
   println(s"fraction=$fraction validateRatio=$validationRatio numEpoch=$numEpoch")
 
-  def evaluate(data: RDD[LabeledData], bModel: Broadcast[GraphModel]): (Double, Double) = {
+  def evaluate(data: RDD[LabeledData], model: GraphModel): (Double, Double) = {
     val scores = data.mapPartitions { case iter =>
-      val model = bModel.value
       val output = model.forward(1, iter.toArray)
       Iterator.single((output, model.graph.placeHolder.getLabel))
     }
@@ -68,10 +67,11 @@ class OfflineLearner {
     validate.count()
     data.unpersist()
 
-    val bModel = SparkContext.getOrCreate().broadcast(model)
-
     val numSplits = (1.0 / fraction).toInt
     val manifold = OfflineLearner.buildManifold(train, numSplits)
+
+    train.unpersist()
+    
     var numUpdate = 1
 
     for (epoch <- 0 until numEpoch) {
@@ -80,9 +80,9 @@ class OfflineLearner {
         val (sumLoss, batchSize) = batchIterator.next().mapPartitions { case iter =>
           PSContext.instance()
           val batch = iter.next()
-          bModel.value.forward(epoch, batch)
-          val loss = bModel.value.getLoss()
-          bModel.value.backward()
+          model.forward(epoch, batch)
+          val loss = model.getLoss()
+          model.backward()
           Iterator.single((loss, batch.length))
         }.reduce((f1, f2) => (f1._1 + f2._1, f1._2 + f2._2))
 
@@ -92,7 +92,7 @@ class OfflineLearner {
         if (boundary) {
           var validateMetricLog = ""
           if (validationRatio > 0.0) {
-            val (validateAuc, validatePrecision) = evaluate(validate, bModel)
+            val (validateAuc, validatePrecision) = evaluate(validate, model)
             validateMetricLog = s"validateAuc=$validateAuc validatePrecision=$validatePrecision"
           }
           println(s"batch[$numUpdate] $validateMetricLog")
@@ -110,14 +110,13 @@ class OfflineLearner {
     *
     */
   def predict(data: RDD[(LabeledData, String)], model: GraphModel): RDD[(String, Double)] = {
-    val bModel = SparkContext.getOrCreate().broadcast(model)
     val scores = data.mapPartitions { iterator =>
       PSContext.instance()
       val samples = iterator.toArray
-      val output  = bModel.value.forward(1, samples.map(f => f._1))
+      val output  = model.forward(1, samples.map(f => f._1))
       val labels = samples.map(f => f._2)
 
-      (output, bModel.value.getLossFunc()) match {
+      (output, model.getLossFunc()) match {
         case (mat :BlasDoubleMatrix, _: LogLoss) =>
           // For LogLoss, the output is (value, sigmoid(value), label)
           (0 until mat.getNumRows).map(idx => (labels(idx), mat.get(idx, 1))).iterator
@@ -132,7 +131,6 @@ class OfflineLearner {
           (0 until mat.getNumRows).map(idx => (labels(idx), mat.get(idx, 0).toDouble)).iterator
       }
     }
-
     scores
   }
 
@@ -143,14 +141,17 @@ class OfflineLearner {
             model: GraphModel): Unit = {
     val conf = SparkContext.getOrCreate().getConf
     val data = SparkContext.getOrCreate().textFile(input)
-      .repartition(SparkUtils.getNumExecutors(conf))
+      .repartition(SparkUtils.getNumCores(conf))
       .map(f => DataLoader.parseIntFloat(f, dim))
 
     model.init(data.getNumPartitions)
 
     if (modelInput.length > 0) model.load(modelInput)
     train(data, model)
-    if (modelOutput.length > 0) model.save(modelOutput)
+    if (modelOutput.length > 0) {
+      model.save(modelOutput)
+      model.saveJson(modelOutput, convertToHadoop(conf))
+    }
   }
 
   def predict(input: String,
@@ -171,7 +172,7 @@ class OfflineLearner {
 
 }
 
-object OfflineLearner {
+object OfflineLearner extends Serializable {
 
   /**
     * Build manifold view for a RDD. A manifold RDD is to split a RDD to multiple RDD.

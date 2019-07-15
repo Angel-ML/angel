@@ -97,8 +97,8 @@ public class IncrementRowTest {
   private WorkerId workerId;
   private WorkerAttemptId workerAttempt0Id;
 
-  int feaNum = 100000;
-  int nnz = 1000;
+  int feaNum = 1000000;
+  int nnz = 1000000;
 
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
@@ -128,6 +128,8 @@ public class IncrementRowTest {
     conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
     conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
     conf.setBoolean("use.new.split", true);
+    conf.setInt(AngelConf.ANGEL_WORKER_MAX_ATTEMPTS, 1);
+    conf.setInt(AngelConf.ANGEL_PS_MAX_ATTEMPTS, 1);
 
     // get a angel client
     angelClient = AngelClientFactory.get(conf);
@@ -137,7 +139,7 @@ public class IncrementRowTest {
     dMat.setName(DENSE_DOUBLE_MAT);
     dMat.setRowNum(1);
     dMat.setColNum(feaNum);
-    dMat.setMaxColNumInBlock(feaNum / 3);
+    dMat.setMaxColNumInBlock(feaNum / 100);
     dMat.setRowType(RowType.T_DOUBLE_DENSE);
     angelClient.addMatrix(dMat);
 
@@ -155,7 +157,7 @@ public class IncrementRowTest {
     sMat.setName(SPARSE_DOUBLE_MAT);
     sMat.setRowNum(1);
     sMat.setColNum(feaNum);
-    sMat.setMaxColNumInBlock(feaNum / 3);
+    sMat.setMaxColNumInBlock(feaNum / 100);
     sMat.setRowType(RowType.T_DOUBLE_SPARSE);
     angelClient.addMatrix(sMat);
 
@@ -389,7 +391,7 @@ public class IncrementRowTest {
     // Start to run application
     angelClient.run();
 
-    Thread.sleep(2000);
+    Thread.sleep(5000);
 
     psId = new ParameterServerId(0);
     psAttempt0Id = new PSAttemptId(psId, 0);
@@ -400,41 +402,41 @@ public class IncrementRowTest {
   }
 
   @Test public void test() throws Exception {
-    testDenseDoubleUDF();
-    testSparseDoubleUDF();
+    //testDenseDoubleUDF();
+    //testSparseDoubleUDF();
 
-    //testDenseDoubleCompUDF();
-    //testSparseDoubleCompUDF();
+    testDenseDoubleCompUDF();
+    /*testSparseDoubleCompUDF();
 
     testDenseFloatUDF();
     testSparseFloatUDF();
 
-    //testDenseFloatCompUDF();
-    //testSparseFloatCompUDF();
+    testDenseFloatCompUDF();
+    testSparseFloatCompUDF();
 
     testDenseIntUDF();
     testSparseIntUDF();
 
-    //testDenseIntCompUDF();
-    //testSparseIntCompUDF();
+    testDenseIntCompUDF();
+    testSparseIntCompUDF();
 
     testDenseLongUDF();
     testSparseLongUDF();
 
-    //testDenseLongCompUDF();
-    //testSparseLongCompUDF();
+    testDenseLongCompUDF();
+    testSparseLongCompUDF();
 
     testSparseDoubleLongKeyUDF();
-    //testSparseDoubleLongKeyCompUDF();
+    testSparseDoubleLongKeyCompUDF();
 
     testSparseFloatLongKeyUDF();
-    //testSparseFloatLongKeyCompUDF();
+    testSparseFloatLongKeyCompUDF();
 
     testSparseIntLongKeyUDF();
-    //testSparseIntLongKeyCompUDF();
+    testSparseIntLongKeyCompUDF();
 
     testSparseLongLongKeyUDF();
-    //testSparseLongLongKeyCompUDF();
+    testSparseLongLongKeyCompUDF();*/
   }
 
 

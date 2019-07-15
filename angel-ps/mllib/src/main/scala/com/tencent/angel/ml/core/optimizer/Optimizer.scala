@@ -22,41 +22,50 @@ import java.util.concurrent.Future
 
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
+import org.json4s.JsonAST.JObject
 
-trait Optimizer extends Serializable {
-  var lr: Double = 0.1
+abstract class Optimizer(stepSize: Double) extends Serializable {
+  protected var numSlot: Int
+  protected var lr: Double = stepSize
+  protected var epsilon: Double = 1e-7
   protected var regL1Param: Double = SharedConf.get().getDouble(MLConf.ML_REG_L1)
   protected var regL2Param: Double = SharedConf.get().getDouble(MLConf.ML_REG_L2)
-
-  def setLearningRate(lr: Double): this.type = {
-    this.lr = lr
-    this
-  }
 
   def setRegL1Param(regParam: Double): this.type = {
     this.regL1Param = regParam
     this
   }
 
+  def getRegL1Param: Double = this.regL1Param
+
   def setRegL2Param(regParam: Double): this.type = {
     this.regL2Param = regParam
     this
   }
 
-  def getLearningRate: Double = this.lr
-
-  def getRegL1Param: Double = this.regL1Param
-
   def getRegL2Param: Double = this.regL2Param
+
+  def getLR: Double = this.lr
+
+  def setLR(lr: Double): Unit = {
+    this.lr = lr
+  }
+
+  def setNumSlot(numSlot: Int): Unit = {
+    this.numSlot = numSlot
+  }
+
+  def getNumSlot: Int = this.numSlot
+
+  def setEpsilon(epsilon: Double): Unit = {
+    this.epsilon = epsilon
+  }
+
+  def getEpsilon: Double = this.epsilon
 
   def update(matrixId: Int, numFactors: Int, epoch: Int): Future[VoidResult]
 
-  def update(matrixId: Int, numFactors: Int, epoch: Int, sampleNum: Int): Future[VoidResult] = {
-    update(matrixId, numFactors, epoch)
-  }
-}
+  def update(matrixId: Int, numFactors: Int, epoch: Int, batchSize: Int): Future[VoidResult]
 
-
-abstract class GradientDescent(val stepSize: Double = 0.1) extends Optimizer {
-  setLearningRate(stepSize)
+  def toJson: JObject
 }

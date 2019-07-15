@@ -94,6 +94,22 @@ public class MatrixMeta {
   }
 
   /**
+   * get index range start
+   */
+  public long getIndexStart() {
+    return matrixContext.getIndexStart();
+  }
+
+  /**
+   * Get index range end
+   *
+   * @return index range end
+   */
+  public long getIndexEnd() {
+    return matrixContext.getIndexEnd();
+  }
+
+  /**
    * Gets name.
    *
    * @return the name

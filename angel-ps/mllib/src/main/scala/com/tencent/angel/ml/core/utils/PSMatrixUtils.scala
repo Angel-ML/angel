@@ -61,7 +61,7 @@ object PSMatrixUtils {
   }
 
   def getRow(epoch: Int, matrixId: Int, rowId: Int): Vector = {
-    PSAgentContext.get.getUserRequestAdapter.getRow(matrixId, rowId, 0)
+    PSAgentContext.get.getUserRequestAdapter.getRow(matrixId, rowId, 0).get()
   }
 
   def getRowWithIndex(epoch: Int, matrixId: Int, rowId: Int, index: Vector): Vector = {
@@ -139,7 +139,7 @@ object PSMatrixUtils {
     val idxArr = (startRowId until endRowId).toArray
     val param = new GetRowsParam(matrixId, idxArr)
     val func = new GetRows(param)
-    val vectorMap = PSAgentContext.get.getUserRequestAdapter.get(func)
+    val vectorMap = PSAgentContext.get.getUserRequestAdapter.get(func).get()
       .asInstanceOf[GetRowsResult].getRows
 
     val vectors = idxArr.map { rowId => vectorMap.get(rowId) }
@@ -152,7 +152,7 @@ object PSMatrixUtils {
             val dim = vec.asInstanceOf[CompIntDoubleVector].getDim
 
             if (data == null) {
-              data = Array[Double](dim * vectors.length)
+              data = new Array[Double](dim * vectors.length)
             }
 
             vec.asInstanceOf[CompIntDoubleVector].getPartitions.zipWithIndex.foreach { case (part, idx) =>
@@ -173,7 +173,7 @@ object PSMatrixUtils {
             val dim = vec.asInstanceOf[CompIntDoubleVector].getDim
 
             if (data == null) {
-              data = Array[Float](dim * vectors.length)
+              data = new Array[Float](dim * vectors.length)
             }
 
             vec.asInstanceOf[CompIntFloatVector].getPartitions.zipWithIndex.foreach { case (part, idx) =>
@@ -197,7 +197,7 @@ object PSMatrixUtils {
           vectors.zipWithIndex.foreach { case (vec, row) =>
             val valArr = vec.asInstanceOf[IntDoubleVector].getStorage.getValues
             if (data == null) {
-              data = Array[Double](valArr.length * vectors.length)
+              data = new Array[Double](valArr.length * vectors.length)
             }
 
             Array.copy(valArr, 0, data, row * valArr.length, valArr.length)
@@ -214,7 +214,7 @@ object PSMatrixUtils {
           vectors.zipWithIndex.foreach { case (vec, row) =>
             val valArr = vec.asInstanceOf[IntFloatVector].getStorage.getValues
             if (data == null) {
-              data = Array[Float](valArr.length * vectors.length)
+              data = new Array[Float](valArr.length * vectors.length)
             }
 
             Array.copy(valArr, 0, data, row * valArr.length, valArr.length)

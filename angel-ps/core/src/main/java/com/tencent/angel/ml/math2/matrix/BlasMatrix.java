@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -21,10 +21,19 @@ package com.tencent.angel.ml.math2.matrix;
 import com.tencent.angel.ml.math2.ufuncs.executor.matrix.BinaryMatrixExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.matrix.DotMatrixExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.matrix.UnaryMatrixExecutor;
-import com.tencent.angel.ml.math2.ufuncs.expression.*;
-import com.tencent.angel.ml.math2.vector.*;
+import com.tencent.angel.ml.math2.ufuncs.expression.Add;
+import com.tencent.angel.ml.math2.ufuncs.expression.Axpy;
+import com.tencent.angel.ml.math2.ufuncs.expression.Div;
+import com.tencent.angel.ml.math2.ufuncs.expression.Mul;
+import com.tencent.angel.ml.math2.ufuncs.expression.SAdd;
+import com.tencent.angel.ml.math2.ufuncs.expression.SDiv;
+import com.tencent.angel.ml.math2.ufuncs.expression.SMul;
+import com.tencent.angel.ml.math2.ufuncs.expression.SSub;
+import com.tencent.angel.ml.math2.ufuncs.expression.Sub;
+import com.tencent.angel.ml.math2.vector.Vector;
 
 public abstract class BlasMatrix extends Matrix {
+
   protected int numRows, numCols;
 
   public BlasMatrix() {
@@ -34,7 +43,8 @@ public abstract class BlasMatrix extends Matrix {
 
   public abstract Vector getCol(int idx);
 
-  @Override public int getNumRows() {
+  @Override
+  public int getNumRows() {
     return numRows;
   }
 
@@ -216,7 +226,11 @@ public abstract class BlasMatrix extends Matrix {
     return DotMatrixExecutor.apply(this, true, v);
   }
 
+  public Matrix dot(Matrix m, Boolean parallel) {
+    return DotMatrixExecutor.apply(this, false, m, false, parallel);
+  }
+
   public Matrix dot(Matrix m) {
-    return DotMatrixExecutor.apply(this, false, m, false);
+    return DotMatrixExecutor.apply(this, false, m, false, true);
   }
 }

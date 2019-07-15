@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,6 +18,7 @@
 
 package com.tencent.angel.ps.storage.vector;
 
+import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.RowType;
@@ -28,15 +29,15 @@ import com.tencent.angel.ps.storage.vector.func.FloatElemUpdateFunc;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import java.io.IOException;
 
 /**
  * The row with "int" index type and "float" value type in PS
  */
 public class ServerIntFloatRow extends ServerFloatRow {
+
   private static final Log LOG = LogFactory.getLog(ServerIntFloatRow.class);
   /**
    * Just a view of "row" in ServerRow
@@ -55,14 +56,14 @@ public class ServerIntFloatRow extends ServerFloatRow {
   /**
    * Create a new ServerIntDoubleRow
    *
-   * @param rowId      row index
-   * @param rowType    row type
-   * @param startCol   start position
-   * @param endCol     end position
+   * @param rowId row index
+   * @param rowType row type
+   * @param startCol start position
+   * @param endCol end position
    * @param estElemNum the estimate element number
    */
   public ServerIntFloatRow(int rowId, RowType rowType, int startCol, int endCol, int estElemNum,
-    IntFloatVector innerRow) {
+      IntFloatVector innerRow) {
     super(rowId, rowType, startCol, endCol, estElemNum, innerRow);
     this.startColInt = startCol;
     this.endColInt = endCol;
@@ -72,10 +73,10 @@ public class ServerIntFloatRow extends ServerFloatRow {
   /**
    * Create a new ServerIntDoubleRow
    *
-   * @param rowId      row index
-   * @param rowType    row type
-   * @param startCol   start position
-   * @param endCol     end position
+   * @param rowId row index
+   * @param rowType row type
+   * @param startCol start position
+   * @param endCol end position
    * @param estElemNum the estimate element number
    */
   public ServerIntFloatRow(int rowId, RowType rowType, int startCol, int endCol, int estElemNum) {
@@ -134,7 +135,7 @@ public class ServerIntFloatRow extends ServerFloatRow {
    * Set a batch elements values without lock
    *
    * @param indices elements indices
-   * @param values  elements values
+   * @param values elements values
    */
   public void set(int[] indices, float[] values) {
     assert indices.length == values.length;
@@ -157,7 +158,7 @@ public class ServerIntFloatRow extends ServerFloatRow {
    * Add a batch elements values without lock
    *
    * @param indices elements indices
-   * @param values  elements plus values
+   * @param values elements plus values
    */
   public void addTo(int[] indices, float[] values) {
     assert indices.length == values.length;
@@ -176,8 +177,8 @@ public class ServerIntFloatRow extends ServerFloatRow {
   }
 
   /**
-   * Get all element indices and values without lock, you must check the storage is sparse first use "isSparse";
-   * if you want use original indices, you must plus with "startCol" first
+   * Get all element indices and values without lock, you must check the storage is sparse first use
+   * "isSparse"; if you want use original indices, you must plus with "startCol" first
    *
    * @return all element values
    */
@@ -186,23 +187,44 @@ public class ServerIntFloatRow extends ServerFloatRow {
   }
 
 
-  @Override public void update(RowType updateType, ByteBuf buf, UpdateOp op) {
+  @Override
+  public void update(RowType updateType, ByteBuf buf, UpdateOp op) {
     startWrite();
     try {
       switch (updateType) {
         case T_FLOAT_SPARSE:
         case T_FLOAT_SPARSE_COMPONENT:
-          updateUseSparse(buf, op);
+          updateUseIntFloatSparse(buf, op);
+          break;
+
+        case T_LONG_SPARSE:
+        case T_LONG_SPARSE_COMPONENT:
+          updateUseIntLongSparse(buf, op);
+          break;
+
+        case T_INT_SPARSE:
+        case T_INT_SPARSE_COMPONENT:
+          updateUseIntIntSparse(buf, op);
           break;
 
         case T_FLOAT_DENSE:
         case T_FLOAT_DENSE_COMPONENT:
-          updateUseDense(buf, op);
+          updateUseIntFloatDense(buf, op);
+          break;
+
+        case T_LONG_DENSE:
+        case T_LONG_DENSE_COMPONENT:
+          updateUseIntLongDense(buf, op);
+          break;
+
+        case T_INT_DENSE:
+        case T_INT_DENSE_COMPONENT:
+          updateUseIntIntDense(buf, op);
           break;
 
         default: {
           throw new UnsupportedOperationException(
-            "Unsupport operation: update " + updateType + " to " + this.getClass().getName());
+              "Unsupport operation: update " + updateType + " to " + this.getClass().getName());
         }
       }
 
@@ -212,7 +234,7 @@ public class ServerIntFloatRow extends ServerFloatRow {
     }
   }
 
-  private void updateUseDense(ByteBuf buf, UpdateOp op) {
+  private void updateUseIntFloatDense(ByteBuf buf, UpdateOp op) {
     int size = buf.readInt();
     if (op == UpdateOp.PLUS) {
       for (int i = 0; i < size; i++) {
@@ -225,7 +247,33 @@ public class ServerIntFloatRow extends ServerFloatRow {
     }
   }
 
-  private void updateUseSparse(ByteBuf buf, UpdateOp op) {
+  private void updateUseIntLongDense(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        intFloatRow.set(i, intFloatRow.get(i) + buf.readLong());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intFloatRow.set(i, buf.readLong());
+      }
+    }
+  }
+
+  private void updateUseIntIntDense(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        intFloatRow.set(i, intFloatRow.get(i) + buf.readInt());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intFloatRow.set(i, buf.readInt());
+      }
+    }
+  }
+
+  private void updateUseIntFloatSparse(ByteBuf buf, UpdateOp op) {
     int size = buf.readInt();
     if (op == UpdateOp.PLUS) {
       for (int i = 0; i < size; i++) {
@@ -239,8 +287,37 @@ public class ServerIntFloatRow extends ServerFloatRow {
     }
   }
 
+  private void updateUseIntLongSparse(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        int index = buf.readInt();
+        intFloatRow.set(index, intFloatRow.get(index) + buf.readLong());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intFloatRow.set(buf.readInt(), buf.readLong());
+      }
+    }
+  }
 
-  @Override public int size() {
+  private void updateUseIntIntSparse(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        int index = buf.readInt();
+        intFloatRow.set(index, intFloatRow.get(index) + buf.readInt());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intFloatRow.set(buf.readInt(), buf.readInt());
+      }
+    }
+  }
+
+
+  @Override
+  public int size() {
     return intFloatRow.size();
   }
 
@@ -265,7 +342,8 @@ public class ServerIntFloatRow extends ServerFloatRow {
     }
   }
 
-  @Override protected void serializeRow(ByteBuf buf) {
+  @Override
+  protected void serializeRow(ByteBuf buf) {
     if (useDenseSerialize()) {
       float[] values = getValues();
       for (int i = 0; i < values.length; i++) {
@@ -282,7 +360,8 @@ public class ServerIntFloatRow extends ServerFloatRow {
     }
   }
 
-  @Override protected void deserializeRow(ByteBuf buf) {
+  @Override
+  protected void deserializeRow(ByteBuf buf) {
     startColInt = (int) startCol;
     endColInt = (int) endCol;
     intFloatRow = (IntFloatVector) row;
@@ -297,7 +376,8 @@ public class ServerIntFloatRow extends ServerFloatRow {
     }
   }
 
-  @Override protected int getRowSpace() {
+  @Override
+  protected int getRowSpace() {
     if (useDenseSerialize()) {
       return 4 * size();
     } else {
@@ -305,11 +385,31 @@ public class ServerIntFloatRow extends ServerFloatRow {
     }
   }
 
-  @Override public ServerRow clone() {
+  @Override
+  public ServerRow clone() {
     startRead();
     try {
       return new ServerIntFloatRow(rowId, rowType, startColInt, endColInt, (int) estElemNum,
-        intFloatRow.clone());
+          intFloatRow.clone());
+    } finally {
+      endRead();
+    }
+  }
+
+  @Override
+  public ServerRow
+adaptiveClone() {
+    startRead();
+    try {
+      if (intFloatRow.isSparse()) {
+        return new ServerIntFloatRow(rowId, rowType, startColInt, endColInt, (int) estElemNum,
+            VFactory
+                .sortedFloatVector((endColInt - startColInt), intFloatRow.getStorage().getIndices(),
+                    intFloatRow.getStorage().getValues()));
+      } else {
+        return new ServerIntFloatRow(rowId, rowType, startColInt, endColInt, (int) estElemNum,
+            intFloatRow);
+      }
     } finally {
       endRead();
     }
@@ -341,7 +441,7 @@ public class ServerIntFloatRow extends ServerFloatRow {
 
   @Override
   public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
-    throws IOException {
+      throws IOException {
     if (func != null) {
       if (indexType == IndexType.INT) {
         for (int i = 0; i < indexSize; i++) {
@@ -361,12 +461,14 @@ public class ServerIntFloatRow extends ServerFloatRow {
     }
   }
 
-  @Override public void setSplit(Vector row) {
+  @Override
+  public void setSplit(Vector row) {
     super.setSplit(row);
     intFloatRow = (IntFloatVector) row;
   }
 
-  @Override public void elemUpdate(FloatElemUpdateFunc func) {
+  @Override
+  public void elemUpdate(FloatElemUpdateFunc func) {
     if (isDense()) {
       float[] values = getValues();
       for (int i = 0; i < values.length; i++) {

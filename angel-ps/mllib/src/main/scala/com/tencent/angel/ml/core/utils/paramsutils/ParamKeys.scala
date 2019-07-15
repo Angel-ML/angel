@@ -66,6 +66,7 @@ object ParamKeys {
   val epoch: String = "epoch"
   val numUpdatePerEpoch: String = "numupdateperepoch"
   val batchSize: String = "batchsize"
-  val decay: String = "decay"
-
+  val decayClass: String = "decayclass"
+  val decayAlpha: String = "decayalpha"
+  val decayBeta: String = "decaybeta"
 }

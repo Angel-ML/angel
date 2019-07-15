@@ -49,8 +49,6 @@ import org.junit.Test;
 
 import java.util.Random;
 
-import static org.junit.Assert.assertEquals;
-
 public class GetRowsTest {
   public static String DENSE_DOUBLE_MAT = "dense_double_mat";
   public static String DENSE_DOUBLE_MAT_COMP = "dense_double_mat_comp";
@@ -97,8 +95,8 @@ public class GetRowsTest {
   private WorkerId workerId;
   private WorkerAttemptId workerAttempt0Id;
 
-  int feaNum = 10000;
-  int nnz = 1000;
+  int feaNum = 1000000;
+  int nnz = 10000;
   int rowNum = 5;
   int blockRowNum = 5;
   int blockColNum = 1000;
@@ -132,6 +130,8 @@ public class GetRowsTest {
     conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
     conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
     conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
+    conf.setInt(AngelConf.ANGEL_WORKER_MAX_ATTEMPTS, 1);
+    conf.setInt(AngelConf.ANGEL_PS_MAX_ATTEMPTS, 1);
 
     // get a angel client
     angelClient = AngelClientFactory.get(conf);

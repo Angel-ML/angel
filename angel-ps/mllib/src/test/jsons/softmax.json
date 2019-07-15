@@ -14,7 +14,7 @@
     {
       "name": "softmaxlosslayer",
       "type": "simplelosslayer",
-      "lossfunc": "softmax",
+      "lossfunc": "softmaxloss",
       "inputlayer": "wide"
     }
   ]

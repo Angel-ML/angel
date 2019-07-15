@@ -25,6 +25,11 @@ public enum AppState {
   NEW, INITED,
 
   /**
+   * Allocate resource and startup workers
+   */
+  PREPARE_WORKERS,
+
+  /**
    * tasks are running
    */
   RUNNING,

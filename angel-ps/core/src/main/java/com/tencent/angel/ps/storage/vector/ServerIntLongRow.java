@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ps.storage.vector;
 
-import com.tencent.angel.ml.math2.vector.IntIntVector;
+import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.IntLongVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.RowType;
@@ -29,17 +29,15 @@ import com.tencent.angel.ps.storage.vector.func.LongElemUpdateFunc;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2LongMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 
 /**
  * The row with "int" index type and "long" value type in PS
  */
 public class ServerIntLongRow extends ServerLongRow {
+
   private static final Log LOG = LogFactory.getLog(ServerIntLongRow.class);
   /**
    * Just a view of "row" in ServerRow
@@ -59,15 +57,15 @@ public class ServerIntLongRow extends ServerLongRow {
   /**
    * Create a new ServerIntDoubleRow
    *
-   * @param rowId      row index
-   * @param rowType    row type
-   * @param startCol   start position
-   * @param endCol     end position
+   * @param rowId row index
+   * @param rowType row type
+   * @param startCol start position
+   * @param endCol end position
    * @param estElemNum the estimate element number
-   * @param innerRow   inner row
+   * @param innerRow inner row
    */
   public ServerIntLongRow(int rowId, RowType rowType, int startCol, int endCol, int estElemNum,
-    IntLongVector innerRow) {
+      IntLongVector innerRow) {
     super(rowId, rowType, startCol, endCol, estElemNum, innerRow);
     this.startColInt = startCol;
     this.endColInt = endCol;
@@ -77,10 +75,10 @@ public class ServerIntLongRow extends ServerLongRow {
   /**
    * Create a new ServerIntDoubleRow
    *
-   * @param rowId      row index
-   * @param rowType    row type
-   * @param startCol   start position
-   * @param endCol     end position
+   * @param rowId row index
+   * @param rowType row type
+   * @param startCol start position
+   * @param endCol end position
    * @param estElemNum the estimate element number
    */
   public ServerIntLongRow(int rowId, RowType rowType, int startCol, int endCol, int estElemNum) {
@@ -139,7 +137,7 @@ public class ServerIntLongRow extends ServerLongRow {
    * Set a batch elements values without lock
    *
    * @param indices elements indices
-   * @param values  elements values
+   * @param values elements values
    */
   public void set(int[] indices, long[] values) {
     assert indices.length == values.length;
@@ -162,7 +160,7 @@ public class ServerIntLongRow extends ServerLongRow {
    * Add a batch elements values without lock
    *
    * @param indices elements indices
-   * @param values  elements plus values
+   * @param values elements plus values
    */
   public void addTo(int[] indices, long[] values) {
     assert indices.length == values.length;
@@ -181,8 +179,8 @@ public class ServerIntLongRow extends ServerLongRow {
   }
 
   /**
-   * Get all element indices and values without lock, you must check the storage is sparse first use "isSparse";
-   * if you want use original indices, you must plus with "startCol" first
+   * Get all element indices and values without lock, you must check the storage is sparse first use
+   * "isSparse"; if you want use original indices, you must plus with "startCol" first
    *
    * @return all element values
    */
@@ -191,23 +189,34 @@ public class ServerIntLongRow extends ServerLongRow {
   }
 
 
-  @Override public void update(RowType updateType, ByteBuf buf, UpdateOp op) {
+  @Override
+  public void update(RowType updateType, ByteBuf buf, UpdateOp op) {
     startWrite();
     try {
       switch (updateType) {
         case T_LONG_SPARSE:
         case T_LONG_SPARSE_COMPONENT:
-          updateUseSparse(buf, op);
+          updateUseIntLongSparse(buf, op);
+          break;
+
+        case T_INT_SPARSE:
+        case T_INT_SPARSE_COMPONENT:
+          updateUseIntIntSparse(buf, op);
           break;
 
         case T_LONG_DENSE:
         case T_LONG_DENSE_COMPONENT:
-          updateUseDense(buf, op);
+          updateUseIntLongDense(buf, op);
+          break;
+
+        case T_INT_DENSE:
+        case T_INT_DENSE_COMPONENT:
+          updateUseIntIntDense(buf, op);
           break;
 
         default: {
           throw new UnsupportedOperationException(
-            "Unsupport operation: update " + updateType + " to " + this.getClass().getName());
+              "Unsupport operation: update " + updateType + " to " + this.getClass().getName());
         }
       }
 
@@ -217,7 +226,7 @@ public class ServerIntLongRow extends ServerLongRow {
     }
   }
 
-  private void updateUseDense(ByteBuf buf, UpdateOp op) {
+  private void updateUseIntLongDense(ByteBuf buf, UpdateOp op) {
     int size = buf.readInt();
     if (op == UpdateOp.PLUS) {
       for (int i = 0; i < size; i++) {
@@ -230,7 +239,20 @@ public class ServerIntLongRow extends ServerLongRow {
     }
   }
 
-  private void updateUseSparse(ByteBuf buf, UpdateOp op) {
+  private void updateUseIntIntDense(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        intLongRow.set(i, intLongRow.get(i) + buf.readInt());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intLongRow.set(i, buf.readInt());
+      }
+    }
+  }
+
+  private void updateUseIntLongSparse(ByteBuf buf, UpdateOp op) {
     int size = buf.readInt();
     if (op == UpdateOp.PLUS) {
       for (int i = 0; i < size; i++) {
@@ -244,7 +266,23 @@ public class ServerIntLongRow extends ServerLongRow {
     }
   }
 
-  @Override public int size() {
+
+  private void updateUseIntIntSparse(ByteBuf buf, UpdateOp op) {
+    int size = buf.readInt();
+    if (op == UpdateOp.PLUS) {
+      for (int i = 0; i < size; i++) {
+        int index = buf.readInt();
+        intLongRow.set(index, intLongRow.get(index) + buf.readInt());
+      }
+    } else {
+      for (int i = 0; i < size; i++) {
+        intLongRow.set(buf.readInt(), buf.readInt());
+      }
+    }
+  }
+
+  @Override
+  public int size() {
     return intLongRow.size();
   }
 
@@ -269,7 +307,8 @@ public class ServerIntLongRow extends ServerLongRow {
     }
   }
 
-  @Override protected void serializeRow(ByteBuf buf) {
+  @Override
+  protected void serializeRow(ByteBuf buf) {
     if (useDenseSerialize()) {
       long[] values = getValues();
       for (int i = 0; i < values.length; i++) {
@@ -286,7 +325,8 @@ public class ServerIntLongRow extends ServerLongRow {
     }
   }
 
-  @Override protected void deserializeRow(ByteBuf buf) {
+  @Override
+  protected void deserializeRow(ByteBuf buf) {
     startColInt = (int) startCol;
     endColInt = (int) endCol;
     intLongRow = (IntLongVector) row;
@@ -302,7 +342,8 @@ public class ServerIntLongRow extends ServerLongRow {
     }
   }
 
-  @Override public int getRowSpace() {
+  @Override
+  public int getRowSpace() {
     if (useDenseSerialize()) {
       return 8 * size();
     } else {
@@ -310,15 +351,36 @@ public class ServerIntLongRow extends ServerLongRow {
     }
   }
 
-  @Override public ServerRow clone() {
+  @Override
+  public ServerRow clone() {
     startRead();
     try {
       return new ServerIntLongRow(rowId, rowType, startColInt, endColInt, (int) estElemNum,
-        intLongRow.clone());
+          intLongRow.clone());
     } finally {
       endRead();
     }
   }
+
+  @Override
+  public ServerRow
+adaptiveClone() {
+    startRead();
+    try {
+      if (intLongRow.isSparse()) {
+        return new ServerIntLongRow(rowId, rowType, startColInt, endColInt, (int) estElemNum,
+            VFactory.sortedLongVector(endColInt - startColInt, intLongRow.getStorage().getIndices(),
+                intLongRow.getStorage().getValues()));
+      } else {
+        return new ServerIntLongRow(rowId, rowType, startColInt, endColInt, (int) estElemNum,
+            intLongRow);
+      }
+
+    } finally {
+      endRead();
+    }
+  }
+
 
   /**
    * Check the vector contains the index or not
@@ -346,7 +408,7 @@ public class ServerIntLongRow extends ServerLongRow {
 
   @Override
   public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
-    throws IOException {
+      throws IOException {
     if (func != null) {
       if (indexType == IndexType.INT) {
         for (int i = 0; i < indexSize; i++) {
@@ -366,12 +428,14 @@ public class ServerIntLongRow extends ServerLongRow {
     }
   }
 
-  @Override public void setSplit(Vector row) {
+  @Override
+  public void setSplit(Vector row) {
     super.setSplit(row);
     intLongRow = (IntLongVector) row;
   }
 
-  @Override public void elemUpdate(LongElemUpdateFunc func) {
+  @Override
+  public void elemUpdate(LongElemUpdateFunc func) {
     if (isDense()) {
       long[] values = getValues();
       for (int i = 0; i < values.length; i++) {

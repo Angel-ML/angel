@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -23,14 +23,32 @@ import com.tencent.angel.ml.math2.ufuncs.executor.UnaryExecutor;
 import com.tencent.angel.ml.math2.ufuncs.expression.Unary;
 import com.tencent.angel.ml.math2.utils.ForkJoinUtils;
 import com.tencent.angel.ml.math2.utils.VectorUtils;
-import com.tencent.angel.ml.math2.vector.*;
-
-import java.util.concurrent.*;
+import com.tencent.angel.ml.math2.vector.CompIntDoubleVector;
+import com.tencent.angel.ml.math2.vector.CompIntFloatVector;
+import com.tencent.angel.ml.math2.vector.CompIntIntVector;
+import com.tencent.angel.ml.math2.vector.CompIntLongVector;
+import com.tencent.angel.ml.math2.vector.CompLongDoubleVector;
+import com.tencent.angel.ml.math2.vector.CompLongFloatVector;
+import com.tencent.angel.ml.math2.vector.CompLongIntVector;
+import com.tencent.angel.ml.math2.vector.CompLongLongVector;
+import com.tencent.angel.ml.math2.vector.ComponentVector;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.ml.math2.vector.IntIntVector;
+import com.tencent.angel.ml.math2.vector.IntLongVector;
+import com.tencent.angel.ml.math2.vector.LongDoubleVector;
+import com.tencent.angel.ml.math2.vector.LongFloatVector;
+import com.tencent.angel.ml.math2.vector.LongIntVector;
+import com.tencent.angel.ml.math2.vector.LongLongVector;
+import com.tencent.angel.ml.math2.vector.Vector;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveAction;
 
 
 public class CompUnaryExecutor {
-  private static ForkJoinPool pool = ForkJoinUtils.getPool();
+
   private static final int THREADS = ForkJoinUtils.getNCores();
+  private static ForkJoinPool pool = ForkJoinUtils.getPool();
 
   public static Vector apply(ComponentVector v1, Unary op) {
     ComponentVector result;
@@ -48,7 +66,136 @@ public class CompUnaryExecutor {
     return (Vector) result;
   }
 
+  private static void apply(CompIntDoubleVector v, Unary op, CompIntDoubleVector result, int start,
+      int end) {
+    IntDoubleVector[] v1Parts = v.getPartitions();
+
+    if (op.isInplace()) {
+      for (int i = start; i <= end; i++) {
+        UnaryExecutor.apply(v1Parts[i], op);
+      }
+    } else {
+      IntDoubleVector[] resParts = result.getPartitions();
+      for (int i = start; i <= end; i++) {
+        resParts[i] = (IntDoubleVector) UnaryExecutor.apply(v1Parts[i], op);
+      }
+    }
+  }
+
+  private static void apply(CompIntFloatVector v, Unary op, CompIntFloatVector result, int start,
+      int end) {
+    IntFloatVector[] v1Parts = v.getPartitions();
+
+    if (op.isInplace()) {
+      for (int i = start; i <= end; i++) {
+        UnaryExecutor.apply(v1Parts[i], op);
+      }
+    } else {
+      IntFloatVector[] resParts = result.getPartitions();
+      for (int i = start; i <= end; i++) {
+        resParts[i] = (IntFloatVector) UnaryExecutor.apply(v1Parts[i], op);
+      }
+    }
+  }
+
+  private static void apply(CompIntLongVector v, Unary op, CompIntLongVector result, int start,
+      int end) {
+    IntLongVector[] v1Parts = v.getPartitions();
+
+    if (op.isInplace()) {
+      for (int i = start; i <= end; i++) {
+        UnaryExecutor.apply(v1Parts[i], op);
+      }
+    } else {
+      IntLongVector[] resParts = result.getPartitions();
+      for (int i = start; i <= end; i++) {
+        resParts[i] = (IntLongVector) UnaryExecutor.apply(v1Parts[i], op);
+      }
+    }
+  }
+
+  private static void apply(CompIntIntVector v, Unary op, CompIntIntVector result, int start,
+      int end) {
+    IntIntVector[] v1Parts = v.getPartitions();
+
+    if (op.isInplace()) {
+      for (int i = start; i <= end; i++) {
+        UnaryExecutor.apply(v1Parts[i], op);
+      }
+    } else {
+      IntIntVector[] resParts = result.getPartitions();
+      for (int i = start; i <= end; i++) {
+        resParts[i] = (IntIntVector) UnaryExecutor.apply(v1Parts[i], op);
+      }
+    }
+  }
+
+  private static void apply(CompLongDoubleVector v, Unary op, CompLongDoubleVector result,
+      int start, int end) {
+    LongDoubleVector[] v1Parts = v.getPartitions();
+
+    if (op.isInplace()) {
+      for (int i = start; i <= end; i++) {
+        UnaryExecutor.apply(v1Parts[i], op);
+      }
+    } else {
+      LongDoubleVector[] resParts = result.getPartitions();
+      for (int i = start; i <= end; i++) {
+        resParts[i] = (LongDoubleVector) UnaryExecutor.apply(v1Parts[i], op);
+      }
+    }
+  }
+
+  private static void apply(CompLongFloatVector v, Unary op, CompLongFloatVector result, int start,
+      int end) {
+    LongFloatVector[] v1Parts = v.getPartitions();
+
+    if (op.isInplace()) {
+      for (int i = start; i <= end; i++) {
+        UnaryExecutor.apply(v1Parts[i], op);
+      }
+    } else {
+      LongFloatVector[] resParts = result.getPartitions();
+      for (int i = start; i <= end; i++) {
+        resParts[i] = (LongFloatVector) UnaryExecutor.apply(v1Parts[i], op);
+      }
+    }
+  }
+
+  private static void apply(CompLongLongVector v, Unary op, CompLongLongVector result, int start,
+      int end) {
+    LongLongVector[] v1Parts = v.getPartitions();
+
+    if (op.isInplace()) {
+      for (int i = start; i <= end; i++) {
+        UnaryExecutor.apply(v1Parts[i], op);
+      }
+    } else {
+      LongLongVector[] resParts = result.getPartitions();
+      for (int i = start; i <= end; i++) {
+        resParts[i] = (LongLongVector) UnaryExecutor.apply(v1Parts[i], op);
+      }
+    }
+  }
+
+  private static void apply(CompLongIntVector v, Unary op, CompLongIntVector result, int start,
+      int end) {
+    LongIntVector[] v1Parts = v.getPartitions();
+
+    if (op.isInplace()) {
+      for (int i = start; i <= end; i++) {
+        UnaryExecutor.apply(v1Parts[i], op);
+      }
+    } else {
+      LongIntVector[] resParts = result.getPartitions();
+      for (int i = start; i <= end; i++) {
+        resParts[i] = (LongIntVector) UnaryExecutor.apply(v1Parts[i], op);
+      }
+    }
+  }
+
   private static class CompUnaExe extends RecursiveAction {
+
     int start, end, threshold;
     ComponentVector v, result;
     Unary op;
@@ -64,7 +211,8 @@ public class CompUnaryExecutor {
       this.op = op;
     }
 
-    @Override protected void compute() {
+    @Override
+    protected void compute() {
       boolean canCompute = (end - start) < threshold;
 
       if (canCompute) {
@@ -94,134 +242,6 @@ public class CompUnaryExecutor {
         CompUnaExe right = new CompUnaExe(v, op, result, middle + 1, end);
 
         invokeAll(left, right);
-      }
-    }
-  }
-
-  private static void apply(CompIntDoubleVector v, Unary op, CompIntDoubleVector result, int start,
-    int end) {
-    IntDoubleVector[] v1Parts = v.getPartitions();
-
-    if (op.isInplace()) {
-      for (int i = start; i <= end; i++) {
-        UnaryExecutor.apply(v1Parts[i], op);
-      }
-    } else {
-      IntDoubleVector[] resParts = result.getPartitions();
-      for (int i = start; i <= end; i++) {
-        resParts[i] = (IntDoubleVector) UnaryExecutor.apply(v1Parts[i], op);
-      }
-    }
-  }
-
-  private static void apply(CompIntFloatVector v, Unary op, CompIntFloatVector result, int start,
-    int end) {
-    IntFloatVector[] v1Parts = v.getPartitions();
-
-    if (op.isInplace()) {
-      for (int i = start; i <= end; i++) {
-        UnaryExecutor.apply(v1Parts[i], op);
-      }
-    } else {
-      IntFloatVector[] resParts = result.getPartitions();
-      for (int i = start; i <= end; i++) {
-        resParts[i] = (IntFloatVector) UnaryExecutor.apply(v1Parts[i], op);
-      }
-    }
-  }
-
-  private static void apply(CompIntLongVector v, Unary op, CompIntLongVector result, int start,
-    int end) {
-    IntLongVector[] v1Parts = v.getPartitions();
-
-    if (op.isInplace()) {
-      for (int i = start; i <= end; i++) {
-        UnaryExecutor.apply(v1Parts[i], op);
-      }
-    } else {
-      IntLongVector[] resParts = result.getPartitions();
-      for (int i = start; i <= end; i++) {
-        resParts[i] = (IntLongVector) UnaryExecutor.apply(v1Parts[i], op);
-      }
-    }
-  }
-
-  private static void apply(CompIntIntVector v, Unary op, CompIntIntVector result, int start,
-    int end) {
-    IntIntVector[] v1Parts = v.getPartitions();
-
-    if (op.isInplace()) {
-      for (int i = start; i <= end; i++) {
-        UnaryExecutor.apply(v1Parts[i], op);
-      }
-    } else {
-      IntIntVector[] resParts = result.getPartitions();
-      for (int i = start; i <= end; i++) {
-        resParts[i] = (IntIntVector) UnaryExecutor.apply(v1Parts[i], op);
-      }
-    }
-  }
-
-  private static void apply(CompLongDoubleVector v, Unary op, CompLongDoubleVector result,
-    int start, int end) {
-    LongDoubleVector[] v1Parts = v.getPartitions();
-
-    if (op.isInplace()) {
-      for (int i = start; i <= end; i++) {
-        UnaryExecutor.apply(v1Parts[i], op);
-      }
-    } else {
-      LongDoubleVector[] resParts = result.getPartitions();
-      for (int i = start; i <= end; i++) {
-        resParts[i] = (LongDoubleVector) UnaryExecutor.apply(v1Parts[i], op);
-      }
-    }
-  }
-
-  private static void apply(CompLongFloatVector v, Unary op, CompLongFloatVector result, int start,
-    int end) {
-    LongFloatVector[] v1Parts = v.getPartitions();
-
-    if (op.isInplace()) {
-      for (int i = start; i <= end; i++) {
-        UnaryExecutor.apply(v1Parts[i], op);
-      }
-    } else {
-      LongFloatVector[] resParts = result.getPartitions();
-      for (int i = start; i <= end; i++) {
-        resParts[i] = (LongFloatVector) UnaryExecutor.apply(v1Parts[i], op);
-      }
-    }
-  }
-
-  private static void apply(CompLongLongVector v, Unary op, CompLongLongVector result, int start,
-    int end) {
-    LongLongVector[] v1Parts = v.getPartitions();
-
-    if (op.isInplace()) {
-      for (int i = start; i <= end; i++) {
-        UnaryExecutor.apply(v1Parts[i], op);
-      }
-    } else {
-      LongLongVector[] resParts = result.getPartitions();
-      for (int i = start; i <= end; i++) {
-        resParts[i] = (LongLongVector) UnaryExecutor.apply(v1Parts[i], op);
-      }
-    }
-  }
-
-  private static void apply(CompLongIntVector v, Unary op, CompLongIntVector result, int start,
-    int end) {
-    LongIntVector[] v1Parts = v.getPartitions();
-
-    if (op.isInplace()) {
-      for (int i = start; i <= end; i++) {
-        UnaryExecutor.apply(v1Parts[i], op);
-      }
-    } else {
-      LongIntVector[] resParts = result.getPartitions();
-      for (int i = start; i <= end; i++) {
-        resParts[i] = (LongIntVector) UnaryExecutor.apply(v1Parts[i], op);
       }
     }
   }

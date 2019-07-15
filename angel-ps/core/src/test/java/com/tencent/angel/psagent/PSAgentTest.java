@@ -27,7 +27,6 @@ import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.localcluster.LocalClusterContext;
 import com.tencent.angel.master.AngelApplicationMaster;
-import com.tencent.angel.master.DummyTask;
 import com.tencent.angel.master.task.AMTaskManager;
 import com.tencent.angel.master.worker.WorkerManager;
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;
@@ -116,6 +115,8 @@ public class PSAgentTest {
       conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
       conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
       conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
+      conf.setInt(AngelConf.ANGEL_WORKER_MAX_ATTEMPTS, 1);
+      conf.setInt(AngelConf.ANGEL_PS_MAX_ATTEMPTS, 1);
 
       // get a angel client
       angelClient = AngelClientFactory.get(conf);
@@ -149,7 +150,7 @@ public class PSAgentTest {
 
       angelClient.startPSServer();
       angelClient.run();
-      Thread.sleep(2000);
+      Thread.sleep(5000);
       group0Id = new WorkerGroupId(0);
       worker0Id = new WorkerId(group0Id, 0);
       worker0Attempt0Id = new WorkerAttemptId(worker0Id, 0);

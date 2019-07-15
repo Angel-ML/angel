@@ -30,36 +30,63 @@ import com.tencent.angel.master.MasterProtocol;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.model.MLModel;
 import com.tencent.angel.ml.model.PSModel;
-import com.tencent.angel.model.*;
+import com.tencent.angel.model.LoadState;
+import com.tencent.angel.model.MatrixLoadContext;
+import com.tencent.angel.model.MatrixSaveContext;
+import com.tencent.angel.model.ModelLoadContext;
+import com.tencent.angel.model.ModelSaveContext;
+import com.tencent.angel.model.SaveState;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.*;
-import com.tencent.angel.protobuf.generated.MLProtos.*;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.CheckModelLoadedRequest;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.CheckModelLoadedResponse;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.CheckModelSavedRequest;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.CheckModelSavedResponse;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.ClientRegisterRequest;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetClientIdRequest;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetJobReportRequest;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetJobReportResponse;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.JobReportProto;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.JobStateProto;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.KeepAliveRequest;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.LoadRequest;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.SaveRequest;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.SetParamsRequest;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.StartRequest;
+import com.tencent.angel.protobuf.generated.MLProtos.CheckMatricesCreatedRequest;
+import com.tencent.angel.protobuf.generated.MLProtos.CheckMatricesCreatedResponse;
+import com.tencent.angel.protobuf.generated.MLProtos.GetAllPSLocationRequest;
+import com.tencent.angel.protobuf.generated.MLProtos.GetAllPSLocationResponse;
+import com.tencent.angel.protobuf.generated.MLProtos.PSLocationProto;
+import com.tencent.angel.protobuf.generated.MLProtos.PSStatus;
+import com.tencent.angel.protobuf.generated.MLProtos.Pair;
 import com.tencent.angel.utils.HdfsUtil;
 import com.tencent.angel.utils.UGITools;
 import com.tencent.angel.worker.WorkerGroupId;
 import com.tencent.angel.worker.WorkerId;
 import com.tencent.angel.worker.task.BaseTask;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.security.UserGroupInformation;
-
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.security.PrivilegedExceptionAction;
-import java.text.DecimalFormat;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Angel application client. It provides the control interfaces for the application.
  */
 public abstract class AngelClient implements AngelClientInterface {
+
   private static final Log LOG = LogFactory.getLog(AngelClient.class);
 
   /**
@@ -120,20 +147,23 @@ public abstract class AngelClient implements AngelClientInterface {
     isExecuteFinished = false;
     isFinished = false;
     hbIntervalMS = conf.getInt(AngelConf.ANGEL_CLIENT_HEARTBEAT_INTERVAL_MS,
-      AngelConf.DEFAULT_ANGEL_CLIENT_HEARTBEAT_INTERVAL_MS);
+        AngelConf.DEFAULT_ANGEL_CLIENT_HEARTBEAT_INTERVAL_MS);
   }
 
-  @SuppressWarnings("rawtypes") @Override public void runTask(Class<? extends BaseTask> taskClass)
-    throws AngelException {
+  @SuppressWarnings("rawtypes")
+  @Override
+  public void runTask(Class<? extends BaseTask> taskClass)
+      throws AngelException {
     if (master == null) {
       throw new AngelException(
-        "parameter servers are not started, you must execute startPSServer first!!");
+          "parameter servers are not started, you must execute startPSServer first!!");
     }
 
     try {
       master.setParams(null, SetParamsRequest.newBuilder().addKvs(
-        Pair.newBuilder().setKey(AngelConf.ANGEL_TASK_USER_TASKCLASS).setValue(taskClass.getName())
-          .build()).build());
+          Pair.newBuilder().setKey(AngelConf.ANGEL_TASK_USER_TASKCLASS)
+              .setValue(taskClass.getName())
+              .build()).build());
       master.start(null, StartRequest.newBuilder().build());
     } catch (ServiceException e) {
       LOG.error("start application failed.", e);
@@ -144,13 +174,13 @@ public abstract class AngelClient implements AngelClientInterface {
   public void runTask(String taskClassName) throws AngelException {
     if (master == null) {
       throw new AngelException(
-        "parameter servers are not started, you must execute startPSServer first!!");
+          "parameter servers are not started, you must execute startPSServer first!!");
     }
 
     try {
       master.setParams(null, SetParamsRequest.newBuilder().addKvs(
-        Pair.newBuilder().setKey(AngelConf.ANGEL_TASK_USER_TASKCLASS).setValue(taskClassName)
-          .build()).build());
+          Pair.newBuilder().setKey(AngelConf.ANGEL_TASK_USER_TASKCLASS).setValue(taskClassName)
+              .build()).build());
       master.start(null, StartRequest.newBuilder().build());
     } catch (ServiceException e) {
       LOG.error("start application failed.", e);
@@ -184,10 +214,11 @@ public abstract class AngelClient implements AngelClientInterface {
     hbThread.start();
   }
 
-  @Override public void run() throws AngelException {
+  @Override
+  public void run() throws AngelException {
     if (master == null) {
       throw new AngelException(
-        "parameter servers are not started, you must execute startPSServer first!!");
+          "parameter servers are not started, you must execute startPSServer first!!");
     }
 
     createMatrices();
@@ -200,10 +231,11 @@ public abstract class AngelClient implements AngelClientInterface {
     }
   }
 
-  @Override public void addMatrix(MatrixContext mContext) throws AngelException {
+  @Override
+  public void addMatrix(MatrixContext mContext) throws AngelException {
     if (nameToMatrixMap.containsKey(mContext.getName())) {
       throw new AngelException(
-        "Matrix \"" + mContext.getName() + "\" already exist, please check it");
+          "Matrix \"" + mContext.getName() + "\" already exist, please check it");
     }
 
     try {
@@ -213,11 +245,13 @@ public abstract class AngelClient implements AngelClientInterface {
     }
   }
 
-  @SuppressWarnings("rawtypes") @Override public void loadModel(MLModel model)
-    throws AngelException {
+  @SuppressWarnings("rawtypes")
+  @Override
+  public void loadModel(MLModel model)
+      throws AngelException {
     if (master == null) {
       throw new AngelException(
-        "parameter servers are not started, you must execute startPSServer first!!");
+          "parameter servers are not started, you must execute startPSServer first!!");
     }
 
     Map<String, PSModel> psModels = model.getPSModels();
@@ -229,11 +263,13 @@ public abstract class AngelClient implements AngelClientInterface {
     load(psModels.keySet());
   }
 
-  @SuppressWarnings("rawtypes") @Override public void saveModel(MLModel model)
-    throws AngelException {
+  @SuppressWarnings("rawtypes")
+  @Override
+  public void saveModel(MLModel model)
+      throws AngelException {
     if (master == null) {
       throw new AngelException(
-        "parameter servers are not started, you must execute startPSServer first!!");
+          "parameter servers are not started, you must execute startPSServer first!!");
     }
 
     Map<String, PSModel> psModels = model.getPSModels();
@@ -258,17 +294,22 @@ public abstract class AngelClient implements AngelClientInterface {
    */
   public void saveMatrices(List<String> matrixNames) {
     ModelSaveContext saveContext = new ModelSaveContext();
+    saveContext.setSavePath(conf.get(AngelConf.ANGEL_JOB_OUTPUT_PATH));
     for (String name : matrixNames) {
       saveContext.addMatrix(new MatrixSaveContext(name));
     }
     save(saveContext);
   }
 
-  @Override public void save(ModelSaveContext saveContext) throws AngelException {
-    if (saveContext.getMatricesContext().size() == 0 || saveContext.getSavePath() == null
-      || saveContext.getSavePath().isEmpty()) {
-      LOG.info("there is no matrices need save or save path is empty");
-      return;
+  @Override
+  public void save(ModelSaveContext saveContext) throws AngelException {
+    if(saveContext.getMatricesContext().size() == 0) {
+      throw new AngelException("Need save matrix name is empty, you should check it");
+    }
+
+    if(saveContext.getSavePath() == null
+        || saveContext.getSavePath().isEmpty()) {
+      throw new AngelException("Save path is null, you should check it");
     }
 
     try {
@@ -291,15 +332,17 @@ public abstract class AngelClient implements AngelClientInterface {
       */
       Path savePath = new Path(saveContext.getSavePath());
       FileSystem fs = savePath.getFileSystem(conf);
-      if(fs.exists(savePath)) {
-        if(conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
-                AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST)) {
+      if (fs.exists(savePath)) {
+        if (conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
+            AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST)) {
           fs.delete(savePath, true);
-          if(fs.exists(savePath)) {
-            throw new AngelException("Save path " + savePath + " already exist, remove it failed!!!");
+          if (fs.exists(savePath)) {
+            throw new AngelException(
+                "Save path " + savePath + " already exist, remove it failed!!!");
           }
         } else {
-          throw new AngelException("Save path " + savePath + " already exist, you can set another save path or set angel.job.output.path.deleteonexist be true");
+          throw new AngelException("Save path " + savePath
+              + " already exist, you can set another save path or set angel.job.output.path.deleteonexist be true");
         }
       }
     } catch (Throwable x) {
@@ -310,8 +353,8 @@ public abstract class AngelClient implements AngelClientInterface {
     int requestId;
     try {
       requestId =
-        master.save(null, builder.setSaveContext(ProtobufUtil.convert(saveContext)).build())
-          .getRequestId();
+          master.save(null, builder.setSaveContext(ProtobufUtil.convert(saveContext)).build())
+              .getRequestId();
     } catch (ServiceException e) {
       LOG.error("save model failed.", e);
       throw new AngelException(e);
@@ -330,14 +373,14 @@ public abstract class AngelClient implements AngelClientInterface {
     }
   }
 
-  @Override public void load(ModelLoadContext loadContext) throws AngelException {
-    if (loadContext.getMatricesContext().size() == 0 || loadContext.getLoadPath() == null
-      || loadContext.getLoadPath().isEmpty()) {
-      LOG.error("there is no matrices need load or load path is empty");
-      LOG.error(String.format("matrix context size=%d load path = %s",
-              loadContext.getMatricesContext().size(),
-              loadContext.getLoadPath()));
-      return;
+  @Override
+  public void load(ModelLoadContext loadContext) throws AngelException {
+    if (loadContext.getMatricesContext().size() == 0) {
+      throw new AngelException("Need load matrix names is empty, you should check it");
+    }
+
+    if (loadContext.getLoadPath() == null || loadContext.getLoadPath().isEmpty()) {
+      throw new AngelException("Load path is null, you should check it");
     }
 
     try {
@@ -355,7 +398,7 @@ public abstract class AngelClient implements AngelClientInterface {
       */
       Path loadPath = new Path(loadContext.getLoadPath());
       FileSystem fs = loadPath.getFileSystem(conf);
-      if(!fs.exists(loadPath)) {
+      if (!fs.exists(loadPath)) {
         throw new AngelException("Load path " + loadPath + " does not exist, please check");
       }
     } catch (Throwable e) {
@@ -366,8 +409,8 @@ public abstract class AngelClient implements AngelClientInterface {
     int requestId;
     try {
       requestId =
-        master.load(null, builder.setLoadContext(ProtobufUtil.convert(loadContext)).build())
-          .getRequestId();
+          master.load(null, builder.setLoadContext(ProtobufUtil.convert(loadContext)).build())
+              .getRequestId();
     } catch (ServiceException e) {
       LOG.error("save model failed.", e);
       throw new AngelException(e);
@@ -388,14 +431,15 @@ public abstract class AngelClient implements AngelClientInterface {
     }
   }
 
-  @Override public void stop(int stateCode) throws AngelException {
+  @Override
+  public void stop(int stateCode) throws AngelException {
     LOG.info("stop the application");
     stopService();
     if (master != null) {
       try {
         LOG.info("master is not null, send stop command to Master, stateCode=" + stateCode);
         master.stop(null,
-          ClientMasterServiceProtos.StopRequest.newBuilder().setExitStatus(stateCode).build());
+            ClientMasterServiceProtos.StopRequest.newBuilder().setExitStatus(stateCode).build());
       } catch (Throwable e) {
         LOG.error("send stop command to Master failed ", e);
         kill();
@@ -408,7 +452,8 @@ public abstract class AngelClient implements AngelClientInterface {
     close();
   }
 
-  @Override public void stop() throws AngelException {
+  @Override
+  public void stop() throws AngelException {
     stop(0);
   }
 
@@ -429,14 +474,15 @@ public abstract class AngelClient implements AngelClientInterface {
     stopped.set(false);
   }
 
-  @Override public void waitForCompletion() throws AngelException {
+  @Override
+  public void waitForCompletion() throws AngelException {
     if (master == null) {
       throw new AngelException(
-        "parameter servers are not started, you must execute startPSServer first!!");
+          "parameter servers are not started, you must execute startPSServer first!!");
     }
 
     RunningMode mode = RunningMode
-      .valueOf(conf.get(AngelConf.ANGEL_RUNNING_MODE, AngelConf.DEFAULT_ANGEL_RUNNING_MODE));
+        .valueOf(conf.get(AngelConf.ANGEL_RUNNING_MODE, AngelConf.DEFAULT_ANGEL_RUNNING_MODE));
     switch (mode) {
       case ANGEL_PS: {
         while (!isCompleted()) {
@@ -467,7 +513,7 @@ public abstract class AngelClient implements AngelClientInterface {
         }
 
         String actionType =
-          conf.get(AngelConf.ANGEL_ACTION_TYPE, AngelConf.DEFAULT_ANGEL_ACTION_TYPE);
+            conf.get(AngelConf.ANGEL_ACTION_TYPE, AngelConf.DEFAULT_ANGEL_ACTION_TYPE);
         LOG.info("action type " + actionType);
         if (actionType.matches("predict")) {
           try {
@@ -552,7 +598,7 @@ public abstract class AngelClient implements AngelClientInterface {
       LOG.debug("job stat = " + jobState.name());
     }
     if (jobState == JobStateProto.J_SUCCEEDED || jobState == JobStateProto.J_FAILED
-      || jobState == JobStateProto.J_KILLED) {
+        || jobState == JobStateProto.J_KILLED) {
       isFinished = true;
       LOG.info("job is finished! status: " + jobState);
       if (jobState == JobStateProto.J_FAILED || jobState == JobStateProto.J_KILLED) {
@@ -571,13 +617,13 @@ public abstract class AngelClient implements AngelClientInterface {
    *
    * @param requestId save request id
    * @return true means complete
-   * @throws AngelException
    */
   private boolean isSaveCompleted(int requestId) throws AngelException {
     CheckModelSavedResponse response;
     try {
       response = master
-        .checkModelSaved(null, CheckModelSavedRequest.newBuilder().setRequestId(requestId).build());
+          .checkModelSaved(null,
+              CheckModelSavedRequest.newBuilder().setRequestId(requestId).build());
     } catch (Throwable x) {
       throw new AngelException("Check model save request failed ", x);
     }
@@ -597,13 +643,12 @@ public abstract class AngelClient implements AngelClientInterface {
    *
    * @param requestId load request id
    * @return true means complete
-   * @throws AngelException
    */
   private boolean isLoadCompleted(int requestId) throws AngelException {
     CheckModelLoadedResponse response;
     try {
       response = master.checkModelLoaded(null,
-        CheckModelLoadedRequest.newBuilder().setRequestId(requestId).build());
+          CheckModelLoadedRequest.newBuilder().setRequestId(requestId).build());
     } catch (Throwable x) {
       throw new AngelException("Check model save request failed ", x);
     }
@@ -619,8 +664,8 @@ public abstract class AngelClient implements AngelClientInterface {
   }
 
   /**
-   * Check the application calculation phase is over or not. If the application state is J_SUCCESSED, J_FAILED
-   * J_KILLED, J_EXECUTE_SUCCESSED or J_COMMITTING means it is over.
+   * Check the application calculation phase is over or not. If the application state is
+   * J_SUCCESSED, J_FAILED J_KILLED, J_EXECUTE_SUCCESSED or J_COMMITTING means it is over.
    *
    * @return boolean true means the application is over
    */
@@ -649,7 +694,7 @@ public abstract class AngelClient implements AngelClientInterface {
       LOG.debug("job stat = " + jobState.name());
     }
     if (jobState != JobStateProto.J_INITED && jobState != JobStateProto.J_NEW
-      && jobState != JobStateProto.J_RUNNING) {
+        && jobState != JobStateProto.J_PREPARE_WORKERS && jobState != JobStateProto.J_RUNNING) {
       isExecuteFinished = true;
       LOG.info("job is finished! status: " + jobState);
       if (jobState == JobStateProto.J_FAILED || jobState == JobStateProto.J_KILLED) {
@@ -692,9 +737,9 @@ public abstract class AngelClient implements AngelClientInterface {
     JobReportProto report = response.getJobReport();
     // JobStateProto jobState = report.getJobState();
     if (lastReport == null || (report.hasCurIteration() && report.getCurIteration() != lastReport
-      .getJobReport().getCurIteration())) {
+        .getJobReport().getCurIteration())) {
       LOG.info(
-        "Epoch: " + report.getCurIteration() + ". Metrics=" + toString(report.getMetricsList()));
+          "Epoch: " + report.getCurIteration() + ". Metrics=" + toString(report.getMetricsList()));
       if (report.hasLoss()) {
         LOG.info("loss/success: " + report.getLoss() + "/" + report.getSuccess());
       }
@@ -707,7 +752,7 @@ public abstract class AngelClient implements AngelClientInterface {
     int size = metrics.size();
     for (int i = 0; i < size; i++) {
       sb.append("\"" + metrics.get(i).getKey() + "\":" + df
-        .format(Double.valueOf(metrics.get(i).getValue())));
+          .format(Double.valueOf(metrics.get(i).getValue())));
       if (i < size - 1) {
         sb.append(",");
       }
@@ -745,14 +790,15 @@ public abstract class AngelClient implements AngelClientInterface {
     return response;
   }
 
-  @Override public void createMatrices() throws AngelException {
+  @Override
+  public void createMatrices() throws AngelException {
     try {
       for (MatrixContext context : nameToMatrixMap.values()) {
         context.init(conf);
       }
 
       master.createMatrices(null,
-        ProtobufUtil.buildCreateMatricesRequest(new ArrayList<>(nameToMatrixMap.values())));
+          ProtobufUtil.buildCreateMatricesRequest(new ArrayList<>(nameToMatrixMap.values())));
       List<String> matrixNames = new ArrayList<>(nameToMatrixMap.keySet());
       waitForMatricesCreated(matrixNames);
     } catch (Throwable x) {
@@ -760,7 +806,8 @@ public abstract class AngelClient implements AngelClientInterface {
     }
   }
 
-  @Override public void createMatrices(List<MatrixContext> matrixContexts) throws AngelException {
+  @Override
+  public void createMatrices(List<MatrixContext> matrixContexts) throws AngelException {
     try {
       for (MatrixContext context : matrixContexts) {
         context.init(conf);
@@ -803,7 +850,7 @@ public abstract class AngelClient implements AngelClientInterface {
 
   private void waitForMatricesCreated(List<String> matrixNames) throws ServiceException {
     CheckMatricesCreatedRequest request =
-      CheckMatricesCreatedRequest.newBuilder().addAllMatrixNames(matrixNames).build();
+        CheckMatricesCreatedRequest.newBuilder().addAllMatrixNames(matrixNames).build();
 
     int size = matrixNames.size();
     while (true) {
@@ -822,14 +869,14 @@ public abstract class AngelClient implements AngelClientInterface {
 
   protected void setInputDirectory() throws IOException {
     boolean isUseDummy = conf.getBoolean(AngelConf.ANGEL_AM_USE_DUMMY_DATASPLITER,
-      AngelConf.DEFAULT_ANGEL_AM_USE_DUMMY_DATASPLITER);
+        AngelConf.DEFAULT_ANGEL_AM_USE_DUMMY_DATASPLITER);
     if (isUseDummy) {
       return;
     }
 
     String actionType = conf.get(AngelConf.ANGEL_ACTION_TYPE, AngelConf.DEFAULT_ANGEL_ACTION_TYPE);
     RunningMode runningMode = RunningMode
-      .valueOf(conf.get(AngelConf.ANGEL_RUNNING_MODE, AngelConf.DEFAULT_ANGEL_RUNNING_MODE));
+        .valueOf(conf.get(AngelConf.ANGEL_RUNNING_MODE, AngelConf.DEFAULT_ANGEL_RUNNING_MODE));
     String path;
     if (actionType.matches("predict")) {
       path = conf.get(AngelConf.ANGEL_PREDICT_DATA_PATH);
@@ -849,10 +896,10 @@ public abstract class AngelClient implements AngelClientInterface {
   protected void setOutputDirectory() throws IOException {
     String actionType = conf.get(AngelConf.ANGEL_ACTION_TYPE, AngelConf.DEFAULT_ANGEL_ACTION_TYPE);
     RunningMode runningMode = RunningMode
-      .valueOf(conf.get(AngelConf.ANGEL_RUNNING_MODE, AngelConf.DEFAULT_ANGEL_RUNNING_MODE));
+        .valueOf(conf.get(AngelConf.ANGEL_RUNNING_MODE, AngelConf.DEFAULT_ANGEL_RUNNING_MODE));
     LOG.info("running mode = " + runningMode);
     boolean deleteOnExist = conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
-      AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST);
+        AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST);
 
     String path = null;
     if (actionType.matches("train") || actionType.matches("inctrain")) {
@@ -867,9 +914,9 @@ public abstract class AngelClient implements AngelClientInterface {
 
     if (path == null) {
       throw new IOException(
-        "output directory is null. you must set " + AngelConf.ANGEL_SAVE_MODEL_PATH
-          + " at training mode or set " + AngelConf.ANGEL_PREDICT_PATH + " at predict mode"
-          + AngelConf.ANGEL_SERVING_TEMP_PATH + "at serving mode");
+          "output directory is null. you must set " + AngelConf.ANGEL_SAVE_MODEL_PATH
+              + " at training mode or set " + AngelConf.ANGEL_PREDICT_PATH + " at predict mode"
+              + AngelConf.ANGEL_SERVING_TEMP_PATH + "at serving mode");
     }
     conf.set(AngelConf.ANGEL_JOB_OUTPUT_PATH, path);
 
@@ -878,8 +925,9 @@ public abstract class AngelClient implements AngelClientInterface {
     if (outFs.exists(outputPath)) {
       if (deleteOnExist) {
         outFs.delete(outputPath, true);
-        if(outFs.exists(outputPath)) {
-          throw new IOException("output path " + outputPath + " already exist, remove it failed!!!");
+        if (outFs.exists(outputPath)) {
+          throw new IOException(
+              "output path " + outputPath + " already exist, remove it failed!!!");
         }
       } else {
         throw new IOException("output path " + outputPath + " already exist, please check");
@@ -891,7 +939,7 @@ public abstract class AngelClient implements AngelClientInterface {
       LOG.info("Make dir for model output parent path: " + outputParentPath);
       if (!outFs.mkdirs(outputParentPath)) {
         throw new IOException(
-          "Failed to make dir for model output parent path: " + outputParentPath);
+            "Failed to make dir for model output parent path: " + outputParentPath);
       }
     }
 
@@ -913,7 +961,7 @@ public abstract class AngelClient implements AngelClientInterface {
     Path tmpOutputPath = HdfsUtil.generateTmpDirectory(conf, getAppId(), outputPath);
 
     internalStateFile =
-      new Path(HdfsUtil.generateTmpDirectory(conf, getAppId(), outputPath), "state");
+        new Path(HdfsUtil.generateTmpDirectory(conf, getAppId(), outputPath), "state");
 
     conf.set(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH, tmpOutputPath.toString());
     LOG.info(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH + "=" + tmpOutputPath.toString());
@@ -924,8 +972,8 @@ public abstract class AngelClient implements AngelClientInterface {
   }
 
   protected void setUser()
-    throws ClassNotFoundException, NoSuchFieldException, SecurityException, InstantiationException,
-    IllegalAccessException, IOException {
+      throws ClassNotFoundException, NoSuchFieldException, SecurityException, InstantiationException,
+      IllegalAccessException, IOException {
     userName = UGITools.getCurrentUser(conf).getShortUserName();
     conf.set(AngelConf.USER_NAME, userName);
   }
@@ -948,7 +996,7 @@ public abstract class AngelClient implements AngelClientInterface {
 
     if (memoryGBStr == null && memoryMBStr != null) {
       LOG.warn("use deprecated parameter " + AngelConf.ANGEL_AM_MEMORY_MB + ", you can use "
-        + AngelConf.ANGEL_AM_MEMORY_GB + " instead.");
+          + AngelConf.ANGEL_AM_MEMORY_GB + " instead.");
 
       try {
         int memoryMB = Integer.valueOf(memoryMBStr);
@@ -963,7 +1011,7 @@ public abstract class AngelClient implements AngelClientInterface {
 
     if (memoryGBStr == null && memoryMBStr != null) {
       LOG.warn("use deprecated parameter " + AngelConf.ANGEL_WORKER_MEMORY_MB + ", you can use "
-        + AngelConf.ANGEL_WORKER_MEMORY_GB + " instead.");
+          + AngelConf.ANGEL_WORKER_MEMORY_GB + " instead.");
 
       try {
         int memoryMB = Integer.valueOf(memoryMBStr);
@@ -978,7 +1026,7 @@ public abstract class AngelClient implements AngelClientInterface {
 
     if (memoryGBStr == null && memoryMBStr != null) {
       LOG.warn("use deprecated parameter " + AngelConf.ANGEL_PS_MEMORY_MB + ", you can use "
-        + AngelConf.ANGEL_PS_MEMORY_GB + " instead.");
+          + AngelConf.ANGEL_PS_MEMORY_GB + " instead.");
 
       try {
         int memoryMB = Integer.valueOf(memoryMBStr);
@@ -1004,14 +1052,14 @@ public abstract class AngelClient implements AngelClientInterface {
     }
 
     coreNum =
-      conf.getInt(AngelConf.ANGEL_WORKER_CPU_VCORES, AngelConf.DEFAULT_ANGEL_WORKER_CPU_VCORES);
+        conf.getInt(AngelConf.ANGEL_WORKER_CPU_VCORES, AngelConf.DEFAULT_ANGEL_WORKER_CPU_VCORES);
     if (coreNum <= 0) {
       sb.append(AngelConf.ANGEL_WORKER_CPU_VCORES + " should > 0");
       sb.append("\n");
     }
 
     memNum =
-      conf.getInt(AngelConf.ANGEL_WORKER_MEMORY_GB, AngelConf.DEFAULT_ANGEL_WORKER_MEMORY_GB);
+        conf.getInt(AngelConf.ANGEL_WORKER_MEMORY_GB, AngelConf.DEFAULT_ANGEL_WORKER_MEMORY_GB);
     if (memNum <= 0) {
       sb.append(AngelConf.ANGEL_WORKER_MEMORY_GB + " should > 0");
       sb.append("\n");
@@ -1038,7 +1086,7 @@ public abstract class AngelClient implements AngelClientInterface {
     boolean isAllPSReady = true;
     while (true) {
       GetAllPSLocationResponse response =
-        master.getAllPSLocation(null, GetAllPSLocationRequest.newBuilder().build());
+          master.getAllPSLocation(null, GetAllPSLocationRequest.newBuilder().build());
       List<PSLocationProto> psLocs = response.getPsLocationsList();
       int size = psLocs.size();
       if (size == psNumber) {
@@ -1058,7 +1106,8 @@ public abstract class AngelClient implements AngelClientInterface {
     }
   }
 
-  @Override public void close() {
+  @Override
+  public void close() {
     TConnectionManager.deleteAllConnections(true);
     TConnectionManager.shutDown();
   }
