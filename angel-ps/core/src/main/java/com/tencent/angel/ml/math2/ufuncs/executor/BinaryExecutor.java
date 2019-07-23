@@ -47,7 +47,7 @@ public class BinaryExecutor {
       if (op.isInplace()) {
         switch (op.getOpType()) {
           case INTERSECTION:
-            return MixedBinaryInZAExecutor.apply((ComponentVector) v1, v2, op);
+            throw new AngelException("The operation is not supported!");
           case UNION:
             return MixedBinaryInNonZAExecutor.apply((ComponentVector) v1, v2, op);
           case ALL:
@@ -67,7 +67,7 @@ public class BinaryExecutor {
       if (op.isInplace()) {
         switch (op.getOpType()) {
           case INTERSECTION:
-            return SimpleBinaryInZAExecutor.apply(v1, v2, op);
+            throw new AngelException("The operation is not supported!");
           case UNION:
             return SimpleBinaryInNonZAExecutor.apply(v1, v2, op);
           case ALL:

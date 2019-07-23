@@ -175,7 +175,7 @@ class FtrlFM() extends Serializable {
     deltaZ.iadd(grad)
     Ufuncs.iaxpy2(deltaN, grad, 1)
     OptFuncs.iftrldetalintersect(grad, localN, alpha)
-    deltaZ.isub(grad.imul(weight))
+    deltaZ.isub(grad.mul(weight))
   }
 
   def gradient(w: Vector, v: Array[Vector], v2: Array[Vector],
@@ -196,8 +196,7 @@ class FtrlFM() extends Serializable {
 
     val gradV = v.zip(vdot).map { case (v0, dot) =>
       val grad = Ufuncs.fmgrad(feature, v0, dot)
-      grad.imul(multiplier)
-      grad
+      grad.mul(multiplier)
     }
 
     val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin

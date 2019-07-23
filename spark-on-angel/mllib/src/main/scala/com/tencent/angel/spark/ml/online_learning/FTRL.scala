@@ -196,13 +196,13 @@ class FTRL() extends Serializable {
 
       // sample the feature index with Possion sampling
       val possion = Ufuncs.ftrlpossion(localN, feature, possionRate).ifilter(10e-10)
-      val grad = possion.imul(multiplier)
+      val grad = possion.mul(multiplier)
 
       // calculate delta z/n
       deltaZ.iadd(grad)
       Ufuncs.iaxpy2(deltaN, grad, 1)
       OptFuncs.iftrldetalintersect(grad, localN, alpha)
-      deltaZ.isub(grad.imul(weight))
+      deltaZ.isub(grad.mul(weight))
 
       val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
       lossSum += loss
