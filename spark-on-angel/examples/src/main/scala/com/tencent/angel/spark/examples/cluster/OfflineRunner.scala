@@ -69,7 +69,7 @@ object OfflineRunner {
       }
     }
 
-    val sc   = new SparkContext(conf)
+    val sc = new SparkContext(conf)
 
     // start PS
     PSContext.getOrCreate(sc)

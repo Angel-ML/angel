@@ -28,11 +28,20 @@ import org.apache.commons.logging.LogFactory
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 
+import scala.collection.mutable
 
-class Adam(stepSize: Double, val gamma: Double, val beta: Double) extends Optimizer(stepSize) {
+
+class Adam(stepSize: Double, var gamma: Double, var beta: Double) extends Optimizer(stepSize) {
   private val LOG = LogFactory.getLog(classOf[Adam])
 
   override protected var numSlot: Int = 3
+
+  override def resetParam(paramMap: mutable.Map[String, Double]): Unit = {
+    super.resetParam(paramMap)
+    gamma = paramMap.getOrElse("gamma", gamma)
+    beta = paramMap.getOrElse("beta", beta)
+    epsilon = paramMap.getOrElse("epsilon", epsilon)
+  }
 
   override def update(matrixId: Int, numFactors: Int, epoch: Int): Future[VoidResult] = {
     update(matrixId, numFactors, epoch, 1)

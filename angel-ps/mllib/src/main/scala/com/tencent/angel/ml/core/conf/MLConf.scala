@@ -170,6 +170,31 @@ object MLConf {
   val KMEANS_C = "ml.kmeans.c"
   val DEFAULT_KMEANS_C = 0.1
 
+  // Tree Model Params
+  val ML_TREE_TASK_TYPE = "ml.tree.task.type"
+  val DEFAULT_ML_TREE_TASK_TYPE = "classification"
+  val ML_NUM_TREE = "ml.num.tree"
+  val DEFAULT_ML_NUM_TREE = 10
+  val ML_TREE_MAX_DEPTH = "ml.tree.max.depth"
+  val DEFAULT_ML_TREE_MAX_DEPTH = 2
+  val ML_TREE_MAX_BIN = "ml.tree.max.bin"
+  val DEFAULT_ML_TREE_MAX_BIN = 3
+  val ML_TREE_SUB_SAMPLE_RATE = "ml.tree.sub.sample.rate"
+  val DEFAULT_ML_TREE_SUB_SAMPLE_RATE = 1
+  val ML_TREE_CATEGORICAL_FEATURE = "ml.tree.categorical.feature"
+  val DEFAULT_ML_TREE_CATEGORICAL_FEATURE = ""
+  val ML_TREE_FEATURE_SAMPLE_STRATEGY = "ml.tree.feature.sample.strategy"
+  val DEFAULT_ML_TREE_FEATURE_SAMPLE_STRATEGY = "all"
+  val ML_TREE_NODE_MIN_INSTANCE = "ml.tree.node.min.instance"
+  val DEFAULT_ML_TREE_NODE_MIN_INSTANCE = 1
+  val ML_TREE_NODE_MIN_INFOGAIN = "ml.tree.node.min.infogain"
+  val DEFAULT_ML_TREE_NODE_MIN_INFOGAIN = 0
+
+  val ML_TREE_IMPURITY = "ml.tree.impurity"
+  val DEFAULT_ML_TREE_IMPURITY = "gini"
+  val ML_TREE_AGGRE_MAX_MEMORY_MB = "ml.tree.aggr.max.memory.mb"
+  val DEFAULT_ML_TREE_AGGRE_MAX_MEMORY_MB = 256
+
   // GBDT Params
   val ML_GBDT_TASK_TYPE = "ml.gbdt.task.type"
   val DEFAULT_ML_GBDT_TASK_TYPE = "classification"
@@ -191,7 +216,7 @@ object MLConf {
   val ML_GBDT_MIN_CHILD_WEIGHT = "ml.gbdt.min.child.weight"
   val DEFAULT_ML_GBDT_MIN_CHILD_WEIGHT = 0.01
   val ML_GBDT_REG_ALPHA = "ml.gbdt.reg.alpha"
-  val DEFAULT_ML_GBDT_REG_ALPHA = 0
+  val DEFAULT_ML_GBDT_REG_ALPHA = 0.0
   val ML_GBDT_REG_LAMBDA = "ml.gbdt.reg.lambda"
   val DEFAULT_ML_GBDT_REG_LAMBDA = 1.0
   val ML_GBDT_THREAD_NUM = "ml.gbdt.thread.num"
@@ -228,6 +253,14 @@ object MLConf {
   val ML_GBDT_MAX_LEAF_WEIGHT = "ml.gbdt.max.leaf.weight"
   val DEFAULT_ML_GBDT_MAX_LEAF_WEIGHT = 0.0
 
+  // AutoML params
+  val ML_AUTO_TUNER_ITER = "ml.auto.tuner.iter"
+  val DEFAULT_ML_AUTO_TUNER_ITER = 10
+  val ML_AUTO_TUNER_MODEL = "ml.auto.tuner.model"
+  val DEFAULT_ML_AUTO_TUNER_MODEL = "GaussianProcess"
+  val ML_AUTO_TUNER_MINIMIZE = "ml.auto.tuner.minimize"
+  val DEFAULT_ML_AUTO_TUNER_MINIMIZE = false
+  val ML_AUTO_TUNER_PARAMS = "ml.auto.tuner.params"
 
   /** The loss sum of all samples */
   val TRAIN_LOSS = "train.loss"

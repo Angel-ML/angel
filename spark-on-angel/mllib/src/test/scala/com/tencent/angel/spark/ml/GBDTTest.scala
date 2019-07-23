@@ -60,13 +60,13 @@ class GBDTTest extends PSFunSuite with SharedPSContext {
   test("GBDT") {
     try {
       trainer.initialize(trainPath, testPath)(sc)
-      val model = trainer.train()
-
+      val (model, metrics) = trainer.train()
+      metrics.foreach(println)
       println(s"Model will be saved to $modelPath")
       trainer.save(model, modelPath)(sc)
 
-      predictor.loadModel(sc, modelPath)
-      predictor.predict(sc, testPath, predPath)
+      predictor.loadModel(modelPath)(sc)
+      predictor.predict(testPath, predPath)(sc)
     } catch {
       case e: Exception => e.printStackTrace()
     } finally {

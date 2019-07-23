@@ -27,8 +27,17 @@ import com.tencent.angel.psagent.PSAgentContext
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 
-class FTRL(stepSize: Double, val alpha: Double, val beta: Double) extends Optimizer(stepSize) {
+import scala.collection.mutable
+
+
+class FTRL(stepSize: Double, var alpha: Double, var beta: Double) extends Optimizer(stepSize) {
   override protected var numSlot: Int = 3
+
+  override def resetParam(paramMap: mutable.Map[String, Double]): Unit = {
+    super.resetParam(paramMap)
+    alpha = paramMap.getOrElse("alpha", alpha)
+    beta = paramMap.getOrElse("beta", beta)
+  }
 
   override def update(matrixId: Int, numFactors: Int, epoch: Int): Future[VoidResult] = {
     update(matrixId, numFactors, epoch, 1)

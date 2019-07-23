@@ -24,12 +24,21 @@ import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import org.json4s.JsonAST.JObject
 
+import scala.collection.mutable
+
+
 abstract class Optimizer(stepSize: Double) extends Serializable {
   protected var numSlot: Int
   protected var lr: Double = stepSize
   protected var epsilon: Double = 1e-7
   protected var regL1Param: Double = SharedConf.get().getDouble(MLConf.ML_REG_L1)
   protected var regL2Param: Double = SharedConf.get().getDouble(MLConf.ML_REG_L2)
+
+  def resetParam(paramMap: mutable.Map[String, Double]): Unit = {
+    lr = paramMap.getOrElse(MLConf.ML_LEARN_RATE, lr)
+    regL1Param = paramMap.getOrElse(MLConf.ML_REG_L1, regL1Param)
+    regL2Param = paramMap.getOrElse(MLConf.ML_REG_L2, regL1Param)
+  }
 
   def setRegL1Param(regParam: Double): this.type = {
     this.regL1Param = regParam

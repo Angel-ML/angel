@@ -35,13 +35,15 @@ import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods.{pretty, render}
 
+import scala.collection.mutable
+
 class GraphModel extends Serializable {
 
   val sharedConf: SharedConf = SharedConf.get()
   implicit val graph: AngelGraph = new AngelGraph(new PlaceHolder())
   var jsonAst: JValue = sharedConf.getJson
-  val stepSize: Double = SharedConf.learningRate
-  val scheduler: StepSizeScheduler = StepSizeScheduler(SharedConf.getStepSizeScheduler, stepSize)
+  var stepSize: Double = SharedConf.learningRate
+  var scheduler: StepSizeScheduler = StepSizeScheduler(SharedConf.getStepSizeScheduler, stepSize)
 
   def ensureJsonAst(): Unit = {
     if (jsonAst == null) {
@@ -53,6 +55,13 @@ class GraphModel extends Serializable {
   def network(): Unit = {
     ensureJsonAst()
     JsonUtils.fillGraph(jsonAst)
+  }
+
+  def resetParam(paramMap: mutable.Map[String, Double]): this.type = {
+    stepSize = paramMap.getOrElse(MLConf.ML_LEARN_RATE, stepSize)
+    scheduler = StepSizeScheduler(SharedConf.getStepSizeScheduler, stepSize)
+    graph.resetParam(paramMap)
+    this
   }
 
   def init(taskNum: Int): Unit = {

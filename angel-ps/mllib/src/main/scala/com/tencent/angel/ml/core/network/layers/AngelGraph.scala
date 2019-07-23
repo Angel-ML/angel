@@ -35,6 +35,7 @@ import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 
 import scala.collection.mutable
+
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 class TimeStats(
@@ -161,6 +162,13 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
 
   def init(taskId: Int = 0): Unit = {
     trainableLayer.foreach { layer => layer.init(taskId) }
+  }
+
+  def resetParam(paramMap: mutable.Map[String, Double]): this.type = {
+    trainableLayer.foreach { trainable =>
+      trainable.optimizer.resetParam(paramMap)
+    }
+    this
   }
 
   /**

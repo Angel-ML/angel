@@ -27,8 +27,16 @@ import com.tencent.angel.psagent.PSAgentContext
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
-class Momentum(stepSize: Double, val momentum: Double) extends Optimizer(stepSize) {
+import scala.collection.mutable
+
+
+class Momentum(stepSize: Double, var momentum: Double) extends Optimizer(stepSize) {
   override protected var numSlot: Int = 2
+
+  override def resetParam(paramMap: mutable.Map[String, Double]): Unit = {
+    super.resetParam(paramMap)
+    momentum = paramMap.getOrElse("momentum", momentum)
+  }
 
   override def update(matrixId: Int, numFactors: Int, epoch: Int = 0): Future[VoidResult] = {
     update(matrixId, numFactors, epoch, 1)

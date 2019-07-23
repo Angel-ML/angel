@@ -32,7 +32,7 @@ public class GBDTPredictExample {
     SparkContext sc = new SparkContext(conf);
     String modelPath = "xxx";
     GBDTPredictor predictor = new GBDTPredictor();
-    predictor.loadModel(sc, modelPath);
+    predictor.loadModel(modelPath, sc);
     int dim = 181;
     // predict sparse instance with indices and values
     int[] indices = {6, 7, 11, 18, 20, 24, 27, 30, 33, 34, 38, 42, 45, 47, 53, 60, 61, 65, 69, 70, 75, 78, 79, 84, 87, 88, 92, 99, 101, 103, 108, 110, 112, 119, 123, 124, 128, 131, 134, 137, 139, 142, 147, 149, 156, 157, 161, 164, 166, 171, 173, 180};
