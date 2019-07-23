@@ -12,10 +12,10 @@ Angel中的大部分算法都是基于[计算图](./computinggraph_on_angel.md)�
         - BiInnerSumCross: FM中使用的二阶特征隐式交叉方式
         - BiIntecationCross: NFM中使用的特征交叉方式
 - join: 有两个或多个输入, 一个输出的层, 这类层也较多, 主要有:
-    - ConcatLayer: 将多个输入层拼起来, 输入一个Dense矩阵
+    - ConcatLayer: 将多个输入层拼起来,输出一个Dense矩阵
     - SumPooling: 将输入元素对应相加后输出
     - MulPooling: 将输入元素对应相乘后输出
-    - DotPooling: 先将对应元素相乘, 然后按行相加, 输入n行一列的矩阵
+    - DotPooling: 先将对应元素相乘, 然后按行相加, 输出n行一列的矩阵
 
 
 ## 1. 输入层
@@ -23,7 +23,7 @@ Angel中的输入层有两类:
 - SimpleInputLayer
 - Embedding
 
-### 1.1 SimpleInpuyLayer
+### 1.1 SimpleInputLayer
 顾名思义, 它是接受输入的. 类的构造函数如下:
 ```scala
 class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, override val optimizer: Optimizer)(implicit graph: AngelGraph)
