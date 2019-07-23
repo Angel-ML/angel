@@ -37,7 +37,7 @@ abstract class AcqOptimizer(
     * @param numPoints : Number of queried points.
     * @return A set of tuple(acquisition value, Configuration).
     */
-  def maximize(numPoints: Int, sorted: Boolean = true): Array[(Double, Configuration)]
+  def maximize(numPoints: Int, sorted: Boolean = true): (Array[(Double, Configuration)],Array[Array[Double]])
 
-  def maximize: (Double, Configuration)
+  def maximize: (Array[(Double, Configuration)],Array[Array[Double]])
 }

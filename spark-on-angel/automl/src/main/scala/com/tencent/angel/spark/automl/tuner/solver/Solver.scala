@@ -25,10 +25,11 @@ import com.tencent.angel.spark.automl.tuner.config.{Configuration, Configuration
 import com.tencent.angel.spark.automl.tuner.parameter.{ContinuousSpace, DiscreteSpace, ParamSpace}
 import com.tencent.angel.spark.automl.tuner.surrogate._
 import com.tencent.angel.spark.automl.utils.AutoMLException
-import org.apache.spark.ml.linalg.Vector
+import org.apache.spark.ml.linalg.{Vector,Vectors}
 import org.apache.commons.logging.{Log, LogFactory}
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 class Solver(
               val cs: ConfigurationSpace,
@@ -40,6 +41,8 @@ class Solver(
   val LOG: Log = LogFactory.getLog(classOf[Solver])
 
   val PARAM_TYPES: Array[String] = Array("discrete", "continuous")
+
+  var features:Array[Array[Double]] = Array[Array[Double]]()
 
   lazy val valid: Boolean = ensureValid()
 
@@ -91,7 +94,8 @@ class Solver(
   def suggest(): Array[Configuration] = {
     surrogateMode match {
       case SurrogateMode.GP | SurrogateMode.RF =>
-        val acqAndConfig = optimizer.maximize(TunerParam.batchSize)
+        val (acqAndConfig:Array[(Double, Configuration)],cateValues:Array[Array[Double]]) = optimizer.maximize(TunerParam.batchSize)
+        features = cateValues
         print(s"suggest configurations: ")
         acqAndConfig.foreach { case (acq, config) =>
           print(s">> config[${config.getVector.toArray.mkString("(", ",", ")")}], " +
@@ -100,9 +104,13 @@ class Solver(
         println()
         acqAndConfig.map(_._2)
       case SurrogateMode.RANDOM =>
-        cs.randomSample(TunerParam.batchSize)
+        val (configs, cateValues) = cs.randomSample(TunerParam.batchSize)
+        features = cateValues
+        configs
       case SurrogateMode.GRID =>
-        cs.gridSample(TunerParam.batchSize)
+        val (configs:Array[Configuration],cateValues:Array[Array[Double]]) = cs.gridSample(TunerParam.batchSize)
+        features = cateValues
+        configs
     }
   }
 
@@ -115,24 +123,75 @@ class Solver(
   def feed(configs: Array[Configuration], Y: Array[Double]): Unit = {
     //println(s"feed ${configs.size} configurations")
     if (!configs.isEmpty && !Y.isEmpty) {
+      val configArrays = configs.map(_.getVector)
+      var oneHotConfigArray = new ArrayBuffer[Vector]()
+      configArrays.foreach{ config =>
+        val configArray = config.toArray
+        var oneHotConfig = new ArrayBuffer[Double]()
+        for ( (feature, config) <- (features zip configArray)){
+          if (feature.contains(Double.MaxValue)){
+            oneHotConfig +=config
+          }
+          else {
+            feature.foreach{ value =>
+              if(value == config){
+                oneHotConfig += 1.0
+              }
+              else {
+                oneHotConfig += 0.0
+              }
+            }
+          }
+        }
+        oneHotConfigArray += Vectors.dense(oneHotConfig.toArray)
+      }
       if (surrogate.minimize) {
-        surrogate.update(configs.map(_.getVector), Y.map(-_))
+        surrogate.update(oneHotConfigArray.toArray, Y.map(-_))
       }
       else {
-        surrogate.update(configs.map(_.getVector), Y)
+        surrogate.update(oneHotConfigArray.toArray, Y)
       }
     }
     cs.addHistories(configs.map(_.getVector))
   }
 
   def feed(config: Configuration, y: Double): Unit = {
+    val configArray = config.getVector.toArray
+    var oneHotConfig = new ArrayBuffer[Double]()
+    for ( (feature, config) <- (features zip configArray)){
+      if (feature.contains(Double.MaxValue)){
+        oneHotConfig +=config
+      }
+      else {
+        feature.foreach{ value =>
+          if(value == config){
+            oneHotConfig += 1.0
+          }
+          else {
+            oneHotConfig += 0.0
+          }
+        }
+      }
+    }
     if (surrogate.minimize)
-      surrogate.update(config.getVector, -y)
+      surrogate.update(Vectors.dense(oneHotConfig.toArray), -y)
     else
-      surrogate.update(config.getVector, y)
+      surrogate.update(Vectors.dense(oneHotConfig.toArray), y)
   }
 
-  def optimal(): (Vector, Double) = surrogate.curBest
+  def optimal(): (Vector, Double) = {
+    var configArray:ArrayBuffer[Double] = new ArrayBuffer[Double]()
+    for ((feature,config) <- features.flatMap(_.toList) zip surrogate.curBest._1.toArray) {
+      if(feature==Double.MaxValue) {
+        configArray +=  config
+      }
+      else if(config!=0.0) {
+        configArray += feature
+      }
+    }
+    val configVec = Vectors.dense(configArray.toArray)
+    (configVec,surrogate.curBest._2)
+  }
 
   def stop(): Unit = {
     surrogate.stop
