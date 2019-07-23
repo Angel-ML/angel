@@ -21,7 +21,7 @@ package com.tencent.angel.matrix.psf.update.enhance
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc}
-import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.servingmath2.utils.RowType
 import com.tencent.angel.ps.storage.matrix.ServerPartition
 import com.tencent.angel.ps.storage.vector._
 

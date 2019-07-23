@@ -19,8 +19,8 @@
 package com.tencent.angel.ml.psf.columns;
 
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.math2.VFactory;
-import com.tencent.angel.ml.math2.vector.*;
+import com.tencent.angel.ml.servingmath2.VFactory;
+import com.tencent.angel.ml.servingmath2.vector.*;
 import com.tencent.angel.matrix.psf.get.base.PartitionGetResult;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;

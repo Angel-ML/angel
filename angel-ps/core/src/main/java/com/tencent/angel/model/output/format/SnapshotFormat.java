@@ -17,14 +17,14 @@
 
 package com.tencent.angel.model.output.format;
 
-import com.tencent.angel.ml.math2.vector.IntDoubleVector;
-import com.tencent.angel.ml.math2.vector.IntFloatVector;
-import com.tencent.angel.ml.math2.vector.IntIntVector;
-import com.tencent.angel.ml.math2.vector.IntLongVector;
-import com.tencent.angel.ml.math2.vector.LongDoubleVector;
-import com.tencent.angel.ml.math2.vector.LongFloatVector;
-import com.tencent.angel.ml.math2.vector.LongIntVector;
-import com.tencent.angel.ml.math2.vector.LongLongVector;
+import com.tencent.angel.ml.servingmath2.vector.IntDoubleVector;
+import com.tencent.angel.ml.servingmath2.vector.IntFloatVector;
+import com.tencent.angel.ml.servingmath2.vector.IntIntVector;
+import com.tencent.angel.ml.servingmath2.vector.IntLongVector;
+import com.tencent.angel.ml.servingmath2.vector.LongDoubleVector;
+import com.tencent.angel.ml.servingmath2.vector.LongFloatVector;
+import com.tencent.angel.ml.servingmath2.vector.LongIntVector;
+import com.tencent.angel.ml.servingmath2.vector.LongLongVector;
 import com.tencent.angel.model.PSMatrixLoadContext;
 import com.tencent.angel.model.PSMatrixSaveContext;
 import com.tencent.angel.model.io.PSMatrixLoaderSaverImpl;

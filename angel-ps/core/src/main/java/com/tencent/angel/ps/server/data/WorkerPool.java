@@ -23,7 +23,7 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.WaitLockTimeOutException;
 import com.tencent.angel.matrix.PartitionLocation;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.servingmath2.utils.RowType;
 import com.tencent.angel.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.matrix.psf.update.base.UpdateFunc;

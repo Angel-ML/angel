@@ -26,24 +26,25 @@ import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.optimizer.decayer.StepSizeScheduler
 import com.tencent.angel.ml.core.utils.ValidationUtils
 import com.tencent.angel.ml.core.{AngelEnvContext, MLLearner, MLModel}
-import com.tencent.angel.ml.math2.utils.LabeledData
+import com.tencent.angel.ml.servingmath2.utils.LabeledData
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.{Log, LogFactory}
 
-class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(ctx) {
+class GraphLearner(conf: SharedConf, ctx: TaskContext) extends MLLearner(ctx) {
   val LOG: Log = LogFactory.getLog(classOf[GraphLearner])
+  private implicit val sharedConf: SharedConf = conf
 
-  val epochNum: Int = SharedConf.epochNum
-  val indexRange: Long = SharedConf.indexRange
-  val modelSize: Long = SharedConf.modelSize
-  val lr0: Double = SharedConf.learningRate
+  val epochNum: Int = conf.epochNum
+  val indexRange: Long = conf.indexRange
+  val modelSize: Long = conf.modelSize
+  val lr0: Double = conf.learningRate
 
   // Init Graph Model
-  val model: AngelModel = AngelModel(modelClassName, conf, ctx)
+  val model: AngelModel = new AngelModel(conf, ctx.getTotalTaskNum)
   model.buildNetwork()
   model.createMatrices(AngelEnvContext(null))
   val graph: Graph = model.graph
-  val ssScheduler: StepSizeScheduler = StepSizeScheduler(SharedConf.stepSizeScheduler, lr0)
+  val ssScheduler: StepSizeScheduler = StepSizeScheduler(conf.stepSizeScheduler, lr0)
   val decayOnBatch: Boolean = conf.getBoolean(MLCoreConf.ML_OPT_DECAY_ON_BATCH,
     MLCoreConf.DEFAULT_ML_OPT_DECAY_ON_BATCH)
 
@@ -125,11 +126,11 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
 
     barrier()
 
-    val numBatch = SharedConf.numUpdatePerEpoch
+    val numBatch = conf.numUpdatePerEpoch
     val batchSize: Int = (trainDataSize + numBatch - 1) / numBatch
     val batchData = new Array[LabeledData](batchSize)
 
-    if (SharedConf.useShuffle) {
+    if (conf.useShuffle) {
       posTrainData.shuffle()
       if (negTrainData != null) {
         negTrainData.shuffle()
@@ -202,7 +203,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
 
     new Iterator[Array[LabeledData]] {
       private var count = 0
-      val posnegRatio: Double = SharedConf.posnegRatio()
+      val posnegRatio: Double = conf.posnegRatio()
       val posPreNum: Int = Math.max((posData.size() + numBatch - 1) / numBatch,
         batchData.length * posnegRatio / (1.0 + posnegRatio)).toInt
 

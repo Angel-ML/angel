@@ -21,7 +21,7 @@ package com.tencent.angel.matrix.psf.update.enhance.zip2.func
 import io.netty.buffer.ByteBuf
 import com.tencent.angel.common.Serialize
 import com.tencent.angel.matrix.psf.update.enhance.zip2.Zip2Map
-import com.tencent.angel.ml.math2.ufuncs.expression.Binary
+import com.tencent.angel.ml.servingmath2.ufuncs.expression.Binary
 
 
 /**

@@ -20,7 +20,7 @@ package com.tencent.angel.matrix.psf.update.enhance.zip2.func
 
 import io.netty.buffer.ByteBuf
 
-import com.tencent.angel.ml.math2.ufuncs.expression.Axpy
+import com.tencent.angel.ml.servingmath2.ufuncs.expression.Axpy
 
 class AxpyFunc(scalar: Double) extends Axpy(true, scalar) with Zip2MapFunc {
   def this() = this(Double.NaN)

@@ -17,7 +17,7 @@
 
 package com.tencent.angel.model.io;
 
-import com.tencent.angel.ml.math2.matrix.Matrix;
+import com.tencent.angel.ml.servingmath2.matrix.Matrix;
 import com.tencent.angel.model.MatrixLoadContext;
 import com.tencent.angel.model.MatrixSaveContext;
 import java.io.IOException;

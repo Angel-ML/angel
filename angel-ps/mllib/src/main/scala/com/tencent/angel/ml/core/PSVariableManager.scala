@@ -5,13 +5,14 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.variable.{PSVariable, VarState, VariableManager}
-import com.tencent.angel.ml.math2.vector.Vector
+import com.tencent.angel.ml.servingmath2.vector.Vector
 import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
 import org.apache.hadoop.conf.Configuration
 
 import scala.collection.JavaConversions._
 
-class PSVariableManager private(isSparseFormat: Boolean) extends VariableManager {
+class PSVariableManager(isSparseFormat: Boolean, conf: SharedConf)
+  extends VariableManager(isSparseFormat, conf) {
 
   override def createALL[T](envCtx: EnvContext[T]): Unit = {
     envCtx match {
@@ -64,30 +65,17 @@ class PSVariableManager private(isSparseFormat: Boolean) extends VariableManager
   override def saveALL[T](envCtx: EnvContext[T], path: String): Unit = {
     envCtx match {
       case AngelEnvContext(client: AngelClient) if client != null =>
-        val sharedConf = SharedConf.get()
         val saveContext = new ModelSaveContext
         getALLVariables.foreach { variable =>
           assert(variable.getState == VarState.Initialized || variable.getState == VarState.Ready)
           saveContext.addMatrix(new MatrixSaveContext(variable.name, variable.formatClassName))
         }
-        saveContext.setSavePath(sharedConf.get(AngelConf.ANGEL_JOB_OUTPUT_PATH, ""))
-        val deleteExistsFile = sharedConf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
+        saveContext.setSavePath(conf.get(AngelConf.ANGEL_JOB_OUTPUT_PATH, ""))
+        val deleteExistsFile = conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
           AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST)
         client.save(saveContext, deleteExistsFile)
       case _ =>
         getALLVariables.foreach { variable => variable.save(envCtx, path) }
     }
-  }
-}
-
-object PSVariableManager {
-  private val vmtl: ThreadLocal[VariableManager]  = new ThreadLocal[VariableManager]()
-
-  def get(isSparseFormat: Boolean): VariableManager = synchronized {
-    if (vmtl.get() == null) {
-      vmtl.set(new PSVariableManager(isSparseFormat))
-    }
-
-    vmtl.get()
   }
 }

@@ -10,7 +10,7 @@ import com.tencent.angel.ml.core.AngelEnvContext
 import com.tencent.angel.ml.core.conf.{AngelMLConf, SharedConf}
 import com.tencent.angel.ml.core.network.EnvContext
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
-import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.servingmath2.utils.RowType
 import com.tencent.angel.model._
 import org.apache.hadoop.conf.Configuration
 
@@ -20,7 +20,7 @@ abstract class PSVariable(name: String,
                           updater: Updater,
                           formatClassName: String,
                           allowPullWithIndex: Boolean)
-                         (implicit variableManager: VariableManager, cilsImpl: CILSImpl)
+                         (implicit  conf: SharedConf, variableManager: VariableManager, cilsImpl: CILSImpl)
   extends Variable(name, rowType, updater, formatClassName, allowPullWithIndex) {
 
   protected var matrixId: Int = -1
@@ -58,7 +58,7 @@ abstract class PSVariable(name: String,
       this.stddev = stddev
 
       if (state == VarState.Created) {
-        val loadModelPath = SharedConf.get().get(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
+        val loadModelPath = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
         if (taskFlag == 0 && rowType.isDense && loadModelPath.isEmpty) {
           if (matrixId == -1) {
             matrixId = PSMatrixUtils.getMatrixId(name)

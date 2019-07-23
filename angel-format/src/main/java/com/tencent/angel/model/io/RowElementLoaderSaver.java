@@ -17,16 +17,16 @@
 
 package com.tencent.angel.model.io;
 
-import com.tencent.angel.ml.math2.matrix.Matrix;
-import com.tencent.angel.ml.math2.vector.IntDoubleVector;
-import com.tencent.angel.ml.math2.vector.IntFloatVector;
-import com.tencent.angel.ml.math2.vector.IntIntVector;
-import com.tencent.angel.ml.math2.vector.IntLongVector;
-import com.tencent.angel.ml.math2.vector.LongDoubleVector;
-import com.tencent.angel.ml.math2.vector.LongFloatVector;
-import com.tencent.angel.ml.math2.vector.LongIntVector;
-import com.tencent.angel.ml.math2.vector.LongLongVector;
-import com.tencent.angel.ml.math2.vector.Vector;
+import com.tencent.angel.ml.servingmath2.matrix.Matrix;
+import com.tencent.angel.ml.servingmath2.vector.IntDoubleVector;
+import com.tencent.angel.ml.servingmath2.vector.IntFloatVector;
+import com.tencent.angel.ml.servingmath2.vector.IntIntVector;
+import com.tencent.angel.ml.servingmath2.vector.IntLongVector;
+import com.tencent.angel.ml.servingmath2.vector.LongDoubleVector;
+import com.tencent.angel.ml.servingmath2.vector.LongFloatVector;
+import com.tencent.angel.ml.servingmath2.vector.LongIntVector;
+import com.tencent.angel.ml.servingmath2.vector.LongLongVector;
+import com.tencent.angel.ml.servingmath2.vector.Vector;
 import com.tencent.angel.model.MatrixLoadContext;
 import com.tencent.angel.model.output.element.IntDoubleElement;
 import com.tencent.angel.model.output.element.IntFloatElement;

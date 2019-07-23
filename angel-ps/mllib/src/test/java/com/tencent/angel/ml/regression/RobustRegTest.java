@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -22,7 +22,7 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.core.PSOptimizerProvider;
 import com.tencent.angel.ml.core.conf.MLCoreConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.servingmath2.utils.RowType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -33,10 +33,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class RobustRegTest {
+
   private Configuration conf = new Configuration();
   private static final Log LOG = LogFactory.getLog(RobustRegTest.class);
   private static String LOCAL_FS = FileSystem.DEFAULT_FS;
-  private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.AngelModel";
+  //private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.AngelModel";
+  private static String CLASSBASE = "com.tencent.angel.ml.regression.RobustRegression";
   private static String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
 
 
@@ -44,7 +46,8 @@ public class RobustRegTest {
     PropertyConfigurator.configure("../conf/log4j.properties");
   }
 
-  @Before public void setConf() {
+  @Before
+  public void setConf() {
     try {
       // Feature number of train data
       int featureNum = 8;
@@ -104,6 +107,8 @@ public class RobustRegTest {
       conf.set(MLCoreConf.ML_REG_L2(), String.valueOf(reg));
       conf.setLong(MLCoreConf.ML_MODEL_SIZE(), 124L);
       conf.set(MLCoreConf.ML_MODEL_CLASS_NAME(), CLASSBASE);
+      String angelConfFile = "./src/test/jsons/robustreg.json";
+      conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
     } catch (Exception e) {
       LOG.error("setup failed ", e);
       throw e;
@@ -134,7 +139,6 @@ public class RobustRegTest {
     }
   }
 
-
   private void incTrain() {
     try {
       String inputPath = "../../data/abalone/abalone_8d_train.libsvm";
@@ -153,7 +157,6 @@ public class RobustRegTest {
       // Set log path
       conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
 
-
       GraphRunner runner = new GraphRunner();
       runner.train(conf);
     } catch (Exception e) {
@@ -161,7 +164,6 @@ public class RobustRegTest {
       throw e;
     }
   }
-
 
   private void predictTest() {
     try {
@@ -190,7 +192,8 @@ public class RobustRegTest {
     }
   }
 
-  @Test public void testLR() throws Exception {
+  @Test
+  public void testLR() throws Exception {
     setConf();
     trainTest();
     incTrain();

@@ -19,8 +19,8 @@
 package com.tencent.angel.psagent.matrix;
 
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.math2.matrix.Matrix;
-import com.tencent.angel.ml.math2.vector.Vector;
+import com.tencent.angel.ml.servingmath2.matrix.Matrix;
+import com.tencent.angel.ml.servingmath2.vector.Vector;
 import com.tencent.angel.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.matrix.psf.get.base.GetResult;
 import com.tencent.angel.matrix.psf.update.base.UpdateFunc;

@@ -30,7 +30,7 @@ import com.tencent.angel.matrix.psf.get.indexed.IndexGet;
 import com.tencent.angel.matrix.psf.get.indexed.IndexGetParam;
 import com.tencent.angel.matrix.psf.get.indexed.LongIndexGet;
 import com.tencent.angel.matrix.psf.get.indexed.LongIndexGetParam;
-import com.tencent.angel.ml.math2.vector.Vector;
+import com.tencent.angel.ml.servingmath2.vector.Vector;
 import com.tencent.angel.matrix.MatrixMeta;
 import com.tencent.angel.matrix.psf.update.base.VoidResult;
 import com.tencent.angel.psagent.PSAgentContext;

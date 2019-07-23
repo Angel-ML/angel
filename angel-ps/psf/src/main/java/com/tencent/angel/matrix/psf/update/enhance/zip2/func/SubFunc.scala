@@ -18,6 +18,6 @@
 
 package com.tencent.angel.matrix.psf.update.enhance.zip2.func
 
-import com.tencent.angel.ml.math2.ufuncs.expression.Sub
+import com.tencent.angel.ml.servingmath2.ufuncs.expression.Sub
 
 class SubFunc extends Sub(false) with Zip2MapFunc

@@ -1,16 +1,17 @@
 package com.tencent.angel.ml.core
 
 import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.network.layers.PlaceHolder
+import com.tencent.angel.ml.core.network.PlaceHolder
 import com.tencent.angel.ml.core.utils.{MLException, RowTypeUtils}
 import com.tencent.angel.ml.core.variable._
-import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.servingmath2.utils.RowType
 
-class PSVariableProvider(dataFormat: String, modelType: RowType, placeHolder: PlaceHolder)(
-  implicit variableManager: VariableManager, cilsImpl: CILSImpl) extends VariableProvider {
-  private val validIndexNum: Long = SharedConf.modelSize
+class PSVariableProvider(dataFormat: String, modelType: RowType)(
+  implicit conf: SharedConf, variableManager: VariableManager, cilsImpl: CILSImpl) extends VariableProvider {
+  private val validIndexNum: Long = conf.modelSize
 
-  override def getEmbedVariable(name: String, numRows: Long, numCols: Long, updater: Updater, formatClassName: String, taskNum: Int): EmbedVariable = {
+  override def getEmbedVariable(name: String, numRows: Long, numCols: Long, updater: Updater,
+                                formatClassName: String, placeHolder: PlaceHolder, taskNum: Int): EmbedVariable = {
     new PSEmbedVariable(name, numCols.toInt, numRows, validIndexNum, updater, modelType,
       formatClassName, true, taskNum, placeHolder)
   }

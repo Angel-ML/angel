@@ -29,7 +29,7 @@ import com.tencent.angel.master.task.AMTask;
 import com.tencent.angel.master.worker.attempt.WorkerAttempt;
 import com.tencent.angel.master.worker.worker.AMWorker;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroup;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.servingmath2.utils.RowType;
 import com.tencent.angel.matrix.*;
 import com.tencent.angel.model.*;
 import com.tencent.angel.protobuf.generated.MLProtos.*;

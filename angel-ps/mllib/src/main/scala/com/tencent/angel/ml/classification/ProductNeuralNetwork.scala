@@ -19,28 +19,27 @@
 package com.tencent.angel.ml.classification
 
 import com.tencent.angel.ml.core.PSOptimizerProvider
-import com.tencent.angel.ml.core.conf.MLCoreConf
+import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.graphsubmit.AngelModel
 import com.tencent.angel.ml.core.network.{Identity, TransFunc}
 import com.tencent.angel.ml.core.network.layers.{Layer, LossLayer}
-import com.tencent.angel.ml.core.network.layers.join.{ConcatLayer, SumPooling}
-import com.tencent.angel.ml.core.network.layers.linear.{BiInnerCross, FCLayer}
-import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer}
+import com.tencent.angel.ml.core.network.layers.multiary.{ConcatLayer, SumPooling}
+import com.tencent.angel.ml.core.network.layers.unary.{BiInnerCross, FCLayer}
+import com.tencent.angel.ml.core.network.layers.leaf.{Embedding, SimpleInputLayer}
 import com.tencent.angel.ml.core.optimizer.loss.LogLoss
 import com.tencent.angel.worker.task.TaskContext
-import org.apache.hadoop.conf.Configuration
 
 
-class ProductNeuralNetwork(conf: Configuration, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
-  val numFields: Int = sharedConf.getInt(MLCoreConf.ML_FIELD_NUM, MLCoreConf.DEFAULT_ML_FIELD_NUM)
-  val numFactors: Int = sharedConf.getInt(MLCoreConf.ML_RANK_NUM, MLCoreConf.DEFAULT_ML_RANK_NUM)
-  val optProvider = new PSOptimizerProvider()
+class ProductNeuralNetwork(conf: SharedConf, _ctx: TaskContext = null) extends AngelModel(conf, _ctx.getTotalTaskNum) {
+  val numFields: Int = conf.getInt(MLCoreConf.ML_FIELD_NUM, MLCoreConf.DEFAULT_ML_FIELD_NUM)
+  val numFactors: Int = conf.getInt(MLCoreConf.ML_RANK_NUM, MLCoreConf.DEFAULT_ML_RANK_NUM)
+  val optProvider = new PSOptimizerProvider(conf)
 
   override def buildNetwork(): this.type = {
-    val inputOptName: String = sharedConf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
+    val inputOptName: String = conf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
     val wide = new SimpleInputLayer("input", 1, new Identity(), optProvider.getOptimizer(inputOptName))
 
-    val embeddingOptName: String = sharedConf.get(MLCoreConf.ML_EMBEDDING_OPTIMIZER, MLCoreConf.DEFAULT_ML_EMBEDDING_OPTIMIZER)
+    val embeddingOptName: String = conf.get(MLCoreConf.ML_EMBEDDING_OPTIMIZER, MLCoreConf.DEFAULT_ML_EMBEDDING_OPTIMIZER)
     val embedding = new Embedding("embedding", numFields * numFactors, numFactors, optProvider.getOptimizer(embeddingOptName))
 
     val crossOutputDim = numFields * (numFields - 1) / 2
@@ -50,8 +49,8 @@ class ProductNeuralNetwork(conf: Configuration, _ctx: TaskContext = null) extend
     val concatLayer = new ConcatLayer("concatMatrix", concatOutputDim, Array[Layer](embedding, innerCross))
 
     var fcLayer: Layer = concatLayer
-    val fclayerParams = sharedConf.get(MLCoreConf.ML_FCLAYER_PARAMS, MLCoreConf.DEFAULT_ML_FCLAYER_PARAMS)
-    fclayerParams.split("|").zipWithIndex.foreach{ case (params: String, idx: Int) =>
+    val fclayerParams = conf.get(MLCoreConf.ML_FCLAYER_PARAMS, MLCoreConf.DEFAULT_ML_FCLAYER_PARAMS)
+    fclayerParams.split("|").zipWithIndex.foreach { case (params: String, idx: Int) =>
       val name = s"fclayer_$idx"
       params.split(":") match {
         case Array(outputDim: String, transFunc: String, optimizer: String) =>

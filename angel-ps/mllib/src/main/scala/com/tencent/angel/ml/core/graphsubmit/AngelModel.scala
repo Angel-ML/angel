@@ -23,34 +23,31 @@ import com.tencent.angel.ml.core._
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.core.network.Graph
-import com.tencent.angel.ml.core.network.layers.PlaceHolder
 import com.tencent.angel.ml.core.utils.JsonUtils
 import com.tencent.angel.ml.core.variable.{AngelCILSImpl, CILSImpl, VariableManager, VariableProvider}
-import com.tencent.angel.ml.math2.utils.LabeledData
-import com.tencent.angel.worker.task.TaskContext
-import org.apache.hadoop.conf.Configuration
+import com.tencent.angel.ml.servingmath2.utils.LabeledData
 
-class AngelModel(conf: Configuration, _ctx: TaskContext) extends GraphModel {
-  lazy val sharedConf: SharedConf = SharedConf.get()
-  lazy val batchSize: Int = SharedConf.batchSize
-  lazy val blockSize: Int = SharedConf.blockSize
 
-  override protected val placeHolder: PlaceHolder = new PlaceHolder(sharedConf)
-  override protected implicit val variableManager: VariableManager = PSVariableManager.get(isSparseFormat)
-  protected implicit val cilsImpl: CILSImpl = new AngelCILSImpl()
-  override protected val variableProvider: VariableProvider = new PSVariableProvider(dataFormat, modelType, placeHolder)
+class AngelModel(conf: SharedConf, taskNum: Int = -1) extends GraphModel(conf) {
+  lazy val batchSize: Int = conf.batchSize
+  lazy val blockSize: Int = conf.blockSize
+  private implicit val sharedConf: SharedConf = conf
 
-  implicit lazy val graph: Graph = if (_ctx != null) {
-    new Graph(variableProvider, placeHolder, sharedConf, _ctx.getTotalTaskNum)
+  override protected implicit val variableManager: VariableManager = new PSVariableManager(isSparseFormat, conf)
+  protected implicit val cilsImpl: CILSImpl = new AngelCILSImpl(conf)
+  override protected val variableProvider: VariableProvider = new PSVariableProvider(dataFormat, modelType)
+
+  implicit lazy val graph: Graph = if (taskNum != -1) {
+    new Graph(variableProvider, conf, taskNum)
   } else {
-    val totalTaskNum: Int = sharedConf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER,
-      AngelConf.DEFAULT_ANGEL_WORKERGROUP_NUMBER) * sharedConf.getInt(
+    val _taskNum: Int = conf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER,
+      AngelConf.DEFAULT_ANGEL_WORKERGROUP_NUMBER) * conf.getInt(
       AngelConf.ANGEL_TASK_ACTUAL_NUM, default = 1)
-    new Graph(variableProvider, placeHolder, sharedConf, totalTaskNum)
+    new Graph(variableProvider, conf, _taskNum)
   }
 
   override def buildNetwork(): this.type = {
-    JsonUtils.layerFromJson(sharedConf.getJson)
+    JsonUtils.layerFromJson(conf.getJson)
 
     this
   }
@@ -62,17 +59,17 @@ class AngelModel(conf: Configuration, _ctx: TaskContext) extends GraphModel {
     * @param storage predict data
     * @return predict result
     */
-  // def predict(storage: DataBlock[LabeledData]): List[PredictResult]
   override def predict(storage: DataBlock[LabeledData]): List[PredictResult] = {
     // new MemoryDataBlock[PredictResult](storage.size())
-
     val numSamples = storage.size()
     val batchData = new Array[LabeledData](numSamples)
     (0 until numSamples).foreach { idx => batchData(idx) = storage.loopingRead() }
     graph.feedData(batchData)
 
+    val indices = graph.placeHolder.getIndices
+
     if (isSparseFormat) {
-      pullParams(-1, placeHolder.getIndices)
+      pullParams(-1, indices)
     } else {
       pullParams(-1)
     }
@@ -81,18 +78,4 @@ class AngelModel(conf: Configuration, _ctx: TaskContext) extends GraphModel {
   }
 
   override def predict(storage: LabeledData): PredictResult = ???
-}
-
-object AngelModel {
-  def apply(className: String, conf: Configuration): AngelModel = {
-    val cls = Class.forName(className)
-    val cstr = cls.getConstructor(classOf[Configuration], classOf[TaskContext])
-    cstr.newInstance(conf, null).asInstanceOf[AngelModel]
-  }
-
-  def apply(className: String, conf: Configuration, ctx: TaskContext): AngelModel = {
-    val cls = Class.forName(className)
-    val cstr = cls.getConstructor(classOf[Configuration], classOf[TaskContext])
-    cstr.newInstance(conf, ctx).asInstanceOf[AngelModel]
-  }
 }

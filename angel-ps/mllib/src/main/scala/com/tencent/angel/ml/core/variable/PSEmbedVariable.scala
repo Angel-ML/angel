@@ -3,10 +3,11 @@ package com.tencent.angel.ml.core.variable
 import java.lang.{Long => JLong}
 import java.util.{Map => JMap}
 
-import com.tencent.angel.ml.core.network.layers.PlaceHolder
-import com.tencent.angel.ml.math2.matrix.{MapMatrix, Matrix}
-import com.tencent.angel.ml.math2.utils.RowType
-import com.tencent.angel.ml.math2.vector._
+import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.ml.core.network.PlaceHolder
+import com.tencent.angel.ml.servingmath2.matrix.{MapMatrix, Matrix}
+import com.tencent.angel.ml.servingmath2.utils.RowType
+import com.tencent.angel.ml.servingmath2.vector._
 import com.tencent.angel.ml.psf.columns._
 import com.tencent.angel.ps.server.data.request.RandomNormalInitFunc
 import com.tencent.angel.psagent.PSAgentContext
@@ -22,7 +23,7 @@ class PSEmbedVariable(name: String,
                       allowPullWithIndex: Boolean,
                       taskNum: Int,
                       placeHolder: PlaceHolder)
-                     (implicit variableManager: VariableManager, cilsImpl: CILSImpl)
+                     (implicit  conf: SharedConf, variableManager: VariableManager, cilsImpl: CILSImpl)
   extends PSMatVariable(name, numRows, numCols, validIndexNum, updater, rowType, formatClassName,
     allowPullWithIndex) with EmbedVariable {
   private var embeddings: JMap[JLong, Vector] = _
@@ -40,7 +41,9 @@ class PSEmbedVariable(name: String,
     val result = PSAgentContext.get.getUserRequestAdapter.get(func).asInstanceOf[GetColsResult]
     embeddings = result.results
 
-    matrix = EmbedUtils.geneMatrix(placeHolder.getFeats, embeddings)
+    val matStats = EmbedUtils.geneMatrix(placeHolder, assembleHint, embeddings)
+    matrix = matStats._1
+    assembleStats = matStats._2
   }
 
   protected override def doPush(grad: Matrix, alpha: Double): Unit = {

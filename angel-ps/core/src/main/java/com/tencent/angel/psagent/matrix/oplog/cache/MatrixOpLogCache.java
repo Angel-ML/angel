@@ -19,8 +19,8 @@
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.math2.matrix.Matrix;
-import com.tencent.angel.ml.math2.vector.Vector;
+import com.tencent.angel.ml.servingmath2.matrix.Matrix;
+import com.tencent.angel.ml.servingmath2.vector.Vector;
 import com.tencent.angel.matrix.MatrixMeta;
 import com.tencent.angel.matrix.psf.update.base.VoidResult;
 import com.tencent.angel.psagent.PSAgentContext;

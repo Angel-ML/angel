@@ -19,15 +19,15 @@
 package com.tencent.angel.ml.classification
 
 import com.tencent.angel.ml.core.PSOptimizerProvider
-import com.tencent.angel.ml.core.conf.{AngelMLConf, MLCoreConf}
+import com.tencent.angel.ml.core.conf.{AngelMLConf, MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.graphsubmit.AngelModel
 import com.tencent.angel.ml.core.network.{Sigmoid, Softmax}
 import com.tencent.angel.ml.core.network.layers.{Layer, LossLayer}
-import com.tencent.angel.ml.core.network.layers.join.DotPooling
-import com.tencent.angel.ml.core.network.layers.verge.SimpleInputLayer
+import com.tencent.angel.ml.core.network.layers.multiary.DotPooling
+import com.tencent.angel.ml.core.network.layers.leaf.SimpleInputLayer
 import com.tencent.angel.ml.core.optimizer.loss.CrossEntropyLoss
 import com.tencent.angel.worker.task.TaskContext
-import org.apache.hadoop.conf.Configuration
+
 
 /**
   * LR model
@@ -35,12 +35,12 @@ import org.apache.hadoop.conf.Configuration
   */
 
 
-class MixedLogisticRegression(conf: Configuration, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
-  val rank: Int = sharedConf.getInt(AngelMLConf.ML_MLR_RANK, AngelMLConf.DEFAULT_ML_MLR_RANK)
-  val optProvider = new PSOptimizerProvider()
+class MixedLogisticRegression(conf: SharedConf, _ctx: TaskContext = null) extends AngelModel(conf, _ctx.getTotalTaskNum) {
+  val rank: Int = conf.getInt(AngelMLConf.ML_MLR_RANK, AngelMLConf.DEFAULT_ML_MLR_RANK)
+  val optProvider = new PSOptimizerProvider(conf)
 
   override def buildNetwork(): this.type = {
-    val ipOptName: String = sharedConf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
+    val ipOptName: String = conf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
     val optimizer = optProvider.getOptimizer(ipOptName)
 
     val sigmoid = new SimpleInputLayer("sigmoid_layer", rank, new Sigmoid(), optimizer)

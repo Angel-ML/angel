@@ -18,9 +18,9 @@
 
 package com.tencent.angel.matrix.psf
 
-import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.servingmath2.utils.RowType
 import io.netty.buffer.ByteBuf
-import com.tencent.angel.ml.math2.utils.RowType._
+import com.tencent.angel.ml.servingmath2.utils.RowType._
 import com.tencent.angel.ps.storage.matrix.ServerPartition
 import com.tencent.angel.ps.storage.vector._
 
