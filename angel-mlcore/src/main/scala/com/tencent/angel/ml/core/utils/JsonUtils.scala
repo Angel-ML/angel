@@ -291,17 +291,6 @@ object JsonUtils {
               layerMap.put(name, newLayer)
               iter.remove()
             }
-          case JString(value) if matchClassName[SoftmaxLayer](value) =>
-            val inputLayer = extract[String](obj, LayerKeys.inputLayerKey)
-            if (inputLayer.nonEmpty && layerMap.contains(inputLayer.get)) {
-              val newLayer = new SoftmaxLayer(name,
-                extract[Int](obj, LayerKeys.outputDimKey).get,
-                layerMap(inputLayer.get)
-              )
-
-              layerMap.put(name, newLayer)
-              iter.remove()
-            }
           case JString(value) if matchClassName[WeightedSumLayer](value) =>
             val inputLayers = extract[Array[String]](obj, LayerKeys.inputLayersKey)
             if (inputLayers.nonEmpty && inputLayers.get.forall(layer => layerMap.contains(layer))) {
