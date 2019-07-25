@@ -19,6 +19,7 @@
 package com.tencent.angel.ml.servingmath2.vector;
 
 import com.tencent.angel.ml.servingmath2.exceptions.MathNotImplementedException;
+import com.tencent.angel.ml.servingmath2.ufuncs.executor.comp.CompReduceExecutor;
 import com.tencent.angel.ml.servingmath2.utils.RowType;
 
 public class CompIntDoubleVector extends DoubleVector implements IntKeyVector, ComponentVector {
@@ -151,7 +152,8 @@ public class CompIntDoubleVector extends DoubleVector implements IntKeyVector, C
   }
 
   public double sum() {
-    throw new MathNotImplementedException("Math Not Implemented Method For Component Vectors");
+//    throw new MathNotImplementedException("Math Not Implemented Method For Component Vectors");
+    return CompReduceExecutor.apply(this, CompReduceExecutor.ReduceOP.Sum);
   }
 
   public double average() {

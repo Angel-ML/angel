@@ -134,4 +134,15 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
     init2(getJson("svm"), getDataFile("a9a", "dummy"))
     train2()
   }
+
+  test("AFM") {
+    init2(getJson("afm"), getDataFile("census", "libsvm"))
+    train2()
+  }
+
+  test("DCN") {
+    init2(getJson("dcn"), getDataFile("census", "libsvm"))
+    train2()
+  }
+
 }

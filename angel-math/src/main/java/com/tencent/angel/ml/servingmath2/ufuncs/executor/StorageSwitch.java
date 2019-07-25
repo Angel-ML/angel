@@ -24,6 +24,7 @@ import com.tencent.angel.ml.servingmath2.ufuncs.expression.Binary;
 import com.tencent.angel.ml.servingmath2.ufuncs.expression.OpType;
 import com.tencent.angel.ml.servingmath2.utils.Constant;
 import com.tencent.angel.ml.servingmath2.vector.Vector;
+import com.tencent.angel.ml.servingmath2.vector.ComponentVector;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -284,5 +285,121 @@ public class StorageSwitch {
     } else {// OpType.ALL
       return all(v1, v2, op);
     }
+  }
+
+  public static Storage[] applyComp(ComponentVector v1, Vector v2, Binary op) {
+    Vector[] parts = v1.getPartitions();
+    Storage[] resParts = new Storage[parts.length];
+    int k = 0;
+    if (op.getOpType() == OpType.UNION) {
+      if (v2.isDense()) {
+        for (Vector part : parts) {
+          if (part.isDense()) {
+            if (op.isInplace()) {
+              resParts[k] = part.getStorage();
+            } else {
+              resParts[k] = part.copy().getStorage();
+            }
+          } else if (part.isSparse()) {
+            if (op.isKeepStorage()) {
+              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySparse, part.dim());
+            } else {
+              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptyDense);
+            }
+          } else {
+            if (op.isKeepStorage()) {
+              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySorted, part.dim());
+            } else {
+              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptyDense);
+            }
+          }
+          k++;
+        }
+      } else {
+        for (Vector part : parts) {
+          if (op.isInplace()) {
+            resParts[k] = part.getStorage();
+          } else {
+            resParts[k] = part.copy().getStorage();
+          }
+          k++;
+        }
+      }
+    } else if (op.getOpType() == OpType.INTERSECTION) {
+      if (v2.isDense()) {
+        for (Vector part : parts) {
+          if (part.isDense()) {
+            resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptyDense);
+          } else if (part.isSparse()) {
+            resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySparse);
+          } else {
+            if (op.isKeepStorage()) {
+              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySorted);
+            } else {
+              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySparse);
+            }
+          }
+          k++;
+        }
+      } else {
+        if (((Vector) v1).getSize() > v2.getSize()) {
+          for (Vector part : parts) {
+            if (op.isKeepStorage()) {
+              if (part.isDense()) {
+                resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptyDense);
+              } else if (part.isSparse()) {
+                resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySparse);
+              } else {
+                resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySorted);
+              }
+            } else {
+              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySparse);
+            }
+            k++;
+          }
+        } else {
+          for (Vector part : parts) {
+            if (part.isDense()) {
+              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptyDense);
+            } else if (part.isSparse()) {
+              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySparse);
+            } else {
+              if (op.isKeepStorage()) {
+                resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySorted);
+              } else {
+                resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySparse);
+              }
+            }
+            k++;
+          }
+        }
+      }
+    } else {//OpType.ALL
+      for (Vector part : parts) {
+        if (part.isDense()) {
+          if (op.isInplace()) {
+            resParts[k] = part.getStorage();
+          } else {
+            resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptyDense);
+          }
+        } else {
+          if (op.isKeepStorage()) {
+            if (part.isSparse()) {
+              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySparse, part.dim());
+            } else { // sorted
+              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySorted, part.dim());
+            }
+          } else {
+            if (part.getStorage() instanceof LongKeyVectorStorage) {
+              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptySparse, part.dim());
+            } else {
+              resParts[k] = emptyStorage(part.getStorage(), StorageMethod.emptyDense);
+            }
+          }
+        }
+        k++;
+      }
+    }
+    return resParts;
   }
 }
