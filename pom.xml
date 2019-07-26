@@ -22,7 +22,7 @@
   <groupId>com.tencent.angel</groupId>
   <artifactId>angel</artifactId>
   <packaging>pom</packaging>
-  <version>2.0.1</version>
+  <version>3.0.0</version>
   <name>angel</name>
   <properties>
     <hadoop-version>2.6.5</hadoop-version>

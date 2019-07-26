@@ -47,7 +47,7 @@ class AngelModel(conf: SharedConf, taskNum: Int = -1) extends GraphModel(conf) {
   }
 
   override def buildNetwork(): this.type = {
-    JsonUtils.layerFromJson(conf.getJson)
+    JsonUtils.layerFromJson(graph)
 
     this
   }
