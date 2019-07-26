@@ -40,11 +40,7 @@
 
 
   <modules>
-    <module>angel-math</module>
-    <module>angel-format</module>
-    <module>angel-mlcore</module>
     <module>angel-ps</module>
-    <!--module>spark-on-angel</module-->
     <module>dist</module>
   </modules>
 

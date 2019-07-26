@@ -21,7 +21,7 @@ package com.tencent.angel.example.quickStart
 import com.tencent.angel.ml.core.{MLModel, PredictResult}
 import com.tencent.angel.ml.core.conf.MLCoreConf
 import com.tencent.angel.ml.core.data.DataBlock
-import com.tencent.angel.ml.servingmath2.utils.{LabeledData, RowType}
+import com.tencent.angel.ml.math2.utils.{LabeledData, RowType}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 

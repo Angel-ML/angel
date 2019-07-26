@@ -21,7 +21,7 @@ package com.tencent.angel.matrix.psf.get.getrows
 import java.util
 import java.util.{HashMap, List, Map}
 
-import com.tencent.angel.ml.servingmath2.vector.Vector
+import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.matrix.psf.get.base._
 import com.tencent.angel.ps.storage.vector.ServerRow
 import com.tencent.angel.psagent.matrix.ResponseType

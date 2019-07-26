@@ -18,9 +18,9 @@
 
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
-import com.tencent.angel.ml.servingmath2.storage.*;
-import com.tencent.angel.ml.servingmath2.vector.LongIntVector;
-import com.tencent.angel.ml.servingmath2.utils.RowType;
+import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.vector.LongIntVector;
+import com.tencent.angel.ml.math2.utils.RowType;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;

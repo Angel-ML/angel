@@ -21,7 +21,7 @@ package com.tencent.angel.ps.storage.matrix;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.common.Serialize;
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.servingmath2.utils.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;

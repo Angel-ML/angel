@@ -19,8 +19,8 @@
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.servingmath2.storage.*;
-import com.tencent.angel.ml.servingmath2.vector.*;
+import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.vector.*;
 import com.tencent.angel.utils.Sort;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

@@ -18,8 +18,8 @@
 
 package com.tencent.angel.psagent.matrix.transport.adapter;
 
-import com.tencent.angel.ml.servingmath2.vector.IntDoubleVector;
-import com.tencent.angel.ml.servingmath2.vector.Vector;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.Vector;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;

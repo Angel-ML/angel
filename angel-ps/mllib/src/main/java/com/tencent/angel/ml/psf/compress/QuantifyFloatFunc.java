@@ -18,9 +18,9 @@ package com.tencent.angel.ml.psf.compress;
  */
 
 
-import com.tencent.angel.ml.servingmath2.storage.IntFloatDenseVectorStorage;
-import com.tencent.angel.ml.servingmath2.vector.IntFloatVector;
-import com.tencent.angel.ml.servingmath2.vector.Vector;
+import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage;
+import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ml.psf.compress.QuantifyFloatParam.QuantifyFloatPartParam;

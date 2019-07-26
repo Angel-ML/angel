@@ -22,7 +22,7 @@ import scala.collection.JavaConversions._
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.matrix.psf.aggr.enhance.{BinaryAggrFunc, ScalarAggrResult, ScalarPartitionAggrResult}
 import com.tencent.angel.matrix.psf.get.base.{GetResult, PartitionGetResult}
-import com.tencent.angel.ml.servingmath2.storage.{IntDoubleDenseVectorStorage, IntFloatDenseVectorStorage, IntIntDenseVectorStorage, IntLongDenseVectorStorage}
+import com.tencent.angel.ml.math2.storage.{IntDoubleDenseVectorStorage, IntFloatDenseVectorStorage, IntIntDenseVectorStorage, IntLongDenseVectorStorage}
 import com.tencent.angel.ps.storage.vector._
 
 /**

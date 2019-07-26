@@ -18,7 +18,7 @@
 
 package com.tencent.angel.matrix.psf.update.enhance.zip2.func
 
-import com.tencent.angel.ml.servingmath2.ufuncs.expression.OpType
+import com.tencent.angel.ml.math2.ufuncs.expression.OpType
 
 
 // todo: need improve

@@ -21,8 +21,8 @@ package com.tencent.angel.matrix.psf.update.enhance.map
 import com.tencent.angel.common.Serialize
 import com.tencent.angel.matrix.psf.update.enhance.{MFUpdateFunc, MFUpdateParam}
 import com.tencent.angel.matrix.psf.update.enhance.map.func.MapFunc
-import com.tencent.angel.ml.servingmath2.ufuncs.executor.UnaryExecutor
-import com.tencent.angel.ml.servingmath2.ufuncs.expression.Unary
+import com.tencent.angel.ml.math2.ufuncs.executor.UnaryExecutor
+import com.tencent.angel.ml.math2.ufuncs.expression.Unary
 import com.tencent.angel.ps.storage.vector.ServerRow
 
 /**

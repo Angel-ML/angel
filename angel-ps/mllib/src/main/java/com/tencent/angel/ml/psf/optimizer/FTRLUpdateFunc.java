@@ -18,9 +18,9 @@
 
 package com.tencent.angel.ml.psf.optimizer;
 
-import com.tencent.angel.ml.servingmath2.ufuncs.OptFuncs;
-import com.tencent.angel.ml.servingmath2.ufuncs.Ufuncs;
-import com.tencent.angel.ml.servingmath2.vector.Vector;
+import com.tencent.angel.ml.math2.ufuncs.OptFuncs;
+import com.tencent.angel.ml.math2.ufuncs.Ufuncs;
+import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ps.storage.matrix.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import org.apache.commons.logging.Log;
