@@ -18,7 +18,7 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
   var validDataBlock: DataBlock[LabeledData] = _
 
   def getJson(name: String): String = {
-    s"./src/test/jsons/$name.json"
+    s"./angel-mlcore/src/test/jsons/$name.json"
   }
 
   def getDataFile(name: String, format: String = "libsvm", aType: String = "train"): String = {
@@ -34,7 +34,7 @@ class AlgoTest extends FunSuite with BeforeAndAfter {
       case _ => throw new Exception("Cannot find data set!")
     }
 
-    s"../data/$name/${name}_${dim}d_$aType.$format"
+    s"./data/$name/${name}_${dim}d_$aType.$format"
   }
 
   def init1(jsonFile: String, sourceFile: String): Unit = {
