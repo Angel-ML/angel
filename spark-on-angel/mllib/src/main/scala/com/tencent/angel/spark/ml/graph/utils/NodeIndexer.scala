@@ -104,6 +104,15 @@ class NodeIndexer extends Serializable {
     }
   }
 
+  def decode[C: ClassTag, U: ClassTag](rdd: RDD[C], batchSize: Int)(
+    func: (Array[C], PSVector) => Iterator[U]): RDD[U] = {
+    rdd.mapPartitions { iter =>
+      BatchIter(iter, batchSize).flatMap { batch =>
+        func(batch, int2long)
+      }
+    }
+  }
+
   def decodePartition[C: ClassTag, U: ClassTag](rdd: RDD[C])(func: PSVector => Iterator[C] => Iterator[U]): RDD[U] = {
     rdd.mapPartitions(func(int2long))
   }

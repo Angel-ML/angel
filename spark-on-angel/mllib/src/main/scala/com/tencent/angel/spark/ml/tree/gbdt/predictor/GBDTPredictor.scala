@@ -32,7 +32,7 @@ class GBDTPredictor extends Serializable {
 
   var forest: Seq[GBTTree] = _
 
-  def loadModel(modelPath: String)(implicit sc: SparkContext): Unit = {
+  def loadModel(sc: SparkContext, modelPath: String): Unit = {
     forest = sc.objectFile[Seq[GBTTree]](modelPath).collect().head
     println(s"Reading model from $modelPath")
   }
@@ -46,7 +46,7 @@ class GBDTPredictor extends Serializable {
     }
   }
 
-  def predict(predictPath: String, outputPath: String)(implicit sc: SparkContext): Unit = {
+  def predict(implicit sc: SparkContext, predictPath: String, outputPath: String): Unit = {
     println(s"Predicting dataset: $predictPath")
     val instances: RDD[Instance] = DataLoader.loadLibsvmDP(predictPath, forest.head.getParam.numFeature).cache()
     //val labels = instances.map(_.label.toFloat).collect()
@@ -171,8 +171,8 @@ object GBDTPredictor {
     val outputPath = params.getOrElse(AngelConf.ANGEL_PREDICT_PATH, "xxx")
 
     val predictor = new GBDTPredictor
-    predictor.loadModel(modelPath)
-    predictor.predict(predictPath, outputPath)
+    predictor.loadModel(sc, modelPath)
+    predictor.predict(sc, predictPath, outputPath)
 
     sc.stop
   }

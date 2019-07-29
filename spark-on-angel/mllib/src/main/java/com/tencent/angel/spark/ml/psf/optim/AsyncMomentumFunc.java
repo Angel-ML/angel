@@ -3,7 +3,6 @@ package com.tencent.angel.spark.ml.psf.optim;
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
-import parquet.org.apache.thrift.async.AsyncMethodCallback;
 
 public class AsyncMomentumFunc extends AsyncOptimFunc {
 
