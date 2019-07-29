@@ -20,15 +20,19 @@ package com.tencent.angel.ml.servingmath2.ufuncs.executor;
 
 
 import com.tencent.angel.ml.servingmath2.exceptions.MathException;
+import com.tencent.angel.ml.servingmath2.ufuncs.executor.comp.CompUnaryExecutor;
 import com.tencent.angel.ml.servingmath2.ufuncs.executor.simple.SimpleUnaryExecutor;
 import com.tencent.angel.ml.servingmath2.ufuncs.expression.Unary;
+import com.tencent.angel.ml.servingmath2.vector.ComponentVector;
 import com.tencent.angel.ml.servingmath2.vector.SimpleVector;
 import com.tencent.angel.ml.servingmath2.vector.Vector;
 
 public class UnaryExecutor {
 
   public static Vector apply(Vector v1, Unary op) {
-    if (v1 instanceof SimpleVector) {
+    if (v1 instanceof ComponentVector) {
+      return CompUnaryExecutor.apply((ComponentVector) v1, op);
+    }else if (v1 instanceof SimpleVector) {
       return SimpleUnaryExecutor.apply(v1, op);
     } else { // Dummy
       throw new MathException("Vector Type is not support the operation!");

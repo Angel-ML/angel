@@ -23,11 +23,41 @@ import com.tencent.angel.ml.servingmath2.ufuncs.executor.simple.*;
 import com.tencent.angel.ml.servingmath2.ufuncs.expression.Binary;
 import com.tencent.angel.ml.servingmath2.vector.SimpleVector;
 import com.tencent.angel.ml.servingmath2.vector.Vector;
+import com.tencent.angel.ml.servingmath2.vector.ComponentVector;
+import com.tencent.angel.ml.servingmath2.ufuncs.executor.comp.CompBinaryExecutor;
+import com.tencent.angel.ml.servingmath2.ufuncs.executor.mixed.MixedBinaryInAllExecutor;
+import com.tencent.angel.ml.servingmath2.ufuncs.executor.mixed.MixedBinaryInNonZAExecutor;
+import com.tencent.angel.ml.servingmath2.ufuncs.executor.mixed.MixedBinaryInZAExecutor;
+import com.tencent.angel.ml.servingmath2.ufuncs.executor.mixed.MixedBinaryOutAllExecutor;
+import com.tencent.angel.ml.servingmath2.ufuncs.executor.mixed.MixedBinaryOutNonZAExecutor;
+import com.tencent.angel.ml.servingmath2.ufuncs.executor.mixed.MixedBinaryOutZAExecutor;
 
 public class BinaryExecutor {
   public static Vector apply(Vector v1, Vector v2, Binary op) {
     assert v1 != null && v2 != null && op != null;
-    if (v1 instanceof SimpleVector && v2 instanceof SimpleVector) {
+    if (v1 instanceof ComponentVector && v2 instanceof ComponentVector) {
+      return CompBinaryExecutor.apply((ComponentVector) v1, (ComponentVector) v2, op);
+    } else if (v1 instanceof ComponentVector && v2 instanceof SimpleVector) {
+      if (op.isInplace()) {
+        switch (op.getOpType()) {
+          case INTERSECTION:
+            throw new MathException("The operation is not supported!");
+          case UNION:
+            return MixedBinaryInNonZAExecutor.apply((ComponentVector) v1, v2, op);
+          case ALL:
+            return MixedBinaryInAllExecutor.apply((ComponentVector) v1, v2, op);
+        }
+      } else {
+        switch (op.getOpType()) {
+          case INTERSECTION:
+            return MixedBinaryOutZAExecutor.apply((ComponentVector) v1, v2, op);
+          case UNION:
+            return MixedBinaryOutNonZAExecutor.apply((ComponentVector) v1, v2, op);
+          case ALL:
+            return MixedBinaryOutAllExecutor.apply((ComponentVector) v1, v2, op);
+        }
+      }
+    } else if (v1 instanceof SimpleVector && v2 instanceof SimpleVector) {
       if (op.isInplace()) {
         switch (op.getOpType()) {
           case INTERSECTION:

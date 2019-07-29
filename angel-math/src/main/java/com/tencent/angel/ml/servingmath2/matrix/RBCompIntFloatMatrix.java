@@ -313,15 +313,15 @@ public class RBCompIntFloatMatrix extends RowBasedMatrix<CompIntFloatVector> {
   @Override
   public Vector sum(int axis) {
     assert axis == 1;
-    double[] maxArr = new double[rows.length];
+    float[] maxArr = new float[rows.length];
     for (int i = 0; i < rows.length; i++) {
       if (rows[i] != null) {
-        maxArr[i] = rows[i].sum();
+        maxArr[i] = (float)rows[i].sum();
       } else {
-        maxArr[i] = Double.NaN;
+        maxArr[i] = Float.NaN;
       }
     }
-    return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
+    return VFactory.denseFloatVector(matrixId, 0, clock, maxArr);
   }
 
   @Override

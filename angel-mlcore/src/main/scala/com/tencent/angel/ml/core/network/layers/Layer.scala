@@ -22,7 +22,8 @@ import com.tencent.angel.ml.core.network.{Graph, PlaceHolder}
 import com.tencent.angel.ml.core.optimizer.Optimizer
 import com.tencent.angel.ml.core.utils.LayerKeys
 import com.tencent.angel.ml.core.variable.{VariableManager, VariableProvider}
-import com.tencent.angel.ml.servingmath2.matrix.{Matrix, RBCompIntDoubleMatrix, RBCompIntFloatMatrix}
+import com.tencent.angel.ml.servingmath2.matrix.{BlasDoubleMatrix, BlasFloatMatrix, BlasMatrix, Matrix, RBCompIntDoubleMatrix, RBCompIntFloatMatrix}
+import com.tencent.angel.ml.servingmath2.utils.MatrixUtils
 import org.json4s.JsonAST._
 import org.json4s.JsonDSL._
 import org.json4s.native.Serialization
@@ -133,6 +134,15 @@ abstract class Layer(val name: String, val outputDim: Int)(implicit val graph: G
                 lparts(partId).iadd(rparts(partId))
               }
             }
+          case (left: BlasMatrix, right: RBCompIntFloatMatrix) =>
+            left.iadd(MatrixUtils.rbCompDense2Blas(right.asInstanceOf[RBCompIntFloatMatrix]))
+          case (left: BlasMatrix, right: RBCompIntDoubleMatrix) =>
+            left.iadd(MatrixUtils.rbCompDense2Blas(right.asInstanceOf[RBCompIntDoubleMatrix]))
+          case (left: RBCompIntFloatMatrix, right: BlasFloatMatrix) =>
+            left.iadd(MatrixUtils.blas2RBCompDense(right.asInstanceOf[BlasFloatMatrix], gradCollection.asInstanceOf[RBCompIntFloatMatrix].getSubDim))
+          case (left: RBCompIntDoubleMatrix, right: BlasDoubleMatrix) =>
+            left.iadd(MatrixUtils.blas2RBCompDense(right.asInstanceOf[BlasDoubleMatrix], gradCollection.asInstanceOf[RBCompIntDoubleMatrix].getSubDim))
+
           case (left, right) => // non embedding
             left.iadd(right)
         }
