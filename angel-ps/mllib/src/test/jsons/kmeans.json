@@ -5,11 +5,11 @@
     "validateratio": 0.1
   },
   "train": {
-    "epoch": 50,
+    "epoch": 5,
     "lr": 1.0
   },
   "model": {
-    "modeltype": "T_DOUBLE_DENSE"
+    "modeltype": "T_DOUBLE_SPARSE"
   },
   "default_optimizer": {
     "type": "kmeansoptimizer"
