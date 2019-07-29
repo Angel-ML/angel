@@ -19,14 +19,14 @@
 package com.tencent.angel.ml.classification
 
 import com.tencent.angel.ml.core.PSOptimizerProvider
-import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.mlcore.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.graphsubmit.AngelModel
-import com.tencent.angel.ml.core.network.{Identity, TransFunc}
-import com.tencent.angel.ml.core.network.layers.{Layer, LossLayer}
-import com.tencent.angel.ml.core.network.layers.multiary.SumPooling
-import com.tencent.angel.ml.core.network.layers.unary.{BiInteractionCross, FCLayer}
-import com.tencent.angel.ml.core.network.layers.leaf.{Embedding, SimpleInputLayer}
-import com.tencent.angel.ml.core.optimizer.loss.LogLoss
+import com.tencent.angel.mlcore.network.{Identity, TransFunc}
+import com.tencent.angel.mlcore.network.layers.{Layer, LossLayer}
+import com.tencent.angel.mlcore.network.layers.multiary.SumPooling
+import com.tencent.angel.mlcore.network.layers.unary.{BiInteractionCross, FCLayer}
+import com.tencent.angel.mlcore.network.layers.leaf.{Embedding, SimpleInputLayer}
+import com.tencent.angel.mlcore.optimizer.loss.LogLoss
 import com.tencent.angel.worker.task.TaskContext
 
 

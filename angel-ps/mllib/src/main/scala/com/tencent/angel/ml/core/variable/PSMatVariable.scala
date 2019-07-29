@@ -2,11 +2,12 @@ package com.tencent.angel.ml.core.variable
 
 import com.tencent.angel.matrix.MatrixContext
 import com.tencent.angel.matrix.psf.update.RandomNormal
-import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.mlcore.conf.SharedConf
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector._
+import com.tencent.angel.mlcore.variable._
 import com.tencent.angel.psagent.PSAgentContext
 
 

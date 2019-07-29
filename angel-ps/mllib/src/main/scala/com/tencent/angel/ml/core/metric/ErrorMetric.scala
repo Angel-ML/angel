@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ml.core.metric
 
-import com.tencent.angel.ml.core.utils.Metric
+import com.tencent.angel.mlcore.utils.Metric
 
 class ErrorMetric(var sampleNum: Int) extends Metric {
 

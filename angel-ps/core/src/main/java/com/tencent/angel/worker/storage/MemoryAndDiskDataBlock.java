@@ -18,7 +18,7 @@
 
 package com.tencent.angel.worker.storage;
 
-import com.tencent.angel.ml.core.data.DataBlock;
+import com.tencent.angel.mlcore.data.DataBlock;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 

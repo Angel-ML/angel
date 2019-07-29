@@ -1,10 +1,11 @@
 package com.tencent.angel.ml.core
 
-import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.network.PlaceHolder
-import com.tencent.angel.ml.core.utils.{MLException, RowTypeUtils}
+import com.tencent.angel.mlcore.conf.SharedConf
+import com.tencent.angel.mlcore.network.PlaceHolder
+import com.tencent.angel.mlcore.utils.{MLException, RowTypeUtils}
 import com.tencent.angel.ml.core.variable._
 import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.mlcore.variable._
 
 class PSVariableProvider(dataFormat: String, modelType: RowType)(
   implicit conf: SharedConf, variableManager: VariableManager, cilsImpl: CILSImpl) extends VariableProvider {

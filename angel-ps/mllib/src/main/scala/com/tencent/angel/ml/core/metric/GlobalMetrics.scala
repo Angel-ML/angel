@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.core.metric
 
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.core.utils.Metric
+import com.tencent.angel.mlcore.utils.Metric
 import com.tencent.angel.worker.task.TaskContext
 
 import scala.collection.mutable

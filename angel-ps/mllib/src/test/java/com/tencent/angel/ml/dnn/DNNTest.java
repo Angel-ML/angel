@@ -20,7 +20,7 @@ package com.tencent.angel.ml.dnn;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.core.PSOptimizerProvider;
-import com.tencent.angel.ml.core.conf.MLCoreConf;
+import com.tencent.angel.mlcore.conf.MLCoreConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

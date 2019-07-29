@@ -18,8 +18,9 @@
 
 package com.tencent.angel.ml.core
 
-import com.tencent.angel.ml.core.conf.{AngelMLConf, SharedConf}
-import com.tencent.angel.ml.core.data.{DataParser, TransLabel}
+import com.tencent.angel.mlcore.conf.SharedConf
+import com.tencent.angel.ml.core.conf.AngelMLConf
+import com.tencent.angel.mlcore.data.{DataParser, TransLabel}
 import com.tencent.angel.ml.core.utils.SConfHelper
 import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.worker.task.{BaseTask, TaskContext}

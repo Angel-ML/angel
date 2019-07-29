@@ -19,13 +19,16 @@
 package com.tencent.angel.ml.core.graphsubmit
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.core.conf.{AngelMLConf, MLCoreConf, SharedConf}
-import com.tencent.angel.ml.core.data.DataBlock
+import com.tencent.angel.mlcore.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.core.conf.AngelMLConf
+import com.tencent.angel.mlcore.data.DataBlock
 import com.tencent.angel.ml.core.metric.LossMetric
-import com.tencent.angel.ml.core.network.Graph
-import com.tencent.angel.ml.core.optimizer.decayer.StepSizeScheduler
-import com.tencent.angel.ml.core.utils.ValidationUtils
-import com.tencent.angel.ml.core.{AngelEnvContext, MLLearner, MLModel}
+import com.tencent.angel.mlcore.network.Graph
+import com.tencent.angel.mlcore.network.layers.unary.KmeansInputLayer
+import com.tencent.angel.mlcore.optimizer.decayer.StepSizeScheduler
+import com.tencent.angel.mlcore.utils.ValidationUtils
+import com.tencent.angel.mlcore.MLModel
+import com.tencent.angel.ml.core.{AngelEnvContext, MLLearner}
 import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.{Log, LogFactory}
@@ -135,6 +138,16 @@ class GraphLearner(conf: SharedConf, ctx: TaskContext) extends MLLearner(ctx) {
       if (negTrainData != null) {
         negTrainData.shuffle()
       }
+    }
+
+    // Init cluster centers randomly
+    graph.getInputLayer("input") match {
+      case layer: KmeansInputLayer if ctx.getTaskId.getIndex == 0 && conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH, "").isEmpty =>
+        model.pullParams(0)
+        val K = conf.numClass
+        layer.initKCentersRandomly(ctx.getTotalTaskNum, posTrainData, K)
+        model.pushGradient(graph.getLR)
+      case _ =>
     }
 
     while (ctx.getEpoch < epochNum) {

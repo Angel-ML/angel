@@ -1,7 +1,7 @@
 package com.tencent.angel.ml.core.variable
 
 import com.tencent.angel.matrix.MatrixContext
-import com.tencent.angel.ml.core.network.EnvContext
+import com.tencent.angel.mlcore.network.EnvContext
 
 trait CILSImpl {
   def doCreate[T](mCtx: MatrixContext, envCtx: EnvContext[T]): Unit
