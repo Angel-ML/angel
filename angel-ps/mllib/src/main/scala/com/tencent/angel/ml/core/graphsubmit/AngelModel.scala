@@ -20,12 +20,14 @@ package com.tencent.angel.ml.core.graphsubmit
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core._
-import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.data.DataBlock
-import com.tencent.angel.ml.core.network.Graph
-import com.tencent.angel.ml.core.utils.JsonUtils
-import com.tencent.angel.ml.core.variable.{AngelCILSImpl, CILSImpl, VariableManager, VariableProvider}
+import com.tencent.angel.mlcore.conf.SharedConf
+import com.tencent.angel.mlcore.data.DataBlock
+import com.tencent.angel.mlcore.network.Graph
+import com.tencent.angel.mlcore.utils.JsonUtils
+import com.tencent.angel.mlcore.variable.{VariableManager, VariableProvider}
+import com.tencent.angel.ml.core.variable.{AngelCILSImpl, CILSImpl}
 import com.tencent.angel.ml.math2.utils.LabeledData
+import com.tencent.angel.mlcore.{GraphModel, PredictResult}
 
 
 class AngelModel(conf: SharedConf, taskNum: Int = -1) extends GraphModel(conf) {

@@ -6,8 +6,8 @@ import com.tencent.angel.client.AngelClient
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.matrix.MatrixContext
 import com.tencent.angel.ml.core.AngelEnvContext
-import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
-import com.tencent.angel.ml.core.network.EnvContext
+import com.tencent.angel.mlcore.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.mlcore.network.EnvContext
 import com.tencent.angel.model._
 
 class AngelCILSImpl(val conf: SharedConf) extends CILSImpl {

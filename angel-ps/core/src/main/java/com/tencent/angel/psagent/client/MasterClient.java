@@ -26,7 +26,7 @@ import com.tencent.angel.master.MasterProtocol;
 import com.tencent.angel.matrix.MatrixContext;
 import com.tencent.angel.matrix.MatrixMeta;
 import com.tencent.angel.matrix.PartitionLocation;
-import com.tencent.angel.ml.core.utils.Metric;
+import com.tencent.angel.mlcore.utils.Metric;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.RequestConverter;
 import com.tencent.angel.protobuf.generated.MLProtos.*;

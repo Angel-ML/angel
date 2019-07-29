@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.core.graphsubmit
 
 import com.tencent.angel.ml.core.TrainTask
-import com.tencent.angel.ml.core.data.DataBlock
+import com.tencent.angel.mlcore.data.DataBlock
 import com.tencent.angel.ml.math2.utils.{LabeledData, RowType}
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.worker.storage.{DiskDataBlock, MemoryAndDiskDataBlock, MemoryDataBlock}

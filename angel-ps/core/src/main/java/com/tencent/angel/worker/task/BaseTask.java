@@ -20,7 +20,7 @@ package com.tencent.angel.worker.task;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.core.data.DataBlock;
+import com.tencent.angel.mlcore.data.DataBlock;
 import com.tencent.angel.worker.storage.*;
 import org.apache.hadoop.conf.Configuration;
 

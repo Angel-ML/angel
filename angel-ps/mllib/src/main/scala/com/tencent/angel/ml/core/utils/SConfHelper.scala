@@ -3,7 +3,8 @@ package com.tencent.angel.ml.core.utils
 import java.io.File
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.mlcore.conf.SharedConf
+import com.tencent.angel.mlcore.utils.JsonUtils
 import org.apache.hadoop.conf.Configuration
 
 trait SConfHelper {

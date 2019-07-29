@@ -28,7 +28,7 @@ import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import com.tencent.angel.matrix.psf.get.getrows.{GetRows, GetRowsParam, GetRowsResult}
-import com.tencent.angel.ml.core.conf.MLCoreConf
+import com.tencent.angel.mlcore.conf.MLCoreConf
 import com.tencent.angel.ps.server.data.request.{InitFunc, RandomNormalInitFunc, UpdateOp}
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
 import com.tencent.angel.psagent.PSAgentContext

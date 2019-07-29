@@ -2,9 +2,10 @@ package com.tencent.angel.ml.core
 
 import com.tencent.angel.client.AngelClient
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.network.EnvContext
-import com.tencent.angel.ml.core.variable.{PSVariable, VarState, VariableManager}
+import com.tencent.angel.mlcore.conf.SharedConf
+import com.tencent.angel.mlcore.network.EnvContext
+import com.tencent.angel.mlcore.variable.{VarState, VariableManager}
+import com.tencent.angel.ml.core.variable.PSVariable
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
 import org.apache.hadoop.conf.Configuration

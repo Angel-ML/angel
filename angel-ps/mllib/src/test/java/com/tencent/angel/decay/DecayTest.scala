@@ -1,7 +1,7 @@
 package com.tencent.angel.decay
 
-import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.optimizer.decayer._
+import com.tencent.angel.mlcore.conf.SharedConf
+import com.tencent.angel.mlcore.optimizer.decayer._
 import java.util
 
 import org.scalatest.{BeforeAndAfter, FunSuite}

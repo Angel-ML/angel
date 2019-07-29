@@ -20,12 +20,12 @@ package com.tencent.angel.ml.regression
 
 
 import com.tencent.angel.ml.core.PSOptimizerProvider
-import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.mlcore.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.graphsubmit.AngelModel
-import com.tencent.angel.ml.core.network.Identity
-import com.tencent.angel.ml.core.network.layers.LossLayer
-import com.tencent.angel.ml.core.network.layers.leaf.SimpleInputLayer
-import com.tencent.angel.ml.core.optimizer.loss.L2Loss
+import com.tencent.angel.mlcore.network.Identity
+import com.tencent.angel.mlcore.network.layers.LossLayer
+import com.tencent.angel.mlcore.network.layers.leaf.SimpleInputLayer
+import com.tencent.angel.mlcore.optimizer.loss.L2Loss
 import com.tencent.angel.worker.task.TaskContext
 
 

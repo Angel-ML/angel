@@ -41,7 +41,7 @@ import com.tencent.angel.master.worker.workergroup.AMWorkerGroup;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroupState;
 import com.tencent.angel.matrix.MatrixMeta;
 import com.tencent.angel.matrix.MatrixReport;
-import com.tencent.angel.ml.core.utils.Metric;
+import com.tencent.angel.mlcore.utils.Metric;
 import com.tencent.angel.model.*;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos;

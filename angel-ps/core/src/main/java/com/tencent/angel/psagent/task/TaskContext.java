@@ -22,7 +22,7 @@ import com.google.protobuf.ServiceException;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.task.TaskCounter;
-import com.tencent.angel.ml.core.utils.Metric;
+import com.tencent.angel.mlcore.utils.Metric;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.clock.ClockCache;
 import com.tencent.angel.psagent.matrix.storage.MatrixStorageManager;

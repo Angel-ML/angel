@@ -1,8 +1,9 @@
 package com.tencent.angel.ml.core
 
-import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.mlcore.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.optimizer._
-import com.tencent.angel.ml.core.utils.{LayerKeys, OptimizerKeys}
+import com.tencent.angel.mlcore.optimizer.{Optimizer, OptimizerProvider}
+import com.tencent.angel.mlcore.utils.{LayerKeys, OptimizerKeys}
 import org.json4s.DefaultFormats
 import org.json4s.JsonAST.{JDouble, JNothing, JObject, JString, JValue}
 import org.json4s.ParserUtil.ParseException
@@ -91,6 +92,8 @@ class PSOptimizerProvider(conf: SharedConf) extends OptimizerProvider {
         val beta: Double = conf.getDouble(MLCoreConf.ML_OPT_ADADELTA_BETA,
           MLCoreConf.DEFAULT_ML_OPT_ADADELTA_BETA)
         new AdaDelta(lr0, alpha, beta)
+      case s: String if matchClassName[KmeansOptimizer](s) =>
+        new KmeansOptimizer()
     }
   }
 
@@ -133,6 +136,8 @@ class PSOptimizerProvider(conf: SharedConf) extends OptimizerProvider {
         val beta: Double = conf.getDouble(MLCoreConf.ML_OPT_ADADELTA_BETA,
           MLCoreConf.DEFAULT_ML_OPT_ADADELTA_BETA)
         new AdaDelta(lr0, alpha, beta)
+      case JString(s) if matchClassName[KmeansOptimizer](s) =>
+        new KmeansOptimizer()
       case obj: JObject if fieldEqualClassName[SGD](obj) =>
         SGD.fromJson(obj, this)
       case obj: JObject if fieldEqualClassName[Adam](obj) =>
@@ -145,6 +150,8 @@ class PSOptimizerProvider(conf: SharedConf) extends OptimizerProvider {
         AdaGrad.fromJson(obj, this)
       case obj: JObject if fieldEqualClassName[AdaDelta](obj) =>
         AdaDelta.fromJson(obj, this)
+      case obj: JObject if fieldEqualClassName[KmeansOptimizer](obj) =>
+        KmeansOptimizer.fromJson(obj, this)
       case _ =>
         val momentum: Double = conf.getDouble(MLCoreConf.ML_OPT_MOMENTUM_MOMENTUM,
           MLCoreConf.DEFAULT_ML_OPT_MOMENTUM_MOMENTUM)
