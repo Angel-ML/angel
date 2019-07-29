@@ -20,7 +20,7 @@ package com.tencent.angel.matrix.psf.update.enhance.map.func
 
 import com.tencent.angel.common.Serialize
 import com.tencent.angel.matrix.psf.update.enhance.map.Map
-import com.tencent.angel.ml.servingmath2.ufuncs.expression.Unary
+import com.tencent.angel.ml.math2.ufuncs.expression.Unary
 
 
 /**

@@ -4,7 +4,7 @@ import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.PlaceHolder
 import com.tencent.angel.ml.core.utils.{MLException, RowTypeUtils}
 import com.tencent.angel.ml.core.variable._
-import com.tencent.angel.ml.servingmath2.utils.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 
 class PSVariableProvider(dataFormat: String, modelType: RowType)(
   implicit conf: SharedConf, variableManager: VariableManager, cilsImpl: CILSImpl) extends VariableProvider {

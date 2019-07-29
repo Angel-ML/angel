@@ -22,7 +22,7 @@
   <groupId>com.tencent.angel</groupId>
   <artifactId>angel</artifactId>
   <packaging>pom</packaging>
-  <version>2.0.1</version>
+  <version>3.0.0</version>
   <name>angel</name>
   <properties>
     <hadoop-version>2.6.5</hadoop-version>
@@ -40,11 +40,7 @@
 
 
   <modules>
-    <module>angel-math</module>
-    <module>angel-format</module>
-    <module>angel-mlcore</module>
     <module>angel-ps</module>
-    <!--module>spark-on-angel</module-->
     <module>dist</module>
   </modules>
 

@@ -25,7 +25,7 @@ import com.tencent.angel.ml.core.data.DataBlock
 import com.tencent.angel.ml.core.network.Graph
 import com.tencent.angel.ml.core.utils.JsonUtils
 import com.tencent.angel.ml.core.variable.{AngelCILSImpl, CILSImpl, VariableManager, VariableProvider}
-import com.tencent.angel.ml.servingmath2.utils.LabeledData
+import com.tencent.angel.ml.math2.utils.LabeledData
 
 
 class AngelModel(conf: SharedConf, taskNum: Int = -1) extends GraphModel(conf) {
@@ -47,7 +47,7 @@ class AngelModel(conf: SharedConf, taskNum: Int = -1) extends GraphModel(conf) {
   }
 
   override def buildNetwork(): this.type = {
-    JsonUtils.layerFromJson(conf.getJson)
+    JsonUtils.layerFromJson(graph)
 
     this
   }

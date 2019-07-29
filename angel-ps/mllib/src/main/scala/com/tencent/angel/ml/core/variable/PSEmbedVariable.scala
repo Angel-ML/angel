@@ -5,9 +5,9 @@ import java.util.{Map => JMap}
 
 import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.core.network.PlaceHolder
-import com.tencent.angel.ml.servingmath2.matrix.{MapMatrix, Matrix}
-import com.tencent.angel.ml.servingmath2.utils.RowType
-import com.tencent.angel.ml.servingmath2.vector._
+import com.tencent.angel.ml.math2.matrix.{MapMatrix, Matrix}
+import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.psf.columns._
 import com.tencent.angel.ps.server.data.request.RandomNormalInitFunc
 import com.tencent.angel.psagent.PSAgentContext

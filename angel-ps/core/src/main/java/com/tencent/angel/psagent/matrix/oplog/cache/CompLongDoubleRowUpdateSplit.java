@@ -18,11 +18,11 @@
 
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
-import com.tencent.angel.ml.servingmath2.storage.LongDoubleSortedVectorStorage;
-import com.tencent.angel.ml.servingmath2.storage.LongDoubleSparseVectorStorage;
-import com.tencent.angel.ml.servingmath2.storage.LongDoubleVectorStorage;
-import com.tencent.angel.ml.servingmath2.vector.LongDoubleVector;
-import com.tencent.angel.ml.servingmath2.utils.RowType;
+import com.tencent.angel.ml.math2.storage.LongDoubleSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongDoubleSparseVectorStorage;
+import com.tencent.angel.ml.math2.storage.LongDoubleVectorStorage;
+import com.tencent.angel.ml.math2.vector.LongDoubleVector;
+import com.tencent.angel.ml.math2.utils.RowType;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;

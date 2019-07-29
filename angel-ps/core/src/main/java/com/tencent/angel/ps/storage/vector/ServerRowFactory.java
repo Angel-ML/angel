@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ps.storage.vector;
 
-import com.tencent.angel.ml.servingmath2.utils.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 
 public class ServerRowFactory {
   public static ServerRow createEmptyServerRow(RowType type) {

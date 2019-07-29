@@ -22,7 +22,7 @@ package com.tencent.angel.psagent.matrix.storage;
  * The storage for a single matrix.
  */
 
-import com.tencent.angel.ml.servingmath2.vector.Vector;
+import com.tencent.angel.ml.math2.vector.Vector;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;

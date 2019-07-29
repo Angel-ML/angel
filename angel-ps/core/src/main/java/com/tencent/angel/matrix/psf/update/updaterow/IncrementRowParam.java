@@ -19,7 +19,7 @@
 package com.tencent.angel.matrix.psf.update.updaterow;
 
 import com.tencent.angel.matrix.psf.update.base.PartitionUpdateParam;
-import com.tencent.angel.ml.servingmath2.vector.Vector;
+import com.tencent.angel.ml.math2.vector.Vector;
 
 import java.util.List;
 

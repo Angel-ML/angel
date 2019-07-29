@@ -18,6 +18,6 @@
 
 package com.tencent.angel.matrix.psf.update.enhance.zip2.func
 
-import com.tencent.angel.ml.servingmath2.ufuncs.expression.Mul
+import com.tencent.angel.ml.math2.ufuncs.expression.Mul
 
 class MulFunc extends Mul(false) with Zip2MapFunc

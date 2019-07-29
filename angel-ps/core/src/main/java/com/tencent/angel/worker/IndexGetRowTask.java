@@ -20,8 +20,8 @@ package com.tencent.angel.worker;
 
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.exception.InvalidParameterException;
-import com.tencent.angel.ml.servingmath2.VFactory;
-import com.tencent.angel.ml.servingmath2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.VFactory;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.matrix.MatrixMeta;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.MatrixClient;
