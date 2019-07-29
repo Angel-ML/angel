@@ -2,7 +2,7 @@
 
 
 [![license](http://img.shields.io/badge/license-Apache2.0-blue.svg?style=flat)](https://github.com/tencent/angel/blob/master/LICENSE)
-[![Release Version](https://img.shields.io/badge/release-2.0.1-red.svg)](https://github.com/tencent/angel/releases)
+[![Release Version](https://img.shields.io/badge/release-3.0.0-red.svg)](https://github.com/tencent/angel/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/tencent/angel/pulls)
 
 [(English Documents Available)](./README_en.md)
