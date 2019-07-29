@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ml.core.metric
 
-import com.tencent.angel.ml.core.utils.Metric
+import com.tencent.angel.mlcore.utils.Metric
 
 class ObjMetric extends Metric {
   var globalObj: Double = 0.0

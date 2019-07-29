@@ -19,12 +19,12 @@
 package com.tencent.angel.ml.classification
 
 import com.tencent.angel.ml.core.PSOptimizerProvider
-import com.tencent.angel.ml.core.conf.MLCoreConf
+import com.tencent.angel.mlcore.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.graphsubmit.AngelModel
-import com.tencent.angel.ml.core.network.Identity
-import com.tencent.angel.ml.core.network.layers.LossLayer
-import com.tencent.angel.ml.core.network.layers.verge.SimpleInputLayer
-import com.tencent.angel.ml.core.optimizer.loss.HingeLoss
+import com.tencent.angel.mlcore.network.Identity
+import com.tencent.angel.mlcore.network.layers.LossLayer
+import com.tencent.angel.mlcore.network.layers.leaf.SimpleInputLayer
+import com.tencent.angel.mlcore.optimizer.loss.HingeLoss
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 
@@ -34,11 +34,11 @@ import org.apache.hadoop.conf.Configuration
   */
 
 
-class SupportVectorMachine(conf: Configuration, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
-  val optProvider = new PSOptimizerProvider()
+class SupportVectorMachine(conf: SharedConf, _ctx: TaskContext = null) extends AngelModel(conf, _ctx.getTotalTaskNum) {
+  val optProvider = new PSOptimizerProvider(conf)
 
   override def buildNetwork(): this.type = {
-    val ipOptName: String = sharedConf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
+    val ipOptName: String = conf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
 
     val input = new SimpleInputLayer("input", 1, new Identity(), optProvider.getOptimizer(ipOptName))
     new LossLayer("simpleLossLayer", input, new HingeLoss())

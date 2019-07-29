@@ -21,7 +21,7 @@ package com.tencent.angel.ml.kmeans;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.core.PSOptimizerProvider;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
-import com.tencent.angel.ml.core.conf.MLCoreConf;
+import com.tencent.angel.mlcore.conf.MLCoreConf;
 import com.tencent.angel.ml.math2.utils.RowType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,144 +33,146 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class KmeansTest {
-  private static final Log LOG = LogFactory.getLog(KmeansTest.class);
-  private Configuration conf = new Configuration();
-  private static final String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
-  private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.AngelModel";
-  private static final String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
-  private static final String TrainInputPath = "../../data/usps/usps_256d_train.libsvm";
-  private static final String PredictInputPath = "../../data/usps/usps_256d_test.libsvm";
+    private static final Log LOG = LogFactory.getLog(KmeansTest.class);
+    private Configuration conf = new Configuration();
+    private static final String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
+    private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.AngelModel";
+    private static final String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
+    private static final String TrainInputPath = "../../data/usps/usps_256d_train.libsvm";
+    private static final String PredictInputPath = "../../data/usps/usps_256d_test.libsvm";
 
-  static {
-    PropertyConfigurator.configure("../conf/log4j.properties");
-  }
-
-  @Before public void setup() throws Exception {
-    try {
-      String dataFmt = "libsvm";
-      String modelType = String.valueOf(RowType.T_DOUBLE_SPARSE);
-      // Cluster center number
-      int centerNum = 10;
-      // Feature number of train data
-      long featureNum = 256;
-      // Total iteration number
-      int epochNum = 5;
-      // Sample ratio per mini-batch
-      double spratio = 1.0;
-      // C
-      double c = 0.5;
-      String optimizer = "KmeansOptimizer";
-
-      // Model type
-      String jsonFile = "./src/test/jsons/kmeans.json";
-
-      // Set local deploy mode
-      conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
-
-      // Set basic configuration keys
-      conf.setBoolean("mapred.mapper.new-api", true);
-      conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
-      conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
-      conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
-      conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
-      conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
-      conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
-
-      //set angel resource parameters #worker, #task, #PS
-      conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
-      conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
-      conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
-
-      //set Kmeans algorithm parameters #cluster #feature #epoch
-      conf.set(MLCoreConf.KMEANS_CENTER_NUM(), String.valueOf(centerNum));
-      conf.set(MLCoreConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
-      conf.set(MLCoreConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
-      conf.set(MLCoreConf.KMEANS_C(), String.valueOf(c));
-
-      conf.setLong(MLCoreConf.ML_MODEL_SIZE(), 256);
-      conf.set(MLCoreConf.ML_INPUTLAYER_OPTIMIZER(), optimizer);
-      // conf.setDouble(MLConf.ML_DATA_POSNEG_RATIO(), posnegRatio);
-      conf.set(MLCoreConf.ML_MODEL_CLASS_NAME(), CLASSBASE);
-      conf.setStrings(AngelConf.ANGEL_ML_CONF, jsonFile);
-      // Set data format
-      conf.set(MLCoreConf.ML_DATA_INPUT_FORMAT(), dataFmt);
-      conf.set(MLCoreConf.ML_MODEL_TYPE(), modelType);
-    } catch (Exception x) {
-      LOG.error("setup failed ", x);
-      throw x;
+    static {
+        PropertyConfigurator.configure("../conf/log4j.properties");
     }
-  }
 
-  private void trainTest() {
-    try {
-      // Set trainning data path
-      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, TrainInputPath);
-      // Set save model path
-      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/Kmeans");
-      // Set log save path
-      conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log/Kmeans/trainLog");
-      // Set actionType train
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLCoreConf.ANGEL_ML_TRAIN());
+    @Before
+    public void setup() throws Exception {
+        try {
+            String dataFmt = "libsvm";
+            String modelType = String.valueOf(RowType.T_DOUBLE_SPARSE);
+            // Cluster center number
+            int centerNum = 10;
+            // Feature number of train data
+            long featureNum = 256;
+            // Total iteration number
+            int epochNum = 5;
+            // Sample ratio per mini-batch
+            double spratio = 1.0;
+            // C
+            double c = 0.5;
+            String optimizer = "KmeansOptimizer";
 
-      GraphRunner runner = new GraphRunner();
-      runner.train(conf);
-    } catch (Exception x) {
-      LOG.error("run trainOnLocalClusterTest failed ", x);
-      throw x;
+            // Model type
+            String jsonFile = "./src/test/jsons/kmeans.json";
+
+            // Set local deploy mode
+            conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
+
+            // Set basic configuration keys
+            conf.setBoolean("mapred.mapper.new-api", true);
+            conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
+            conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
+            conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
+            conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
+            conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
+            conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
+
+            //set angel resource parameters #worker, #task, #PS
+            conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
+            conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
+            conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
+
+            //set Kmeans algorithm parameters #cluster #feature #epoch
+            conf.set(MLCoreConf.KMEANS_CENTER_NUM(), String.valueOf(centerNum));
+            conf.set(MLCoreConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
+            conf.set(MLCoreConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
+            conf.set(MLCoreConf.KMEANS_C(), String.valueOf(c));
+
+            conf.setLong(MLCoreConf.ML_MODEL_SIZE(), 256);
+            conf.set(MLCoreConf.ML_INPUTLAYER_OPTIMIZER(), optimizer);
+            // conf.setDouble(MLConf.ML_DATA_POSNEG_RATIO(), posnegRatio);
+            conf.set(MLCoreConf.ML_MODEL_CLASS_NAME(), CLASSBASE);
+            conf.setStrings(AngelConf.ANGEL_ML_CONF, jsonFile);
+            // Set data format
+            conf.set(MLCoreConf.ML_DATA_INPUT_FORMAT(), dataFmt);
+            conf.set(MLCoreConf.ML_MODEL_TYPE(), modelType);
+        } catch (Exception x) {
+            LOG.error("setup failed ", x);
+            throw x;
+        }
     }
-  }
 
+    private void trainTest() {
+        try {
+            // Set trainning data path
+            conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, TrainInputPath);
+            // Set save model path
+            conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/Kmeans");
+            // Set log save path
+            conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log/Kmeans/trainLog");
+            // Set actionType train
+            conf.set(AngelConf.ANGEL_ACTION_TYPE, MLCoreConf.ANGEL_ML_TRAIN());
 
-  private void incTrain() {
-    try {
-      String savePath = LOCAL_FS + TMP_PATH + "/model/Kmeans";
-      String newPath = LOCAL_FS + TMP_PATH + "/model/NewKmeans";
-      String logPath = LOCAL_FS + TMP_PATH + "/log/Kmeans/trainLog";
-
-      // Set trainning data path
-      conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, TrainInputPath);
-      // Set load model path
-      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, savePath);
-      // Set save model path
-      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, newPath);
-      // Set actionType incremental train
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLCoreConf.ANGEL_ML_INC_TRAIN());
-      // Set log path
-      conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
-
-
-      GraphRunner runner = new GraphRunner();
-      runner.train(conf);
-    } catch (Exception e) {
-      LOG.error("run incTrainTest failed", e);
-      throw e;
+            GraphRunner runner = new GraphRunner();
+            runner.train(conf);
+        } catch (Exception x) {
+            LOG.error("run trainOnLocalClusterTest failed ", x);
+            throw x;
+        }
     }
-  }
 
-  private void predictTest() {
-    try {
-      // Set testing data path
-      conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, PredictInputPath);
-      // Set load model path
-      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/Kmeans");
-      conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "log/Kmeans/predictLog");
-      // Set predict result path
-      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict/Kmeans");
-      // Set actionType prediction
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLCoreConf.ANGEL_ML_PREDICT());
+    private void incTrain() {
+        try {
+            String savePath = LOCAL_FS + TMP_PATH + "/model/Kmeans";
+            String newPath = LOCAL_FS + TMP_PATH + "/model/NewKmeans";
+            String logPath = LOCAL_FS + TMP_PATH + "/log/Kmeans/trainLog";
 
-      GraphRunner runner = new GraphRunner();
-      runner.predict(conf);
-    } catch (Exception x) {
-      LOG.error("run predictOnLocalClusterTest failed ", x);
-      throw x;
+            // Set trainning data path
+            conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, TrainInputPath);
+            // Set load model path
+            conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, savePath);
+            // Set save model path
+            conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, newPath);
+            // Set actionType incremental train
+            conf.set(AngelConf.ANGEL_ACTION_TYPE, MLCoreConf.ANGEL_ML_INC_TRAIN());
+            // Set log path
+            conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
+
+
+            GraphRunner runner = new GraphRunner();
+            runner.train(conf);
+        } catch (Exception e) {
+            LOG.error("run incTrainTest failed", e);
+            throw e;
+        }
     }
-  }
 
-  @Test public void testKMeans() throws Exception {
-    setup();
-    trainTest();
-    incTrain();
-    predictTest();
-  }
+    private void predictTest() {
+        try {
+            // Set testing data path
+            conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, PredictInputPath);
+            // Set load model path
+            conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/Kmeans");
+            conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "log/Kmeans/predictLog");
+            // Set predict result path
+            conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/com/tencent/angel/ml/predict/Kmeans");
+            // Set actionType prediction
+            conf.set(AngelConf.ANGEL_ACTION_TYPE, MLCoreConf.ANGEL_ML_PREDICT());
+
+            GraphRunner runner = new GraphRunner();
+            runner.predict(conf);
+        } catch (Exception x) {
+            LOG.error("run predictOnLocalClusterTest failed ", x);
+            throw x;
+        }
+    }
+
+    @Test
+    public void testKMeans() throws Exception {
+        setup();
+        trainTest();
+        incTrain();
+        predictTest();
+    }
 }
+

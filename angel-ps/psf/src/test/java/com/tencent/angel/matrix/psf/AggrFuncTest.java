@@ -30,7 +30,6 @@ import com.tencent.angel.matrix.psf.aggr.Nrm2;
 import com.tencent.angel.matrix.psf.aggr.Sum;
 import com.tencent.angel.matrix.psf.update.enhance.map.func.Set;
 import com.tencent.angel.ml.math2.storage.DoubleVectorStorage;
-import com.tencent.angel.matrix.psf.aggr.*;
 import com.tencent.angel.matrix.psf.aggr.enhance.ScalarAggrResult;
 import com.tencent.angel.matrix.psf.aggr.Pull;
 import com.tencent.angel.matrix.psf.get.base.GetFunc;

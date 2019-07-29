@@ -20,7 +20,7 @@ package com.tencent.angel.ml.core
 
 import com.tencent.angel.AppSubmitter
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.core.conf.MLCoreConf
+import com.tencent.angel.mlcore.conf.MLCoreConf
 import org.apache.hadoop.conf.Configuration
 
 

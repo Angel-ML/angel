@@ -1,15 +1,67 @@
 package com.tencent.angel.ml.core
 
-import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.mlcore.conf.{MLCoreConf, SharedConf}
 import com.tencent.angel.ml.core.optimizer._
-import com.tencent.angel.ml.core.utils.JsonUtils.{fieldEqualClassName, matchClassName}
-import com.tencent.angel.ml.core.utils.OptimizerKeys
-import org.json4s.JsonAST.{JDouble, JObject, JString, JValue}
-import org.json4s.JsonDSL._
+import com.tencent.angel.mlcore.optimizer.{Optimizer, OptimizerProvider}
+import com.tencent.angel.mlcore.utils.{LayerKeys, OptimizerKeys}
+import org.json4s.DefaultFormats
+import org.json4s.JsonAST.{JDouble, JNothing, JObject, JString, JValue}
+import org.json4s.ParserUtil.ParseException
+import org.json4s.native.JsonMethods._
 
-class PSOptimizerProvider extends OptimizerProvider with OptimizerHelper {
+import scala.reflect.ClassTag
+
+class PSOptimizerProvider(conf: SharedConf) extends OptimizerProvider {
+  private implicit val formats: DefaultFormats.type = DefaultFormats
+  private implicit val sharedConf: SharedConf = conf
+
+  def extract[T: Manifest](jast: JValue, key: String, default: Option[T] = None): Option[T] = {
+    jast \ key match {
+      case JNothing => default
+      case value => Some(value.extract[T](formats, implicitly[Manifest[T]]))
+    }
+  }
+
+  def fieldEqualClassName[T: ClassTag](obj: JObject, fieldName: String = "type"): Boolean = {
+    val runtimeClassName = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+
+    val name = extract[String](obj, fieldName)
+    if (name.isEmpty) {
+      false
+    } else {
+      runtimeClassName.equalsIgnoreCase(name.get)
+    }
+  }
+
+  def matchClassName[T: ClassTag](name: String): Boolean = {
+    val runtimeClassName = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+
+    runtimeClassName.equalsIgnoreCase(name)
+  }
+
+  def json2String(obj: JValue): String = {
+    obj \ LayerKeys.optimizerKey match {
+      case JString(opt) => opt
+      case opt: JObject => pretty(render(opt))
+      case _ => "Momentum"
+    }
+  }
+
+  def string2Json(jsonstr: String): JValue = {
+    try {
+      parse(jsonstr)
+    } catch {
+      case _: ParseException =>
+        if (jsonstr.startsWith("\"")) {
+          JString(jsonstr.substring(1, jsonstr.length - 1))
+        } else {
+          JString(jsonstr)
+        }
+      case e: Exception => JNothing
+    }
+  }
+
   def getOptimizer(name: String): Optimizer = {
-    val conf: SharedConf = SharedConf.get()
     val lr0: Double = conf.getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)
 
     name match {
@@ -46,17 +98,16 @@ class PSOptimizerProvider extends OptimizerProvider with OptimizerHelper {
   }
 
   def getDefaultOptimizer(): Optimizer = {
-    val conf: SharedConf = SharedConf.get()
     val lr0: Double = conf.getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)
     val momentum: Double = conf.getDouble(MLCoreConf.ML_OPT_MOMENTUM_MOMENTUM,
       MLCoreConf.DEFAULT_ML_OPT_MOMENTUM_MOMENTUM)
     new Momentum(lr0, momentum)
   }
 
-  override def optFromJson(json: JValue): Optimizer = {
-    val conf: SharedConf = SharedConf.get()
+  override def optFromJson(jsonstr: String): Optimizer = {
     val lr0: Double = conf.getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)
 
+    val json = string2Json(jsonstr)
     val opt = json match {
       case JString(s) if matchClassName[SGD](s) =>
         new SGD(lr = lr0)
@@ -88,35 +139,41 @@ class PSOptimizerProvider extends OptimizerProvider with OptimizerHelper {
       case JString(s) if matchClassName[KmeansOptimizer](s) =>
         new KmeansOptimizer()
       case obj: JObject if fieldEqualClassName[SGD](obj) =>
-        SGD.fromJson(obj)
+        SGD.fromJson(obj, this)
       case obj: JObject if fieldEqualClassName[Adam](obj) =>
-        Adam.fromJson(obj)
+        Adam.fromJson(obj, this)
       case obj: JObject if fieldEqualClassName[Momentum](obj) =>
-        Momentum.fromJson(obj)
+        Momentum.fromJson(obj, this)
       case obj: JObject if fieldEqualClassName[FTRL](obj) =>
-        FTRL.fromJson(obj)
+        FTRL.fromJson(obj, this)
       case obj: JObject if fieldEqualClassName[AdaGrad](obj) =>
-        AdaGrad.fromJson(obj)
+        AdaGrad.fromJson(obj, this)
       case obj: JObject if fieldEqualClassName[AdaDelta](obj) =>
-        AdaDelta.fromJson(obj)
+        AdaDelta.fromJson(obj, this)
       case obj: JObject if fieldEqualClassName[KmeansOptimizer](obj) =>
-        KmeansOptimizer.fromJson(obj)
+        KmeansOptimizer.fromJson(obj, this)
       case _ =>
         val momentum: Double = conf.getDouble(MLCoreConf.ML_OPT_MOMENTUM_MOMENTUM,
           MLCoreConf.DEFAULT_ML_OPT_MOMENTUM_MOMENTUM)
         new Momentum(lr0, momentum)
     }
 
-    setRegParams(opt, json)
+    setRegParams(opt, pretty(render(json)))
   }
 
-  override def defaultOptJson(): JObject = {
-    val conf: SharedConf = SharedConf.get()
-    val momentum: Double = conf.getDouble(MLCoreConf.ML_OPT_MOMENTUM_MOMENTUM,
-      MLCoreConf.DEFAULT_ML_OPT_MOMENTUM_MOMENTUM)
+  override def setRegParams[T <: Optimizer](opt: T, jastStr: String): T = {
+    val jast = string2Json(jastStr)
+    jast \ OptimizerKeys.reg1Key match {
+      case JDouble(num) => opt.setRegL1Param(num)
+      case _ => opt.setRegL1Param(conf.getDouble(MLCoreConf.ML_REG_L1, MLCoreConf.DEFAULT_ML_REG_L1))
+    }
 
-    (OptimizerKeys.typeKey -> s"${classOf[Momentum].getSimpleName}") ~
-      (OptimizerKeys.momentumKey -> JDouble(momentum))
+    jast \ OptimizerKeys.reg2Key match {
+      case JDouble(num) => opt.setRegL2Param(num)
+      case _ => opt.setRegL1Param(conf.getDouble(MLCoreConf.ML_REG_L2, MLCoreConf.DEFAULT_ML_REG_L2))
+    }
+
+    opt
   }
-
 }
+

@@ -25,6 +25,7 @@ package com.tencent.angel.ml.core
 
 
 import com.tencent.angel.ml.core.metric.GlobalMetrics
+import com.tencent.angel.mlcore.Learner
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration

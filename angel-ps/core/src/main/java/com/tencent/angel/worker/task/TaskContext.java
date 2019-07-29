@@ -22,7 +22,7 @@ import com.google.protobuf.ServiceException;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.matrix.MatrixContext;
 import com.tencent.angel.matrix.MatrixMeta;
-import com.tencent.angel.ml.core.utils.Metric;
+import com.tencent.angel.mlcore.utils.Metric;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
 import com.tencent.angel.protobuf.generated.MLProtos.TaskIdProto;

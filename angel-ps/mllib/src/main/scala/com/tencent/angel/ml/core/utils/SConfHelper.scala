@@ -3,13 +3,14 @@ package com.tencent.angel.ml.core.utils
 import java.io.File
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.core.conf.SharedConf
+import com.tencent.angel.mlcore.conf.SharedConf
+import com.tencent.angel.mlcore.utils.JsonUtils
 import org.apache.hadoop.conf.Configuration
 
 trait SConfHelper {
 
   def initConf(conf: Configuration): SharedConf = {
-    val sharedConf = SharedConf.get()
+    val sharedConf = new SharedConf
 
     // 1. parse json and update conf
     if (conf.get(AngelConf.ANGEL_ML_CONF) != null) {
@@ -30,8 +31,7 @@ trait SConfHelper {
       }
 
       if (!validateFileName.isEmpty) {
-        val json = JsonUtils.parseAndUpdateJson(validateFileName, sharedConf, conf)
-        sharedConf.setJson(json)
+        JsonUtils.parseAndUpdateJson(validateFileName, sharedConf, conf)
       }
     }
 

@@ -19,8 +19,7 @@
 package com.tencent.angel.ml.core.graphsubmit
 
 import com.tencent.angel.ml.core.TrainTask
-import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.data.DataBlock
+import com.tencent.angel.mlcore.data.DataBlock
 import com.tencent.angel.ml.math2.utils.{LabeledData, RowType}
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.worker.storage.{DiskDataBlock, MemoryAndDiskDataBlock, MemoryDataBlock}
@@ -32,8 +31,8 @@ import org.apache.hadoop.io.{LongWritable, Text}
 class GraphTrainTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
   val LOG: Log = LogFactory.getLog(classOf[GraphTrainTask])
 
-  private val valiRat = SharedConf.validateRatio
-  private val posnegRatio: Double = SharedConf.posnegRatio()
+  private val valiRat = sharedConf.validateRatio
+  private val posnegRatio: Double = sharedConf.posnegRatio()
 
   // validation data storage
   val validDataBlock: DataBlock[LabeledData] = getDataBlock("memory")
@@ -41,11 +40,11 @@ class GraphTrainTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx
   val negDataBlock: DataBlock[LabeledData] = getDataBlock()
 
   // data format of training data, libsvm or dummy
-  val modelType: RowType = SharedConf.modelType
-  val modelClassName: String = SharedConf.modelClassName
+  val modelType: RowType = sharedConf.modelType
+  val modelClassName: String = sharedConf.modelClassName
 
   override def train(ctx: TaskContext): Unit = {
-    val trainer = new GraphLearner(modelClassName, ctx)
+    val trainer = new GraphLearner(sharedConf, ctx)
     if (posnegRatio == -1) {
       trainer.train(taskDataBlock, validDataBlock)
     } else {
@@ -101,7 +100,7 @@ class GraphTrainTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx
     val storageLevel = if (level != null && level.length != 0) {
       level
     } else {
-      SharedConf.storageLevel
+      sharedConf.storageLevel
     }
 
     if (storageLevel.equalsIgnoreCase("memory")) {

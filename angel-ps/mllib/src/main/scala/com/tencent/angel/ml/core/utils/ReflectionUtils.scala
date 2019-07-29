@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ml.core.utils
 
-import com.tencent.angel.ml.core.conf.MLCoreConf
+import com.tencent.angel.mlcore.conf.MLCoreConf
 
 object ReflectionUtils {
 

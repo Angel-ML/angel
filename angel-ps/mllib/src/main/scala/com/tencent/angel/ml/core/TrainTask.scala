@@ -18,8 +18,9 @@
 
 package com.tencent.angel.ml.core
 
-import com.tencent.angel.ml.core.conf.{AngelMLConf, SharedConf}
-import com.tencent.angel.ml.core.data.{DataParser, TransLabel}
+import com.tencent.angel.mlcore.conf.SharedConf
+import com.tencent.angel.ml.core.conf.AngelMLConf
+import com.tencent.angel.mlcore.data.{DataParser, TransLabel}
 import com.tencent.angel.ml.core.utils.SConfHelper
 import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.worker.task.{BaseTask, TaskContext}
@@ -35,9 +36,9 @@ abstract class TrainTask[KEYIN, VALUEIN](taskContext: TaskContext)
     sharedConf.getString(AngelMLConf.ML_DATA_LABEL_TRANS, AngelMLConf.DEFAULT_ML_DATA_LABEL_TRANS),
     sharedConf.getDouble(AngelMLConf.ML_DATA_LABEL_TRANS_THRESHOLD, AngelMLConf.DEFAULT_ML_DATA_LABEL_TRANS_THRESHOLD)
   )
-  protected val dataParser = DataParser(SharedConf.indexRange, SharedConf.inputDataFormat,
+  protected val dataParser = DataParser(sharedConf.indexRange, sharedConf.inputDataFormat,
     sharedConf.getString(AngelMLConf.ML_DATA_SPLITOR, AngelMLConf.DEFAULT_ML_DATA_SPLITOR),
-    SharedConf.modelType, sharedConf.getBoolean(AngelMLConf.ML_DATA_HAS_LABEL, AngelMLConf.DEFAULT_ML_DATA_HAS_LABEL),
+    sharedConf.modelType, sharedConf.getBoolean(AngelMLConf.ML_DATA_HAS_LABEL, AngelMLConf.DEFAULT_ML_DATA_HAS_LABEL),
     true, transLabel)
 
   final def run(taskContext: TaskContext): Unit = {

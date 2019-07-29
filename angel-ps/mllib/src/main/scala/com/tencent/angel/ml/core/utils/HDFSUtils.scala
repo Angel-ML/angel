@@ -21,8 +21,8 @@ package com.tencent.angel.ml.core.utils
 import java.io.IOException
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.core.PredictResult
-import com.tencent.angel.ml.core.conf.MLCoreConf
+import com.tencent.angel.mlcore.PredictResult
+import com.tencent.angel.mlcore.conf.MLCoreConf
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration

@@ -20,11 +20,13 @@ package com.tencent.angel.ml.core.optimizer
 
 import java.util.concurrent.Future
 
-import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
-import com.tencent.angel.ml.core.utils.JsonUtils.{extract, fieldEqualClassName}
-import com.tencent.angel.ml.core.utils.OptimizerKeys
-import com.tencent.angel.ml.core.variable.{PSVariable, Variable}
+import com.tencent.angel.ml.core.PSOptimizerProvider
+import com.tencent.angel.mlcore.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.mlcore.utils.OptimizerKeys
+import com.tencent.angel.mlcore.variable.Variable
+import com.tencent.angel.ml.core.variable.PSVariable
 import com.tencent.angel.ml.psf.optimizer.MomentumUpdateFunc
+import com.tencent.angel.mlcore.optimizer.{Optimizer, OptimizerProvider}
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
 import org.json4s.JsonAST._
@@ -54,14 +56,16 @@ class Momentum(override var lr: Double, val momentum: Double) extends Optimizer 
 }
 
 object Momentum {
-  private val conf: SharedConf = SharedConf.get()
-
-  def fromJson(jast: JObject): Momentum = {
-    assert(fieldEqualClassName[Momentum](jast, OptimizerKeys.typeKey))
+  def fromJson(jast: JObject, provider: OptimizerProvider)(implicit conf: SharedConf): Momentum = {
+    val psProvider = provider.asInstanceOf[PSOptimizerProvider]
+    assert(psProvider.fieldEqualClassName[Momentum](jast, OptimizerKeys.typeKey))
     val lr = conf.getDouble(MLCoreConf.ML_LEARN_RATE, MLCoreConf.DEFAULT_ML_LEARN_RATE)
     val moment = conf.getDouble(MLCoreConf.ML_OPT_MOMENTUM_MOMENTUM, MLCoreConf.DEFAULT_ML_OPT_MOMENTUM_MOMENTUM)
 
-    new Momentum(lr, extract[Double](jast, OptimizerKeys.momentumKey, Some(moment)).get)
+    val regL1Param: Double = conf.getDouble(MLCoreConf.ML_REG_L1, MLCoreConf.DEFAULT_ML_REG_L1)
+    val regL2Param: Double = conf.getDouble(MLCoreConf.ML_REG_L2, MLCoreConf.DEFAULT_ML_REG_L2)
+    val opt = new Momentum(lr, psProvider.extract[Double](jast, OptimizerKeys.momentumKey, Some(moment)).get)
+    opt.setRegL1Param(regL1Param).setRegL2Param(regL2Param)
   }
 }
 

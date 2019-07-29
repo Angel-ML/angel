@@ -13,7 +13,7 @@
 # or implied. See the License for the specific language governing permissions and limitations under
 # the License.
 
-export ANGEL_VERSION=2.0.2
+export ANGEL_VERSION=3.0.0
 export PATH=${JAVA_HOME}/bin:$PATH
 
 if [ "${HADOOP_HOME}" = "" ]; then
@@ -47,4 +47,3 @@ export CLASS="com.tencent.angel.utils.AngelRunJar"
 export CLASSPATH=${CLASSPATH}
 export PYTHONHASHSEED=0
 exec "${JAVA}" ${JAVA_HEAP_MAX} ${HADOOP_OPTS} ${CLASS} "$@"
-

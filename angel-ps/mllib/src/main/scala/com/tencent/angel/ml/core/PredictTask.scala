@@ -21,11 +21,13 @@ package com.tencent.angel.ml.core
 import java.io.IOException
 
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.core.conf.{AngelMLConf, MLCoreConf, SharedConf}
-import com.tencent.angel.ml.core.data.{DataBlock, DataParser, TransLabel}
+import com.tencent.angel.mlcore.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.core.conf.AngelMLConf
+import com.tencent.angel.mlcore.data.{DataBlock, DataParser, TransLabel}
 import com.tencent.angel.ml.core.utils.SConfHelper
 import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.ml.core.utils.HDFSUtils
+import com.tencent.angel.mlcore.MLModel
 import com.tencent.angel.worker.task.{BaseTask, TaskContext}
 
 abstract class PredictTask[KEYIN, VALUEIN](ctx: TaskContext)
@@ -36,9 +38,9 @@ abstract class PredictTask[KEYIN, VALUEIN](ctx: TaskContext)
     sharedConf.getString(AngelMLConf.ML_DATA_LABEL_TRANS, AngelMLConf.DEFAULT_ML_DATA_LABEL_TRANS),
     sharedConf.getDouble(AngelMLConf.ML_DATA_LABEL_TRANS_THRESHOLD, AngelMLConf.DEFAULT_ML_DATA_LABEL_TRANS_THRESHOLD)
   )
-  protected val dataParser = DataParser(SharedConf.indexRange, SharedConf.inputDataFormat,
+  protected val dataParser = DataParser(sharedConf.indexRange, sharedConf.inputDataFormat,
     sharedConf.getString(AngelMLConf.ML_DATA_SPLITOR, AngelMLConf.DEFAULT_ML_DATA_SPLITOR),
-    SharedConf.modelType, sharedConf.getBoolean(AngelMLConf.ML_DATA_HAS_LABEL, AngelMLConf.DEFAULT_ML_DATA_HAS_LABEL),
+    sharedConf.modelType, sharedConf.getBoolean(AngelMLConf.ML_DATA_HAS_LABEL, AngelMLConf.DEFAULT_ML_DATA_HAS_LABEL),
     false, transLabel)
 
   @throws(classOf[AngelException])

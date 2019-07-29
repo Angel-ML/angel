@@ -6,39 +6,39 @@ import com.tencent.angel.ps.storage.vector.ServerRow;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public class KmeansUpdateFunc extends OptMMUpdateFunc{
+ public class KmeansUpdateFunc extends OptMMUpdateFunc{
 
-  private static final Log LOG = LogFactory.getLog(KmeansUpdateFunc.class);
+   private static final Log LOG = LogFactory.getLog(KmeansUpdateFunc.class);
 
-  public KmeansUpdateFunc() {
+   public KmeansUpdateFunc() {
     super();
   }
 
-  public KmeansUpdateFunc(int matId, int factor) {
+   public KmeansUpdateFunc(int matId, int factor) {
     this(matId, factor, 1);
   }
 
-  public KmeansUpdateFunc(int matId, int factor, int batchSize) {
+   public KmeansUpdateFunc(int matId, int factor, int batchSize) {
     super(matId, new int[]{factor}, new double[]{batchSize});
   }
   @Override
   void update(ServerPartition partition, int factor, double[] scalars) {
     double batchSize = scalars[0];
 
-    for (int f = 0; f < factor; f++) {
+     for (int f = 0; f < factor; f++) {
       ServerRow gradientServerRow = partition.getRow(f + factor);
       try {
         gradientServerRow.startWrite();
         Vector weight = partition.getRow(f).getSplit();
         Vector gradient = gradientServerRow.getSplit();
 
-        if (batchSize > 1) {
+         if (batchSize > 1) {
           gradient.idiv(batchSize);
         }
 
-        weight.iadd(gradient);
+         weight.iadd(gradient);
 
-        gradient.clear();
+         gradient.clear();
       } finally {
         gradientServerRow.endWrite();
       }

@@ -1,17 +1,16 @@
 package com.tencent.angel.ml.core.variable
 
-import java.util
+
 import java.util.concurrent.atomic.AtomicBoolean
 
-import com.tencent.angel.client.AngelClient
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.matrix.MatrixContext
-import com.tencent.angel.ml.core.AngelEnvContext
-import com.tencent.angel.ml.core.conf.{AngelMLConf, SharedConf}
-import com.tencent.angel.ml.core.network.EnvContext
+import com.tencent.angel.ml.core.conf.AngelMLConf
+import com.tencent.angel.mlcore.conf.SharedConf
+import com.tencent.angel.mlcore.network.EnvContext
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.math2.utils.RowType
-import com.tencent.angel.model._
+import com.tencent.angel.mlcore.variable._
 import org.apache.hadoop.conf.Configuration
 
 
@@ -20,7 +19,7 @@ abstract class PSVariable(name: String,
                           updater: Updater,
                           formatClassName: String,
                           allowPullWithIndex: Boolean)
-                         (implicit variableManager: VariableManager, cilsImpl: CILSImpl)
+                         (implicit conf: SharedConf, variableManager: VariableManager, cilsImpl: CILSImpl)
   extends Variable(name, rowType, updater, formatClassName, allowPullWithIndex) {
 
   protected var matrixId: Int = -1
@@ -58,7 +57,7 @@ abstract class PSVariable(name: String,
       this.stddev = stddev
 
       if (state == VarState.Created) {
-        val loadModelPath = SharedConf.get().get(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
+        val loadModelPath = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
         if (taskFlag == 0 && rowType.isDense && loadModelPath.isEmpty) {
           if (matrixId == -1) {
             matrixId = PSMatrixUtils.getMatrixId(name)

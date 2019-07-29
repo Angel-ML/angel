@@ -20,11 +20,13 @@ package com.tencent.angel.ml.core.optimizer
 
 import java.util.concurrent.Future
 
-import com.tencent.angel.ml.core.conf.{MLCoreConf, SharedConf}
-import com.tencent.angel.ml.core.utils.JsonUtils.{extract, fieldEqualClassName}
-import com.tencent.angel.ml.core.utils.OptimizerKeys
-import com.tencent.angel.ml.core.variable.{PSVariable, Variable}
+import com.tencent.angel.ml.core.PSOptimizerProvider
+import com.tencent.angel.mlcore.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.mlcore.utils.OptimizerKeys
+import com.tencent.angel.mlcore.variable.Variable
+import com.tencent.angel.ml.core.variable.PSVariable
 import com.tencent.angel.ml.psf.optimizer.AdamUpdateFunc
+import com.tencent.angel.mlcore.optimizer.{Optimizer, OptimizerProvider}
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory
 import org.json4s.JsonAST._
@@ -55,15 +57,16 @@ class Adam(override var lr: Double, val beta: Double, val gamma: Double) extends
 }
 
 object Adam {
-  private val conf: SharedConf = SharedConf.get()
-
-  def fromJson(jast: JObject): Adam = {
-    assert(fieldEqualClassName[Adam](jast, OptimizerKeys.typeKey))
+  def fromJson(jast: JObject, provider: OptimizerProvider)(implicit conf: SharedConf): Adam = {
+    val psProvider = provider.asInstanceOf[PSOptimizerProvider]
+    assert(psProvider.fieldEqualClassName[Adam](jast, OptimizerKeys.typeKey))
     val beta = conf.getDouble(MLCoreConf.ML_OPT_ADAM_BETA, MLCoreConf.DEFAULT_ML_OPT_ADAM_BETA)
     val gamma = conf.getDouble(MLCoreConf.ML_OPT_ADAM_GAMMA, MLCoreConf.DEFAULT_ML_OPT_ADAM_GAMMA)
 
-    new Adam(1.0, extract[Double](jast, OptimizerKeys.betaKey, Some(beta)).get,
-      extract[Double](jast, OptimizerKeys.gammaKey, Some(gamma)).get
-    )
+    val regL1Param: Double  = conf.getDouble(MLCoreConf.ML_REG_L1, MLCoreConf.DEFAULT_ML_REG_L1)
+    val regL2Param: Double  = conf.getDouble(MLCoreConf.ML_REG_L2, MLCoreConf.DEFAULT_ML_REG_L2)
+    val opt = new Adam(1.0, psProvider.extract[Double](jast, OptimizerKeys.betaKey, Some(beta)).get,
+      psProvider.extract[Double](jast, OptimizerKeys.gammaKey, Some(gamma)).get)
+    opt.setRegL1Param(regL1Param).setRegL2Param(regL2Param)
   }
 }
