@@ -331,7 +331,7 @@ public class ParameterServer {
 
   private void exit(int code) {
     AngelDeployMode deployMode = context.getDeployMode();
-    if (deployMode == AngelDeployMode.YARN) {
+    if (deployMode == AngelDeployMode.YARN || deployMode == AngelDeployMode.KUBERNETES) {
       System.exit(code);
     }
   }

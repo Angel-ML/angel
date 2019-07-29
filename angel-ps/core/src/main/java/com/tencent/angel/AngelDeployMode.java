@@ -23,5 +23,5 @@ package com.tencent.angel;
  * Angel application support LOCAL or YARN
  */
 public enum AngelDeployMode {
-  LOCAL, YARN
+  LOCAL, YARN, KUBERNETES
 }

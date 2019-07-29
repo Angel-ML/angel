@@ -20,8 +20,11 @@ package com.tencent.angel.master;
 
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
+import com.tencent.angel.AngelDeployMode;
+import com.tencent.angel.RunningMode;
 import com.tencent.angel.common.location.Location;
 import com.tencent.angel.common.location.LocationManager;
+import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ipc.MLRPC;
 import com.tencent.angel.ipc.RpcServer;
 import com.tencent.angel.master.app.AMContext;
@@ -49,7 +52,6 @@ import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.*;
 import com.tencent.angel.protobuf.generated.MLProtos.*;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.*;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.*;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.*;
 import com.tencent.angel.ps.PSAttemptId;
@@ -272,9 +274,17 @@ public class MasterService extends AbstractService implements MasterProtocol {
   }
 
   @Override protected void serviceInit(Configuration conf) throws Exception {
-    //choose a unused port
-    int servicePort = NetUtils.chooseAListenPort(conf);
-    String ip = NetUtils.getRealLocalIP();
+    String ip;
+    int servicePort;
+    if(conf.get(AngelConf.ANGEL_DEPLOY_MODE, AngelConf.DEFAULT_ANGEL_DEPLOY_MODE).equals("KUBERNETES")) {
+      ip = conf.get(AngelConf.ANGEL_KUBERNETES_MASTER_POD_IP);
+      servicePort = conf.getInt(AngelConf.ANGEL_KUBERNETES_MASTER_PORT,
+              AngelConf.DEFAULT_ANGEL_KUBERNETES_MASTER_PORT);
+    } else {
+      ip = NetUtils.getRealLocalIP();
+      //choose a unused port
+      servicePort = NetUtils.chooseAListenPort(conf);
+    }
     LOG.info("listen ip:" + ip + ", port:" + servicePort);
 
     location = new Location(ip, servicePort);
@@ -1108,6 +1118,17 @@ public class MasterService extends AbstractService implements MasterProtocol {
     throws ServiceException {
     LOG.info("start to calculation");
     context.getApp().startExecute();
+    if (context.getDeployMode() == AngelDeployMode.KUBERNETES && context.getRunningMode() == RunningMode.ANGEL_PS_WORKER) {
+      int workerNum = context.getConf().getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER,
+              AngelConf.DEFAULT_ANGEL_WORKERGROUP_NUMBER);
+      while (context.getWorkerManager().getRegisterWorkerNumber() < workerNum) {
+        LOG.debug("waiting for worker register in monitor...");
+      }
+      LOG.info("Now scheduler and lanuch worker pod.");
+      Configuration workerConf = new Configuration(context.getConf());
+      workerConf.set(AngelConf.ANGEL_KUBERNETES_EXECUTOR_ROLE, "worker");
+      context.getK8sClusterManager().scheduler(workerConf);
+    }
     return StartResponse.newBuilder().build();
   }
 

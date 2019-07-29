@@ -364,6 +364,7 @@ public class Worker implements Executor {
     } catch (Exception netException) {
       if (!stopped.get()) {
         LOG.error("report to appmaster failed, err: ", netException);
+        workerExit(-1);
       }
     }
   }
@@ -484,7 +485,7 @@ public class Worker implements Executor {
 
   private void exit(int exitValue) {
     AngelDeployMode deployMode = WorkerContext.get().getDeployMode();
-    if (deployMode == AngelDeployMode.YARN) {
+    if (deployMode == AngelDeployMode.YARN || deployMode == AngelDeployMode.KUBERNETES) {
       System.exit(exitValue);
     }
   }
