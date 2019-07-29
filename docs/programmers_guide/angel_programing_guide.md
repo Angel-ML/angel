@@ -78,7 +78,7 @@ Angel的这两个Task中，都是BaseTask的子类，Angel会负责透明的数�
 
 Angel本身的算法编写，接口略微简朴。但是这种方式，可以让Angel更加Focus在并提升机器学习算法性能，而无需过多关注其它事情。
 
-但是有些用户希望更加灵活的写法，或者他们希望Spark也能基于Angel获得高维度模型的训练能力。为此在Spark on Angel上，也可以有体现和支持。具体可以查看：[《Spark on Angel 编程指南》]()
+但是有些用户希望更加灵活的写法，或者他们希望Spark也能基于Angel获得高维度模型的训练能力。为此在Spark on Angel上，也可以有体现和支持。具体可以查看：[《Spark on Angel 编程指南》](spark_on_angel_programing_guide.md)
 
 
 
