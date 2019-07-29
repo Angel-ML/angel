@@ -30,6 +30,7 @@ import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.client.MasterClient;
 import com.tencent.angel.ps.server.data.ServerState;
 import com.tencent.angel.utils.HdfsUtil;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -253,5 +254,27 @@ public class SnapshotDumper {
         dumpDispatcher.interrupt();
       }
     }
+  }
+
+  public void checkpoint(int matrixId) throws IOException {
+    LOG.info("checkpoint matrixId=" + matrixId);
+    FileSystem fs = baseDirPath.getFileSystem(context.getConf());
+    Path tmpPath = HdfsUtil.toTmpPath(baseDirPath);
+    if (fs.exists(tmpPath)) {
+      fs.delete(tmpPath, true);
+    }
+
+    List<PSMatrixSaveContext> saveContexts = new ArrayList<>(1);
+    MatrixMeta meta = context.getMatrixMetaManager().getMatrixMeta(matrixId);
+    saveContexts.add(
+        new PSMatrixSaveContext(matrixId,
+            new ArrayList<>(meta.getPartitionMetas().keySet()),
+            null, SnapshotFormat.class.getName(),
+            new Path(tmpPath, meta.getName()).toString(),
+            false, true));
+
+    context.getIOExecutors()
+        .save(new PSMatricesSaveContext(-1, -1, saveContexts), dumpParallel);
+    HdfsUtil.rename(tmpPath, baseDirPath, fs);
   }
 }

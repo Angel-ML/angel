@@ -22,8 +22,8 @@ private[angel] class AngelExecutorPodsSnapshotsStoreImpl(subscribersExecutor: Sc
   private var currentSnapshot = AngelExecutorPodsSnapshot()
 
   override def addSubscriber(
-      processBatchIntervalMillis: Long)
-      (onNewSnapshots: Seq[AngelExecutorPodsSnapshot] => Unit): Unit = {
+                              processBatchIntervalMillis: Long)
+                            (onNewSnapshots: Seq[AngelExecutorPodsSnapshot] => Unit): Unit = {
     val newSubscriber = SnapshotsSubscriber(
       new LinkedBlockingQueue[AngelExecutorPodsSnapshot](), onNewSnapshots)
     SNAPSHOT_LOCK.synchronized {
@@ -76,4 +76,5 @@ private[angel] class AngelExecutorPodsSnapshotsStoreImpl(subscribersExecutor: Sc
   private case class SnapshotsSubscriber(
                                           snapshotsBuffer: BlockingQueue[AngelExecutorPodsSnapshot],
                                           onNewSnapshots: Seq[AngelExecutorPodsSnapshot] => Unit)
+
 }

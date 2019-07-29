@@ -18,13 +18,13 @@ private[angel] trait LoggingPodStatusWatcher extends Watcher[Pod] {
   * A monitor for the running Kubernetes pod of a Angel application. Status logging occurs on
   * every state change and also at an interval for liveness.
   *
-  * @param appId application ID.
+  * @param appId                application ID.
   * @param maybeLoggingInterval ms between each state request. If provided, must be a positive
   *                             number.
   */
 private[angel] class LoggingPodStatusWatcherImpl(
-    appId: String,
-    maybeLoggingInterval: Option[Long])
+                                                  appId: String,
+                                                  maybeLoggingInterval: Option[Long])
   extends LoggingPodStatusWatcher {
 
   private final val LOG: Log = LogFactory.getLog(classOf[LoggingPodStatusWatcherImpl])

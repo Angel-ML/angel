@@ -23,7 +23,7 @@ import com.tencent.angel.ml.math2.ufuncs.executor.UnaryExecutor
 import com.tencent.angel.ml.math2.ufuncs.expression.Unary
 import com.tencent.angel.ml.matrix.psf.update.enhance.map.func.MapFunc
 import com.tencent.angel.ml.matrix.psf.update.enhance.{MFUpdateFunc, MFUpdateParam}
-import com.tencent.angel.ps.storage.vector.ServerRow
+import com.tencent.angel.ps.storage.vector.{ServerRow, ServerRowUtils}
 
 /**
   * It is a Map function which applies `MapFunc` to `fromId` row and saves the result to `toId` row
@@ -39,7 +39,7 @@ class MapInPlace(param: MFUpdateParam) extends MFUpdateFunc(param) {
     assert(op.isInplace, "not inplace op")
     rows(0).startWrite()
     try {
-      UnaryExecutor.apply(rows(0).getSplit, op)
+      UnaryExecutor.apply(ServerRowUtils.getVector(rows(0)), op)
     } finally {
       rows(0).endWrite()
     }

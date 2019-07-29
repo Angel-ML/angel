@@ -26,14 +26,9 @@ import java.util.Random;
 import java.util.HashSet;
 
 public class ${itype}${dtype}DenseVectorStorage implements ${itype}${dtype}VectorStorage {
-
     private $dtype.toLowerCase() [ ] values;
     private byte flag; // 001: dense; 010: sparse; 100: sorted
     private $itype.toLowerCase() dim;
-
-    public ${itype}${dtype}DenseVectorStorage() {
-		super();
-	}
 
     public ${itype}${dtype}DenseVectorStorage($dtype.toLowerCase() [ ] values) {
         this.flag = 1;
@@ -267,8 +262,6 @@ public class ${itype}${dtype}DenseVectorStorage implements ${itype}${dtype}Vecto
     public int size() {
         return values.length;
     }
-
-	public void setSize(int size) {}
 
     @Override
     public boolean hasKey($itype.toLowerCase() key) {

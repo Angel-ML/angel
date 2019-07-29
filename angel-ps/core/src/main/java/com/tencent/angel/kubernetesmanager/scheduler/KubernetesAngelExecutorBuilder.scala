@@ -4,24 +4,24 @@ import com.tencent.angel.kubernetesmanager.deploy.config._
 import com.tencent.angel.kubernetesmanager.deploy.features._
 
 private[angel] class KubernetesAngelExecutorBuilder(
-                                                     provideBasicStep: (KubernetesConf [KubernetesExecutorSpecificConf])
-      => BasicAngelExecutorFeatureStep =
-    new BasicAngelExecutorFeatureStep(_),
+                                                     provideBasicStep: (KubernetesConf[KubernetesExecutorSpecificConf])
+                                                       => BasicAngelExecutorFeatureStep =
+                                                     new BasicAngelExecutorFeatureStep(_),
                                                      provideSecretsStep: (KubernetesConf[_ <: KubernetesRoleSpecificConf])
-      => MountSecretsFeatureStep =
-    new MountSecretsFeatureStep(_),
+                                                       => MountSecretsFeatureStep =
+                                                     new MountSecretsFeatureStep(_),
                                                      provideEnvSecretsStep:
-    (KubernetesConf[_ <: KubernetesRoleSpecificConf] => EnvSecretsFeatureStep) =
-    new EnvSecretsFeatureStep(_),
+                                                     (KubernetesConf[_ <: KubernetesRoleSpecificConf] => EnvSecretsFeatureStep) =
+                                                     new EnvSecretsFeatureStep(_),
                                                      provideLocalDirsStep: (KubernetesConf[_ <: KubernetesRoleSpecificConf])
-      => LocalDirsFeatureStep =
-    new LocalDirsFeatureStep(_),
+                                                       => LocalDirsFeatureStep =
+                                                     new LocalDirsFeatureStep(_),
                                                      provideVolumesStep: (KubernetesConf[_ <: KubernetesRoleSpecificConf]
-      => MountVolumesFeatureStep) =
-    new MountVolumesFeatureStep(_)) {
+                                                       => MountVolumesFeatureStep) =
+                                                     new MountVolumesFeatureStep(_)) {
 
   def buildFromFeatures(
-    kubernetesConf: KubernetesConf[KubernetesExecutorSpecificConf]): AngelPod = {
+                         kubernetesConf: KubernetesConf[KubernetesExecutorSpecificConf]): AngelPod = {
 
     val baseFeatures = Seq(provideBasicStep(kubernetesConf), provideLocalDirsStep(kubernetesConf))
     val secretFeature = if (kubernetesConf.roleSecretNamesToMountPaths.nonEmpty) {

@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -23,13 +23,13 @@ import java.util.Map;
 
 public enum TransportMethod {
   GET_ROWSPLIT(1), PUT_PARTUPDATE(2), GET_ROWSSPLIT(3), GET_PART(4), PUT_PART(5), GET_CLOCKS(
-    6), UPDATE_PSF(7), GET_PSF(8), RECOVER_PART(9), UPDATE_CLOCK(10), UPDATE(11), INDEX_GET_ROW(
-    12), INDEX_GET_ROWS(13), UNKNOWN(14);
+      6), UPDATE_PSF(7), GET_PSF(8), RECOVER_PART(9), UPDATE_CLOCK(10), UPDATE(11), INDEX_GET_ROW(
+      12), INDEX_GET_ROWS(13), CHECKPOINT(14), GET_STATE(15), UNKNOWN(16);
 
   public static Map<Integer, TransportMethod> typeIdToTypeMap;
 
   static {
-    typeIdToTypeMap = new HashMap<Integer, TransportMethod>();
+    typeIdToTypeMap = new HashMap<>();
     typeIdToTypeMap.put(GET_ROWSPLIT.methodId, GET_ROWSPLIT);
     typeIdToTypeMap.put(PUT_PARTUPDATE.methodId, PUT_PARTUPDATE);
     typeIdToTypeMap.put(GET_ROWSSPLIT.methodId, GET_ROWSSPLIT);
@@ -43,6 +43,8 @@ public enum TransportMethod {
     typeIdToTypeMap.put(UPDATE.methodId, UPDATE);
     typeIdToTypeMap.put(INDEX_GET_ROW.methodId, INDEX_GET_ROW);
     typeIdToTypeMap.put(INDEX_GET_ROWS.methodId, INDEX_GET_ROWS);
+    typeIdToTypeMap.put(CHECKPOINT.methodId, CHECKPOINT);
+    typeIdToTypeMap.put(GET_STATE.methodId, GET_STATE);
     typeIdToTypeMap.put(UNKNOWN.methodId, UNKNOWN);
   }
 

@@ -4,7 +4,7 @@ import com.tencent.angel.kubernetesmanager.deploy.config._
 import io.fabric8.kubernetes.api.model._
 
 private[angel] class MountVolumesFeatureStep(
-    kubernetesConf: KubernetesConf[_ <: KubernetesRoleSpecificConf])
+                                              kubernetesConf: KubernetesConf[_ <: KubernetesRoleSpecificConf])
   extends KubernetesFeatureConfigStep {
 
   override def configurePod(pod: AngelPod): AngelPod = {
@@ -28,8 +28,8 @@ private[angel] class MountVolumesFeatureStep(
   override def getAdditionalKubernetesResources(): Seq[HasMetadata] = Seq.empty
 
   private def constructVolumes(
-    volumeSpecs: Iterable[KubernetesVolumeSpec[_ <: KubernetesVolumeSpecificConf]]
-  ): Iterable[(VolumeMount, Volume)] = {
+                                volumeSpecs: Iterable[KubernetesVolumeSpec[_ <: KubernetesVolumeSpecificConf]]
+                              ): Iterable[(VolumeMount, Volume)] = {
     volumeSpecs.map { spec =>
       val volumeMount = new VolumeMountBuilder()
         .withMountPath(spec.mountPath)

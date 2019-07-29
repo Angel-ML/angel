@@ -850,6 +850,16 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
+  public FutureResult<VoidResult> checkpoint() throws AngelException {
+    try {
+      LOG.info("checkpoint matrixId=" + matrixId);
+      return PSAgentContext.get().getUserRequestAdapter().checkpoint(matrixId);
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
+  }
+
+  @Override
   public Future<VoidResult> clock(boolean flushFirst) throws AngelException {
     return PSAgentContext.get().getConsistencyController().clock(taskContext, matrixId, flushFirst);
   }

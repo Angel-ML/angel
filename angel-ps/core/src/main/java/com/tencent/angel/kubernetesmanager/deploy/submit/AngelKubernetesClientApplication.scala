@@ -1,6 +1,6 @@
 package com.tencent.angel.kubernetesmanager.deploy.submit
 
-import java.io.{Closeable, StringReader, StringWriter}
+import java.io.{Closeable, StringWriter}
 import java.util.{Collections, Properties}
 
 import com.tencent.angel.conf.AngelConf
@@ -14,13 +14,13 @@ import org.apache.hadoop.conf.Configuration
 import scala.util.control.NonFatal
 
 private[angel] class Client(
-    builder: KubernetesAngelMasterBuilder,
-    kubernetesConf: KubernetesConf[KubernetesMasterSpecificConf],
-    kubernetesClient: KubernetesClient,
-    waitForAppCompletion: Boolean,
-    appName: String,
-    watcher: LoggingPodStatusWatcher,
-    kubernetesResourceNamePrefix: String) {
+                             builder: KubernetesAngelMasterBuilder,
+                             kubernetesConf: KubernetesConf[KubernetesMasterSpecificConf],
+                             kubernetesClient: KubernetesClient,
+                             waitForAppCompletion: Boolean,
+                             appName: String,
+                             watcher: LoggingPodStatusWatcher,
+                             kubernetesResourceNamePrefix: String) {
 
   private final val LOG: Log = LogFactory.getLog(classOf[KubernetesClientApplication])
 
@@ -32,24 +32,24 @@ private[angel] class Client(
     // Angel command builder to pickup on the Java Options present in the ConfigMap
     val resolvedMasterContainer = new ContainerBuilder(resolvedMasterSpec.pod.container)
       .addNewEnv()
-        .withName(Constants.ENV_ANGEL_CONF_DIR)
-        .withValue(Constants.ANGEL_CONF_DIR_INTERNAL)
-        .endEnv()
+      .withName(Constants.ENV_ANGEL_CONF_DIR)
+      .withValue(Constants.ANGEL_CONF_DIR_INTERNAL)
+      .endEnv()
       .addNewVolumeMount()
-        .withName(Constants.ANGEL_CONF_VOLUME)
-        .withMountPath(Constants.ANGEL_CONF_DIR_INTERNAL)
-        .endVolumeMount()
+      .withName(Constants.ANGEL_CONF_VOLUME)
+      .withMountPath(Constants.ANGEL_CONF_DIR_INTERNAL)
+      .endVolumeMount()
       .build()
     val resolvedMasterPod = new PodBuilder(resolvedMasterSpec.pod.pod)
       .editSpec()
-        .addToContainers(resolvedMasterContainer)
-        .addNewVolume()
-          .withName(Constants.ANGEL_CONF_VOLUME)
-          .withNewConfigMap()
-            .withName(configMapName)
-            .endConfigMap()
-          .endVolume()
-        .endSpec()
+      .addToContainers(resolvedMasterContainer)
+      .addNewVolume()
+      .withName(Constants.ANGEL_CONF_VOLUME)
+      .withNewConfigMap()
+      .withName(configMapName)
+      .endConfigMap()
+      .endVolume()
+      .endSpec()
       .build()
     tryWithResource(
       kubernetesClient
@@ -125,7 +125,7 @@ private[angel] class Client(
 private[angel] class KubernetesClientApplication {
 
   private final val LOG: Log = LogFactory.getLog(classOf[KubernetesClientApplication])
-  private var k8sClient:KubernetesClient = _
+  private var k8sClient: KubernetesClient = _
   private var angelMasterPodName: String = _
 
 
@@ -169,7 +169,7 @@ private[angel] class KubernetesClientApplication {
 
   }
 
-  def getAngelMasterPodIp:String ={
+  def getAngelMasterPodIp: String = {
     var pod: Pod = null
     var podIp: String = null
     LOG.info("waiting for get angel master pod ip, pod name is: " + angelMasterPodName)
@@ -177,19 +177,19 @@ private[angel] class KubernetesClientApplication {
       pod = k8sClient.pods().withName(angelMasterPodName).get()
       podIp = pod.getStatus.getPodIP
     } catch {
-       case npe: NullPointerException =>
-          Thread.sleep(1000)
-        case e: Exception =>
-          throw e
+      case npe: NullPointerException =>
+        Thread.sleep(1000)
+      case e: Exception =>
+        throw e
     }
-    if(podIp != null && !"".equals(podIp) && pod.getStatus.getPhase.equals("Running")) {
+    if (podIp != null && !"".equals(podIp) && pod.getStatus.getPhase.equals("Running")) {
       LOG.info("Now angel master pod state phase is Running, return angel master pod ip.")
     }
     podIp
   }
 
   //todo
-  def deleteMasterPod: Unit ={
+  def deleteMasterPod: Unit = {
 
   }
 

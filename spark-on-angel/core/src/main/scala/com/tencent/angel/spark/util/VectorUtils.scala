@@ -159,6 +159,15 @@ object VectorUtils {
   }
 
   /**
+    * Count the number of elements in `vector`
+    */
+  def size(vector: PSVector): Long = {
+    vector.assertValid()
+    psfGet(vector.poolId, new Size(vector.poolId, vector.id))
+      .asInstanceOf[ScalarAggrResult].getResult.toLong
+  }
+
+  /**
    * Use ps Function(PSF) to aggregate a PSVector on PS nodes.
    */
   private[spark] def psfGet(modelId: Int, func: GetFunc): GetResult = {

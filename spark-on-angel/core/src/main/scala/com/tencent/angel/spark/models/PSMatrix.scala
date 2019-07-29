@@ -19,13 +19,12 @@
 package com.tencent.angel.spark.models
 
 import java.util.concurrent.Future
+
 import scala.collection.Map
-
 import org.apache.commons.logging.LogFactory
-
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.vector.Vector
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.update.{Diag, Eye, FullFill, Random}
 import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
@@ -159,6 +158,8 @@ abstract class PSMatrix extends PSModel {
 
   def asyncPsfUpdate(func: UpdateFunc): Future[VoidResult]
 
+  def checkpoint(): Future[VoidResult]
+
   def destroy()
 }
 
@@ -232,6 +233,12 @@ object PSMatrix{
     val matrixMeta = PSContext.instance()
       .createDenseMatrix(rows, cols, rowInBlock, colInBlock, rowType, additionalConfiguration)
     new PSMatrixImpl(matrixMeta.getId, rows, cols, rowType)
+  }
+
+  def matrix(mc : MatrixContext): PSMatrix = {
+    val matrixMeta = PSContext.instance()
+      .createMatrix(mc)
+    new PSMatrixImpl(matrixMeta.getId, matrixMeta.getRowNum, matrixMeta.getColNum, matrixMeta.getRowType)
   }
 
   /**

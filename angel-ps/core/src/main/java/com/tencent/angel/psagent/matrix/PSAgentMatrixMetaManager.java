@@ -176,6 +176,15 @@ public class PSAgentMatrixMetaManager {
   }
 
   /**
+   * Get the server that hold the partition.
+   *
+   * @return ParameterServerId server id
+   */
+  public List<ParameterServerId> getPss(int matrixId) {
+    return matrixMetaManager.getPss(matrixId);
+  }
+
+  /**
    * Get list of partitionKeys for matrixId and rowId.
    *
    * @param matrixId, matrixId

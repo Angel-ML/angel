@@ -29,18 +29,22 @@ import com.tencent.angel.ml.math2.vector.LongLongVector;
 import com.tencent.angel.model.MatrixLoadContext;
 import com.tencent.angel.model.PSMatrixLoadContext;
 import com.tencent.angel.model.PSMatrixSaveContext;
-import com.tencent.angel.ps.storage.matrix.PartitionSource;
 import com.tencent.angel.ps.storage.matrix.PartitionState;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
+import com.tencent.angel.ps.storage.partition.ServerPartition;
+import com.tencent.angel.ps.storage.partition.storage.ServerRowsStorage;
+import com.tencent.angel.ps.storage.vector.ServerIntAnyRow;
 import com.tencent.angel.ps.storage.vector.ServerIntDoubleRow;
 import com.tencent.angel.ps.storage.vector.ServerIntFloatRow;
 import com.tencent.angel.ps.storage.vector.ServerIntIntRow;
 import com.tencent.angel.ps.storage.vector.ServerIntLongRow;
+import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
 import com.tencent.angel.ps.storage.vector.ServerLongDoubleRow;
 import com.tencent.angel.ps.storage.vector.ServerLongFloatRow;
 import com.tencent.angel.ps.storage.vector.ServerLongIntRow;
 import com.tencent.angel.ps.storage.vector.ServerLongLongRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;
+import com.tencent.angel.ps.storage.vector.ServerRowUtils;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
@@ -55,7 +59,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.logging.Log;
@@ -72,7 +75,23 @@ public class SnapshotFormat extends MatrixFormatImpl {
   private final static Log LOG = LogFactory.getLog(RowFormat.class);
 
   public SnapshotFormat(Configuration conf) {
-    super(conf);
+    super(conf, 1);
+  }
+
+  @Override
+  public void save(ServerPartition part, MatrixPartitionMeta partMeta,
+      PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
+    if(part instanceof RowBasedPartition) {
+      save((RowBasedPartition) part, partMeta, saveContext, output);
+    }
+  }
+
+  @Override
+  public void load(ServerPartition part, MatrixPartitionMeta partMeta,
+      PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+    if(part instanceof RowBasedPartition) {
+      load((RowBasedPartition) part, partMeta, loadContext, input);
+    }
   }
 
   static enum SaveType {
@@ -108,15 +127,17 @@ public class SnapshotFormat extends MatrixFormatImpl {
    * @param saveContext save context
    * @param output output stream
    */
-  public void save(ServerPartition part, MatrixPartitionMeta partMeta,
+  public void save(RowBasedPartition part, MatrixPartitionMeta partMeta,
       PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
     List<Integer> rowIds = saveContext.getRowIndexes();
-    PartitionSource rows = part.getRows();
+    ServerRowsStorage rows = part.getRowsStorage();
     if (rowIds == null || rowIds.isEmpty()) {
-      Iterator<Map.Entry<Integer, ServerRow>> iter = part.getRows().iterator();
-      rowIds = new ArrayList<>();
-      while (iter.hasNext()) {
-        rowIds.add(iter.next().getKey());
+      int rowStart = part.getPartitionKey().getStartRow();
+      int rowEnd = part.getPartitionKey().getEndRow();
+
+      rowIds = new ArrayList<>(rowEnd - rowStart);
+      for (int i = rowStart; i < rowEnd; i++) {
+        rowIds.add(i);
       }
     } else {
       rowIds = filter(part, rowIds);
@@ -157,7 +178,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
   public void save(ServerRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
       DataOutputStream out) throws IOException {
     if (saveContext.cloneFirst()) {
-      row = row.adaptiveClone();
+      row = (ServerRow) row.adaptiveClone();
     }
     try {
       row.startWrite();
@@ -177,6 +198,10 @@ public class SnapshotFormat extends MatrixFormatImpl {
         save((ServerLongIntRow) row, saveContext, meta, out);
       } else if (row instanceof ServerLongLongRow) {
         save((ServerLongLongRow) row, saveContext, meta, out);
+      } else if (row instanceof ServerIntAnyRow) {
+        save((ServerIntAnyRow) row, saveContext, meta, out);
+      } else if (row instanceof ServerLongAnyRow) {
+        save((ServerLongAnyRow) row, saveContext, meta, out);
       } else {
         throw new IOException("Unknown vector type " + row.getRowType());
       }
@@ -193,9 +218,9 @@ public class SnapshotFormat extends MatrixFormatImpl {
    * @param loadContext load context
    * @param input input stream
    */
-  public void load(ServerPartition part, MatrixPartitionMeta partMeta,
+  public void load(RowBasedPartition part, MatrixPartitionMeta partMeta,
       PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
-    PartitionSource rows = part.getRows();
+    ServerRowsStorage rows = part.getRowsStorage();
     try {
       Map<Integer, RowPartitionMeta> rowMetas = partMeta.getRowMetas();
       for (RowPartitionMeta rowMeta : rowMetas.values()) {
@@ -241,6 +266,10 @@ public class SnapshotFormat extends MatrixFormatImpl {
         load((ServerLongIntRow) row, loadContext, meta, in);
       } else if (row instanceof ServerLongLongRow) {
         load((ServerLongLongRow) row, loadContext, meta, in);
+      } else if (row instanceof ServerIntAnyRow) {
+        load((ServerIntAnyRow) row, loadContext, meta, in);
+      } else if (row instanceof ServerLongAnyRow) {
+        load((ServerLongAnyRow) row, loadContext, meta, in);
       } else {
         throw new IOException("Unknown vector type " + row.getRowType());
       }
@@ -252,7 +281,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
   private void save(ServerIntFloatRow row, PSMatrixSaveContext saveContext,
       MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     int startCol = (int) meta.getStartCol();
-    IntFloatVector vector = (IntFloatVector) row.getSplit();
+    IntFloatVector vector = ServerRowUtils.getVector(row);
     if (vector.isDense()) {
       float[] data = vector.getStorage().getValues();
       for (int i = 0; i < data.length; i++) {
@@ -279,7 +308,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
   private void save(ServerIntDoubleRow row, PSMatrixSaveContext saveContext,
       MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     int startCol = (int) meta.getStartCol();
-    IntDoubleVector vector = (IntDoubleVector) row.getSplit();
+    IntDoubleVector vector = ServerRowUtils.getVector(row);
     if (vector.isDense()) {
       double[] data = vector.getStorage().getValues();
       for (int i = 0; i < data.length; i++) {
@@ -306,7 +335,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
   private void save(ServerIntIntRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
       DataOutputStream out) throws IOException {
     int startCol = (int) meta.getStartCol();
-    IntIntVector vector = (IntIntVector) row.getSplit();
+    IntIntVector vector = ServerRowUtils.getVector(row);
     if (vector.isDense()) {
       int[] data = vector.getStorage().getValues();
       for (int i = 0; i < data.length; i++) {
@@ -333,7 +362,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
   private void save(ServerIntLongRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
       DataOutputStream out) throws IOException {
     int startCol = (int) meta.getStartCol();
-    IntLongVector vector = (IntLongVector) row.getSplit();
+    IntLongVector vector = ServerRowUtils.getVector(row);
     if (vector.isDense()) {
       long[] data = vector.getStorage().getValues();
       for (int i = 0; i < data.length; i++) {
@@ -360,8 +389,8 @@ public class SnapshotFormat extends MatrixFormatImpl {
   private void save(ServerLongDoubleRow row, PSMatrixSaveContext saveContext,
       MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
-    if (row.getSplit() instanceof IntDoubleVector) {
-      IntDoubleVector vector = (IntDoubleVector) row.getSplit();
+    if (ServerRowUtils.getVector(row) instanceof IntDoubleVector) {
+      IntDoubleVector vector = (IntDoubleVector) ServerRowUtils.getVector(row);
       if (vector.isDense()) {
         double[] data = vector.getStorage().getValues();
         for (int i = 0; i < data.length; i++) {
@@ -384,7 +413,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
         }
       }
     } else {
-      LongDoubleVector vector = (LongDoubleVector) row.getSplit();
+      LongDoubleVector vector = (LongDoubleVector) ServerRowUtils.getVector(row);
       if (vector.isSorted()) {
         long[] indices = vector.getStorage().getIndices();
         double[] values = vector.getStorage().getValues();
@@ -407,8 +436,8 @@ public class SnapshotFormat extends MatrixFormatImpl {
   private void save(ServerLongFloatRow row, PSMatrixSaveContext saveContext,
       MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
-    if (row.getSplit() instanceof IntFloatVector) {
-      IntFloatVector vector = (IntFloatVector) row.getSplit();
+    if (ServerRowUtils.getVector(row) instanceof IntFloatVector) {
+      IntFloatVector vector = (IntFloatVector) ServerRowUtils.getVector(row);
       if (vector.isDense()) {
         float[] data = vector.getStorage().getValues();
         for (int i = 0; i < data.length; i++) {
@@ -431,7 +460,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
         }
       }
     } else {
-      LongFloatVector vector = (LongFloatVector) row.getSplit();
+      LongFloatVector vector = (LongFloatVector) ServerRowUtils.getVector(row);
       if (vector.isSorted()) {
         long[] indices = vector.getStorage().getIndices();
         float[] values = vector.getStorage().getValues();
@@ -455,8 +484,8 @@ public class SnapshotFormat extends MatrixFormatImpl {
   private void save(ServerLongIntRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
       DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
-    if (row.getSplit() instanceof IntIntVector) {
-      IntIntVector vector = (IntIntVector) row.getSplit();
+    if (ServerRowUtils.getVector(row) instanceof IntIntVector) {
+      IntIntVector vector = (IntIntVector) ServerRowUtils.getVector(row);
       if (vector.isDense()) {
         int[] data = vector.getStorage().getValues();
         for (int i = 0; i < data.length; i++) {
@@ -479,7 +508,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
         }
       }
     } else {
-      LongIntVector vector = (LongIntVector) row.getSplit();
+      LongIntVector vector = (LongIntVector) ServerRowUtils.getVector(row);
       if (vector.isSorted()) {
         long[] indices = vector.getStorage().getIndices();
         int[] values = vector.getStorage().getValues();
@@ -502,8 +531,8 @@ public class SnapshotFormat extends MatrixFormatImpl {
   private void save(ServerLongLongRow row, PSMatrixSaveContext saveContext,
       MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
-    if (row.getSplit() instanceof IntLongVector) {
-      IntLongVector vector = (IntLongVector) row.getSplit();
+    if (ServerRowUtils.getVector(row) instanceof IntLongVector) {
+      IntLongVector vector = (IntLongVector) ServerRowUtils.getVector(row);
       if (vector.isDense()) {
         long[] data = vector.getStorage().getValues();
         for (int i = 0; i < data.length; i++) {
@@ -526,7 +555,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
         }
       }
     } else {
-      LongLongVector vector = (LongLongVector) row.getSplit();
+      LongLongVector vector = (LongLongVector) ServerRowUtils.getVector(row);
       if (vector.isSorted()) {
         long[] indices = vector.getStorage().getIndices();
         long[] values = vector.getStorage().getValues();
@@ -544,6 +573,26 @@ public class SnapshotFormat extends MatrixFormatImpl {
         }
       }
     }
+  }
+
+  private void save(ServerIntAnyRow row, PSMatrixSaveContext saveContext,
+      MatrixPartitionMeta meta, DataOutputStream output) throws IOException {
+    row.getStorage().serialize(output);
+  }
+
+  private void save(ServerLongAnyRow row, PSMatrixSaveContext saveContext,
+      MatrixPartitionMeta meta, DataOutputStream output) throws IOException {
+    row.getStorage().serialize(output);
+  }
+
+  private void load(ServerIntAnyRow row, PSMatrixLoadContext loadContext,
+      MatrixPartitionMeta meta, DataInputStream in) throws IOException {
+    row.getStorage().deserialize(in);
+  }
+
+  private void load(ServerLongAnyRow row, PSMatrixLoadContext loadContext,
+      MatrixPartitionMeta meta, DataInputStream in) throws IOException {
+    row.getStorage().deserialize(in);
   }
 
   private void load(ServerIntFloatRow row, PSMatrixLoadContext loadContext,

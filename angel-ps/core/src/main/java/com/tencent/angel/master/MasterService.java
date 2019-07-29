@@ -52,6 +52,7 @@ import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.*;
 import com.tencent.angel.protobuf.generated.MLProtos.*;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.*;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.*;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.*;
 import com.tencent.angel.ps.PSAttemptId;

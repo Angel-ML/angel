@@ -18,6 +18,7 @@
 
 package com.tencent.angel.spark.context
 
+import java.security.PrivilegedExceptionAction
 import java.util
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -45,6 +46,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.{Map, mutable}
 import org.apache.commons.httpclient.URI
 import com.tencent.angel.ps.storage.partitioner.Partitioner
+import org.apache.hadoop.security.UserGroupInformation
 
 /**
   * AngelPSContext for driver and executor, it is an implement of `PSContext`
@@ -249,6 +251,15 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
 
   private[spark] def conf: Map[String, String] = angelConf
 
+  override def createMatrix(mc: MatrixContext): MatrixMeta = {
+    //assertCallByDriver("The operation of creating a matrix can only be called on the driver side.")
+    psAgent.createMatrix(mc, 5000L)
+    val meta = psAgent.getMatrix(mc.getName)
+    matrixCounter += 1
+    matrixMetaMap(meta.getId) = meta
+    meta
+  }
+
   override def save(ctx: ModelSaveContext): Unit = AngelPSContext.save(ctx)
 
   override def load(ctx: ModelLoadContext): Unit = AngelPSContext.load(ctx)
@@ -386,9 +397,8 @@ private[spark] object AngelPSContext {
     }
 
     // Some other settings
-    conf.getAllWithPrefix("spark.angel").foreach {
-      case (key, value) =>
-        hadoopConf.set(s"angel$key", value)
+    conf.getAllWithPrefix("angel").foreach {
+      case (key, value) => hadoopConf.set(s"angel$key", value)
     }
     hadoopConf
   }

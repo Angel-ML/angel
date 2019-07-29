@@ -214,6 +214,10 @@ public abstract class AngelClient implements AngelClientInterface {
     hbThread.start();
   }
 
+  public void keepAlive() throws ServiceException {
+    master.keepAlive(null, KeepAliveRequest.newBuilder().setClientId(clientId).build());
+  }
+
   @Override
   public void run() throws AngelException {
     if (master == null) {

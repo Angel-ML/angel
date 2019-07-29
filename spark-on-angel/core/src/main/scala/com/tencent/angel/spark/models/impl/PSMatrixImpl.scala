@@ -318,4 +318,8 @@ class PSMatrixImpl(
   override def asyncPsfUpdate(func: UpdateFunc): Future[VoidResult] = {
     matrixClient.asyncUpdate(func)
   }
+
+  override def checkpoint(): Future[VoidResult] = {
+    matrixClient.checkpoint();
+  }
 }

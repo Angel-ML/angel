@@ -19,10 +19,9 @@
 package com.tencent.angel.ml.matrix.psf.aggr
 
 import scala.collection.JavaConversions._
-
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.{BinaryAggrFunc, ScalarAggrResult, ScalarPartitionAggrResult}
 import com.tencent.angel.ml.matrix.psf.get.base.{GetResult, PartitionGetResult}
-import com.tencent.angel.ps.storage.vector.ServerRow
+import com.tencent.angel.ps.storage.vector.{ServerRow, ServerRowUtils}
 
 /**
   * `Dot` will return dot product result of `rowId1` and `rowId2`.
@@ -41,6 +40,6 @@ class Dot(matrixId: Int, rowId1: Int, rowId2: Int) extends BinaryAggrFunc(matrix
     new ScalarAggrResult(sum)
   }
 
-  override protected def processRows(row1: ServerRow, row2: ServerRow): Double = row1.getSplit.dot(row2.getSplit)
+  override protected def processRows(row1: ServerRow, row2: ServerRow): Double = ServerRowUtils.getVector(row1).dot(ServerRowUtils.getVector(row2))
 
 }

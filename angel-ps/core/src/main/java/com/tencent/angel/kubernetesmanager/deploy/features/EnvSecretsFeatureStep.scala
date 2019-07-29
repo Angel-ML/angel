@@ -2,15 +2,16 @@ package com.tencent.angel.kubernetesmanager.deploy.features
 
 import com.tencent.angel.kubernetesmanager.deploy.config.{AngelPod, KubernetesConf, KubernetesRoleSpecificConf}
 import io.fabric8.kubernetes.api.model.{ContainerBuilder, EnvVarBuilder, HasMetadata}
+
 import scala.collection.JavaConverters._
 
 private[angel] class EnvSecretsFeatureStep(
-    kubernetesConf: KubernetesConf[_ <: KubernetesRoleSpecificConf])
+                                            kubernetesConf: KubernetesConf[_ <: KubernetesRoleSpecificConf])
   extends KubernetesFeatureConfigStep {
   override def configurePod(pod: AngelPod): AngelPod = {
     val addedEnvSecrets = kubernetesConf
       .roleSecretEnvNamesToKeyRefs
-      .map{ case (envName, keyRef) =>
+      .map { case (envName, keyRef) =>
         // Keyref parts
         val keyRefParts = keyRef.split(":")
         require(keyRefParts.size == 2, "SecretKeyRef must be in the form name:key.")

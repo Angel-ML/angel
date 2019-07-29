@@ -30,7 +30,7 @@ import com.tencent.angel.ps.server.data.request.Request;
 import com.tencent.angel.ps.server.data.request.UpdateClockRequest;
 import com.tencent.angel.ps.server.data.response.Response;
 import com.tencent.angel.ps.server.data.response.ResponseType;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.ServerPartition;
 import com.tencent.angel.psagent.matrix.transport.FutureResult;
 import com.tencent.angel.utils.ByteBufUtils;
 import io.netty.bootstrap.Bootstrap;

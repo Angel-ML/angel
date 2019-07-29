@@ -35,6 +35,7 @@ import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.server.data.PSLocation;
 import com.tencent.angel.utils.StringUtils;
+import java.util.concurrent.LinkedBlockingDeque;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -46,7 +47,6 @@ import org.apache.hadoop.yarn.factory.providers.RecordFactoryProvider;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -344,7 +344,7 @@ public class ParameterServerManager extends AbstractService
   }
 
   public void psFailedReport(PSLocation psLoc) {
-    restartPS(psLoc);
+    //restartPS(psLoc);
   }
 
   private void restartPS(PSLocation psLoc) {
