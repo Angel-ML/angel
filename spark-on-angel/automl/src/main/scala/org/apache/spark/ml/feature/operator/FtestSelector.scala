@@ -29,15 +29,13 @@ import org.apache.spark.sql.functions._
 import breeze.linalg.argsort
 import breeze.linalg.{DenseVector => BDV, Vector => BV}
 import breeze.stats.mean
-
 import org.apache.hadoop.fs.Path
 import org.apache.spark.ml.attribute.{Attribute, AttributeGroup, NominalAttribute}
+import org.apache.spark.ml.feature.operator.FtestSelectorModel.FtestSelectorModelWriter
 import org.apache.spark.ml.param.shared.{HasFeaturesCol, HasLabelCol, HasOutputCol}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.stat.{MultivariateStatisticalSummary, Statistics}
 import org.apache.spark.rdd.RDD
-
-
 
 
 /**
@@ -218,7 +216,7 @@ object FtestSelector extends DefaultParamsReadable[FtestSelector] {
   */
 class FtestSelectorModel(override val uid: String,
                          val selectedFeatures: Array[Int])
-  extends Model[FtestSelectorModel] with FtestSelectorParams {
+  extends Model[FtestSelectorModel] with FtestSelectorParams with MLWritable {
 
   private var filterIndices: Array[Int] = selectedFeatures.take(${numTopFeatures}).sorted
 
@@ -285,6 +283,9 @@ class FtestSelectorModel(override val uid: String,
     val copied = new FtestSelectorModel(uid, filterIndices)
     copyValues(copied, extra).setParent(parent)
   }
+
+  override def write: MLWriter = new FtestSelectorModelWriter(this)
+
 }
 
 object FtestSelectorModel extends MLReadable[FtestSelectorModel] {
@@ -308,10 +309,11 @@ object FtestSelectorModel extends MLReadable[FtestSelectorModel] {
 
     override def load(path: String): FtestSelectorModel = {
       val metadata = DefaultParamsReader.loadMetadata(path, sc, className)
-      val data = sparkSession.read.parquet(path).select("selectedFeatures").head()
+      val dataPath = new Path(path, "data").toString
+      val data = sparkSession.read.parquet(dataPath).select("selectedFeatures").head()
       val selectedFeatures = data.getAs[Seq[Int]](0).toArray
       val model = new FtestSelectorModel(metadata.uid, selectedFeatures)
-      DefaultParamsReader.getAndSetParams(model, metadata)
+      metadata.getAndSetParams(model)
       model
     }
   }
