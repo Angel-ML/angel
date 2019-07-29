@@ -14,7 +14,7 @@ If you open an issue, the more information the better. Such as detailed descript
 ## Pull Requests
 We strongly welcome your pull request to make Angel better. 
 
-Ensure you have signed the [Contributor License Agreement (CLA).](master/CLA.md)
+Ensure you have signed the [Contributor License Agreement (CLA).](CLA.md)
 
 
 ### Branch Management
@@ -53,4 +53,4 @@ Use [Code Style](https://github.com/Tencent/angel/blob/master/dev/checkstyle.xml
 
 ## License
 By contributing to Angel, you agree that your contributions will be licensed
-under its [ Apache License, Version 2.0](https://github.com/Tencent/angel/blob/master/LICENSE)
+under its [ Apache License, Version 2.0](https://github.com/Tencent/angel/blob/master/LICENSE.TXT)
