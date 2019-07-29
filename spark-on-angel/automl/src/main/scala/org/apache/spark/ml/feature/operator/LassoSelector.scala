@@ -32,6 +32,7 @@ import Math.abs
 
 import org.apache.hadoop.fs.Path
 import org.apache.spark.ml.attribute.{Attribute, AttributeGroup, NominalAttribute}
+import org.apache.spark.ml.feature.operator.LassoSelectorModel.LassoSelectorModelWriter
 import org.apache.spark.ml.param.shared.{HasFeaturesCol, HasLabelCol, HasOutputCol}
 
 
@@ -161,7 +162,7 @@ object LassoSelector extends DefaultParamsReadable[LassoSelector] {
   */
 class LassoSelectorModel(override val uid: String,
                          val selectedFeatures: Array[Int])
-  extends Model[LassoSelectorModel] with LassoSelectorParams {
+  extends Model[LassoSelectorModel] with LassoSelectorParams with MLWritable {
 
   private var filterIndices: Array[Int] = selectedFeatures.sorted
 
@@ -228,6 +229,8 @@ class LassoSelectorModel(override val uid: String,
     val copied = new LassoSelectorModel(uid, filterIndices)
     copyValues(copied, extra).setParent(parent)
   }
+
+  override def write: MLWriter = new LassoSelectorModelWriter(this)
 }
 
 object LassoSelectorModel extends MLReadable[LassoSelectorModel] {
@@ -251,10 +254,11 @@ object LassoSelectorModel extends MLReadable[LassoSelectorModel] {
 
     override def load(path: String): LassoSelectorModel = {
       val metadata = DefaultParamsReader.loadMetadata(path, sc, className)
-      val data = sparkSession.read.parquet(path).select("selectedFeatures").head()
+      val dataPath = new Path(path, "data").toString
+      val data = sparkSession.read.parquet(dataPath).select("selectedFeatures").head()
       val selectedFeatures = data.getAs[Seq[Int]](0).toArray
       val model = new LassoSelectorModel(metadata.uid, selectedFeatures)
-      DefaultParamsReader.getAndSetParams(model, metadata)
+      metadata.getAndSetParams(model)
       model
     }
   }

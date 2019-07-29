@@ -255,10 +255,11 @@ object RandomForestSelectorModel extends MLReadable[RandomForestSelectorModel] {
 
     override def load(path: String): RandomForestSelectorModel = {
       val metadata = DefaultParamsReader.loadMetadata(path, sc, className)
-      val data = sparkSession.read.parquet(path).select("selectedFeatures").head()
+      val dataPath = new Path(path, "data").toString
+      val data = sparkSession.read.parquet(dataPath).select("selectedFeatures").head()
       val selectedFeatures = data.getAs[Seq[Int]](0).toArray
       val model = new RandomForestSelectorModel(metadata.uid, selectedFeatures)
-      DefaultParamsReader.getAndSetParams(model, metadata)
+      metadata.getAndSetParams(model)
       model
     }
   }

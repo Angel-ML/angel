@@ -252,7 +252,7 @@ object VarianceSelectorModel extends MLReadable[VarianceSelectorModel] {
       val data = sparkSession.read.parquet(dataPath).select("selectedFeatures").head()
       val selectedFeatures = data.getAs[Seq[Int]](0).toArray
       val model = new VarianceSelectorModel(metadata.uid, selectedFeatures)
-      DefaultParamsReader.getAndSetParams(model, metadata)
+      metadata.getAndSetParams(model)
       model
     }
   }
