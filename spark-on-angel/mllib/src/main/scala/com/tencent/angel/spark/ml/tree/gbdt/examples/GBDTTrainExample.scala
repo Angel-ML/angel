@@ -91,7 +91,7 @@ object GBDTTrainExample {
       val trainer = new GBDTTrainer(param)
       trainer.initialize(trainPath, validPath)
       val model = trainer.train()
-      trainer.save(model, modelPath)
+      trainer.save(model._1, modelPath)
     } catch {
       case e: Exception =>
         e.printStackTrace()
