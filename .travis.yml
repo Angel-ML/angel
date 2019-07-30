@@ -5,4 +5,4 @@ install:
 
 language: java
 jdk:
-  - oraclejdk9
+  - openjdk8
