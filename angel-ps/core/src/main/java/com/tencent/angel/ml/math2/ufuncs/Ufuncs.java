@@ -320,6 +320,10 @@ public class Ufuncs {
     return UnaryExecutor.apply(v1, new SoftThreshold(true, x));
   }
 
+  public static Vector ipagerank(Vector v1, Vector v2, float initRank, float resetProb) {
+    return BinaryExecutor.apply(v1, v2, new PageRankCal(true, initRank, resetProb));
+  }
+
   /*
   Computes v1 = abs(v1)
   */

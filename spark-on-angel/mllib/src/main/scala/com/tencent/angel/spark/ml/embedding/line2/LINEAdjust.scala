@@ -3,6 +3,7 @@ package com.tencent.angel.spark.ml.embedding.line2
 import java.util
 
 import com.tencent.angel.PartitionKey
+import com.tencent.angel.graph.data.NodeUtils
 import com.tencent.angel.ml.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc, UpdateParam}
 import com.tencent.angel.ps.storage.partition.RowBasedPartition
 import com.tencent.angel.ps.storage.vector.ServerIntAnyRow
@@ -10,7 +11,6 @@ import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplitUtils
 import io.netty.buffer.ByteBuf
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
-import org.apache.velocity.runtime.parser.node.NodeUtils
 
 class LINEAdjust(var param: LINEAdjustParam) extends UpdateFunc(param) {
 
