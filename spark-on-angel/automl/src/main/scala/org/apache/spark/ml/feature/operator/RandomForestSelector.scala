@@ -258,7 +258,7 @@ object RandomForestSelectorModel extends MLReadable[RandomForestSelectorModel] {
       val data = sparkSession.read.parquet(path).select("selectedFeatures").head()
       val selectedFeatures = data.getAs[Seq[Int]](0).toArray
       val model = new RandomForestSelectorModel(metadata.uid, selectedFeatures)
-      DefaultParamsReader.getAndSetParams(model, metadata)
+      metadata.getAndSetParams(model)
       model
     }
   }
