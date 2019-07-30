@@ -47,4 +47,3 @@ export CLASS="com.tencent.angel.utils.AngelRunJar"
 export CLASSPATH=${CLASSPATH}
 export PYTHONHASHSEED=0
 exec "${JAVA}" ${JAVA_HEAP_MAX} ${HADOOP_OPTS} ${CLASS} "$@"
-

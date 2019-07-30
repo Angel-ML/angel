@@ -42,4 +42,4 @@ object KmeansOptimizer {
     assert(psProvider.fieldEqualClassName[KmeansOptimizer](jast, OptimizerKeys.typeKey))
     new KmeansOptimizer()
   }
-} 
+}

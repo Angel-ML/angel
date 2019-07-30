@@ -63,4 +63,3 @@ export JAVA=$JAVA_HOME/bin/java
 echo $JAVA $JAVA_HEAP_MAX $HADOOP_OPTS $CLASS "$@"
 exec "$JAVA" $JAVA_HEAP_MAX $HADOOP_OPTS $CLASS "$@"
 
-
