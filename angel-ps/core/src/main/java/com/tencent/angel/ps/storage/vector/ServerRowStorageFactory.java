@@ -147,8 +147,6 @@ public class ServerRowStorageFactory {
         break;
 
       case T_FLOAT_SPARSE_LONGKEY:
-        LOG.info("startCol=" + startCol + ", endCol=" + endCol + ", estElemNum=" + estElemNum);
-
         if (useIntKey(useAdaptiveKey, startCol, endCol)) {
           if (sparseToDense(useAdaptiveStorage, startCol, endCol, estElemNum, sparseToDenseFactor)) {
             ret = new LongFloatVectorStorage(VFactory.denseFloatVector((int) (endCol - startCol)),
@@ -158,7 +156,6 @@ public class ServerRowStorageFactory {
                 VFactory.sparseFloatVector((int) (endCol - startCol), (int) estElemNum), startCol);
           }
         } else {
-          LOG.info("create long float storage, estElemNum=" + estElemNum);
           ret = new LongFloatVectorStorage(
               VFactory.sparseLongKeyFloatVector(endCol - startCol, (int) estElemNum), startCol);
         }
