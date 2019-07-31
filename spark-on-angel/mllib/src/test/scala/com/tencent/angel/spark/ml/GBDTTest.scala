@@ -63,7 +63,7 @@ class GBDTTest extends PSFunSuite with SharedPSContext {
       val model = trainer.train()
 
       println(s"Model will be saved to $modelPath")
-      trainer.save(model, modelPath)(sc)
+      trainer.save(model._1, modelPath)(sc)
 
       predictor.loadModel(sc, modelPath)
       predictor.predict(sc, testPath, predPath)

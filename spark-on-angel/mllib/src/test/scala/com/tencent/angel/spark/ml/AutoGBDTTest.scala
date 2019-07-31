@@ -21,6 +21,7 @@ import com.tencent.angel.RunningMode
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.spark.ml.tree.gbdt.trainer.AutoGBDTLearner
+import org.apache.spark.SparkContext
 
 class AutoGBDTTest extends PSFunSuite with SharedPSContext {
   private var learner: AutoGBDTLearner = _
@@ -68,7 +69,7 @@ class AutoGBDTTest extends PSFunSuite with SharedPSContext {
   }
 
   test("AutoGBDT") {
-    learner.train(sc)
+    learner.train()(sc)
   }
 
 }
