@@ -23,7 +23,7 @@ import com.tencent.angel.ml.core.conf.SharedConf
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.core.network.layers._
 import org.apache.commons.logging.LogFactory
 

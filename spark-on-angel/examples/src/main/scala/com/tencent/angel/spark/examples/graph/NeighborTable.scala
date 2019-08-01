@@ -21,7 +21,8 @@ import java.util.Random
 
 import com.tencent.angel.graph.client.initneighbor.{InitNeighbor, InitNeighborOver, InitNeighborOverParam, InitNeighborParam}
 import com.tencent.angel.graph.client.sampleneighbor.{SampleNeighbor, SampleNeighborParam, SampleNeighborResult}
-import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
+import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.ps.storage.partition.CSRPartition
 import com.tencent.angel.spark.models.PSMatrix
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap

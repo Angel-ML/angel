@@ -21,7 +21,8 @@ package com.tencent.angel.spark.ml.embedding.line2
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
+import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.embedding.NEModel.NEDataSet

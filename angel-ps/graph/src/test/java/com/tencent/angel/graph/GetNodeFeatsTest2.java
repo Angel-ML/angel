@@ -19,7 +19,7 @@ import com.tencent.angel.localcluster.LocalClusterContext;
 import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.matrix.MatrixClient;

@@ -21,7 +21,7 @@ package com.tencent.angel.ml.core.conf
 import com.tencent.angel.RunningMode
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.core.utils.NetUtils
 import com.tencent.angel.ml.math2.utils.Constant
 import org.apache.commons.logging.LogFactory

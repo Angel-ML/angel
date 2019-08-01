@@ -25,7 +25,7 @@ import com.tencent.angel.ml.GBDT.GBDTModel._
 import com.tencent.angel.ml.core.conf.MLConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, IntIntVector}
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.ml.core.utils.Maths

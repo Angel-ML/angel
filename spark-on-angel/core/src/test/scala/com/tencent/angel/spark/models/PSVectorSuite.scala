@@ -22,7 +22,7 @@ import scala.util.Random
 
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.{IntFloatVector, LongFloatVector}
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
 import com.tencent.angel.spark.{PSFunSuite, SharedPSContext}
 

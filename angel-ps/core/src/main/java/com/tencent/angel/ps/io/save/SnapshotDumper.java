@@ -18,7 +18,6 @@
 
 package com.tencent.angel.ps.io.save;
 
-import com.google.protobuf.ServiceException;
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.MatrixMeta;
@@ -27,7 +26,7 @@ import com.tencent.angel.model.PSMatrixSaveContext;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.model.output.format.SnapshotFormat;
 import com.tencent.angel.ps.PSContext;
-import com.tencent.angel.ps.client.MasterClient;
+
 import com.tencent.angel.ps.server.data.ServerState;
 import com.tencent.angel.utils.HdfsUtil;
 import java.io.IOException;
@@ -137,6 +136,7 @@ public class SnapshotDumper {
           try {
             LOG.info("to writeSnapshots");
             while (context.getRunningContext().getState() == ServerState.BUSY) {
+              LOG.info("State is busy");
               Thread.sleep(5000);
             }
             writeSnapshots();
@@ -158,7 +158,8 @@ public class SnapshotDumper {
    * Write snapshot
    */
   private void writeSnapshots() throws Exception {
-    List<Integer> matrixIds = null;
+    List<Integer> matrixIds;
+    // If not set need save matrices, all matrices will be dump to files
     if (needDumpMatrices == null) {
       matrixIds = new ArrayList<>(context.getMatrixMetaManager().getMatrixMetas().keySet());
     } else {
@@ -166,74 +167,40 @@ public class SnapshotDumper {
     }
 
     if (matrixIds.isEmpty()) {
+      LOG.info("there is no matrices need dump");
       return;
     }
 
-    List<Integer> needDumpMatrices = filter(matrixIds);
-    if (needDumpMatrices != null && !needDumpMatrices.isEmpty()) {
-      FileSystem fs = baseDirPath.getFileSystem(context.getConf());
-      Path tmpPath = HdfsUtil.toTmpPath(baseDirPath);
-      if (fs.exists(tmpPath)) {
-        fs.delete(tmpPath, true);
-      }
-
-      List<Integer> ids = filter(matrixIds);
-      if (!ids.isEmpty()) {
-        int size = ids.size();
-        List<PSMatrixSaveContext> saveContexts = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-          MatrixMeta meta = context.getMatrixMetaManager().getMatrixMeta(ids.get(i));
-          saveContexts.add(
-              new PSMatrixSaveContext(ids.get(i),
-                  new ArrayList<>(meta.getPartitionMetas().keySet()),
-                  null, SnapshotFormat.class.getName(),
-                  new Path(tmpPath, meta.getName()).toString(),
-                  true, false));
-        }
-
-        context.getIOExecutors()
-            .save(new PSMatricesSaveContext(-1, -1, saveContexts), dumpParallel);
-        HdfsUtil.rename(tmpPath, baseDirPath, fs);
+    // Generate tmp dump directory
+    FileSystem fs = baseDirPath.getFileSystem(context.getConf());
+    Path tmpPath = HdfsUtil.toTmpPath(baseDirPath);
+    if (fs.exists(tmpPath)) {
+      boolean ret = fs.delete(tmpPath, true);
+      if(!ret) {
+        throw new IOException("Delete tmp snapshot dir failed");
       }
     }
-  }
 
-  /**
-   * Get the matrices that need dump
-   *
-   * @param matrixIds all matrices
-   * @return the matrices that need dump
-   */
-  private List<Integer> filter(List<Integer> matrixIds) throws ServiceException {
     int size = matrixIds.size();
-    List<Integer> ret = new ArrayList<>(size);
+    List<PSMatrixSaveContext> saveContexts = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {
-      if (checkNeedDump(matrixIds.get(i))) {
-        ret.add(matrixIds.get(i));
-      }
+      MatrixMeta meta = context.getMatrixMetaManager().getMatrixMeta(matrixIds.get(i));
+      LOG.info("Need dump matrices: " + meta.getName());
+      saveContexts.add(
+          new PSMatrixSaveContext(matrixIds.get(i),
+              new ArrayList<>(meta.getPartitionMetas().keySet()),
+              null, SnapshotFormat.class.getName(),
+              new Path(tmpPath, meta.getName()).toString(),
+              true, false));
     }
 
-    return ret;
-  }
-
-  /**
-   * Is this matrix need dump
-   *
-   * @param matrixId matrix id
-   * @return true mean need dump
-   */
-  private boolean checkNeedDump(int matrixId) throws ServiceException {
-    if (mode == RunningMode.ANGEL_PS) {
-      return true;
-    } else {
-      MasterClient master = context.getMaster();
-      if (master == null) {
-        return false;
-      } else {
-        int iteration = context.getMaster().getIteration();
-        return iteration > lastIteration;
-      }
-    }
+    // Dump
+    LOG.info("Dump parallel = " + dumpParallel);
+    long startTs = System.currentTimeMillis();
+    context.getIOExecutors()
+        .save(new PSMatricesSaveContext(-1, -1, saveContexts), dumpParallel);
+    HdfsUtil.rename(tmpPath, baseDirPath, fs);
+    LOG.info("Dump success, use time = " + (System.currentTimeMillis() - startTs));
   }
 
   private List<Integer> toMatrixIds() {

@@ -22,7 +22,7 @@ import com.tencent.angel.client.AngelClientFactory;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.localcluster.LocalClusterContext;
 import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 //import com.tencent.angel.ml.matrix.psf.graph.adjacency.getneighbor.GetNeighbor;
 //import com.tencent.angel.ml.matrix.psf.graph.adjacency.getneighbor.GetNeighborParam;
 //import com.tencent.angel.ml.matrix.psf.graph.adjacency.getneighbor.GetNeighborResult;

@@ -32,7 +32,7 @@ import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.storage._
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.matrix.psf.update.RandomNormal
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.psf.columns._

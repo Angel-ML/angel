@@ -12,7 +12,7 @@ import com.tencent.angel.master.MasterProtocol;
 import com.tencent.angel.ml.math2.storage.LongDoubleSparseVectorStorage;
 import com.tencent.angel.ml.math2.vector.LongDoubleVector;
 import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSErrorRequest;
 import com.tencent.angel.ps.PSAttemptId;

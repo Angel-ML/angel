@@ -19,7 +19,7 @@
 package com.tencent.angel.ps.storage.vector;
 
 import com.tencent.angel.ml.math2.vector.IntLongVector;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
 import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.storage.vector.func.LongElemUpdateFunc;

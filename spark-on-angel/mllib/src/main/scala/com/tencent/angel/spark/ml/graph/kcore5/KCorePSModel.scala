@@ -1,7 +1,8 @@
 package com.tencent.angel.spark.ml.graph.kcore5
 
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.LongIntVector
-import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
+import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.spark.models.PSVector
 import com.tencent.angel.spark.models.impl.PSVectorImpl

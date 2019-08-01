@@ -21,7 +21,8 @@ import com.tencent.angel.graph.client.initneighbor.{InitNeighbor, InitNeighborOv
 import com.tencent.angel.graph.client.initneighbor2.{InitNeighbor => InitLongNeighbor, InitNeighborParam => InitLongNeighborParam}
 import com.tencent.angel.graph.client.sampleneighbor.{SampleNeighbor, SampleNeighborParam, SampleNeighborResult}
 import com.tencent.angel.graph.client.sampleneighbor2.{SampleNeighbor => SampleLongNeighbor, SampleNeighborParam => SampleLongNeighborParam, SampleNeighborResult => SampleLongNeighborResult}
-import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
+import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.ps.storage.partition.CSRPartition
 import com.tencent.angel.ps.storage.vector.element.LongArrayElement
 import com.tencent.angel.spark.models.PSMatrix

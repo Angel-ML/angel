@@ -18,7 +18,7 @@
 package com.tencent.angel.ps.storage.partition;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ps.storage.partition.storage.CSRStorage;
 import com.tencent.angel.ps.storage.partition.storage.DenseServerRowsStorage;
 import com.tencent.angel.ps.storage.partition.storage.IServerPartitionStorage;

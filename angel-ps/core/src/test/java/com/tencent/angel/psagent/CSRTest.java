@@ -6,7 +6,7 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.PartContext;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.storage.partition.CSRPartition;
@@ -83,16 +83,6 @@ public class CSRTest {
 
   @Before
   public void setup() throws Exception {
-
-    int tryNum = 10;
-    while(tryNum-- >0) {
-      Random r = new Random(seed);
-      LOG.info("=================================================================");
-      for(int i = 0; i < 10; i++) {
-        LOG.info("tryNum=" + tryNum + " rand value=" + r.nextInt(10000000));
-      }
-    }
-
     // set basic configuration keys
     Configuration conf = new Configuration();
     conf.setBoolean("mapred.mapper.new-api", true);
@@ -103,7 +93,7 @@ public class CSRTest {
     conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
     conf.setBoolean(AngelConf.ANGEL_AM_USE_DUMMY_DATASPLITER, true);
     conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
-    conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, "file:///F:\\test\\model_1");
+    conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model");
     conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, LOCAL_FS + TMP_PATH + "/in");
     conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 

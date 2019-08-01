@@ -57,7 +57,7 @@ import com.tencent.angel.ml.math2.vector.LongLongVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ml.matrix.psf.update.update.IncrementRows;
 import com.tencent.angel.ml.matrix.psf.update.update.IncrementRowsParam;
 import com.tencent.angel.ps.PSAttemptId;

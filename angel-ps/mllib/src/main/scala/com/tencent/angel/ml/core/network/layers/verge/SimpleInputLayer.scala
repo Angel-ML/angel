@@ -29,12 +29,12 @@ import com.tencent.angel.ml.core.utils.paramsutils.ParamKeys
 import com.tencent.angel.ml.core.utils.{NetUtils, PSMatrixUtils}
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
-import com.tencent.angel.ml.math2.utils.VectorUtils
+import com.tencent.angel.ml.math2.utils.{RowType, VectorUtils}
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import com.tencent.angel.ml.matrix.psf.update.RandomNormal
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
-import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
+import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.commons.logging.LogFactory

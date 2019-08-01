@@ -22,7 +22,7 @@ import com.tencent.angel.AppSubmitter;
 import com.tencent.angel.client.AngelClient;
 import com.tencent.angel.client.AngelClientFactory;
 import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import org.apache.hadoop.conf.Configuration;
 
 public class IndexGetRowTest implements AppSubmitter {

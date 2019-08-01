@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ml.math2.storage;
 
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ml.math2.utils.ArrayCopy;
 
 import java.util.Arrays;

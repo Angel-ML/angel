@@ -21,6 +21,7 @@ package com.tencent.angel.ml.matrix;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.model.output.format.MatrixFilesMeta;
 import com.tencent.angel.ps.storage.partition.IServerPartition;

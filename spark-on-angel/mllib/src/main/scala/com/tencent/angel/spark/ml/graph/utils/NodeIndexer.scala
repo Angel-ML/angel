@@ -2,8 +2,9 @@ package com.tencent.angel.spark.ml.graph.utils
 
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.math2.VFactory
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.{IntIntVector, IntLongVector}
-import com.tencent.angel.ml.matrix.{MatrixContext, PartContext, RowType}
+import com.tencent.angel.ml.matrix.{MatrixContext, PartContext}
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.spark.models.PSVector
 import com.tencent.angel.spark.models.impl.PSVectorImpl

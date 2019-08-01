@@ -22,7 +22,7 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.PartitionMeta;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.storage.partition.IServerPartition;
 import com.tencent.angel.ps.storage.partition.storage.IServerPartitionStorage;

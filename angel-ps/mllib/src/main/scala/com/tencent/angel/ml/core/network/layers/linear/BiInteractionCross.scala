@@ -24,7 +24,7 @@ import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.utils.VectorUtils
 import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, Vector}
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.core.network.layers._
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import org.apache.commons.logging.LogFactory

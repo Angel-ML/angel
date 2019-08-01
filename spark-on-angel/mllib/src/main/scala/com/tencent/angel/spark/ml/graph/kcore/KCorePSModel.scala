@@ -19,7 +19,7 @@ package com.tencent.angel.spark.ml.graph.kcore
 
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.IntIntVector
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.spark.models.PSVector
 
 private[kcore] class KCorePSModel(val core: PSVector) extends Serializable {

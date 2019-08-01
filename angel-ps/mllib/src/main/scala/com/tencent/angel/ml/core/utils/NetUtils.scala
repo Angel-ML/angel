@@ -22,7 +22,7 @@ import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.matrix._
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 
 
 object NetUtils {

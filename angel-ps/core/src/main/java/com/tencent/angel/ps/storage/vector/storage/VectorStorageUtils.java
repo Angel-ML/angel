@@ -31,7 +31,7 @@ import com.tencent.angel.ml.math2.vector.LongIntVector;
 import com.tencent.angel.ml.math2.vector.LongLongVector;
 import com.tencent.angel.ml.math2.vector.LongVector;
 import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;

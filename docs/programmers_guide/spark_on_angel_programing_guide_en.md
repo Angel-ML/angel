@@ -233,7 +233,7 @@ for (i <- 1 to ITERATIONS) {
 Example 3: In this third example, we describe how to use the Adam optimizer to accelerate the convergence speed. To use the Adam optimizer, we need to maintain another two vectors to calculate the historical gradients. Compared with the vanilla SGD, which allocates a PSMatrix with two rows, we allocates a PSMatrix with 4 rows
 ```scala
 import com.tencent.angel.ml.core.optimizer.Adam
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 
 
 // allocate a randomly initialized 4xdim PS matrix

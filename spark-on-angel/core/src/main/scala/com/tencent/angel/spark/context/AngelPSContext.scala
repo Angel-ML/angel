@@ -29,7 +29,8 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.conf.AngelConf._
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.kubernetesmanager.scheduler.KubernetesClusterManager
-import com.tencent.angel.ml.matrix.{MatrixContext, MatrixMeta, RowType}
+import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.matrix.{MatrixContext, MatrixMeta}
 import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.ps.ParameterServer
 import com.tencent.angel.psagent.PSAgent

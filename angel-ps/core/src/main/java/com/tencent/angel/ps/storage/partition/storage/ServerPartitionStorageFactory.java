@@ -18,7 +18,7 @@
 package com.tencent.angel.ps.storage.partition.storage;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 
 /**
  * Server partition storage factory
