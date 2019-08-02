@@ -20,7 +20,7 @@ package com.tencent.angel.utils;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.predict.PredictResult;
-import com.tencent.angel.worker.storage.DataBlock;
+import com.tencent.angel.ml.math2.utils.DataBlock;
 import com.tencent.angel.worker.task.TaskContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

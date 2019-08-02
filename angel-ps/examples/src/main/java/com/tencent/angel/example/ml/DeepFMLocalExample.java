@@ -19,7 +19,7 @@
 package com.tencent.angel.example.ml;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.conf.AngelMLConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -110,7 +110,7 @@ public class DeepFMLocalExample {
     conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
 
     // Set model class
-    conf.set(MLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "DeepFM");
+    conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "DeepFM");
   }
 
   public void train() {

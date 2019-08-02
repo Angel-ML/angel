@@ -1,7 +1,7 @@
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.ml.math2.vector.LongFloatVector
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner

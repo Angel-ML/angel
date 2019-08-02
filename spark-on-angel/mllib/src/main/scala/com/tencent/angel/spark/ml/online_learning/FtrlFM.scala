@@ -1,7 +1,7 @@
 package com.tencent.angel.spark.ml.online_learning
 
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
-import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.ml.math2.storage.LongKeyVectorStorage
 import com.tencent.angel.ml.math2.ufuncs.{OptFuncs, Ufuncs}
 import com.tencent.angel.ml.math2.utils.RowType

@@ -19,7 +19,7 @@
 package com.tencent.angel.example.quickStart;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.conf.AngelMLConf;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
@@ -67,18 +67,18 @@ public class QSLRLocalExample {
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
     //set sgd LR algorithm parameters #feature #epoch
-    conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
-    conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
-    conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
-    conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
+    conf.set(AngelMLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
+    conf.set(AngelMLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
+    conf.set(AngelMLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
+    conf.set(AngelMLConf.ML_REG_L2(), String.valueOf(reg));
 
     // Set input data path
     conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
     // Set save model path
     conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, savePath);
     // Set actionType train
-    conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
-    conf.set(MLConf.ML_DATA_INPUT_FORMAT(), "libsvm");
+    conf.set(AngelConf.ANGEL_ACTION_TYPE, AngelMLConf.ANGEL_ML_TRAIN());
+    conf.set(AngelMLConf.ML_DATA_INPUT_FORMAT(), "libsvm");
     return conf;
   }
 

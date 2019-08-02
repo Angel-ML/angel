@@ -20,7 +20,7 @@ package com.tencent.angel.ml.GBDT.algo;
 
 import com.tencent.angel.ml.GBDT.algo.RegTree.GradHistHelper;
 import com.tencent.angel.ml.psf.compress.QuantifyDoubleFunc;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.conf.AngelMLConf;
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 
 import com.tencent.angel.ml.model.PSModel;
@@ -54,10 +54,10 @@ public class GradHistThread implements Runnable {
     GradHistHelper histMaker = new GradHistHelper(this.controller, this.nid);
     IntDoubleVector histogram = histMaker.buildHistogram(insStart, insEnd);
     int bytesPerItem = this.controller.taskContext.getConf().
-      getInt(MLConf.ANGEL_COMPRESS_BYTES(), MLConf.DEFAULT_ANGEL_COMPRESS_BYTES());
+      getInt(AngelMLConf.ANGEL_COMPRESS_BYTES(), AngelMLConf.DEFAULT_ANGEL_COMPRESS_BYTES());
     if (bytesPerItem < 1 || bytesPerItem > 8) {
       LOG.info("Invalid compress configuration: " + bytesPerItem + ", it should be [1,8].");
-      bytesPerItem = MLConf.DEFAULT_ANGEL_COMPRESS_BYTES();
+      bytesPerItem = AngelMLConf.DEFAULT_ANGEL_COMPRESS_BYTES();
     }
     // 3. push the histograms to PS
     try {

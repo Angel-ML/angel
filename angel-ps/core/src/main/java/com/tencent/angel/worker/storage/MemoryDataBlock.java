@@ -19,6 +19,7 @@
 package com.tencent.angel.worker.storage;
 
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.ml.math2.utils.DataBlock;
 import com.tencent.angel.utils.MemoryUtils;
 import com.tencent.angel.worker.WorkerContext;
 import org.apache.commons.logging.Log;

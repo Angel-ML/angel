@@ -55,6 +55,11 @@
             <artifactId>angel-ps-psf</artifactId>
             <version>${project.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.tencent.angel</groupId>
+            <artifactId>angel-mlcore</artifactId>
+            <!--version>3.0.0</version-->
+            <version>0.1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 </project>

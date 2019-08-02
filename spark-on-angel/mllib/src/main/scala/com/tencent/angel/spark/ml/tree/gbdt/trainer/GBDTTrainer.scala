@@ -19,7 +19,7 @@
 package com.tencent.angel.spark.ml.tree.gbdt.trainer
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.AngelMLConf
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.tree.param.GBDTParam
 import com.tencent.angel.spark.ml.tree.gbdt.dataset.Dataset

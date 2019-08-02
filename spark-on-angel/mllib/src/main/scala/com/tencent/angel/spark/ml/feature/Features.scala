@@ -18,7 +18,7 @@
 package com.tencent.angel.spark.ml.feature
 
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
-import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.LongIntVector
 import com.tencent.angel.ml.math2.utils.RowType

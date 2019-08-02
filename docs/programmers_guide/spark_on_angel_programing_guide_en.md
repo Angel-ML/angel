@@ -289,7 +289,7 @@ To write a Logistic Regression algorithm, we write a class ``LogisticRegression`
 ```scala
 package com.tencent.angel.spark.ml.classification
 
-import com.tencent.angel.ml.core.conf.MLConf
+import com.tencent.angel.ml.core.conf.AngelMLConf
 import com.tencent.angel.ml.core.network.layers.verge.{SimpleLossLayer, SimpleInputLayer}
 import com.tencent.angel.ml.core.network.transfunc.Identity
 import com.tencent.angel.ml.core.optimizer.Adam
@@ -444,7 +444,7 @@ For FM algorithm, we only need to write an another class that extends the GraphM
 ```scala
 package com.tencent.angel.spark.ml.classification
 
-import com.tencent.angel.ml.core.conf.MLConf
+import com.tencent.angel.ml.core.conf.AngelMLConf
 import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleLossLayer, SimpleInputLayer}
 import com.tencent.angel.ml.core.network.layers.join.SumPooling
 import com.tencent.angel.ml.core.network.layers.linear.BiInnerSumCross

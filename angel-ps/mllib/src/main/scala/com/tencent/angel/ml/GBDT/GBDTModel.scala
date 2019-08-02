@@ -22,15 +22,15 @@ import java.text.DecimalFormat
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.GBDT.GBDTModel._
-import com.tencent.angel.ml.core.conf.MLConf
-import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.core.conf.AngelMLConf
+import com.tencent.angel.ml.math2.utils.{DataBlock, LabeledData, RowType}
 import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, IntIntVector}
-import com.tencent.angel.ml.math2.utils.RowType
-import com.tencent.angel.ml.model.{MLModel, PSModel}
+import com.tencent.angel.ml.model.PSModel
+import com.tencent.angel.ml.model.OldMLModel
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.ml.core.utils.Maths
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.worker.storage.{DataBlock, MemoryDataBlock}
+import com.tencent.angel.worker.storage.MemoryDataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
@@ -49,24 +49,23 @@ object GBDTModel {
   val NODE_PRED_MAT: String = "gbdt.node.predict"
 
 
-  def apply(conf: Configuration) = {
+  def apply(conf: Configuration): GBDTModel = {
     new GBDTModel(conf)
   }
 
-  def apply(ctx: TaskContext, conf: Configuration) = {
+  def apply(ctx: TaskContext, conf: Configuration): GBDTModel = {
     new GBDTModel(conf, ctx)
   }
 }
 
-class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
+class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends OldMLModel(conf, _ctx) {
   var LOG = LogFactory.getLog(classOf[GBDTModel])
-
-  var indexRange = conf.getInt(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
-  val maxTreeNum = conf.getInt(MLConf.ML_GBDT_TREE_NUM, MLConf.DEFAULT_ML_GBDT_TREE_NUM)
-  val maxTreeDepth = conf.getInt(MLConf.ML_GBDT_TREE_DEPTH, MLConf.DEFAULT_ML_GBDT_TREE_DEPTH)
-  val splitNum = conf.getInt(MLConf.ML_GBDT_SPLIT_NUM, MLConf.DEFAULT_ML_GBDT_SPLIT_NUM)
-  val featSampleRatio = conf.getFloat(MLConf.ML_GBDT_SAMPLE_RATIO, MLConf.DEFAULT_ML_GBDT_SAMPLE_RATIO)
-  val cateFeatStr = conf.get(MLConf.ML_GBDT_CATE_FEAT, MLConf.DEFAULT_ML_GBDT_CATE_FEAT)
+  var indexRange = conf.getInt(AngelMLConf.ML_FEATURE_INDEX_RANGE, AngelMLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
+  val maxTreeNum = conf.getInt(AngelMLConf.ML_GBDT_TREE_NUM, AngelMLConf.DEFAULT_ML_GBDT_TREE_NUM)
+  val maxTreeDepth = conf.getInt(AngelMLConf.ML_GBDT_TREE_DEPTH, AngelMLConf.DEFAULT_ML_GBDT_TREE_DEPTH)
+  val splitNum = conf.getInt(AngelMLConf.ML_GBDT_SPLIT_NUM, AngelMLConf.DEFAULT_ML_GBDT_SPLIT_NUM)
+  val featSampleRatio = conf.getFloat(AngelMLConf.ML_GBDT_SAMPLE_RATIO, AngelMLConf.DEFAULT_ML_GBDT_SAMPLE_RATIO)
+  val cateFeatStr = conf.get(AngelMLConf.ML_GBDT_CATE_FEAT, AngelMLConf.DEFAULT_ML_GBDT_CATE_FEAT)
   val cateFeatNum = if (cateFeatStr.contains(",")) cateFeatStr.split(",").length else 1
 
   val maxTNodeNum: Int = Maths.pow(2, maxTreeDepth) - 1
@@ -78,7 +77,7 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
   // adjust feature number to ensure the parameter partition
   if (indexRange % psNumber != 0) {
     indexRange = (indexRange / psNumber + 1) * psNumber
-    conf.setInt(MLConf.ML_FEATURE_INDEX_RANGE, indexRange)
+    conf.setInt(AngelMLConf.ML_FEATURE_INDEX_RANGE, indexRange)
     LOG.info(s"PS num: $psNumber, true feat num: $indexRange")
   }
 
@@ -166,7 +165,7 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
   super.setSavePath(conf)
   super.setLoadPath(conf)
 
-  override def predict(dataSet: DataBlock[LabeledData]): DataBlock[PredictResult] = {
+  def predict(dataSet: DataBlock[LabeledData]): DataBlock[PredictResult] = {
     val predict = new MemoryDataBlock[PredictResult](-1)
 
     val splitFeatVecs: Array[IntIntVector] = new Array[IntIntVector](this.maxTreeNum)
@@ -184,7 +183,7 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
     }
 
     dataSet.resetReadIndex
-    val lr: Double = conf.getFloat(MLConf.ML_LEARN_RATE, MLConf.DEFAULT_ML_LEARN_RATE.asInstanceOf[Float])
+    val lr: Double = conf.getFloat(AngelMLConf.ML_LEARN_RATE, AngelMLConf.DEFAULT_ML_LEARN_RATE.asInstanceOf[Float])
     var posTrue: Int = 0
     var posNum: Int = 0
     var negTrue: Int = 0

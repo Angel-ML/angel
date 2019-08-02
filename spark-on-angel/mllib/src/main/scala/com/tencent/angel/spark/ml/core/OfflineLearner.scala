@@ -18,10 +18,11 @@
 
 package com.tencent.angel.spark.ml.core
 
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.AngelMLConf
 import com.tencent.angel.ml.core.optimizer.loss.{L2Loss, LogLoss}
-import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
+import com.tencent.angel.mlcore.conf.SharedConf
 import com.tencent.angel.spark.context.AngelPSContext.convertToHadoop
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.metric.{AUC, Precision}

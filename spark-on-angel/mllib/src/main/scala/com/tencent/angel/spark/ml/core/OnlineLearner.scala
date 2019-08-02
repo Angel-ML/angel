@@ -18,12 +18,11 @@
 
 package com.tencent.angel.spark.ml.core
 
-import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.math2.utils.LabeledData
+import com.tencent.angel.mlcore.conf.SharedConf
 import org.apache.commons.logging.LogFactory
 import org.apache.spark.SparkContext
 import org.apache.spark.streaming.dstream.{DStream, InputDStream}
-
 import com.tencent.angel.spark.context.PSContext
 
 class OnlineLearner {

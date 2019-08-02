@@ -23,23 +23,30 @@ package com.tencent.angel.ml.core
   * Base class for all machine learning algorithm learner.
   */
 
-import com.tencent.angel.ml.feature.LabeledData
+
 import com.tencent.angel.ml.metric.GlobalMetrics
-import com.tencent.angel.ml.model.MLModel
-import com.tencent.angel.worker.storage.DataBlock
+import com.tencent.angel.ml.math2.utils.{DataBlock, LabeledData}
+import com.tencent.angel.ml.model.OldMLModel
+import com.tencent.angel.mlcore.{Learner, MLModel}
+import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 
-abstract class MLLearner(val ctx: TaskContext) {
+abstract class MLLearner(val ctx: TaskContext) extends Learner {
   val globalMetrics = new GlobalMetrics(ctx)
   val conf: Configuration = ctx.getConf
 
-  /**
-    * Train a ML Model
-    *
-    * @param train : input train data storage
-    * @param vali  : validate data storage
-    * @return : a learned model
-    */
-  def train(train: DataBlock[LabeledData], vali: DataBlock[LabeledData]): MLModel
+  override protected def barrier(): Unit = {
+    PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
+  }
+
+  override def train(trainData: DataBlock[LabeledData],
+                     validationData: DataBlock[LabeledData]): MLModel = ???
+
+  def train(posTrainData: DataBlock[LabeledData],
+            negTrainData: DataBlock[LabeledData],
+            validationData: DataBlock[LabeledData]): MLModel = ???
+
+  def trainOld(trainBlock: DataBlock[LabeledData],
+               validBlock: DataBlock[LabeledData]): OldMLModel = ???
 }

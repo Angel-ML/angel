@@ -19,13 +19,13 @@
 package com.tencent.angel.ml.GBDT.algo.RegTree;
 
 import com.tencent.angel.ml.GBDT.algo.FeatureMeta;
-import com.tencent.angel.ml.feature.LabeledData;
+import com.tencent.angel.ml.math2.utils.LabeledData;
 import com.tencent.angel.ml.GBDT.param.RegTParam;
 import com.tencent.angel.ml.core.utils.Maths;
 import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.math2.vector.IntFloatVector;
-import com.tencent.angel.worker.storage.DataBlock;
+import com.tencent.angel.ml.math2.utils.DataBlock;
 
 import java.io.IOException;
 import java.util.Arrays;
