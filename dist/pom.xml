@@ -24,7 +24,7 @@
   <parent>
     <groupId>com.tencent.angel</groupId>
     <artifactId>angel</artifactId>
-    <version>3.0.0</version>
+    <version>3.0.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>angel-dist</artifactId>
@@ -76,13 +76,18 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>angel-ps-serving</artifactId>
       <version>${project.version}</version>
+<<<<<<< HEAD
     </dependency>
     <dependency>
+=======
+    </dependency-->
+    <!--dependency>
+>>>>>>> 46a940c4970656f51004c9b4254bbcda77254ccc
       <groupId>${project.groupId}</groupId>
       <artifactId>spark-on-angel-core</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
+    </dependency-->
+    <!--dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>spark-on-angel-mllib</artifactId>
       <version>${project.version}</version>
