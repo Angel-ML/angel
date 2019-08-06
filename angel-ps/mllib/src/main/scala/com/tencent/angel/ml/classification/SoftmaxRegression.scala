@@ -33,7 +33,7 @@ import com.tencent.angel.worker.task.TaskContext
   */
 
 
-class SoftmaxRegression(conf: SharedConf, _ctx: TaskContext = null) extends AngelModel(conf, _ctx.getTotalTaskNum) {
+class SoftmaxRegression(conf: SharedConf, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
   val numClass: Int = conf.numClass
   val optProvider = new PSOptimizerProvider(conf)
 

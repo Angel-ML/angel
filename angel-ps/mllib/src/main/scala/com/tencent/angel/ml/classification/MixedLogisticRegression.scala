@@ -36,7 +36,7 @@ import com.tencent.angel.worker.task.TaskContext
   */
 
 
-class MixedLogisticRegression(conf: SharedConf, _ctx: TaskContext = null) extends AngelModel(conf, _ctx.getTotalTaskNum) {
+class MixedLogisticRegression(conf: SharedConf, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
   val rank: Int = conf.getInt(AngelMLConf.ML_MLR_RANK, AngelMLConf.DEFAULT_ML_MLR_RANK)
   val optProvider = new PSOptimizerProvider(conf)
 

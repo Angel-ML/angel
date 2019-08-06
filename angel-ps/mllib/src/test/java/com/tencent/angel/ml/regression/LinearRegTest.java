@@ -70,6 +70,8 @@ public class LinearRegTest {
       double decay = 2;
       // Regularization coefficient
       double reg = 0.0001;
+      // Model type
+      String jsonFile = "./src/test/jsons/linreg.json";
 
       // Set local deploy mode
       conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
@@ -105,6 +107,9 @@ public class LinearRegTest {
       conf.set(AngelMLConf.ML_REG_L2(), String.valueOf(reg));
       conf.setLong(AngelMLConf.ML_MODEL_SIZE(), 124L);
       conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "LinearRegression");
+//      conf.setStrings(AngelConf.ANGEL_ML_CONF, jsonFile);
+      conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
+
     } catch (Exception e) {
       LOG.error("setup failed ", e);
       throw e;
