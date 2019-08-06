@@ -2,6 +2,7 @@ package com.tencent.angel.model.output.format;
 
 import com.tencent.angel.ml.math2.matrix.Matrix;
 import com.tencent.angel.model.MatrixLoadContext;
+import com.tencent.angel.model.ModelIOUtils;
 import com.tencent.angel.model.PSMatrixLoadContext;
 import com.tencent.angel.model.PSMatrixSaveContext;
 import com.tencent.angel.ps.storage.matrix.PartitionState;
@@ -105,7 +106,7 @@ public abstract class ComplexRowFormat extends RowBasedFormat {
         rowIds.add(iter.next().getKey());
       }
     } else {
-      rowIds = filter(part, rowIds);
+      rowIds = ModelIOUtils.filter(part, rowIds);
     }
 
     FSDataOutputStream dataOutputStream =
@@ -175,11 +176,5 @@ public abstract class ComplexRowFormat extends RowBasedFormat {
         save(entry.getIntKey() + startPos, entry.getValue(), output);
       }
     }
-  }
-
-  @Override
-  public void load(Matrix matrix, MatrixPartitionMeta partMeta, MatrixLoadContext loadContext,
-      FSDataInputStream in) throws IOException {
-
   }
 }

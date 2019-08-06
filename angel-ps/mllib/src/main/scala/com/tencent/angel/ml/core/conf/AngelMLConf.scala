@@ -5,7 +5,7 @@ import com.tencent.angel.model.output.format.{ColIdValueTextRowFormat, RowIdColI
 
 object AngelMLConf {
   val ANGEL_ML_TRAIN = "train"
-  val ANGEL_ML_PREDICT = "com/tencent/angel/ml/predict"
+  val ANGEL_ML_PREDICT = "predict"
   val ANGEL_ML_INC_TRAIN = "inctrain"
 
   // Data params

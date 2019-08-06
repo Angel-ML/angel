@@ -895,7 +895,7 @@ public abstract class AngelClient implements AngelClientInterface {
         boolean deleteOnExist = conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
                 AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST);
 
-        String path = null;
+        String path;
         if (actionType.matches("train") || actionType.matches("inctrain")) {
             path = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH);
         } else if (actionType.matches("predict")) {
