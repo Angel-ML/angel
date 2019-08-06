@@ -35,7 +35,6 @@ import com.tencent.angel.spark.ml.embedding.NEModel.NEDataSet
 import com.tencent.angel.spark.ml.psf.embedding.NEDot.NEDotResult
 import com.tencent.angel.spark.ml.psf.embedding.NESlice.SliceResult
 import com.tencent.angel.spark.ml.psf.embedding.{Init, InitParam, NEModelRandomize, NESlice}
-import com.tencent.angel.spark.models.PSMatrix
 
 abstract class NEModel(numNode: Int,
                        dimension: Int,

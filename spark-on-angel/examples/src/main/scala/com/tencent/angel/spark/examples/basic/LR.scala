@@ -23,7 +23,7 @@ import org.apache.spark.sql.{Row, SparkSession}
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.spark.models.PSVector
+import com.tencent.angel.sona.models.PSVector
 import com.tencent.angel.ml.math2.vector.IntDoubleVector
 import com.tencent.angel.spark.util.VectorUtils
 

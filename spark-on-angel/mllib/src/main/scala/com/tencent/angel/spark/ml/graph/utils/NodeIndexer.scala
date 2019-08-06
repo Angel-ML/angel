@@ -6,8 +6,8 @@ import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.{IntIntVector, IntLongVector}
 import com.tencent.angel.ml.matrix.{MatrixContext, PartContext}
 import com.tencent.angel.psagent.PSAgentContext
-import com.tencent.angel.spark.models.PSVector
-import com.tencent.angel.spark.models.impl.PSVectorImpl
+import com.tencent.angel.sona.models.PSVector
+import com.tencent.angel.sona.models.impl.PSVectorImpl
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel

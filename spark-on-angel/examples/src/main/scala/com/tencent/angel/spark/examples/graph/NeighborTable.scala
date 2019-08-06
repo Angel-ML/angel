@@ -24,7 +24,7 @@ import com.tencent.angel.graph.client.sampleneighbor.{SampleNeighbor, SampleNeig
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.ps.storage.partition.CSRPartition
-import com.tencent.angel.spark.models.PSMatrix
+import com.tencent.angel.sona.models.PSMatrix
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import org.apache.spark.rdd.RDD
 
