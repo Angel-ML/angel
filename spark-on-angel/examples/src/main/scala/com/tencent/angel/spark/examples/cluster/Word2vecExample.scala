@@ -25,7 +25,9 @@ import com.tencent.angel.spark.ml.embedding.Param
 import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel
 import com.tencent.angel.spark.ml.feature.{Features, SubSampling}
 import com.tencent.angel.spark.ml.util.SparkUtils
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -113,10 +115,20 @@ object Word2vecExample {
     val model = new Word2VecModel(param)
     model.train(docs, param, output + "/embedding")
     model.save(output + "/embedding", numEpoch)
-    denseToString.map(rdd => rdd.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "/mapping"))
+    val mappingPath=output + "/mapping"
+    deleteIfExists(mappingPath)
+    denseToString.map(rdd => rdd.map(f => s"${f._1}:${f._2}").saveAsTextFile(mappingPath))
 
     PSContext.stop()
     sc.stop()
   }
 
+  private def deleteIfExists(pathString: String): Unit = {
+    val ss = SparkSession.builder().getOrCreate()
+    val path = new Path(pathString)
+    val fs = path.getFileSystem(ss.sparkContext.hadoopConfiguration)
+    if (fs.exists(path)) {
+      fs.delete(path, true)
+    }
+  }
 }
