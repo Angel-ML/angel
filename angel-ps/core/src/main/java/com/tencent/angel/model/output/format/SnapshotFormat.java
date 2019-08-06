@@ -28,7 +28,6 @@ import com.tencent.angel.ml.math2.vector.LongLongVector;
 import com.tencent.angel.model.ModelIOUtils;
 import com.tencent.angel.model.PSMatrixLoadContext;
 import com.tencent.angel.model.PSMatrixSaveContext;
-import com.tencent.angel.model.io.PSMatrixLoaderSaverImpl;
 import com.tencent.angel.ps.storage.matrix.PartitionState;
 import com.tencent.angel.ps.storage.partition.RowBasedPartition;
 import com.tencent.angel.ps.storage.partition.ServerPartition;
@@ -69,15 +68,15 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 /**
  * Snapshot format, it just use for snapshot now.
  */
-public class SnapshotFormat extends PSMatrixLoaderSaverImpl {
-
+public class SnapshotFormat implements Format {
+  protected final Configuration conf;
   private final static Log LOG = LogFactory.getLog(RowFormat.class);
 
   public SnapshotFormat(Configuration conf) {
-    super(conf, 1);
+    this.conf = conf;
   }
 
-  @Override
+
   public void save(ServerPartition part, MatrixPartitionMeta partMeta,
       PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
     if(part instanceof RowBasedPartition) {
@@ -85,7 +84,7 @@ public class SnapshotFormat extends PSMatrixLoaderSaverImpl {
     }
   }
 
-  @Override
+
   public void load(ServerPartition part, MatrixPartitionMeta partMeta,
       PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
     if(part instanceof RowBasedPartition) {
