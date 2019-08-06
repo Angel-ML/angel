@@ -4,8 +4,8 @@ import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.LongIntVector
 import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.psagent.PSAgentContext
-import com.tencent.angel.spark.models.PSVector
-import com.tencent.angel.spark.models.impl.PSVectorImpl
+import com.tencent.angel.sona.models.PSVector
+import com.tencent.angel.sona.models.impl.PSVectorImpl
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.spark.ml.util.LoadBalancePartitioner
 import com.tencent.angel.spark.util.VectorUtils

@@ -15,61 +15,36 @@
  *
  */
 
-package com.tencent.angel.model.output.format;
+package com.tencent.angel.model.io;
 
-import com.tencent.angel.ml.math2.matrix.Matrix;
-import com.tencent.angel.model.MatrixLoadContext;
-import com.tencent.angel.model.MatrixSaveContext;
 import com.tencent.angel.model.PSMatrixLoadContext;
 import com.tencent.angel.model.PSMatrixSaveContext;
 import com.tencent.angel.ps.storage.matrix.ServerMatrix;
+import java.io.IOException;
 import org.apache.hadoop.conf.Configuration;
 
-import java.io.IOException;
-
 /**
- * Model format interface
+ * PS Matrix loader/saver interface
  */
-public interface MatrixFormat {
+public interface PSMatrixLoaderSaver {
+
   /**
    * Write the ServerMatrix to files
    *
-   * @param matrix      the ServerMatrix
+   * @param matrix the ServerMatrix
    * @param saveContext save context
-   * @param conf        system configuration
-   * @throws IOException
+   * @param conf system configuration
    */
   void save(ServerMatrix matrix, PSMatrixSaveContext saveContext, Configuration conf)
-    throws IOException;
+      throws IOException;
 
   /**
    * Load the ServerMatrix from files
    *
-   * @param matrix      the ServerMatrix
+   * @param matrix the ServerMatrix
    * @param loadContext load context
-   * @param conf        system configuration
-   * @throws IOException
+   * @param conf system configuration
    */
   void load(ServerMatrix matrix, PSMatrixLoadContext loadContext, Configuration conf)
-    throws IOException;
-
-  /**
-   * Write the Matrix to files
-   *
-   * @param matrix      the ServerMatrix
-   * @param saveContext save context
-   * @param conf        system configuration
-   * @throws IOException
-   */
-  void save(Matrix matrix, MatrixSaveContext saveContext, Configuration conf) throws IOException;
-
-  /**
-   * Load the Matrix from files
-   *
-   * @param loadContext load context
-   * @param conf        system configuration
-   * @return Matrix loaded matrix
-   * @throws IOException
-   */
-  Matrix load(MatrixLoadContext loadContext, Configuration conf) throws IOException;
+      throws IOException;
 }

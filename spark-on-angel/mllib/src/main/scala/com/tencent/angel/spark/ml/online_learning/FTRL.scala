@@ -31,8 +31,8 @@ import com.tencent.angel.ps.storage.partitioner.{ColumnRangePartitioner, Partiti
 import com.tencent.angel.spark.context.AngelPSContext
 import com.tencent.angel.spark.ml.psf.ftrl.ComputeW
 import com.tencent.angel.spark.ml.util.AutoPartitioner
-import com.tencent.angel.spark.models.impl.{PSMatrixImpl, PSVectorImpl}
-import com.tencent.angel.spark.models.{PSMatrix, PSVector}
+import com.tencent.angel.sona.models.impl.{PSMatrixImpl, PSVectorImpl}
+import com.tencent.angel.sona.models.{PSMatrix, PSVector}
 import org.apache.spark.rdd.RDD
 
 class FTRL() extends Serializable {

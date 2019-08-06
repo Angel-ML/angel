@@ -17,7 +17,6 @@
 
 package com.tencent.angel.model.output.format;
 
-import com.tencent.angel.ml.math2.matrix.Matrix;
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.ml.math2.vector.IntIntVector;
@@ -26,7 +25,7 @@ import com.tencent.angel.ml.math2.vector.LongDoubleVector;
 import com.tencent.angel.ml.math2.vector.LongFloatVector;
 import com.tencent.angel.ml.math2.vector.LongIntVector;
 import com.tencent.angel.ml.math2.vector.LongLongVector;
-import com.tencent.angel.model.MatrixLoadContext;
+import com.tencent.angel.model.ModelIOUtils;
 import com.tencent.angel.model.PSMatrixLoadContext;
 import com.tencent.angel.model.PSMatrixSaveContext;
 import com.tencent.angel.ps.storage.matrix.PartitionState;
@@ -64,21 +63,20 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 
 /**
  * Snapshot format, it just use for snapshot now.
  */
-public class SnapshotFormat extends MatrixFormatImpl {
-
+public class SnapshotFormat implements Format {
+  protected final Configuration conf;
   private final static Log LOG = LogFactory.getLog(RowFormat.class);
 
   public SnapshotFormat(Configuration conf) {
-    super(conf, 1);
+    this.conf = conf;
   }
 
-  @Override
+
   public void save(ServerPartition part, MatrixPartitionMeta partMeta,
       PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
     if(part instanceof RowBasedPartition) {
@@ -86,7 +84,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
     }
   }
 
-  @Override
+
   public void load(ServerPartition part, MatrixPartitionMeta partMeta,
       PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
     if(part instanceof RowBasedPartition) {
@@ -140,7 +138,7 @@ public class SnapshotFormat extends MatrixFormatImpl {
         rowIds.add(i);
       }
     } else {
-      rowIds = filter(part, rowIds);
+      rowIds = ModelIOUtils.filter(part, rowIds);
     }
 
     FSDataOutputStream dataOutputStream =
@@ -230,12 +228,6 @@ public class SnapshotFormat extends MatrixFormatImpl {
     } finally {
       part.setState(PartitionState.READ_AND_WRITE);
     }
-  }
-
-  @Override
-  public void load(Matrix matrix, MatrixPartitionMeta partMeta, MatrixLoadContext loadContext,
-      FSDataInputStream in) throws IOException {
-    throw new UnsupportedOperationException("Unsupport now");
   }
 
   /**

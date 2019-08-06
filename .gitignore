@@ -16,6 +16,7 @@
 *.class
 angel-ps/core/target/
 angel-ps/psf/target/
+angel-ps/graph/
 angel-ps/examples/target/
 angel-ps/jarvis/target/
 angel-ps/tools/target/

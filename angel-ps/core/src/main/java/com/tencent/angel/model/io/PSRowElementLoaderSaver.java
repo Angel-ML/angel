@@ -15,18 +15,44 @@
  *
  */
 
-package com.tencent.angel.model.output.format;
+package com.tencent.angel.model.io;
 
-import com.tencent.angel.ml.math2.matrix.Matrix;
-import com.tencent.angel.ml.math2.vector.*;
-import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.model.MatrixLoadContext;
+import com.tencent.angel.ml.math2.vector.IntDoubleVector;
+import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.ml.math2.vector.IntIntVector;
+import com.tencent.angel.ml.math2.vector.IntLongVector;
+import com.tencent.angel.ml.math2.vector.LongDoubleVector;
+import com.tencent.angel.ml.math2.vector.LongFloatVector;
+import com.tencent.angel.ml.math2.vector.LongIntVector;
+import com.tencent.angel.ml.math2.vector.LongLongVector;
+import com.tencent.angel.model.ModelIOUtils;
 import com.tencent.angel.model.PSMatrixLoadContext;
 import com.tencent.angel.model.PSMatrixSaveContext;
+import com.tencent.angel.model.output.element.IntDoubleElement;
+import com.tencent.angel.model.output.element.IntFloatElement;
+import com.tencent.angel.model.output.element.IntIntElement;
+import com.tencent.angel.model.output.element.IntLongElement;
+import com.tencent.angel.model.output.element.LongDoubleElement;
+import com.tencent.angel.model.output.element.LongFloatElement;
+import com.tencent.angel.model.output.element.LongIntElement;
+import com.tencent.angel.model.output.element.LongLongElement;
+import com.tencent.angel.model.output.format.ElementFormat;
+import com.tencent.angel.model.output.format.MatrixPartitionMeta;
+import com.tencent.angel.model.output.format.RowPartitionMeta;
+import com.tencent.angel.ps.storage.matrix.PartitionSource;
 import com.tencent.angel.ps.storage.matrix.PartitionState;
-
 import com.tencent.angel.ps.storage.partition.RowBasedPartition;
-import com.tencent.angel.ps.storage.vector.*;
+import com.tencent.angel.ps.storage.partition.ServerPartition;
+import com.tencent.angel.ps.storage.vector.ServerIntDoubleRow;
+import com.tencent.angel.ps.storage.vector.ServerIntFloatRow;
+import com.tencent.angel.ps.storage.vector.ServerIntIntRow;
+import com.tencent.angel.ps.storage.vector.ServerIntLongRow;
+import com.tencent.angel.ps.storage.vector.ServerLongDoubleRow;
+import com.tencent.angel.ps.storage.vector.ServerLongFloatRow;
+import com.tencent.angel.ps.storage.vector.ServerLongIntRow;
+import com.tencent.angel.ps.storage.vector.ServerLongLongRow;
+import com.tencent.angel.ps.storage.vector.ServerRow;
+import com.tencent.angel.ps.storage.vector.ServerRowUtils;
 import com.tencent.angel.utils.Sort;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
@@ -37,205 +63,68 @@ import it.unimi.dsi.fastutil.longs.Long2FloatMap;
 import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.Long2LongMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FSDataOutputStream;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
+
 
 /**
- * Base class for row first output format
+ * Loader/Saver use row-base matrix, it masks the details of all row vector traversal and only be
+ * used in PS
  */
-public abstract class RowFormat extends RowBasedFormat {
-  private final static Log LOG = LogFactory.getLog(RowFormat.class);
+public class PSRowElementLoaderSaver extends PSMatrixLoaderSaverImpl {
 
-  public RowFormat(Configuration conf) {
+  private final static Log LOG = LogFactory.getLog(PSRowLoaderSaver.class);
+  private final ElementFormat format;
+
+  public PSRowElementLoaderSaver(ElementFormat format, Configuration conf) {
     super(conf);
+    this.format = format;
   }
-
-  /**
-   * Save a (int, float) element
-   *
-   * @param element a (int, float) element
-   * @param out     output stream
-   * @throws IOException
-   */
-  public abstract void save(IntFloatElement element, DataOutputStream out) throws IOException;
-
-  /**
-   * Save a (int, double) element
-   *
-   * @param element a (int, double) element
-   * @param out     output stream
-   * @throws IOException
-   */
-  public abstract void save(IntDoubleElement element, DataOutputStream out) throws IOException;
-
-  /**
-   * Save a (int, int) element
-   *
-   * @param element a (int, int) element
-   * @param out     output stream
-   * @throws IOException
-   */
-  public abstract void save(IntIntElement element, DataOutputStream out) throws IOException;
-
-  /**
-   * Save a (int, long) element
-   *
-   * @param element a (int, long) element
-   * @param out     output stream
-   * @throws IOException
-   */
-  public abstract void save(IntLongElement element, DataOutputStream out) throws IOException;
-
-  /**
-   * Save a (long, float) element
-   *
-   * @param element a (long, float) element
-   * @param out     output stream
-   * @throws IOException
-   */
-  public abstract void save(LongFloatElement element, DataOutputStream out) throws IOException;
-
-  /**
-   * Save a (long, double) element
-   *
-   * @param element a (long, double) element
-   * @param out     output stream
-   * @throws IOException
-   */
-  public abstract void save(LongDoubleElement element, DataOutputStream out) throws IOException;
-
-  /**
-   * Save a (long, int) element
-   *
-   * @param element a (long, int) element
-   * @param out     output stream
-   * @throws IOException
-   */
-  public abstract void save(LongIntElement element, DataOutputStream out) throws IOException;
-
-  /**
-   * Save a (long, long) element
-   *
-   * @param element a (long, long) element
-   * @param out     output stream
-   * @throws IOException
-   */
-  public abstract void save(LongLongElement element, DataOutputStream out) throws IOException;
-
-  /**
-   * Load a (int, float) element
-   *
-   * @param element a (int, float) element
-   * @param in      input stream
-   * @throws IOException
-   */
-  public abstract void load(IntFloatElement element, DataInputStream in) throws IOException;
-
-  /**
-   * Load a (int, double) element
-   *
-   * @param element a (int, double) element
-   * @param in      input stream
-   * @throws IOException
-   */
-  public abstract void load(IntDoubleElement element, DataInputStream in) throws IOException;
-
-  /**
-   * Load a (int, int) element
-   *
-   * @param element a (int, int) element
-   * @param in      input stream
-   * @throws IOException
-   */
-  public abstract void load(IntIntElement element, DataInputStream in) throws IOException;
-
-  /**
-   * Load a (int, long) element
-   *
-   * @param element a (int, long) element
-   * @param in      input stream
-   * @throws IOException
-   */
-  public abstract void load(IntLongElement element, DataInputStream in) throws IOException;
-
-  /**
-   * Load a (long, float) element
-   *
-   * @param element a (long, float) element
-   * @param in      input stream
-   * @throws IOException
-   */
-  public abstract void load(LongFloatElement element, DataInputStream in) throws IOException;
-
-  /**
-   * Load a (long, double) element
-   *
-   * @param element a (long, double) element
-   * @param in      input stream
-   * @throws IOException
-   */
-  public abstract void load(LongDoubleElement element, DataInputStream in) throws IOException;
-
-  /**
-   * Load a (long, int) element
-   *
-   * @param element a (long, int) element
-   * @param in      input stream
-   * @throws IOException
-   */
-  public abstract void load(LongIntElement element, DataInputStream in) throws IOException;
-
-  /**
-   * Load a (long, long) element
-   *
-   * @param element a (long, long) element
-   * @param in      input stream
-   * @throws IOException
-   */
-  public abstract void load(LongLongElement element, DataInputStream in) throws IOException;
 
   /**
    * Matrix partition data
    *
-   * @param part        matrix partition
-   * @param partMeta    matrix partition data meta
+   * @param part matrix partition
+   * @param partMeta matrix partition data meta
    * @param saveContext save context
-   * @param output      output stream
-   * @throws IOException
+   * @param output output stream
    */
-  public void save(RowBasedPartition part, MatrixPartitionMeta partMeta,
-    PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
+  public void save(ServerPartition part, MatrixPartitionMeta partMeta,
+      PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
+    RowBasedPartition rowPart = (RowBasedPartition) part;
     List<Integer> rowIds = saveContext.getRowIndexes();
 
     if (rowIds == null || rowIds.isEmpty()) {
-      Iterator<Map.Entry<Integer, ServerRow>> iter = part.getRowsStorage().iterator();
+      Iterator<Entry<Integer, ServerRow>> iter = rowPart.getRowsStorage().iterator();
       rowIds = new ArrayList<>();
       while (iter.hasNext()) {
         rowIds.add(iter.next().getKey());
       }
     } else {
-      rowIds = filter(part, rowIds);
+      rowIds = ModelIOUtils.filter(rowPart, rowIds);
     }
 
     FSDataOutputStream dataOutputStream =
-      new FSDataOutputStream(output, null, partMeta != null ? partMeta.getOffset() : 0);
+        new FSDataOutputStream(output, null, partMeta != null ? partMeta.getOffset() : 0);
 
     partMeta.setSaveRowNum(rowIds.size());
     for (int rowId : rowIds) {
-      ServerRow row = part.getRow(rowId);
+      ServerRow row = rowPart.getRow(rowId);
       RowPartitionMeta rowMeta = new RowPartitionMeta(rowId, 0, 0);
       if (row != null) {
         rowMeta.setElementNum(row.size());
         rowMeta.setOffset(dataOutputStream.getPos());
-        save(part.getRow(rowId), saveContext, partMeta, output);
+        save(rowPart.getRow(rowId), saveContext, partMeta, output);
       } else {
         rowMeta.setElementNum(0);
         rowMeta.setOffset(dataOutputStream.getPos());
@@ -247,14 +136,13 @@ public abstract class RowFormat extends RowBasedFormat {
   /**
    * Save a row
    *
-   * @param row         row data
+   * @param row row data
    * @param saveContext save context
-   * @param meta        partition data meta
-   * @param out         output stream
-   * @throws IOException
+   * @param meta partition data meta
+   * @param out output stream
    */
   public void save(ServerRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
-    DataOutputStream out) throws IOException {
+      DataOutputStream out) throws IOException {
     if (saveContext.cloneFirst()) {
       row = (ServerRow) row.adaptiveClone();
     }
@@ -287,18 +175,19 @@ public abstract class RowFormat extends RowBasedFormat {
   /**
    * Load a matrix partition
    *
-   * @param part        matrix partition
-   * @param partMeta    matrix partition data meta
+   * @param part matrix partition
+   * @param partMeta matrix partition data meta
    * @param loadContext load context
-   * @param input       input stream
-   * @throws IOException
+   * @param input input stream
    */
-  public void load(RowBasedPartition part, MatrixPartitionMeta partMeta,
-    PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+  public void load(ServerPartition part, MatrixPartitionMeta partMeta,
+      PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+    RowBasedPartition rowPart = (RowBasedPartition) part;
+
     try {
       Map<Integer, RowPartitionMeta> rowMetas = partMeta.getRowMetas();
       for (RowPartitionMeta rowMeta : rowMetas.values()) {
-        ServerRow row = part.getRow(rowMeta.getRowId());
+        ServerRow row = rowPart.getRow(rowMeta.getRowId());
         load(row, partMeta, loadContext, input);
       }
     } finally {
@@ -309,14 +198,13 @@ public abstract class RowFormat extends RowBasedFormat {
   /**
    * Load a row data
    *
-   * @param row         row partition
-   * @param meta        partition meta
+   * @param row row partition
+   * @param meta partition meta
    * @param loadContext load context
-   * @param in          input stream
-   * @throws IOException
+   * @param in input stream
    */
   public void load(ServerRow row, MatrixPartitionMeta meta, PSMatrixLoadContext loadContext,
-    DataInputStream in) throws IOException {
+      DataInputStream in) throws IOException {
     try {
       row.startWrite();
       if (row instanceof ServerIntFloatRow) {
@@ -344,7 +232,7 @@ public abstract class RowFormat extends RowBasedFormat {
   }
 
   private void save(ServerIntFloatRow row, PSMatrixSaveContext saveContext,
-    MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
+      MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     int startCol = (int) meta.getStartCol();
     IntFloatVector vector = ServerRowUtils.getVector(row);
     IntFloatElement element = new IntFloatElement();
@@ -354,7 +242,7 @@ public abstract class RowFormat extends RowBasedFormat {
         element.rowId = row.getRowId();
         element.colId = startCol + i;
         element.value = data[i];
-        save(element, out);
+        format.save(element, out);
       }
     } else {
       if (saveContext.sortFirst()) {
@@ -365,7 +253,7 @@ public abstract class RowFormat extends RowBasedFormat {
           element.rowId = row.getRowId();
           element.colId = indices[i] + startCol;
           element.value = values[i];
-          save(element, out);
+          format.save(element, out);
         }
       } else {
         ObjectIterator<Int2FloatMap.Entry> iter = vector.getStorage().entryIterator();
@@ -375,14 +263,14 @@ public abstract class RowFormat extends RowBasedFormat {
           element.rowId = row.getRowId();
           element.colId = entry.getIntKey() + startCol;
           element.value = entry.getFloatValue();
-          save(element, out);
+          format.save(element, out);
         }
       }
     }
   }
 
   private void save(ServerIntDoubleRow row, PSMatrixSaveContext saveContext,
-    MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
+      MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     int startCol = (int) meta.getStartCol();
     IntDoubleVector vector = ServerRowUtils.getVector(row);
     IntDoubleElement element = new IntDoubleElement();
@@ -392,7 +280,7 @@ public abstract class RowFormat extends RowBasedFormat {
         element.rowId = row.getRowId();
         element.colId = startCol + i;
         element.value = data[i];
-        save(element, out);
+        format.save(element, out);
       }
     } else {
       if (saveContext.sortFirst()) {
@@ -403,7 +291,7 @@ public abstract class RowFormat extends RowBasedFormat {
           element.rowId = row.getRowId();
           element.colId = indices[i] + startCol;
           element.value = values[i];
-          save(element, out);
+          format.save(element, out);
         }
       } else {
         ObjectIterator<Int2DoubleMap.Entry> iter = vector.getStorage().entryIterator();
@@ -413,14 +301,14 @@ public abstract class RowFormat extends RowBasedFormat {
           element.rowId = row.getRowId();
           element.colId = entry.getIntKey() + startCol;
           element.value = entry.getDoubleValue();
-          save(element, out);
+          format.save(element, out);
         }
       }
     }
   }
 
   private void save(ServerIntIntRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
-    DataOutputStream out) throws IOException {
+      DataOutputStream out) throws IOException {
     int startCol = (int) meta.getStartCol();
     IntIntVector vector = ServerRowUtils.getVector(row);
     IntIntElement element = new IntIntElement();
@@ -430,7 +318,7 @@ public abstract class RowFormat extends RowBasedFormat {
         element.rowId = row.getRowId();
         element.colId = startCol + i;
         element.value = data[i];
-        save(element, out);
+        format.save(element, out);
       }
     } else {
       if (saveContext.sortFirst()) {
@@ -441,7 +329,7 @@ public abstract class RowFormat extends RowBasedFormat {
           element.rowId = row.getRowId();
           element.colId = indices[i] + startCol;
           element.value = values[i];
-          save(element, out);
+          format.save(element, out);
         }
       } else {
         ObjectIterator<Int2IntMap.Entry> iter = vector.getStorage().entryIterator();
@@ -451,14 +339,14 @@ public abstract class RowFormat extends RowBasedFormat {
           element.rowId = row.getRowId();
           element.colId = entry.getIntKey() + startCol;
           element.value = entry.getIntValue();
-          save(element, out);
+          format.save(element, out);
         }
       }
     }
   }
 
   private void save(ServerIntLongRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
-    DataOutputStream out) throws IOException {
+      DataOutputStream out) throws IOException {
     int startCol = (int) meta.getStartCol();
     IntLongVector vector = ServerRowUtils.getVector(row);
     IntLongElement element = new IntLongElement();
@@ -468,7 +356,7 @@ public abstract class RowFormat extends RowBasedFormat {
         element.rowId = row.getRowId();
         element.colId = startCol + i;
         element.value = data[i];
-        save(element, out);
+        format.save(element, out);
       }
     } else {
       if (saveContext.sortFirst()) {
@@ -479,7 +367,7 @@ public abstract class RowFormat extends RowBasedFormat {
           element.rowId = row.getRowId();
           element.colId = indices[i] + startCol;
           element.value = values[i];
-          save(element, out);
+          format.save(element, out);
         }
       } else {
         ObjectIterator<Int2LongMap.Entry> iter = vector.getStorage().entryIterator();
@@ -489,26 +377,26 @@ public abstract class RowFormat extends RowBasedFormat {
           element.rowId = row.getRowId();
           element.colId = entry.getIntKey() + startCol;
           element.value = entry.getLongValue();
-          save(element, out);
+          format.save(element, out);
         }
       }
     }
   }
 
   private void save(ServerLongDoubleRow row, PSMatrixSaveContext saveContext,
-    MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
+      MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
     LongDoubleElement element = new LongDoubleElement();
-    DoubleVector storageVec = ServerRowUtils.getVector(row);
-    if (storageVec instanceof IntDoubleVector) {
-      IntDoubleVector vector = (IntDoubleVector) storageVec;
+
+    if (ServerRowUtils.getVector(row) instanceof IntDoubleVector) {
+      IntDoubleVector vector = (IntDoubleVector) ServerRowUtils.getVector(row);
       if (vector.isDense()) {
         double[] data = vector.getStorage().getValues();
         for (int i = 0; i < data.length; i++) {
           element.rowId = row.getRowId();
           element.colId = startCol + i;
           element.value = data[i];
-          save(element, out);
+          format.save(element, out);
         }
       } else {
         if (saveContext.sortFirst()) {
@@ -519,7 +407,7 @@ public abstract class RowFormat extends RowBasedFormat {
             element.rowId = row.getRowId();
             element.colId = indices[i] + startCol;
             element.value = values[i];
-            save(element, out);
+            format.save(element, out);
           }
         } else {
           ObjectIterator<Int2DoubleMap.Entry> iter = vector.getStorage().entryIterator();
@@ -529,12 +417,12 @@ public abstract class RowFormat extends RowBasedFormat {
             element.rowId = row.getRowId();
             element.colId = entry.getIntKey() + startCol;
             element.value = entry.getDoubleValue();
-            save(element, out);
+            format.save(element, out);
           }
         }
       }
     } else {
-      LongDoubleVector vector = (LongDoubleVector) storageVec;
+      LongDoubleVector vector = (LongDoubleVector) ServerRowUtils.getVector(row);
       if (saveContext.sortFirst()) {
         long[] indices = vector.getStorage().getIndices();
         double[] values = vector.getStorage().getValues();
@@ -543,7 +431,7 @@ public abstract class RowFormat extends RowBasedFormat {
           element.rowId = row.getRowId();
           element.colId = indices[i] + startCol;
           element.value = values[i];
-          save(element, out);
+          format.save(element, out);
         }
       } else {
         ObjectIterator<Long2DoubleMap.Entry> iter = vector.getStorage().entryIterator();
@@ -553,26 +441,25 @@ public abstract class RowFormat extends RowBasedFormat {
           element.rowId = row.getRowId();
           element.colId = entry.getLongKey() + startCol;
           element.value = entry.getDoubleValue();
-          save(element, out);
+          format.save(element, out);
         }
       }
     }
   }
 
   private void save(ServerLongFloatRow row, PSMatrixSaveContext saveContext,
-    MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
+      MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
     LongFloatElement element = new LongFloatElement();
-    FloatVector storageVec = ServerRowUtils.getVector(row);
-    if (storageVec instanceof IntFloatVector) {
-      IntFloatVector vector = (IntFloatVector) storageVec;
+    if (ServerRowUtils.getVector(row) instanceof IntFloatVector) {
+      IntFloatVector vector = (IntFloatVector) ServerRowUtils.getVector(row);
       if (vector.isDense()) {
         float[] data = vector.getStorage().getValues();
         for (int i = 0; i < data.length; i++) {
           element.rowId = row.getRowId();
           element.colId = startCol + i;
           element.value = data[i];
-          save(element, out);
+          format.save(element, out);
         }
       } else {
         if (saveContext.sortFirst()) {
@@ -583,7 +470,7 @@ public abstract class RowFormat extends RowBasedFormat {
             element.rowId = row.getRowId();
             element.colId = indices[i] + startCol;
             element.value = values[i];
-            save(element, out);
+            format.save(element, out);
           }
         } else {
           ObjectIterator<Int2FloatMap.Entry> iter = vector.getStorage().entryIterator();
@@ -593,12 +480,12 @@ public abstract class RowFormat extends RowBasedFormat {
             element.rowId = row.getRowId();
             element.colId = entry.getIntKey() + startCol;
             element.value = entry.getFloatValue();
-            save(element, out);
+            format.save(element, out);
           }
         }
       }
     } else {
-      LongFloatVector vector = (LongFloatVector) storageVec;
+      LongFloatVector vector = (LongFloatVector) ServerRowUtils.getVector(row);
       if (saveContext.sortFirst()) {
         long[] indices = vector.getStorage().getIndices();
         float[] values = vector.getStorage().getValues();
@@ -607,7 +494,7 @@ public abstract class RowFormat extends RowBasedFormat {
           element.rowId = row.getRowId();
           element.colId = indices[i] + startCol;
           element.value = values[i];
-          save(element, out);
+          format.save(element, out);
         }
       } else {
         ObjectIterator<Long2FloatMap.Entry> iter = vector.getStorage().entryIterator();
@@ -617,7 +504,7 @@ public abstract class RowFormat extends RowBasedFormat {
           element.rowId = row.getRowId();
           element.colId = entry.getLongKey() + startCol;
           element.value = entry.getFloatValue();
-          save(element, out);
+          format.save(element, out);
         }
       }
     }
@@ -625,19 +512,18 @@ public abstract class RowFormat extends RowBasedFormat {
 
 
   private void save(ServerLongIntRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta meta,
-    DataOutputStream out) throws IOException {
+      DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
     LongIntElement element = new LongIntElement();
-    IntVector storageVec = ServerRowUtils.getVector(row);
-    if (storageVec instanceof IntIntVector) {
-      IntIntVector vector = (IntIntVector) storageVec;
+    if (ServerRowUtils.getVector(row) instanceof IntIntVector) {
+      IntIntVector vector = (IntIntVector) ServerRowUtils.getVector(row);
       if (vector.isDense()) {
         int[] data = vector.getStorage().getValues();
         for (int i = 0; i < data.length; i++) {
           element.rowId = row.getRowId();
           element.colId = startCol + i;
           element.value = data[i];
-          save(element, out);
+          format.save(element, out);
         }
       } else {
         if (saveContext.sortFirst()) {
@@ -648,7 +534,7 @@ public abstract class RowFormat extends RowBasedFormat {
             element.rowId = row.getRowId();
             element.colId = indices[i] + startCol;
             element.value = values[i];
-            save(element, out);
+            format.save(element, out);
           }
         } else {
           ObjectIterator<Int2IntMap.Entry> iter = vector.getStorage().entryIterator();
@@ -658,12 +544,12 @@ public abstract class RowFormat extends RowBasedFormat {
             element.rowId = row.getRowId();
             element.colId = entry.getIntKey() + startCol;
             element.value = entry.getIntValue();
-            save(element, out);
+            format.save(element, out);
           }
         }
       }
     } else {
-      LongIntVector vector = (LongIntVector) storageVec;
+      LongIntVector vector = (LongIntVector) ServerRowUtils.getVector(row);
       if (saveContext.sortFirst()) {
         long[] indices = vector.getStorage().getIndices();
         int[] values = vector.getStorage().getValues();
@@ -672,7 +558,7 @@ public abstract class RowFormat extends RowBasedFormat {
           element.rowId = row.getRowId();
           element.colId = indices[i] + startCol;
           element.value = values[i];
-          save(element, out);
+          format.save(element, out);
         }
       } else {
         ObjectIterator<Long2IntMap.Entry> iter = vector.getStorage().entryIterator();
@@ -682,26 +568,25 @@ public abstract class RowFormat extends RowBasedFormat {
           element.rowId = row.getRowId();
           element.colId = entry.getLongKey() + startCol;
           element.value = entry.getIntValue();
-          save(element, out);
+          format.save(element, out);
         }
       }
     }
   }
 
   private void save(ServerLongLongRow row, PSMatrixSaveContext saveContext,
-    MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
+      MatrixPartitionMeta meta, DataOutputStream out) throws IOException {
     long startCol = meta.getStartCol();
     LongLongElement element = new LongLongElement();
-    LongVector storageVec = ServerRowUtils.getVector(row);
-    if (storageVec instanceof IntLongVector) {
-      IntLongVector vector = (IntLongVector) storageVec;
+    if (ServerRowUtils.getVector(row) instanceof IntLongVector) {
+      IntLongVector vector = (IntLongVector) ServerRowUtils.getVector(row);
       if (vector.isDense()) {
         long[] data = vector.getStorage().getValues();
         for (int i = 0; i < data.length; i++) {
           element.rowId = row.getRowId();
           element.colId = startCol + i;
           element.value = data[i];
-          save(element, out);
+          format.save(element, out);
         }
       } else {
         if (saveContext.sortFirst()) {
@@ -712,7 +597,7 @@ public abstract class RowFormat extends RowBasedFormat {
             element.rowId = row.getRowId();
             element.colId = indices[i] + startCol;
             element.value = values[i];
-            save(element, out);
+            format.save(element, out);
           }
         } else {
           ObjectIterator<Int2LongMap.Entry> iter = vector.getStorage().entryIterator();
@@ -722,12 +607,12 @@ public abstract class RowFormat extends RowBasedFormat {
             element.rowId = row.getRowId();
             element.colId = entry.getIntKey() + startCol;
             element.value = entry.getLongValue();
-            save(element, out);
+            format.save(element, out);
           }
         }
       }
     } else {
-      LongLongVector vector = (LongLongVector) storageVec;
+      LongLongVector vector = (LongLongVector) ServerRowUtils.getVector(row);
       if (saveContext.sortFirst()) {
         long[] indices = vector.getStorage().getIndices();
         long[] values = vector.getStorage().getValues();
@@ -736,7 +621,7 @@ public abstract class RowFormat extends RowBasedFormat {
           element.rowId = row.getRowId();
           element.colId = indices[i] + startCol;
           element.value = values[i];
-          save(element, out);
+          format.save(element, out);
         }
       } else {
         ObjectIterator<Long2LongMap.Entry> iter = vector.getStorage().entryIterator();
@@ -746,259 +631,104 @@ public abstract class RowFormat extends RowBasedFormat {
           element.rowId = row.getRowId();
           element.colId = entry.getLongKey() + startCol;
           element.value = entry.getLongValue();
-          save(element, out);
+          format.save(element, out);
         }
       }
     }
   }
 
   private void load(ServerIntFloatRow row, PSMatrixLoadContext loadContext,
-    MatrixPartitionMeta meta, DataInputStream in) throws IOException {
+      MatrixPartitionMeta meta, DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
     IntFloatElement element = new IntFloatElement();
     for (int i = 0; i < elemNum; i++) {
-      element.colId = i + (int)row.getStartCol();
-      load(element, in);
+      element.colId = i + (int) row.getStartCol();
+      format.load(element, in);
       row.set(element.colId, element.value);
     }
   }
 
   private void load(ServerIntDoubleRow row, PSMatrixLoadContext loadContext,
-    MatrixPartitionMeta meta, DataInputStream in) throws IOException {
+      MatrixPartitionMeta meta, DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
     IntDoubleElement element = new IntDoubleElement();
     for (int i = 0; i < elemNum; i++) {
-      element.colId = i + (int)row.getStartCol();
-      load(element, in);
+      element.colId = i + (int) row.getStartCol();
+      format.load(element, in);
       row.set(element.colId, element.value);
     }
   }
 
   private void load(ServerIntIntRow row, PSMatrixLoadContext loadContext, MatrixPartitionMeta meta,
-    DataInputStream in) throws IOException {
+      DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
     IntIntElement element = new IntIntElement();
     for (int i = 0; i < elemNum; i++) {
-      element.colId = i + (int)row.getStartCol();
-      load(element, in);
+      element.colId = i + (int) row.getStartCol();
+      format.load(element, in);
       row.set(element.colId, element.value);
     }
   }
 
   private void load(ServerIntLongRow row, PSMatrixLoadContext loadContext, MatrixPartitionMeta meta,
-    DataInputStream in) throws IOException {
+      DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
     IntLongElement element = new IntLongElement();
     for (int i = 0; i < elemNum; i++) {
-      element.colId = i + (int)row.getStartCol();
-      load(element, in);
+      element.colId = i + (int) row.getStartCol();
+      format.load(element, in);
       row.set(element.colId, element.value);
     }
   }
 
   private void load(ServerLongFloatRow row, PSMatrixLoadContext loadContext,
-    MatrixPartitionMeta meta, DataInputStream in) throws IOException {
+      MatrixPartitionMeta meta, DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
     LongFloatElement element = new LongFloatElement();
     for (int i = 0; i < elemNum; i++) {
       element.colId = i + row.getStartCol();
-      load(element, in);
+      format.load(element, in);
       row.set(element.colId, element.value);
     }
   }
 
   private void load(ServerLongDoubleRow row, PSMatrixLoadContext loadContext,
-    MatrixPartitionMeta meta, DataInputStream in) throws IOException {
+      MatrixPartitionMeta meta, DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
     LongDoubleElement element = new LongDoubleElement();
     for (int i = 0; i < elemNum; i++) {
       element.colId = i + row.getStartCol();
-      load(element, in);
+      format.load(element, in);
       row.set(element.colId, element.value);
     }
   }
 
   private void load(ServerLongIntRow row, PSMatrixLoadContext loadContext, MatrixPartitionMeta meta,
-    DataInputStream in) throws IOException {
+      DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
     LongIntElement element = new LongIntElement();
     for (int i = 0; i < elemNum; i++) {
       element.colId = i + row.getStartCol();
-      load(element, in);
+      format.load(element, in);
       row.set(element.colId, element.value);
     }
   }
 
   private void load(ServerLongLongRow row, PSMatrixLoadContext loadContext,
-    MatrixPartitionMeta meta, DataInputStream in) throws IOException {
+      MatrixPartitionMeta meta, DataInputStream in) throws IOException {
     RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
     LongLongElement element = new LongLongElement();
     for (int i = 0; i < elemNum; i++) {
       element.colId = i + row.getStartCol();
-      load(element, in);
-      row.set(element.colId, element.value);
-    }
-  }
-
-  public void load(Matrix matrix, MatrixPartitionMeta partMeta, MatrixLoadContext loadContext,
-    FSDataInputStream in) throws IOException {
-    Map<Integer, RowPartitionMeta> rowMetas = partMeta.getRowMetas();
-    for (int rowId : rowMetas.keySet()) {
-      Vector row = matrix.getRow(rowId);
-      load(row, partMeta, loadContext, in);
-    }
-  }
-
-  public void load(Vector row, MatrixPartitionMeta meta, MatrixLoadContext loadContext,
-    DataInputStream in) throws IOException {
-    try {
-      if (row instanceof IntFloatVector) {
-        load((IntFloatVector) row, loadContext, meta, in);
-      } else if (row instanceof IntDoubleVector) {
-        load((IntDoubleVector) row, loadContext, meta, in);
-      } else if (row instanceof IntIntVector) {
-        load((IntIntVector) row, loadContext, meta, in);
-      } else if (row instanceof IntLongVector) {
-        load((IntLongVector) row, loadContext, meta, in);
-      } else if (row instanceof LongFloatVector) {
-        load((LongFloatVector) row, loadContext, meta, in);
-      } else if (row instanceof LongDoubleVector) {
-        load((LongDoubleVector) row, loadContext, meta, in);
-      } else if (row instanceof LongIntVector) {
-        load((LongIntVector) row, loadContext, meta, in);
-      } else if (row instanceof LongLongVector) {
-        load((LongLongVector) row, loadContext, meta, in);
-      } else {
-        throw new IOException("Unknown vector type " + row.getType());
-      }
-    } finally {
-    }
-  }
-
-  private void load(IntFloatVector row, MatrixLoadContext loadContext, MatrixPartitionMeta meta,
-    DataInputStream in) throws IOException {
-    RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
-    if(rowMeta == null) {
-      LOG.warn("can not find meta data for row " + row.getRowId() + ", just exit load");
-      return;
-    }
-    int elemNum = rowMeta.getElementNum();
-    IntFloatElement element = new IntFloatElement();
-    for (int i = 0; i < elemNum; i++) {
-      load(element, in);
-      row.set(element.colId, element.value);
-    }
-  }
-
-  private void load(IntDoubleVector row, MatrixLoadContext loadContext, MatrixPartitionMeta meta,
-    DataInputStream in) throws IOException {
-    RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
-    if(rowMeta == null) {
-      LOG.warn("can not find meta data for row " + row.getRowId() + ", just exit load");
-      return;
-    }
-    int elemNum = rowMeta.getElementNum();
-    IntDoubleElement element = new IntDoubleElement();
-    for (int i = 0; i < elemNum; i++) {
-      load(element, in);
-      row.set(element.colId, element.value);
-    }
-  }
-
-  private void load(IntIntVector row, MatrixLoadContext loadContext, MatrixPartitionMeta meta,
-    DataInputStream in) throws IOException {
-    RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
-    if(rowMeta == null) {
-      LOG.warn("can not find meta data for row " + row.getRowId() + ", just exit load");
-      return;
-    }
-    int elemNum = rowMeta.getElementNum();
-    IntIntElement element = new IntIntElement();
-    for (int i = 0; i < elemNum; i++) {
-      load(element, in);
-      row.set(element.colId, element.value);
-    }
-  }
-
-  private void load(IntLongVector row, MatrixLoadContext loadContext, MatrixPartitionMeta meta,
-    DataInputStream in) throws IOException {
-    RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
-    if(rowMeta == null) {
-      LOG.warn("can not find meta data for row " + row.getRowId() + ", just exit load");
-      return;
-    }
-    int elemNum = rowMeta.getElementNum();
-    IntLongElement element = new IntLongElement();
-    for (int i = 0; i < elemNum; i++) {
-      load(element, in);
-      row.set(element.colId, element.value);
-    }
-  }
-
-  private void load(LongFloatVector row, MatrixLoadContext loadContext, MatrixPartitionMeta meta,
-    DataInputStream in) throws IOException {
-    RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
-    if(rowMeta == null) {
-      LOG.warn("can not find meta data for row " + row.getRowId() + ", just exit load");
-      return;
-    }
-    int elemNum = rowMeta.getElementNum();
-    LongFloatElement element = new LongFloatElement();
-    for (int i = 0; i < elemNum; i++) {
-      load(element, in);
-      row.set(element.colId, element.value);
-    }
-  }
-
-  private void load(LongDoubleVector row, MatrixLoadContext loadContext, MatrixPartitionMeta meta,
-    DataInputStream in) throws IOException {
-    RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
-    if(rowMeta == null) {
-      LOG.warn("can not find meta data for row " + row.getRowId() + ", just exit load");
-      return;
-    }
-    int elemNum = rowMeta.getElementNum();
-    LongDoubleElement element = new LongDoubleElement();
-    for (int i = 0; i < elemNum; i++) {
-      load(element, in);
-      row.set(element.colId, element.value);
-    }
-  }
-
-  private void load(LongIntVector row, MatrixLoadContext loadContext, MatrixPartitionMeta meta,
-    DataInputStream in) throws IOException {
-    RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
-    if(rowMeta == null) {
-      LOG.warn("can not find meta data for row " + row.getRowId() + ", just exit load");
-      return;
-    }
-    int elemNum = rowMeta.getElementNum();
-    LongIntElement element = new LongIntElement();
-    for (int i = 0; i < elemNum; i++) {
-      load(element, in);
-      row.set(element.colId, element.value);
-    }
-  }
-
-  private void load(LongLongVector row, MatrixLoadContext loadContext, MatrixPartitionMeta meta,
-    DataInputStream in) throws IOException {
-    RowPartitionMeta rowMeta = meta.getRowMeta(row.getRowId());
-    if(rowMeta == null) {
-      LOG.warn("can not find meta data for row " + row.getRowId() + ", just exit load");
-      return;
-    }
-    int elemNum = rowMeta.getElementNum();
-    LongLongElement element = new LongLongElement();
-    for (int i = 0; i < elemNum; i++) {
-      load(element, in);
+      format.load(element, in);
       row.set(element.colId, element.value);
     }
   }

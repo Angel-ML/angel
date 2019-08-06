@@ -34,7 +34,7 @@ import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.func.{Zip2MapFunc, Zi
 import com.tencent.angel.ml.matrix.psf.update.{Compress, RandomNormal, RandomUniform}
 import com.tencent.angel.psagent.matrix.{MatrixClientFactory, ResponseType, Result}
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.models.PSVector
+import com.tencent.angel.sona.models.PSVector
 
 object VectorUtils {
 
