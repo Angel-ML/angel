@@ -23,7 +23,7 @@
     <parent>
         <groupId>com.tencent.angel</groupId>
         <artifactId>angel-ps</artifactId>
-        <version>2.2.0</version>
+        <version>3.0.0</version>
     </parent>
 
     <artifactId>angel-ps-tools</artifactId>

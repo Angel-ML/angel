@@ -117,6 +117,14 @@ public class AngelPSClient {
     return new AngelContext(client.getMasterLocation(), conf);
   }
 
+  public Configuration getConf() {
+    return conf;
+  }
+
+  public void setTaskNum(int taskNum) {
+
+  }
+
   /**
    * Add a matrix
    *
@@ -144,6 +152,10 @@ public class AngelPSClient {
    */
   public void save(ModelSaveContext saveContext) throws AngelException {
     client.save(saveContext);
+  }
+
+  public void save(ModelSaveContext saveContext, Boolean deleteExistsFile) throws AngelException {
+    client.save(saveContext, deleteExistsFile);
   }
 
   public void load(ModelLoadContext loadContext) {

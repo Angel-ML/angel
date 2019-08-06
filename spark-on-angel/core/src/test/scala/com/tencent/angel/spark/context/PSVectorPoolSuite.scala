@@ -19,7 +19,7 @@
 package com.tencent.angel.spark.context
 
 import com.tencent.angel.ml.math2.utils.RowType
-import com.tencent.angel.spark.models.PSVector
+import com.tencent.angel.sona.models.PSVector
 import com.tencent.angel.spark.{PSFunSuite, SharedPSContext}
 
 class PSVectorPoolSuite extends PSFunSuite with SharedPSContext {

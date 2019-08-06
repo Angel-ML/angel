@@ -22,8 +22,8 @@ import org.apache.spark.SparkException
 import sun.misc.Cleaner
 
 import com.tencent.angel.ml.math2.utils.RowType
-import com.tencent.angel.spark.models.PSVector
-import com.tencent.angel.spark.models.impl.PSVectorImpl
+import com.tencent.angel.sona.models.PSVector
+import com.tencent.angel.sona.models.impl.PSVectorImpl
 
 /**
  * PSVectorPool delegate a memory space on PS servers,
