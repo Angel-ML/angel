@@ -19,8 +19,10 @@
 package com.tencent.angel.example.ml;
 
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.ml.core.PSOptimizerProvider;
 import com.tencent.angel.ml.core.conf.AngelMLConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
+import com.tencent.angel.mlcore.conf.MLCoreConf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -99,6 +101,7 @@ public class WideAndDeepLocalExample {
     conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
     conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
+    conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
 
     // Set WideAndDeep algorithm parameters
     String angelConfFile = null;

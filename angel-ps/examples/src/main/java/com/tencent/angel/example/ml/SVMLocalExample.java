@@ -20,9 +20,11 @@ package com.tencent.angel.example.ml;
 
 
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.ml.core.PSOptimizerProvider;
 import com.tencent.angel.ml.core.conf.AngelMLConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
 import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.mlcore.conf.MLCoreConf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -132,6 +134,15 @@ public class SVMLocalExample {
     conf.set(AngelMLConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
     conf.set(AngelMLConf.ML_REG_L2(), String.valueOf(reg));
     conf.setLong(AngelMLConf.ML_MODEL_SIZE(), featureNum);
+    conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
+
+    String angelConfFile = null;
+    if (inPackage) {
+      angelConfFile = "../examples/src/jsons/svm.json";
+    } else {
+      angelConfFile = "angel-ps/examples/src/jsons/svm.json";
+    }
+    conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
 
     // Set model class
     conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "SupportVectorMachine");

@@ -104,6 +104,8 @@ public class MLRTest {
       conf.set(AngelMLConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
       conf.set(AngelMLConf.ML_REG_L2(), String.valueOf(reg));
       conf.setLong(AngelMLConf.ML_MODEL_SIZE(), featureNum);
+      String angelConfFile = "./src/test/jsons/mixedlr.json";
+      conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
       conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "MixedLogisticRegression");
     } catch (Exception x) {
       LOG.error("setup failed ", x);

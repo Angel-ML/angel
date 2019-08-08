@@ -104,6 +104,8 @@ public class RobustRegTest {
       conf.set(AngelMLConf.ML_REG_L2(), String.valueOf(reg));
       conf.setLong(AngelMLConf.ML_MODEL_SIZE(), 124L);
       conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "RobustRegression");
+      String angelConfFile = "./src/test/jsons/robustreg.json";
+      conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
 
       conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
 

@@ -103,6 +103,8 @@ public class SoftmaxTest {
       conf.setInt(AngelMLConf.ML_NUM_CLASS(), classNum);
       conf.setBoolean(AngelMLConf.ML_DATA_USE_SHUFFLE(), true);
       conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "SoftmaxRegression");
+      String angelConfFile = "./src/test/jsons/softmax.json";
+      conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
 
       conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
 

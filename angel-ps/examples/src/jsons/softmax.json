@@ -8,7 +8,7 @@
     {
       "name": "wide",
       "type": "simpleinputlayer",
-      "outputdim": 3,
+      "outputdim": 10,
       "transfunc": "identity"
     },
     {

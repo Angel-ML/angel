@@ -102,6 +102,8 @@ public class SVMTest {
         "com.tencent.angel.ml.classification.SupportVectorMachine");
 
       conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
+      String angelConfFile = "./src/test/jsons/svm.json";
+      conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
 
     } catch (Exception x) {
       LOG.error("setup failed ", x);

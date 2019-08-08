@@ -104,7 +104,10 @@ public class LinearRegTest {
       conf.set(AngelMLConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
       conf.set(AngelMLConf.ML_REG_L2(), String.valueOf(reg));
       conf.setLong(AngelMLConf.ML_MODEL_SIZE(), 124L);
+      String angelConfFile = "./src/test/jsons/linreg.json";
+      conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
       conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "LinearRegression");
+      conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
     } catch (Exception e) {
       LOG.error("setup failed ", e);
       throw e;

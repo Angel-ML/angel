@@ -113,7 +113,7 @@ public class LRTest {
   @Test public void testLR() throws Exception {
     setConf();
     trainTest();
-    // predictTest();
+    predictTest();
   }
 
   private void trainTest() throws Exception {
