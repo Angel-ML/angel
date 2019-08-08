@@ -49,7 +49,7 @@ public class KmeansTest {
   public void setup() throws Exception {
     try {
       String dataFmt = "libsvm";
-      String modelType = String.valueOf(RowType.T_DOUBLE_SPARSE);
+      String modelType = String.valueOf(RowType.T_FLOAT_SPARSE);
       // Cluster center number
       int centerNum = 10;
       // Feature number of train data
@@ -59,7 +59,7 @@ public class KmeansTest {
       // Sample ratio per mini-batch
       double spratio = 1.0;
       // C
-      double c = 0.5;
+      double c = 2;
       String optimizer = "KmeansOptimizer";
 
       // Model type
@@ -96,6 +96,7 @@ public class KmeansTest {
       // Set data format
       conf.set(MLCoreConf.ML_DATA_INPUT_FORMAT(), dataFmt);
       conf.set(MLCoreConf.ML_MODEL_TYPE(), modelType);
+      conf.set(MLCoreConf.ML_NUM_UPDATE_PER_EPOCH(), "50");
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;
@@ -171,7 +172,7 @@ public class KmeansTest {
   public void testKMeans() throws Exception {
     setup();
     trainTest();
-    incTrain();
-    predictTest();
+//    incTrain();
+//    predictTest();
   }
 }
