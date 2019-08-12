@@ -21,6 +21,7 @@ import com.tencent.angel.model.io.PSColumnLoaderSaver;
 import com.tencent.angel.model.io.PSMatrixLoaderSaver;
 import com.tencent.angel.model.io.PSRowElementLoaderSaver;
 import com.tencent.angel.model.io.PSRowLoaderSaver;
+import com.tencent.angel.model.io.SnapshotLoaderSaver;
 import org.apache.hadoop.conf.Configuration;
 
 public class PSMatrixFilesUtils {
@@ -39,6 +40,8 @@ public class PSMatrixFilesUtils {
       return new PSColumnLoaderSaver((ColumnFormat) format, conf);
     } else if (format instanceof RowFormat) {
       return new PSRowLoaderSaver((RowFormat) format, conf);
+    } else if(format instanceof SnapshotFormat) {
+      return new SnapshotLoaderSaver((SnapshotFormat)format, conf);
     } else {
       throw new UnsupportedOperationException(
           "format " + format.getClass().getName() + " not support now!");
