@@ -55,6 +55,12 @@
       <groupId>com.tencent.angel</groupId>
       <artifactId>angel-format</artifactId>
       <version>0.1.0-SNAPSHOT</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.tencent.angel</groupId>
+          <artifactId>angel-ps-core</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
@@ -112,7 +118,7 @@
       <groupId>org.json4s</groupId>
       <artifactId>json4s-jackson_2.11</artifactId>
       <!--version>3.2.11</version-->
-      <version>3.6.6</version>
+      <version>${json4s.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>

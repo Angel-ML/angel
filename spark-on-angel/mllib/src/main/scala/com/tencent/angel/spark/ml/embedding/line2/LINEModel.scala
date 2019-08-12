@@ -29,7 +29,7 @@ import com.tencent.angel.spark.ml.embedding.NEModel.NEDataSet
 import com.tencent.angel.spark.ml.embedding.line.LINEModel.{LINEDataSet, buildDataBatches}
 import com.tencent.angel.spark.ml.embedding.{FastSigmoid, Param}
 import com.tencent.angel.spark.ml.psf.embedding.NEModelRandomize.RandomizeUpdateParam
-import com.tencent.angel.spark.models.PSMatrix
+import com.tencent.angel.sona.models.PSMatrix
 import it.unimi.dsi.fastutil.ints.{Int2IntOpenHashMap, Int2ObjectOpenHashMap}
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkContext

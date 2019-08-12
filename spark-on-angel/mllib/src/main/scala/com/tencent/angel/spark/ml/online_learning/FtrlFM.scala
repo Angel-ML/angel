@@ -12,8 +12,8 @@ import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadC
 import com.tencent.angel.ps.storage.partitioner.{ColumnRangePartitioner, Partitioner}
 import com.tencent.angel.spark.context.AngelPSContext
 import com.tencent.angel.spark.ml.psf.ftrl.ComputeW
-import com.tencent.angel.spark.models.PSMatrix
-import com.tencent.angel.spark.models.impl.PSMatrixImpl
+import com.tencent.angel.sona.models.PSMatrix
+import com.tencent.angel.sona.models.impl.PSMatrixImpl
 
 class FtrlFM() extends Serializable {
 

@@ -76,8 +76,13 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>angel-ps-serving</artifactId>
       <version>${project.version}</version>
+<<<<<<< HEAD
+    </dependency>
+    <dependency>
+=======
     </dependency-->
     <!--dependency>
+>>>>>>> 46a940c4970656f51004c9b4254bbcda77254ccc
       <groupId>${project.groupId}</groupId>
       <artifactId>spark-on-angel-core</artifactId>
       <version>${project.version}</version>
