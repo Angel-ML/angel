@@ -28,7 +28,7 @@ import com.tencent.angel.mlcore.optimizer.loss.LogLoss
 import com.tencent.angel.worker.task.TaskContext
 
 
-class LogisticRegression(conf: SharedConf, _ctx: TaskContext = null) extends AngelModel(conf, _ctx.getTotalTaskNum) {
+class LogisticRegression(conf: SharedConf, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
   val optProvider = new PSOptimizerProvider(conf)
 
   override def buildNetwork(): this.type = {

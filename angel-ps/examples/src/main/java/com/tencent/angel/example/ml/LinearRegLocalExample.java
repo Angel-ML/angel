@@ -20,9 +20,11 @@ package com.tencent.angel.example.ml;
 
 
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.ml.core.PSOptimizerProvider;
 import com.tencent.angel.ml.core.conf.AngelMLConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
 import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.mlcore.conf.MLCoreConf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -89,6 +91,13 @@ public class LinearRegLocalExample {
     // Regularization coefficient
     double reg = 0.0001;
 
+    String angelConfFile = null;
+    if (inPackage) {
+      angelConfFile = "../examples/src/jsons/linreg.json";
+    } else {
+      angelConfFile = "angel-ps/examples/src/jsons/linreg.json";
+    }
+
     // Set file system
     String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
     String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
@@ -101,6 +110,8 @@ public class LinearRegLocalExample {
     // Use local deploy mode and data format
     conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
     conf.set(AngelMLConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
+    conf.setStrings(AngelConf.ANGEL_ML_CONF, angelConfFile);
+    conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
 
     // Set data path
     conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());

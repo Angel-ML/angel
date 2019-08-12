@@ -8,13 +8,13 @@
     {
       "name": "wide",
       "type": "simpleinputlayer",
-      "outputdim": 3,
+      "outputdim": 1,
       "transfunc": "identity"
     },
     {
-      "name": "softmaxlosslayer",
+      "name": "simplelosslayer",
       "type": "simplelosslayer",
-      "lossfunc": "softmaxloss",
+      "lossfunc": "huberloss",
       "inputlayer": "wide"
     }
   ]

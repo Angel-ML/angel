@@ -27,16 +27,19 @@ import com.tencent.angel.mlcore.variable.{VariableManager, VariableProvider}
 import com.tencent.angel.ml.core.variable.{AngelCILSImpl, CILSImpl}
 import com.tencent.angel.ml.math2.utils.{DataBlock, LabeledData}
 import com.tencent.angel.mlcore.{GraphModel, PredictResult}
+import com.tencent.angel.worker.task.TaskContext
 
 
-class AngelModel(conf: SharedConf, taskNum: Int = -1) extends GraphModel(conf) {
+class AngelModel(conf: SharedConf, ctx: TaskContext = null) extends GraphModel(conf) {
   lazy val batchSize: Int = conf.batchSize
   lazy val blockSize: Int = conf.blockSize
   private implicit val sharedConf: SharedConf = conf
 
   override protected implicit val variableManager: VariableManager = new PSVariableManager(isSparseFormat, conf)
   protected implicit val cilsImpl: CILSImpl = new AngelCILSImpl(conf)
-  override protected val variableProvider: VariableProvider = new PSVariableProvider(dataFormat, modelType)
+  override protected val variableProvider: VariableProvider = new PSVariableProvider(dataFormat, sharedConf)
+  var taskNum: Int = -1
+  if (ctx != null) taskNum = ctx.getTotalTaskNum
 
   implicit lazy val graph: Graph = if (taskNum != -1) {
     new Graph(variableProvider, conf, taskNum)
@@ -79,4 +82,18 @@ class AngelModel(conf: SharedConf, taskNum: Int = -1) extends GraphModel(conf) {
   }
 
   override def predict(storage: LabeledData): PredictResult = ???
+}
+
+object AngelModel {
+  def apply(className: String, conf: SharedConf): AngelModel = {
+    val cls = Class.forName(className)
+    val cstr = cls.getConstructor(classOf[SharedConf], classOf[TaskContext])
+    cstr.newInstance(conf, null).asInstanceOf[AngelModel]
+  }
+
+  def apply(className: String, conf: SharedConf, ctx: TaskContext = null): AngelModel = {
+    val cls = Class.forName(className)
+    val cstr = cls.getConstructor(classOf[SharedConf], classOf[TaskContext])
+    cstr.newInstance(conf, ctx).asInstanceOf[AngelModel]
+  }
 }

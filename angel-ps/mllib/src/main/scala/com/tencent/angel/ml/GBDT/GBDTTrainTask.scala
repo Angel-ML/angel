@@ -41,7 +41,7 @@ class GBDTTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](
   @throws[Exception]
   def train(ctx: TaskContext) {
     val trainer = new GBDTLearner(ctx)
-    trainer.train(taskDataBlock, validDataStorage)
+    trainer.trainOld(taskDataBlock, validDataStorage)
   }
 
   /**

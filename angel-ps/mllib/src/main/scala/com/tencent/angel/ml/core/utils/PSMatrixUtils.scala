@@ -158,7 +158,7 @@ object PSMatrixUtils {
     val idxArr = (startRowId until endRowId).toArray
     val param = new GetRowsParam(matrixId, idxArr)
     val func = new GetRows(param)
-    val vectorMap = PSAgentContext.get.getUserRequestAdapter.get(func)
+    val vectorMap = PSAgentContext.get.getUserRequestAdapter.get(func).get()
       .asInstanceOf[GetRowsResult].getRows
 
     val vectors = idxArr.map { rowId => vectorMap.get(rowId) }

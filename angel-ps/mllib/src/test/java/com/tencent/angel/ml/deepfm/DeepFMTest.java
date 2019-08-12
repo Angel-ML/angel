@@ -85,8 +85,8 @@ public class DeepFMTest {
 
   @Test public void testDeepFM() throws Exception {
     setSystemConf();
-//    trainTest();
-//    incTrainTest();
+    trainTest();
+    incTrainTest();
     predictTest();
   }
 
