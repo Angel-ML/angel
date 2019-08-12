@@ -37,7 +37,7 @@ class AngelModel(conf: SharedConf, ctx: TaskContext = null) extends GraphModel(c
 
   override protected implicit val variableManager: VariableManager = new PSVariableManager(isSparseFormat, conf)
   protected implicit val cilsImpl: CILSImpl = new AngelCILSImpl(conf)
-  override protected val variableProvider: VariableProvider = new PSVariableProvider(dataFormat, modelType)
+  override protected val variableProvider: VariableProvider = new PSVariableProvider(dataFormat, sharedConf)
   var taskNum: Int = -1
   if (ctx != null) taskNum = ctx.getTotalTaskNum
 
