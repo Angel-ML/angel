@@ -140,7 +140,7 @@ class NeighborTableModel(@BeanProperty val param: Param) extends Serializable {
 
   def checkpoint() = {
     println(s"neighbor table checkpoint now matrixId=${psMatrix.id}")
-    psMatrix.checkpoint().get()
+    psMatrix.checkpoint()
   }
 }
 

@@ -22,7 +22,7 @@
 	<parent>
 		<groupId>com.tencent.angel</groupId>
 		<artifactId>angel</artifactId>
-		<version>2.2.0</version>
+		<version>2.3.0</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -66,6 +66,12 @@
 		<dependency>
 			<groupId>com.tencent.angel</groupId>
 			<artifactId>angel-ps-core</artifactId>
+			<version>${project.version}</version>
+			<scope>${dist.deps.scope}</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.tencent.angel</groupId>
+			<artifactId>angel-ps-graph</artifactId>
 			<version>${project.version}</version>
 			<scope>${dist.deps.scope}</scope>
 		</dependency>

@@ -77,7 +77,7 @@ class FtrlFM() extends Serializable {
     */
   def init(ctx: MatrixContext): PSMatrix = {
     val matId = PSMatrixUtils.createPSMatrix(ctx)
-    new PSMatrixImpl(matId, ctx.getRowNum, ctx.getColNum, ctx.getRowType)
+    new PSMatrixImpl(matId, ctx.getName, ctx.getRowNum, ctx.getColNum, ctx.getRowType)
   }
 
   def init(start: Long, end: Long, factor: Int): Unit = {

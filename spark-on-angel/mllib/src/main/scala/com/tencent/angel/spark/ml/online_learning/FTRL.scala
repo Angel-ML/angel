@@ -89,7 +89,7 @@ class FTRL() extends Serializable {
   def init(ctx: MatrixContext): Unit = {
     val matId = PSMatrixUtils.createPSMatrix(ctx)
     wPS = new PSVectorImpl(matId, 2, ctx.getColNum, ctx.getRowType)
-    matrix = new PSMatrixImpl(matId, ctx.getRowNum, ctx.getColNum, ctx.getRowType)
+    matrix = new PSMatrixImpl(matId, ctx.getName, ctx.getRowNum, ctx.getColNum, ctx.getRowType)
   }
 
   def init(start: Long, end: Long): Unit =

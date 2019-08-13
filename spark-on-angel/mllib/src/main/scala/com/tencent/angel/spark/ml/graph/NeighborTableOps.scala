@@ -1,7 +1,6 @@
 package com.tencent.angel.spark.ml.graph
 
 import com.tencent.angel.graph.client.initneighbor2.{InitNeighbor => InitLongNeighbor, InitNeighborParam => InitLongNeighborParam}
-import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.ps.storage.vector.element.LongArrayElement
 import com.tencent.angel.spark.context.PSContext
@@ -62,7 +61,7 @@ class NeighborTableOps(table: NeighborTableModel) extends Serializable {
     neighborsMap
   }
 
-  def checkpoint(): VoidResult = table.checkpoint()
+  def checkpoint(): Unit = table.checkpoint()
 
   def testPS[ED: ClassTag](neighborsRDD: RDD[NeighborTablePartition[ED]],
                                num: Int = 10): NeighborTableModel = {

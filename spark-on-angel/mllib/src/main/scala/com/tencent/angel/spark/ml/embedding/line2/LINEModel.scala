@@ -83,7 +83,7 @@ class LINEModel(numNode: Int,
     var startTs = System.currentTimeMillis()
 
     // Before training, checkpoint the model
-    checkpoint(0)
+    psMatrix.checkpoint(0)
     logTime(s"Write checkpoint use time=${System.currentTimeMillis() - startTs}")
 
     for (epoch <- 1 to numEpoch) {
@@ -107,7 +107,7 @@ class LINEModel(numNode: Int,
       if (epoch % checkpointInterval == 0 && epoch < numEpoch) {
         logTime(s"Epoch=${epoch}, checkpoint the model")
         startTs = System.currentTimeMillis()
-        checkpoint(epoch)
+        psMatrix.checkpoint(epoch)
         logTime(s"checkpoint use time=${System.currentTimeMillis() - startTs}")
       }
 
@@ -357,7 +357,7 @@ class LINEModel(numNode: Int,
   def checkpoint(checkpointId:Int): Unit = {
     val saveContext = new ModelSaveContext()
     saveContext.addMatrix(new MatrixSaveContext(matrixName, classOf[SnapshotFormat].getTypeName))
-    PSContext.getOrCreate(SparkContext.getOrCreate()).checkpoint(checkpointId, saveContext)
+    PSContext.instance().checkpoint(checkpointId, saveContext)
   }
 
   def save(modelPathRoot: String, epoch: Int): Unit = {
@@ -371,7 +371,7 @@ class LINEModel(numNode: Int,
 
     val saveContext = new ModelSaveContext(modelPath)
     saveContext.addMatrix(new MatrixSaveContext(matrixName, classOf[TextLINEModelOutputFormat].getTypeName))
-    PSContext.getOrCreate(SparkContext.getOrCreate()).save(saveContext)
+    PSContext.instance().save(saveContext)
   }
 
   def load(modelPath: String): Unit = {
