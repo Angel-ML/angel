@@ -146,8 +146,31 @@ public class AngelPSClient {
     client.save(saveContext);
   }
 
+  /**
+   * Write the checkpoint
+   * @param checkpointId checkpoint id
+   * @param saveContext save context
+   * @throws AngelException
+   */
+  public void checkpoint(int checkpointId, ModelSaveContext saveContext) throws AngelException {
+    client.checkpoint(checkpointId, saveContext);
+  }
+
+  /**
+   * Load the model from hdfs files
+   * @param loadContext load context
+   */
   public void load(ModelLoadContext loadContext) {
     client.load(loadContext);
+  }
+
+  /**
+   * Recover the model from the checkpoint
+   * @param checkpointId the checkpoint id
+   * @param loadContext load context
+   */
+  public void recover(int checkpointId, ModelLoadContext loadContext) {
+    client.recover(checkpointId, loadContext);
   }
 
   /**

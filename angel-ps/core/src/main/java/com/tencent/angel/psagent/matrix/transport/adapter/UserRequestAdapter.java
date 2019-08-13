@@ -36,6 +36,9 @@ import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult;
+import com.tencent.angel.ps.ParameterServer;
+import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.ps.server.data.request.CheckpointPSRequest;
 import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.ServerRow;
@@ -664,7 +667,7 @@ public class UserRequestAdapter {
         clear(requestId);
       }
 
-      // LOG.info("request = " + request + ", cache = " + cache);
+      LOG.debug("request = " + request + ", cache = " + cache);
       if (request != null) {
         switch (request.getType()) {
           case GET_PSF:
@@ -805,6 +808,25 @@ public class UserRequestAdapter {
 
   public GetRowsResult getRowsFlow(GetRowsResult result, RowIndex index, int batchSize) {
     return getRowsFlow(result, index, batchSize, -1);
+  }
+
+  public FutureResult<VoidResult> checkpoint(int matrixId, int checkPointId) {
+    List<ParameterServerId> pss = PSAgentContext.get().getMatrixMetaManager().getPss(matrixId);
+    MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
+
+    CheckpointRequest request = new CheckpointRequest(UserRequestType.CHECKPOINT, matrixId, checkPointId);
+    CheckpointCache cache = new CheckpointCache(pss.size());
+    FutureResult<VoidResult> result = new FutureResult<>();
+    int requestId = request.getRequestId();
+    requestIdToSubresponsMap.put(requestId, cache);
+    requestIdToResultMap.put(requestId, result);
+
+    requests.put(requestId, request);
+    for(ParameterServerId psId : pss) {
+      matrixClient.checkpoint(requestId, matrixId, checkPointId, psId);
+    }
+
+    return result;
   }
 
   class IndexRange {

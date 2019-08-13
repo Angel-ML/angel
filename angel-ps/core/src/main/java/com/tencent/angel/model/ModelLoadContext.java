@@ -28,7 +28,7 @@ public class ModelLoadContext {
   /**
    * Model save directory, load model from it
    */
-  private final String loadPath;
+  private volatile String loadPath;
 
   /**
    * Matrices load context
@@ -78,6 +78,14 @@ public class ModelLoadContext {
    */
   public String getLoadPath() {
     return loadPath;
+  }
+
+  /**
+   * Set model load path
+   * @param loadPath model load path
+   */
+  public void setLoadPath(String loadPath) {
+    this.loadPath = loadPath;
   }
 
   /**

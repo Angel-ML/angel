@@ -34,6 +34,8 @@ import com.tencent.angel.ml.matrix.psf.get.indexed.IndexGet;
 import com.tencent.angel.ml.matrix.psf.get.indexed.IndexGetParam;
 import com.tencent.angel.ml.matrix.psf.get.indexed.LongIndexGet;
 import com.tencent.angel.ml.matrix.psf.get.indexed.LongIndexGetParam;
+import com.tencent.angel.model.MatrixSaveContext;
+import com.tencent.angel.model.ModelSaveContext;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.psagent.matrix.MatrixClient;
@@ -436,10 +438,10 @@ public class IndexGetRowTest {
   }
 
   @Test public void test() throws Exception {
-    testDenseDoubleUDF();
+    //testDenseDoubleUDF();
     testSparseDoubleUDF();
 
-    testDenseDoubleCompUDF();
+    /*testDenseDoubleCompUDF();
     testSparseDoubleCompUDF();
 
     testDenseFloatUDF();
@@ -470,7 +472,7 @@ public class IndexGetRowTest {
     testSparseIntLongKeyCompUDF();
 
     testSparseLongLongKeyUDF();
-    testSparseLongLongKeyCompUDF();
+    testSparseLongLongKeyCompUDF();*/
   }
 
 
@@ -821,6 +823,13 @@ public class IndexGetRowTest {
     }
 
     Assert.assertTrue(index.length == row.size());
+
+    ModelSaveContext saveContext = new ModelSaveContext();
+    String savePath = LOCAL_FS + TMP_PATH + "/model";
+    saveContext.setSavePath(savePath);
+    MatrixSaveContext matrixContext = new MatrixSaveContext(SPARSE_DOUBLE_MAT);
+    saveContext.addMatrix(matrixContext);
+    angelClient.save(saveContext);
   }
 
   public void testDenseDoubleCompUDF() throws Exception {

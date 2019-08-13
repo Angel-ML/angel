@@ -127,6 +127,20 @@ public class AngelConf extends Configuration {
   public static final boolean DEFAULT_ANGEL_SAVE_MODEL_EPOCH_TIGGER_ENABLE = false;
 
   /**
+   * Maximum save results number
+   */
+  public static final String ANGEL_SAVE_MODEL_MAX_RESULTS_FOR_SINGLE_MATRIX =
+      "angel.save.model.max.results.for.single.matrix";
+  public static final int DEFAULT_ANGEL_SAVE_MODEL_MAX_RESULTS_FOR_SINGLE_MATRIX = 2;
+
+  /**
+   * Maximum save results number
+   */
+  public static final String ANGEL_CHECKPOINT_MAX_RESULTS_FOR_SINGLE_MATRIX =
+      "angel.checkpoint.max.results.for.single.matrix";
+  public static final int DEFAULT_ANGEL_CHECKPOINT_MAX_RESULTS_FOR_SINGLE_MATRIX = 1;
+
+  /**
    * Save model every how many epochs, it is effective only as "angel.save.model.epoch.trigger.enable"
    * is set to true
    */
@@ -327,7 +341,7 @@ public class AngelConf extends Configuration {
 
   public static final String ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS =
       "angel.client.heartbeat.interval.timeout.ms";
-  public static final int DEFAULT_ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS = 30000;
+  public static final int DEFAULT_ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS = 3000000;
 
   // //////////////////////////////
   // Master Configs
@@ -601,6 +615,81 @@ public class AngelConf extends Configuration {
   public static final float DEFAULT_ANGEL_WORKER_JVM_YOUNG_FACTOR = 0.4f;
 
   /**
+   * Enable G1 in Worker
+   */
+  public static final String ANGEL_WORKER_JVM_USE_G1 = ANGEL_WORKER_PREFIX + "jvm.use.g1";
+  public static final boolean DEFAULT_ANGEL_WORKER_JVM_USE_G1 = true;
+
+  /**
+   * Max GC pause time
+   */
+  public static final String ANGEL_WORKER_JVM_G1_MAXPAUSETIME_MS =
+      ANGEL_WORKER_PREFIX + "jvm.g1.maxpausetime.ms";
+  public static final int DEFAULT_ANGEL_WORKER_JVM_G1_MAXPAUSETIME_MS = 2000;
+
+  /**
+   * Minimal young region ratio
+   */
+  public static final String ANGEL_WORKER_JVM_G1_MIN_NEWRATIO =
+      ANGEL_WORKER_PREFIX + "jvm.g1.min.newratio";
+  public static final int DEFAULT_ANGEL_WORKER_JVM_G1_MIN_NEWRATIO = 5;
+
+  /**
+   * Maximal young region ratio
+   */
+  public static final String ANGEL_WORKER_JVM_G1_MAX_NEWRATIO =
+      ANGEL_WORKER_PREFIX + "jvm.g1.max.newratio";
+  public static final int DEFAULT_ANGEL_WORKER_JVM_G1_MAX_NEWRATIO = 60;
+
+  /**
+   * Region size
+   */
+  public static final String ANGEL_WORKER_JVM_G1_REGIONSIZE_MB =
+      ANGEL_WORKER_PREFIX + "jvm.g1.regionsize.mb";
+  public static final int DEFAULT_ANGEL_WORKER_JVM_G1_REGIONSIZE_MB = 32;
+
+  /**
+   * InitiatingHeapOccupancyPercent
+   */
+  public static final String ANGEL_WORKER_JVM_G1_IHOP = ANGEL_WORKER_PREFIX + "jvm.g1.ihop";
+  public static final int DEFAULT_ANGEL_WORKER_JVM_G1_IHOP = 60;
+
+  /**
+   * G1MixedGCLiveThresholdPercent
+   */
+  public static final String ANGEL_WORKER_JVM_G1_MIXGC_LIVE_THRESHOLD_PERCENT =
+      ANGEL_WORKER_PREFIX + "jvm.g1.mixgc.live.threshold.percent";
+  public static final int DEFAULT_ANGEL_WORKER_JVM_G1_MIXGC_LIVE_THRESHOLD_PERCENT = 65;
+
+  /**
+   * G1MixedGCCountTarget
+   */
+  public static final String ANGEL_WORKER_JVM_G1_MIXGC_TARGET_COUNT =
+      ANGEL_WORKER_PREFIX + "jvm.g1.mixgc.target.count";
+  public static final int DEFAULT_ANGEL_WORKER_JVM_G1_MIXGC_TARGET_COUNT = 8;
+
+  /**
+   * ParallelGCThreads
+   */
+  public static final String ANGEL_WORKER_JVM_G1_WORKER_NUM =
+      ANGEL_WORKER_PREFIX + "jvm.g1.worker.num";
+  public static final int DEFAULT_ANGEL_WORKER_JVM_G1_WORKER_NUM = 4;
+
+  /**
+   * ConcGCThreads
+   */
+  public static final String ANGEL_WORKER_JVM_G1_CONC_WORKER_NUM =
+      ANGEL_WORKER_PREFIX + "jvm.g1.conc.worker.num";
+  public static final int DEFAULT_ANGEL_WORKER_JVM_G1_CONC_WORKER_NUM = 4;
+
+  /**
+   * G1ReservePercent
+   */
+  public static final String ANGEL_WORKER_JVM_G1_RESERVE_PERCENT =
+      ANGEL_WORKER_PREFIX + "jvm.g1.reserve.percent";
+  public static final int DEFAULT_ANGEL_WORKER_JVM_G1_RESERVE_PERCENT = 10;
+
+  /**
    * The workers number for matrix operations
    */
   public static final String ANGEL_WORKER_MATRIX_EXECUTORS_NUM =
@@ -791,6 +880,12 @@ public class AngelConf extends Configuration {
   public static final int DEFAULT_ANGEL_PS_HA_SYNC_SEND_BUFFER_SIZE = 1024 * 1024;
 
   /**
+   * File read/write buffer size in PS
+   */
+  public static final String ANGEL_PS_IO_FILE_BUFFER_SIZE = ANGEL_PS_PREFIX + "io.file.buffer.size";
+  public static final int DEFAULT_ANGEL_PS_IO_FILE_BUFFER_SIZE = 4 * 1024 * 1024;
+
+  /**
    * Ps resource priority, it use to YARN container allocation. The smaller the priority, the higher
    * the priority.
    */
@@ -837,9 +932,15 @@ public class AngelConf extends Configuration {
   public static final String Angel_PS_PARTITION_CLASS =
       ANGEL_PS_PREFIX + "partition.class";
 
+  public static final String ANGEL_PS_CHECKPOINTS_MAX_NUM = ANGEL_PS_PREFIX + "checkpoint.max.num";
+  public static final int DEFAULT_ANGEL_PS_CHECKPOINTS_MAX_NUM = 1;
 
   public static final String ANGEL_PS_MAX_LOCK_WAITTIME_MS = ANGEL_PS_PREFIX + "max.lock.waittime";
   public static final int DEFAULT_ANGEL_PS_MAX_LOCK_WAITTIME_MS = 10000;
+
+  public static final String ANGEL_PS_USE_ADAPTIVE_KEY_ENABLE =
+      ANGEL_PS_PREFIX + "use.adaptive.key.enable";
+  public static final boolean DEFAULT_ANGEL_PS_USE_ADAPTIVE_KEY_ENABLE = true;
 
   public static final String ANGEL_PS_USE_ADAPTIVE_STORAGE_ENABLE =
       ANGEL_PS_PREFIX + "use.adaptive.storage.enable";
@@ -851,50 +952,84 @@ public class AngelConf extends Configuration {
 
   public static final String ANGEL_PS_JVM_DIRECT_FACTOR_USE_DIRECT_BUFF =
       ANGEL_PS_PREFIX + "jvm.direct.factor.use.direct.buff";
-  public static final float DEFAULT_ANGEL_PS_JVM_DIRECT_FACTOR_USE_DIRECT_BUFF = 0.25f;
+  public static final float DEFAULT_ANGEL_PS_JVM_DIRECT_FACTOR_USE_DIRECT_BUFF = 0.45f;
 
   public static final String ANGEL_PS_JVM_DIRECT_FACTOR_USE_HEAP_BUFF =
       ANGEL_PS_PREFIX + "jvm.direct.factor.use.direct.buff";
-  public static final float DEFAULT_ANGEL_PS_JVM_DIRECT_FACTOR_USE_HEAP_BUFF = 0.20f;
+  public static final float DEFAULT_ANGEL_PS_JVM_DIRECT_FACTOR_USE_HEAP_BUFF = 0.25f;
 
   public static final String ANGEL_PS_JVM_YOUNG_FACTOR = ANGEL_PS_PREFIX + "jvm.young.factor";
   public static final float DEFAULT_ANGEL_PS_JVM_YOUNG_FACTOR = 0.4f;
 
-  public static final String ANGEL_PS_JVM_USE_G1 = ANGEL_PS_PREFIX + "jvm.use.g1";
-  public static final boolean DEFAULT_ANGEL_PS_JVM_USE_G1 = false;
 
+  /**
+   * Enable G1 in PS
+   */
+  public static final String ANGEL_PS_JVM_USE_G1 = ANGEL_PS_PREFIX + "jvm.use.g1";
+  public static final boolean DEFAULT_ANGEL_PS_JVM_USE_G1 = true;
+
+  /**
+   * Max GC pause time
+   */
   public static final String ANGEL_PS_JVM_G1_MAXPAUSETIME_MS =
       ANGEL_PS_PREFIX + "jvm.g1.maxpausetime.ms";
-  public static final int DEFAULT_ANGEL_PS_JVM_G1_MAXPAUSETIME_MS = 500;
+  public static final int DEFAULT_ANGEL_PS_JVM_G1_MAXPAUSETIME_MS = 2000;
 
+  /**
+   * Minimal young region ratio
+   */
   public static final String ANGEL_PS_JVM_G1_MIN_NEWRATIO = ANGEL_PS_PREFIX + "jvm.g1.min.newratio";
   public static final int DEFAULT_ANGEL_PS_JVM_G1_MIN_NEWRATIO = 5;
 
+  /**
+   * Maximal young region ratio
+   */
   public static final String ANGEL_PS_JVM_G1_MAX_NEWRATIO = ANGEL_PS_PREFIX + "jvm.g1.max.newratio";
   public static final int DEFAULT_ANGEL_PS_JVM_G1_MAX_NEWRATIO = 60;
 
+  /**
+   * Region size
+   */
   public static final String ANGEL_PS_JVM_G1_REGIONSIZE_MB =
       ANGEL_PS_PREFIX + "jvm.g1.regionsize.mb";
-  public static final int DEFAULT_ANGEL_PS_JVM_G1_REGIONSIZE_MB = 16;
+  public static final int DEFAULT_ANGEL_PS_JVM_G1_REGIONSIZE_MB = 32;
 
+  /**
+   * InitiatingHeapOccupancyPercent
+   */
   public static final String ANGEL_PS_JVM_G1_IHOP = ANGEL_PS_PREFIX + "jvm.g1.ihop";
   public static final int DEFAULT_ANGEL_PS_JVM_G1_IHOP = 60;
 
+  /**
+   * G1MixedGCLiveThresholdPercent
+   */
   public static final String ANGEL_PS_JVM_G1_MIXGC_LIVE_THRESHOLD_PERCENT =
       ANGEL_PS_PREFIX + "jvm.g1.mixgc.live.threshold.percent";
   public static final int DEFAULT_ANGEL_PS_JVM_G1_MIXGC_LIVE_THRESHOLD_PERCENT = 65;
 
+  /**
+   * G1MixedGCCountTarget
+   */
   public static final String ANGEL_PS_JVM_G1_MIXGC_TARGET_COUNT =
       ANGEL_PS_PREFIX + "jvm.g1.mixgc.target.count";
   public static final int DEFAULT_ANGEL_PS_JVM_G1_MIXGC_TARGET_COUNT = 8;
 
+  /**
+   * ParallelGCThreads
+   */
   public static final String ANGEL_PS_JVM_G1_WORKER_NUM = ANGEL_PS_PREFIX + "jvm.g1.worker.num";
   public static final int DEFAULT_ANGEL_PS_JVM_G1_WORKER_NUM = 4;
 
+  /**
+   * ConcGCThreads
+   */
   public static final String ANGEL_PS_JVM_G1_CONC_WORKER_NUM =
       ANGEL_PS_PREFIX + "jvm.g1.conc.worker.num";
   public static final int DEFAULT_ANGEL_PS_JVM_G1_CONC_WORKER_NUM = 4;
 
+  /**
+   * G1ReservePercent
+   */
   public static final String ANGEL_PS_JVM_G1_RESERVE_PERCENT =
       ANGEL_PS_PREFIX + "jvm.g1.reserve.percent";
   public static final int DEFAULT_ANGEL_PS_JVM_G1_RESERVE_PERCENT = 10;
@@ -1169,7 +1304,7 @@ public class AngelConf extends Configuration {
    */
   public static final String ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS =
       ANGEL_PREFIX + "matrixtransfer.request.timeout.ms";
-  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS = 30000;
+  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS = 120000;
 
   /**
    * The time interval in milliseconds of clock events. We will check timeout requests and retry
@@ -1206,7 +1341,7 @@ public class AngelConf extends Configuration {
 
   public static final String ANGEL_PSAGENT_TO_PS_HEARTBEAT_TIMEOUT_MS =
       ANGEL_PSAGENT_PREFIX + "to.ps.heartbeat.timeout.ms";
-  public static final int DEFAULT_ANGEL_PSAGENT_TO_PS_HEARTBEAT_TIMEOUT_MS = 20000;
+  public static final int DEFAULT_ANGEL_PSAGENT_TO_PS_HEARTBEAT_TIMEOUT_MS = 600000;
 
   public static final String ANGEL_PSAGENT_UPDATE_SPLIT_ADAPTION_ENABLE =
       ANGEL_PSAGENT_PREFIX + "update.split.adaption.enable";

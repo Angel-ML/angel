@@ -17,6 +17,7 @@
 
 package com.tencent.angel.model.output.format;
 
+import java.text.DecimalFormat;
 import org.apache.hadoop.conf.Configuration;
 
 import java.io.DataInputStream;
@@ -30,6 +31,7 @@ public class RowIdColIdValueTextRowFormat extends RowFormat {
   private final String defaultSet = ",";
   public final static String sepParam =  "text.format.filed.sep";
   private final String sep;
+  private final DecimalFormat format = new DecimalFormat("#.######");
 
   public RowIdColIdValueTextRowFormat(Configuration conf) {
     super(conf);
@@ -45,7 +47,7 @@ public class RowIdColIdValueTextRowFormat extends RowFormat {
   @Override public void save(IntDoubleElement element, DataOutputStream out) throws IOException {
     out.writeBytes(
       String.valueOf(element.rowId) + sep + String.valueOf(element.colId) + sep + String
-        .valueOf(element.value) + "\n");
+        .valueOf(format.format(element.value)) + "\n");
   }
 
   @Override public void save(IntIntElement element, DataOutputStream out) throws IOException {
@@ -69,7 +71,7 @@ public class RowIdColIdValueTextRowFormat extends RowFormat {
   @Override public void save(LongDoubleElement element, DataOutputStream out) throws IOException {
     out.writeBytes(
       String.valueOf(element.rowId) + sep + String.valueOf(element.colId) + sep + String
-        .valueOf(element.value) + "\n");
+        .valueOf(format.format(element.value)) + "\n");
   }
 
   @Override public void save(LongIntElement element, DataOutputStream out) throws IOException {

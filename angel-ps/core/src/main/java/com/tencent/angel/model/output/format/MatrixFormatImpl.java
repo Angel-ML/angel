@@ -28,14 +28,24 @@ import com.tencent.angel.model.MatrixLoadContext;
 import com.tencent.angel.model.MatrixSaveContext;
 import com.tencent.angel.model.PSMatrixLoadContext;
 import com.tencent.angel.model.PSMatrixSaveContext;
-import com.tencent.angel.ps.storage.matrix.PartitionSource;
 import com.tencent.angel.ps.storage.matrix.ServerMatrix;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
+import com.tencent.angel.ps.storage.partition.ServerPartition;
 import com.tencent.angel.utils.HdfsUtil;
 import com.tencent.angel.utils.StringUtils;
 import it.unimi.dsi.fastutil.ints.Int2LongMap;
 import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Vector;
+import java.util.concurrent.RecursiveAction;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -44,56 +54,54 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.util.*;
-import java.util.Vector;
-import java.util.concurrent.RecursiveAction;
-
 /**
  * Default matrix format implement.
  */
 public abstract class MatrixFormatImpl implements MatrixFormat {
+
   private final static Log LOG = LogFactory.getLog(MatrixFormatImpl.class);
   protected final Configuration conf;
+  protected final int partNumPerFile;
 
   public MatrixFormatImpl(Configuration conf) {
+    this(conf, -1);
+  }
+
+  public MatrixFormatImpl(Configuration conf, int partNumPerFile) {
     this.conf = conf;
+    this.partNumPerFile = partNumPerFile;
   }
 
   /**
    * Save a matrix partition
    *
-   * @param part        matrix partition
-   * @param partMeta    matrix partition data meta
+   * @param part matrix partition
+   * @param partMeta matrix partition data meta
    * @param saveContext save context
-   * @param output      output stream
-   * @throws IOException
+   * @param output output stream
    */
   public abstract void save(ServerPartition part, MatrixPartitionMeta partMeta,
-    PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException;
+      PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException;
 
   /**
    * Load a matrix partition
    *
-   * @param part        matrix partition
-   * @param partMeta    matrix partition data meta
+   * @param part matrix partition
+   * @param partMeta matrix partition data meta
    * @param loadContext load context
-   * @param input       input stream
-   * @throws IOException
+   * @param input input stream
    */
   public abstract void load(ServerPartition part, MatrixPartitionMeta partMeta,
-    PSMatrixLoadContext loadContext, DataInputStream input) throws IOException;
+      PSMatrixLoadContext loadContext, DataInputStream input) throws IOException;
 
   @Override
   public void save(ServerMatrix matrix, PSMatrixSaveContext saveContext, Configuration conf)
-    throws IOException {
+      throws IOException {
     Path matrixFilesPath = new Path(saveContext.getSavePath());
     FileSystem fs = matrixFilesPath.getFileSystem(conf);
     if (!fs.mkdirs(matrixFilesPath)) {
       String errorMsg =
-        "can not create output path " + matrixFilesPath + " for matrix " + matrix.getName();
+          "can not create output path " + matrixFilesPath + " for matrix " + matrix.getName();
       LOG.error(errorMsg);
       throw new IOException(errorMsg);
     }
@@ -105,17 +113,21 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
 
     List<Integer> partIds = new ArrayList<>(saveContext.getPartIds());
     Collections.sort(partIds, new Comparator<Integer>() {
-      @Override public int compare(Integer id1, Integer id2) {
+      @Override
+      public int compare(Integer id1, Integer id2) {
         return id1 - id2;
       }
     });
 
     Vector<String> errorLogs = new Vector<>();
-    int maxPartsInSingleFile = conf.getInt(AngelConf.ANGEL_PS_MAX_PARTITION_NUM_SINGLE_FILE,
-      AngelConf.DEFAULT_ANGEL_PS_MAX_PARTITION_NUM_SINGLE_FILE);
+
+    int maxPartsInSingleFile = partNumPerFile > 0 ? partNumPerFile:
+    conf.getInt(AngelConf.ANGEL_PS_MAX_PARTITION_NUM_SINGLE_FILE,
+        AngelConf.DEFAULT_ANGEL_PS_MAX_PARTITION_NUM_SINGLE_FILE);
+
     PartitionDiskOp commitOp =
-      new PartitionDiskOp(matrix, fs, matrixFilesPath, ACTION.SAVE, partIds, saveContext,
-        psMatrixFilesMeta, errorLogs, 0, partIds.size(), maxPartsInSingleFile);
+        new PartitionDiskOp(matrix, fs, matrixFilesPath, ACTION.SAVE, partIds, saveContext,
+            psMatrixFilesMeta, errorLogs, 0, partIds.size(), maxPartsInSingleFile);
     saveContext.getWorkers().execute(commitOp);
     commitOp.join();
 
@@ -132,7 +144,7 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
       psMatrixFilesMeta.write(metaOut);
       metaOut.flush();
     } finally {
-      if(metaOut != null) {
+      if (metaOut != null) {
         metaOut.close();
       }
     }
@@ -143,14 +155,15 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
 
   @Override
   public void load(ServerMatrix matrix, PSMatrixLoadContext loadContext, Configuration conf)
-    throws IOException {
+      throws IOException {
     LOG.info("load matrix " + matrix.getName() + " from path " + loadContext.getLoadPath());
     Path matrixFilesPath = new Path(loadContext.getLoadPath());
     FileSystem fs = matrixFilesPath.getFileSystem(conf);
     if (!fs.exists(matrixFilesPath)) {
       LOG.error(
-        "Can not find matrix " + matrix.getName() + " in directory " + loadContext.getLoadPath());
-      throw new IOException("Can not find matrix " + matrix.getName() + " in directory " + loadContext.getLoadPath());
+          "Can not find matrix " + matrix.getName() + " in directory " + loadContext.getLoadPath());
+      throw new IOException(
+          "Can not find matrix " + matrix.getName() + " in directory " + loadContext.getLoadPath());
       //matrix.startServering();
       //return;
     }
@@ -201,7 +214,8 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
     }
 
     Collections.sort(partFileMetas, new Comparator<MatrixPartitionMeta>() {
-      @Override public int compare(MatrixPartitionMeta p1, MatrixPartitionMeta p2) {
+      @Override
+      public int compare(MatrixPartitionMeta p1, MatrixPartitionMeta p2) {
         if (p1.getFileName().compareTo(p2.getFileName()) < 0) {
           return -1;
         } else if (p1.getFileName().compareTo(p2.getFileName()) > 0) {
@@ -221,29 +235,32 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
     // Load partitions from file use fork-join
     Vector<String> errorLogs = new Vector<>();
     int maxPartsInSingleFile = conf.getInt(AngelConf.ANGEL_PS_MAX_PARTITION_NUM_SINGLE_FILE,
-      AngelConf.DEFAULT_ANGEL_PS_MAX_PARTITION_NUM_SINGLE_FILE);
+        AngelConf.DEFAULT_ANGEL_PS_MAX_PARTITION_NUM_SINGLE_FILE);
     PartitionDiskOp loadOp =
-      new PartitionDiskOp(matrix, fs, matrixFilesPath, ACTION.LOAD, parts, loadContext,
-        psMatrixFilesMeta, errorLogs, 0, parts.size(), maxPartsInSingleFile);
+        new PartitionDiskOp(matrix, fs, matrixFilesPath, ACTION.LOAD, parts, loadContext,
+            psMatrixFilesMeta, errorLogs, 0, parts.size(), maxPartsInSingleFile);
     loadContext.getWorkers().execute(loadOp);
     loadOp.join();
     if (!errorLogs.isEmpty()) {
       String errorLog =
-        "load partitions for matrix " + matrix.getName() + " failed, error log is " + StringUtils
-          .join("\n", errorLogs);
+          "load partitions for matrix " + matrix.getName() + " failed, error log is " + StringUtils
+              .join("\n", errorLogs);
       LOG.error(errorLog);
       throw new IOException(errorLog);
     }
   }
 
-  @Override public void save(Matrix matrix, MatrixSaveContext saveContext, Configuration conf)
-    throws IOException {
+  @Override
+  public void save(Matrix matrix, MatrixSaveContext saveContext, Configuration conf)
+      throws IOException {
     throw new UnsupportedOperationException("Unsupport now");
   }
 
-  @Override public Matrix load(MatrixLoadContext loadContext, Configuration conf)
-    throws IOException {
-    LOG.info("load matrix " + loadContext.getMatrixName() + " from path " + loadContext.getLoadPath());
+  @Override
+  public Matrix load(MatrixLoadContext loadContext, Configuration conf)
+      throws IOException {
+    LOG.info(
+        "load matrix " + loadContext.getMatrixName() + " from path " + loadContext.getLoadPath());
     Path matrixFilesPath = new Path(loadContext.getLoadPath());
     FileSystem fs = matrixFilesPath.getFileSystem(conf);
     if (!fs.exists(matrixFilesPath)) {
@@ -252,8 +269,10 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
 
     // Read matrix meta from meta file
     Path metaFilePath = new Path(matrixFilesPath, ModelFilesConstent.modelMetaFileName);
-    if(!fs.exists(matrixFilesPath)) {
-      throw new IOException("Can not find meta file for matrix " + loadContext.getMatrixName() + " on path " + loadContext.getLoadPath());
+    if (!fs.exists(matrixFilesPath)) {
+      throw new IOException(
+          "Can not find meta file for matrix " + loadContext.getMatrixName() + " on path "
+              + loadContext.getLoadPath());
     }
     MatrixFilesMeta matrixFilesMeta;
     fs.setVerifyChecksum(false);
@@ -271,7 +290,8 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
 
     // Sort partitions
     Collections.sort(partFileMetas, new Comparator<MatrixPartitionMeta>() {
-      @Override public int compare(MatrixPartitionMeta p1, MatrixPartitionMeta p2) {
+      @Override
+      public int compare(MatrixPartitionMeta p1, MatrixPartitionMeta p2) {
         if (p1.getFileName().compareTo(p2.getFileName()) < 0) {
           return -1;
         } else if (p1.getFileName().compareTo(p2.getFileName()) > 0) {
@@ -321,9 +341,9 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
   public Matrix initMatrix(MatrixFilesMeta matrixFilesMeta) {
     Map<Integer, MatrixPartitionMeta> partMetas = matrixFilesMeta.getPartMetas();
     Int2LongOpenHashMap rowIdToElemNumMap = new Int2LongOpenHashMap();
-    for(MatrixPartitionMeta partMeta : partMetas.values()) {
+    for (MatrixPartitionMeta partMeta : partMetas.values()) {
       Map<Integer, RowPartitionMeta> rowMetas = partMeta.getRowMetas();
-      for(Map.Entry<Integer, RowPartitionMeta> rowMetaEntry : rowMetas.entrySet()) {
+      for (Map.Entry<Integer, RowPartitionMeta> rowMetaEntry : rowMetas.entrySet()) {
         rowIdToElemNumMap.addTo(rowMetaEntry.getKey(), rowMetaEntry.getValue().getElementNum());
       }
     }
@@ -332,9 +352,10 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
     RowBasedMatrix matrix = rbMatrix(rowType, matrixFilesMeta.getRow(), matrixFilesMeta.getCol());
     ObjectIterator<Int2LongMap.Entry> iter = rowIdToElemNumMap.int2LongEntrySet().fastIterator();
     Int2LongMap.Entry entry;
-    while(iter.hasNext()) {
+    while (iter.hasNext()) {
       entry = iter.next();
-      matrix.setRow(entry.getIntKey(), initRow(rowType, matrixFilesMeta.getCol(), entry.getLongValue()));
+      matrix.setRow(entry.getIntKey(),
+          initRow(rowType, matrixFilesMeta.getCol(), entry.getLongValue()));
     }
 
     return matrix;
@@ -391,12 +412,13 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
     }
   }
 
-  public static com.tencent.angel.ml.math2.vector.Vector initRow(RowType rowType, long dim, long estElemNum) {
+  public static com.tencent.angel.ml.math2.vector.Vector initRow(RowType rowType, long dim,
+      long estElemNum) {
     com.tencent.angel.ml.math2.vector.Vector ret;
     switch (rowType) {
       case T_DOUBLE_SPARSE:
       case T_DOUBLE_SPARSE_COMPONENT:
-        ret = VFactory.sparseDoubleVector((int) dim, (int)estElemNum);
+        ret = VFactory.sparseDoubleVector((int) dim, (int) estElemNum);
         break;
 
       case T_DOUBLE_DENSE:
@@ -406,7 +428,7 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
 
       case T_FLOAT_SPARSE:
       case T_FLOAT_SPARSE_COMPONENT:
-        ret = VFactory.sparseFloatVector((int) dim, (int)estElemNum);
+        ret = VFactory.sparseFloatVector((int) dim, (int) estElemNum);
         break;
 
       case T_FLOAT_DENSE:
@@ -472,20 +494,22 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
 
       default:
         throw new UnsupportedOperationException(
-          "can not support " + rowType + " type row for ServerIntDoubleRow");
+            "can not support " + rowType + " type row for ServerIntDoubleRow");
     }
 
     return ret;
   }
 
-  public abstract void load(Matrix matrix, MatrixPartitionMeta partMeta, MatrixLoadContext loadContext, FSDataInputStream in)
-    throws IOException;
+  public abstract void load(Matrix matrix, MatrixPartitionMeta partMeta,
+      MatrixLoadContext loadContext, FSDataInputStream in)
+      throws IOException;
 
   enum ACTION {
     LOAD, SAVE
   }
 
   class PartitionDiskOp extends RecursiveAction {
+
     private final ServerMatrix matrix;
     private final Path matrixPath;
     private final FileSystem fs;
@@ -499,8 +523,8 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
     private final int maxPartsInSingleFile;
 
     public PartitionDiskOp(ServerMatrix matrix, FileSystem fs, Path matrixPath, ACTION action,
-      List<Integer> partIds, Object context, PSMatrixFilesMeta dataFilesMeta,
-      Vector<String> errorMsgs, int startPos, int endPos, int maxPartsInSingleFile) {
+        List<Integer> partIds, Object context, PSMatrixFilesMeta dataFilesMeta,
+        Vector<String> errorMsgs, int startPos, int endPos, int maxPartsInSingleFile) {
       this.matrix = matrix;
       this.fs = fs;
       this.matrixPath = matrixPath;
@@ -514,7 +538,8 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
       this.maxPartsInSingleFile = maxPartsInSingleFile;
     }
 
-    @Override protected void compute() {
+    @Override
+    protected void compute() {
       if (endPos <= startPos) {
         return;
       }
@@ -522,7 +547,7 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
       if (endPos - startPos <= maxPartsInSingleFile) {
         try {
           process(matrix, matrixPath, fs, action, partIds, context, startPos, endPos,
-            dataFilesMeta);
+              dataFilesMeta);
         } catch (Throwable x) {
           LOG.error(action + " model partitions failed.", x);
           errorMsgs.add(action + " model partitions failed." + x.getMessage());
@@ -530,28 +555,28 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
       } else {
         int middle = (startPos + endPos) / 2;
         PartitionDiskOp opLeft =
-          new PartitionDiskOp(matrix, fs, matrixPath, action, partIds, context, dataFilesMeta,
-            errorMsgs, startPos, middle, maxPartsInSingleFile);
+            new PartitionDiskOp(matrix, fs, matrixPath, action, partIds, context, dataFilesMeta,
+                errorMsgs, startPos, middle, maxPartsInSingleFile);
         PartitionDiskOp opRight =
-          new PartitionDiskOp(matrix, fs, matrixPath, action, partIds, context, dataFilesMeta,
-            errorMsgs, middle, endPos, maxPartsInSingleFile);
+            new PartitionDiskOp(matrix, fs, matrixPath, action, partIds, context, dataFilesMeta,
+                errorMsgs, middle, endPos, maxPartsInSingleFile);
         invokeAll(opLeft, opRight);
       }
     }
   }
 
   private void process(ServerMatrix matrix, Path matrixPath, FileSystem fs, ACTION action,
-    List<Integer> partIds, Object context, int startPos, int endPos,
-    PSMatrixFilesMeta serverMatrixMeta) throws IOException {
+      List<Integer> partIds, Object context, int startPos, int endPos,
+      PSMatrixFilesMeta serverMatrixMeta) throws IOException {
     switch (action) {
       case SAVE:
         save(matrix, matrixPath, fs, partIds, (PSMatrixSaveContext) context, startPos, endPos,
-          serverMatrixMeta);
+            serverMatrixMeta);
         break;
 
       case LOAD:
         load(matrix, matrixPath, fs, partIds, (PSMatrixLoadContext) context, startPos, endPos,
-          serverMatrixMeta);
+            serverMatrixMeta);
         break;
 
       default:
@@ -560,25 +585,33 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
   }
 
   private void save(ServerMatrix matrix, Path matrixPath, FileSystem fs, List<Integer> partIds,
-    PSMatrixSaveContext saveContext, int startPos, int endPos, PSMatrixFilesMeta dataFilesMeta)
-    throws IOException {
+      PSMatrixSaveContext saveContext, int startPos, int endPos, PSMatrixFilesMeta dataFilesMeta)
+      throws IOException {
 
     Path destFile = new Path(matrixPath, ModelFilesUtils.fileName(partIds.get(startPos)));
     Path tmpDestFile = HdfsUtil.toTmpPath(destFile);
 
-    FSDataOutputStream out = fs.create(tmpDestFile);
+    if(fs.exists(tmpDestFile)) {
+      fs.delete(tmpDestFile, true);
+    }
+
+    FSDataOutputStream out = fs.create(tmpDestFile, true, conf.getInt(
+        AngelConf.ANGEL_PS_IO_FILE_BUFFER_SIZE,
+        AngelConf.DEFAULT_ANGEL_PS_IO_FILE_BUFFER_SIZE));
+
     long streamPos = 0;
-    ServerPartition partition = null;
+    ServerPartition partition;
     for (int i = startPos; i < endPos; i++) {
       LOG.info("Write partition " + partIds.get(i) + " of matrix " + matrix.getName() + " to "
-        + tmpDestFile);
+          + tmpDestFile);
       streamPos = out.getPos();
       partition = matrix.getPartition(partIds.get(i));
       PartitionKey partKey = partition.getPartitionKey();
       MatrixPartitionMeta partMeta =
-        new MatrixPartitionMeta(partKey.getPartitionId(), partKey.getStartRow(),
-          partKey.getEndRow(), partKey.getStartCol(), partKey.getEndCol(), partition.elementNum(),
-          destFile.getName(), streamPos, 0);
+          new MatrixPartitionMeta(partKey.getPartitionId(), partKey.getStartRow(),
+              partKey.getEndRow(), partKey.getStartCol(), partKey.getEndCol(),
+              partition.getElemNum(),
+              destFile.getName(), streamPos, 0);
       save(partition, partMeta, saveContext, out);
       partMeta.setLength(out.getPos() - streamPos);
       dataFilesMeta.addPartitionMeta(partIds.get(i), partMeta);
@@ -589,10 +622,10 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
   }
 
   private void load(ServerMatrix matrix, Path matrixPath, FileSystem fs, List<Integer> partIds,
-    PSMatrixLoadContext loadContext, int startPos, int endPos, PSMatrixFilesMeta dataFilesMeta)
-    throws IOException {
+      PSMatrixLoadContext loadContext, int startPos, int endPos, PSMatrixFilesMeta dataFilesMeta)
+      throws IOException {
 
-    ServerPartition partition = null;
+    ServerPartition partition;
     FSDataInputStream input = null;
     long offset = 0;
     String currentFileName = "";
@@ -617,12 +650,11 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
     }
   }
 
+  //TODO:
   protected List<Integer> filter(ServerPartition part, List<Integer> rowIds) {
     List<Integer> ret = new ArrayList<>();
-    PartitionSource rows = part.getRows();
-
     for (int rowId : rowIds) {
-      if (rows.hasRow(rowId)) {
+      if (((RowBasedPartition) part).hasRow(rowId)) {
         ret.add(rowId);
       }
     }

@@ -150,6 +150,7 @@ public class MatrixPartitionMeta {
         output.writeInt(meta.getRowId());
         output.writeLong(meta.getOffset());
         output.writeInt(meta.getElementNum());
+        output.writeInt(meta.getSaveType());
       }
     } else {
       output.writeInt(0);
@@ -173,7 +174,7 @@ public class MatrixPartitionMeta {
     rowMetas = new LinkedHashMap<>(rowIndexNum);
     for (int i = 0; i < rowIndexNum; i++) {
       RowPartitionMeta rowMeta =
-        new RowPartitionMeta(input.readInt(), input.readLong(), input.readInt());
+        new RowPartitionMeta(input.readInt(), input.readLong(), input.readInt(), input.readInt());
       rowMetas.put(rowMeta.getRowId(), rowMeta);
     }
   }

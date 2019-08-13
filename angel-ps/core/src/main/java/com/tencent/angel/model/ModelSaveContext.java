@@ -36,6 +36,11 @@ public class ModelSaveContext {
   private volatile String tmpSavePath;
 
   /**
+   * Is checkpoint
+   */
+  private volatile boolean isCheckpoint = false;
+
+  /**
    * Matrices save contexts
    */
   private final List<MatrixSaveContext> matricesContext;
@@ -119,5 +124,21 @@ public class ModelSaveContext {
    */
   public void setSavePath(String savePath) {
     this.savePath = savePath;
+  }
+
+  /**
+   * Is this a checkpoint operation
+   * @return true means is a checkpoint operation
+   */
+  public boolean isCheckpoint() {
+    return isCheckpoint;
+  }
+
+  /**
+   * Set this operation a checkpoint operation
+   * @param checkpoint
+   */
+  public void setCheckpoint(boolean checkpoint) {
+    isCheckpoint = checkpoint;
   }
 }

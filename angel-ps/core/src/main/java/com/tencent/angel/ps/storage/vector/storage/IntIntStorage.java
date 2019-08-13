@@ -15,18 +15,20 @@
  *
  */
 
+package com.tencent.angel.ps.storage.vector.storage;
 
-package com.tencent.angel.ps.storage.vector;
+import com.tencent.angel.ps.storage.vector.op.IIntIntOp;
 
-import com.tencent.angel.ml.math2.vector.IntVector;
-import com.tencent.angel.ml.matrix.RowType;
-import com.tencent.angel.ps.storage.vector.func.IntElemUpdateFunc;
+/**
+ * Base class for int key int value storage
+ */
+public abstract class IntIntStorage extends BasicTypeStorage implements IIntIntOp {
 
-public abstract class ServerIntRow extends ServerRow {
-  public ServerIntRow(int rowId, RowType rowType, long startCol, long endCol, int estElemNum,
-    IntVector innerRow) {
-    super(rowId, rowType, startCol, endCol, estElemNum, innerRow);
+  public IntIntStorage(long indexOffset) {
+    super(indexOffset);
   }
 
-  public abstract void elemUpdate(IntElemUpdateFunc func);
+  public IntIntStorage() {
+    this(0L);
+  }
 }

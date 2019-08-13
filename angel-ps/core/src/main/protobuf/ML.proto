@@ -79,6 +79,7 @@ message MatrixContextProto {
   required string partitionerClassName = 11;
   repeated PartContextProto parts = 12;
   repeated Pair attribute = 13;
+  optional bytes initFunc = 14;
 }
 
 message PartContextProto {

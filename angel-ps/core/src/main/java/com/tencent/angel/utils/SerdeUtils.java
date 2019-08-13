@@ -19,8 +19,12 @@
 package com.tencent.angel.utils;
 
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.SplitInfoProto;
+import com.tencent.angel.ps.storage.matrix.PSMatrixInit;
 import com.tencent.angel.split.SplitClassification;
 import com.tencent.angel.split.SplitInfo;
+import io.netty.buffer.ByteBuf;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.io.serializer.Deserializer;
@@ -36,6 +40,7 @@ import java.util.List;
  * Serialize/Deserialize tool for training data split.
  */
 public class SerdeUtils {
+  private final static Log LOG = LogFactory.getLog(SerdeUtils.class);
   private static SerializationFactory factory;
 
   public static SplitClassification deSerilizeSplitProtos(List<SplitInfoProto> splitInfoList,
@@ -238,5 +243,43 @@ public class SerdeUtils {
         in.close();
       }
     }
+  }
+
+  public static byte[] serializeInitFunc(PSMatrixInit initFunc) {
+    ByteBuf buf = ByteBufUtils.newHeapByteBuf(initFunc.bufferLen());
+    String partParamClassName = initFunc.getClass().getName();
+    LOG.info("func name=" + partParamClassName);
+    byte[] data = partParamClassName.getBytes();
+    buf.writeInt(data.length);
+
+    buf.writeBytes(data);
+    initFunc.serialize(buf);
+    int writeIndex = buf.writerIndex();
+    data = new byte[writeIndex];
+    buf.readBytes(data);
+
+    return data;
+  }
+
+  public static PSMatrixInit deserializeInitFunc(byte[] data) {
+    ByteBuf buf = ByteBufUtils.newHeapByteBuf(data.length);
+    buf.writeBytes(data);
+    int size = buf.readInt();
+    byte[] nameData = new byte[size];
+    buf.readBytes(nameData);
+
+    String className = new String(nameData);
+    LOG.info("func name=" + className);
+    PSMatrixInit iniFunc;
+
+    try {
+      iniFunc = (PSMatrixInit) Class.forName(className).newInstance();
+      iniFunc.deserialize(buf);
+    } catch (Throwable e) {
+      LOG.error("deserialize init func falied, ", e);
+      throw new RuntimeException("deserialize init func falied:" + e.getMessage());
+    }
+
+    return iniFunc;
   }
 }

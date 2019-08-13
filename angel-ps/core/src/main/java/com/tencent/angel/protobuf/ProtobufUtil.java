@@ -25,17 +25,71 @@ import com.google.protobuf.ServiceException;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.common.location.Location;
 import com.tencent.angel.exception.StandbyException;
+import com.tencent.angel.master.matrix.committer.SaveResult;
 import com.tencent.angel.master.task.AMTask;
 import com.tencent.angel.master.worker.attempt.WorkerAttempt;
 import com.tencent.angel.master.worker.worker.AMWorker;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroup;
-import com.tencent.angel.ml.matrix.*;
-import com.tencent.angel.model.*;
-import com.tencent.angel.protobuf.generated.MLProtos.*;
-import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.*;
-import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.*;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.*;
+import com.tencent.angel.ml.matrix.MatrixContext;
+import com.tencent.angel.ml.matrix.MatrixMeta;
+import com.tencent.angel.ml.matrix.MatrixReport;
+import com.tencent.angel.ml.matrix.PartContext;
+import com.tencent.angel.ml.matrix.PartReport;
+import com.tencent.angel.ml.matrix.PartitionMeta;
+import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.model.LoadState;
+import com.tencent.angel.model.MatrixLoadContext;
+import com.tencent.angel.model.MatrixSaveContext;
+import com.tencent.angel.model.ModelLoadContext;
+import com.tencent.angel.model.ModelSaveContext;
+import com.tencent.angel.model.PSMatricesLoadContext;
+import com.tencent.angel.model.PSMatricesLoadResult;
+import com.tencent.angel.model.PSMatricesSaveContext;
+import com.tencent.angel.model.PSMatricesSaveResult;
+import com.tencent.angel.model.PSMatrixLoadContext;
+import com.tencent.angel.model.PSMatrixSaveContext;
+import com.tencent.angel.model.SaveState;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.MatrixLoadContextProto;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.MatrixSaveContextProto;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.ModelLoadContextProto;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.ModelSaveContextProto;
+import com.tencent.angel.protobuf.generated.MLProtos.CreateMatricesRequest;
+import com.tencent.angel.protobuf.generated.MLProtos.LocationProto;
+import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
+import com.tencent.angel.protobuf.generated.MLProtos.MatrixContextProto;
+import com.tencent.angel.protobuf.generated.MLProtos.MatrixMetaProto;
+import com.tencent.angel.protobuf.generated.MLProtos.PSAgentAttemptIdProto;
+import com.tencent.angel.protobuf.generated.MLProtos.PSAgentIdProto;
+import com.tencent.angel.protobuf.generated.MLProtos.PSAttemptIdProto;
+import com.tencent.angel.protobuf.generated.MLProtos.PSFailedReportProto;
+import com.tencent.angel.protobuf.generated.MLProtos.PSFailedReportsProto;
+import com.tencent.angel.protobuf.generated.MLProtos.PSIdProto;
+import com.tencent.angel.protobuf.generated.MLProtos.PSLocationProto;
+import com.tencent.angel.protobuf.generated.MLProtos.PSStatus;
+import com.tencent.angel.protobuf.generated.MLProtos.Pair;
+import com.tencent.angel.protobuf.generated.MLProtos.PartContextProto;
+import com.tencent.angel.protobuf.generated.MLProtos.PartitionMetaProto;
+import com.tencent.angel.protobuf.generated.MLProtos.TaskIdProto;
+import com.tencent.angel.protobuf.generated.MLProtos.WorkerAttemptIdProto;
+import com.tencent.angel.protobuf.generated.MLProtos.WorkerGroupIdProto;
+import com.tencent.angel.protobuf.generated.MLProtos.WorkerIdProto;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.MatrixReportProto;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSMatricesLoadContextProto;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSMatricesLoadResultProto;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSMatricesSaveContextProto;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSMatricesSaveResultProto;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSMatrixLoadContextProto;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSMatrixSaveContextProto;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PartReportProto;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.RecoverPartKeyProto;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.SaveResultProto;
+import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.GetWorkerGroupMetaInfoResponse;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.GetWorkerGroupMetaInfoResponse.WorkerGroupStatus;
+import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.SplitInfoProto;
+import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.TaskMetaInfoProto;
+import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerGroupMetaInfoProto;
+import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerLocationProto;
+import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerMetaInfoProto;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.ha.RecoverPartKey;
@@ -52,11 +106,6 @@ import com.tencent.angel.worker.WorkerGroupId;
 import com.tencent.angel.worker.WorkerId;
 import com.tencent.angel.worker.task.TaskId;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -64,6 +113,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
 
 /**
  * Protobufs utility.
@@ -315,7 +368,8 @@ public final class ProtobufUtil {
   }
 
   public static MatrixContextProto convertToMatrixContextProto(MatrixContext mContext) {
-    return MatrixContextProto.newBuilder().setName(mContext.getName()).setId(mContext.getMatrixId())
+    MatrixContextProto.Builder builder =  MatrixContextProto.newBuilder();
+    builder.setName(mContext.getName()).setId(mContext.getMatrixId())
         .setRowNum(mContext.getRowNum()).setColNum(mContext.getColNum())
         .setIndexStart(mContext.getIndexStart())
         .setIndexEnd(mContext.getIndexEnd())
@@ -325,7 +379,12 @@ public final class ProtobufUtil {
         .setRowType(mContext.getRowType().getNumber())
         .setPartitionerClassName(mContext.getPartitionerClass().getName())
         .addAllParts(convertToPartContextsProto(mContext.getParts()))
-        .addAllAttribute(convertToPairs(mContext.getAttributes())).build();
+        .addAllAttribute(convertToPairs(mContext.getAttributes()));
+    if(mContext.getInitFunc() != null) {
+      builder.setInitFunc(ByteString.copyFrom(SerdeUtils.serializeInitFunc(mContext.getInitFunc())));
+    }
+
+    return builder.build();
   }
 
   public static List<PartContext> convertToPartContexts(List<PartContextProto> partsProto) {
@@ -359,7 +418,8 @@ public final class ProtobufUtil {
 
   public static PartContextProto convert(PartContext part) {
     return PartContextProto.newBuilder().setStartRow(part.getStartRow()).setEndRow(part.getEndRow())
-        .setStartCol(part.getStartCol()).setEndCol(part.getEndCol()).setIndexNum(part.getIndexNum()).build();
+        .setStartCol(part.getStartCol()).setEndCol(part.getEndCol()).setIndexNum(part.getIndexNum())
+        .build();
   }
 
   public static List<Pair> convertToPairs(Map<String, String> attrs) {
@@ -406,6 +466,9 @@ public final class ProtobufUtil {
         (Class<? extends Partitioner>) Class.forName(matrixContextProto.getPartitionerClassName()));
     matrixContext.getAttributes()
         .putAll(convertToAttributes(matrixContextProto.getAttributeList()));
+    if(matrixContextProto.hasInitFunc()) {
+      matrixContext.setInitFunc(SerdeUtils.deserializeInitFunc(matrixContextProto.getInitFunc().toByteArray()));
+    }
 
     return matrixContext;
   }
@@ -478,7 +541,7 @@ public final class ProtobufUtil {
   }
 
   public static List<MatrixMeta> convertToMatricesMeta(List<MatrixMetaProto> matricesMetaProto)
-      throws ClassNotFoundException {
+      throws ClassNotFoundException, IOException {
     int size = matricesMetaProto.size();
     List<MatrixMeta> matricesMeta = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {
@@ -631,6 +694,7 @@ public final class ProtobufUtil {
     List<MatrixSaveContext> matricesContext = saveContext.getMatricesContext();
     ModelSaveContextProto.Builder builder = ModelSaveContextProto.newBuilder();
     builder.setSavePath(saveContext.getSavePath());
+    builder.setCheckpint(saveContext.isCheckpoint());
     int size = matricesContext.size();
     for (int i = 0; i < size; i++) {
       builder.addMatrixContextes(convert(matricesContext.get(i)));
@@ -647,6 +711,7 @@ public final class ProtobufUtil {
 
   public static ModelSaveContext convert(ModelSaveContextProto saveContext) {
     ModelSaveContext context = new ModelSaveContext(saveContext.getSavePath());
+    context.setCheckpoint(saveContext.getCheckpint());
     List<MatrixSaveContextProto> matricesContext = saveContext.getMatrixContextesList();
     int size = matricesContext.size();
     for (int i = 0; i < size; i++) {
@@ -790,5 +855,14 @@ public final class ProtobufUtil {
       matrixContexts.add(convert(matrixContextProtos.get(i)));
     }
     return new ModelLoadContext(contextProto.getLoadPath(), matrixContexts);
+  }
+
+  public static SaveResultProto convert(SaveResult result) {
+    return SaveResultProto.newBuilder().setModelPath(result.getModelPath())
+        .setMatrixPath(result.getMatrixPath()).setSaveTs(result.getSaveTs()).build();
+  }
+
+  public static SaveResult convert(SaveResultProto result) {
+    return new SaveResult(result.getModelPath(), result.getMatrixPath(), result.getSaveTs());
   }
 }

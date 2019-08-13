@@ -328,7 +328,7 @@ public class ParameterServerManager extends AbstractService
   }
 
   public void psFailedReport(PSLocation psLoc) {
-    restartPS(psLoc);
+    //restartPS(psLoc);
   }
 
   private void restartPS(PSLocation psLoc) {

@@ -36,6 +36,7 @@ import com.tencent.angel.model.MatrixSaveContext;
 import com.tencent.angel.model.ModelLoadContext;
 import com.tencent.angel.model.ModelSaveContext;
 import com.tencent.angel.model.SaveState;
+import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.CheckModelLoadedRequest;
@@ -134,6 +135,8 @@ public abstract class AngelClient implements AngelClientInterface {
 
   private final int hbIntervalMS;
 
+  private final int hbTimeoutMS;
+
   private final AtomicBoolean stopped = new AtomicBoolean(false);
 
   /**
@@ -148,6 +151,8 @@ public abstract class AngelClient implements AngelClientInterface {
     isFinished = false;
     hbIntervalMS = conf.getInt(AngelConf.ANGEL_CLIENT_HEARTBEAT_INTERVAL_MS,
         AngelConf.DEFAULT_ANGEL_CLIENT_HEARTBEAT_INTERVAL_MS);
+    hbTimeoutMS = conf.getInt(AngelConf.ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS,
+        AngelConf.DEFAULT_ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS);
   }
 
   @SuppressWarnings("rawtypes")
@@ -198,10 +203,18 @@ public abstract class AngelClient implements AngelClientInterface {
 
     LOG.info("clientId=" + clientId);
     hbThread = new Thread(() -> {
+      long lastHbTs = System.currentTimeMillis();
       while (!stopped.get() && !Thread.interrupted()) {
         try {
+          if (System.currentTimeMillis() - lastHbTs > hbTimeoutMS) {
+            LOG.fatal("can not connect to master in " + hbTimeoutMS
+                + " ms. the client will be killed by itself");
+            System.exit(-1);
+          }
+
           Thread.sleep(hbIntervalMS);
           master.keepAlive(null, KeepAliveRequest.newBuilder().setClientId(clientId).build());
+          lastHbTs = System.currentTimeMillis();
         } catch (Throwable e) {
           if (!stopped.get()) {
             LOG.error("AngelClient " + clientId + " send heartbeat to Master failed ", e);
@@ -212,6 +225,10 @@ public abstract class AngelClient implements AngelClientInterface {
 
     hbThread.setName("client-heartbeat");
     hbThread.start();
+  }
+
+  public void keepAlive() throws ServiceException {
+    master.keepAlive(null, KeepAliveRequest.newBuilder().setClientId(clientId).build());
   }
 
   @Override
@@ -303,11 +320,11 @@ public abstract class AngelClient implements AngelClientInterface {
 
   @Override
   public void save(ModelSaveContext saveContext) throws AngelException {
-    if(saveContext.getMatricesContext().size() == 0) {
+    if (saveContext.getMatricesContext().size() == 0) {
       throw new AngelException("Need save matrix name is empty, you should check it");
     }
 
-    if(saveContext.getSavePath() == null
+    if (saveContext.getSavePath() == null
         || saveContext.getSavePath().isEmpty()) {
       throw new AngelException("Save path is null, you should check it");
     }
@@ -374,6 +391,16 @@ public abstract class AngelClient implements AngelClientInterface {
   }
 
   @Override
+  public void checkpoint(int checkpointId, ModelSaveContext saveContext) throws AngelException {
+    String tmpPath = conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
+    String snapshotDir = new Path(tmpPath, ModelFilesConstent.snapshotDirName).toString();
+    String checkpointItemPath = new Path(snapshotDir, "" + checkpointId).toString();
+    saveContext.setSavePath(checkpointItemPath);
+    saveContext.setCheckpoint(true);
+    save(saveContext);
+  }
+
+  @Override
   public void load(ModelLoadContext loadContext) throws AngelException {
     if (loadContext.getMatricesContext().size() == 0) {
       throw new AngelException("Need load matrix names is empty, you should check it");
@@ -429,6 +456,15 @@ public abstract class AngelClient implements AngelClientInterface {
     if (appFailedMessage != null) {
       throw new AngelException("app run failed, " + appFailedMessage);
     }
+  }
+
+  @Override
+  public void recover(int checkpointId, ModelLoadContext loadContext) throws AngelException {
+    String tmpPath = conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
+    String snapshotDir = new Path(tmpPath, ModelFilesConstent.snapshotDirName).toString();
+    String checkpointItemPath = new Path(snapshotDir, "" + checkpointId).toString();
+    loadContext.setLoadPath(checkpointItemPath);
+    load(loadContext);
   }
 
   @Override

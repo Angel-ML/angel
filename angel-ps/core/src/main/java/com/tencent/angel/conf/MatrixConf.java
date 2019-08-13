@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,7 +18,11 @@
 
 package com.tencent.angel.conf;
 
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+
+import com.tencent.angel.ps.storage.partition.storage.DenseServerRowsStorage;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
+import com.tencent.angel.ps.storage.partition.ServerPartition;
+import com.tencent.angel.ps.storage.partition.storage.ServerPartitionStorage;
 
 /**
  * Matrix parameters.
@@ -26,13 +30,20 @@ import com.tencent.angel.ps.storage.matrix.ServerPartition;
 public class MatrixConf {
 
   /**
-   * matrix partitioner class
+   * matrix partition class
    */
   public static final String SERVER_PARTITION_CLASS = "server.partition.class";
-  public static final String DEFAULT_SERVER_PARTITION_CLASS = ServerPartition.class.getName();
+  public static final Class<? extends ServerPartition> DEFAULT_SERVER_PARTITION_CLASS = RowBasedPartition.class;
 
   /**
-   * Matrix oplog storage type. There are four types oplog now:DENSE_DOUBLE, DENSE_INT, LIL_INI, DENSE_FLOAT.
+   * matrix partition storage class
+   */
+  public static final String SERVER_PARTITION_STORAGE_CLASS = "server.partition.storage.class";
+  public static final Class<? extends ServerPartitionStorage> DEFAULT_SERVER_PARTITION_STORAGE_CLASS = DenseServerRowsStorage.class;
+
+  /**
+   * Matrix oplog storage type. There are four types oplog now:DENSE_DOUBLE, DENSE_INT, LIL_INI,
+   * DENSE_FLOAT.
    * <p>
    * DENSE_DOUBLE means use a dense double matrix to store the oplog, if the oplog is a sparse/dense
    * double vector or matrix, we can use it.
@@ -59,7 +70,7 @@ public class MatrixConf {
    * check and filter zero values in oplog before transfer
    */
   public static final String MATRIX_OPLOG_FILTER_THRESHOLD = "matrix.oplog.filter.threshold";
-    // true, false
+  // true, false
   public static final String DEFAULT_MATRIX_OPLOG_FILTER_THRESHOLD = "0.0";
 
   /**
@@ -90,4 +101,10 @@ public class MatrixConf {
    */
   public static final String MATRIX_SAVE_PATH = "matrix.save.path";
   public static final String DEFAULT_MATRIX_SAVE_PATH = "";
+
+  public static final String VALUE_TYPE_CLASSNANE = "matrix.value.type.classname";
+
+  public static final String PS_MATRIX_PARTITION_CLASSNANE = "ps.matrix.partition.classname";
+  public static final String DEFAULT_PS_MATRIX_PARTITION_CLASSNANE = RowBasedPartition.class
+      .getName();
 }

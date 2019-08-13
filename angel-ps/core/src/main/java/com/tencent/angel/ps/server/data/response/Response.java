@@ -35,7 +35,7 @@ public class Response implements Serialize {
   /**
    * Server state:IDLE, GENERAL, BUSY
    */
-  private ServerState state;
+  private volatile ServerState state;
 
   /**
    * response type
