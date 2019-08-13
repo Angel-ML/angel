@@ -26,6 +26,8 @@ import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
 import com.tencent.angel.ml.matrix.psf.update.zero.Zero
 import com.tencent.angel.ml.matrix.psf.update.{Fill, Reset}
+import com.tencent.angel.model.output.format.SnapshotFormat
+import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
 import com.tencent.angel.psagent.matrix.{MatrixClient, MatrixClientFactory}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.models.PSMatrix
@@ -33,13 +35,16 @@ import com.tencent.angel.spark.util.PSMatrixUtils
 
 class PSMatrixImpl(
                     override val id: Int,
+                    override val name: String,
                     override val rows: Int,
                     override val columns: Long,
                     override val rowType: RowType)
   extends PSMatrix {
 
+  def this(id: Int, rows: Int, columns: Long, rowType: RowType) = this(id, "", rows, columns, rowType)
+
   override def toString: String = {
-    s"PSMatrix(id=$id rows=$rows cols=$columns)"
+    s"PSMatrix(id=$id name=${name} rows=$rows cols=$columns)"
   }
 
   override def pull(): Matrix = {
@@ -317,5 +322,11 @@ class PSMatrixImpl(
 
   override def asyncPsfUpdate(func: UpdateFunc): Future[VoidResult] = {
     matrixClient.asyncUpdate(func)
+  }
+
+  override def checkpoint(epochId: Int) = {
+    val modelSaveContext = new ModelSaveContext()
+    modelSaveContext.addMatrix(new MatrixSaveContext(name, classOf[SnapshotFormat].getTypeName))
+    PSContext.instance().checkpoint(epochId, modelSaveContext)
   }
 }
