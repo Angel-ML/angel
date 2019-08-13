@@ -30,7 +30,7 @@ public class AsyncFTRLFunc extends AsyncOptimFunc {
 
     Ufuncs.iaxpy2(n, grad, 1);
     Vector delta = OptFuncs.ftrldelta(n, grad, alpha, OpType.INTERSECTION);
-    Ufuncs.isub(grad, delta.mul(w));
+    Ufuncs.isub(grad, delta.imul(w));
     Ufuncs.iadd(z, grad);
 
     // how to do intersection for two dense vector with a given indices ??

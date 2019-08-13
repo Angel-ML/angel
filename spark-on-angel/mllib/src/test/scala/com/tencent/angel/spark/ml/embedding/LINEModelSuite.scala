@@ -28,13 +28,13 @@ import com.tencent.angel.spark.ml.{PSFunSuite, SharedPSContext}
 
 class LINEModelSuite extends PSFunSuite with SharedPSContext {
   val input = "../../data/bc/edge"
-  val output = "model/"
-  val numPartition = 4
+  val output = "file:///E://model/"
+  val numPartition = 1
   val lr = 0.025f
   val dim = 32
   val batchSize = 1024
-  val numPSPart = 2
-  val numEpoch = 2
+  val numPSPart = 1
+  val numEpoch = 5
   val negative = 5
   val storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
   var param: Param = _
@@ -119,5 +119,6 @@ class LINEModelSuite extends PSFunSuite with SharedPSContext {
       assert(loss(i + 1) < loss(i), s"loss increase: ${loss.mkString("->")}")
     }
   }
+
 
 }

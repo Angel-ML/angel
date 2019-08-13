@@ -32,6 +32,7 @@ class Param extends Serializable {
   var numPSPart: Int = 1
   var modelPath: String = _
   var checkpointInterval: Int = Int.MaxValue
+  var saveModelInterval: Int = Int.MaxValue
   var order: Int = _
   var nodesNumPerRow: Int = -1
   var numRowDataSet: Option[Long] = None
@@ -122,6 +123,12 @@ class Param extends Serializable {
   def setModelCPInterval(modelCPInterval: Int): this.type = {
     require(modelCPInterval > 0, s"model checkpoint interval > 0, $modelCPInterval given")
     this.checkpointInterval = modelCPInterval
+    this
+  }
+
+  def setModelSaveInterval(modelSaveInterval: Int): this.type = {
+    require(modelSaveInterval > 0, s"model save interval > 0, $modelSaveInterval given")
+    this.saveModelInterval = modelSaveInterval
     this
   }
 

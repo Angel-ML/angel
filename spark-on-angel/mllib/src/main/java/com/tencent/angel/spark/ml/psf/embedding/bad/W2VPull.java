@@ -21,6 +21,8 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage;
 import com.tencent.angel.ml.matrix.psf.get.base.*;
 
+import com.tencent.angel.ps.storage.vector.ServerIntFloatRow;
+import com.tencent.angel.ps.storage.vector.ServerRowUtils;
 import java.util.List;
 
 public class W2VPull extends GetFunc {
@@ -51,8 +53,8 @@ public class W2VPull extends GetFunc {
       float[][] rows = new float[totalRows][];
 
       for (int row = startRow; row < startRow + totalRows; row ++)
-        rows[row - startRow] = ((IntFloatDenseVectorStorage) psContext.getMatrixStorageManager()
-          .getRow(pkey, row).getSplit().getStorage())
+        rows[row - startRow] = ServerRowUtils.getVector((ServerIntFloatRow) psContext.getMatrixStorageManager()
+          .getRow(pkey, row)).getStorage()
           .getValues();
 
       for (int a = 0; a < indices.length; a ++) {

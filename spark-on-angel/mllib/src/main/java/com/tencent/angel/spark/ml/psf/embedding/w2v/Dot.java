@@ -24,6 +24,8 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
+import com.tencent.angel.ps.storage.vector.ServerIntFloatRow;
+import com.tencent.angel.ps.storage.vector.ServerRowUtils;
 import com.tencent.angel.spark.ml.psf.embedding.NEDot;
 import com.tencent.angel.spark.ml.psf.embedding.ServerWrapper;
 
@@ -67,8 +69,8 @@ public class Dot extends GetFunc {
       int numRows = pkey.getEndRow() - pkey.getStartRow();
       float[][] layers = new float[numRows][];
       for (int row = 0; row < numRows; row ++)
-        layers[row] = ((IntFloatDenseVectorStorage) psContext.getMatrixStorageManager()
-                .getRow(pkey, row).getSplit().getStorage())
+        layers[row] = ServerRowUtils.getVector((ServerIntFloatRow) psContext.getMatrixStorageManager()
+                .getRow(pkey, row)).getStorage()
                 .getValues();
 
       EmbeddingModel model;

@@ -22,7 +22,9 @@ import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
+import com.tencent.angel.ps.storage.vector.ServerIntFloatRow;
+import com.tencent.angel.ps.storage.vector.ServerRowUtils;
 
 public class W2VPush extends UpdateFunc {
 
@@ -37,14 +39,14 @@ public class W2VPush extends UpdateFunc {
     if (partParam instanceof W2VPushPartitionParam) {
       W2VPushPartitionParam param = (W2VPushPartitionParam) partParam;
       try {
-        update(psContext.getMatrixStorageManager().getPart(param.getPartKey()), param);
+        update((RowBasedPartition) psContext.getMatrixStorageManager().getPart(param.getPartKey()), param);
       } finally {
         param.clear();
       }
     }
   }
 
-  private void update(ServerPartition partition,
+  private void update(RowBasedPartition partition,
                       W2VPushPartitionParam param) {
     PartitionKey pkey = param.getPartKey();
     int totalRows = pkey.getEndRow() - pkey.getStartRow();
@@ -55,8 +57,8 @@ public class W2VPush extends UpdateFunc {
     int dimension = param.dimension;
 
     for (int row = startRow; row < startRow + totalRows; row ++)
-      rows[row - startRow] = ((IntFloatDenseVectorStorage) partition
-              .getRow(row).getSplit().getStorage())
+      rows[row - startRow] = ServerRowUtils.getVector((ServerIntFloatRow) partition
+              .getRow(row)).getStorage()
               .getValues();
 
     for (int i = 0; i < param.length; i++) {
