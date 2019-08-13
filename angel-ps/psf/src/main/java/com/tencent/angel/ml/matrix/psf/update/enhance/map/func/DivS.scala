@@ -22,7 +22,10 @@ import io.netty.buffer.ByteBuf
 
 import com.tencent.angel.ml.math2.ufuncs.expression
 
-class DivS(scalar: Double, inplace: Boolean) extends expression.SDiv(inplace, scalar) with MapFunc {
+class DivS(scalar: Double, inplace: Boolean)
+  extends expression.SDiv(inplace, scalar)
+    with MapFunc {
+
   def this() = this(Double.NaN, false)
 
   assert(scalar != 0.0, "div by 0.0")

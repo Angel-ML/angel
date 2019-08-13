@@ -20,6 +20,7 @@ package com.tencent.angel.ml.matrix.psf.aggr.enhance
 
 import com.tencent.angel.ml.matrix.psf.Utils
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, PartitionGetParam, PartitionGetResult}
+import com.tencent.angel.ps.storage.partition.RowBasedPartition
 import com.tencent.angel.ps.storage.vector.ServerRow
 
 
@@ -37,8 +38,8 @@ abstract class BinaryAggrFunc(matrixId: Int, rowId1: Int, rowId2: Int)
     val rowId1 = partKey.asInstanceOf[BinaryAggrParam.BinaryPartitionAggrParam].getRowId1
     val rowId2 = partKey.asInstanceOf[BinaryAggrParam.BinaryPartitionAggrParam].getRowId2
     if (Utils.withinPart(partKey.getPartKey, Array[Int](rowId1, rowId2))) if (part != null) {
-      val row1 = part.getRow(rowId1)
-      val row2 = part.getRow(rowId2)
+      val row1 = part.asInstanceOf[RowBasedPartition].getRow(rowId1)
+      val row2 = part.asInstanceOf[RowBasedPartition].getRow(rowId2)
       if (row1 != null && row2 != null) {
         val result = processRows(row1, row2)
         return new ScalarPartitionAggrResult(result)

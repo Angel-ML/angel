@@ -21,6 +21,7 @@ package com.tencent.angel.ml.matrix.psf.update.enhance
 import com.tencent.angel.common.Serialize
 import com.tencent.angel.ml.matrix.psf.Utils
 import com.tencent.angel.ml.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc}
+import com.tencent.angel.ps.storage.partition.RowBasedPartition
 import com.tencent.angel.ps.storage.vector.ServerRow
 
 
@@ -45,7 +46,7 @@ abstract class MFUpdateFunc(param: MFUpdateParam) extends UpdateFunc(param) {
       val mf = partParam.asInstanceOf[MFUpdateParam.MFPartitionUpdateParam]
       val rowIds = mf.getRowIds
       if (Utils.withinPart(partParam.getPartKey, rowIds)) {
-        update(rowIds.map(part.getRow), mf.getFunc)
+        update(rowIds.map(part.asInstanceOf[RowBasedPartition].getRow), mf.getFunc)
       }
     }
   }
