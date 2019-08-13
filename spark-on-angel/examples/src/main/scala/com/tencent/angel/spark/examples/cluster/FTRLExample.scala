@@ -1,6 +1,7 @@
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.vector.LongFloatVector
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
@@ -109,7 +110,7 @@ object FTRLExample {
         case iterator =>
           val loss = iterator
             .sliding(batchSize, batchSize)
-            .map(f => opt.optimize(f.toArray)).sum
+            .map((f: Seq[LabeledData]) => opt.optimize(f.toArray)).sum
           Iterator.single(loss)
       }.sum()
 

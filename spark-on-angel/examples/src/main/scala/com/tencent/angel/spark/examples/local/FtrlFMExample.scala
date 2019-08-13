@@ -56,7 +56,7 @@ object FtrlFMExample {
     val partNum = params.getOrElse("partNum", "10").toInt
     val numEpoch = params.getOrElse("numEpoch", "3").toInt
     val modelPath = params.getOrElse("output", "file:///model")
-    val loadPath = params.getOrElse("load", "")
+    val loadPath = params.getOrElse("load", "file:///model")
     val factor = params.getOrElse("factor", "10").toInt
 
     val opt = new FtrlFM(lambda1, lambda2, alpha, beta)
