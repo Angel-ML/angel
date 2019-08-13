@@ -20,9 +20,9 @@ package com.tencent.angel.example.ml;
 
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.conf.AngelMLConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -97,7 +97,7 @@ public class SVMLocalExample {
 
     // Use local deploy mode and data format
     conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
-    conf.set(MLConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
+    conf.set(AngelMLConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
 
     // Set data path
     conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
@@ -124,17 +124,17 @@ public class SVMLocalExample {
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
     // Set SVM algorithm parameters
-    conf.set(MLConf.ML_MODEL_TYPE(), modelType);
-    conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
-    conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
-    conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
-    conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
-    conf.set(MLConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
-    conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
-    conf.setLong(MLConf.ML_MODEL_SIZE(), featureNum);
+    conf.set(AngelMLConf.ML_MODEL_TYPE(), modelType);
+    conf.set(AngelMLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
+    conf.set(AngelMLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
+    conf.set(AngelMLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
+    conf.set(AngelMLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
+    conf.set(AngelMLConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
+    conf.set(AngelMLConf.ML_REG_L2(), String.valueOf(reg));
+    conf.setLong(AngelMLConf.ML_MODEL_SIZE(), featureNum);
 
     // Set model class
-    conf.set(MLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "SupportVectorMachine");
+    conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "SupportVectorMachine");
 
   }
 

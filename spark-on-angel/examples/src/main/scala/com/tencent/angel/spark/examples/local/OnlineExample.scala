@@ -18,7 +18,7 @@
 
 package com.tencent.angel.spark.examples.local
 
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.AngelMLConf
 import com.tencent.angel.ml.core.utils.DataParser
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OnlineLearner}

@@ -20,7 +20,7 @@ package com.tencent.angel.ml.lda.algo;
 
 
 import com.tencent.angel.ml.lda.algo.structures.I2ITranverseMap;
-import com.tencent.angel.worker.storage.DataBlock;
+import com.tencent.angel.ml.math2.utils.DataBlock;
 
 import java.io.IOException;
 

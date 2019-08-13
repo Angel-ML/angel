@@ -2,21 +2,21 @@ package com.tencent.angel.kubernetesmanager.scheduler
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
+import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.kubernetesmanager.deploy.config.{Constants, KubernetesConf}
 import io.fabric8.kubernetes.api.model.{ContainerBuilder, PodBuilder}
 import io.fabric8.kubernetes.client.KubernetesClient
-import org.apache.hadoop.conf.Configuration
-import com.tencent.angel.kubernetesmanager.deploy.config.{Constants, KubernetesConf}
-import com.tencent.angel.conf.AngelConf
 import org.apache.commons.logging.{Log, LogFactory}
+import org.apache.hadoop.conf.Configuration
 
 import scala.collection.mutable
 import scala.util.control.{Breaks, NonFatal}
 
 private[angel] class AngelExecutorPodsAllocator(
-                                            conf: Configuration,
-                                            executorBuilder: KubernetesAngelExecutorBuilder,
-                                            kubernetesClient: KubernetesClient,
-                                            snapshotsStore: AngelExecutorPodsSnapshotsStore) {
+                                                 conf: Configuration,
+                                                 executorBuilder: KubernetesAngelExecutorBuilder,
+                                                 kubernetesClient: KubernetesClient,
+                                                 snapshotsStore: AngelExecutorPodsSnapshotsStore) {
 
   private final val LOG: Log = LogFactory.getLog(classOf[AngelExecutorPodsAllocator])
 
@@ -114,7 +114,7 @@ private[angel] class AngelExecutorPodsAllocator(
         val loop = new Breaks
         LOG.info(s"Going to request $numExecutorsToAllocate executors from Kubernetes.")
         loop.breakable {
-          for ( _ <- 0 until numExecutorsToAllocate) {
+          for (_ <- 0 until numExecutorsToAllocate) {
             if (executorRole.equals("ps")) {
               val pSAttemptId = KubernetesClusterManager.getContext()
                 .getParameterServerManager.getPsAttemptIdBlockingQueue.poll()

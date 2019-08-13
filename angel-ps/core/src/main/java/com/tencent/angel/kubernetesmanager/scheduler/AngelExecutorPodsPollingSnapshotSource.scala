@@ -2,10 +2,10 @@ package com.tencent.angel.kubernetesmanager.scheduler
 
 import java.util.concurrent.{Future, ScheduledExecutorService, TimeUnit}
 
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.kubernetesmanager.deploy.config.Constants
 import com.tencent.angel.kubernetesmanager.deploy.config.Constants.{ANGEL_POD_PS_ROLE, ANGEL_POD_WORKER_ROLE}
 import com.tencent.angel.kubernetesmanager.deploy.utils.ThreadUtils
-import com.tencent.angel.conf.AngelConf
 import io.fabric8.kubernetes.client.KubernetesClient
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.hadoop.conf.Configuration

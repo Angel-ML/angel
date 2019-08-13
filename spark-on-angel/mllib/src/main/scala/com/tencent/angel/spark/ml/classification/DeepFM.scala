@@ -18,12 +18,12 @@
 
 package com.tencent.angel.spark.ml.classification
 
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.core.network.layers.Layer
-import com.tencent.angel.ml.core.network.layers.join.SumPooling
-import com.tencent.angel.ml.core.network.layers.linear.{BiInnerSumCross, FCLayer}
-import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer, SimpleLossLayer}
-import com.tencent.angel.ml.core.network.transfunc.{Identity, Relu}
+import com.tencent.angel.ml.core.conf.AngelMLConf
+import com.tencent.angel.mlcore.network.layers.Layer
+import com.tencent.angel.mlcore.network.layers.join.SumPooling
+import com.tencent.angel.mlcore.network.layers.linear.{BiInnerSumCross, FCLayer}
+import com.tencent.angel.mlcore.network.layers.verge.{Embedding, SimpleInputLayer, SimpleLossLayer}
+import com.tencent.angel.mlcore.network.transfunc.{Identity, Relu}
 import com.tencent.angel.ml.core.optimizer.Adam
 import com.tencent.angel.ml.core.optimizer.loss.LogLoss
 import com.tencent.angel.spark.ml.core.GraphModel

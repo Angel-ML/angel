@@ -1,15 +1,14 @@
 package com.tencent.angel.kubernetesmanager.deploy.features
 
-import com.tencent.angel.kubernetesmanager.deploy.config.{AngelPod, KubernetesConf, KubernetesExecutorSpecificConf}
+import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.kubernetesmanager.deploy.config.{AngelPod, Constants, KubernetesConf, KubernetesExecutorSpecificConf}
+import io.fabric8.kubernetes.api.model._
 
 import scala.collection.JavaConverters._
-import io.fabric8.kubernetes.api.model._
-import com.tencent.angel.kubernetesmanager.deploy.config.Constants
-import com.tencent.angel.conf.AngelConf
 
 
 private[angel] class BasicAngelExecutorFeatureStep(
-    kubernetesConf: KubernetesConf[KubernetesExecutorSpecificConf])
+                                                    kubernetesConf: KubernetesConf[KubernetesExecutorSpecificConf])
   extends KubernetesFeatureConfigStep {
 
   private val executorRole = kubernetesConf.angelConf.get(AngelConf.ANGEL_KUBERNETES_EXECUTOR_ROLE,
@@ -88,11 +87,11 @@ private[angel] class BasicAngelExecutorFeatureStep(
       .withName(executorRole)
       .withImage(executorContainerImage)
       .withImagePullPolicy(kubernetesConf.imagePullPolicy())
-        .withNewResources()
-        .addToRequests("memory", executorMemoryQuantity)
-        .addToLimits("memory", executorMemoryQuantity)
-        .addToRequests("cpu", executorCpuQuantity)
-        .endResources()
+      .withNewResources()
+      .addToRequests("memory", executorMemoryQuantity)
+      .addToLimits("memory", executorMemoryQuantity)
+      .addToRequests("cpu", executorCpuQuantity)
+      .endResources()
       .addAllToEnv(executorEnv.asJava)
       .addToArgs(executorRole)
       .build()
@@ -102,8 +101,8 @@ private[angel] class BasicAngelExecutorFeatureStep(
         .build()
       new ContainerBuilder(executorContainer)
         .editResources()
-          .addToLimits("cpu", executorCpuLimitQuantity)
-          .endResources()
+        .addToLimits("cpu", executorCpuLimitQuantity)
+        .endResources()
         .build()
     }.getOrElse(executorContainer)
     val masterPod = kubernetesConf.roleSpecificConf.masterPod
@@ -117,18 +116,18 @@ private[angel] class BasicAngelExecutorFeatureStep(
         .build())
     val executorPod = new PodBuilder(pod.pod)
       .editOrNewMetadata()
-        .withName(name)
-        .withLabels(kubernetesConf.roleLabels.asJava)
-        .withAnnotations(kubernetesConf.roleAnnotations.asJava)
-        .addToOwnerReferences(ownerReference.toSeq: _*)
-        .endMetadata()
+      .withName(name)
+      .withLabels(kubernetesConf.roleLabels.asJava)
+      .withAnnotations(kubernetesConf.roleAnnotations.asJava)
+      .addToOwnerReferences(ownerReference.toSeq: _*)
+      .endMetadata()
       .editOrNewSpec()
-        .withHostname(hostname)
-        .withRestartPolicy("Never")
-        .endSpec()
+      .withHostname(hostname)
+      .withRestartPolicy("Never")
+      .endSpec()
       .editOrNewSpec()
-        .withServiceAccount(kubernetesConf.serviceAccount())
-        .withServiceAccountName(kubernetesConf.serviceAccount())
+      .withServiceAccount(kubernetesConf.serviceAccount())
+      .withServiceAccountName(kubernetesConf.serviceAccount())
       .endSpec()
       .build()
 

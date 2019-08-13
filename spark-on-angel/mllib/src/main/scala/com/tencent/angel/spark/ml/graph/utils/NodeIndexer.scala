@@ -2,11 +2,12 @@ package com.tencent.angel.spark.ml.graph.utils
 
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.math2.VFactory
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.{IntIntVector, IntLongVector}
-import com.tencent.angel.ml.matrix.{MatrixContext, PartContext, RowType}
+import com.tencent.angel.ml.matrix.{MatrixContext, PartContext}
 import com.tencent.angel.psagent.PSAgentContext
-import com.tencent.angel.spark.models.PSVector
-import com.tencent.angel.spark.models.impl.PSVectorImpl
+import com.tencent.angel.sona.models.PSVector
+import com.tencent.angel.sona.models.impl.PSVectorImpl
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
@@ -97,6 +98,15 @@ class NodeIndexer extends Serializable {
   def decode[C: ClassTag, U: ClassTag](rdd: RDD[C],
                                        func: (Array[C], PSVector) => Iterator[U],
                                        batchSize: Int): RDD[U] = {
+    rdd.mapPartitions { iter =>
+      BatchIter(iter, batchSize).flatMap { batch =>
+        func(batch, int2long)
+      }
+    }
+  }
+
+  def decode[C: ClassTag, U: ClassTag](rdd: RDD[C], batchSize: Int)(
+    func: (Array[C], PSVector) => Iterator[U]): RDD[U] = {
     rdd.mapPartitions { iter =>
       BatchIter(iter, batchSize).flatMap { batch =>
         func(batch, int2long)

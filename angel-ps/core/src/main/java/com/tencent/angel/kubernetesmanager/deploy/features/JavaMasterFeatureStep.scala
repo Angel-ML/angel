@@ -12,6 +12,7 @@ private[angel] class JavaMasterFeatureStep(
       .build()
     AngelPod(pod.pod, withMasterArgs)
   }
+
   override def getAdditionalPodSystemProperties(): Map[String, String] = Map.empty
 
   override def getAdditionalKubernetesResources(): Seq[HasMetadata] = Seq.empty

@@ -13,12 +13,12 @@ import org.apache.hadoop.conf.Configuration
 private[angel] object AngelKubernetesClientFactory {
 
   def createKubernetesClient(
-      master: String,
-      namespace: Option[String],
-      kubernetesAuthConfPrefix: String,
-      angelConf: Configuration,
-      defaultServiceAccountToken: Option[File],
-      defaultServiceAccountCaCert: Option[File]): KubernetesClient = {
+                              master: String,
+                              namespace: Option[String],
+                              kubernetesAuthConfPrefix: String,
+                              angelConf: Configuration,
+                              defaultServiceAccountToken: Option[File],
+                              defaultServiceAccountCaCert: Option[File]): KubernetesClient = {
     val oauthTokenFileConf = s"$kubernetesAuthConfPrefix." + AngelConf.OAUTH_TOKEN_FILE_CONF_SUFFIX
     val oauthTokenConf = s"$kubernetesAuthConfPrefix." + AngelConf.OAUTH_TOKEN_CONF_SUFFIX
     val oauthTokenFile = Option(angelConf.get(oauthTokenFileConf)).map(new File(_))
@@ -71,5 +71,6 @@ private[angel] object AngelKubernetesClientFactory {
       }.getOrElse(configBuilder)
     }
   }
+
 }
 

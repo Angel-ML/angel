@@ -19,19 +19,20 @@
 package com.tencent.angel.spark.ml.online_learning
 
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
-import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.ml.math2.storage.LongKeyVectorStorage
 import com.tencent.angel.ml.math2.ufuncs.{OptFuncs, Ufuncs}
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector.{LongDummyVector, LongKeyVector, Vector}
-import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
+import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.model.output.format.{ColIdValueTextRowFormat, RowIdColIdValueTextRowFormat}
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.ps.storage.partitioner.{ColumnRangePartitioner, Partitioner}
 import com.tencent.angel.spark.context.AngelPSContext
 import com.tencent.angel.spark.ml.psf.ftrl.ComputeW
 import com.tencent.angel.spark.ml.util.AutoPartitioner
-import com.tencent.angel.spark.models.impl.{PSMatrixImpl, PSVectorImpl}
-import com.tencent.angel.spark.models.{PSMatrix, PSVector}
+import com.tencent.angel.sona.models.impl.{PSMatrixImpl, PSVectorImpl}
+import com.tencent.angel.sona.models.{PSMatrix, PSVector}
 import org.apache.spark.rdd.RDD
 
 class FTRL() extends Serializable {

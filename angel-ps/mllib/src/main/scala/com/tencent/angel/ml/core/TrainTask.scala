@@ -18,82 +18,32 @@
 
 package com.tencent.angel.ml.core
 
-import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
-import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.vector.{IntDoubleVector, IntFloatVector, IntKeyVector, LongDoubleVector, LongFloatVector, LongKeyVector, Vector}
-import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.ml.core.utils.{DataParser, NetUtils}
+import com.tencent.angel.mlcore.conf.SharedConf
+import com.tencent.angel.ml.core.conf.AngelMLConf
+import com.tencent.angel.mlcore.data.{DataParser, TransLabel}
+import com.tencent.angel.ml.core.utils.SConfHelper
+import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.worker.task.{BaseTask, TaskContext}
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet
 
-import scala.util.Sorting.quickSort
 
 /**
   * The type labeled base task.
   */
-abstract class TrainTask[KEYIN, VALUEIN](taskContext: TaskContext) extends BaseTask[KEYIN, VALUEIN, LabeledData](taskContext) {
-  protected val dataParser = DataParser(SharedConf.get(conf))
+abstract class TrainTask[KEYIN, VALUEIN](taskContext: TaskContext)
+  extends BaseTask[KEYIN, VALUEIN, LabeledData](taskContext) with SConfHelper {
+  val sharedConf: SharedConf = initConf(conf)
+  private val transLabel: TransLabel = TransLabel.get(
+    sharedConf.getString(AngelMLConf.ML_DATA_LABEL_TRANS, AngelMLConf.DEFAULT_ML_DATA_LABEL_TRANS),
+    sharedConf.getDouble(AngelMLConf.ML_DATA_LABEL_TRANS_THRESHOLD, AngelMLConf.DEFAULT_ML_DATA_LABEL_TRANS_THRESHOLD)
+  )
+  protected val dataParser = DataParser(sharedConf.indexRange, sharedConf.inputDataFormat,
+    sharedConf.getString(AngelMLConf.ML_DATA_SPLITOR, AngelMLConf.DEFAULT_ML_DATA_SPLITOR),
+    sharedConf.modelType, sharedConf.getBoolean(AngelMLConf.ML_DATA_HAS_LABEL, AngelMLConf.DEFAULT_ML_DATA_HAS_LABEL),
+    true, transLabel)
 
-  if (conf.get(AngelConf.ANGEL_ML_CONF) != null) {
-    SharedConf.get(conf)
-    JsonUtils.init()
-  } else {
-    SharedConf.get(conf)
-  }
-
-  final def run(taskContext: TaskContext) = {
+  final def run(taskContext: TaskContext): Unit = {
     this.train(taskContext)
   }
 
   def train(taskContext: TaskContext)
-
-  protected def needIndexs: Boolean = {
-    val inputFormat = SharedConf.inputDataFormat
-    val modelType = SharedConf.storageType
-    (inputFormat, modelType) match {
-      case ("libsvm" | "dummy", "sparse" | "component_sparse") => false // true
-      case ("dense", "libsvm" | "component_sparse") =>
-        throw new AngelException("The input data is dense, but the model is sparse!")
-      case _ => false
-    }
-  }
-
-  protected def addIndexs(vector: Vector, idxs: IntOpenHashSet): Unit = {
-    vector match {
-      case v: IntDoubleVector if !v.isDense =>
-        v.getStorage.getIndices.foreach { i => idxs.add(i) }
-      case v: IntFloatVector if !v.isDense =>
-        v.getStorage.getIndices.foreach { i => idxs.add(i) }
-      case v: IntKeyVector if v.isDense =>
-        (0 until v.getDim).foreach { i => idxs.add(i) }
-    }
-  }
-
-  protected def addIndexs(vector: Vector, idxs: LongOpenHashSet): Unit = {
-    vector match {
-      case v: LongDoubleVector if !v.isDense =>
-        v.getStorage.getIndices.foreach { i => idxs.add(i) }
-      case v: LongFloatVector if !v.isDense =>
-        v.getStorage.getIndices.foreach { i => idxs.add(i) }
-      case v: LongKeyVector if v.isDense =>
-        (0L until v.getDim).foreach { i => idxs.add(i) }
-    }
-  }
-
-  protected def set2Vector(idxs: LongOpenHashSet): Vector = {
-    val temp = idxs.toLongArray
-    quickSort(temp)
-    VFactory.denseLongVector(temp)
-  }
-
-  protected def set2Vector(idxs: IntOpenHashSet): Vector = {
-    val temp = idxs.toIntArray
-    quickSort(temp)
-    VFactory.denseIntVector(temp)
-  }
 }

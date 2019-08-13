@@ -2,7 +2,7 @@ package com.tencent.angel.spark.examples.local
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.ml.graph.kcore.KCore
+import com.tencent.angel.spark.ml.graph.kcore5.KCore
 import com.tencent.angel.spark.ml.graph.utils.GraphIO
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
@@ -12,8 +12,8 @@ object KCoreExample {
   def main(args: Array[String]): Unit = {
     val mode = "local"
     val input = "data/bc/edge"
-    val output = "model/kcore"
-    val partitionNum = 4
+    val output = "model/kcore5/edge"
+    val partitionNum = 3
     val storageLevel = StorageLevel.MEMORY_ONLY
     val batchSize = 100
     val psPartitionNum = 2
@@ -22,7 +22,6 @@ object KCoreExample {
     val kCore = new KCore()
       .setPartitionNum(partitionNum)
       .setStorageLevel(storageLevel)
-      .setBatchSize(batchSize)
       .setPSPartitionNum(psPartitionNum)
 
     val df = GraphIO.load(input, isWeighted = false)

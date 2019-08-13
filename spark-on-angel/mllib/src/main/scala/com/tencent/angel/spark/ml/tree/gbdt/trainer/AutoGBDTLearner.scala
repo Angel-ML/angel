@@ -18,7 +18,7 @@
 package com.tencent.angel.spark.ml.tree.gbdt.trainer
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.AngelMLConf
 import com.tencent.angel.spark.automl.tuner.config.{Configuration, ConfigurationSpace, EarlyStopping}
 import com.tencent.angel.spark.automl.tuner.parameter.{ParamConfig, ParamParser}
 import com.tencent.angel.spark.automl.tuner.solver.Solver

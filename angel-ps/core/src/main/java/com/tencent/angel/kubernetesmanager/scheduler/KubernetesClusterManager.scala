@@ -1,7 +1,7 @@
 package com.tencent.angel.kubernetesmanager.scheduler
 
-import com.tencent.angel.kubernetesmanager.deploy.utils.{AngelKubernetesClientFactory, ThreadUtils}
 import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.kubernetesmanager.deploy.utils.{AngelKubernetesClientFactory, ThreadUtils}
 import com.tencent.angel.master.app.AMContext
 import org.apache.hadoop.conf.Configuration
 
@@ -12,9 +12,9 @@ private[angel] class KubernetesClusterManager(context: AMContext) {
 
   def doScheduler(conf: Configuration): Unit = {
     val (authConfPrefix,
-      apiServerUri,
-      defaultServiceAccountToken,
-      defaultServiceAccountCaCrt) = (conf.get(AngelConf.ANGEL_KUBERNETES_KUBERNETES_AUTH_CLIENT_MODE_PREFIX),
+    apiServerUri,
+    defaultServiceAccountToken,
+    defaultServiceAccountCaCrt) = (conf.get(AngelConf.ANGEL_KUBERNETES_KUBERNETES_AUTH_CLIENT_MODE_PREFIX),
       conf.get(AngelConf.ANGEL_KUBERNETES_MASTER),
       None,
       None)
@@ -30,7 +30,7 @@ private[angel] class KubernetesClusterManager(context: AMContext) {
       conf,
       defaultServiceAccountToken,
       defaultServiceAccountCaCrt)
-    val requestExecutorsService =  ThreadUtils.newDaemonCachedThreadPool(
+    val requestExecutorsService = ThreadUtils.newDaemonCachedThreadPool(
       "kubernetes-executor-requests" + "-" + executorRole)
     val subscribersExecutor = ThreadUtils
       .newDaemonThreadPoolScheduledExecutor(

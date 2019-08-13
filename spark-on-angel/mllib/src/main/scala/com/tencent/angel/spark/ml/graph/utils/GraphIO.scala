@@ -2,9 +2,9 @@ package com.tencent.angel.spark.ml.graph.utils
 
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkContext
+import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
-import org.apache.spark.sql.functions._
 
 object GraphIO {
 
@@ -38,7 +38,7 @@ object GraphIO {
           .drop(structField.name)
           .withColumnRenamed(tmpName, structField.name)
       case _: FloatType => df
-      case t => throw new Exception(s"$t can't convert to Long")
+      case t => throw new Exception(s"$t can't convert to Float")
     }
   }
 
@@ -62,16 +62,17 @@ object GraphIO {
            srcIndex: Int = 0, dstIndex: Int = 1, weightIndex: Int = 2,
            sep: String = " "): DataFrame = {
     val ss = SparkSession.builder().getOrCreate()
+
     val schema = if (isWeighted) {
       StructType(Seq(
         StructField("src", LongType, nullable = false),
-        StructField("dst", LongType, nullable = false)
+        StructField("dst", LongType, nullable = false),
+        StructField("weight", FloatType, nullable = false)
       ))
     } else {
       StructType(Seq(
         StructField("src", LongType, nullable = false),
-        StructField("dst", LongType, nullable = false),
-        StructField("wgt", LongType, nullable = false)
+        StructField("dst", LongType, nullable = false)
       ))
     }
     ss.read
@@ -81,12 +82,12 @@ object GraphIO {
       .csv(input)
   }
 
-  def save(df: DataFrame, output: String): Unit = {
+  def save(df: DataFrame, output: String, seq: String = "\t"): Unit = {
     df.printSchema()
     df.write
       .mode(SaveMode.Overwrite)
       .option(HEADER, "false")
-      .option(DELIMITER, "\t")
+      .option(DELIMITER, seq)
       .csv(output)
   }
 

@@ -23,7 +23,7 @@ import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.*;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ps.storage.vector.*;
 import com.tencent.angel.psagent.PSAgentContext;
 import org.apache.commons.logging.Log;
@@ -1400,7 +1400,7 @@ public class RowSplitCombineUtils {
     int size = rowSplits.size();
     int clock = Integer.MAX_VALUE;
     for (int i = 0; i < size; i++) {
-      splits[i] = (IntDoubleVector) rowSplits.get(i).getSplit();
+      splits[i] = ServerRowUtils.getVector((ServerIntDoubleRow) (rowSplits.get(i)));
       if (rowSplits.get(i).getClock() < clock) {
         clock = rowSplits.get(i).getClock();
       }
@@ -1459,7 +1459,7 @@ public class RowSplitCombineUtils {
     int size = rowSplits.size();
     int clock = Integer.MAX_VALUE;
     for (int i = 0; i < size; i++) {
-      splits[i] = (IntFloatVector) rowSplits.get(i).getSplit();
+      splits[i] = ServerRowUtils.getVector((ServerIntFloatRow) (rowSplits.get(i)));
       if (rowSplits.get(i).getClock() < clock) {
         clock = rowSplits.get(i).getClock();
       }
@@ -1518,7 +1518,7 @@ public class RowSplitCombineUtils {
     int size = rowSplits.size();
     int clock = Integer.MAX_VALUE;
     for (int i = 0; i < size; i++) {
-      splits[i] = (IntIntVector) rowSplits.get(i).getSplit();
+      splits[i] = ServerRowUtils.getVector((ServerIntIntRow) (rowSplits.get(i)));
       if (rowSplits.get(i).getClock() < clock) {
         clock = rowSplits.get(i).getClock();
       }
@@ -1577,7 +1577,7 @@ public class RowSplitCombineUtils {
     int size = rowSplits.size();
     int clock = Integer.MAX_VALUE;
     for (int i = 0; i < size; i++) {
-      splits[i] = (IntLongVector) rowSplits.get(i).getSplit();
+      splits[i] = ServerRowUtils.getVector((ServerIntLongRow) (rowSplits.get(i)));
       if (rowSplits.get(i).getClock() < clock) {
         clock = rowSplits.get(i).getClock();
       }
@@ -1626,12 +1626,14 @@ public class RowSplitCombineUtils {
     assert rowSplits.size() == partitionKeys.size();
     Collections.sort(rowSplits, serverRowComp);
     Collections.sort(partitionKeys, partKeyComp);
+
+    //TODO: ServerLongDoubleRow maybe use IntDoubleVector as inner storage
     LongDoubleVector[] splits = new LongDoubleVector[rowSplits.size()];
 
     int size = rowSplits.size();
     int clock = Integer.MAX_VALUE;
     for (int i = 0; i < size; i++) {
-      splits[i] = (LongDoubleVector) rowSplits.get(i).getSplit();
+      splits[i] = (LongDoubleVector) ServerRowUtils.getVector((ServerLongDoubleRow) (rowSplits.get(i)));
       if (rowSplits.get(i).getClock() < clock) {
         clock = rowSplits.get(i).getClock();
       }
@@ -1680,12 +1682,14 @@ public class RowSplitCombineUtils {
     assert rowSplits.size() == partitionKeys.size();
     Collections.sort(rowSplits, serverRowComp);
     Collections.sort(partitionKeys, partKeyComp);
+
+    //TODO: ServerLongDoubleRow maybe use IntDoubleVector as inner storage
     LongFloatVector[] splits = new LongFloatVector[rowSplits.size()];
 
     int size = rowSplits.size();
     int clock = Integer.MAX_VALUE;
     for (int i = 0; i < size; i++) {
-      splits[i] = (LongFloatVector) rowSplits.get(i).getSplit();
+      splits[i] = (LongFloatVector) ServerRowUtils.getVector((ServerLongFloatRow) (rowSplits.get(i)));
       if (rowSplits.get(i).getClock() < clock) {
         clock = rowSplits.get(i).getClock();
       }
@@ -1734,12 +1738,14 @@ public class RowSplitCombineUtils {
     assert rowSplits.size() == partitionKeys.size();
     Collections.sort(rowSplits, serverRowComp);
     Collections.sort(partitionKeys, partKeyComp);
+
+    //TODO: ServerLongDoubleRow maybe use IntDoubleVector as inner storage
     LongIntVector[] splits = new LongIntVector[rowSplits.size()];
 
     int size = rowSplits.size();
     int clock = Integer.MAX_VALUE;
     for (int i = 0; i < size; i++) {
-      splits[i] = (LongIntVector) rowSplits.get(i).getSplit();
+      splits[i] = (LongIntVector) ServerRowUtils.getVector((ServerLongIntRow) (rowSplits.get(i)));
       if (rowSplits.get(i).getClock() < clock) {
         clock = rowSplits.get(i).getClock();
       }
@@ -1788,12 +1794,14 @@ public class RowSplitCombineUtils {
     assert rowSplits.size() == partitionKeys.size();
     Collections.sort(rowSplits, serverRowComp);
     Collections.sort(partitionKeys, partKeyComp);
+
+    //TODO: ServerLongDoubleRow maybe use IntDoubleVector as inner storage
     LongLongVector[] splits = new LongLongVector[rowSplits.size()];
 
     int size = rowSplits.size();
     int clock = Integer.MAX_VALUE;
     for (int i = 0; i < size; i++) {
-      splits[i] = (LongLongVector) rowSplits.get(i).getSplit();
+      splits[i] = (LongLongVector) ServerRowUtils.getVector((ServerLongLongRow) (rowSplits.get(i)));
       if (rowSplits.get(i).getClock() < clock) {
         clock = rowSplits.get(i).getClock();
       }

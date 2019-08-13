@@ -1,12 +1,12 @@
 package com.tencent.angel.kubernetesmanager.scheduler
 
-import io.fabric8.kubernetes.api.model.Pod
-import io.fabric8.kubernetes.client.{KubernetesClient, KubernetesClientException, Watcher}
-import io.fabric8.kubernetes.client.Watcher.Action
 import java.io.Closeable
 
-import com.tencent.angel.kubernetesmanager.deploy.config.Constants._
 import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.kubernetesmanager.deploy.config.Constants._
+import io.fabric8.kubernetes.api.model.Pod
+import io.fabric8.kubernetes.client.Watcher.Action
+import io.fabric8.kubernetes.client.{KubernetesClient, KubernetesClientException, Watcher}
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.hadoop.conf.Configuration
 

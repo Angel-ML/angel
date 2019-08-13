@@ -21,7 +21,7 @@ import java.util.concurrent.Future
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.vector.Vector
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
 import com.tencent.angel.ml.matrix.psf.update.zero.Zero
@@ -317,5 +317,9 @@ class PSMatrixImpl(
 
   override def asyncPsfUpdate(func: UpdateFunc): Future[VoidResult] = {
     matrixClient.asyncUpdate(func)
+  }
+
+  override def checkpoint(): Future[VoidResult] = {
+    matrixClient.checkpoint();
   }
 }

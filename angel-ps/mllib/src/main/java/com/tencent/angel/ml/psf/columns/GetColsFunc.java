@@ -21,13 +21,12 @@ package com.tencent.angel.ml.psf.columns;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.*;
-import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.server.data.request.InitFunc;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
 import com.tencent.angel.ps.storage.vector.*;
 
 import java.util.Arrays;
@@ -45,7 +44,8 @@ public class GetColsFunc extends GetFunc {
     super(null);
   }
 
-  @Override public PartitionGetResult partitionGet(PartitionGetParam partParam) {
+  @Override
+  public PartitionGetResult partitionGet(PartitionGetParam partParam) {
     PartitionGetColsParam param = (PartitionGetColsParam) partParam;
     int[] rows = param.rows;
     long[] cols = param.cols;
@@ -53,8 +53,9 @@ public class GetColsFunc extends GetFunc {
     int partitionId = param.getPartKey().getPartitionId();
     Arrays.sort(rows);
 
-    ServerPartition partition = psContext.getMatrixStorageManager().getPart(matId, partitionId);
-    ServerRow [] splits = new ServerRow[rows.length];
+    RowBasedPartition partition = (RowBasedPartition) psContext.getMatrixStorageManager()
+        .getPart(matId, partitionId);
+    ServerRow[] splits = new ServerRow[rows.length];
     for (int i = 0; i < rows.length; i++) {
       splits[i] = partition.getRow(rows[i]);
     }
@@ -64,7 +65,7 @@ public class GetColsFunc extends GetFunc {
   }
 
   private Vector doGet(ServerRow[] rows, long[] cols, InitFunc func) {
-    if(func != null) {
+    if (func != null) {
       rows[0].startWrite();
       try {
         return doGetLockFree(rows, cols, func);
@@ -82,27 +83,27 @@ public class GetColsFunc extends GetFunc {
   }
 
   private Vector doGetLockFree(ServerRow[] rows, long[] cols, InitFunc func) {
-    if(rows[0] instanceof ServerIntDoubleRow) {
+    if (rows[0] instanceof ServerIntDoubleRow) {
       IntDoubleVector[] vectors = new IntDoubleVector[cols.length];
-      if(func != null) {
+      if (func != null) {
         for (int i = 0; i < cols.length; i++) {
           vectors[i] = VFactory.denseDoubleVector(rows.length);
           for (int j = 0; j < rows.length; j++) {
-            vectors[i].set(j, ((ServerIntDoubleRow) rows[j]).initAndGet((int)cols[i], func));
+            vectors[i].set(j, ((ServerIntDoubleRow) rows[j]).initAndGet((int) cols[i], func));
           }
         }
       } else {
         for (int i = 0; i < cols.length; i++) {
           vectors[i] = VFactory.denseDoubleVector(rows.length);
           for (int j = 0; j < rows.length; j++) {
-            vectors[i].set(j, ((ServerIntDoubleRow) rows[j]).get((int)cols[i]));
+            vectors[i].set(j, ((ServerIntDoubleRow) rows[j]).get((int) cols[i]));
           }
         }
       }
       return VFactory.compIntDoubleVector(cols.length, vectors, rows.length);
-    } else if(rows[0] instanceof ServerLongDoubleRow) {
+    } else if (rows[0] instanceof ServerLongDoubleRow) {
       IntDoubleVector[] vectors = new IntDoubleVector[cols.length];
-      if(func != null) {
+      if (func != null) {
         for (int i = 0; i < cols.length; i++) {
           vectors[i] = VFactory.denseDoubleVector(rows.length);
           for (int j = 0; j < rows.length; j++) {
@@ -118,27 +119,27 @@ public class GetColsFunc extends GetFunc {
         }
       }
       return VFactory.compIntDoubleVector(cols.length, vectors, rows.length);
-    } else if(rows[0] instanceof ServerIntFloatRow) {
+    } else if (rows[0] instanceof ServerIntFloatRow) {
       IntFloatVector[] vectors = new IntFloatVector[cols.length];
-      if(func != null) {
+      if (func != null) {
         for (int i = 0; i < cols.length; i++) {
           vectors[i] = VFactory.denseFloatVector(rows.length);
           for (int j = 0; j < rows.length; j++) {
-            vectors[i].set(j, ((ServerIntFloatRow) rows[j]).initAndGet((int)cols[i], func));
+            vectors[i].set(j, ((ServerIntFloatRow) rows[j]).initAndGet((int) cols[i], func));
           }
         }
       } else {
         for (int i = 0; i < cols.length; i++) {
           vectors[i] = VFactory.denseFloatVector(rows.length);
           for (int j = 0; j < rows.length; j++) {
-            vectors[i].set(j, ((ServerIntFloatRow) rows[j]).get((int)cols[i]));
+            vectors[i].set(j, ((ServerIntFloatRow) rows[j]).get((int) cols[i]));
           }
         }
       }
       return VFactory.compIntFloatVector(cols.length, vectors, rows.length);
-    } else if(rows[0] instanceof ServerLongFloatRow) {
+    } else if (rows[0] instanceof ServerLongFloatRow) {
       IntFloatVector[] vectors = new IntFloatVector[cols.length];
-      if(func != null) {
+      if (func != null) {
         for (int i = 0; i < cols.length; i++) {
           vectors[i] = VFactory.denseFloatVector(rows.length);
           for (int j = 0; j < rows.length; j++) {
@@ -159,7 +160,8 @@ public class GetColsFunc extends GetFunc {
     }
   }
 
-  @Override public GetResult merge(List<PartitionGetResult> partResults) {
+  @Override
+  public GetResult merge(List<PartitionGetResult> partResults) {
     PartitionGetColsResult rr = (PartitionGetColsResult) partResults.get(0);
     if (rr.vector instanceof CompIntDoubleVector) {
       Map<Long, Vector> maps = new HashMap<>();
@@ -167,8 +169,9 @@ public class GetColsFunc extends GetFunc {
         PartitionGetColsResult rrr = (PartitionGetColsResult) r;
         long[] cols = rrr.cols;
         CompIntDoubleVector vector = (CompIntDoubleVector) rrr.vector;
-        for (int i = 0; i < cols.length; i++)
+        for (int i = 0; i < cols.length; i++) {
           maps.put(cols[i], vector.getPartitions()[i]);
+        }
       }
       return new GetColsResult(maps);
     } else if (rr.vector instanceof CompIntFloatVector) {

@@ -35,8 +35,6 @@ object InstanceInfo {
     // 2 class: preds of each instance
     // multi-class one-tree: probs_ins_1, probs_ins_2, ...
     // multi-class multi-tree: probs_ins_1, probs_ins_2, ...
-    val totalSize = predSize / math.pow(10, 9) + 2 * numData / math.pow(10, 9) + 2 * gradSize / math.pow(10, 9)
-    println(s"InstanceInfo costs about ${4 * totalSize} GB memory")
     val predictions = new Array[Float](predSize)
     val weights = Array.fill[Float](numData)(1.0f)
     val gradients = new Array[Double](gradSize)

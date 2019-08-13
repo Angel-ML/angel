@@ -38,7 +38,7 @@ class Compress(param: MMUpdateParam) extends MMUpdateFunc(param) {
       case r: ServerLongDoubleRow => {
         try {
           r.startWrite()
-          r.setSplit(filterLongDoubleVec(r))
+          ServerRowUtils.setVector(r, filterLongDoubleVec(r))
         } finally {
           r.endWrite()
         }
@@ -47,7 +47,7 @@ class Compress(param: MMUpdateParam) extends MMUpdateFunc(param) {
       case r: ServerLongFloatRow => {
         try {
           r.startWrite()
-          r.setSplit(filterLongFloatVec(r))
+          ServerRowUtils.setVector(r, filterLongFloatVec(r))
         } finally {
           r.endWrite()
         }
@@ -56,7 +56,7 @@ class Compress(param: MMUpdateParam) extends MMUpdateFunc(param) {
       case r: ServerLongLongRow => {
         try {
           r.startWrite()
-          r.setSplit(filterLongLongVec(r))
+          ServerRowUtils.setVector(r, filterLongLongVec(r))
         } finally {
           r.endWrite()
         }
@@ -65,7 +65,7 @@ class Compress(param: MMUpdateParam) extends MMUpdateFunc(param) {
       case r: ServerLongIntRow => {
         try {
           r.startWrite()
-          r.setSplit(filterLongIntVec(r))
+          ServerRowUtils.setVector(r, filterLongIntVec(r))
         } finally {
           r.endWrite()
         }
@@ -77,8 +77,8 @@ class Compress(param: MMUpdateParam) extends MMUpdateFunc(param) {
 
   def filterLongDoubleVec(r: ServerLongDoubleRow) : DoubleVector = {
     var newSplit: DoubleVector = null
-    newSplit = VectorUtils.emptyLike(r.getSplit).asInstanceOf[DoubleVector]
-    r.getSplit match {
+    newSplit = VectorUtils.emptyLike(ServerRowUtils.getVector(r)).asInstanceOf[DoubleVector]
+    ServerRowUtils.getVector(r) match {
       case intDoubleVec: IntDoubleVector => {
         if(intDoubleVec.isDense) {
           val data = intDoubleVec.getStorage.getValues
@@ -114,8 +114,8 @@ class Compress(param: MMUpdateParam) extends MMUpdateFunc(param) {
     var newSplit: FloatVector = null
     r.startRead()
     try {
-      newSplit = VectorUtils.emptyLike(r.getSplit).asInstanceOf[FloatVector]
-      r.getSplit match {
+      newSplit = VectorUtils.emptyLike(ServerRowUtils.getVector(r)).asInstanceOf[FloatVector]
+      ServerRowUtils.getVector(r) match {
         case intFloatVec: IntFloatVector => {
           if(intFloatVec.isDense) {
             val data = intFloatVec.getStorage.getValues
@@ -155,8 +155,8 @@ class Compress(param: MMUpdateParam) extends MMUpdateFunc(param) {
     var newSplit: IntVector = null
     r.startRead()
     try {
-      newSplit = VectorUtils.emptyLike(r.getSplit).asInstanceOf[IntVector]
-      r.getSplit match {
+      newSplit = VectorUtils.emptyLike(ServerRowUtils.getVector(r)).asInstanceOf[IntVector]
+      ServerRowUtils.getVector(r) match {
         case intIntVec: IntIntVector => {
           if(intIntVec.isDense) {
             val data = intIntVec.getStorage.getValues
@@ -196,8 +196,8 @@ class Compress(param: MMUpdateParam) extends MMUpdateFunc(param) {
     var newSplit: LongVector = null
     r.startRead()
     try {
-      newSplit = VectorUtils.emptyLike(r.getSplit).asInstanceOf[LongVector]
-      r.getSplit match {
+      newSplit = VectorUtils.emptyLike(ServerRowUtils.getVector(r)).asInstanceOf[LongVector]
+      ServerRowUtils.getVector(r) match {
         case intLongVec: IntLongVector => {
           if(intLongVec.isDense) {
             val data = intLongVec.getStorage.getValues

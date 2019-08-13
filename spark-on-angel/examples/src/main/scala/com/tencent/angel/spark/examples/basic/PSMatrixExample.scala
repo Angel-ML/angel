@@ -19,7 +19,7 @@ package com.tencent.angel.spark.examples.basic
 
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.models.PSMatrix
+import com.tencent.angel.sona.models.PSMatrix
 import org.apache.spark.{SparkConf, SparkContext}
 
 object PSMatrixExample {

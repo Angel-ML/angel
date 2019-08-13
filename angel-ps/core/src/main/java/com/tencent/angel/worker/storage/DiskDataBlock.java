@@ -23,6 +23,7 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.math2.utils.DataBlock;
 import com.tencent.angel.worker.WorkerContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

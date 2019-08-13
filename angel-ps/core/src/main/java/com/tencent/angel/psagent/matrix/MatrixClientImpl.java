@@ -23,7 +23,7 @@ import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.matrix.Matrix;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
@@ -847,6 +847,16 @@ public class MatrixClientImpl extends MatrixClient {
   @Override
   public Future<VoidResult> clock() throws AngelException {
     return clock(true);
+  }
+
+  @Override
+  public FutureResult<VoidResult> checkpoint() throws AngelException {
+    try {
+      LOG.info("checkpoint matrixId=" + matrixId);
+      return PSAgentContext.get().getUserRequestAdapter().checkpoint(matrixId);
+    } catch (Throwable x) {
+      throw new AngelException(x);
+    }
   }
 
   @Override

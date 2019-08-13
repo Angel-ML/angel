@@ -18,7 +18,8 @@
 
 package com.tencent.angel.ps.server.data.response;
 
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.ServerPartition;
+import com.tencent.angel.ps.storage.partition.ServerPartitionFactory;
 import io.netty.buffer.ByteBuf;
 
 /**
@@ -72,6 +73,9 @@ public class GetPartitionResponse extends Response {
   @Override public void serialize(ByteBuf buf) {
     super.serialize(buf);
     if (partition != null) {
+      byte []  partClass = partition.getClass().getName().getBytes();
+      buf.writeInt(partClass.length);
+      buf.writeBytes(partClass);
       partition.serialize(buf);
     }
   }
@@ -83,7 +87,11 @@ public class GetPartitionResponse extends Response {
       return;
     }
 
-    partition = new ServerPartition();
+    byte [] partClass = new byte[buf.readInt()];
+    buf.readBytes(partClass);
+    String partClassName = new String(partClass);
+
+    partition = ServerPartitionFactory.getPartition(partClassName);
     partition.deserialize(buf);
   }
 

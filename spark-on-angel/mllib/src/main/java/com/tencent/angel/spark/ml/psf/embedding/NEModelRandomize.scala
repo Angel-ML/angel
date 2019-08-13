@@ -24,7 +24,8 @@ import io.netty.buffer.ByteBuf
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.ml.math2.storage.IntFloatDenseVectorStorage
 import com.tencent.angel.ml.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc, UpdateParam}
-import com.tencent.angel.ps.storage.matrix.ServerPartition
+import com.tencent.angel.ps.storage.partition.RowBasedPartition
+import com.tencent.angel.ps.storage.vector.ServerRowUtils
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.spark.ml.psf.embedding.NEModelRandomize.{RandomizePartitionUpdateParam, RandomizeUpdateParam}
 
@@ -38,14 +39,14 @@ class NEModelRandomize(param: RandomizeUpdateParam) extends UpdateFunc(param) {
   def this() = this(null)
 
   override def partitionUpdate(partParam: PartitionUpdateParam): Unit = {
-    val part = psContext.getMatrixStorageManager.getPart(partParam.getMatrixId, partParam.getPartKey.getPartitionId)
+    val part = psContext.getMatrixStorageManager.getPart(partParam.getMatrixId, partParam.getPartKey.getPartitionId).asInstanceOf[RowBasedPartition]
     if (part != null) {
       val ff = partParam.asInstanceOf[RandomizePartitionUpdateParam]
       update(part, partParam.getPartKey, ff.partDim, ff.dim, ff.order, ff.seed)
     }
   }
 
-  private def update(part: ServerPartition, key: PartitionKey, partDim: Int, dim: Int, order: Int, seed: Int): Unit = {
+  private def update(part: RowBasedPartition, key: PartitionKey, partDim: Int, dim: Int, order: Int, seed: Int): Unit = {
     val startRow = key.getStartRow
     val endRow = key.getEndRow
     val rand = new Random(seed)
@@ -53,7 +54,7 @@ class NEModelRandomize(param: RandomizeUpdateParam) extends UpdateFunc(param) {
       (rowId, rand.nextInt)
     ).par.foreach { case (rowId, rowSeed) =>
       val rowRandom = new Random(rowSeed)
-      val data = part.getRow(rowId).getSplit.getStorage.asInstanceOf[IntFloatDenseVectorStorage].getValues
+      val data = ServerRowUtils.getVector(part.getRow(rowId)).getStorage.asInstanceOf[IntFloatDenseVectorStorage].getValues
       if (order == 1)
         data.indices.foreach(data(_) = (rowRandom.nextFloat() - 0.5f) / dim)
       else {

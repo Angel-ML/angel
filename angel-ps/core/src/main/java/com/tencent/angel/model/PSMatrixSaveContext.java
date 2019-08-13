@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,13 +18,13 @@
 package com.tencent.angel.model;
 
 import com.tencent.angel.model.io.IOExecutors;
-
 import java.util.List;
 
 /**
  * PS matrix save context
  */
 public class PSMatrixSaveContext {
+
   /**
    * Matrix id
    */
@@ -68,12 +68,12 @@ public class PSMatrixSaveContext {
   /**
    * Create a new PSMatrixSaveContext
    *
-   * @param matrixId   matrix id
-   * @param partIds    need save matrix partitions
+   * @param matrixId matrix id
+   * @param partIds need save matrix partitions
    * @param rowIndexes need save matrix rows
    */
   public PSMatrixSaveContext(int matrixId, List<Integer> partIds, List<Integer> rowIndexes,
-    String formatClassName, String savePath, boolean cloneFirst, boolean sortFirst) {
+      String formatClassName, String savePath, boolean cloneFirst, boolean sortFirst) {
     this.matrixId = matrixId;
     this.partIds = partIds;
     this.rowIndexes = rowIndexes;
@@ -130,6 +130,7 @@ public class PSMatrixSaveContext {
 
   /**
    * Set matrix output files save path
+   *
    * @param savePath matrix output files save path
    */
   public void setSavePath(String savePath) {

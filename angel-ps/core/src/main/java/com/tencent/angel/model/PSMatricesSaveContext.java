@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -24,6 +24,7 @@ import java.util.List;
  * PS matrices save context, it contains all need save matrices that are stored in this PS
  */
 public class PSMatricesSaveContext {
+
   /**
    * Global save request id
    */
@@ -42,12 +43,12 @@ public class PSMatricesSaveContext {
   /**
    * Create a PSMatricesSaveContext
    *
-   * @param requestId          global save request id
-   * @param subRequestId       sub-save request id
+   * @param requestId global save request id
+   * @param subRequestId sub-save request id
    * @param matrixSaveContexts matrix save contexts
    */
   public PSMatricesSaveContext(int requestId, int subRequestId,
-    List<PSMatrixSaveContext> matrixSaveContexts) {
+      List<PSMatrixSaveContext> matrixSaveContexts) {
     this.requestId = requestId;
     this.subRequestId = subRequestId;
     this.matrixSaveContexts = matrixSaveContexts;

@@ -20,9 +20,9 @@ package com.tencent.angel.spark.ml.psf.embedding
 
 import io.netty.buffer.ByteBuf
 import org.apache.commons.logging.{Log, LogFactory}
-
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.ml.matrix.psf.get.base._
+import com.tencent.angel.ps.storage.partition.RowBasedPartition
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.spark.ml.psf.embedding.NESlice.{SliceParam, SlicePartitionParam, SlicePartitionResult, SliceResult}
 
@@ -36,7 +36,7 @@ class NESlice(sliceParam: SliceParam) extends GetFunc(sliceParam) {
   def this() = this(null)
 
   override def partitionGet(pParam: PartitionGetParam): PartitionGetResult = {
-    val part = psContext.getMatrixStorageManager.getPart(pParam.getMatrixId, pParam.getPartKey.getPartitionId)
+    val part = psContext.getMatrixStorageManager.getPart(pParam.getMatrixId, pParam.getPartKey.getPartitionId).asInstanceOf[RowBasedPartition]
     if (part == null) return null
     val partParam = pParam.asInstanceOf[SlicePartitionParam]
     val pw = new PartitionWrapper(part, partParam.getPartDim, partParam.getOrder)

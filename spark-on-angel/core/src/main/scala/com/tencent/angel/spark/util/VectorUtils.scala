@@ -34,7 +34,7 @@ import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.func.{Zip2MapFunc, Zi
 import com.tencent.angel.ml.matrix.psf.update.{Compress, RandomNormal, RandomUniform}
 import com.tencent.angel.psagent.matrix.{MatrixClientFactory, ResponseType, Result}
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.models.PSVector
+import com.tencent.angel.sona.models.PSVector
 
 object VectorUtils {
 
@@ -155,6 +155,15 @@ object VectorUtils {
   def nnz(vector: PSVector): Long = {
     vector.assertValid()
     psfGet(vector.poolId, new Nnz(vector.poolId, vector.id))
+      .asInstanceOf[ScalarAggrResult].getResult.toLong
+  }
+
+  /**
+    * Count the number of elements in `vector`
+    */
+  def size(vector: PSVector): Long = {
+    vector.assertValid()
+    psfGet(vector.poolId, new Size(vector.poolId, vector.id))
       .asInstanceOf[ScalarAggrResult].getResult.toLong
   }
 

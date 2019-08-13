@@ -144,15 +144,14 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
           .addTransition(AppState.INITED, AppState.KILLED, AppEventType.KILL, APP_KILLED_TRANSITION)
           .addTransition(AppState.INITED, AppState.FAILED, AppEventType.INTERNAL_ERROR,
               APP_FAILED_TRANSITION)
-
-      .addTransition(AppState.RUNNING, AppState.EXECUTE_SUCCESSED, AppEventType.EXECUTE_SUCESS,
-          APP_EXECUTE_SUCCESS_TRANSITION)
           .addTransition(AppState.PREPARE_WORKERS, AppState.RUNNING,
               AppEventType.ALL_WORKERS_LAUNCHED)
           .addTransition(AppState.PREPARE_WORKERS, AppState.KILLED, AppEventType.KILL, APP_KILLED_TRANSITION)
           .addTransition(AppState.PREPARE_WORKERS, AppState.FAILED, AppEventType.INTERNAL_ERROR,
               APP_FAILED_TRANSITION)
 
+          .addTransition(AppState.RUNNING, AppState.EXECUTE_SUCCESSED, AppEventType.EXECUTE_SUCESS,
+          APP_EXECUTE_SUCCESS_TRANSITION)
           .addTransition(AppState.RUNNING, AppState.EXECUTE_SUCCESSED, AppEventType.EXECUTE_SUCESS)
           .addTransition(AppState.RUNNING, AppState.KILLED, AppEventType.KILL,
               APP_KILLED_TRANSITION)

@@ -18,13 +18,13 @@
 
 package com.tencent.angel.ml.matrix.psf.get.indexed;
 
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ml.matrix.psf.get.getrow.GetRowResult;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
 import com.tencent.angel.ps.storage.vector.*;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.ResponseType;
@@ -55,7 +55,7 @@ public class IndexGet extends GetFunc {
    */
   @Override public PartitionGetResult partitionGet(PartitionGetParam partParam) {
     long startTs = System.currentTimeMillis();
-    ServerPartition part = psContext.getMatrixStorageManager()
+    RowBasedPartition part = (RowBasedPartition)psContext.getMatrixStorageManager()
       .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
 
     PartitionGetResult result = null;

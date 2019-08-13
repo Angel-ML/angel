@@ -23,7 +23,7 @@ import org.apache.spark.sql.{Row, SparkSession}
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.spark.models.PSVector
+import com.tencent.angel.sona.models.PSVector
 import com.tencent.angel.ml.math2.vector.IntDoubleVector
 import com.tencent.angel.spark.util.VectorUtils
 
@@ -33,9 +33,12 @@ object LR {
     val params = ArgsUtil.parse(args)
     val ITERATIONS = params.getOrElse("numIter", "5").toInt
     val input = params.getOrElse("input", "data/a9a/a9a_123d_train.libsvm")
+    val mode = params.getOrElse("mode", "yarn-cluster")
     val lr = params.getOrElse("lr", "0.1").toDouble
 
-    val ss = SparkSession.builder().getOrCreate()
+    val ss = SparkSession.builder()
+      .master(mode)
+      .appName("LRExample").getOrCreate()
     val sc = ss.sparkContext
     val psc = PSContext.getOrCreate(sc)
 

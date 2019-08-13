@@ -23,7 +23,7 @@ import com.tencent.angel.ml.math2.storage.LongLongSortedVectorStorage;
 import com.tencent.angel.ml.math2.storage.LongLongSparseVectorStorage;
 import com.tencent.angel.ml.math2.storage.LongLongVectorStorage;
 import com.tencent.angel.ml.math2.vector.LongLongVector;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.longs.Long2LongMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;

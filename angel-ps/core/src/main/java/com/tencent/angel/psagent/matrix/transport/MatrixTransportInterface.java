@@ -30,7 +30,7 @@ import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateItem;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.server.data.response.GetClocksResponse;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplit;
 import com.tencent.angel.psagent.matrix.transport.adapter.*;

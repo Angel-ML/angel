@@ -1,11 +1,11 @@
 package com.tencent.angel.kubernetesmanager.deploy.config
 
-import com.tencent.angel.kubernetesmanager.deploy.config.Constants._
-import com.tencent.angel.kubernetesmanager.deploy.utils.KubernetesUtils
 import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.kubernetesmanager.deploy.config.Constants._
+import com.tencent.angel.kubernetesmanager.deploy.submit.KubernetesClientApplication._
+import com.tencent.angel.kubernetesmanager.deploy.utils.KubernetesUtils
 import io.fabric8.kubernetes.api.model.Pod
 import org.apache.hadoop.conf.Configuration
-import com.tencent.angel.kubernetesmanager.deploy.submit.KubernetesClientApplication._
 
 private[angel] sealed trait KubernetesRoleSpecificConf
 
@@ -16,24 +16,24 @@ private[angel] case class KubernetesMasterSpecificConf(appName: String)
  * Structure containing metadata for Kubernetes logic that builds a angel executor(ps or worker).
  */
 private[angel] case class KubernetesExecutorSpecificConf(
-    executorId: String,
-    masterPod: Option[Pod])
+                                                          executorId: String,
+                                                          masterPod: Option[Pod])
   extends KubernetesRoleSpecificConf
 
 /**
   * Structure containing metadata for Kubernetes logic to build angel pods.
   */
 private[angel] case class KubernetesConf[T <: KubernetesRoleSpecificConf](
-    angelConf: Configuration,
-    roleSpecificConf: T,
-    appResourceNamePrefix: String,
-    appId: String,
-    roleLabels: Map[String, String],
-    roleAnnotations: Map[String, String],
-    roleSecretNamesToMountPaths: Map[String, String],
-    roleSecretEnvNamesToKeyRefs: Map[String, String],
-    roleEnvs: Map[String, String],
-    roleVolumes: Iterable[KubernetesVolumeSpec[_ <: KubernetesVolumeSpecificConf]]) {
+                                                                           angelConf: Configuration,
+                                                                           roleSpecificConf: T,
+                                                                           appResourceNamePrefix: String,
+                                                                           appId: String,
+                                                                           roleLabels: Map[String, String],
+                                                                           roleAnnotations: Map[String, String],
+                                                                           roleSecretNamesToMountPaths: Map[String, String],
+                                                                           roleSecretEnvNamesToKeyRefs: Map[String, String],
+                                                                           roleEnvs: Map[String, String],
+                                                                           roleVolumes: Iterable[KubernetesVolumeSpec[_ <: KubernetesVolumeSpecificConf]]) {
 
 
   def namespace(): String = angelConf.get(AngelConf.ANGEL_KUBERNETES_NAMESPACE,
@@ -48,10 +48,10 @@ private[angel] case class KubernetesConf[T <: KubernetesRoleSpecificConf](
 
 private[angel] object KubernetesConf {
   def createMasterConf(
-      angelConf: Configuration,
-      appName: String,
-      appResourceNamePrefix: String,
-      appId: String): KubernetesConf[KubernetesMasterSpecificConf] = {
+                        angelConf: Configuration,
+                        appName: String,
+                        appResourceNamePrefix: String,
+                        appId: String): KubernetesConf[KubernetesMasterSpecificConf] = {
 
     val masterCustomLabels = KubernetesUtils.parsePrefixedKeyValuePairs(angelConf,
       AngelConf.ANGEL_KUBERNETES_MASTER_LABEL_PREFIX)
@@ -91,10 +91,10 @@ private[angel] object KubernetesConf {
   }
 
   def createExecutorConf(
-      angelConf: Configuration,
-      executorId: String,
-      appId: String,
-      masterPod: Option[Pod]): KubernetesConf[KubernetesExecutorSpecificConf] = {
+                          angelConf: Configuration,
+                          executorId: String,
+                          appId: String,
+                          masterPod: Option[Pod]): KubernetesConf[KubernetesExecutorSpecificConf] = {
     val executorCustomLabels = KubernetesUtils.parsePrefixedKeyValuePairs(
       angelConf, AngelConf.ANGEL_KUBERNETES_EXECUTOR_LABEL_PREFIX)
     require(

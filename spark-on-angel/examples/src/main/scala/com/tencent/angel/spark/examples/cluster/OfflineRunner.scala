@@ -20,7 +20,7 @@ package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.RunningMode
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.AngelMLConf
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.{ArgsUtil, GraphModel, OfflineLearner}
 import org.apache.spark.{SparkConf, SparkContext}
@@ -69,7 +69,7 @@ object OfflineRunner {
       }
     }
 
-    val sc = new SparkContext(conf)
+    val sc   = new SparkContext(conf)
 
     // start PS
     PSContext.getOrCreate(sc)

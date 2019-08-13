@@ -2,8 +2,8 @@ package com.tencent.angel.kubernetesmanager.deploy.utils
 
 import java.util.NoSuchElementException
 
-import com.tencent.angel.kubernetesmanager.deploy.config._
 import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.kubernetesmanager.deploy.config._
 import org.apache.hadoop.conf.Configuration
 
 import scala.collection.JavaConverters._
@@ -18,12 +18,12 @@ private[angel] object KubernetesUtils {
     * return the result as a Map. Keys must not have more than one value.
     *
     * @param angelConf Angel configuration
-    * @param prefix the given property name prefix
+    * @param prefix    the given property name prefix
     * @return a Map storing the configuration property keys and values
     */
   def parsePrefixedKeyValuePairs(
-    angelConf: Configuration,
-    prefix: String): Map[String, String] = {
+                                  angelConf: Configuration,
+                                  prefix: String): Map[String, String] = {
     angelConf.iterator().asScala.map(x => (x.getKey, x.getValue)).toArray
       .filter { case (k, v) => k.startsWith(prefix) }
       .map { case (k, v) => (k.substring(prefix.length), v) }.toMap
@@ -33,12 +33,12 @@ private[angel] object KubernetesUtils {
     * Extract Angel volume configuration properties with a given name prefix.
     *
     * @param angelConf Angel configuration
-    * @param prefix the given property name prefix
+    * @param prefix    the given property name prefix
     * @return a Map storing with volume name as key and spec as value
     */
   def parseVolumesWithPrefix(
-    angelConf: Configuration,
-    prefix: String): Iterable[Try[KubernetesVolumeSpec[_ <: KubernetesVolumeSpecificConf]]] = {
+                              angelConf: Configuration,
+                              prefix: String): Iterable[Try[KubernetesVolumeSpec[_ <: KubernetesVolumeSpecificConf]]] = {
     val properties = angelConf.iterator().asScala.map(x => (x.getKey, x.getValue)).toArray
       .filter { case (k, v) => k.startsWith(prefix) }
       .map { case (k, v) => (k.substring(prefix.length), v) }.toMap
@@ -63,12 +63,13 @@ private[angel] object KubernetesUtils {
     * Get unique pairs of volumeType and volumeName,
     * assuming options are formatted in this way:
     * `volumeType`.`volumeName`.`property` = `value`
+    *
     * @param properties flat mapping of property names to values
     * @return Set[(volumeType, volumeName)]
     */
   private def getVolumeTypesAndNames(
-    properties: Map[String, String]
-  ): Set[(String, String)] = {
+                                      properties: Map[String, String]
+                                    ): Set[(String, String)] = {
     properties.keys.flatMap { k =>
       k.split('.').toList match {
         case tpe :: name :: _ => Some((tpe, name))
@@ -78,9 +79,9 @@ private[angel] object KubernetesUtils {
   }
 
   private def parseVolumeSpecificConf(
-    options: Map[String, String],
-    volumeType: String,
-    volumeName: String): Try[KubernetesVolumeSpecificConf] = {
+                                       options: Map[String, String],
+                                       volumeType: String,
+                                       volumeName: String): Try[KubernetesVolumeSpecificConf] = {
     volumeType match {
       case AngelConf.ANGEL_KUBERNETES_VOLUMES_HOSTPATH_TYPE =>
         val pathKey = s"$volumeType.$volumeName." + AngelConf.ANGEL_KUBERNETES_VOLUMES_OPTIONS_PATH_KEY
@@ -117,4 +118,5 @@ private[angel] object KubernetesUtils {
         .fold[Try[B]](Failure(new NoSuchElementException(key.toString)))(Success(_))
     }
   }
+
 }

@@ -1,12 +1,12 @@
 package com.tencent.angel.spark.examples.basic
 
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.conf.AngelMLConf
 import com.tencent.angel.ml.core.optimizer.Adam
-import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.LabeledData
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.util.DataLoader
-import com.tencent.angel.spark.models.PSMatrix
+import com.tencent.angel.sona.models.PSMatrix
 import org.apache.spark.{SparkConf, SparkContext}
 import com.tencent.angel.ml.math2.vector.Vector
 

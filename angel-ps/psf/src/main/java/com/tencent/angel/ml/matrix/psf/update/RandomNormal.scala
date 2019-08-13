@@ -22,6 +22,7 @@ import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.matrix.psf.update.enhance.{MMUpdateFunc, MMUpdateParam}
 import com.tencent.angel.ps.storage.vector._
 import com.tencent.angel.ps.storage.vector.func._
+import com.tencent.angel.ps.storage.vector.op.{IDoubleValueOp, IFloatValueOp, IIntValueOp, ILongValueOp}
 
 /**
   * Generate a random array for `rowId`, each element belongs to normal distribution N(mean, stddev)
@@ -41,28 +42,28 @@ class RandomNormal(param: MMUpdateParam) extends MMUpdateFunc(param) {
     val stdDev = scalars(1)
     val rand = new util.Random(System.currentTimeMillis())
     rows.foreach {
-      case r: ServerDoubleRow =>
+      case r: IDoubleValueOp =>
         r.elemUpdate(new DoubleElemUpdateFunc {
           override def update(): Double = {
             stdDev * rand.nextGaussian() + mean
           }
         })
 
-      case r: ServerFloatRow =>
+      case r: IFloatValueOp =>
         r.elemUpdate(new FloatElemUpdateFunc {
           override def update(): Float = {
             (stdDev * rand.nextGaussian() + mean).toFloat
           }
         })
 
-      case r: ServerIntRow =>
+      case r: IIntValueOp =>
         r.elemUpdate(new IntElemUpdateFunc {
           override def update(): Int = {
             (stdDev * rand.nextGaussian() + mean).toInt
           }
         })
 
-      case r: ServerLongRow =>
+      case r: ILongValueOp =>
         r.elemUpdate(new LongElemUpdateFunc {
           override def update(): Long = {
             (stdDev * rand.nextGaussian() + mean).toLong

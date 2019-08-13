@@ -29,6 +29,7 @@ import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.storage.vector.ServerIntIntRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;
+import com.tencent.angel.ps.storage.vector.ServerRowUtils;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
@@ -87,14 +88,13 @@ public class LikelihoodFunc extends GetFunc {
     int len = (int) (row.getEndCol() - row.getStartCol());
     double ll = 0;
     if (row.isDense()) {
-      int[] values = ((IntIntDenseVectorStorage)(row.getSplit().getStorage())).getValues();
+      int[] values = ServerRowUtils.getVector(row).getStorage().getValues();
       for (int i = 0; i < len; i++) {
         if (values[i] > 0)
           ll += Gamma.logGamma(values[i] + beta) - lgammaBeta;
       }
     } else if (row.isSparse()) {
-      ObjectIterator<Int2IntMap.Entry> iterator = row.getIter();
-      ;
+      ObjectIterator<Int2IntMap.Entry> iterator = ServerRowUtils.getVector(row).getStorage().entryIterator();
       while (iterator.hasNext()) {
         Int2IntMap.Entry entry = iterator.next();
         int val = entry.getIntValue();

@@ -23,7 +23,8 @@ import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.io.load.SnapshotRecover;
 import com.tencent.angel.ps.storage.matrix.ServerMatrix;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
+import com.tencent.angel.ps.storage.partition.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -84,7 +85,7 @@ public class MatrixStorageManager {
    * @param matrixMeta the matrix partitions
    * @throws IOException load matrix partition from files failed
    */
-  public void addMatrix(MatrixMeta matrixMeta) throws IOException {
+  public void addMatrix(MatrixMeta matrixMeta) {
     int matrixId = matrixMeta.getId();
     if (matrixIdToDataMap.containsKey(matrixId)) {
       LOG.warn("MatrixId [" + matrixId + "] has already been added.");
@@ -129,7 +130,7 @@ public class MatrixStorageManager {
   public ServerRow getRow(int matrixId, int rowId, int partId) {
     ServerMatrix matrix = matrixIdToDataMap.get(matrixId);
     if (matrix != null) {
-      return matrix.getRow(partId, rowId);
+      return ((RowBasedPartition) matrix.getPartition(partId)).getRow(rowId);
     } else {
       return null;
     }

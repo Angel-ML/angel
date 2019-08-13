@@ -21,7 +21,7 @@ package com.tencent.angel.ml.matrix.psf.aggr
 
 import com.tencent.angel.ml.math2.storage.{DoubleVectorStorage, FloatVectorStorage, IntVectorStorage, LongVectorStorage}
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.UnaryAggrFunc
-import com.tencent.angel.ps.storage.vector.ServerRow
+import com.tencent.angel.ps.storage.vector.{ServerRow, ServerRowUtils}
 
 /**
   * The Aggregate function `Asum` will return the sum absolute value of the `rowId` row in
@@ -32,7 +32,7 @@ class Asum(matrixId: Int, rowId: Int) extends UnaryAggrFunc(matrixId, rowId) {
   def this() = this(-1, -1)
 
   override protected def processRow(row: ServerRow): Double = {
-    row.getSplit.getStorage match {
+    ServerRowUtils.getVector(row).getStorage match {
       case s: DoubleVectorStorage => s.getValues.map(math.abs).sum
       case s: FloatVectorStorage => s.getValues.map(math.abs).sum
       case s: LongVectorStorage => s.getValues.map(math.abs).sum

@@ -4,7 +4,7 @@ import com.tencent.angel.kubernetesmanager.deploy.config.{AngelPod, KubernetesCo
 import io.fabric8.kubernetes.api.model._
 
 private[angel] class MountSecretsFeatureStep(
-    kubernetesConf: KubernetesConf[_ <: KubernetesRoleSpecificConf])
+                                              kubernetesConf: KubernetesConf[_ <: KubernetesRoleSpecificConf])
   extends KubernetesFeatureConfigStep {
   override def configurePod(pod: AngelPod): AngelPod = {
     val addedVolumes = kubernetesConf

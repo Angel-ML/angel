@@ -9,10 +9,10 @@ import org.apache.hadoop.conf.Configuration
 import scala.collection.mutable
 
 private[angel] class AngelExecutorPodsLifecycleManager(
-                                                   conf: Configuration,
-                                                   executorBuilder: KubernetesAngelExecutorBuilder,
-                                                   kubernetesClient: KubernetesClient,
-                                                   snapshotsStore: AngelExecutorPodsSnapshotsStore) {
+                                                        conf: Configuration,
+                                                        executorBuilder: KubernetesAngelExecutorBuilder,
+                                                        kubernetesClient: KubernetesClient,
+                                                        snapshotsStore: AngelExecutorPodsSnapshotsStore) {
 
   private final val LOG: Log = LogFactory.getLog(classOf[AngelExecutorPodsLifecycleManager])
 
@@ -55,9 +55,9 @@ private[angel] class AngelExecutorPodsLifecycleManager(
   }
 
   private def onFinalNonDeletedState(
-      podState: FinalPodState,
-      execId: Long,
-      execIdsRemovedInRound: mutable.Set[Long]): Unit = {
+                                      podState: FinalPodState,
+                                      execId: Long,
+                                      execIdsRemovedInRound: mutable.Set[Long]): Unit = {
     removeExecutorFromK8s(podState.pod)
     execIdsRemovedInRound += execId
   }
@@ -67,9 +67,9 @@ private[angel] class AngelExecutorPodsLifecycleManager(
     // is still around.
     // Delete as best attempt - duplicate deletes will throw an exception but the end state
     // of getting rid of the pod is what matters.
-      kubernetesClient
-        .pods()
-        .withName(updatedPod.getMetadata.getName)
-        .delete()
+    kubernetesClient
+      .pods()
+      .withName(updatedPod.getMetadata.getName)
+      .delete()
   }
 }
