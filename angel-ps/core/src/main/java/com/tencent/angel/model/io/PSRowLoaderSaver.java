@@ -35,16 +35,19 @@ import com.tencent.angel.model.output.format.RowPartitionMeta;
 import com.tencent.angel.ps.storage.matrix.PartitionState;
 import com.tencent.angel.ps.storage.partition.RowBasedPartition;
 import com.tencent.angel.ps.storage.partition.ServerPartition;
+import com.tencent.angel.ps.storage.vector.ServerIntAnyRow;
 import com.tencent.angel.ps.storage.vector.ServerIntDoubleRow;
 import com.tencent.angel.ps.storage.vector.ServerIntFloatRow;
 import com.tencent.angel.ps.storage.vector.ServerIntIntRow;
 import com.tencent.angel.ps.storage.vector.ServerIntLongRow;
+import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
 import com.tencent.angel.ps.storage.vector.ServerLongDoubleRow;
 import com.tencent.angel.ps.storage.vector.ServerLongFloatRow;
 import com.tencent.angel.ps.storage.vector.ServerLongIntRow;
 import com.tencent.angel.ps.storage.vector.ServerLongLongRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.ps.storage.vector.ServerRowUtils;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -143,6 +146,10 @@ public class PSRowLoaderSaver extends PSMatrixLoaderSaverImpl {
         save((ServerLongIntRow) row, saveContext, meta, out);
       } else if (row instanceof ServerLongLongRow) {
         save((ServerLongLongRow) row, saveContext, meta, out);
+      } else if(row instanceof ServerIntAnyRow) {
+        save((ServerIntAnyRow) row, saveContext, meta, out);
+      } else if(row instanceof ServerLongAnyRow) {
+        save((ServerLongAnyRow) row, saveContext, meta, out);
       } else {
         throw new IOException("Unknown vector type " + row.getRowType());
       }
