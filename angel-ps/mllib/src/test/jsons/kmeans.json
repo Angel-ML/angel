@@ -1,0 +1,34 @@
+{
+  "data": {
+    "format": "libsvm",
+    "indexrange": 256,
+    "validateratio": 0.1
+  },
+  "train": {
+    "epoch": 5,
+    "lr": 1.0
+  },
+  "model": {
+    "modeltype": "T_DOUBLE_SPARSE"
+  },
+  "default_optimizer": {
+    "type": "kmeansoptimizer"
+  },
+  "layers": [
+    {
+      "name": "input",
+      "type": "kmeansinputlayer",
+      "outputdim": 10,
+      "transfunc": "identity",
+      "optimizer": {
+        "type": "kmeansoptimizer"
+      }
+    },
+    {
+      "name": "simplelosslayer",
+      "type": "losslayer",
+      "lossfunc": "kmeansloss",
+      "inputlayer": "input"
+    }
+  ]
+}

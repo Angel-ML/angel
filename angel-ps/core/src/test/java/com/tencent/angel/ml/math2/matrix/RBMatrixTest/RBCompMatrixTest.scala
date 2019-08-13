@@ -23,6 +23,7 @@ import java.util
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import com.tencent.angel.ml.math2.matrix._
+import com.tencent.angel.ml.math2.utils.MathException
 import com.tencent.angel.ml.math2.vector._
 import org.junit.{BeforeClass, Test}
 
@@ -448,18 +449,16 @@ class RBCompMatrixTest {
         try {
           matrixlist.get(i).add(matrixlist.get(j)).sum()
         } catch {
-          case e: AngelException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
       (0 until vectorlist.size).foreach { j =>
         try {
          matrixlist.get(i).add(vectorlist.get(j)).sum()
         } catch {
-          case e: AngelException => {
-           e
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
      matrixlist.get(i).add(2).sum()
@@ -471,18 +470,16 @@ class RBCompMatrixTest {
         try {
          lmatrixlist.get(i).add(lmatrixlist.get(j)).sum()
         } catch {
-          case e: AngelException => {
-           e
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
       (0 until lvectorlist.size).foreach { j =>
         try {
           lmatrixlist.get(i).add(lvectorlist.get(j)).sum()
         } catch {
-          case e: AngelException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
     }
@@ -495,18 +492,16 @@ class RBCompMatrixTest {
         try {
          matrixlist.get(i).sub(matrixlist.get(j)).sum()
         } catch {
-          case e: AngelException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
       (0 until vectorlist.size).foreach { j =>
         try {
           matrixlist.get(i).sub(vectorlist.get(j)).sum()
         } catch {
-          case e: AngelException => {
-           e
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
       matrixlist.get(i).sub(2).sum()
@@ -518,18 +513,16 @@ class RBCompMatrixTest {
         try {
           lmatrixlist.get(i).sub(lmatrixlist.get(j)).sum()
         } catch {
-          case e: AngelException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
       (0 until lvectorlist.size).foreach { j =>
         try {
          lmatrixlist.get(i).sub(lvectorlist.get(j)).sum()
         } catch {
-          case e: AngelException => {
-           e
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
     }
@@ -542,18 +535,16 @@ class RBCompMatrixTest {
         try {
           matrixlist.get(i).mul(matrixlist.get(j)).sum()
         } catch {
-          case e: AngelException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
       (0 until vectorlist.size).foreach { j =>
         try {
           matrixlist.get(i).mul(vectorlist.get(j)).sum()
         } catch {
-          case e: AngelException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
       matrixlist.get(i).mul(2).sum()
@@ -565,18 +556,16 @@ class RBCompMatrixTest {
         try {
           lmatrixlist.get(i).mul(lmatrixlist.get(j)).sum()
         } catch {
-          case e: AngelException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
       (0 until lvectorlist.size).foreach { j =>
         try {
           lmatrixlist.get(i).mul(lvectorlist.get(j)).sum()
         } catch {
-          case e: AngelException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
      lmatrixlist.get(i).mul(2).sum()
@@ -590,24 +579,18 @@ class RBCompMatrixTest {
         try {
           matrixlist.get(i).div(matrixlist.get(j)).sum()
         } catch {
-          case e: AngelException => {
-            e
-          }
-          case e: ArithmeticException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
+          case e: ArithmeticException => e
         }
       }
       (0 until vectorlist.size).foreach { j =>
         try {
           matrixlist.get(i).div(vectorlist.get(j)).sum()
         } catch {
-          case e: AngelException => {
-            e
-          }
-          case e: ArithmeticException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
+          case e: ArithmeticException => e
         }
       }
      matrixlist.get(i).div(2).sum()
@@ -619,24 +602,18 @@ class RBCompMatrixTest {
         try {
           lmatrixlist.get(i).div(lmatrixlist.get(j)).sum()
         } catch {
-          case e: AngelException => {
-            e
-          }
-          case e: ArithmeticException => {
-           e
-          }
+          case e: AngelException => e
+          case e: MathException => e
+          case e: ArithmeticException => e
         }
       }
       (0 until lvectorlist.size).foreach { j =>
         try {
          lmatrixlist.get(i).div(lvectorlist.get(j)).sum()
         } catch {
-          case e: AngelException => {
-            e
-          }
-          case e: ArithmeticException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
+          case e: ArithmeticException => e
         }
       }
       lmatrixlist.get(i).div(2).sum()
@@ -650,24 +627,18 @@ class RBCompMatrixTest {
         try {
          matrixlist.get(i).axpy(matrixlist.get(j), 2.0).sum()
         } catch {
-          case e: AngelException => {
-            e
-          }
-          case e: ArithmeticException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
+          case e: ArithmeticException => e
         }
       }
       (0 until vectorlist.size).foreach { j =>
         try {
          matrixlist.get(i).axpy(vectorlist.get(j), 2.0).sum()
         } catch {
-          case e: AngelException => {
-           e
-          }
-          case e: ArithmeticException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
+          case e: ArithmeticException => e
         }
       }
     }
@@ -678,24 +649,18 @@ class RBCompMatrixTest {
         try {
          lmatrixlist.get(i).axpy(lmatrixlist.get(j), 2.0).sum()
         } catch {
-          case e: AngelException => {
-            e
-          }
-          case e: ArithmeticException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
+          case e: ArithmeticException => e
         }
       }
       (0 until lvectorlist.size).foreach { j =>
         try {
           lmatrixlist.get(i).axpy(lvectorlist.get(j), 2.0).sum()
         } catch {
-          case e: AngelException => {
-            e
-          }
-          case e: ArithmeticException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
+          case e: ArithmeticException => e
         }
       }
     }
