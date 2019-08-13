@@ -850,10 +850,10 @@ public class MatrixClientImpl extends MatrixClient {
   }
 
   @Override
-  public FutureResult<VoidResult> checkpoint() throws AngelException {
+  public FutureResult<VoidResult> checkpoint(int id) throws AngelException {
     try {
       LOG.info("checkpoint matrixId=" + matrixId);
-      return PSAgentContext.get().getUserRequestAdapter().checkpoint(matrixId);
+      return PSAgentContext.get().getUserRequestAdapter().checkpoint(matrixId, id);
     } catch (Throwable x) {
       throw new AngelException(x);
     }

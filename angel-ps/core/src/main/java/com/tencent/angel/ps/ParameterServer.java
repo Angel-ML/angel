@@ -24,7 +24,7 @@ import com.tencent.angel.RunningMode;
 import com.tencent.angel.common.AngelEnvironment;
 import com.tencent.angel.common.location.Location;
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.conf.MatrixConf;
+import com.tencent.angel.master.matrix.committer.SaveResult;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.PartitionMeta;
 import com.tencent.angel.model.PSMatricesLoadContext;
@@ -348,6 +348,9 @@ public class ParameterServer {
     Configuration conf = new Configuration();
     conf.addResource(AngelConf.ANGEL_JOB_CONF_FILE);
 
+    conf.setInt("io.file.buffer.size", conf.getInt(AngelConf.ANGEL_PS_IO_FILE_BUFFER_SIZE,
+        AngelConf.DEFAULT_ANGEL_PS_IO_FILE_BUFFER_SIZE));
+
     String user = System.getenv(ApplicationConstants.Environment.USER.name());
     UserGroupInformation.setConfiguration(conf);
 
@@ -663,7 +666,7 @@ public class ParameterServer {
       List<PSMatrixLoadContext> matrixLoadContexts = new ArrayList<>(matrixMetas.size());
       SnapshotRecover recover = new SnapshotRecover(context);
       for (int i = 0; i < matrixNum; i++) {
-        // First check snapshot
+        // 1. First check old snapshot
         Path inputPath = null;
         try {
           inputPath = recover.getSnapshotPath(matrixMetas.get(i).getId());
@@ -671,19 +674,64 @@ public class ParameterServer {
           LOG.error("Get snapshot path failed, ", e);
         }
 
-        // Check load path setting
+        // 2. Check new checkpoints
         if (inputPath == null) {
-          String loadPathStr = matrixMetas.get(i).getAttribute(MatrixConf.MATRIX_LOAD_PATH);
-          if (loadPathStr != null) {
-            inputPath = new Path(loadPathStr, matrixMetas.get(i).getName());
+          try {
+            List<SaveResult> saveResults = master.getCheckpoints(matrixMetas.get(i).getId());
+            if (saveResults == null || saveResults.isEmpty()) {
+              LOG.info("There is no checkpoint results for matrix " + matrixMetas.get(i).getName());
+            } else {
+              inputPath = new Path(saveResults.get(saveResults.size() - 1).getMatrixPath());
+              LOG.info(
+                  "There is " + saveResults.size() + " checkpoint results for matrix + "
+                      + matrixMetas
+                      .get(i).getName()
+                      + " we choose the latest result in dir " + saveResults
+                      .get(saveResults.size() - 1).getMatrixPath());
+            }
+          } catch (ServiceException e) {
+            LOG.error(
+                "Get checkpoint results for matrix " + matrixMetas.get(i).getName() + " failed ",
+                e);
+          }
+        }
+
+        // 3. Check load path setting and old save result
+        if (inputPath == null) {
+          try {
+            List<SaveResult> saveResults = master.getSaveResult(matrixMetas.get(i).getId());
+            if (saveResults == null || saveResults.isEmpty()) {
+              LOG.info("There is no old save result for matrix " + matrixMetas.get(i).getName());
+            } else {
+              inputPath = new Path(saveResults.get(saveResults.size() - 1).getMatrixPath());
+              LOG.info(
+                  "There is " + saveResults.size() + " old save results for matrix + " + matrixMetas
+                      .get(i).getName()
+                      + " we choose the latest result in dir " + saveResults
+                      .get(saveResults.size() - 1).getMatrixPath());
+            }
+          } catch (ServiceException e) {
+            LOG.error("Get save results for matrix " + matrixMetas.get(i).getName() + " failed ",
+                e);
           }
         }
 
         if (inputPath != null) {
+          LOG.info("Load matrix " + matrixMetas.get(i).getName() + " from " + inputPath.toString());
           matrixLoadContexts.add(new PSMatrixLoadContext(matrixMetas.get(i).getId(),
-              new Path(inputPath.toString(), matrixMetas.get(i).getName()).toString(),
+              inputPath.toString(),
               new ArrayList<>(matrixMetas.get(i).getPartitionMetas().keySet()),
               SnapshotFormat.class.getName()));
+        } else {
+          // Just init it again
+          if (matrixMetas.get(i).getInitFunc() != null) {
+            LOG.info("Matrix " + matrixMetas.get(i) + " has a init function " + matrixMetas.get(i)
+                .getInitFunc().getClass().getName() + ", use this function to reinit the matrix");
+            long startTs = System.currentTimeMillis();
+            matrixMetas.get(i).getInitFunc()
+                .init(context.getMatrixStorageManager().getMatrix(matrixMetas.get(i).getId()));
+            LOG.info("Reinit the matrix use time " + (System.currentTimeMillis() - startTs));
+          }
         }
       }
 

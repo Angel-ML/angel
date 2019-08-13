@@ -7,14 +7,16 @@ import io.netty.buffer.ByteBuf;
 public class CheckpointPSRequest extends PSRequest {
 
   private int matrixId;
+  private int checkPointId;
 
-  public CheckpointPSRequest(int userRequestId, int matrixId, ParameterServerId psId) {
+  public CheckpointPSRequest(int userRequestId, int matrixId, int checkPointId, ParameterServerId psId) {
     super(userRequestId, psId);
     this.matrixId = matrixId;
+    this.checkPointId = checkPointId;
   }
 
   public CheckpointPSRequest() {
-    this(-1, -1, null);
+    this(-1, -1, -1, null);
   }
 
   public int getMatrixId() {
@@ -25,6 +27,14 @@ public class CheckpointPSRequest extends PSRequest {
     this.matrixId = matrixId;
   }
 
+  public int getCheckPointId() {
+    return checkPointId;
+  }
+
+  public void setCheckPointId(int checkPointId) {
+    this.checkPointId = checkPointId;
+  }
+
   @Override
   public int getEstimizeDataSize() {
     return 0;
@@ -33,15 +43,17 @@ public class CheckpointPSRequest extends PSRequest {
   @Override public void serialize(ByteBuf buf) {
     super.serialize(buf);
     buf.writeInt(matrixId);
+    buf.writeInt(checkPointId);
   }
 
   @Override public void deserialize(ByteBuf buf) {
     super.deserialize(buf);
     matrixId = buf.readInt();
+    checkPointId = buf.readInt();
   }
 
   @Override public int bufferLen() {
-    return 4 + super.bufferLen();
+    return 4 + 4 + super.bufferLen();
   }
 
   @Override

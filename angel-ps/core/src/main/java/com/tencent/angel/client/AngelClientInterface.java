@@ -78,6 +78,14 @@ public interface AngelClientInterface {
   void load(ModelLoadContext context) throws AngelException;
 
   /**
+   * Recover the model from the checkpoint
+   * @param checkpointId the checkpoint id
+   * @param context load context
+   * @throws AngelException
+   */
+  void recover(int checkpointId, ModelLoadContext context) throws AngelException;
+
+  /**
    * Accept specified task and start
    *
    * @param taskClass
@@ -117,6 +125,14 @@ public interface AngelClientInterface {
    * @throws AngelException
    */
   void save(ModelSaveContext context) throws AngelException;
+
+  /**
+   * Write the model checkpoint
+   * @param checkpointId the checkpoint id
+   * @param context save context
+   * @throws AngelException
+   */
+  void checkpoint(int checkpointId, ModelSaveContext context) throws AngelException;
 
   /**
    * Stop the whole application.

@@ -150,6 +150,20 @@ public class AngelConf extends Configuration {
   public static final boolean DEFAULT_ANGEL_SAVE_MODEL_EPOCH_TIGGER_ENABLE = false;
 
   /**
+   * Maximum save results number
+   */
+  public static final String ANGEL_SAVE_MODEL_MAX_RESULTS_FOR_SINGLE_MATRIX =
+      "angel.save.model.max.results.for.single.matrix";
+  public static final int DEFAULT_ANGEL_SAVE_MODEL_MAX_RESULTS_FOR_SINGLE_MATRIX = 2;
+
+  /**
+   * Maximum save results number
+   */
+  public static final String ANGEL_CHECKPOINT_MAX_RESULTS_FOR_SINGLE_MATRIX =
+      "angel.checkpoint.max.results.for.single.matrix";
+  public static final int DEFAULT_ANGEL_CHECKPOINT_MAX_RESULTS_FOR_SINGLE_MATRIX = 1;
+
+  /**
    * Save model every how many epochs, it is effective only as "angel.save.model.epoch.trigger.enable"
    * is set to true
    */
@@ -350,7 +364,7 @@ public class AngelConf extends Configuration {
 
   public static final String ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS =
       "angel.client.heartbeat.interval.timeout.ms";
-  public static final int DEFAULT_ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS = 30000;
+  public static final int DEFAULT_ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS = 3000000;
 
   // //////////////////////////////
   // Master Configs
@@ -889,6 +903,12 @@ public class AngelConf extends Configuration {
   public static final int DEFAULT_ANGEL_PS_HA_SYNC_SEND_BUFFER_SIZE = 1024 * 1024;
 
   /**
+   * File read/write buffer size in PS
+   */
+  public static final String ANGEL_PS_IO_FILE_BUFFER_SIZE = ANGEL_PS_PREFIX + "io.file.buffer.size";
+  public static final int DEFAULT_ANGEL_PS_IO_FILE_BUFFER_SIZE = 4 * 1024 * 1024;
+
+  /**
    * Ps resource priority, it use to YARN container allocation. The smaller the priority, the higher
    * the priority.
    */
@@ -934,6 +954,9 @@ public class AngelConf extends Configuration {
 
   public static final String Angel_PS_PARTITION_CLASS =
       ANGEL_PS_PREFIX + "partition.class";
+
+  public static final String ANGEL_PS_CHECKPOINTS_MAX_NUM = ANGEL_PS_PREFIX + "checkpoint.max.num";
+  public static final int DEFAULT_ANGEL_PS_CHECKPOINTS_MAX_NUM = 1;
 
   public static final String ANGEL_PS_MAX_LOCK_WAITTIME_MS = ANGEL_PS_PREFIX + "max.lock.waittime";
   public static final int DEFAULT_ANGEL_PS_MAX_LOCK_WAITTIME_MS = 10000;

@@ -23,6 +23,7 @@ import com.tencent.angel.common.location.Location;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.master.MasterProtocol;
+import com.tencent.angel.master.matrix.committer.SaveResult;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.PartitionLocation;
 import com.tencent.angel.model.PSMatricesLoadResult;
@@ -326,5 +327,49 @@ public class MasterClient {
     masterProxy.loadStart(null, LoadStartRequest.newBuilder()
       .setPsAttemptId(ProtobufUtil.convertToIdProto(context.getPSAttemptId()))
       .setRequestId(requestId).setSubRequestId(subRequestId).build());
+  }
+
+  /**
+   * Get matrix save result contexts
+   * @param matrixId matrix id
+   * @return matrix save result contexts
+   * @throws ServiceException
+   */
+  public List<SaveResult> getSaveResult(int matrixId) throws ServiceException {
+    GetSaveResultsResponse response = masterProxy
+        .getSaveResults(null, GetSaveResultsRequest.newBuilder().setMatrixId(matrixId).build());
+    List<SaveResultProto> resultProtos = response.getSaveResultsList();
+    if(resultProtos == null || resultProtos.isEmpty()) {
+      return new ArrayList<>(0);
+    }
+
+    List<SaveResult> results = new ArrayList<>(resultProtos.size());
+    for(SaveResultProto resultProto : resultProtos) {
+      results.add(ProtobufUtil.convert(resultProto));
+    }
+
+    return results;
+  }
+
+  /**
+   * Get matrix checkpoint result contexts
+   * @param matrixId matrix id
+   * @return matrix checkpoint result contexts
+   * @throws ServiceException
+   */
+  public List<SaveResult> getCheckpoints(int matrixId) throws ServiceException {
+    GetCheckpointsResponse response = masterProxy
+        .getCheckpointResults(null, GetCheckpointsRequest.newBuilder().setMatrixId(matrixId).build());
+    List<SaveResultProto> resultProtos = response.getSaveResultsList();
+    if(resultProtos == null || resultProtos.isEmpty()) {
+      return new ArrayList<>(0);
+    }
+
+    List<SaveResult> results = new ArrayList<>(resultProtos.size());
+    for(SaveResultProto resultProto : resultProtos) {
+      results.add(ProtobufUtil.convert(resultProto));
+    }
+
+    return results;
   }
 }
