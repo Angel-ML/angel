@@ -18,6 +18,7 @@
 
 package com.tencent.angel.spark.context
 
+import java.security.PrivilegedExceptionAction
 import java.util
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -38,13 +39,13 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.util.ShutdownHookManager
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.{SparkConf, SparkContext, SparkEnv, TaskContext}
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{Map, mutable}
-
 import org.apache.commons.httpclient.URI
-
 import com.tencent.angel.ps.storage.partitioner.Partitioner
+import org.apache.hadoop.security.UserGroupInformation
 
 /**
   * AngelPSContext for driver and executor, it is an implement of `PSContext`
@@ -249,10 +250,22 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
 
   private[spark] def conf: Map[String, String] = angelConf
 
+  override def createMatrix(mc: MatrixContext): MatrixMeta = {
+    //assertCallByDriver("The operation of creating a matrix can only be called on the driver side.")
+    psAgent.createMatrix(mc, 5000L)
+    val meta = psAgent.getMatrix(mc.getName)
+    matrixCounter += 1
+    matrixMetaMap(meta.getId) = meta
+    meta
+  }
+
   override def save(ctx: ModelSaveContext): Unit = AngelPSContext.save(ctx)
+
+  override def checkpoint(checkpointId:Int, ctx: ModelSaveContext): Unit = AngelPSContext.checkpoint(checkpointId, ctx)
 
   override def load(ctx: ModelLoadContext): Unit = AngelPSContext.load(ctx)
 
+  override def recover(checkpointId:Int, ctx: ModelLoadContext): Unit = AngelPSContext.recover(checkpointId, ctx)
 }
 
 private[spark] object AngelPSContext {
@@ -290,9 +303,18 @@ private[spark] object AngelPSContext {
     angelClient.save(context)
   }
 
+  def checkpoint(checkpointId:Int, context: ModelSaveContext): Unit = {
+    angelClient.checkpoint(checkpointId, context)
+  }
+
   def load(context: ModelLoadContext): Unit = {
     angelClient.load(context)
   }
+
+  def recover(checkpointId:Int, context: ModelLoadContext): Unit = {
+    angelClient.recover(checkpointId, context)
+  }
+
 
   //Start Angel
   private def launchAngel(conf: SparkConf): AngelContext = {

@@ -21,14 +21,13 @@ package com.tencent.angel.spark.util
 import java.util.concurrent.Future
 
 import org.apache.spark.SparkException
-
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.matrix.psf.aggr._
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
 import com.tencent.angel.ml.matrix.psf.update.enhance.map._
-import com.tencent.angel.ml.matrix.psf.update.enhance.map.func.MapFunc
+import com.tencent.angel.ml.matrix.psf.update.enhance.map.func.{Abs, DivS, MapFunc, MulS, Sqrt}
 import com.tencent.angel.ml.matrix.psf.update.enhance.zip2._
 import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.func.{Zip2MapFunc, Zip2MapWithIndexFunc}
 import com.tencent.angel.ml.matrix.psf.update.{Compress, RandomNormal, RandomUniform}
@@ -63,6 +62,26 @@ object VectorUtils {
   def mapInPlace(proxy: PSVector, func: MapFunc): Unit = {
     proxy.assertValid()
     update(proxy.poolId, new MapInPlace(proxy.poolId, proxy.id, func))
+  }
+
+  def iabs(proxy: PSVector): Unit = {
+    proxy.assertValid()
+    update(proxy.poolId, new MapInPlace(proxy.poolId, proxy.id, new Abs(true)))
+  }
+
+  def imul(proxy: PSVector, x: Double): Unit = {
+    proxy.assertValid()
+    update(proxy.poolId, new MapInPlace(proxy.poolId, proxy.id, new MulS(x, true)))
+  }
+
+  def idiv(proxy: PSVector, x: Double): Unit = {
+    proxy.assertValid()
+    update(proxy.poolId, new MapInPlace(proxy.poolId, proxy.id, new DivS(x, true)))
+  }
+
+  def isqrt(proxy: PSVector): Unit = {
+    proxy.assertValid()
+    update(proxy.poolId, new MapInPlace(proxy.poolId, proxy.id, new Sqrt(true)))
   }
 
   /**
@@ -155,6 +174,15 @@ object VectorUtils {
   def nnz(vector: PSVector): Long = {
     vector.assertValid()
     psfGet(vector.poolId, new Nnz(vector.poolId, vector.id))
+      .asInstanceOf[ScalarAggrResult].getResult.toLong
+  }
+
+  /**
+    * Count the number of elements in `vector`
+    */
+  def size(vector: PSVector): Long = {
+    vector.assertValid()
+    psfGet(vector.poolId, new Size(vector.poolId, vector.id))
       .asInstanceOf[ScalarAggrResult].getResult.toLong
   }
 
