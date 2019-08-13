@@ -201,6 +201,7 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
       }
 
       val y: Double = instance.getY
+      val attach: String = instance.getAttach
       var pred: Double = 0
 
       (0 until this.maxTreeNum).foreach { treeIdx =>
@@ -221,8 +222,8 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
         pred += lr * curPred
       }
 
-      predict.put(GBDTPredictResult(instance.getAttach, y, pred))
-      LOG.debug(s"instance[$idx]: label[$y], pred[$pred]")
+      predict.put(GBDTPredictResult(attach, pred, if (y.isNaN) 0.0 else y))
+      LOG.debug(s"instance[$idx]: attach[$attach] pred[$pred] label[$y]")
 
       if (y > 0) {
         posNum += 1
@@ -233,7 +234,7 @@ class GBDTModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
       }
     }
 
-    LOG.info(s"Positive accuracy: ${posTrue.toDouble / posNum.toDouble}, " +
+    LOG.debug(s"Positive accuracy: ${posTrue.toDouble / posNum.toDouble}, " +
       s"negative accuracy: ${negTrue.toDouble / negNum.toDouble}")
     predict
   }

@@ -127,8 +127,8 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
     .setOplogType("T_INT_SPARSE")
 
   val tMat = PSModel(TOPIC_MAT, 1, K, 1, K)
-    .setRowType(RowType.T_INT_DENSE)
-    .setOplogType("T_INT_DENSE")
+    .setRowType(RowType.T_LONG_DENSE)
+    .setOplogType("T_LONG_DENSE")
     .setNeedSave(false)
 
 
@@ -162,7 +162,7 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
 
   def loadModel(): Unit = {
     val paths = getPaths()
-    val update = VFactory.denseIntVector(K)
+    val update = VFactory.denseLongVector(K)
 
     System.out.println(paths.length)
 

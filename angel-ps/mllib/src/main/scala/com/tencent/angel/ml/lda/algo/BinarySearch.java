@@ -24,11 +24,14 @@ public class BinarySearch {
   public static int binarySearch(double[] p, double u, int start, int end) {
     int pstart = start, pend = end;
 
+    if (start == end)
+      return start;
+
     while (pstart < pend) {
       if (pstart + 1 == pend) {
         if (p[pstart] > u)
           return pstart;
-        else if (p[end] > u)
+        else if (p[end] >= u)
           return pend;
         else
           return -1;
@@ -50,13 +53,26 @@ public class BinarySearch {
   }
 
   public static int binarySearch(float[] p, float u, int start, int end) {
+//    if (u >= p[end]) {
+//      System.out.println("u=" + u + " p[end]=" + p[end] + " start=" + start + " end=" + end);
+//      return end;
+//    }
+//
+//    if (u < p[start]) {
+//      System.out.println("u=" + u + " p[start]=" + p[start] + " start=" + start + " end=" + end);
+//      return start;
+//    }
+
     int pstart = start, pend = end;
+
+    if (start == end)
+      return start;
 
     while (pstart < pend) {
       if (pstart + 1 == pend) {
         if (p[pstart] > u)
           return pstart;
-        else if (p[end] > u)
+        else if (p[end] >= u)
           return pend;
         else
           return -1;

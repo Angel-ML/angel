@@ -33,7 +33,7 @@ import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.lda.algo.{CSRTokens, Sampler}
 import com.tencent.angel.ml.lda.psf._
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.vector.IntIntVector
+import com.tencent.angel.ml.math2.vector.{IntIntVector, IntLongVector}
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult
 import com.tencent.angel.ml.matrix.psf.get.getrows.PartitionGetRowsParam
@@ -84,7 +84,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
   val lgammaAlpha = Gamma.logGamma(alpha)
   val lgammaAlphaSum = Gamma.logGamma(alpha * model.K)
 
-  val nk = new Array[Int](model.K)
+  val nk = new Array[Long](model.K)
 
   globalMetrics.addMetric(LOG_LIKELIHOOD, new ObjMetric())
 
@@ -113,7 +113,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
   }
 
   def fetchNk(): Unit = {
-    val row = model.tMat.getRow(0).asInstanceOf[IntIntVector]
+    val row = model.tMat.getRow(0).asInstanceOf[IntLongVector]
     val values = row.getStorage.getValues
     System.arraycopy(values, 0, nk, 0, nk.length)
     LOG.info(s"sum of nk (total tokens) = ${row.sum()}")
@@ -265,7 +265,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
     if (update) {
       // Calculate the delta value of nk
       // The take means that all tasks have been finished
-      val update = VFactory.denseIntVector(model.K)
+      val update = VFactory.denseLongVector(model.K)
       for (i <- 0 until model.threadNum) {
         val sampler = queue.take()
         for (i <- 0 until model.K)
@@ -307,7 +307,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
     if (update) {
       // calculate the delta value of nk
       // the take means that all tasks have been finished
-      val update = VFactory.denseIntVector(model.K)
+      val update = VFactory.denseLongVector(model.K)
       for (i <- 0 until model.threadNum) {
         val sampler = queue.take()
         for (i <- 0 until model.K)
