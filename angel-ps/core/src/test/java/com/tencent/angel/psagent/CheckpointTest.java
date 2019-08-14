@@ -188,8 +188,8 @@ public class CheckpointTest {
 
     client.increment(deltaVec, true);
     //client1.clock().get();
-    client.checkpoint().get();
-    client.checkpoint().get();
+    client.checkpoint(0).get();
+    client.checkpoint(1).get();
 
     ps.stop(-1);
     PSErrorRequest request = PSErrorRequest.newBuilder()
