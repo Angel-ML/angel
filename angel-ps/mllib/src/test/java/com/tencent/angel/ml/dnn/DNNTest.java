@@ -72,7 +72,7 @@ public class DNNTest {
       conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
       String angelConfFile = "./src/test/jsons/dnn.json";
       conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
-      conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "GraphModel");
+      conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "AngelModel");
 
     } catch (Exception x) {
       LOG.error("setup failed ", x);
