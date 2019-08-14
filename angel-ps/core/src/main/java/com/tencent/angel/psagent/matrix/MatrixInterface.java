@@ -569,5 +569,5 @@ public interface MatrixInterface {
    * Dump the snapshot to HDFS
    * @throws AngelException
    */
-  FutureResult<VoidResult> checkpoint() throws AngelException;
+  FutureResult<VoidResult> checkpoint(int id) throws AngelException;
 }

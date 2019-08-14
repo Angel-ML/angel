@@ -104,15 +104,9 @@ public class PSModelLoader {
    * @param loadContext load context
    */
   public void load(PSMatricesLoadContext loadContext) {
+    writeLock.lock();
     try {
-      context.getMaster().loadStart(loadContext.getRequestId(), loadContext.getSubRequestId());
-    } catch (Throwable e) {
-      LOG.error("send load start message to master failed ", e);
-      return;
-    }
-    try {
-      writeLock.lock();
-      if (loadContext.getRequestId() == currentRequestId) {
+      if (loadContexts.containsKey(loadContext.getRequestId())) {
         LOG.info("Load task " + loadContexts.get(currentRequestId) + " is running");
         return;
       }
@@ -124,6 +118,7 @@ public class PSModelLoader {
           fileOpExecutor.shutdown();
         }
       }
+
       currentRequestId = loadContext.getRequestId();
       lastRequestId = currentRequestId;
       loadContexts.put(currentRequestId, loadContext);

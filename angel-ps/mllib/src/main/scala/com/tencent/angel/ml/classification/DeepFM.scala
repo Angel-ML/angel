@@ -30,7 +30,7 @@ import com.tencent.angel.mlcore.optimizer.loss.LogLoss
 import com.tencent.angel.worker.task.TaskContext
 
 
-class DeepFM(conf: SharedConf, _ctx: TaskContext = null) extends AngelModel(conf, _ctx.getTotalTaskNum) {
+class DeepFM(conf: SharedConf, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
   val numFields: Int = conf.getInt(MLCoreConf.ML_FIELD_NUM, MLCoreConf.DEFAULT_ML_FIELD_NUM)
   val numFactors: Int = conf.getInt(MLCoreConf.ML_RANK_NUM, MLCoreConf.DEFAULT_ML_RANK_NUM)
   val optProvider = new PSOptimizerProvider(conf)

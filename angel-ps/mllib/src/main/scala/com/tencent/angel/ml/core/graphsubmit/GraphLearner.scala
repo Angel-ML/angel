@@ -42,7 +42,8 @@ class GraphLearner(conf: SharedConf, ctx: TaskContext) extends MLLearner(ctx) {
   val lr0: Double = conf.learningRate
 
   // Init Graph Model
-  val model: AngelModel = new AngelModel(conf, ctx.getTotalTaskNum)
+  val modelClassName: String = sharedConf.modelClassName
+  val model: AngelModel = AngelModel(modelClassName, conf, ctx)
   model.buildNetwork()
   model.createMatrices(AngelEnvContext(null))
   val graph: Graph = model.graph

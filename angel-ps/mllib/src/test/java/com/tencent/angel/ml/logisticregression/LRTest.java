@@ -101,7 +101,7 @@ public class LRTest {
       conf.setLong(AngelMLConf.ML_MODEL_SIZE(), 123);
       conf.set(AngelMLConf.ML_INPUTLAYER_OPTIMIZER(), optimizer);
       // conf.setDouble(AngelMLConf.ML_DATA_POSNEG_RATIO(), posnegRatio);
-      conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "GraphModel");
+      conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "AngelModel");
       conf.setStrings(AngelConf.ANGEL_ML_CONF, jsonFile);
       conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
     } catch (Exception x) {

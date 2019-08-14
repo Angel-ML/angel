@@ -21,6 +21,7 @@ package com.tencent.angel.ml.matrix;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.ps.storage.matrix.PSMatrixInit;
 import com.tencent.angel.ps.storage.partition.IServerPartition;
 import com.tencent.angel.ps.storage.partition.storage.IServerPartitionStorage;
 import com.tencent.angel.ps.storage.vector.element.IElement;
@@ -391,4 +392,11 @@ public class MatrixMeta {
     return matrixContext.getPartitionStorageClass();
   }
 
+  /**
+   * Get PS Matrix initialization function
+   * @return PS Matrix initialization function
+   */
+  public PSMatrixInit getInitFunc() {
+    return matrixContext.getInitFunc();
+  }
 }

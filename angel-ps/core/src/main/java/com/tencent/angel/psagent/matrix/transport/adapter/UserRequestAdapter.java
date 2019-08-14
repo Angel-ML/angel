@@ -810,11 +810,11 @@ public class UserRequestAdapter {
     return getRowsFlow(result, index, batchSize, -1);
   }
 
-  public FutureResult<VoidResult> checkpoint(int matrixId) {
+  public FutureResult<VoidResult> checkpoint(int matrixId, int checkPointId) {
     List<ParameterServerId> pss = PSAgentContext.get().getMatrixMetaManager().getPss(matrixId);
     MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
 
-    CheckpointRequest request = new CheckpointRequest(UserRequestType.CHECKPOINT, matrixId);
+    CheckpointRequest request = new CheckpointRequest(UserRequestType.CHECKPOINT, matrixId, checkPointId);
     CheckpointCache cache = new CheckpointCache(pss.size());
     FutureResult<VoidResult> result = new FutureResult<>();
     int requestId = request.getRequestId();
@@ -823,7 +823,7 @@ public class UserRequestAdapter {
 
     requests.put(requestId, request);
     for(ParameterServerId psId : pss) {
-      matrixClient.checkpoint(requestId, matrixId, psId);
+      matrixClient.checkpoint(requestId, matrixId, checkPointId, psId);
     }
 
     return result;

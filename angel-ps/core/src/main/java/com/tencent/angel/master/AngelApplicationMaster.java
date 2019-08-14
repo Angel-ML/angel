@@ -496,7 +496,9 @@ public class AngelApplicationMaster extends CompositeService {
       LOG.info("Deleting tmp output directory " + tmpOutDir);
       Path tmpOutPath = new Path(tmpOutDir);
       FileSystem fs = tmpOutPath.getFileSystem(conf);
-      fs.delete(tmpOutPath, true);
+      if(!fs.delete(tmpOutPath, true)) {
+        LOG.error("Failed to cleanup staging dir " + tmpOutDir);
+      }
     } catch (IOException io) {
       LOG.error("Failed to cleanup staging dir " + tmpOutDir, io);
     }

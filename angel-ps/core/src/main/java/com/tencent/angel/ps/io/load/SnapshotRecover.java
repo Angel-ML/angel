@@ -21,8 +21,10 @@ package com.tencent.angel.ps.io.load;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.ps.PSContext;
+import com.tencent.angel.utils.Sort;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
@@ -63,23 +65,7 @@ public class SnapshotRecover {
    * @throws IOException
    */
   public Path getSnapshotBasePath() throws IOException {
-    FileSystem fs = baseDirPath.getFileSystem(context.getConf());
-    Path lastAttemptSnapshotPath = null;
-    int lastAttempt = context.getPSAttemptId().getIndex();
-    while (lastAttempt >= 0) {
-      lastAttemptSnapshotPath = new Path(baseDirPath, String.valueOf(lastAttempt));
-      if (fs.exists(lastAttemptSnapshotPath)) {
-        LOG.info("find snapshot directory for " + context.getPSAttemptId() + ", the path is "
-          + lastAttemptSnapshotPath);
-        break;
-      } else {
-        LOG.warn("ps: " + context.getPSAttemptId().getPsId() + ", attempt " + lastAttempt
-          + " failed without write snapshots!");
-        lastAttemptSnapshotPath = null;
-        lastAttempt--;
-      }
-    }
-    return lastAttemptSnapshotPath;
+    return baseDirPath;
   }
 
   /**
@@ -90,19 +76,38 @@ public class SnapshotRecover {
    * @throws IOException
    */
   public Path getSnapshotPath(int matrixId) throws IOException {
-    Path basePath = getSnapshotBasePath();
-    if (basePath == null) {
-      return null;
-    }
-
     String name = context.getMatrixMetaManager().getMatrixMeta(matrixId).getName();
-    Path matrixPath = new Path(basePath, name);
+    Path matrixPath = new Path(baseDirPath, name);
     FileSystem fs = matrixPath.getFileSystem(context.getConf());
 
+    // If matrix checkpoint path not exist, just return null
     if (!fs.exists(matrixPath)) {
       return null;
-    } else {
-      return basePath;
     }
+
+    // Return the path with maximum checkpoint id
+    FileStatus[] status = fs.listStatus(matrixPath);
+    if(status == null || status.length == 0) {
+      return null;
+    }
+
+    int maxCheckpointId = Integer.MIN_VALUE;
+    int index = 0;
+    for (int i = 0; i < status.length; i++) {
+      int id = 0;
+      try {
+        id = Integer.valueOf(status[i].getPath().getName());
+      } catch (Throwable x) {
+        LOG.warn("Path " + status[i].getPath().toString()
+            + " is not a valid checkpoint path");
+      }
+
+      if(id > maxCheckpointId) {
+        maxCheckpointId = id;
+        index = i;
+      }
+    }
+
+    return status[index].getPath();
   }
 }

@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -20,28 +20,24 @@ package com.tencent.angel.utils;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.InvalidParameterException;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
-public class ConfUtils {
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+public class ConfUtils {
   private static final Log LOG = LogFactory.getLog(AngelRunJar.class);
   private static final String angelSysConfFile = "angel-site.xml";
 
@@ -210,18 +206,18 @@ public class ConfUtils {
   }
 
   public static void addResourceFiles(Configuration conf, String fileNames)
-      throws MalformedURLException {
+    throws MalformedURLException {
     String[] fileNameArray = fileNames.split(",");
     StringBuilder sb = new StringBuilder();
 
     for (int i = 0; i < fileNameArray.length; i++) {
       Path filePath = new Path(fileNameArray[i]);
-      if (!filePath.isAbsolute()) {
+      if(!filePath.isAbsolute()) {
         String pwd = "";
         File pwdFile = new File("");
-        try {
+        try{
           pwd = pwdFile.getAbsolutePath();
-        } catch (Throwable e) {
+        } catch(Throwable e){
           LOG.warn("get pwd failed " + e.getMessage());
         }
         LOG.info("PWD=" + pwd);

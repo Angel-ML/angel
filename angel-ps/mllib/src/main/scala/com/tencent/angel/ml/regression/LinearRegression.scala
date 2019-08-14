@@ -29,7 +29,7 @@ import com.tencent.angel.mlcore.optimizer.loss.L2Loss
 import com.tencent.angel.worker.task.TaskContext
 
 
-class LinearRegression(conf: SharedConf, _ctx: TaskContext = null) extends AngelModel(conf, _ctx.getTotalTaskNum) {
+class LinearRegression(conf: SharedConf, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
   val optProvider = new PSOptimizerProvider(conf)
 
   override def buildNetwork(): this.type = {

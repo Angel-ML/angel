@@ -63,7 +63,7 @@ public class SoftmaxTest {
       // class number
       int classNum = 3;
       // Model type
-      String modelType = String.valueOf(RowType.T_DOUBLE_DENSE);
+      String modelType = String.valueOf(RowType.T_FLOAT_DENSE);
 
       // Learning rate
       double learnRate = 0.5;
@@ -74,6 +74,8 @@ public class SoftmaxTest {
 
       // Set local deploy mode
       conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
+
+      String jsonFile = "./src/test/jsons/softmax.json";
 
       // Set basic configuration keys
       conf.setBoolean("mapred.mapper.new-api", true);
@@ -102,6 +104,7 @@ public class SoftmaxTest {
       conf.setLong(AngelMLConf.ML_MODEL_SIZE(), featureNum);
       conf.setInt(AngelMLConf.ML_NUM_CLASS(), classNum);
       conf.setBoolean(AngelMLConf.ML_DATA_USE_SHUFFLE(), true);
+//      conf.setStrings(AngelConf.ANGEL_ML_CONF, jsonFile);
       conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "SoftmaxRegression");
       String angelConfFile = "./src/test/jsons/softmax.json";
       conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
@@ -179,6 +182,7 @@ public class SoftmaxTest {
       String inputPath = "../../data/protein/protein_357d_test.libsvm";
       String loadPath = LOCAL_FS + TMP_PATH + "/SoftMax";
       String predictPath = LOCAL_FS + TMP_PATH + "/predict";
+      String logPath = LOCAL_FS + TMP_PATH + "/SoftMaxlog";
 
       // Set trainning data path
       conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);
@@ -186,6 +190,10 @@ public class SoftmaxTest {
       conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, loadPath);
       // Set predict result path
       conf.set(AngelConf.ANGEL_PREDICT_PATH, predictPath);
+      // Set log path
+      conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
+
+      conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "SoftmaxRegression");
 
       conf.set(AngelConf.ANGEL_ACTION_TYPE, AngelMLConf.ANGEL_ML_PREDICT());
 

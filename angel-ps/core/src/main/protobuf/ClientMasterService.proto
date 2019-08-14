@@ -109,7 +109,8 @@ message MatrixSaveContextProto {
 
 message ModelSaveContextProto {
   required string savePath = 1;
-  repeated MatrixSaveContextProto matrixContextes = 2;
+  required bool checkpint = 2;
+  repeated MatrixSaveContextProto matrixContextes = 3;
 }
 
 message SaveResponse {
@@ -199,6 +200,15 @@ message CheckModelLoadedResponse {
   optional string log = 2;
 }
 
+message KillPSRequest {
+  required int32 psId = 1;
+  required int32 attemptIndex = 2;
+}
+
+message KillPSResponse {
+
+}
+
 service ClientMasterService {
   rpc start(StartRequest) returns (StartResponse);
   rpc getAllPSLocation(GetAllPSLocationRequest) returns (GetAllPSLocationResponse);
@@ -216,4 +226,5 @@ service ClientMasterService {
   rpc getClientId(GetClientIdRequest) returns (GetClientIdResponse);
   rpc keepAlive(KeepAliveRequest) returns (KeepAliveResponse);
   rpc clientRegister(ClientRegisterRequest) returns (ClientRegisterResponse);
+  rpc killPS(KillPSRequest) returns (KillPSResponse);
 }

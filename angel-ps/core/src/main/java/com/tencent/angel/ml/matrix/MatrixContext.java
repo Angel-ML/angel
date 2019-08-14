@@ -24,6 +24,7 @@ import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.model.output.format.MatrixFilesMeta;
+import com.tencent.angel.ps.storage.matrix.PSMatrixInit;
 import com.tencent.angel.ps.storage.partition.IServerPartition;
 import com.tencent.angel.ps.storage.partition.storage.IServerPartitionStorage;
 import com.tencent.angel.ps.storage.partition.ServerPartition;
@@ -117,6 +118,12 @@ public class MatrixContext implements Serializable {
    * Matrix id
    */
   private int matrixId;
+
+  /**
+   * PS Matrix initialization function
+   */
+  private PSMatrixInit initFunc;
+
 
   /**
    * Creates a new MatrixContext by default.
@@ -608,6 +615,22 @@ public class MatrixContext implements Serializable {
    */
   public int getMatrixId() {
     return matrixId;
+  }
+
+  /**
+   * Get PS matrix init function
+   * @return PS matrix init function
+   */
+  public PSMatrixInit getInitFunc() {
+    return initFunc;
+  }
+
+  /**
+   * Set PS matrix init function
+   * @param initFunc PS matrix init function
+   */
+  public void setInitFunc(PSMatrixInit initFunc) {
+    this.initFunc = initFunc;
   }
 
   /**

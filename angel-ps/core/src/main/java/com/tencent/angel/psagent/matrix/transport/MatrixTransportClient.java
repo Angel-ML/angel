@@ -241,6 +241,8 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
   private final int partReplicNum;
 
+  private final int hbTimeoutMS;
+
   /**
    * PSAgent to PS heartbeat sender
    */
@@ -330,6 +332,9 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
     usePool = conf.getBoolean(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_CLIENT_USEPOOL,
         AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_USEPOOL);
+
+    hbTimeoutMS = conf.getInt(AngelConf.ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS,
+        AngelConf.DEFAULT_ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS);
 
     ByteBufUtils.useDirect = useDirectBuffer;
     ByteBufUtils.usePool = usePool;
@@ -607,8 +612,8 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     return future;
   }
 
-  public void checkpoint(int requestId, int matrixId, ParameterServerId psId) {
-    CheckpointPSRequest request = new CheckpointPSRequest(requestId, matrixId, psId);
+  public void checkpoint(int requestId, int matrixId, int checkPointId, ParameterServerId psId) {
+    CheckpointPSRequest request = new CheckpointPSRequest(requestId, matrixId, checkPointId, psId);
     LOG.debug("checkpoint request=" + request);
 
     FutureResult<VoidResult> future = new FutureResult<>();
@@ -753,32 +758,54 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     queue.add(request);
   }
 
+  private final void breakAllRequests(String errorLog){
+    Iterator<Entry<Integer, Request>> iter = seqIdToRequestMap.entrySet().iterator();
+    while(iter.hasNext()) {
+      Entry<Integer, Request> entry = iter.next();
+      PSAgentContext.get().getPsAgent().getUserRequestAdapter()
+          .notifySubTaskFailed(entry.getValue().getUserRequestId(), entry.getValue().getSeqId(), errorLog);
+    }
+  }
 
   class PSLocRefresher extends Thread {
 
     @Override
     public void run() {
+      long lastHbTs = System.currentTimeMillis();
       while (!stopped.get() && !Thread.interrupted()) {
-        Iterator<Entry<ParameterServerId, Location>> iter = failedPSToLocMap.entrySet().iterator();
-        while (iter.hasNext()) {
-          Entry<ParameterServerId, Location> entry = iter.next();
-          try {
-            Location loc = PSAgentContext.get().getMasterClient().getPSLocation(entry.getKey());
-            if (loc != null && !loc.equals(entry.getValue())) {
-              LOG.info("Refresh location for PS " + entry.getKey() + ", new location=" + loc);
-              // Update location table
-              PSAgentContext.get().getLocationManager().setPsLocation(entry.getKey(), loc);
 
-              // Remove the server from failed list
-              removeFailedServers(entry.getKey());
-
-              // Notify refresh success message to request dispatcher
-              refreshServerLocationSuccess(entry.getKey(), true);
-            }
-          } catch (Throwable e) {
-            LOG.error("Get location from master failed ", e);
-          }
+        if(System.currentTimeMillis() - lastHbTs > hbTimeoutMS) {
+          LOG.fatal("can not connect to master in " + hbTimeoutMS + " ms!!");
+          breakAllRequests("Angel master is exit!!");
         }
+
+        if(!failedPSToLocMap.isEmpty()) {
+          Iterator<Entry<ParameterServerId, Location>> iter = failedPSToLocMap.entrySet().iterator();
+
+          while (iter.hasNext()) {
+            Entry<ParameterServerId, Location> entry = iter.next();
+            try {
+              Location loc = PSAgentContext.get().getMasterClient().getPSLocation(entry.getKey());
+              lastHbTs = System.currentTimeMillis();
+              if (loc != null && !loc.equals(entry.getValue())) {
+                LOG.info("Refresh location for PS " + entry.getKey() + ", new location=" + loc);
+                // Update location table
+                PSAgentContext.get().getLocationManager().setPsLocation(entry.getKey(), loc);
+
+                // Remove the server from failed list
+                removeFailedServers(entry.getKey());
+
+                // Notify refresh success message to request dispatcher
+                refreshServerLocationSuccess(entry.getKey(), true);
+              }
+            } catch (Throwable e) {
+              LOG.error("Get location from master failed ", e);
+            }
+          }
+        } else {
+          lastHbTs = System.currentTimeMillis();
+        }
+
         try {
           Thread.sleep(5000);
         } catch (Throwable e) {
@@ -1057,7 +1084,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
               request.getContext().setFailedTs(System.currentTimeMillis());
 
               // Add it to failed rpc list
-              if (request instanceof PartitionRequest) {
+              if (request instanceof PartitionRequest || request instanceof PSRequest) {
                 request.getContext().setNextRetryTs(genNextRetryTs());
                 failedGetCache.add(request);
               }
@@ -1088,7 +1115,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
               request.getContext().setFailedTs(System.currentTimeMillis());
 
               // Add it to failed rpc list
-              if (request instanceof PartitionRequest) {
+              if (request instanceof PartitionRequest || request instanceof PSRequest) {
                 request.getContext().setNextRetryTs(genNextRetryTs());
                 failedPutCache.add(request);
               }
@@ -1574,6 +1601,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       case PUT_PART:
       case UPDATE:
       case UPDATE_PSF:
+      case CHECKPOINT:
         putRequestFailed(request, failedType, errorLog);
         break;
 
@@ -2230,6 +2258,8 @@ public class MatrixTransportClient implements MatrixTransportInterface {
             break;
           }
 
+          case PUT_PARTUPDATE:
+            break;
           case GET_ROWSSPLIT: {
             handleGetRowsSplitResponse(msg, seqId, (GetRowsSplitRequest) request);
             break;
@@ -2240,6 +2270,8 @@ public class MatrixTransportClient implements MatrixTransportInterface {
             break;
           }
 
+          case PUT_PART:
+            break;
           case GET_CLOCKS:
             handleGetClocksResponse(msg, seqId, (GetClocksRequest) request);
             break;
@@ -2248,6 +2280,10 @@ public class MatrixTransportClient implements MatrixTransportInterface {
             handleGetStateResponse(msg, seqId, (GetStateRequest) request);
             break;
 
+          case RECOVER_PART:
+            break;
+          case UPDATE_CLOCK:
+            break;
           case UPDATE:
             handleUpdateResponse(msg, seqId, (UpdateRequest) request);
             break;
@@ -2264,6 +2300,8 @@ public class MatrixTransportClient implements MatrixTransportInterface {
             handleCheckpointResponse(msg, seqId, (CheckpointPSRequest) request);
             break;
 
+          case UNKNOWN:
+            break;
           default:
             break;
         }

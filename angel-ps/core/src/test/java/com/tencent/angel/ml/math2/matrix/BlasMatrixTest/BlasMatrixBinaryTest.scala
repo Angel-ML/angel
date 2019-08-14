@@ -24,6 +24,7 @@ import breeze.linalg.DenseMatrix
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math2.matrix.Matrix
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
+import com.tencent.angel.ml.math2.utils.MathException
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import org.junit.{BeforeClass, Test}
@@ -292,9 +293,8 @@ class BlasMatrixBinaryTest {
         try {
           println(s"blasmatrix add vector: ${matrixlist1.get(i).add(ilist1.get(j)).sum()}")
         } catch {
-          case e: AngelException => {
-            println(e)
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
 
@@ -307,9 +307,8 @@ class BlasMatrixBinaryTest {
           println(s"blasmatrix add blasmatrix : ${Ufuncs.add(matrixlist1.get(i), true, matrixlist1.get(j), false).sum()}")
           println(s"blasmatrix add blasmatrix : ${Ufuncs.add(matrixlist1.get(i), false, matrixlist1.get(j), true).sum()}")
         } catch {
-          case e: AngelException => {
-            println(e)
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
       println(s"blasmatrix add numeric : ${matrixlist1.get(i).add(2.0).sum()}")
@@ -325,9 +324,8 @@ class BlasMatrixBinaryTest {
         try {
           println(s"blasmatrix sub vector: ${matrixlist1.get(i).sub(ilist1.get(j)).sum()}")
         } catch {
-          case e: AngelException => {
-            println(e)
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
 
@@ -340,9 +338,8 @@ class BlasMatrixBinaryTest {
           println(s"blasmatrix sub blasmatrix : ${Ufuncs.sub(matrixlist1.get(i), true, matrixlist1.get(j), false).sum()}")
           println(s"blasmatrix sub blasmatrix : ${Ufuncs.sub(matrixlist1.get(i), false, matrixlist1.get(j), true).sum()}")
         } catch {
-          case e: AngelException => {
-            println(e)
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
       println(s"blasmatrix sub numeric : ${matrixlist1.get(i).sub(2.0).sum()}")
@@ -358,9 +355,8 @@ class BlasMatrixBinaryTest {
         try {
           println(s"blasmatrix mul vector: ${matrixlist1.get(i).mul(ilist1.get(j)).sum()}")
         } catch {
-          case e: AngelException => {
-            println(e)
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
 
@@ -373,9 +369,8 @@ class BlasMatrixBinaryTest {
           println(s"blasmatrix mul blasmatrix : ${Ufuncs.mul(matrixlist1.get(i), true, matrixlist1.get(j), false).sum()}")
           println(s"blasmatrix mul blasmatrix : ${Ufuncs.mul(matrixlist1.get(i), false, matrixlist1.get(j), true).sum()}")
         } catch {
-          case e: AngelException => {
-            println(e)
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
       println(s"blasmatrix mul numeric : ${matrixlist1.get(i).mul(2.0).sum()}")
@@ -391,9 +386,8 @@ class BlasMatrixBinaryTest {
         try {
           println(s"blasmatrix div vector: ${matrixlist1.get(i).div(ilist1.get(j)).sum()}")
         } catch {
-          case e: AngelException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
 
@@ -406,9 +400,8 @@ class BlasMatrixBinaryTest {
           println(s"blasmatrix div blasmatrix : ${Ufuncs.div(matrixlist1.get(i), true, matrixlist1.get(j), false).sum()}")
           println(s"blasmatrix div blasmatrix : ${Ufuncs.div(matrixlist1.get(i), false, matrixlist1.get(j), true).sum()}")
         } catch {
-          case e: AngelException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
       println(s"blasmatrix div numeric : ${matrixlist1.get(i).div(2.0).sum()}")
@@ -424,9 +417,8 @@ class BlasMatrixBinaryTest {
         try {
           println(s"blasmatrix axpy vector: ${matrixlist1.get(i).axpy(ilist1.get(j), 2.0).sum()}")
         } catch {
-          case e: AngelException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
 
@@ -439,9 +431,8 @@ class BlasMatrixBinaryTest {
           println(s"blasmatrix axpy blasmatrix : ${Ufuncs.axpy(matrixlist1.get(i), false, matrixlist1.get(j), true, 2.0).sum()}")
           println(s"blasmatrix axpy blasmatrix : ${Ufuncs.axpy(matrixlist1.get(i), true, matrixlist1.get(j), false, 2.0).sum()}")
         } catch {
-          case e: AngelException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
     }
@@ -457,18 +448,16 @@ class BlasMatrixBinaryTest {
           println(s"blasmatrix dot vector: ${Ufuncs.dot(matrixlist.get(i), ilist.get(j)).sum()}")
           matrixlist.get(i).dot(ilist.get(j))
         } catch {
-          case e: AngelException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
       (0 until ilist1.size()).foreach { j =>
         try {
           println(s"blasmatrix dot vector: ${Ufuncs.dot(matrixlist1.get(i), true, ilist1.get(j)).sum()}")
         } catch {
-          case e: AngelException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
     }
@@ -494,9 +483,8 @@ class BlasMatrixBinaryTest {
         try {
           println(s"blasmatrix dot vector: ${Ufuncs.xAx(matrixlist1.get(i), ilist1.get(j))}")
         } catch {
-          case e: AngelException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
     }
@@ -511,9 +499,8 @@ class BlasMatrixBinaryTest {
         try {
           println(s"blasmatrix dot vector: ${Ufuncs.xAy(matrixlist.get(i), ilist1.get(j), ilist.get(j))}")
         } catch {
-          case e: AngelException => {
-            e
-          }
+          case e: AngelException => e
+          case e: MathException => e
         }
       }
     }
@@ -529,9 +516,8 @@ class BlasMatrixBinaryTest {
           try {
             println(s"blasmatrix dot vector: ${Ufuncs.rank1update(matrixlist.get(i), 0.5, ilist1.get(j), ilist.get(t)).sum()}")
           } catch {
-            case e: AngelException => {
-              e
-            }
+            case e: AngelException => e
+            case e: MathException => e
           }
         }
       }

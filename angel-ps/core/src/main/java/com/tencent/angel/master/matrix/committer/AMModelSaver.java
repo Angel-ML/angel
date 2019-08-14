@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -24,14 +24,36 @@ import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.matrixmeta.AMMatrixMetaManager;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.PartitionMeta;
-import com.tencent.angel.model.*;
+import com.tencent.angel.model.MatrixSaveContext;
+import com.tencent.angel.model.ModelSaveContext;
+import com.tencent.angel.model.ModelSaveResult;
+import com.tencent.angel.model.ModelSaveRunningContext;
+import com.tencent.angel.model.PSMatricesSaveContext;
+import com.tencent.angel.model.PSMatricesSaveResult;
+import com.tencent.angel.model.PSMatrixSaveContext;
+import com.tencent.angel.model.SaveState;
+import com.tencent.angel.model.SaveTriggerMode;
 import com.tencent.angel.model.io.IOExecutors;
-import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.model.output.format.MatrixFilesMeta;
+import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.model.output.format.PSMatrixFilesMeta;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.utils.HdfsUtil;
 import com.tencent.angel.utils.StringUtils;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -40,18 +62,11 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.service.AbstractService;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.RecursiveAction;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 /**
  * Model save manager
  */
 public class AMModelSaver extends AbstractService {
+
   private static final Log LOG = LogFactory.getLog(AMModelSaver.class);
   private final Lock lock;
 
@@ -128,6 +143,31 @@ public class AMModelSaver extends AbstractService {
   private int receivedSubResult;
 
   /**
+   * Matrix id to save results map
+   */
+  private final ConcurrentHashMap<Integer, List<SaveResult>> matrixIdToSaveResults;
+
+  /**
+   * Matrix id to old model load context map
+   */
+  private final ConcurrentHashMap<Integer, SaveResult> matrixIdToLoadPathResult;
+
+  /**
+   * Matrix id to checkpoint results map
+   */
+  private final ConcurrentHashMap<Integer, List<SaveResult>> matrixIdToCheckpointResults;
+
+  /**
+   * Maximum save results
+   */
+  private final int maxSaveItem;
+
+  /**
+   * Maximum checkpoint number
+   */
+  private final int maxCheckpointItem;
+
+  /**
    * Create a AMMatrixCommitter
    *
    * @param context master context
@@ -140,17 +180,27 @@ public class AMModelSaver extends AbstractService {
     this.results = new ConcurrentHashMap<>();
     this.waitingTasks = new ArrayList<>();
 
+    this.matrixIdToSaveResults = new ConcurrentHashMap<>();
+    this.matrixIdToLoadPathResult = new ConcurrentHashMap<>();
+    this.matrixIdToCheckpointResults = new ConcurrentHashMap<>();
+
     this.lock = new ReentrantLock();
 
     epochTrigSave = context.getConf().getBoolean(AngelConf.ANGEL_SAVE_MODEL_EPOCH_TIGGER_ENABLE,
-      AngelConf.DEFAULT_ANGEL_SAVE_MODEL_EPOCH_TIGGER_ENABLE);
+        AngelConf.DEFAULT_ANGEL_SAVE_MODEL_EPOCH_TIGGER_ENABLE);
     saveModelFrequency = context.getConf().getInt(AngelConf.ANGEL_SAVE_MODEL_EVERY_HOWMANY_EPOCHS,
-      AngelConf.DEFAULT_ANGEL_SAVE_MODEL_EVERY_HOWMANY_EPOCHS);
+        AngelConf.DEFAULT_ANGEL_SAVE_MODEL_EVERY_HOWMANY_EPOCHS);
+    maxSaveItem = context.getConf().getInt(AngelConf.ANGEL_SAVE_MODEL_MAX_RESULTS_FOR_SINGLE_MATRIX,
+        AngelConf.DEFAULT_ANGEL_SAVE_MODEL_MAX_RESULTS_FOR_SINGLE_MATRIX);
+    maxCheckpointItem = context.getConf().getInt(AngelConf.ANGEL_CHECKPOINT_MAX_RESULTS_FOR_SINGLE_MATRIX,
+        AngelConf.DEFAULT_ANGEL_CHECKPOINT_MAX_RESULTS_FOR_SINGLE_MATRIX);
   }
 
-  @Override public void serviceStart() throws Exception {
+  @Override
+  public void serviceStart() throws Exception {
     dispatcher = new Thread(new Runnable() {
-      @Override public void run() {
+      @Override
+      public void run() {
         while (!stopped.get() && !Thread.interrupted()) {
           try {
             lock.lock();
@@ -176,7 +226,8 @@ public class AMModelSaver extends AbstractService {
     dispatcher.start();
   }
 
-  @Override protected void serviceStop() throws Exception {
+  @Override
+  protected void serviceStop() throws Exception {
     if (stopped.getAndSet(true)) {
       return;
     }
@@ -263,7 +314,7 @@ public class AMModelSaver extends AbstractService {
       lock.lock();
       int requestId = saveRequestIdGen++;
       saveContext.setTmpSavePath(HdfsUtil.generateTmpDirectory(context.getConf(),
-        context.getApplicationId().toString(), new Path(saveContext.getSavePath())).toString());
+          context.getApplicationId().toString(), new Path(saveContext.getSavePath())).toString());
       //Path tmpPath = new Path(new Path(context.getConf().get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH)),
       //  String.valueOf(requestId));
       //Path tmpPath = HdfsUtil.toTmpPath(new Path(saveContext.getSavePath()));
@@ -300,15 +351,15 @@ public class AMModelSaver extends AbstractService {
       lock.lock();
       currentRequestId = runningContext.getRequestId();
       LOG.info("Start to execute save request " + saveContext + " with request id=" + runningContext
-        .getRequestId());
+          .getRequestId());
 
       // Split the user request to sub-requests to pss
       currentSubSaveContexts = split(currentRequestId, saveContext);
       subResults = new HashMap<>(currentSubSaveContexts.size());
       for (Map.Entry<ParameterServerId, PSMatricesSaveContext> entry : currentSubSaveContexts
-        .entrySet()) {
+          .entrySet()) {
         subResults.put(entry.getKey(), new PSMatricesSaveResult(entry.getValue().getRequestId(),
-          entry.getValue().getSubRequestId(), SaveState.INIT));
+            entry.getValue().getSubRequestId(), SaveState.INIT));
       }
       receivedSubResult = 0;
     } finally {
@@ -319,8 +370,8 @@ public class AMModelSaver extends AbstractService {
   /**
    * PS start saving
    *
-   * @param psId         PS id
-   * @param requestId    request id
+   * @param psId PS id
+   * @param requestId request id
    * @param subRequestId sub-request id
    */
   public void psSaveStart(ParameterServerId psId, int requestId, int subRequestId) {
@@ -338,7 +389,7 @@ public class AMModelSaver extends AbstractService {
   /**
    * PS finish save request
    *
-   * @param psId      parameter server id
+   * @param psId parameter server id
    * @param subResult the result of sub save request
    */
   public void psSaveFinish(ParameterServerId psId, PSMatricesSaveResult subResult) {
@@ -350,8 +401,8 @@ public class AMModelSaver extends AbstractService {
       receivedSubResult++;
       subResults.put(psId, subResult);
       LOG.info(
-        "save subrequest, complete number=" + receivedSubResult + ", total number=" + subResults
-          .size());
+          "save subrequest, complete number=" + receivedSubResult + ", total number=" + subResults
+              .size());
       if (receivedSubResult >= subResults.size()) {
         ModelSaveResult result = results.get(subResult.getRequestId());
         if (canCombine()) {
@@ -445,14 +496,14 @@ public class AMModelSaver extends AbstractService {
   }
 
   private Map<ParameterServerId, PSMatricesSaveContext> split(int requestId,
-    ModelSaveContext saveContext) {
+      ModelSaveContext saveContext) {
     List<MatrixSaveContext> matricesContext = saveContext.getMatricesContext();
     Map<ParameterServerId, List<PSMatrixSaveContext>> psIdToContextsMap = new HashMap<>();
     int size = matricesContext.size();
     for (int i = 0; i < size; i++) {
       Map<ParameterServerId, PSMatrixSaveContext> psIdToContextMap = split(matricesContext.get(i));
       for (Map.Entry<ParameterServerId, PSMatrixSaveContext> matrixEntry : psIdToContextMap
-        .entrySet()) {
+          .entrySet()) {
         List<PSMatrixSaveContext> contexts = psIdToContextsMap.get(matrixEntry.getKey());
         if (contexts == null) {
           contexts = new ArrayList<>();
@@ -465,20 +516,21 @@ public class AMModelSaver extends AbstractService {
     Map<ParameterServerId, PSMatricesSaveContext> ret = new HashMap<>(psIdToContextsMap.size());
     int subRequestId = 0;
     for (Map.Entry<ParameterServerId, List<PSMatrixSaveContext>> modelEntry : psIdToContextsMap
-      .entrySet()) {
+        .entrySet()) {
       Path psPath =
-        new Path(new Path(new Path(saveContext.getTmpSavePath()), ModelFilesConstent.resultDirName),
-          modelEntry.getKey().toString());
+          new Path(
+              new Path(new Path(saveContext.getTmpSavePath()), ModelFilesConstent.resultDirName),
+              modelEntry.getKey().toString());
 
       List<PSMatrixSaveContext> psMatrixContexts = modelEntry.getValue();
       for (PSMatrixSaveContext matrixContext : psMatrixContexts) {
         matrixContext.setSavePath(new Path(psPath,
-          context.getMatrixMetaManager().getMatrix(matrixContext.getMatrixId()).getName())
-          .toString());
+            context.getMatrixMetaManager().getMatrix(matrixContext.getMatrixId()).getName())
+            .toString());
       }
 
       ret.put(modelEntry.getKey(),
-        new PSMatricesSaveContext(requestId, subRequestId++, modelEntry.getValue()));
+          new PSMatricesSaveContext(requestId, subRequestId++, modelEntry.getValue()));
     }
     return ret;
   }
@@ -532,22 +584,68 @@ public class AMModelSaver extends AbstractService {
     for (Map.Entry<ParameterServerId, Set<Integer>> entry : psIdToPartIdsMap.entrySet()) {
       List<Integer> partIds = new ArrayList<>(entry.getValue());
       partIds.sort(new Comparator<Integer>() {
-        @Override public int compare(Integer id1, Integer id2) {
+        @Override
+        public int compare(Integer id1, Integer id2) {
           return id1 - id2;
         }
       });
       PSMatrixSaveContext psMatrixSaveContext =
-        new PSMatrixSaveContext(matrixId, partIds, matrixSaveContext.getRowIndexes(),
-          matrixSaveContext.getFormatClassName(), null, false, true);
+          new PSMatrixSaveContext(matrixId, partIds, matrixSaveContext.getRowIndexes(),
+              matrixSaveContext.getFormatClassName(), null, false, true);
       ret.put(entry.getKey(), psMatrixSaveContext);
     }
     return ret;
+  }
+
+  public List<SaveResult> getSaveResults(int matrixId) {
+    SaveResult loadPathResult = null;
+    try {
+      loadPathResult = getLoadPath(matrixId);
+    } catch (IOException e) {
+      LOG.warn("Get load path result failed ", e);
+    }
+
+    if(loadPathResult == null) {
+      return matrixIdToSaveResults.get(matrixId);
+    } else {
+      List<SaveResult> results = new ArrayList<>();
+      results.add(loadPathResult);
+      if(matrixIdToSaveResults.get(matrixId) != null) {
+        results.addAll(matrixIdToSaveResults.get(matrixId));
+      }
+      return results;
+    }
+  }
+
+  public List<SaveResult> getCheckpointResults(int matrixId) {
+    return matrixIdToCheckpointResults.get(matrixId);
+  }
+
+  private SaveResult getLoadPath(int matrixId) throws IOException {
+    SaveResult result = matrixIdToLoadPathResult.get(matrixId);
+    if(result == null) {
+      String loadPath = context.getConf().get(AngelConf.ANGEL_LOAD_MODEL_PATH);
+      if(loadPath != null) {
+        AMMatrixMetaManager matrixMetaManager = context.getMatrixMetaManager();
+        MatrixMeta meta = matrixMetaManager.getMatrix(matrixId);
+        if(meta != null) {
+          Path matrixPath = new Path(loadPath, meta.getName());
+          FileSystem fs = matrixPath.getFileSystem(context.getConf());
+          if(fs.exists(matrixPath)) {
+            result = new SaveResult(loadPath, matrixPath.toString(), -1);
+            matrixIdToLoadPathResult.putIfAbsent(matrixId, result);
+          }
+        }
+      }
+    }
+    return result;
   }
 
   /**
    * Matrices commit operator
    */
   class ModelCombineOp extends RecursiveAction {
+
     private final ModelSaveContext saveContext;
     private final Vector<String> errorLogs;
     private final int startPos;
@@ -556,7 +654,7 @@ public class AMModelSaver extends AbstractService {
     private final FileSystem fs;
 
     public ModelCombineOp(ModelSaveContext saveContext, Vector<String> errorLogs, int startPos,
-      int endPos, Path tmpCombinePath, FileSystem fs) {
+        int endPos, Path tmpCombinePath, FileSystem fs) {
       this.saveContext = saveContext;
       this.errorLogs = errorLogs;
       this.startPos = startPos;
@@ -565,7 +663,8 @@ public class AMModelSaver extends AbstractService {
       this.fs = fs;
     }
 
-    @Override protected void compute() {
+    @Override
+    protected void compute() {
       if (endPos <= startPos) {
         return;
       }
@@ -573,19 +672,19 @@ public class AMModelSaver extends AbstractService {
       if (endPos - startPos == 1) {
         try {
           combineMatrix(saveContext, saveContext.getMatricesContext().get(startPos), errorLogs,
-            tmpCombinePath, fs);
+              tmpCombinePath, fs);
         } catch (Throwable e) {
           String matrixName = saveContext.getMatricesContext().get(startPos).getMatrixName();
           errorLogs.add("merge output files for matrix " + matrixName + " failed, error log is " + e
-            .getMessage());
+              .getMessage());
           LOG.error("merge output files for matrix " + matrixName + " failed. ", e);
         }
       } else {
         int middle = (startPos + endPos) / 2;
         ModelCombineOp opLeft =
-          new ModelCombineOp(saveContext, errorLogs, startPos, middle, tmpCombinePath, fs);
+            new ModelCombineOp(saveContext, errorLogs, startPos, middle, tmpCombinePath, fs);
         ModelCombineOp opRight =
-          new ModelCombineOp(saveContext, errorLogs, middle, endPos, tmpCombinePath, fs);
+            new ModelCombineOp(saveContext, errorLogs, middle, endPos, tmpCombinePath, fs);
         invokeAll(opLeft, opRight);
       }
     }
@@ -595,22 +694,23 @@ public class AMModelSaver extends AbstractService {
    * Combine all output files of a model to a combine directory
    *
    * @param matrixContext matrix save context
-   * @param errorLogs     error logs
+   * @param errorLogs error logs
    */
   private void combineMatrix(ModelSaveContext saveContext, MatrixSaveContext matrixContext,
-    Vector<String> errorLogs, Path tmpCombinePath, FileSystem fs) {
+      Vector<String> errorLogs, Path tmpCombinePath, FileSystem fs) {
     LOG.info("start commit matrix " + matrixContext.getMatrixName());
 
     // Init matrix files meta
     int matrixId = context.getMatrixMetaManager().getMatrix(matrixContext.getMatrixName()).getId();
     List<ParameterServerId> psIds =
-      new ArrayList<>(context.getMatrixMetaManager().getMasterPsIds(matrixId));
+        new ArrayList<>(context.getMatrixMetaManager().getMasterPsIds(matrixId));
     MatrixMeta meta = context.getMatrixMetaManager().getMatrix(matrixId);
     Map<String, String> kvMap = meta.getAttributes();
 
     MatrixFilesMeta filesMeta =
-      new MatrixFilesMeta(matrixId, meta.getName(), matrixContext.getFormatClassName(), meta.getRowType().getNumber(), meta.getRowNum(),
-        meta.getColNum(), meta.getBlockRowNum(), meta.getBlockColNum(), kvMap);
+        new MatrixFilesMeta(matrixId, meta.getName(), matrixContext.getFormatClassName(),
+            meta.getRowType().getNumber(), meta.getRowNum(),
+            meta.getColNum(), meta.getBlockRowNum(), meta.getBlockColNum(), kvMap);
 
     filesMeta.setFeatureIndexStart(meta.getIndexStart());
     filesMeta.setFeatureIndexEnd(meta.getIndexEnd());
@@ -620,7 +720,7 @@ public class AMModelSaver extends AbstractService {
       Path srcPath = new Path(saveContext.getTmpSavePath(), ModelFilesConstent.resultDirName);
       Path destPath = new Path(tmpCombinePath, meta.getName());
       PSModelCombineOp partCombineOp =
-        new PSModelCombineOp(srcPath, destPath, psIds, errorLogs, filesMeta, 0, psIds.size(), fs);
+          new PSModelCombineOp(srcPath, destPath, psIds, errorLogs, filesMeta, 0, psIds.size(), fs);
       fileOpExecutor.execute(partCombineOp);
       partCombineOp.join();
 
@@ -636,7 +736,7 @@ public class AMModelSaver extends AbstractService {
       LOG.info("commit meta file use time=" + (System.currentTimeMillis() - startTs));
     } catch (Throwable x) {
       errorLogs.add("move output files for matrix " + meta.getName() + " failed, error msg = " + x
-        .getMessage());
+          .getMessage());
       LOG.error("move output files for matrix " + meta.getName() + " failed.", x);
     }
   }
@@ -646,6 +746,7 @@ public class AMModelSaver extends AbstractService {
    * Model partitions committer
    */
   class PSModelCombineOp extends RecursiveAction {
+
     private final Path moveSrcPath;
     private final Path moveDestPath;
     private final List<ParameterServerId> psList;
@@ -656,8 +757,8 @@ public class AMModelSaver extends AbstractService {
     private final FileSystem fs;
 
     public PSModelCombineOp(Path moveSrcPath, Path moveDestPath, List<ParameterServerId> psList,
-      Vector<String> errorLogs, MatrixFilesMeta matrixMeta, int startPos, int endPos,
-      FileSystem fs) {
+        Vector<String> errorLogs, MatrixFilesMeta matrixMeta, int startPos, int endPos,
+        FileSystem fs) {
       this.moveSrcPath = moveSrcPath;
       this.moveDestPath = moveDestPath;
       this.psList = psList;
@@ -668,22 +769,23 @@ public class AMModelSaver extends AbstractService {
       this.fs = fs;
     }
 
-    @Override protected void compute() {
+    @Override
+    protected void compute() {
       if (endPos <= startPos) {
         return;
       }
 
       if (endPos - startPos == 1) {
         combinePartitions(moveSrcPath, moveDestPath, psList.get(startPos), errorLogs, matrixMeta,
-          fs);
+            fs);
       } else {
         int middle = (startPos + endPos) / 2;
         PSModelCombineOp opLeft =
-          new PSModelCombineOp(moveSrcPath, moveDestPath, psList, errorLogs, matrixMeta, startPos,
-            middle, fs);
+            new PSModelCombineOp(moveSrcPath, moveDestPath, psList, errorLogs, matrixMeta, startPos,
+                middle, fs);
         PSModelCombineOp opRight =
-          new PSModelCombineOp(moveSrcPath, moveDestPath, psList, errorLogs, matrixMeta, middle,
-            endPos, fs);
+            new PSModelCombineOp(moveSrcPath, moveDestPath, psList, errorLogs, matrixMeta, middle,
+                endPos, fs);
         invokeAll(opLeft, opRight);
       }
     }
@@ -693,14 +795,14 @@ public class AMModelSaver extends AbstractService {
   /**
    * Move all model output files generated by a PS to the combine directory
    *
-   * @param moveSrcPath  source path
+   * @param moveSrcPath source path
    * @param moveDestPath dest path
-   * @param psId         parameter server id
-   * @param errorLogs    error logs
-   * @param matrixMeta   model files meta
+   * @param psId parameter server id
+   * @param errorLogs error logs
+   * @param matrixMeta model files meta
    */
   private void combinePartitions(Path moveSrcPath, Path moveDestPath, ParameterServerId psId,
-    Vector<String> errorLogs, MatrixFilesMeta matrixMeta, FileSystem fs) {
+      Vector<String> errorLogs, MatrixFilesMeta matrixMeta, FileSystem fs) {
     Path psPath = new Path(moveSrcPath, String.valueOf(psId));
     Path serverMatrixPath = new Path(psPath, matrixMeta.getMatrixName());
 
@@ -716,15 +818,18 @@ public class AMModelSaver extends AbstractService {
       matrixMeta.merge(serverMatrixMeta);
       HdfsUtil.copyFilesInSameHdfs(serverMatrixPath, moveDestPath, fs);
       LOG.info(
-        "copy files of matrix " + matrixMeta.getMatrixName() + " from " + serverMatrixPath + " to "
-          + moveDestPath + " success.");
+          "copy files of matrix " + matrixMeta.getMatrixName() + " from " + serverMatrixPath
+              + " to "
+              + moveDestPath + " success.");
     } catch (Throwable x) {
       errorLogs.add(
-        "copy files of matrix " + matrixMeta.getMatrixName() + " from " + serverMatrixPath + " to "
-          + moveDestPath + " failed, error log is " + x.getMessage());
+          "copy files of matrix " + matrixMeta.getMatrixName() + " from " + serverMatrixPath
+              + " to "
+              + moveDestPath + " failed, error log is " + x.getMessage());
       LOG.error(
-        "copy files of matrix " + matrixMeta.getMatrixName() + " from " + serverMatrixPath + " to "
-          + moveDestPath + " failed. ", x);
+          "copy files of matrix " + matrixMeta.getMatrixName() + " from " + serverMatrixPath
+              + " to "
+              + moveDestPath + " failed. ", x);
     }
   }
 
@@ -737,14 +842,15 @@ public class AMModelSaver extends AbstractService {
     }
 
     combineDispatchThread = new Thread(new Runnable() {
-      @Override public void run() {
+      @Override
+      public void run() {
         Vector<String> errorLogs = new Vector<>();
         ModelCombineOp op =
-          new ModelCombineOp(saveContext, errorLogs, 0, saveContext.getMatricesContext().size(),
-            tmpCombinePath, fs);
+            new ModelCombineOp(saveContext, errorLogs, 0, saveContext.getMatricesContext().size(),
+                tmpCombinePath, fs);
         fileOpExecutor = new IOExecutors(context.getConf()
-          .getInt(AngelConf.ANGEL_AM_MATRIX_DISKIO_WORKER_POOL_SIZE,
-            AngelConf.DEFAULT_ANGEL_AM_MATRIX_DISKIO_WORKER_POOL_SIZE));
+            .getInt(AngelConf.ANGEL_AM_MATRIX_DISKIO_WORKER_POOL_SIZE,
+                AngelConf.DEFAULT_ANGEL_AM_MATRIX_DISKIO_WORKER_POOL_SIZE));
         fileOpExecutor.init();
         fileOpExecutor.start();
 
@@ -753,12 +859,13 @@ public class AMModelSaver extends AbstractService {
           op.join();
           if (!errorLogs.isEmpty()) {
             String errorLog = "move output files for matrice failed, error msg = " + StringUtils
-              .join(";", errorLogs);
+                .join(";", errorLogs);
             LOG.error(errorLog);
             saveFailed(result, errorLog);
           } else {
             finalCommit(tmpCombinePath, new Path(saveContext.getSavePath()), fs);
             saveSuccess(result);
+            recordSaveResult(saveContext);
           }
         } catch (Throwable x) {
           LOG.error("move output files for matrice failed. ", x);
@@ -771,6 +878,52 @@ public class AMModelSaver extends AbstractService {
 
     combineDispatchThread.setName("CommitTaskDispacher");
     combineDispatchThread.start();
+  }
+
+  private void recordSaveResult(ModelSaveContext saveContext) {
+    List<MatrixSaveContext> matricesContext = saveContext.getMatricesContext();
+    for (MatrixSaveContext matrixContext : matricesContext) {
+      int matrixId = context.getMatrixMetaManager().getMatrix(matrixContext.getMatrixName())
+          .getId();
+
+      List<SaveResult> results;
+      if(saveContext.isCheckpoint()) {
+        results = matrixIdToCheckpointResults.get(matrixId);
+        if (results == null) {
+          results = matrixIdToCheckpointResults.putIfAbsent(matrixId, new ArrayList<>());
+          if (results == null) {
+            results = matrixIdToCheckpointResults.get(matrixId);
+          }
+        }
+      } else {
+        results = matrixIdToSaveResults.get(matrixId);
+        if (results == null) {
+          results = matrixIdToSaveResults.putIfAbsent(matrixId, new ArrayList<>());
+          if (results == null) {
+            results = matrixIdToSaveResults.get(matrixId);
+          }
+        }
+      }
+
+      results.add(new SaveResult(saveContext.getSavePath(),
+          new Path(saveContext.getSavePath(), matrixContext.getMatrixName()).toString(),
+          System.currentTimeMillis()));
+
+      LOG.info("result size=" + results.size());
+
+      int maxSaveNum = saveContext.isCheckpoint() ? maxCheckpointItem : maxSaveItem;
+      while (results.size() > maxSaveNum) {
+        LOG.info("need remove old save results/checkpoint for matrix " + matrixContext.getMatrixName());
+        SaveResult oldResult = results.remove(0);
+        try {
+          HdfsUtil.remove(context.getConf(), oldResult.getMatrixPath());
+          HdfsUtil.removeIfEmpty(context.getConf(), oldResult.getModelPath());
+        } catch (IOException e) {
+          LOG.warn("remove old save result/checkpoint " + saveContext.getSavePath() + " for matrix "
+              + matrixContext.getMatrixName() + " failed ");
+        }
+      }
+    }
   }
 
   private void clean(ModelSaveContext saveContext) {

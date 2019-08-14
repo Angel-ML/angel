@@ -15,21 +15,13 @@
  *
  */
 
-package com.tencent.angel.model.output.format;
+package com.tencent.angel.ps.storage.matrix;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
+import com.tencent.angel.common.Serialize;
 
 /**
- * Snapshot format, it just use for snapshot now.
+ * Base class for PS Matrix initialization
  */
-public class SnapshotFormat implements Format {
-  protected final Configuration conf;
-  private final static Log LOG = LogFactory.getLog(RowFormat.class);
-
-  public SnapshotFormat(Configuration conf) {
-    this.conf = conf;
-  }
+public abstract class PSMatrixInit implements IPSMatrixInit, Serialize {
 
 }

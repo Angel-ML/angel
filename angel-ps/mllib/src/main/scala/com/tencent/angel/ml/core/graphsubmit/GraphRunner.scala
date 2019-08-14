@@ -47,7 +47,8 @@ class GraphRunner extends MLRunner with SConfHelper {
     try {
       client.startPSServer()
 
-      val model: AngelModel = new AngelModel(sharedConf)
+      val modelClassName: String = sharedConf.modelClassName
+      val model: AngelModel = AngelModel(modelClassName, sharedConf)
       model.buildNetwork()
 
       model.createMatrices(envCtx)
@@ -84,7 +85,8 @@ class GraphRunner extends MLRunner with SConfHelper {
     try {
       client.startPSServer()
 
-      val model: AngelModel = new AngelModel(sharedConf)
+      val modelClassName: String = sharedConf.modelClassName
+      val model: AngelModel = AngelModel(modelClassName, sharedConf)
       model.buildNetwork()
 
       model.createMatrices(envCtx)

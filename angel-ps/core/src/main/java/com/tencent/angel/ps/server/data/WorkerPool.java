@@ -850,7 +850,7 @@ public class WorkerPool {
     }
 
     try {
-      context.getSnapshotDumper().checkpoint(request.getMatrixId());
+      context.getSnapshotDumper().checkpoint(request.getMatrixId(), request.getCheckPointId());
       return new CheckpointPSResponse(ResponseType.SUCCESS, "");
     } catch (Throwable e) {
       String detail = StringUtils.stringifyException(e);
