@@ -9,15 +9,9 @@
 
 With model-centered core design concept, **Angel** partitions parameters of complex models into multiple parameter-server nodes, and implements a variety of machine learning algorithms using efficient model-updating interfaces and functions, as well as flexible consistency model for synchronization.
 
-**Angel** is developed with **Java** and **Scala**.  It supports running on **Yarn**. With **PS Service** abstraction, it supports **Spark on Angel** and **Pytorch on Angel** now.  Graph computing and deep learning frameworks support is under development and with be released in the future.
+**Angel** is developed with **Java** and **Scala**.  It supports running on **Yarn** and **Kubernetes**. With **PS Service** abstraction, it supports **Spark on Angel** and **Pytorch on Angel** now.  Graph computing and deep learning frameworks support is under development and with be released in the future.
 
 We welcome everyone interested in machine learning to contribute code, create issues or pull requests. Please refer to  [Angel Contribution Guide](https://github.com/Tencent/angel/blob/master/CONTRIBUTING.md) for more detail.
-
-
-## Introduction to Angel
-
-* [Architecture](./docs/overview/architecture_en.md)
-* [Design](./docs/overview/design_philosophy_en.md)
 
 
 ## Quick Start
@@ -42,7 +36,9 @@ We welcome everyone interested in machine learning to contribute code, create is
 * [Configuration Details](./docs/deploy/config_details_en.md)
 
 ## Development
-* [core API]((./docs/apis/core_api_en.md))
+* [Architecture](./docs/overview/architecture_en.md)
+* [Angel PS Service](./docs/overview/ps_service_en.md)
+* [Core API]((./docs/apis/core_api_en.md))
 
 ## FAQ
 * [Angel FAQ](https://github.com/Tencent/angel/wiki/Angel%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
