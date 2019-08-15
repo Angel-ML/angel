@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -30,19 +30,23 @@ import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.client.MasterClient;
 import com.tencent.angel.ps.server.data.ServerState;
 import com.tencent.angel.utils.HdfsUtil;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-
+import com.tencent.angel.utils.Sort;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 
 /**
  * Snapshot dumper, it dump the matrices to hdfs once in a while
  */
 public class SnapshotDumper {
+
   private static final Log LOG = LogFactory.getLog(SnapshotDumper.class);
   /**
    * PS context
@@ -85,6 +89,8 @@ public class SnapshotDumper {
    */
   private final RunningMode mode;
 
+  private final int dumpParallel;
+
   /**
    * Create a SnapshotDumper
    *
@@ -97,13 +103,16 @@ public class SnapshotDumper {
     mode = context.getRunningMode();
 
     backupIntervalMs = context.getConf()
-      .getInt(AngelConf.ANGEL_PS_BACKUP_INTERVAL_MS, AngelConf.DEFAULT_ANGEL_PS_BACKUP_INTERVAL_MS);
+        .getInt(AngelConf.ANGEL_PS_BACKUP_INTERVAL_MS,
+            AngelConf.DEFAULT_ANGEL_PS_BACKUP_INTERVAL_MS);
+
+    dumpParallel = context.getConf()
+        .getInt(AngelConf.ANGEL_PS_BACKUP_PARALLEL, AngelConf.DEFAULT_ANGEL_PS_BACKUP_PARALLEL);
 
     outputDir = context.getConf().get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
     baseDirPath = new Path(
-      outputDir + Path.SEPARATOR + ModelFilesConstent.snapshotDirName + Path.SEPARATOR + context
-        .getPSAttemptId().getPsId() + Path.SEPARATOR + String
-        .valueOf(context.getPSAttemptId().getIndex()));
+        outputDir + Path.SEPARATOR + ModelFilesConstent.snapshotDirName + Path.SEPARATOR + context
+            .getPSAttemptId().getPsId());
 
     String matricesStr = context.getConf().get(AngelConf.ANGEL_PS_BACKUP_MATRICES);
     if (matricesStr == null) {
@@ -150,8 +159,6 @@ public class SnapshotDumper {
 
   /**
    * Write snapshot
-   *
-   * @throws Exception
    */
   private void writeSnapshots() throws Exception {
     List<Integer> matrixIds = null;
@@ -167,27 +174,7 @@ public class SnapshotDumper {
 
     List<Integer> needDumpMatrices = filter(matrixIds);
     if (needDumpMatrices != null && !needDumpMatrices.isEmpty()) {
-      FileSystem fs = baseDirPath.getFileSystem(context.getConf());
-      Path tmpPath = HdfsUtil.toTmpPath(baseDirPath);
-      if (fs.exists(tmpPath)) {
-        fs.delete(tmpPath, true);
-      }
-
-      List<Integer> ids = filter(matrixIds);
-      if (!ids.isEmpty()) {
-        int size = ids.size();
-        List<PSMatrixSaveContext> saveContexts = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-          MatrixMeta meta = context.getMatrixMetaManager().getMatrixMeta(ids.get(i));
-          saveContexts.add(
-            new PSMatrixSaveContext(ids.get(i), new ArrayList<>(meta.getPartitionMetas().keySet()),
-              null, SnapshotFormat.class.getName(), new Path(tmpPath, meta.getName()).toString(),
-              true, false));
-        }
-
-        context.getIOExecutors().save(new PSMatricesSaveContext(-1, -1, saveContexts));
-        HdfsUtil.rename(tmpPath, baseDirPath, fs);
-      }
+      checkpoint(matrixIds, 0, true, false);
     }
   }
 
@@ -196,7 +183,6 @@ public class SnapshotDumper {
    *
    * @param matrixIds all matrices
    * @return the matrices that need dump
-   * @throws ServiceException
    */
   private List<Integer> filter(List<Integer> matrixIds) throws ServiceException {
     int size = matrixIds.size();
@@ -215,7 +201,6 @@ public class SnapshotDumper {
    *
    * @param matrixId matrix id
    * @return true mean need dump
-   * @throws ServiceException
    */
   private boolean checkNeedDump(int matrixId) throws ServiceException {
     if (mode == RunningMode.ANGEL_PS) {
@@ -247,6 +232,114 @@ public class SnapshotDumper {
     if (!stopped.getAndSet(true)) {
       if (dumpDispatcher != null) {
         dumpDispatcher.interrupt();
+      }
+    }
+  }
+
+  private void checkpoint(List<Integer> matrixIds, int checkpointId, boolean cloneFirst,
+      boolean sortFirst) throws IOException {
+    if (matrixIds == null || matrixIds.isEmpty()) {
+      return;
+    }
+
+    List<PSMatrixSaveContext> saveContexts = new ArrayList<>(matrixIds.size());
+    List<Path> checkpointItemPaths = new ArrayList<>(matrixIds.size());
+    List<Path> tempPaths = new ArrayList<>(matrixIds.size());
+
+    for (int matrixId : matrixIds) {
+      Path checkpointItemPath = genCheckpointPath(matrixId, checkpointId);
+      Path tempPath = genTmpCheckpointPath(checkpointItemPath);
+      checkpointItemPaths.add(checkpointItemPath);
+      tempPaths.add(tempPath);
+
+      MatrixMeta meta = context.getMatrixMetaManager().getMatrixMeta(matrixId);
+      saveContexts.add(
+          new PSMatrixSaveContext(matrixId,
+              new ArrayList<>(meta.getPartitionMetas().keySet()),
+              null, SnapshotFormat.class.getName(),
+              tempPath.toString(),
+              cloneFirst, sortFirst));
+    }
+
+    context.getIOExecutors()
+        .save(new PSMatricesSaveContext(-1, -1, saveContexts), dumpParallel);
+
+    // Rename temp to item path
+    FileSystem fs = baseDirPath.getFileSystem(context.getConf());
+    for (int i = 0; i < matrixIds.size(); i++) {
+      HdfsUtil.rename(tempPaths.get(i), checkpointItemPaths.get(i), fs);
+      clearOldCheckpoint(fs, genMatrixPath(matrixIds.get(0)));
+    }
+  }
+
+  private Path genMatrixPath(int matrixId) throws IOException {
+    String matrixName = context.getMatrixMetaManager().getMatrixMeta(matrixId).getName();
+    LOG.info("checkpoint matrix " + matrixName);
+
+    // Checkpoint base path = Base dir/matrix name
+    return new Path(baseDirPath, matrixName);
+  }
+
+  private Path genCheckpointPath(int matrixId, int checkpointId) throws IOException {
+    // Path for this checkpoint
+    Path checkpointItemPath = new Path(genMatrixPath(matrixId), "" + checkpointId);
+    return checkpointItemPath;
+  }
+
+  private Path genTmpCheckpointPath(Path checkpointItemPath) throws IOException {
+    // Generate tmp path
+    Path tmpPath = HdfsUtil.toTmpPath(checkpointItemPath);
+
+    LOG.info("Checkpoint item path=" + checkpointItemPath.toString());
+    LOG.info("Checkpoint tmp path=" + tmpPath.toString());
+
+    FileSystem fs = checkpointItemPath.getFileSystem(context.getConf());
+    if (fs.exists(tmpPath)) {
+      boolean ret = fs.delete(tmpPath, true);
+      if (!ret) {
+        LOG.error("Delete tmp dir " + tmpPath.toString() + " failed");
+        throw new IOException("Delete tmp dir " + tmpPath.toString() + " failed ");
+      }
+    }
+
+    return tmpPath;
+  }
+
+  public void checkpoint(int matrixId, int checkpointId) throws IOException {
+    List<Integer> matrixIds = new ArrayList<>(1);
+    matrixIds.add(matrixId);
+    checkpoint(matrixIds, checkpointId, false, false);
+  }
+
+  private void clearOldCheckpoint(FileSystem fs, Path checkpointPath) throws IOException {
+    int maxCheckpoint = context.getConf().getInt(AngelConf.ANGEL_PS_CHECKPOINTS_MAX_NUM,
+        AngelConf.DEFAULT_ANGEL_PS_CHECKPOINTS_MAX_NUM);
+    FileStatus[] status = fs.listStatus(checkpointPath);
+    if (status.length <= maxCheckpoint) {
+      return;
+    }
+
+    // Delete old checkpoints
+    int[] checkpointIds = new int[status.length];
+    for (int i = 0; i < status.length; i++) {
+      try {
+        checkpointIds[i] = Integer.valueOf(status[i].getPath().getName());
+      } catch (Throwable x) {
+        LOG.warn("Path " + status[i].getPath().toString()
+            + " is not a valid checkpoint path, just remove it");
+      }
+    }
+
+    Sort.quickSort(checkpointIds, status, 0, checkpointIds.length - 1);
+    for (int i = 0; i < checkpointIds.length - maxCheckpoint; i++) {
+      try {
+        if (!fs.delete(status[i].getPath(), true)) {
+          LOG.warn("Delete path " + status[i].getPath() + " failed ");
+        } else {
+          LOG.info("Delete old checkpoint " + status[i].getPath() + " failed ");
+        }
+      } catch (Throwable x) {
+        LOG.warn("Delete path " + status[i].getPath() + " failed ", x);
       }
     }
   }

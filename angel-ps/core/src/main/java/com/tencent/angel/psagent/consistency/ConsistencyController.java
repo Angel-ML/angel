@@ -84,7 +84,7 @@ public class ConsistencyController {
       if (staleness == 0 && PSAgentContext.get().getLocalTaskNum() == 1) {
         waitForClock(matrixId, rowIndex, taskContext.getMatrixClock(matrixId));
         return ((GetRowResult) PSAgentContext.get().getUserRequestAdapter()
-          .get(new GetRow(new GetRowParam(matrixId, rowIndex)))).getRow();
+          .get(new GetRow(new GetRowParam(matrixId, rowIndex))).get()).getRow();
       }
 
       // Get row from cache.
@@ -103,13 +103,13 @@ public class ConsistencyController {
       // Wait until the clock value of this row is greater than or equal to the value
       int stalenessClock = taskContext.getMatrixClock(matrixId) - staleness;
       waitForClock(matrixId, rowIndex, stalenessClock);
-      row = PSAgentContext.get().getUserRequestAdapter().getRow(matrixId, rowIndex, stalenessClock);
+      row = PSAgentContext.get().getUserRequestAdapter().getRow(matrixId, rowIndex, stalenessClock).get();
       PSAgentContext.get().getMatrixStorageManager().addRow(matrixId, rowIndex, row);
       return cloneRow(matrixId, rowIndex, row);
     } else {
       // For ASYNC mode, just get from pss.
       GetRow func = new GetRow(new GetRowParam(matrixId, rowIndex));
-      GetRowResult result = ((GetRowResult) PSAgentContext.get().getUserRequestAdapter().get(func));
+      GetRowResult result = ((GetRowResult) PSAgentContext.get().getUserRequestAdapter().get(func).get());
       if (result.getResponseType() == ResponseType.FAILED) {
         throw new IOException("get row from ps failed.");
       } else {
@@ -157,7 +157,7 @@ public class ConsistencyController {
       GetRows func = new GetRows(new GetRowsParam(rowIndex.getMatrixId(), rowIdSet.toIntArray()));
       com.tencent.angel.ml.matrix.psf.get.getrows.GetRowsResult funcResult =
         ((com.tencent.angel.ml.matrix.psf.get.getrows.GetRowsResult) PSAgentContext.get()
-          .getUserRequestAdapter().get(func));
+          .getUserRequestAdapter().get(func).get());
 
       if (funcResult.getResponseType() == ResponseType.FAILED) {
         throw new IOException("get rows from ps failed.");
@@ -278,7 +278,7 @@ public class ConsistencyController {
     if (staleness >= 0) {
       waitForClock(matrixId, rowIndex, taskContext.getMatrixClock(matrixId) - staleness);
     }
-    return ((GetRowResult) PSAgentContext.get().getUserRequestAdapter().get(func)).getRow();
+    return ((GetRowResult) PSAgentContext.get().getUserRequestAdapter().get(func).get()).getRow();
   }
 
   /**
@@ -296,7 +296,7 @@ public class ConsistencyController {
     if (staleness >= 0) {
       waitForClock(matrixId, rowIndex, taskContext.getMatrixClock(matrixId) - staleness);
     }
-    return ((GetRowResult) PSAgentContext.get().getUserRequestAdapter().get(func)).getRow();
+    return ((GetRowResult) PSAgentContext.get().getUserRequestAdapter().get(func).get()).getRow();
   }
 
   /**

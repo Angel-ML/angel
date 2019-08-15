@@ -25,10 +25,12 @@ import com.google.protobuf.ServiceException;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.common.location.Location;
 import com.tencent.angel.exception.StandbyException;
+import com.tencent.angel.master.matrix.committer.SaveResult;
 import com.tencent.angel.master.task.AMTask;
 import com.tencent.angel.master.worker.attempt.WorkerAttempt;
 import com.tencent.angel.master.worker.worker.AMWorker;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroup;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ml.matrix.*;
 import com.tencent.angel.model.*;
 import com.tencent.angel.protobuf.generated.MLProtos.*;
@@ -315,7 +317,8 @@ public final class ProtobufUtil {
   }
 
   public static MatrixContextProto convertToMatrixContextProto(MatrixContext mContext) {
-    return MatrixContextProto.newBuilder().setName(mContext.getName()).setId(mContext.getMatrixId())
+    MatrixContextProto.Builder builder =  MatrixContextProto.newBuilder();
+    builder.setName(mContext.getName()).setId(mContext.getMatrixId())
         .setRowNum(mContext.getRowNum()).setColNum(mContext.getColNum())
         .setIndexStart(mContext.getIndexStart())
         .setIndexEnd(mContext.getIndexEnd())
@@ -325,7 +328,12 @@ public final class ProtobufUtil {
         .setRowType(mContext.getRowType().getNumber())
         .setPartitionerClassName(mContext.getPartitionerClass().getName())
         .addAllParts(convertToPartContextsProto(mContext.getParts()))
-        .addAllAttribute(convertToPairs(mContext.getAttributes())).build();
+        .addAllAttribute(convertToPairs(mContext.getAttributes()));
+    if(mContext.getInitFunc() != null) {
+      builder.setInitFunc(ByteString.copyFrom(SerdeUtils.serializeInitFunc(mContext.getInitFunc())));
+    }
+
+    return builder.build();
   }
 
   public static List<PartContext> convertToPartContexts(List<PartContextProto> partsProto) {
@@ -359,7 +367,8 @@ public final class ProtobufUtil {
 
   public static PartContextProto convert(PartContext part) {
     return PartContextProto.newBuilder().setStartRow(part.getStartRow()).setEndRow(part.getEndRow())
-        .setStartCol(part.getStartCol()).setEndCol(part.getEndCol()).setIndexNum(part.getIndexNum()).build();
+        .setStartCol(part.getStartCol()).setEndCol(part.getEndCol()).setIndexNum(part.getIndexNum())
+        .build();
   }
 
   public static List<Pair> convertToPairs(Map<String, String> attrs) {
@@ -406,6 +415,9 @@ public final class ProtobufUtil {
         (Class<? extends Partitioner>) Class.forName(matrixContextProto.getPartitionerClassName()));
     matrixContext.getAttributes()
         .putAll(convertToAttributes(matrixContextProto.getAttributeList()));
+    if(matrixContextProto.hasInitFunc()) {
+      matrixContext.setInitFunc(SerdeUtils.deserializeInitFunc(matrixContextProto.getInitFunc().toByteArray()));
+    }
 
     return matrixContext;
   }
@@ -478,7 +490,7 @@ public final class ProtobufUtil {
   }
 
   public static List<MatrixMeta> convertToMatricesMeta(List<MatrixMetaProto> matricesMetaProto)
-      throws ClassNotFoundException {
+      throws ClassNotFoundException, IOException {
     int size = matricesMetaProto.size();
     List<MatrixMeta> matricesMeta = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {
@@ -631,6 +643,7 @@ public final class ProtobufUtil {
     List<MatrixSaveContext> matricesContext = saveContext.getMatricesContext();
     ModelSaveContextProto.Builder builder = ModelSaveContextProto.newBuilder();
     builder.setSavePath(saveContext.getSavePath());
+    builder.setCheckpint(saveContext.isCheckpoint());
     int size = matricesContext.size();
     for (int i = 0; i < size; i++) {
       builder.addMatrixContextes(convert(matricesContext.get(i)));
@@ -647,6 +660,7 @@ public final class ProtobufUtil {
 
   public static ModelSaveContext convert(ModelSaveContextProto saveContext) {
     ModelSaveContext context = new ModelSaveContext(saveContext.getSavePath());
+    context.setCheckpoint(saveContext.getCheckpint());
     List<MatrixSaveContextProto> matricesContext = saveContext.getMatrixContextesList();
     int size = matricesContext.size();
     for (int i = 0; i < size; i++) {
@@ -790,5 +804,14 @@ public final class ProtobufUtil {
       matrixContexts.add(convert(matrixContextProtos.get(i)));
     }
     return new ModelLoadContext(contextProto.getLoadPath(), matrixContexts);
+  }
+
+  public static SaveResultProto convert(SaveResult result) {
+    return SaveResultProto.newBuilder().setModelPath(result.getModelPath())
+        .setMatrixPath(result.getMatrixPath()).setSaveTs(result.getSaveTs()).build();
+  }
+
+  public static SaveResult convert(SaveResultProto result) {
+    return new SaveResult(result.getModelPath(), result.getMatrixPath(), result.getSaveTs());
   }
 }

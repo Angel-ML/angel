@@ -23,15 +23,15 @@ import java.io.{BufferedReader, InputStreamReader}
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.conf.AngelConf._
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.core.conf.MLConf
-import com.tencent.angel.ml.core.conf.MLConf._
-import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.core.conf.AngelMLConf
+import com.tencent.angel.ml.core.conf.AngelMLConf._
+import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.ml.lda.LDAModel._
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.ml.model.{MLModel, PSModel}
+import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.model.{OldMLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
-import com.tencent.angel.worker.storage.DataBlock
+import com.tencent.angel.ml.math2.utils.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
@@ -85,14 +85,14 @@ object LDAModel {
 
   val WORD_NUM_PATH = "word.num.path"
 
-  val SAVE_PATH = "save.path"
+  val SAVE_PATH = "modelPath"
 }
 
-class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
+class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends OldMLModel(conf, _ctx) {
 
   val LOG = LogFactory.getLog(classOf[LDAModel])
 
-  val numTasks = conf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, -1)
+  val numTasks = conf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 10)
 
   // Initializing parameters
   //  var V: Int = 0
@@ -105,7 +105,7 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
 
   val K = conf.getInt(TOPIC_NUM, 1)
   val M = conf.getInt(DOC_NUM, 1)
-  val epoch = conf.getInt(MLConf.ML_EPOCH_NUM, 10)
+  val epoch = conf.getInt(AngelMLConf.ML_EPOCH_NUM, 10)
   val alpha = conf.getFloat(ALPHA, 50.0F / K)
   val beta = conf.getFloat(BETA, 0.01F)
   var vBeta = 0F
@@ -140,7 +140,7 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
 
   val actType = conf.get(AngelConf.ANGEL_ACTION_TYPE)
   actType match {
-    case MLConf.ANGEL_ML_PREDICT => addPSModel(wtMat)
+    case AngelMLConf.ANGEL_ML_PREDICT => addPSModel(wtMat)
     case _ =>
   }
   addPSModel(tMat)
@@ -149,8 +149,7 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
   //  setSavePath(conf)
   //  setLoadPath(conf)
 
-  override
-  def predict(dataSet: DataBlock[LabeledData]): DataBlock[PredictResult] = {
+  override def predict(dataSet: DataBlock[LabeledData]): DataBlock[PredictResult] = {
     null
   }
 

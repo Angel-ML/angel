@@ -20,6 +20,7 @@ package com.tencent.angel.ml.matrix.psf.update.enhance
 
 import com.tencent.angel.ml.matrix.psf.Utils
 import com.tencent.angel.ml.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc}
+import com.tencent.angel.ps.storage.partition.RowBasedPartition
 import com.tencent.angel.ps.storage.vector._
 
 
@@ -42,7 +43,7 @@ abstract class MultiRowUpdateFunc(param: MultiRowUpdateParam) extends UpdateFunc
       val values = mf.getValues
       for (i <- rowIds.indices){
         if (Utils.withinPart(partParam.getPartKey, Array(rowIds(i))))
-          update(part.getRow(i), values(i))
+          update(part.asInstanceOf[RowBasedPartition].getRow(i), values(i))
       }
     }
   }

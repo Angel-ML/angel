@@ -19,11 +19,8 @@
 package com.tencent.angel.ml.core
 
 import com.tencent.angel.AppSubmitter
-import com.tencent.angel.client.AngelClientFactory
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.core.conf.MLConf
-import com.tencent.angel.ml.model.MLModel
-import com.tencent.angel.worker.task.BaseTask
+import com.tencent.angel.mlcore.conf.MLCoreConf
 import org.apache.hadoop.conf.Configuration
 
 
@@ -35,58 +32,18 @@ trait MLRunner extends AppSubmitter {
   def train(conf: Configuration)
 
   /**
-    * Default train method with standard training process. Don't Override this method.
-    *
-    * @param conf
-    * @param model
-    * @param taskClass
-    */
-  final protected def train(conf: Configuration, model: MLModel, taskClass: Class[_ <: BaseTask[_, _, _]]): Unit = {
-    val client = AngelClientFactory.get(conf)
-
-    try {
-      client.startPSServer()
-      client.loadModel(model)
-      client.runTask(taskClass)
-      client.waitForCompletion()
-      client.saveModel(model)
-    } finally {
-      client.stop()
-    }
-  }
-
-  /**
     * Using a model to predict with unobserved samples
     */
   def predict(conf: Configuration)
-
-  /**
-    * Default predict method with standard predict process. Don't try to override this Method.
-    *
-    * @param conf
-    * @param model
-    * @param taskClass
-    */
-  final protected def predict(conf: Configuration, model: MLModel, taskClass: Class[_ <: BaseTask[_, _, _]]): Unit = {
-    val client = AngelClientFactory.get(conf)
-    try {
-      client.startPSServer()
-      client.loadModel(model)
-      client.runTask(taskClass)
-      client.waitForCompletion()
-    } finally {
-      client.stop(0)
-    }
-  }
 
   @throws[Exception]
   override
   def submit(conf: Configuration): Unit = {
     val actType = conf.get(AngelConf.ANGEL_ACTION_TYPE)
     actType match {
-      case MLConf.ANGEL_ML_TRAIN | MLConf.ANGEL_ML_INC_TRAIN  =>
+      case MLCoreConf.ANGEL_ML_TRAIN | MLCoreConf.ANGEL_ML_INC_TRAIN  =>
         train(conf)
-      case MLConf.ANGEL_ML_PREDICT =>
+      case MLCoreConf.ANGEL_ML_PREDICT =>
         predict(conf)
       case _ =>
         println("Error action type, should be train or predict or inctrain")

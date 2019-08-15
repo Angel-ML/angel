@@ -20,6 +20,7 @@ package com.tencent.angel.utils;
 
 import it.unimi.dsi.fastutil.doubles.DoubleComparator;
 import it.unimi.dsi.fastutil.ints.IntComparator;
+import java.util.Random;
 
 /**
  * Quick sort utils
@@ -270,6 +271,62 @@ public class Sort {
     }
   }
 
+  public static <T> void quickSort(int [] ids, T[] values, int low, int high) {
+    if (low < high) {
+      int tmp = ids[low];
+      T tmpValue = values[low];
+      int ii = low, jj = high;
+      while (ii < jj) {
+        while (ii < jj && ids[jj] >= tmp) {
+          jj--;
+        }
+
+        ids[ii] = ids[jj];
+        values[ii] = values[jj];
+
+        while (ii < jj && ids[ii] <= tmp) {
+          ii++;
+        }
+
+        ids[jj] = ids[ii];
+        values[jj] = values[ii];
+      }
+      ids[ii] = tmp;
+      values[ii] = tmpValue;
+
+      quickSort(ids, values, low, ii - 1);
+      quickSort(ids, values, ii + 1, high);
+    }
+  }
+
+  public static <T> void quickSort(long [] ids, T[] values, int low, int high) {
+    if (low < high) {
+      long tmp = ids[low];
+      T tmpValue = values[low];
+      int ii = low, jj = high;
+      while (ii < jj) {
+        while (ii < jj && ids[jj] >= tmp) {
+          jj--;
+        }
+
+        ids[ii] = ids[jj];
+        values[ii] = values[jj];
+
+        while (ii < jj && ids[ii] <= tmp) {
+          ii++;
+        }
+
+        ids[jj] = ids[ii];
+        values[jj] = values[ii];
+      }
+      ids[ii] = tmp;
+      values[ii] = tmpValue;
+
+      quickSort(ids, values, low, ii - 1);
+      quickSort(ids, values, ii + 1, high);
+    }
+  }
+
   public static void quickSort(double[] x, double[] y, int from, int to, DoubleComparator comp) {
     int len = to - from;
     if (len < 7) {
@@ -435,6 +492,41 @@ public class Sort {
         y[i] = y[m];
         y[m] = temp;
       }
+    }
+  }
+
+  public static void main(String [] args) {
+    int len = 100000000;
+    double [] predicts = new double[len];
+    double [] labels = new double[len];
+
+    Random r = new Random();
+    for(int i = 0; i < len; i++) {
+      predicts[i] = 1.0;
+      labels[i] = 1.0;
+    }
+
+    DoubleComparator cmp = new DoubleComparator() {
+      @Override public int compare(double i, double i1) {
+        if (Math.abs(i - i1) < 10e-12) {
+          return 0;
+        } else {
+          return i - i1 > 10e-12 ? 1 : -1;
+        }
+      }
+
+      @Override public int compare(Double o1, Double o2) {
+        if (Math.abs(o1 - o2) < 10e-12) {
+          return 0;
+        } else {
+          return o1 - o2 > 10e-12 ? 1 : -1;
+        }
+      }
+    };
+
+    while(len-- > -10) {
+      System.out.println("len=" + len);
+      quickSort(predicts, labels, 0, len, cmp);
     }
   }
 }

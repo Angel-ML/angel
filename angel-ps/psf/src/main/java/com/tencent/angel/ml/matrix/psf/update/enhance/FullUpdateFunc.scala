@@ -20,9 +20,9 @@ package com.tencent.angel.ml.matrix.psf.update.enhance
 
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc}
-import com.tencent.angel.ps.storage.matrix.ServerPartition
+import com.tencent.angel.ps.storage.partition.RowBasedPartition
 import com.tencent.angel.ps.storage.vector._
 
 
@@ -40,11 +40,11 @@ abstract class FullUpdateFunc(param: FullUpdateParam) extends UpdateFunc(param) 
       .getPart(partParam.getMatrixId, partParam.getPartKey.getPartitionId)
     if (part != null) {
       val ff = partParam.asInstanceOf[FullUpdateParam.FullPartitionUpdateParam]
-      update(part, partParam.getPartKey, ff.getValues);
+      update(part.asInstanceOf[RowBasedPartition], partParam.getPartKey, ff.getValues);
     }
   }
 
-  private def update(part: ServerPartition, key: PartitionKey, values: Array[Double]) {
+  private def update(part: RowBasedPartition, key: PartitionKey, values: Array[Double]) {
     val startRow = key.getStartRow
     val endRow = key.getEndRow
     part.getRowType match {

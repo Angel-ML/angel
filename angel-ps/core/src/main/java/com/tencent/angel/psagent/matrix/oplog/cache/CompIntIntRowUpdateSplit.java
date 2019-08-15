@@ -18,9 +18,13 @@
 
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
-import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.VFactory;
+import com.tencent.angel.ml.math2.storage.IntIntDenseVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntIntSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntIntSparseVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntIntVectorStorage;
 import com.tencent.angel.ml.math2.vector.IntIntVector;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
@@ -51,14 +55,28 @@ public class CompIntIntRowUpdateSplit extends RowUpdateSplit {
     this.split = split;
     this.maxItemNum = maxItemNum;
 
-    IntIntVectorStorage storage = split.getStorage();
-    if (storage instanceof IntIntDenseVectorStorage) {
-      rowType = RowType.T_INT_DENSE_COMPONENT;
-    } else {
-      rowType = RowType.T_INT_SPARSE_COMPONENT;
+    if (split != null) {
+      IntIntVectorStorage storage = split.getStorage();
+      if (storage instanceof IntIntDenseVectorStorage) {
+        rowType = RowType.T_INT_DENSE_COMPONENT;
+      } else {
+        rowType = RowType.T_INT_SPARSE_COMPONENT;
+      }
     }
   }
 
+  /**
+   * Create new empty CompIntFloatRowUpdateSplit
+   */
+  public CompIntIntRowUpdateSplit() {
+    this(-1, null, -1);
+  }
+
+  /**
+   * Get row update split vector
+   *
+   * @return row update split vector
+   */
   public IntIntVector getSplit() {
     return split;
   }
@@ -95,6 +113,29 @@ public class CompIntIntRowUpdateSplit extends RowUpdateSplit {
     } else {
       throw new UnsupportedOperationException(
           "unsupport split for storage " + storage.getClass().getName());
+    }
+  }
+
+
+  @Override
+  public void deserialize(ByteBuf buf) {
+    super.deserialize(buf);
+    int elemNum = buf.readInt();
+    if (rowType == RowType.T_INT_DENSE_COMPONENT) {
+      int[] values = new int[elemNum];
+      for (int i = 0; i < elemNum; i++) {
+        values[i] = buf.readInt();
+      }
+      vector = VFactory.denseIntVector(values);
+    } else if (rowType == RowType.T_INT_SPARSE_COMPONENT) {
+      vector = VFactory.sparseIntVector(
+          (int) (splitContext.getPartKey().getEndCol() - splitContext.getPartKey().getStartCol()),
+          elemNum);
+      for (int i = 0; i < elemNum; i++) {
+        ((IntIntVector) vector).set(buf.readInt(), buf.readInt());
+      }
+    } else {
+      throw new UnsupportedOperationException("Unsupport rowtype " + rowType);
     }
   }
 

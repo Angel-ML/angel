@@ -18,6 +18,7 @@
 
 package com.tencent.angel.master.worker;
 
+import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.app.AppEvent;
@@ -49,6 +50,7 @@ import org.apache.hadoop.yarn.factory.providers.RecordFactoryProvider;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -143,6 +145,13 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
    */
   private final ConcurrentHashMap<WorkerAttemptId, Long> workerLastHeartbeatTS =
     new ConcurrentHashMap<>();
+
+  /**
+   * worker attempt id queue for kubernetes allocator
+   */
+  private final LinkedBlockingDeque<WorkerAttemptId> workerAttemptIdBlockingQueue =
+          new LinkedBlockingDeque<>();
+
   /**
    * worker timeout value in millisecond
    */
@@ -441,6 +450,15 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
     }
   }
 
+    /**
+     * parameter server attempt id queue
+     * @return LinkedBlockingDeque<PSAttemptId>
+     */
+
+    public LinkedBlockingDeque<WorkerAttemptId> getWorkerAttemptIdBlockingQueue() {
+        return workerAttemptIdBlockingQueue;
+    }
+
   /**
    * get actual total task number
    *
@@ -478,6 +496,20 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
     try {
       readLock.lock();
       return workersMap.size();
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  /**
+   * get worker number
+   *
+   * @return int worker number
+   */
+  public int getRegisterWorkerNumber() {
+    try {
+      readLock.lock();
+      return workerLastHeartbeatTS.size();
     } finally {
       readLock.unlock();
     }
@@ -628,6 +660,9 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
   public void register(WorkerAttemptId workerAttemptId) {
     LOG.info(workerAttemptId + " is registered in monitor!");
     workerLastHeartbeatTS.put(workerAttemptId, System.currentTimeMillis());
+    if (context.getDeployMode() == AngelDeployMode.KUBERNETES) {
+        workerAttemptIdBlockingQueue.add(workerAttemptId);
+    }
   }
 
   /**

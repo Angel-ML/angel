@@ -25,10 +25,10 @@ import scala.collection.mutable.Map
 import org.apache.commons.logging.{Log, LogFactory}
 import com.tencent.angel.conf.MatrixConf
 import com.tencent.angel.exception.{AngelException, InvalidParameterException}
-import com.tencent.angel.ml.matrix.{MatrixContext, MatrixOpLogType, RowType}
+import com.tencent.angel.ml.math2.utils.RowType
+import com.tencent.angel.ml.matrix.{MatrixContext, MatrixOpLogType}
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
-import com.tencent.angel.ml.matrix.psf.get.indexed.{IndexGet, IndexGetParam, LongIndexGet, LongIndexGetParam}
 import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
 import com.tencent.angel.ml.matrix.psf.update.zero.Zero
 import com.tencent.angel.ml.matrix.psf.update.zero.Zero.ZeroParam
@@ -432,7 +432,7 @@ class PSModel(
   @throws(classOf[AngelException])
   def update(func: UpdateFunc): Future[VoidResult] = {
     try {
-      return getClient.update(func)
+      return getClient.asyncUpdate(func)
     }
     catch {
       case e: InvalidParameterException => {

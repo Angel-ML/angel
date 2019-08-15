@@ -21,7 +21,7 @@ package com.tencent.angel.ps.storage.partitioner;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.PartitionMeta;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -142,5 +142,24 @@ public class RangePartitioner implements Partitioner {
   public int assignPartToServer(int partId) {
     int serverNum = conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
     return partId % serverNum;
+  }
+
+  public static void main(String [] args) {
+    MatrixContext matrix1 = new MatrixContext();
+    matrix1.setRowNum(1);
+    matrix1.setColNum(-1);
+    matrix1.setMaxRowNumInBlock(1);
+    matrix1.setMaxColNumInBlock(-1);
+    matrix1.setValidIndexNum(252830411);
+    matrix1.setRowType(RowType.T_FLOAT_SPARSE_LONGKEY);
+    matrix1.setName("w1");
+    matrix1.setIndexStart(Long.MIN_VALUE);
+    matrix1.setIndexEnd(Long.MAX_VALUE);
+
+    Configuration conf = new Configuration();
+    RangePartitioner partitioner = new RangePartitioner();
+
+    partitioner.init(matrix1, conf);
+    partitioner.getPartitions();
   }
 }

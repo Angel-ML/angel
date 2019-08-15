@@ -31,7 +31,7 @@ import com.tencent.angel.ml.psf.compress.QuantifyDoubleFunc;
 import com.tencent.angel.ml.GBDT.psf.GBDTGradHistGetRowFunc;
 import com.tencent.angel.ml.GBDT.psf.GBDTGradHistGetRowResult;
 import com.tencent.angel.ml.GBDT.psf.HistAggrParam;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.conf.AngelMLConf;
 import com.tencent.angel.ml.core.utils.Maths;
 import com.tencent.angel.ml.math2.storage.IntDoubleDenseVectorStorage;
 import com.tencent.angel.ml.math2.storage.IntDoubleSparseVectorStorage;
@@ -120,7 +120,7 @@ public class GBDTController {
     this.sketches = new float[this.param.numFeature * this.param.numSplit];
 
     String cateFeatStr = this.taskContext.getConf()
-            .get(MLConf.ML_GBDT_CATE_FEAT(), MLConf.DEFAULT_ML_GBDT_CATE_FEAT());
+            .get(AngelMLConf.ML_GBDT_CATE_FEAT(), AngelMLConf.DEFAULT_ML_GBDT_CATE_FEAT());
     cateFeatList = new ArrayList<>();
     cateFeatNum = new HashMap<>();
     switch (cateFeatStr) {
@@ -557,10 +557,10 @@ public class GBDTController {
     Set<Integer> pushNodes = new HashSet<>(calNodes);
     pushNodes.addAll(subNodes);
     int bytesPerItem = this.taskContext.getConf().
-            getInt(MLConf.ANGEL_COMPRESS_BYTES(), MLConf.DEFAULT_ANGEL_COMPRESS_BYTES());
+            getInt(AngelMLConf.ANGEL_COMPRESS_BYTES(), AngelMLConf.DEFAULT_ANGEL_COMPRESS_BYTES());
     if (bytesPerItem < 1 || bytesPerItem > 8) {
       LOG.info("Invalid compress configuration: " + bytesPerItem + ", it should be [1,8].");
-      bytesPerItem = MLConf.DEFAULT_ANGEL_COMPRESS_BYTES();
+      bytesPerItem = AngelMLConf.DEFAULT_ANGEL_COMPRESS_BYTES();
     }
     for (int nid : pushNodes) {
       pushHistogram(nid, bytesPerItem);
@@ -628,9 +628,9 @@ public class GBDTController {
     double[] updatedSplitGain = new double[tNodeId.length]; // the updated split gain
 
     boolean isServerSplit = taskContext.getConf()
-            .getBoolean(MLConf.ML_GBDT_SERVER_SPLIT(), MLConf.DEFAULT_ML_GBDT_SERVER_SPLIT());
+            .getBoolean(AngelMLConf.ML_GBDT_SERVER_SPLIT(), AngelMLConf.DEFAULT_ML_GBDT_SERVER_SPLIT());
     int splitNum =
-            taskContext.getConf().getInt(MLConf.ML_GBDT_SPLIT_NUM(), MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
+            taskContext.getConf().getInt(AngelMLConf.ML_GBDT_SPLIT_NUM(), AngelMLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
 
     for (int i = 0; i < tNodeId.length; i++) {
       int nid = tNodeId[i];

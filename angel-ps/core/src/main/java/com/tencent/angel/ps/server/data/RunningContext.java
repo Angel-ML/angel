@@ -94,6 +94,8 @@ public class RunningContext {
         checkOOM();
         if (LOG.isDebugEnabled()) {
           printToken();
+        } else {
+          printTokenIfBusy();
         }
 
         try {
@@ -108,6 +110,12 @@ public class RunningContext {
 
     tokenTimeoutChecker.setName("token-timeout-checker");
     tokenTimeoutChecker.start();
+  }
+
+  private void printTokenIfBusy() {
+    if(getState() == ServerState.BUSY) {
+      printToken();
+    }
   }
 
   /**

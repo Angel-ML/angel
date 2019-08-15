@@ -103,13 +103,33 @@ public class PSModelSaver {
    * @param saveContext save context
    */
   public void save(PSMatricesSaveContext saveContext) {
+    writeLock.lock();
     try {
-      context.getMaster().saveStart(saveContext.getRequestId(), saveContext.getSubRequestId());
-    } catch (Throwable e) {
-      LOG.error("send save start message to master failed ", e);
-      return;
+      if (saveContexts.containsKey(saveContext.getRequestId())) {
+        LOG.info("Save task " + saveContexts.get(saveContext.getRequestId()) + " is running");
+        return;
+      }
+
+      if (currentRequestId != -1) {
+        LOG.warn(
+            "There is another save task now, just stop it " + saveContexts.get(currentRequestId));
+        if (fileOpExecutor != null) {
+          fileOpExecutor.shutdown();
+        }
+      }
+
+      currentRequestId = saveContext.getRequestId();
+      lastRequestId = currentRequestId;
+      saveContexts.put(currentRequestId, saveContext);
+      results.put(currentRequestId,
+          new PSMatricesSaveResult(currentRequestId, saveContext.getSubRequestId(),
+              SaveState.SAVING));
+      save(saveContext, results.get(currentRequestId));
+    } finally {
+      writeLock.unlock();
     }
 
+    /*
     try {
       writeLock.lock();
 
@@ -135,6 +155,7 @@ public class PSModelSaver {
     } finally {
       writeLock.unlock();
     }
+    */
   }
 
   /**

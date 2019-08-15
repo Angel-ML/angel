@@ -22,7 +22,7 @@ import com.tencent.angel.common.Serialize
 import com.tencent.angel.ml.math2.ufuncs.executor.UnaryExecutor
 import com.tencent.angel.ml.matrix.psf.update.enhance.map.func.MapFunc
 import com.tencent.angel.ml.matrix.psf.update.enhance.{MFUpdateFunc, MFUpdateParam}
-import com.tencent.angel.ps.storage.vector.ServerRow
+import com.tencent.angel.ps.storage.vector.{ServerRow, ServerRowUtils}
 
 /**
   * It is a Map function which applies `MapFunc` to `fromId` row and saves the result to `toId` row
@@ -36,10 +36,10 @@ class Map(param: MFUpdateParam) extends MFUpdateFunc(param) {
   def update(rows: Array[ServerRow], func: Serialize) {
     val op = func.asInstanceOf[MapFunc]
     assert(!op.isInplace, "inplace op")
-    val mapValue = UnaryExecutor.apply(rows(0).getSplit, op)
+    val mapValue = UnaryExecutor.apply(ServerRowUtils.getVector(rows(0)), op)
     rows(1).startWrite()
     try {
-      rows(1).setSplit(mapValue)
+      ServerRowUtils.setVector(rows(1), mapValue)
     } finally {
       rows(1).endWrite()
     }

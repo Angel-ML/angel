@@ -19,15 +19,10 @@
 package com.tencent.angel.ml.core.graphsubmit
 
 import com.tencent.angel.ml.core.TrainTask
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.math2.utils.{DataBlock, LabeledData, RowType}
 import com.tencent.angel.ml.math2.vector.Vector
-import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.ml.core.utils.{DataParser, NetUtils}
-import com.tencent.angel.worker.storage.{DataBlock, DiskDataBlock, MemoryAndDiskDataBlock, MemoryDataBlock}
+import com.tencent.angel.worker.storage.{DiskDataBlock, MemoryAndDiskDataBlock, MemoryDataBlock}
 import com.tencent.angel.worker.task.TaskContext
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.hadoop.io.{LongWritable, Text}
 
@@ -35,8 +30,8 @@ import org.apache.hadoop.io.{LongWritable, Text}
 class GraphTrainTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
   val LOG: Log = LogFactory.getLog(classOf[GraphTrainTask])
 
-  private val valiRat = SharedConf.validateRatio
-  private val posnegRatio: Double = SharedConf.posnegRatio()
+  private val valiRat = sharedConf.validateRatio
+  private val posnegRatio: Double = sharedConf.posnegRatio()
 
   // validation data storage
   val validDataBlock: DataBlock[LabeledData] = getDataBlock("memory")
@@ -44,12 +39,11 @@ class GraphTrainTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx
   val negDataBlock: DataBlock[LabeledData] = getDataBlock()
 
   // data format of training data, libsvm or dummy
-  override val dataParser = DataParser(SharedConf.get())
-  val modelType: RowType = SharedConf.modelType
-  val modelClassName: String = SharedConf.modelClassName
+  val modelType: RowType = sharedConf.modelType
+  val modelClassName: String = sharedConf.modelClassName
 
-  override def train(ctx: TaskContext) {
-    val trainer = new GraphLearner(modelClassName, ctx)
+  override def train(ctx: TaskContext): Unit = {
+    val trainer = new GraphLearner(sharedConf, ctx)
     if (posnegRatio == -1) {
       trainer.train(taskDataBlock, validDataBlock)
     } else {
@@ -105,7 +99,7 @@ class GraphTrainTask(ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx
     val storageLevel = if (level != null && level.length != 0) {
       level
     } else {
-      SharedConf.storageLevel
+      sharedConf.storageLevel
     }
 
     if (storageLevel.equalsIgnoreCase("memory")) {

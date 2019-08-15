@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -24,21 +24,21 @@ import com.tencent.angel.ml.math2.matrix.Matrix;
 import com.tencent.angel.ml.math2.matrix.RowBasedMatrix;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.storage.MatrixStorage;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Matrix update cache.
  */
 public class MatrixOpLog {
+
   protected final static Log LOG = LogFactory.getLog(MatrixOpLog.class);
 
   /**
@@ -79,7 +79,7 @@ public class MatrixOpLog {
     }
 
     return MatrixFactory
-      .createRBMatrix(opLogType, meta.getRowNum(), meta.getColNum(), meta.getBlockColNum());
+        .createRBMatrix(opLogType, meta.getRowNum(), meta.getColNum(), meta.getBlockColNum());
   }
 
   /**
@@ -87,7 +87,7 @@ public class MatrixOpLog {
    */
   public void flushToLocalStorage() {
     MatrixStorage storage =
-      PSAgentContext.get().getMatrixStorageManager().getMatrixStoage(matrixId);
+        PSAgentContext.get().getMatrixStorageManager().getMatrixStoage(matrixId);
     MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
     int row = matrixMeta.getRowNum();
 
@@ -100,8 +100,9 @@ public class MatrixOpLog {
       for (int rowIndex = 0; rowIndex < row; rowIndex++) {
         deltaVector = getRow(rowIndex);
         vector = storage.getRow(rowIndex);
-        if (deltaVector == null || vector == null)
+        if (deltaVector == null || vector == null) {
           continue;
+        }
         vector.iaxpy(deltaVector, 1.0 / PSAgentContext.get().getTotalTaskNum());
       }
     } finally {
@@ -117,19 +118,22 @@ public class MatrixOpLog {
   public void split(Map<PartitionKey, List<RowUpdateSplit>> psUpdateData) {
     long startTime = System.currentTimeMillis();
     MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-    List<PartitionKey> partitions =
-      PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
+
     int row = matrixMeta.getRowNum();
     boolean enableFilter = matrixMeta.getAttribute(MatrixConf.MATRIX_OPLOG_ENABLEFILTER,
-      MatrixConf.DEFAULT_MATRIX_OPLOG_ENABLEFILTER).equalsIgnoreCase("true");
+        MatrixConf.DEFAULT_MATRIX_OPLOG_ENABLEFILTER).equalsIgnoreCase("true");
     double filterThreshold = Double.valueOf(matrixMeta
-      .getAttribute(MatrixConf.MATRIX_OPLOG_FILTER_THRESHOLD,
-        MatrixConf.DEFAULT_MATRIX_OPLOG_FILTER_THRESHOLD));
+        .getAttribute(MatrixConf.MATRIX_OPLOG_FILTER_THRESHOLD,
+            MatrixConf.DEFAULT_MATRIX_OPLOG_FILTER_THRESHOLD));
 
     for (int rowId = 0; rowId < row; rowId++) {
       Vector vector = getRow(rowId);
-      if (vector == null)
+      if (vector == null) {
         continue;
+      }
+
+      List<PartitionKey> partitions =
+          PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId, rowId);
 
       // Doing average or not
       if (matrixMeta.isAverage()) {
@@ -165,7 +169,7 @@ public class MatrixOpLog {
     }
 
     LOG.debug("taking " + (System.currentTimeMillis() - startTime) + " ms to split logs for matrix="
-      + matrixId);
+        + matrixId);
   }
 
   /**
@@ -204,10 +208,10 @@ public class MatrixOpLog {
    */
   Vector getRow(int rowIndex) {
     if (matrix instanceof RowBasedMatrix) {
-      return ((RowBasedMatrix) matrix).getRow(rowIndex);
+      return matrix.getRow(rowIndex);
     } else {
       throw new UnsupportedOperationException(
-        "get row is unsupported for this type matrix:" + matrix.getClass().getName());
+          "get row is unsupported for this type matrix:" + matrix.getClass().getName());
     }
   }
 
@@ -219,7 +223,7 @@ public class MatrixOpLog {
       ((RowBasedMatrix) matrix).clearRow(rowIndex);
     } else {
       throw new UnsupportedOperationException(
-        "get row is unsupported for this type matrix:" + matrix.getClass().getName());
+          "get row is unsupported for this type matrix:" + matrix.getClass().getName());
     }
   }
 }

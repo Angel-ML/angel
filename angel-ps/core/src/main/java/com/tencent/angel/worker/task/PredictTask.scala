@@ -21,10 +21,10 @@ package com.tencent.angel.worker.task
 import java.io.IOException
 
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.model.MLModel
+import com.tencent.angel.ml.math2.utils.LabeledData
+import com.tencent.angel.ml.model.OldMLModel
 import com.tencent.angel.utils.HdfsUtil
-import com.tencent.angel.worker.storage.DataBlock
+import com.tencent.angel.ml.math2.utils.DataBlock
 
 abstract class PredictTask[KEYIN, VALUEIN](ctx: TaskContext)
   extends BaseTask[KEYIN, VALUEIN, LabeledData](ctx) {
@@ -39,7 +39,7 @@ abstract class PredictTask[KEYIN, VALUEIN](ctx: TaskContext)
   @throws(classOf[IOException])
   protected final def predict(
                                taskContext: TaskContext,
-                               model: MLModel,
+                               model: OldMLModel,
                                dataBlock: DataBlock[LabeledData]) {
     val predictResult = model.predict(dataBlock)
     HdfsUtil.writeStorage(predictResult, taskContext)

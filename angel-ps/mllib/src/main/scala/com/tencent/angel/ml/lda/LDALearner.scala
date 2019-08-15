@@ -28,8 +28,8 @@ import com.tencent.angel.PartitionKey
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.core.MLLearner
-import com.tencent.angel.ml.core.conf.MLConf._
-import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.core.conf.AngelMLConf._
+import com.tencent.angel.ml.math2.utils.{DataBlock, LabeledData}
 import com.tencent.angel.ml.lda.algo.{CSRTokens, Sampler}
 import com.tencent.angel.ml.lda.psf._
 import com.tencent.angel.ml.math2.VFactory
@@ -40,11 +40,11 @@ import com.tencent.angel.ml.matrix.psf.get.getrows.PartitionGetRowsParam
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.matrix.psf.update.zero.Zero.ZeroParam
 import com.tencent.angel.ml.metric.ObjMetric
-import com.tencent.angel.ml.model.MLModel
+import com.tencent.angel.ml.model.OldMLModel
+import com.tencent.angel.mlcore.optimizer.decayer.StepSizeScheduler
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex
 import com.tencent.angel.utils.{HdfsUtil, MemoryUtils}
-import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 import org.apache.commons.math.special.Gamma
@@ -96,8 +96,7 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
     * @param vali  : validate data storage
     * @return : a learned model
     */
-  override
-  def train(train: DataBlock[LabeledData], vali: DataBlock[LabeledData]): MLModel = ???
+  override def trainOld(train: DataBlock[LabeledData], vali: DataBlock[LabeledData]): OldMLModel = ???
 
 
   def initialize(): Unit = {
@@ -149,8 +148,8 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
     model.tMat.getRow(0)
     if (ctx.getTaskIndex == 0) {
       model.tMat.zero()
-      ctx.getMatrix(model.tMat.modelName).update(new ResetFunc(new ZeroParam(model.tMat.getMatrixId(), false)))
-      ctx.getMatrix(model.wtMat.modelName).update(new ResetFunc(new ZeroParam(model.wtMat.getMatrixId(), false)))
+      ctx.getMatrix(model.tMat.modelName).asyncUpdate(new ResetFunc(new ZeroParam(model.tMat.getMatrixId(), false)))
+      ctx.getMatrix(model.wtMat.modelName).asyncUpdate(new ResetFunc(new ZeroParam(model.wtMat.getMatrixId(), false)))
     }
     model.tMat.clock(false).get()
     model.tMat.getRow(0)
@@ -599,4 +598,14 @@ class LDALearner(ctx: TaskContext, model: LDAModel, data: CSRTokens) extends MLL
     fs.rename(tmp, dest)
 
   }
+
+  override protected val ssScheduler: StepSizeScheduler = null
+
+  override protected def trainOneEpoch(epoch: Int, iter: Iterator[Array[LabeledData]], numBatch: Int): Double = ???
+
+  override protected def validate(epoch: Int, valiData: DataBlock[LabeledData]): Unit = ???
+}
+
+object LDALearner {
+
 }

@@ -23,7 +23,7 @@ package com.tencent.angel.ml.matrix.psf.aggr
 import com.tencent.angel.ml.math2.vector.{DoubleVector, FloatVector, IntVector, LongVector}
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.{ScalarAggrResult, ScalarPartitionAggrResult, UnaryAggrFunc}
 import com.tencent.angel.ml.matrix.psf.get.base.{GetResult, PartitionGetResult}
-import com.tencent.angel.ps.storage.vector.ServerRow;
+import com.tencent.angel.ps.storage.vector.{ServerRow, ServerRowUtils};
 
 /**
   * `Nrm2` will return 2-Norm of the `rowId` row in `matrixId` matrix.
@@ -33,7 +33,7 @@ class Nrm2(matrixId: Int, rowId: Int) extends UnaryAggrFunc(matrixId, rowId) {
   def this() = this(-1, -1)
 
   override protected def processRow(row: ServerRow): Double = {
-    row.getSplit match {
+    ServerRowUtils.getVector(row) match {
       case s: DoubleVector => Math.pow(s.norm(), 2)
       case s: FloatVector => Math.pow(s.norm(), 2)
       case s: LongVector => Math.pow(s.norm(), 2)

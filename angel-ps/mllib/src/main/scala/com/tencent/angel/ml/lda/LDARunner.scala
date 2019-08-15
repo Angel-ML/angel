@@ -22,7 +22,7 @@ import com.tencent.angel.client.AngelClientFactory
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.data.inputformat.BalanceInputFormat
 import com.tencent.angel.ml.core.MLRunner
-import com.tencent.angel.ml.core.conf.MLConf
+import com.tencent.angel.ml.core.conf.AngelMLConf
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 
@@ -40,7 +40,7 @@ class LDARunner extends MLRunner {
     val numTopics = conf.getInt(LDAModel.TOPIC_NUM, 10)
     val numWorkers = conf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 10)
     val numServers = conf.getInt(AngelConf.ANGEL_PS_NUMBER, 10)
-    val numThreads = conf.getInt(MLConf.ANGEL_WORKER_THREAD_NUM, 2)
+    val numThreads = conf.getInt(AngelMLConf.ANGEL_WORKER_THREAD_NUM, 2)
     val alpha = conf.getFloat(LDAModel.ALPHA, 50.0F / numTopics)
     val beta = conf.getFloat(LDAModel.BETA, 0.01F)
 

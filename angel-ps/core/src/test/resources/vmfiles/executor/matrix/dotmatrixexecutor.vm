@@ -28,7 +28,7 @@ import it.unimi.dsi.fastutil.ints.*;
 import com.tencent.angel.ml.math2.MatrixExecutors;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import com.tencent.angel.ml.math2.utils.ArrayCopy;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import java.util.concurrent.RecursiveAction;
 
 

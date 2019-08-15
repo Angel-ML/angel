@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,13 +18,16 @@
 
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.VFactory;
+import com.tencent.angel.ml.math2.vector.IntIntVector;
+import com.tencent.angel.ml.math2.utils.RowType;
 import io.netty.buffer.ByteBuf;
 
 /**
  * Row split of sparse int row update
  */
 public class SparseIntRowUpdateSplit extends RowUpdateSplit {
+
   /**
    * indexes
    */
@@ -38,15 +41,19 @@ public class SparseIntRowUpdateSplit extends RowUpdateSplit {
   /**
    * Create a new sparse int row split update
    *
-   * @param start   start position
-   * @param end     end position
+   * @param start start position
+   * @param end end position
    * @param offsets values indexes
-   * @param values  values of row update
+   * @param values values of row update
    */
   public SparseIntRowUpdateSplit(int rowIndex, int start, int end, int[] offsets, int[] values) {
     super(rowIndex, RowType.T_INT_SPARSE, start, end);
     this.offsets = offsets;
     this.values = values;
+  }
+
+  public SparseIntRowUpdateSplit() {
+    this(-1, -1, -1, null, null);
   }
 
 
@@ -68,7 +75,8 @@ public class SparseIntRowUpdateSplit extends RowUpdateSplit {
     return values;
   }
 
-  @Override public void serialize(ByteBuf buf) {
+  @Override
+  public void serialize(ByteBuf buf) {
     super.serialize(buf);
     int startCol = (int) splitContext.getPartKey().getStartCol();
     if (splitContext.isEnableFilter()) {
@@ -93,6 +101,18 @@ public class SparseIntRowUpdateSplit extends RowUpdateSplit {
     }
   }
 
+  @Override
+  public void deserialize(ByteBuf buf) {
+    super.deserialize(buf);
+    int size = buf.readInt();
+    vector = VFactory.sparseIntVector(
+        (int) (splitContext.getPartKey().getEndCol() - splitContext.getPartKey().getStartCol()),
+        size);
+    for (int i = 0; i < size; i++) {
+      ((IntIntVector) vector).set(buf.readInt(), buf.readInt());
+    }
+  }
+
   private int getNeedUpdateItemNum() {
     int needUpdateItemNum = 0;
     int filterValue = (int) splitContext.getFilterThreshold();
@@ -104,7 +124,8 @@ public class SparseIntRowUpdateSplit extends RowUpdateSplit {
     return needUpdateItemNum;
   }
 
-  @Override public int bufferLen() {
+  @Override
+  public int bufferLen() {
     if (splitContext.isEnableFilter()) {
       return 4 + super.bufferLen() + getNeedUpdateItemNum() * 8;
     } else {

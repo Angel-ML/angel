@@ -18,29 +18,29 @@
 
 package com.tencent.angel.ml.regression
 
-import com.tencent.angel.ml.core.conf.MLConf
-import com.tencent.angel.ml.core.graphsubmit.GraphModel
-import com.tencent.angel.ml.core.network.layers.verge.{SimpleLossLayer, SimpleInputLayer}
-import com.tencent.angel.ml.core.network.transfunc.Identity
-import com.tencent.angel.ml.core.optimizer.OptUtils
-import com.tencent.angel.ml.core.optimizer.loss.HuberLoss
+import com.tencent.angel.ml.core.PSOptimizerProvider
+import com.tencent.angel.mlcore.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.core.conf.AngelMLConf
+import com.tencent.angel.ml.core.graphsubmit.AngelModel
+import com.tencent.angel.mlcore.network.Identity
+import com.tencent.angel.mlcore.network.layers.LossLayer
+import com.tencent.angel.mlcore.network.layers.leaf.SimpleInputLayer
+import com.tencent.angel.mlcore.optimizer.loss.HuberLoss
 import com.tencent.angel.worker.task.TaskContext
-import org.apache.hadoop.conf.Configuration
 
-class RobustRegression(conf: Configuration, _ctx: TaskContext = null)
-  extends GraphModel(conf, _ctx) {
 
-  override val lossFunc = new HuberLoss(conf.getDouble(MLConf.ML_ROBUSTREGRESSION_LOSS_DELTA, 1.0))
+class RobustRegression(conf: SharedConf, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
+  val optProvider = new PSOptimizerProvider(conf)
 
-  override def buildNetwork(): Unit = {
-    val input = dataFormat match {
-      case "dense" | "component_sparse" => new SimpleInputLayer("input", 1, new Identity(),
-        OptUtils.getOptimizer(MLConf.ML_INPUTLAYER_OPTIMIZER))
-      case _ => new SimpleInputLayer("input", 1, new Identity(),
-        OptUtils.getOptimizer(MLConf.ML_INPUTLAYER_OPTIMIZER))
-    }
+  override def buildNetwork(): this.type = {
+    val ipOptName: String = conf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
 
-    new SimpleLossLayer("simpleLossLayer", input, lossFunc)
+    val input = new SimpleInputLayer("input", 1, new Identity(), optProvider.getOptimizer(ipOptName))
+
+    new LossLayer("simpleLossLayer", input,
+      new HuberLoss(conf.getDouble(AngelMLConf.ML_ROBUSTREGRESSION_LOSS_DELTA, 1.0)))
+
+    this
   }
 
 }

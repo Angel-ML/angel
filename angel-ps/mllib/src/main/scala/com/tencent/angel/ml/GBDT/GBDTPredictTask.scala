@@ -19,7 +19,7 @@
 package com.tencent.angel.ml.GBDT
 
 import com.tencent.angel.ml.core.PredictTask
-import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.io.{LongWritable, Text}
 
@@ -27,7 +27,8 @@ import org.apache.hadoop.io.{LongWritable, Text}
 class GBDTPredictTask(ctx: TaskContext) extends PredictTask[LongWritable, Text](ctx) {
 
   def predict(ctx: TaskContext) {
-    predict(ctx, GBDTModel(ctx, conf), taskDataBlock);
+    // predict(taskContext: TaskContext, model: MLModel, dataBlock: DataBlock[LabeledData]): Unit
+    predict(ctx, GBDTModel(ctx, conf), taskDataBlock)
   }
 
   def parse(key: LongWritable, value: Text): LabeledData = {

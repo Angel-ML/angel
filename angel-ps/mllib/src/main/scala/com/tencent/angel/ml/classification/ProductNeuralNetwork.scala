@@ -18,45 +18,57 @@
 
 package com.tencent.angel.ml.classification
 
-import com.tencent.angel.ml.core.conf.MLConf
-import com.tencent.angel.ml.core.graphsubmit.GraphModel
-import com.tencent.angel.ml.core.network.layers.Layer
-import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleLossLayer, SimpleInputLayer}
-import com.tencent.angel.ml.core.network.layers.join.{ConcatLayer, SumPooling}
-import com.tencent.angel.ml.core.network.layers.linear.BiInnerCross
-import com.tencent.angel.ml.core.network.transfunc.Identity
-import com.tencent.angel.ml.core.optimizer.loss.{LogLoss, LossFunc}
-import com.tencent.angel.ml.core.utils.paramsutils.{EmbeddingParams, JsonUtils}
+import com.tencent.angel.ml.core.PSOptimizerProvider
+import com.tencent.angel.mlcore.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.core.graphsubmit.AngelModel
+import com.tencent.angel.mlcore.network.{Identity, TransFunc}
+import com.tencent.angel.mlcore.network.layers.{Layer, LossLayer}
+import com.tencent.angel.mlcore.network.layers.multiary.{ConcatLayer, SumPooling}
+import com.tencent.angel.mlcore.network.layers.unary.{BiInnerCross, FCLayer}
+import com.tencent.angel.mlcore.network.layers.leaf.{Embedding, SimpleInputLayer}
+import com.tencent.angel.mlcore.optimizer.loss.LogLoss
 import com.tencent.angel.worker.task.TaskContext
-import org.apache.hadoop.conf.Configuration
 
-class ProductNeuralNetwork(conf: Configuration, _ctx: TaskContext = null) extends GraphModel(conf, _ctx) {
-  val numFields: Int = sharedConf.getInt(MLConf.ML_FIELD_NUM, MLConf.DEFAULT_ML_FIELD_NUM)
 
-  override def lossFunc: LossFunc = new LogLoss()
+class ProductNeuralNetwork(conf: SharedConf, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
+  val numFields: Int = conf.getInt(MLCoreConf.ML_FIELD_NUM, MLCoreConf.DEFAULT_ML_FIELD_NUM)
+  val numFactors: Int = conf.getInt(MLCoreConf.ML_RANK_NUM, MLCoreConf.DEFAULT_ML_RANK_NUM)
+  val optProvider = new PSOptimizerProvider(conf)
 
-  override def buildNetwork(): Unit = {
-    ensureJsonAst()
+  override def buildNetwork(): this.type = {
+    val inputOptName: String = conf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
+    val wide = new SimpleInputLayer("input", 1, new Identity(), optProvider.getOptimizer(inputOptName))
 
-    val wide = new SimpleInputLayer("input", 1, new Identity(),
-      JsonUtils.getOptimizerByLayerType(jsonAst, "SparseInputLayer"))
-
-    val embeddingParams = JsonUtils.getLayerParamsByLayerType(jsonAst, "Embedding")
-      .asInstanceOf[EmbeddingParams]
-    val embedding = new Embedding("embedding", embeddingParams.outputDim, embeddingParams.numFactors,
-      embeddingParams.optimizer.build()
-    )
+    val embeddingOptName: String = conf.get(MLCoreConf.ML_EMBEDDING_OPTIMIZER, MLCoreConf.DEFAULT_ML_EMBEDDING_OPTIMIZER)
+    val embedding = new Embedding("embedding", numFields * numFactors, numFactors, optProvider.getOptimizer(embeddingOptName))
 
     val crossOutputDim = numFields * (numFields - 1) / 2
     val innerCross = new BiInnerCross("innerPooling", crossOutputDim, embedding)
 
-    val concatOutputDim = embeddingParams.outputDim + crossOutputDim
+    val concatOutputDim = numFields * numFactors + crossOutputDim
     val concatLayer = new ConcatLayer("concatMatrix", concatOutputDim, Array[Layer](embedding, innerCross))
 
-    val hiddenLayers = JsonUtils.getFCLayer(jsonAst, concatLayer)
+    var fcLayer: Layer = concatLayer
+    val fclayerParams = conf.get(MLCoreConf.ML_FCLAYER_PARAMS, MLCoreConf.DEFAULT_ML_FCLAYER_PARAMS)
+    fclayerParams.split("|").zipWithIndex.foreach { case (params: String, idx: Int) =>
+      val name = s"fclayer_$idx"
+      params.split(":") match {
+        case Array(outputDim: String, transFunc: String, optimizer: String) =>
+          fcLayer = new FCLayer(name, outputDim.toInt, fcLayer,
+            TransFunc.fromString(transFunc), optProvider.getOptimizer(optimizer))
+        case Array(outputDim: String, transFunc: String) =>
+          fcLayer = new FCLayer(name, outputDim.toInt, fcLayer,
+            TransFunc.fromString(transFunc), optProvider.getDefaultOptimizer())
+        case Array(outputDim: String) =>
+          fcLayer = new FCLayer(name, outputDim.toInt, fcLayer,
+            TransFunc.defaultTransFunc(), optProvider.getDefaultOptimizer())
+      }
+    }
 
-    val join = new SumPooling("sumPooling", 1, Array[Layer](wide, hiddenLayers))
+    val join = new SumPooling("sumPooling", 1, Array[Layer](wide, fcLayer))
 
-    new SimpleLossLayer("simpleLossLayer", join,lossFunc)
+    new LossLayer("simpleLossLayer", join, new LogLoss())
+
+    this
   }
 }

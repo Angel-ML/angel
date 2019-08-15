@@ -2,7 +2,7 @@
 
 ---
 
-In order to support massively complex models (wide or deep), Angel needs to partition the model parameters and store them on multiple PSServer nodes, and provide convenient accesss to the service. This is the essence, and one fundamental functionality, of Parameter Server.
+In order to support massively complex models (wide or deep), Angel needs to partition the model parameters and store them on multiple PSServer nodes, and provide convenient access to the service. This is the essence, and one fundamental functionality, of Parameter Server.
 
 Model partitioning is a common engineering problem that deserves extra attention in designing a parameter server, as different partitioning methods can result in different computing performance. We believe that a good partitioning should reflect the following aspects:
 
@@ -23,50 +23,19 @@ Please note that:
 
 1. `PSModel` should be the entry point of your operations
 2. Default partitioner class is `PSPartitioner`, but it can be replaced
-3. Partition is the smallest unit; each partition corresponds to a specific model shard on PSServer
+3. Partition is the smallest unit; each partition corresponds to a specific Model Shard on PSServer
 
 During the model loading stage, PSServer will start up model shard depending on the partitioner that is passed to it. As a result, the design of model partitioner, together with actual runtime data, will affect how the model is distributed and will behave on PSServer. 
 
-## Default: PSPartitioner
+## Default Partitioner (RangePartitioner)
 
-In Angel, models are represented by martrix. IF the partitioning parameters/method are not configured for the application, Angel will use the default partitioner, `PSPartitioner`, which obeys the following principles as much as possible: 
+`RangePartitioner` partitions the model using model's index range, i.e., divides the index range into non-coincident intervals. With this strategy, Angel can quickly figure out which interval the required part of the model falls in when dividing requests from the application layer.
 
- - Equal distribution of a model to all PS nodes
- - For very small model, allocate the entire matrix on one PS node
- - For model (matrix) with multiple rows, allocate the same row on the same PS node
+In Angel, models are represented by Martrix. If the partitioning parameters/method are not configured for the application, Angel will use the default partitioning algorithm, which obeys the following principles to the fullest extent:
 
-
-### Partition Size
-
-Some RPC interfaces at the bottom layer of Angel platform treat matrix partitions as operating units. To avoid excessive message size, Angel sets a maximum message size limit at 100MB (configurable through `angel.netty.matrixtransfer.max.message.size`). In general, storage space of any matrix partition should avoid exceeding this limit. 
-
-We recommend the size of a single partition to be between 10MB and 40MB. If the partition is 40MB in size, for example, roughly 40 * 10^6 / 8 = 5,000,000 double-type elements can be stored; therefore, the default partitioning algorithm uses 5,000,000 as a default limit.  
-
-
-### Default Partitioning Algorithm 
-
-Suppose the model matrix is `row`-by-`col` in size, and we have `serverNum` number of PS.  
-
- - **When `row` >= `serverNum`**
-
-```Scala
-# Number of rows of the partition block
-blockRow = Math.min(row / serverNum, Math.max(1, 5000000 / col))
-# Number of columns of the partition block
-blockCol = Math.min(5000000 / blockRow, col)
-```
-
- - **When `row` < `serverNum`**
-
-```Scala
-# Number of rows of the partition block
-blockRow = row
-# Number of columns of the partition block
-blockCol = Math.min(5000000 / blockRow, Math.max(100, col / serverNum))`
-```
-
-According to the default partitioning algorithm, assuming `serverNum` = 4, the following chart shows the partitions of several typical matrices:
-	![][1]
+- Equal distribution of a model to all PS nodes
+- For very small model, allocate the entire matrix on one PS node
+- For model (matrix) with multiple rows, allocate the same row on the same PS node
 	
 ## Customized Partitioner 
 

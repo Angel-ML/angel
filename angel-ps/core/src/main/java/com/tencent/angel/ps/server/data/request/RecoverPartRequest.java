@@ -20,7 +20,8 @@ package com.tencent.angel.ps.server.data.request;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ps.server.data.TransportMethod;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+
+import com.tencent.angel.ps.storage.partition.ServerPartition;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
@@ -49,7 +50,7 @@ public class RecoverPartRequest extends PartitionRequest {
    * @param part                partition data
    */
   public RecoverPartRequest(Int2IntOpenHashMap taskIndexToClockMap, PartitionKey partKey,
-    ServerPartition part) {
+      ServerPartition part) {
     super(0, partKey);
     this.taskIndexToClockMap = taskIndexToClockMap;
     this.part = part;
@@ -82,6 +83,7 @@ public class RecoverPartRequest extends PartitionRequest {
 
   @Override public void serialize(ByteBuf buf) {
     super.serialize(buf);
+    //TODO:
     part.serialize(buf);
     if (taskIndexToClockMap != null) {
       buf.writeInt(taskIndexToClockMap.size());
@@ -99,7 +101,8 @@ public class RecoverPartRequest extends PartitionRequest {
 
   @Override public void deserialize(ByteBuf buf) {
     super.deserialize(buf);
-    part = new ServerPartition();
+    //part = new ServerPartition();
+    // TODO:
     part.deserialize(buf);
     int clockVecSize = buf.readInt();
     if (clockVecSize > 0) {

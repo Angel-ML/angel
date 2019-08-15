@@ -222,6 +222,28 @@ message LoadStartResponse {
 
 }
 
+message SaveResultProto {
+  required string modelPath = 1;
+  required string matrixPath = 2;
+  required int64 saveTs = 3;
+}
+
+message GetSaveResultsRequest {
+  required int32 matrixId = 1;
+}
+
+message GetSaveResultsResponse {
+  repeated SaveResultProto saveResults = 1;
+}
+
+message GetCheckpointsRequest {
+  required int32 matrixId = 1;
+}
+
+message GetCheckpointsResponse {
+  repeated SaveResultProto saveResults = 1;
+}
+
 service PSMasterService {
   rpc psRegister(PSRegisterRequest) returns (PSRegisterResponse);
   rpc psReport(PSReportRequest) returns (PSReportResponse);
@@ -238,4 +260,6 @@ service PSMasterService {
   rpc loadFinish(LoadFinishRequest) returns (LoadFinishResponse);
   rpc saveStart(SaveStartRequest) returns (SaveStartResponse);
   rpc loadStart(LoadStartRequest) returns (LoadStartResponse);
+  rpc getSaveResults(GetSaveResultsRequest) returns (GetSaveResultsResponse);
+  rpc getCheckpointResults(GetCheckpointsRequest) returns (GetCheckpointsResponse);
 }

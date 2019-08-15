@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -19,10 +19,11 @@
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
 import com.tencent.angel.ml.math2.MFactory;
-import com.tencent.angel.ml.math2.matrix.*;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.matrix.Matrix;
+import com.tencent.angel.ml.math2.utils.RowType;
 
 public class MatrixFactory {
+
   public static Matrix createRBMatrix(RowType rowType, int rowNum, long colNum, long subDim) {
     switch (rowType) {
       case T_DOUBLE_DENSE:
@@ -63,7 +64,6 @@ public class MatrixFactory {
       case T_DOUBLE_DENSE_LONGKEY_COMPONENT:
       case T_DOUBLE_SPARSE_LONGKEY_COMPONENT:
         return MFactory.rbCompLongDoubleMatrix(rowNum, colNum, subDim);
-
 
       case T_FLOAT_SPARSE_LONGKEY:
         return MFactory.rbLongFloatMatrix(rowNum, colNum);

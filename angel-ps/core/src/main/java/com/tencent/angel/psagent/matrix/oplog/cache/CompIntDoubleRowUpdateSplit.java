@@ -18,9 +18,13 @@
 
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
-import com.tencent.angel.ml.math2.storage.*;
+import com.tencent.angel.ml.math2.VFactory;
+import com.tencent.angel.ml.math2.storage.IntDoubleDenseVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntDoubleSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntDoubleSparseVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntDoubleVectorStorage;
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
@@ -31,7 +35,7 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 public class CompIntDoubleRowUpdateSplit extends RowUpdateSplit {
 
   /**
-   * Row update split
+   * Row update split, it only use in serialization
    */
   private final IntDoubleVector split;
 
@@ -51,21 +55,35 @@ public class CompIntDoubleRowUpdateSplit extends RowUpdateSplit {
     super(rowIndex, RowType.T_DOUBLE_DENSE, -1, -1);
     this.split = split;
     this.maxItemNum = maxItemNum;
-    IntDoubleVectorStorage storage = split.getStorage();
-    if (storage instanceof IntDoubleDenseVectorStorage) {
-      rowType = RowType.T_DOUBLE_DENSE_COMPONENT;
-    } else {
-      rowType = RowType.T_DOUBLE_SPARSE_COMPONENT;
+
+    if (split != null) {
+      IntDoubleVectorStorage storage = split.getStorage();
+      if (storage instanceof IntDoubleDenseVectorStorage) {
+        rowType = RowType.T_DOUBLE_DENSE_COMPONENT;
+      } else {
+        rowType = RowType.T_DOUBLE_SPARSE_COMPONENT;
+      }
     }
   }
 
+  /**
+   * Create a empty CompIntDoubleRowUpdateSplit.
+   */
+  public CompIntDoubleRowUpdateSplit() {
+    this(-1, null, -1);
+  }
+
+  /**
+   * Get row update split vector
+   *
+   * @return row update split vector
+   */
   public IntDoubleVector getSplit() {
     return split;
   }
 
   @Override
   public void serialize(ByteBuf buf) {
-    // TODO:
     super.serialize(buf);
     IntDoubleVectorStorage storage = split.getStorage();
 
@@ -96,6 +114,28 @@ public class CompIntDoubleRowUpdateSplit extends RowUpdateSplit {
     } else {
       throw new UnsupportedOperationException(
           "unsupport split for storage " + storage.getClass().getName());
+    }
+  }
+
+  @Override
+  public void deserialize(ByteBuf buf) {
+    super.deserialize(buf);
+    int elemNum = buf.readInt();
+    if (rowType == RowType.T_DOUBLE_DENSE_COMPONENT) {
+      double[] values = new double[elemNum];
+      for (int i = 0; i < elemNum; i++) {
+        values[i] = buf.readDouble();
+      }
+      vector = VFactory.denseDoubleVector(values);
+    } else if (rowType == RowType.T_DOUBLE_SPARSE_COMPONENT) {
+      vector = VFactory.sparseDoubleVector(
+          (int) (splitContext.getPartKey().getEndCol() - splitContext.getPartKey().getStartCol()),
+          elemNum);
+      for (int i = 0; i < elemNum; i++) {
+        ((IntDoubleVector) vector).set(buf.readInt(), buf.readDouble());
+      }
+    } else {
+      throw new UnsupportedOperationException("Unsupport rowtype " + rowType);
     }
   }
 

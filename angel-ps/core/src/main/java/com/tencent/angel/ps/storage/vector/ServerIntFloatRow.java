@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -19,63 +19,45 @@
 package com.tencent.angel.ps.storage.vector;
 
 import com.tencent.angel.ml.math2.vector.IntFloatVector;
-import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
 import com.tencent.angel.ps.server.data.request.InitFunc;
-import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.func.FloatElemUpdateFunc;
+import com.tencent.angel.ps.storage.vector.op.IIntFloatOp;
+import com.tencent.angel.ps.storage.vector.storage.IntFloatStorage;
 import io.netty.buffer.ByteBuf;
-import it.unimi.dsi.fastutil.ints.Int2FloatMap;
-import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import java.io.IOException;
 
 /**
  * The row with "int" index type and "float" value type in PS
  */
-public class ServerIntFloatRow extends ServerFloatRow {
-  private static final Log LOG = LogFactory.getLog(ServerIntFloatRow.class);
-  /**
-   * Just a view of "row" in ServerRow
-   */
-  private IntFloatVector intFloatRow;
-  /**
-   * Just a view of "startCol" in ServerRow
-   */
-  private transient int startColInt;
+public class ServerIntFloatRow extends ServerBasicTypeRow implements IIntFloatOp {
 
-  /**
-   * Just a view of "endCol" in ServerRow
-   */
-  private transient int endColInt;
+  private static final Log LOG = LogFactory.getLog(ServerIntFloatRow.class);
 
   /**
    * Create a new ServerIntDoubleRow
    *
-   * @param rowId      row index
-   * @param rowType    row type
-   * @param startCol   start position
-   * @param endCol     end position
+   * @param rowId row index
+   * @param rowType row type
+   * @param startCol start position
+   * @param endCol end position
    * @param estElemNum the estimate element number
+   * @param storage inner storage
    */
   public ServerIntFloatRow(int rowId, RowType rowType, int startCol, int endCol, int estElemNum,
-    IntFloatVector innerRow) {
-    super(rowId, rowType, startCol, endCol, estElemNum, innerRow);
-    this.startColInt = startCol;
-    this.endColInt = endCol;
-    this.intFloatRow = (IntFloatVector) row;
+      IntFloatStorage storage) {
+    super(rowId, rowType, startCol, endCol, estElemNum, storage);
   }
 
   /**
    * Create a new ServerIntDoubleRow
    *
-   * @param rowId      row index
-   * @param rowType    row type
-   * @param startCol   start position
-   * @param endCol     end position
+   * @param rowId row index
+   * @param rowType row type
+   * @param startCol start position
+   * @param endCol end position
    * @param estElemNum the estimate element number
    */
   public ServerIntFloatRow(int rowId, RowType rowType, int startCol, int endCol, int estElemNum) {
@@ -96,294 +78,75 @@ public class ServerIntFloatRow extends ServerFloatRow {
   // and call endWrite/endRead after
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
-  /**
-   * Get a element value with out lock operation
-   *
-   * @param index element index
-   * @return element value
-   */
+  @Override
+  public IntFloatStorage getStorage() {
+    return (IntFloatStorage) storage;
+  }
+
+  @Override
   public float get(int index) {
-    return intFloatRow.get(index - startColInt);
+    return getStorage().get(index);
   }
 
-  /**
-   * Set a element value without lock operation
-   *
-   * @param index element index
-   * @param value element new value
-   */
+  @Override
   public void set(int index, float value) {
-    intFloatRow.set(index - startColInt, value);
+    getStorage().set(index, value);
   }
 
-  /**
-   * Get a batch elements values without lock
-   *
-   * @param indices elements indices
-   * @return elements values
-   */
+  @Override
   public float[] get(int[] indices) {
-    float[] values = new float[indices.length];
-    for (int i = 0; i < indices.length; i++) {
-      values[i] = intFloatRow.get(indices[i] - startColInt);
-    }
-    return values;
+    return getStorage().get(indices);
   }
 
-  /**
-   * Set a batch elements values without lock
-   *
-   * @param indices elements indices
-   * @param values  elements values
-   */
+  @Override
   public void set(int[] indices, float[] values) {
     assert indices.length == values.length;
-    for (int i = 0; i < indices.length; i++) {
-      intFloatRow.set(indices[i] - startColInt, values[i]);
-    }
+    getStorage().set(indices, values);
   }
 
-  /**
-   * Add a element value without lock
-   *
-   * @param index element index
-   * @param value element plus value
-   */
+  @Override
   public void addTo(int index, float value) {
-    set(index, get(index) + value);
+    getStorage().addTo(index, value);
   }
 
-  /**
-   * Add a batch elements values without lock
-   *
-   * @param indices elements indices
-   * @param values  elements plus values
-   */
+  @Override
   public void addTo(int[] indices, float[] values) {
     assert indices.length == values.length;
-    for (int i = 0; i < indices.length; i++) {
-      set(indices[i], get(indices[i]) + values[i]);
-    }
+    getStorage().addTo(indices, values);
   }
 
-  /**
-   * Get all element values without lock, you must check the storage is dense first use "isDense"
-   *
-   * @return all element values
-   */
-  private float[] getValues() {
-    return intFloatRow.getStorage().getValues();
+  @Override
+  public int size() {
+    return getStorage().size();
   }
 
-  /**
-   * Get all element indices and values without lock, you must check the storage is sparse first use "isSparse";
-   * if you want use original indices, you must plus with "startCol" first
-   *
-   * @return all element values
-   */
-  public ObjectIterator<Int2FloatMap.Entry> getIter() {
-    return intFloatRow.getStorage().entryIterator();
-  }
-
-
-  @Override public void update(RowType updateType, ByteBuf buf, UpdateOp op) {
-    startWrite();
-    try {
-      switch (updateType) {
-        case T_FLOAT_SPARSE:
-        case T_FLOAT_SPARSE_COMPONENT:
-          updateUseIntFloatSparse(buf, op);
-          break;
-
-        case T_LONG_SPARSE:
-        case T_LONG_SPARSE_COMPONENT:
-          updateUseIntLongSparse(buf, op);
-          break;
-
-        case T_INT_SPARSE:
-        case T_INT_SPARSE_COMPONENT:
-          updateUseIntIntSparse(buf, op);
-          break;
-
-        case T_FLOAT_DENSE:
-        case T_FLOAT_DENSE_COMPONENT:
-          updateUseIntFloatDense(buf, op);
-          break;
-
-        case T_LONG_DENSE:
-        case T_LONG_DENSE_COMPONENT:
-          updateUseIntLongDense(buf, op);
-          break;
-
-        case T_INT_DENSE:
-        case T_INT_DENSE_COMPONENT:
-          updateUseIntIntDense(buf, op);
-          break;
-
-        default: {
-          throw new UnsupportedOperationException(
-            "Unsupport operation: update " + updateType + " to " + this.getClass().getName());
-        }
-      }
-
-      updateRowVersion();
-    } finally {
-      endWrite();
-    }
-  }
-
-  private void updateUseIntFloatDense(ByteBuf buf, UpdateOp op) {
-    int size = buf.readInt();
-    if (op == UpdateOp.PLUS) {
-      for (int i = 0; i < size; i++) {
-        intFloatRow.set(i, intFloatRow.get(i) + buf.readFloat());
-      }
-    } else {
-      for (int i = 0; i < size; i++) {
-        intFloatRow.set(i, buf.readFloat());
-      }
-    }
-  }
-
-  private void updateUseIntLongDense(ByteBuf buf, UpdateOp op) {
-    int size = buf.readInt();
-    if (op == UpdateOp.PLUS) {
-      for (int i = 0; i < size; i++) {
-        intFloatRow.set(i, intFloatRow.get(i) + buf.readLong());
-      }
-    } else {
-      for (int i = 0; i < size; i++) {
-        intFloatRow.set(i, buf.readLong());
-      }
-    }
-  }
-
-  private void updateUseIntIntDense(ByteBuf buf, UpdateOp op) {
-    int size = buf.readInt();
-    if (op == UpdateOp.PLUS) {
-      for (int i = 0; i < size; i++) {
-        intFloatRow.set(i, intFloatRow.get(i) + buf.readInt());
-      }
-    } else {
-      for (int i = 0; i < size; i++) {
-        intFloatRow.set(i, buf.readInt());
-      }
-    }
-  }
-
-  private void updateUseIntFloatSparse(ByteBuf buf, UpdateOp op) {
-    int size = buf.readInt();
-    if (op == UpdateOp.PLUS) {
-      for (int i = 0; i < size; i++) {
-        int index = buf.readInt();
-        intFloatRow.set(index, intFloatRow.get(index) + buf.readFloat());
-      }
-    } else {
-      for (int i = 0; i < size; i++) {
-        intFloatRow.set(buf.readInt(), buf.readFloat());
-      }
-    }
-  }
-
-  private void updateUseIntLongSparse(ByteBuf buf, UpdateOp op) {
-    int size = buf.readInt();
-    if (op == UpdateOp.PLUS) {
-      for (int i = 0; i < size; i++) {
-        int index = buf.readInt();
-        intFloatRow.set(index, intFloatRow.get(index) + buf.readLong());
-      }
-    } else {
-      for (int i = 0; i < size; i++) {
-        intFloatRow.set(buf.readInt(), buf.readLong());
-      }
-    }
-  }
-
-  private void updateUseIntIntSparse(ByteBuf buf, UpdateOp op) {
-    int size = buf.readInt();
-    if (op == UpdateOp.PLUS) {
-      for (int i = 0; i < size; i++) {
-        int index = buf.readInt();
-        intFloatRow.set(index, intFloatRow.get(index) + buf.readInt());
-      }
-    } else {
-      for (int i = 0; i < size; i++) {
-        intFloatRow.set(buf.readInt(), buf.readInt());
-      }
-    }
-  }
-
-
-  @Override public int size() {
-    return intFloatRow.size();
-  }
-
+  @Override
   public void mergeTo(IntFloatVector mergedRow) {
     startRead();
     try {
-      if (isDense()) {
-        float[] values = getValues();
-        for (int i = 0; i < values.length; i++) {
-          mergedRow.set(i + startColInt, values[i]);
-        }
-      } else {
-        ObjectIterator<Int2FloatMap.Entry> iter = getIter();
-        Int2FloatMap.Entry entry;
-        while (iter.hasNext()) {
-          entry = iter.next();
-          mergedRow.set(entry.getIntKey() + startColInt, entry.getFloatValue());
-        }
-      }
+      getStorage().mergeTo(mergedRow);
     } finally {
       endRead();
     }
   }
 
-  @Override protected void serializeRow(ByteBuf buf) {
-    if (useDenseSerialize()) {
-      float[] values = getValues();
-      for (int i = 0; i < values.length; i++) {
-        buf.writeFloat(values[i]);
-      }
-    } else {
-      ObjectIterator<Int2FloatMap.Entry> iter = getIter();
-      Int2FloatMap.Entry entry;
-      while (iter.hasNext()) {
-        entry = iter.next();
-        buf.writeInt(entry.getIntKey());
-        buf.writeFloat(entry.getFloatValue());
-      }
-    }
-  }
-
-  @Override protected void deserializeRow(ByteBuf buf) {
-    startColInt = (int) startCol;
-    endColInt = (int) endCol;
-    intFloatRow = (IntFloatVector) row;
-    if (useDenseSerialize()) {
-      for (int i = 0; i < size; i++) {
-        intFloatRow.set(i, buf.readFloat());
-      }
-    } else {
-      for (int i = 0; i < size; i++) {
-        intFloatRow.set(buf.readInt(), buf.readFloat());
-      }
-    }
-  }
-
-  @Override protected int getRowSpace() {
-    if (useDenseSerialize()) {
-      return 4 * size();
-    } else {
-      return 8 * size();
-    }
-  }
-
-  @Override public ServerRow clone() {
+  @Override
+  public ServerRow deepClone() {
     startRead();
     try {
-      return new ServerIntFloatRow(rowId, rowType, startColInt, endColInt, (int) estElemNum,
-        intFloatRow.clone());
+      return new ServerIntFloatRow(rowId, rowType, (int) startCol, (int) endCol, (int) estElemNum,
+          (IntFloatStorage) getStorage().deepClone());
+    } finally {
+      endRead();
+    }
+  }
+
+  @Override
+  public ServerRow adaptiveClone() {
+    startRead();
+    try {
+      return new ServerIntFloatRow(rowId, rowType, (int) startCol, (int) endCol, (int) estElemNum,
+          (IntFloatStorage) getStorage().adaptiveClone());
     } finally {
       endRead();
     }
@@ -396,63 +159,21 @@ public class ServerIntFloatRow extends ServerFloatRow {
    * @return true means exist
    */
   public boolean exist(int index) {
-    if (intFloatRow.isSparse()) {
-      return intFloatRow.getStorage().hasKey(index - startColInt);
-    } else {
-      return intFloatRow.get(index - startColInt) != 0.0f;
-    }
-  }
-
-  public float initAndGet(int index, InitFunc func) {
-    if (exist(index)) {
-      return get(index);
-    } else {
-      float value = (float) func.action();
-      set(index, value);
-      return value;
-    }
+    return getStorage().exist(index);
   }
 
   @Override
-  public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
-    throws IOException {
-    if (func != null) {
-      if (indexType == IndexType.INT) {
-        for (int i = 0; i < indexSize; i++) {
-          out.writeFloat(initAndGet(in.readInt(), func));
-        }
-      } else {
-        throw new IOException(this.getClass().getName() + " only support int type index now");
-      }
-    } else {
-      if (indexType == IndexType.INT) {
-        for (int i = 0; i < indexSize; i++) {
-          out.writeFloat(get(in.readInt()));
-        }
-      } else {
-        throw new IOException(this.getClass().getName() + " only support int type index now");
-      }
-    }
+  public float initAndGet(int index, InitFunc func) {
+    return getStorage().initAndGet(index, func);
   }
 
-  @Override public void setSplit(Vector row) {
-    super.setSplit(row);
-    intFloatRow = (IntFloatVector) row;
+  @Override
+  public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func) {
+    getStorage().indexGet(indexType, indexSize, in, out, func);
   }
 
-  @Override public void elemUpdate(FloatElemUpdateFunc func) {
-    if (isDense()) {
-      float[] values = getValues();
-      for (int i = 0; i < values.length; i++) {
-        values[i] = func.update();
-      }
-    } else {
-      ObjectIterator<Int2FloatMap.Entry> iter = getIter();
-      Int2FloatMap.Entry entry;
-      while (iter.hasNext()) {
-        entry = iter.next();
-        entry.setValue(func.update());
-      }
-    }
+  @Override
+  public void elemUpdate(FloatElemUpdateFunc func) {
+    getStorage().elemUpdate(func);
   }
 }

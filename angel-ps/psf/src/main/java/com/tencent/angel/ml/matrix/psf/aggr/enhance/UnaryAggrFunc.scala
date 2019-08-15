@@ -20,6 +20,7 @@ package com.tencent.angel.ml.matrix.psf.aggr.enhance
 
 import com.tencent.angel.ml.matrix.psf.Utils
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult, PartitionGetParam, PartitionGetResult}
+import com.tencent.angel.ps.storage.partition.RowBasedPartition
 import com.tencent.angel.ps.storage.vector.ServerRow
 
 
@@ -36,7 +37,7 @@ abstract class UnaryAggrFunc(val matrixId: Int, val rowId: Int)
     if (part != null) {
       val rowId = partKey.asInstanceOf[UnaryAggrParam.UnaryPartitionAggrParam].getRowId
       if (Utils.withinPart(part.getPartitionKey, Array[Int](rowId))) {
-        val row = part.getRow(rowId)
+        val row = part.asInstanceOf[RowBasedPartition].getRow(rowId)
         val result = processRow(row)
         return new ScalarPartitionAggrResult(result)
       }

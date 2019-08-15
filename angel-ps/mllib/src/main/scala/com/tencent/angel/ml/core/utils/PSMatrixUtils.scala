@@ -21,15 +21,18 @@ package com.tencent.angel.ml.core.utils
 import java.util.{ArrayList => JArrayList, List => JList}
 
 import com.tencent.angel.exception.AngelException
+import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.ml.math2.matrix._
 import com.tencent.angel.ml.math2.storage._
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import com.tencent.angel.ml.matrix.psf.get.getrows.{GetRows, GetRowsParam, GetRowsResult}
-import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
+import com.tencent.angel.mlcore.conf.MLCoreConf
 import com.tencent.angel.ps.server.data.request.{InitFunc, RandomNormalInitFunc, UpdateOp}
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
 import com.tencent.angel.psagent.PSAgentContext
+import com.tencent.angel.psagent.client.MasterClient
 
 
 object PSMatrixUtils {
@@ -40,10 +43,22 @@ object PSMatrixUtils {
     meta.getMatrixContext.getMatrixId
   }
 
-  def createPSMatrixCtx(name: String, numRows: Int, numCols: Long, rowType: RowType): MatrixContext = {
+  def createPSMatrixCtx(name: String, numRows: Int, numCols: Long,
+                        rowType: RowType, formatClassName: String): MatrixContext = {
     val matrix = new MatrixContext(name, numRows, numCols)
     matrix.setPartitionerClass(classOf[ColumnRangePartitioner])
     matrix.setRowType(rowType)
+    matrix.set(MLCoreConf.ML_MATRIX_OUTPUT_FORMAT, formatClassName)
+    matrix
+  }
+
+  def createPSMatrixCtx(name: String, numRows: Int, numCols: Long, rowType: RowType,
+                        formatClassName: String, validIndexNum: Long): MatrixContext = {
+    val matrix = new MatrixContext(name, numRows, numCols)
+    matrix.setPartitionerClass(classOf[ColumnRangePartitioner])
+    matrix.setRowType(rowType)
+    matrix.set(MLCoreConf.ML_MATRIX_OUTPUT_FORMAT, formatClassName)
+    matrix.setValidIndexNum(validIndexNum)
     matrix
   }
 
@@ -55,18 +70,22 @@ object PSMatrixUtils {
   }
 
   def createPSMatrix(ctx: MatrixContext): Int = {
-    val master = PSAgentContext.get().getMasterClient
-    master.createMatrix(ctx, Long.MaxValue)
-    master.getMatrix(ctx.getName).getId
+    val masterClient = PSAgentContext.get().getMasterClient
+    createPSMatrix(masterClient, ctx)
+  }
+
+  def createPSMatrix(masterClient: MasterClient, ctx: MatrixContext): Int = {
+    masterClient.createMatrix(ctx, Long.MaxValue)
+    masterClient.getMatrix(ctx.getName).getId
   }
 
   def getRow(epoch: Int, matrixId: Int, rowId: Int): Vector = {
-    PSAgentContext.get.getUserRequestAdapter.getRow(matrixId, rowId, 0)
+    PSAgentContext.get.getUserRequestAdapter.getRow(matrixId, rowId, 0).get()
   }
 
-  def getRowWithIndex(epoch: Int, matrixId: Int, rowId: Int, index: Vector): Vector = {
+  def getRowWithIndex(epoch: Int, matrixId: Int, rowId: Int, index: Vector)(mean: Double, stddev: Double): Vector = {
     val futureVector = if (epoch == 0) {
-      val initFunc = new RandomNormalInitFunc(0.0, 0.00001)
+      val initFunc = new RandomNormalInitFunc(mean, stddev)
       index match {
         case v: IntIntVector if v.isDense =>
           PSAgentContext.get.getUserRequestAdapter.get(matrixId, rowId, v.getStorage.getValues, initFunc)
@@ -93,9 +112,9 @@ object PSMatrixUtils {
     futureVector.get()
   }
 
-  def getRowsWithIndex(epoch: Int, matrixId: Int, rowIds: Array[Int], index: Vector): Array[Vector] = {
+  def getRowsWithIndex(epoch: Int, matrixId: Int, rowIds: Array[Int], index: Vector)(mean: Double, stddev: Double): Array[Vector] = {
     val futureVector = if (epoch == 0) {
-      val initFunc = new RandomNormalInitFunc(0.0, 0.00001)
+      val initFunc = new RandomNormalInitFunc(mean, stddev)
       index match {
         case v: IntIntVector if v.isDense =>
           PSAgentContext.get.getUserRequestAdapter.get(matrixId, rowIds, v.getStorage.getValues, initFunc)
@@ -139,7 +158,7 @@ object PSMatrixUtils {
     val idxArr = (startRowId until endRowId).toArray
     val param = new GetRowsParam(matrixId, idxArr)
     val func = new GetRows(param)
-    val vectorMap = PSAgentContext.get.getUserRequestAdapter.get(func)
+    val vectorMap = PSAgentContext.get.getUserRequestAdapter.get(func).get()
       .asInstanceOf[GetRowsResult].getRows
 
     val vectors = idxArr.map { rowId => vectorMap.get(rowId) }
@@ -231,8 +250,9 @@ object PSMatrixUtils {
     }
   }
 
-  def getMatrixWithIndex(epoch: Int, matrixId: Int, startRowId: Int, endRowId: Int, index: Vector): Matrix = {
-    val vectors = getRowsWithIndex(epoch, matrixId, (startRowId until endRowId).toArray, index)
+  def getMatrixWithIndex(epoch: Int, matrixId: Int, startRowId: Int, endRowId: Int, index: Vector
+                        )(mean: Double, stddev: Double): Matrix = {
+    val vectors = getRowsWithIndex(epoch, matrixId, (startRowId until endRowId).toArray, index)(mean, stddev)
 
     vectors.head match {
       case _: CompIntDoubleVector =>
@@ -299,3 +319,4 @@ object PSMatrixUtils {
   }
 
 }
+

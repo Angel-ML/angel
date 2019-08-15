@@ -20,8 +20,9 @@ package com.tencent.angel.ml.psf.optimizer;
 
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs;
 import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
+import com.tencent.angel.ps.storage.vector.ServerRowUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -43,7 +44,7 @@ public class PGDUpdateFunc extends OptMMUpdateFunc {
   }
 
   @Override
-  public void update(ServerPartition partition, int factor, double[] scalars) {
+  public void update(RowBasedPartition partition, int factor, double[] scalars) {
     double lr = scalars[0];
     double l1RegParam = scalars[1];
     double l2RegParam = scalars[2];
@@ -53,8 +54,8 @@ public class PGDUpdateFunc extends OptMMUpdateFunc {
       ServerRow gradientServerRow = partition.getRow(f + factor);
       try {
         gradientServerRow.startWrite();
-        Vector weight = partition.getRow(f).getSplit();
-        Vector gradient = gradientServerRow.getSplit();
+        Vector weight = ServerRowUtils.getVector(partition.getRow(f));
+        Vector gradient = ServerRowUtils.getVector(gradientServerRow);
 
         if (batchSize > 1) {
           gradient.idiv(batchSize);

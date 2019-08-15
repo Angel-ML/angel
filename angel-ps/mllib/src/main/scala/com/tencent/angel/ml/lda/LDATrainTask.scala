@@ -52,7 +52,7 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Do
   def preProcess(ctx: TaskContext) {
     val reader = ctx.getReader[LongWritable, Text]
     while (reader.nextKeyValue()) {
-      docs.put(parse(reader.getCurrentKey(), reader.getCurrentValue))
+      docs.put(parse(reader.getCurrentKey, reader.getCurrentValue))
     }
   }
 
@@ -89,7 +89,7 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Do
       + s"beta=${model.beta} M=${docs.size()} tokens=$N "
       + s"threadNum=${model.threadNum}")
 
-    LOG.info(s"V=${model.V} real V=${numVocabulary}")
+    LOG.info(s"V=${model.V} real V=$numVocabulary")
 
     model.V = numVocabulary
     model.vBeta = model.beta * model.V

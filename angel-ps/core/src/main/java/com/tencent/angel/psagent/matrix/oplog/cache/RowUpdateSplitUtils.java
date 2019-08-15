@@ -19,788 +19,629 @@
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.math2.storage.*;
-import com.tencent.angel.ml.math2.vector.*;
+import com.tencent.angel.ml.math2.vector.Vector;
+import com.tencent.angel.psagent.matrix.oplog.cache.splitter.ISplitter;
 import com.tencent.angel.utils.Sort;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-
+/**
+ * Row update split utils
+ */
 public class RowUpdateSplitUtils {
 
   protected final static Log LOG = LogFactory.getLog(RowUpdateSplitUtils.class);
 
+  /**
+   * Vector name to splitter map
+   */
+  private static ConcurrentHashMap<String, ISplitter> handlers = new ConcurrentHashMap<>();
 
-  static class PartitionComp implements Comparator<PartitionKey> {
+  private static ISplitter getHandler(String vecClassName) {
+    ISplitter splitter = handlers.get(vecClassName);
+    if (splitter == null) {
+      String splitterClassName =
+          "com.tencent.angel.psagent.matrix.oplog.cache.splitter." + vecClassName + "Splitter";
 
-    @Override
-    public int compare(PartitionKey key1, PartitionKey key2) {
-      return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
+      try {
+        splitter = (ISplitter) Class.forName(splitterClassName).newInstance();
+      } catch (Throwable e) {
+        throw new RuntimeException(e);
+      }
+      splitter = handlers.putIfAbsent(vecClassName, splitter);
+      if (splitter == null) {
+        splitter = handlers.get(vecClassName);
+      }
     }
+    return splitter;
   }
 
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId, int[] indices,
-      double[] values, List<PartitionKey> partitionInfos) {
-    return split(rowId, indices, values, partitionInfos, false);
+  /**
+   * Split vector to vector splits by vector partitions in PS
+   *
+   * @param vector the vector need split
+   * @param parts partitions that contain this vector, this partition must be sorted by part start
+   * column index
+   * @return part to split map
+   */
+  public static Map<PartitionKey, RowUpdateSplit> split(Vector vector, List<PartitionKey> parts) {
+    return getHandler(vector.getClass().getSimpleName()).split(vector, parts);
   }
 
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId, int[] indices,
-      float[] values, List<PartitionKey> partitionInfos) {
-    return split(rowId, indices, values, partitionInfos, false);
+  /**
+   * Split a array pair to vector splits by vector partitions in PS
+   *
+   * @param rowId need update row id
+   * @param indices column indices
+   * @param values column values, the dimension must equals to indices
+   * @param parts partitions that contain this vector, this partition must be sorted by part start
+   * column index
+   * @return part to split map
+   */
+  public static Map<PartitionKey, RowUpdateSplit> split(int rowId, int[] indices,
+      double[] values, List<PartitionKey> parts) {
+    return split(rowId, indices, values, parts, false);
   }
 
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId, int[] indices, int[] values,
-      List<PartitionKey> partitionInfos) {
-    return split(rowId, indices, values, partitionInfos, false);
+  /**
+   * Split a array pair to vector splits by vector partitions in PS
+   *
+   * @param rowId need update row id
+   * @param indices column indices
+   * @param values column values, the dimension must equals to indices
+   * @param parts partitions that contain this vector, this partition must be sorted by part start
+   * column index
+   * @return part to split map
+   */
+  public static Map<PartitionKey, RowUpdateSplit> split(int rowId, int[] indices,
+      float[] values, List<PartitionKey> parts) {
+    return split(rowId, indices, values, parts, false);
   }
 
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId, long[] indices,
-      double[] values, List<PartitionKey> partitionInfos) {
-    return split(rowId, indices, values, partitionInfos, false);
+  /**
+   * Split a array pair to vector splits by vector partitions in PS
+   *
+   * @param rowId need update row id
+   * @param indices column indices
+   * @param values column values, the dimension must equals to indices
+   * @param parts partitions that contain this vector, this partition must be sorted by part start
+   * column index
+   * @return part to split map
+   */
+  public static Map<PartitionKey, RowUpdateSplit> split(int rowId, int[] indices, int[] values,
+      List<PartitionKey> parts) {
+    return split(rowId, indices, values, parts, false);
   }
 
-  public static HashMap<PartitionKey, RowUpdateSplit> split(Vector vector,
-      List<PartitionKey> partitionInfos) {
-    if (vector instanceof IntDoubleVector) {
-      return split((IntDoubleVector) vector, partitionInfos);
-    }
-
-    if (vector instanceof IntIntVector) {
-      return split((IntIntVector) vector, partitionInfos);
-    }
-
-    if (vector instanceof IntLongVector) {
-      return split((IntLongVector) vector, partitionInfos);
-    }
-
-    if (vector instanceof IntFloatVector) {
-      return split((IntFloatVector) vector, partitionInfos);
-    }
-
-    if (vector instanceof LongDoubleVector) {
-      return split((LongDoubleVector) vector, partitionInfos);
-    }
-
-    if (vector instanceof LongIntVector) {
-      return split((LongIntVector) vector, partitionInfos);
-    }
-
-    if (vector instanceof LongLongVector) {
-      return split((LongLongVector) vector, partitionInfos);
-    }
-
-    if (vector instanceof LongFloatVector) {
-      return split((LongFloatVector) vector, partitionInfos);
-    }
-
-    if (vector instanceof CompIntDoubleVector) {
-      return split((CompIntDoubleVector) vector, partitionInfos);
-    }
-
-    if (vector instanceof CompLongDoubleVector) {
-      return split((CompLongDoubleVector) vector, partitionInfos);
-    }
-
-    if (vector instanceof CompIntFloatVector) {
-      return split((CompIntFloatVector) vector, partitionInfos);
-    }
-
-    if (vector instanceof CompLongFloatVector) {
-      return split((CompLongFloatVector) vector, partitionInfos);
-    }
-
-    if (vector instanceof CompIntIntVector) {
-      return split((CompIntIntVector) vector, partitionInfos);
-    }
-
-    if (vector instanceof CompLongIntVector) {
-      return split((CompLongIntVector) vector, partitionInfos);
-    }
-
-    if (vector instanceof CompIntLongVector) {
-      return split((CompIntLongVector) vector, partitionInfos);
-    }
-
-    if (vector instanceof CompLongLongVector) {
-      return split((CompLongLongVector) vector, partitionInfos);
-    }
-
-    throw new UnsupportedOperationException(
-        "Unsupport operation: split " + vector.getClass().getName());
+  /**
+   * Split a array pair to vector splits by vector partitions in PS
+   *
+   * @param rowId need update row id
+   * @param indices column indices
+   * @param values column values, the dimension must equals to indices
+   * @param parts partitions that contain this vector, this partition must be sorted by part start
+   * column index
+   * @return part to split map
+   */
+  public static Map<PartitionKey, RowUpdateSplit> split(int rowId, long[] indices,
+      double[] values, List<PartitionKey> parts) {
+    return split(rowId, indices, values, parts, false);
   }
 
-  public static HashMap<PartitionKey, RowUpdateSplit> split(IntDoubleVector vector,
-      List<PartitionKey> partitionInfos) {
-    return split(vector.getRowId(), vector.getStorage(), partitionInfos);
-  }
-
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId,
-      IntDoubleVectorStorage storage, List<PartitionKey> partitionInfos) {
-    if (storage instanceof IntDoubleDenseVectorStorage) {
-      return split(rowId, storage.getValues(), partitionInfos);
-    } else if (storage instanceof IntDoubleSparseVectorStorage) {
-      return split(rowId, storage.getIndices(), storage.getValues(), partitionInfos, false);
-    } else if (storage instanceof IntDoubleSortedVectorStorage) {
-      return split(rowId, storage.getIndices(), storage.getValues(), partitionInfos, true);
-    } else {
-      throw new UnsupportedOperationException(
-          "unsupport split for storage type:" + storage.getClass().getName());
-    }
-  }
-
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId, double[] values,
-      List<PartitionKey> partitionInfos) {
-    HashMap<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
-    for (PartitionKey partitionKey : partitionInfos) {
-      if (rowId >= partitionKey.getStartRow() && rowId < partitionKey.getEndRow()) {
+  /**
+   * Split a array to vector splits by vector partitions in PS
+   *
+   * @param rowId need update row id
+   * @param values column values, the dimension must equals to indices
+   * @param parts partitions that contain this vector, this partition must be sorted by part start
+   * column index
+   * @return part to split map
+   */
+  public static Map<PartitionKey, RowUpdateSplit> split(int rowId, double[] values,
+      List<PartitionKey> parts) {
+    Map<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
+    for (PartitionKey part : parts) {
+      if (rowId >= part.getStartRow() && rowId < part.getEndRow()) {
         RowUpdateSplit split =
-            new DenseDoubleRowUpdateSplit(rowId, (int) partitionKey.getStartCol(),
-                (int) partitionKey.getEndCol(), values);
-        ret.put(partitionKey, split);
+            new DenseDoubleRowUpdateSplit(rowId, (int) part.getStartCol(),
+                (int) part.getEndCol(), values);
+        ret.put(part, split);
       }
     }
     return ret;
   }
 
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId, int[] indices,
-      double[] values, List<PartitionKey> partitionInfos, boolean sorted) {
+  /**
+   * Split a array pair to vector splits by vector partitions in PS
+   *
+   * @param rowId need update row id
+   * @param indices column indices
+   * @param values column values, the dimension must equals to indices
+   * @param parts partitions that contain this vector, this partition must be sorted by part start
+   * column index
+   * @param sorted true means sort the indices and values first
+   * @return part to split map
+   */
+  public static Map<PartitionKey, RowUpdateSplit> split(int rowId, int[] indices,
+      double[] values, List<PartitionKey> parts, boolean sorted) {
     if (!sorted) {
       Sort.quickSort(indices, values, 0, indices.length - 1);
     }
 
-    HashMap<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
+    Map<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
 
-    ArrayList<PartitionKey> partitionOfVector = new ArrayList<>();
-
-    LOG.debug("split sparse double vector, rowId=" + rowId);
-    for (PartitionKey partitionKey : partitionInfos) {
-      LOG.debug("split sparse double vector, rowId=" + rowId + ", partitionKey.getStartRow()="
-          + partitionKey.getStartRow() + ", partitionKey.getEndRow()=" + partitionKey.getEndRow());
-      if (rowId >= partitionKey.getStartRow() && rowId < partitionKey.getEndRow()) {
-        partitionOfVector.add(partitionKey);
-      }
-    }
-
-    Collections.sort(partitionOfVector, new PartitionComp());
-
-    int ii = 0;
-    int keyIndex = 0;
-    while (ii < indices.length || keyIndex < partitionOfVector.size()) {
+    int featureIndex = 0;
+    int partIndex = 0;
+    while (featureIndex < indices.length || partIndex < parts.size()) {
       int length = 0;
-      int endOffset = (int) partitionOfVector.get(keyIndex).getEndCol();
-      while (ii < indices.length && indices[ii] < endOffset) {
-        ii++;
+      int endOffset = (int) parts.get(partIndex).getEndCol();
+      while (featureIndex < indices.length && indices[featureIndex] < endOffset) {
+        featureIndex++;
         length++;
       }
 
       RowUpdateSplit split =
-          new SparseDoubleRowUpdateSplit(rowId, ii - length, ii, indices, values);
-      ret.put(partitionOfVector.get(keyIndex), split);
+          new SparseDoubleRowUpdateSplit(rowId, featureIndex - length, featureIndex, indices,
+              values);
+      ret.put(parts.get(partIndex), split);
 
-      keyIndex++;
+      partIndex++;
     }
     return ret;
   }
 
 
-  public static HashMap<PartitionKey, RowUpdateSplit> split(IntIntVector vector,
-      List<PartitionKey> partitionInfos) {
-    return split(vector.getRowId(), vector.getStorage(), partitionInfos);
-  }
-
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId, IntIntVectorStorage storage,
-      List<PartitionKey> partitionInfos) {
-    if (storage instanceof IntIntDenseVectorStorage) {
-      return split(rowId, storage.getValues(), partitionInfos);
-    } else if (storage instanceof IntIntSparseVectorStorage) {
-      return split(rowId, storage.getIndices(), storage.getValues(), partitionInfos, false);
-    } else if (storage instanceof IntIntSortedVectorStorage) {
-      return split(rowId, storage.getIndices(), storage.getValues(), partitionInfos, true);
-    } else {
-      throw new UnsupportedOperationException(
-          "unsupport split for storage type:" + storage.getClass().getName());
-    }
-  }
-
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId, int[] values,
-      List<PartitionKey> partitionInfos) {
-    HashMap<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
-    for (PartitionKey partitionKey : partitionInfos) {
-      if (rowId >= partitionKey.getStartRow() && rowId < partitionKey.getEndRow()) {
-        RowUpdateSplit split = new DenseIntRowUpdateSplit(rowId, (int) partitionKey.getStartCol(),
-            (int) partitionKey.getEndCol(), values);
-        ret.put(partitionKey, split);
+  /**
+   * Split a array to vector splits by vector partitions in PS
+   *
+   * @param rowId need update row id
+   * @param values column values, the dimension must equals to indices
+   * @param parts partitions that contain this vector, this partition must be sorted by part start
+   * column index
+   * @return part to split map
+   */
+  public static Map<PartitionKey, RowUpdateSplit> split(int rowId, int[] values,
+      List<PartitionKey> parts) {
+    Map<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
+    for (PartitionKey part : parts) {
+      if (rowId >= part.getStartRow() && rowId < part.getEndRow()) {
+        RowUpdateSplit split = new DenseIntRowUpdateSplit(rowId, (int) part.getStartCol(),
+            (int) part.getEndCol(), values);
+        ret.put(part, split);
       }
     }
     return ret;
   }
 
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId, int[] indices, int[] values,
-      List<PartitionKey> partitionInfos, boolean sorted) {
-
+  /**
+   * Split a array pair to vector splits by vector partitions in PS
+   *
+   * @param rowId need update row id
+   * @param indices column indices
+   * @param values column values, the dimension must equals to indices
+   * @param parts partitions that contain this vector, this partition must be sorted by part start
+   * column index
+   * @param sorted true means sort the indices and values first
+   * @return part to split map
+   */
+  public static Map<PartitionKey, RowUpdateSplit> split(int rowId, int[] indices, int[] values,
+      List<PartitionKey> parts, boolean sorted) {
     if (!sorted) {
       Sort.quickSort(indices, values, 0, indices.length - 1);
     }
 
-    HashMap<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
+    Map<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
 
-    ArrayList<PartitionKey> partitionOfVector = new ArrayList<>();
-
-    for (PartitionKey partitionKey : partitionInfos) {
-      if (rowId >= partitionKey.getStartRow() && rowId < partitionKey.getEndRow()) {
-        partitionOfVector.add(partitionKey);
-      }
-    }
-
-    Collections.sort(partitionOfVector, new Comparator<PartitionKey>() {
-      @Override
-      public int compare(PartitionKey key1, PartitionKey key2) {
-        return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
-      }
-    });
-
-    int ii = 0;
-    int keyIndex = 0;
+    int featureIndex = 0;
+    int partIndex = 0;
 
     // For each partition, we generate a update split.
     // Although the split is empty for partitions those without any update data,
     // we still need to generate a update split to update the clock info on ps.
-    while (ii < indices.length || keyIndex < partitionOfVector.size()) {
+    while (featureIndex < indices.length || partIndex < parts.size()) {
       int length = 0;
-      int endOffset = (int) partitionOfVector.get(keyIndex).getEndCol();
-      while (ii < indices.length && indices[ii] < endOffset) {
-        ii++;
+      int endOffset = (int) parts.get(partIndex).getEndCol();
+      while (featureIndex < indices.length && indices[featureIndex] < endOffset) {
+        featureIndex++;
         length++;
       }
 
-      RowUpdateSplit split = new SparseIntRowUpdateSplit(rowId, ii - length, ii, indices, values);
-      ret.put(partitionOfVector.get(keyIndex), split);
+      RowUpdateSplit split = new SparseIntRowUpdateSplit(rowId, featureIndex - length, featureIndex,
+          indices, values);
+      ret.put(parts.get(partIndex), split);
 
-      keyIndex++;
+      partIndex++;
     }
 
     return ret;
   }
 
-  public static HashMap<PartitionKey, RowUpdateSplit> split(IntLongVector vector,
-      List<PartitionKey> partitionInfos) {
-    return split(vector.getRowId(), vector.getStorage(), partitionInfos);
-  }
+  public static class IntIndicesView {
+    private final int [] indices;
+    private final int start;
+    private final int end;
 
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId, IntLongVectorStorage storage,
-      List<PartitionKey> partitionInfos) {
-    if (storage instanceof IntLongDenseVectorStorage) {
-      return split(rowId, storage.getValues(), partitionInfos);
-    } else if (storage instanceof IntLongSparseVectorStorage) {
-      return split(rowId, storage.getIndices(), storage.getValues(), partitionInfos, false);
-    } else if (storage instanceof IntLongSortedVectorStorage) {
-      return split(rowId, storage.getIndices(), storage.getValues(), partitionInfos, true);
-    } else {
-      throw new UnsupportedOperationException(
-          "unsupport split for storage type:" + storage.getClass().getName());
+    public IntIndicesView(int [] indices, int start, int end) {
+      this.indices = indices;
+      this.start = start;
+      this.end = end;
+    }
+
+    public int[] getIndices() {
+      return indices;
+    }
+
+    public int getStart() {
+      return start;
+    }
+
+    public int getEnd() {
+      return end;
     }
   }
 
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId, long[] values,
-      List<PartitionKey> partitionInfos) {
-    HashMap<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
-    for (PartitionKey partitionKey : partitionInfos) {
-      if (rowId >= partitionKey.getStartRow() && rowId < partitionKey.getEndRow()) {
-        RowUpdateSplit split = new DenseLongRowUpdateSplit(rowId, (int) partitionKey.getStartCol(),
-            (int) partitionKey.getEndCol(), values);
-        ret.put(partitionKey, split);
-      }
-    }
-    return ret;
-  }
-
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId, int[] indices, long[] values,
-      List<PartitionKey> partitionInfos, boolean sorted) {
-
+  public static Map<PartitionKey, IntIndicesView> split(int[] indices, List<PartitionKey> parts, boolean sorted) {
     if (!sorted) {
-      Sort.quickSort(indices, values, 0, indices.length - 1);
+      Arrays.sort(indices);
     }
 
-    HashMap<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
+    Map<PartitionKey, IntIndicesView> ret = new HashMap<>();
 
-    ArrayList<PartitionKey> partitionOfVector = new ArrayList<>();
-
-    for (PartitionKey partitionKey : partitionInfos) {
-      if (rowId >= partitionKey.getStartRow() && rowId < partitionKey.getEndRow()) {
-        partitionOfVector.add(partitionKey);
-      }
-    }
-
-    Collections.sort(partitionOfVector, new Comparator<PartitionKey>() {
-      @Override
-      public int compare(PartitionKey key1, PartitionKey key2) {
-        return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
-      }
-    });
-
-    int ii = 0;
-    int keyIndex = 0;
+    int featureIndex = 0;
+    int partIndex = 0;
 
     // For each partition, we generate a update split.
     // Although the split is empty for partitions those without any update data,
     // we still need to generate a update split to update the clock info on ps.
-    while (ii < indices.length || keyIndex < partitionOfVector.size()) {
+    while (featureIndex < indices.length || partIndex < parts.size()) {
       int length = 0;
-      int endOffset = (int) partitionOfVector.get(keyIndex).getEndCol();
-      while (ii < indices.length && indices[ii] < endOffset) {
-        ii++;
+      int endOffset = (int) parts.get(partIndex).getEndCol();
+      while (featureIndex < indices.length && indices[featureIndex] < endOffset) {
+        featureIndex++;
         length++;
       }
 
-      RowUpdateSplit split = new SparseLongRowUpdateSplit(rowId, ii - length, ii, indices, values);
-      ret.put(partitionOfVector.get(keyIndex), split);
+      if(length > 0) {
+        IntIndicesView split = new IntIndicesView(indices, featureIndex - length, featureIndex);
+        ret.put(parts.get(partIndex), split);
+      }
 
-      keyIndex++;
+      partIndex++;
     }
 
     return ret;
   }
 
-  public static HashMap<PartitionKey, RowUpdateSplit> split(IntFloatVector vector,
-      List<PartitionKey> partitionInfos) {
-    return split(vector.getRowId(), vector.getStorage(), partitionInfos);
-  }
-
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId,
-      IntFloatVectorStorage storage, List<PartitionKey> partitionInfos) {
-    if (storage instanceof IntFloatDenseVectorStorage) {
-      return split(rowId, storage.getValues(), partitionInfos);
-    } else if (storage instanceof IntFloatSparseVectorStorage) {
-      return split(rowId, storage.getIndices(), storage.getValues(), partitionInfos, false);
-    } else if (storage instanceof IntFloatSortedVectorStorage) {
-      return split(rowId, storage.getIndices(), storage.getValues(), partitionInfos, true);
-    } else {
-      throw new UnsupportedOperationException(
-          "unsupport split for storage type:" + storage.getClass().getName());
-    }
-  }
-
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId, float[] values,
-      List<PartitionKey> partitionInfos) {
-    HashMap<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
-    for (PartitionKey partitionKey : partitionInfos) {
-      if (rowId >= partitionKey.getStartRow() && rowId < partitionKey.getEndRow()) {
-        RowUpdateSplit split = new DenseFloatRowUpdateSplit(rowId, (int) partitionKey.getStartCol(),
-            (int) partitionKey.getEndCol(), values);
-        ret.put(partitionKey, split);
+  /**
+   * Split a array to vector splits by vector partitions in PS
+   *
+   * @param rowId need update row id
+   * @param values column values, the dimension must equals to indices
+   * @param parts partitions that contain this vector, this partition must be sorted by part start
+   * column index
+   * @return part to split map
+   */
+  public static Map<PartitionKey, RowUpdateSplit> split(int rowId, long[] values,
+      List<PartitionKey> parts) {
+    Map<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
+    for (PartitionKey part : parts) {
+      if (rowId >= part.getStartRow() && rowId < part.getEndRow()) {
+        RowUpdateSplit split = new DenseLongRowUpdateSplit(rowId, (int) part.getStartCol(),
+            (int) part.getEndCol(), values);
+        ret.put(part, split);
       }
     }
     return ret;
   }
 
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId, int[] indices,
-      float[] values, List<PartitionKey> partitionInfos, boolean sorted) {
+  /**
+   * Split a array pair to vector splits by vector partitions in PS
+   *
+   * @param rowId need update row id
+   * @param indices column indices
+   * @param values column values, the dimension must equals to indices
+   * @param parts partitions that contain this vector, this partition must be sorted by part start
+   * column index
+   * @param sorted true means sort the indices and values first
+   * @return part to split map
+   */
+  public static Map<PartitionKey, RowUpdateSplit> split(int rowId, int[] indices, long[] values,
+      List<PartitionKey> parts, boolean sorted) {
     if (!sorted) {
       Sort.quickSort(indices, values, 0, indices.length - 1);
     }
 
-    HashMap<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
+    Map<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
 
-    ArrayList<PartitionKey> partitionOfVector = new ArrayList<>();
-
-    for (PartitionKey partitionKey : partitionInfos) {
-      if (rowId >= partitionKey.getStartRow() && rowId < partitionKey.getEndRow()) {
-        partitionOfVector.add(partitionKey);
-      }
-    }
-
-    Collections.sort(partitionOfVector, new PartitionComp());
-
-    int ii = 0;
-    int keyIndex = 0;
-    while (ii < indices.length || keyIndex < partitionOfVector.size()) {
-      int length = 0;
-      int endOffset = (int) partitionOfVector.get(keyIndex).getEndCol();
-      while (ii < indices.length && indices[ii] < endOffset) {
-        ii++;
-        length++;
-      }
-
-      RowUpdateSplit split = new SparseFloatRowUpdateSplit(rowId, ii - length, ii, indices, values);
-      ret.put(partitionOfVector.get(keyIndex), split);
-
-      keyIndex++;
-    }
-    return ret;
-  }
-
-  public static HashMap<PartitionKey, RowUpdateSplit> split(LongDoubleVector vector,
-      List<PartitionKey> partitionInfos) {
-    return split(vector.getRowId(), vector.getStorage(), partitionInfos);
-  }
-
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId,
-      LongDoubleVectorStorage storage, List<PartitionKey> partitionInfos) {
-    if (storage instanceof LongDoubleSparseVectorStorage) {
-      return split(rowId, storage.getIndices(), storage.getValues(), partitionInfos, false);
-    } else if (storage instanceof LongDoubleSortedVectorStorage) {
-      return split(rowId, storage.getIndices(), storage.getValues(), partitionInfos, true);
-    } else {
-      throw new UnsupportedOperationException(
-          "unsupport split for storage type:" + storage.getClass().getName());
-    }
-  }
-
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId, long[] indices,
-      double[] values, List<PartitionKey> partitionInfos, boolean sorted) {
-    if (!sorted) {
-      Sort.quickSort(indices, values, 0, indices.length - 1);
-    }
-
-    HashMap<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
-
-    ArrayList<PartitionKey> partitionOfVector = new ArrayList<>();
-
-    for (PartitionKey partitionKey : partitionInfos) {
-      if (rowId >= partitionKey.getStartRow() && rowId < partitionKey.getEndRow()) {
-        partitionOfVector.add(partitionKey);
-      }
-    }
-
-    Collections.sort(partitionOfVector, new Comparator<PartitionKey>() {
-      @Override
-      public int compare(PartitionKey key1, PartitionKey key2) {
-        return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
-      }
-    });
-
-    int ii = 0;
-    int keyIndex = 0;
+    int featureIndex = 0;
+    int partIndex = 0;
 
     // For each partition, we generate a update split.
     // Although the split is empty for partitions those without any update data,
     // we still need to generate a update split to update the clock info on ps.
-    while (ii < indices.length || keyIndex < partitionOfVector.size()) {
+    while (featureIndex < indices.length || partIndex < parts.size()) {
       int length = 0;
-      long endOffset = partitionOfVector.get(keyIndex).getEndCol();
-      while (ii < indices.length && indices[ii] < endOffset) {
-        ii++;
+      int endOffset = (int) parts.get(partIndex).getEndCol();
+      while (featureIndex < indices.length && indices[featureIndex] < endOffset) {
+        featureIndex++;
+        length++;
+      }
+
+      RowUpdateSplit split = new SparseLongRowUpdateSplit(rowId, featureIndex - length,
+          featureIndex, indices, values);
+      ret.put(parts.get(partIndex), split);
+
+      partIndex++;
+    }
+
+    return ret;
+  }
+
+  /**
+   * Split a array to vector splits by vector partitions in PS
+   *
+   * @param rowId need update row id
+   * @param values column values, the dimension must equals to indices
+   * @param parts partitions that contain this vector, this partition must be sorted by part start
+   * column index
+   * @return part to split map
+   */
+  public static Map<PartitionKey, RowUpdateSplit> split(int rowId, float[] values,
+      List<PartitionKey> parts) {
+    Map<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
+    for (PartitionKey part : parts) {
+      if (rowId >= part.getStartRow() && rowId < part.getEndRow()) {
+        RowUpdateSplit split = new DenseFloatRowUpdateSplit(rowId, (int) part.getStartCol(),
+            (int) part.getEndCol(), values);
+        ret.put(part, split);
+      }
+    }
+    return ret;
+  }
+
+  /**
+   * Split a array pair to vector splits by vector partitions in PS
+   *
+   * @param rowId need update row id
+   * @param indices column indices
+   * @param values column values, the dimension must equals to indices
+   * @param parts partitions that contain this vector, this partition must be sorted by part start
+   * column index
+   * @param sorted true means sort the indices and values first
+   * @return part to split map
+   */
+  public static Map<PartitionKey, RowUpdateSplit> split(int rowId, int[] indices,
+      float[] values, List<PartitionKey> parts, boolean sorted) {
+    if (!sorted) {
+      Sort.quickSort(indices, values, 0, indices.length - 1);
+    }
+
+    Map<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
+
+    int featureIndex = 0;
+    int partIndex = 0;
+    while (featureIndex < indices.length || partIndex < parts.size()) {
+      int length = 0;
+      int endOffset = (int) parts.get(partIndex).getEndCol();
+      while (featureIndex < indices.length && indices[featureIndex] < endOffset) {
+        featureIndex++;
+        length++;
+      }
+
+      RowUpdateSplit split = new SparseFloatRowUpdateSplit(rowId, featureIndex - length,
+          featureIndex, indices, values);
+      ret.put(parts.get(partIndex), split);
+
+      partIndex++;
+    }
+    return ret;
+  }
+
+  /**
+   * Split a array pair to vector splits by vector partitions in PS
+   *
+   * @param rowId need update row id
+   * @param indices column indices
+   * @param values column values, the dimension must equals to indices
+   * @param parts partitions that contain this vector, this partition must be sorted by part start
+   * column index
+   * @param sorted true means sort the indices and values first
+   * @return part to split map
+   */
+  public static Map<PartitionKey, RowUpdateSplit> split(int rowId, long[] indices,
+      double[] values, List<PartitionKey> parts, boolean sorted) {
+    if (!sorted) {
+      Sort.quickSort(indices, values, 0, indices.length - 1);
+    }
+
+    Map<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
+
+    int featureIndex = 0;
+    int partIndex = 0;
+
+    // For each partition, we generate a update split.
+    // Although the split is empty for partitions those without any update data,
+    // we still need to generate a update split to update the clock info on ps.
+    while (featureIndex < indices.length || partIndex < parts.size()) {
+      int length = 0;
+      long endOffset = parts.get(partIndex).getEndCol();
+      while (featureIndex < indices.length && indices[featureIndex] < endOffset) {
+        featureIndex++;
         length++;
       }
 
       RowUpdateSplit split =
-          new LongKeySparseDoubleRowUpdateSplit(rowId, ii - length, ii, indices, values);
-      ret.put(partitionOfVector.get(keyIndex), split);
+          new LongKeySparseDoubleRowUpdateSplit(rowId, featureIndex - length, featureIndex, indices,
+              values);
+      ret.put(parts.get(partIndex), split);
 
-      keyIndex++;
+      partIndex++;
     }
     return ret;
   }
 
-  public static HashMap<PartitionKey, RowUpdateSplit> split(LongIntVector vector,
-      List<PartitionKey> partitionInfos) {
-    return split(vector.getRowId(), vector.getStorage(), partitionInfos);
-  }
-
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId, LongIntVectorStorage storage,
-      List<PartitionKey> partitionInfos) {
-    if (storage instanceof LongIntSparseVectorStorage) {
-      return split(rowId, storage.getIndices(), storage.getValues(), partitionInfos, false);
-    } else if (storage instanceof LongIntSortedVectorStorage) {
-      return split(rowId, storage.getIndices(), storage.getValues(), partitionInfos, true);
-    } else {
-      throw new UnsupportedOperationException(
-          "unsupport split for storage type:" + storage.getClass().getName());
-    }
-  }
-
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId, long[] indices, int[] values,
-      List<PartitionKey> partitionInfos, boolean sorted) {
+  /**
+   * Split a array pair to vector splits by vector partitions in PS
+   *
+   * @param rowId need update row id
+   * @param indices column indices
+   * @param values column values, the dimension must equals to indices
+   * @param parts partitions that contain this vector, this partition must be sorted by part start
+   * column index
+   * @param sorted true means sort the indices and values first
+   * @return part to split map
+   */
+  public static Map<PartitionKey, RowUpdateSplit> split(int rowId, long[] indices, int[] values,
+      List<PartitionKey> parts, boolean sorted) {
     if (!sorted) {
       Sort.quickSort(indices, values, 0, indices.length - 1);
     }
 
-    HashMap<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
+    Map<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
 
-    ArrayList<PartitionKey> partitionOfVector = new ArrayList<>();
-
-    for (PartitionKey partitionKey : partitionInfos) {
-      if (rowId >= partitionKey.getStartRow() && rowId < partitionKey.getEndRow()) {
-        partitionOfVector.add(partitionKey);
-      }
-    }
-
-    Collections.sort(partitionOfVector, new Comparator<PartitionKey>() {
-      @Override
-      public int compare(PartitionKey key1, PartitionKey key2) {
-        return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
-      }
-    });
-
-    int ii = 0;
-    int keyIndex = 0;
+    int featureIndex = 0;
+    int partIndex = 0;
 
     // For each partition, we generate a update split.
     // Although the split is empty for partitions those without any update data,
     // we still need to generate a update split to update the clock info on ps.
-    while (ii < indices.length || keyIndex < partitionOfVector.size()) {
+    while (featureIndex < indices.length || partIndex < parts.size()) {
       int length = 0;
-      long endOffset = partitionOfVector.get(keyIndex).getEndCol();
-      while (ii < indices.length && indices[ii] < endOffset) {
-        ii++;
+      long endOffset = parts.get(partIndex).getEndCol();
+      while (featureIndex < indices.length && indices[featureIndex] < endOffset) {
+        featureIndex++;
         length++;
       }
 
       RowUpdateSplit split =
-          new LongKeySparseIntRowUpdateSplit(rowId, ii - length, ii, indices, values);
-      ret.put(partitionOfVector.get(keyIndex), split);
+          new LongKeySparseIntRowUpdateSplit(rowId, featureIndex - length, featureIndex, indices,
+              values);
+      ret.put(parts.get(partIndex), split);
 
-      keyIndex++;
+      partIndex++;
     }
     return ret;
   }
 
-  public static HashMap<PartitionKey, RowUpdateSplit> split(LongLongVector vector,
-      List<PartitionKey> partitionInfos) {
-    return split(vector.getRowId(), vector.getStorage(), partitionInfos);
-  }
-
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId,
-      LongLongVectorStorage storage, List<PartitionKey> partitionInfos) {
-    if (storage instanceof LongLongSparseVectorStorage) {
-      return split(rowId, storage.getIndices(), storage.getValues(), partitionInfos, false);
-    } else if (storage instanceof LongLongSortedVectorStorage) {
-      return split(rowId, storage.getIndices(), storage.getValues(), partitionInfos, true);
-    } else {
-      throw new UnsupportedOperationException(
-          "unsupport split for storage type:" + storage.getClass().getName());
-    }
-  }
-
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId, long[] indices,
-      long[] values, List<PartitionKey> partitionInfos, boolean sorted) {
+  /**
+   * Split a array pair to vector splits by vector partitions in PS
+   *
+   * @param rowId need update row id
+   * @param indices column indices
+   * @param values column values, the dimension must equals to indices
+   * @param parts partitions that contain this vector, this partition must be sorted by part start
+   * column index
+   * @param sorted true means sort the indices and values first
+   * @return part to split map
+   */
+  public static Map<PartitionKey, RowUpdateSplit> split(int rowId, long[] indices,
+      long[] values, List<PartitionKey> parts, boolean sorted) {
     if (!sorted) {
       Sort.quickSort(indices, values, 0, indices.length - 1);
     }
 
-    HashMap<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
+    Map<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
 
-    ArrayList<PartitionKey> partitionOfVector = new ArrayList<>();
-
-    for (PartitionKey partitionKey : partitionInfos) {
-      if (rowId >= partitionKey.getStartRow() && rowId < partitionKey.getEndRow()) {
-        partitionOfVector.add(partitionKey);
-      }
-    }
-
-    Collections.sort(partitionOfVector, new Comparator<PartitionKey>() {
-      @Override
-      public int compare(PartitionKey key1, PartitionKey key2) {
-        return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
-      }
-    });
-
-    int ii = 0;
-    int keyIndex = 0;
+    int featureIndex = 0;
+    int partIndex = 0;
 
     // For each partition, we generate a update split.
     // Although the split is empty for partitions those without any update data,
     // we still need to generate a update split to update the clock info on ps.
-    while (ii < indices.length || keyIndex < partitionOfVector.size()) {
+    while (featureIndex < indices.length || partIndex < parts.size()) {
       int length = 0;
-      long endOffset = partitionOfVector.get(keyIndex).getEndCol();
-      while (ii < indices.length && indices[ii] < endOffset) {
-        ii++;
+      long endOffset = parts.get(partIndex).getEndCol();
+      while (featureIndex < indices.length && indices[featureIndex] < endOffset) {
+        featureIndex++;
         length++;
       }
 
       RowUpdateSplit split =
-          new LongKeySparseLongRowUpdateSplit(rowId, ii - length, ii, indices, values);
-      ret.put(partitionOfVector.get(keyIndex), split);
+          new LongKeySparseLongRowUpdateSplit(rowId, featureIndex - length, featureIndex, indices,
+              values);
+      ret.put(parts.get(partIndex), split);
 
-      keyIndex++;
+      partIndex++;
     }
     return ret;
   }
 
-  public static HashMap<PartitionKey, RowUpdateSplit> split(LongFloatVector vector,
-      List<PartitionKey> partitionInfos) {
-    return split(vector.getRowId(), vector.getStorage(), partitionInfos);
-  }
-
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId,
-      LongFloatVectorStorage storage, List<PartitionKey> partitionInfos) {
-    if (storage instanceof LongFloatSparseVectorStorage) {
-      return split(rowId, storage.getIndices(), storage.getValues(), partitionInfos, false);
-    } else if (storage instanceof LongFloatSortedVectorStorage) {
-      return split(rowId, storage.getIndices(), storage.getValues(), partitionInfos, true);
-    } else {
-      throw new UnsupportedOperationException(
-          "unsupport split for storage type:" + storage.getClass().getName());
-    }
-  }
-
-  public static HashMap<PartitionKey, RowUpdateSplit> split(int rowId, long[] indices,
-      float[] values, List<PartitionKey> partitionInfos, boolean sorted) {
+  /**
+   * Split a array pair to vector splits by vector partitions in PS
+   *
+   * @param rowId need update row id
+   * @param indices column indices
+   * @param values column values, the dimension must equals to indices
+   * @param parts partitions that contain this vector, this partition must be sorted by part start
+   * column index
+   * @param sorted true means sort the indices and values first
+   * @return part to split map
+   */
+  public static Map<PartitionKey, RowUpdateSplit> split(int rowId, long[] indices,
+      float[] values, List<PartitionKey> parts, boolean sorted) {
     if (!sorted) {
       Sort.quickSort(indices, values, 0, indices.length - 1);
     }
 
-    HashMap<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
+    Map<PartitionKey, RowUpdateSplit> ret = new HashMap<>();
 
-    ArrayList<PartitionKey> partitionOfVector = new ArrayList<>();
-
-    for (PartitionKey partitionKey : partitionInfos) {
-      if (rowId >= partitionKey.getStartRow() && rowId < partitionKey.getEndRow()) {
-        partitionOfVector.add(partitionKey);
-      }
-    }
-
-    Collections.sort(partitionOfVector, new Comparator<PartitionKey>() {
-      @Override
-      public int compare(PartitionKey key1, PartitionKey key2) {
-        return key1.getStartCol() < key2.getStartCol() ? -1 : 1;
-      }
-    });
-
-    int ii = 0;
-    int keyIndex = 0;
+    int featureIndex = 0;
+    int partIndex = 0;
 
     // For each partition, we generate a update split.
     // Although the split is empty for partitions those without any update data,
     // we still need to generate a update split to update the clock info on ps.
-    while (ii < indices.length || keyIndex < partitionOfVector.size()) {
+    while (featureIndex < indices.length || partIndex < parts.size()) {
       int length = 0;
-      long endOffset = partitionOfVector.get(keyIndex).getEndCol();
-      while (ii < indices.length && indices[ii] < endOffset) {
-        ii++;
+      long endOffset = parts.get(partIndex).getEndCol();
+      while (featureIndex < indices.length && indices[featureIndex] < endOffset) {
+        featureIndex++;
         length++;
       }
 
       RowUpdateSplit split =
-          new LongKeySparseFloatRowUpdateSplit(rowId, ii - length, ii, indices, values);
-      ret.put(partitionOfVector.get(keyIndex), split);
+          new LongKeySparseFloatRowUpdateSplit(rowId, featureIndex - length, featureIndex, indices,
+              values);
+      ret.put(parts.get(partIndex), split);
 
-      keyIndex++;
+      partIndex++;
     }
     return ret;
   }
 
-  private static HashMap<PartitionKey, RowUpdateSplit> split(CompLongDoubleVector vector,
-      List<PartitionKey> partitionInfos) {
-    partitionInfos.sort(new PartitionComp());
-    LongDoubleVector[] vecParts = vector.getPartitions();
-    assert vecParts.length == partitionInfos.size();
 
-    HashMap<PartitionKey, RowUpdateSplit> updateSplitMap = new HashMap<>(partitionInfos.size());
-    for (int i = 0; i < vecParts.length; i++) {
-      updateSplitMap.put(partitionInfos.get(i),
-          new CompLongDoubleRowUpdateSplit(vector.getRowId(), vecParts[i]));
+  public static boolean isInRange(int[] sortedIndices, List<PartitionKey> sortedParts) {
+    if (sortedIndices == null || sortedIndices.length == 0) {
+      return true;
     }
-    return updateSplitMap;
+
+    return sortedIndices[0] >= sortedParts.get(0).getStartCol()
+        && sortedIndices[sortedIndices.length - 1] < sortedParts.get(sortedParts.size() - 1)
+        .getEndCol();
   }
 
-  private static HashMap<PartitionKey, RowUpdateSplit> split(CompIntDoubleVector vector,
-      List<PartitionKey> partitionInfos) {
-    partitionInfos.sort(new PartitionComp());
-    IntDoubleVector[] vecParts = vector.getPartitions();
-    assert vecParts.length == partitionInfos.size();
-
-    HashMap<PartitionKey, RowUpdateSplit> updateSplitMap = new HashMap<>(partitionInfos.size());
-    for (int i = 0; i < vecParts.length; i++) {
-      updateSplitMap.put(partitionInfos.get(i),
-          new CompIntDoubleRowUpdateSplit(vector.getRowId(), vecParts[i],
-              (int) (partitionInfos.get(i).getEndCol() - partitionInfos.get(i).getStartCol())));
+  public static boolean isInRange(long[] sortedIndices, List<PartitionKey> sortedParts) {
+    if (sortedIndices == null || sortedIndices.length == 0) {
+      return true;
     }
-    return updateSplitMap;
+
+    return sortedIndices[0] >= sortedParts.get(0).getStartCol()
+        && sortedIndices[sortedIndices.length - 1] < sortedParts.get(sortedParts.size() - 1)
+        .getEndCol();
   }
 
-  private static HashMap<PartitionKey, RowUpdateSplit> split(CompIntFloatVector vector,
-      List<PartitionKey> partitionInfos) {
-    partitionInfos.sort(new PartitionComp());
-    IntFloatVector[] vecParts = vector.getPartitions();
-    assert vecParts.length == partitionInfos.size();
+  public static boolean isInRange(long[] indices, int[] sortedIndex,
+                                  List<PartitionKey> sortedParts) {
+    if (indices == null || indices.length == 0)
+      return true;
 
-    HashMap<PartitionKey, RowUpdateSplit> updateSplitMap = new HashMap<>(partitionInfos.size());
-    for (int i = 0; i < vecParts.length; i++) {
-      updateSplitMap
-          .put(partitionInfos.get(i), new CompIntFloatRowUpdateSplit(vector.getRowId(), vecParts[i],
-              (int) (partitionInfos.get(i).getEndCol() - partitionInfos.get(i).getStartCol())));
-    }
-    return updateSplitMap;
-  }
-
-  private static HashMap<PartitionKey, RowUpdateSplit> split(CompLongFloatVector vector,
-      List<PartitionKey> partitionInfos) {
-    partitionInfos.sort(new PartitionComp());
-    LongFloatVector[] vecParts = vector.getPartitions();
-    assert vecParts.length == partitionInfos.size();
-
-    HashMap<PartitionKey, RowUpdateSplit> updateSplitMap = new HashMap<>(partitionInfos.size());
-    for (int i = 0; i < vecParts.length; i++) {
-      updateSplitMap.put(partitionInfos.get(i),
-          new CompLongFloatRowUpdateSplit(vector.getRowId(), vecParts[i]));
-    }
-    return updateSplitMap;
-  }
-
-  private static HashMap<PartitionKey, RowUpdateSplit> split(CompLongIntVector vector,
-      List<PartitionKey> partitionInfos) {
-    partitionInfos.sort(new PartitionComp());
-    LongIntVector[] vecParts = vector.getPartitions();
-    assert vecParts.length == partitionInfos.size();
-
-    HashMap<PartitionKey, RowUpdateSplit> updateSplitMap = new HashMap<>(partitionInfos.size());
-    for (int i = 0; i < vecParts.length; i++) {
-      updateSplitMap
-          .put(partitionInfos.get(i),
-              new CompLongIntRowUpdateSplit(vector.getRowId(), vecParts[i]));
-    }
-    return updateSplitMap;
-  }
-
-  private static HashMap<PartitionKey, RowUpdateSplit> split(CompIntIntVector vector,
-      List<PartitionKey> partitionInfos) {
-    partitionInfos.sort(new PartitionComp());
-    IntIntVector[] vecParts = vector.getPartitions();
-    assert vecParts.length == partitionInfos.size();
-
-    HashMap<PartitionKey, RowUpdateSplit> updateSplitMap = new HashMap<>(partitionInfos.size());
-    for (int i = 0; i < vecParts.length; i++) {
-      updateSplitMap
-          .put(partitionInfos.get(i), new CompIntIntRowUpdateSplit(vector.getRowId(), vecParts[i],
-              (int) (partitionInfos.get(i).getEndCol() - partitionInfos.get(i).getStartCol())));
-    }
-    return updateSplitMap;
-  }
-
-  private static HashMap<PartitionKey, RowUpdateSplit> split(CompIntLongVector vector,
-      List<PartitionKey> partitionInfos) {
-    partitionInfos.sort(new PartitionComp());
-    IntLongVector[] vecParts = vector.getPartitions();
-    assert vecParts.length == partitionInfos.size();
-
-    HashMap<PartitionKey, RowUpdateSplit> updateSplitMap = new HashMap<>(partitionInfos.size());
-    for (int i = 0; i < vecParts.length; i++) {
-      updateSplitMap
-          .put(partitionInfos.get(i), new CompIntLongRowUpdateSplit(vector.getRowId(), vecParts[i],
-              (int) (partitionInfos.get(i).getEndCol() - partitionInfos.get(i).getStartCol())));
-    }
-    return updateSplitMap;
-  }
-
-  private static HashMap<PartitionKey, RowUpdateSplit> split(CompLongLongVector vector,
-      List<PartitionKey> partitionInfos) {
-    partitionInfos.sort(new PartitionComp());
-    LongLongVector[] vecParts = vector.getPartitions();
-    assert vecParts.length == partitionInfos.size();
-
-    HashMap<PartitionKey, RowUpdateSplit> updateSplitMap = new HashMap<>(partitionInfos.size());
-    for (int i = 0; i < vecParts.length; i++) {
-      updateSplitMap
-          .put(partitionInfos.get(i),
-              new CompLongLongRowUpdateSplit(vector.getRowId(), vecParts[i]));
-    }
-    return updateSplitMap;
+    return indices[sortedIndex[0]] >= sortedParts.get(0).getStartCol()
+      && indices[sortedIndex[sortedIndex.length - 1]] < sortedParts.get(sortedParts.size() - 1)
+      .getEndCol();
   }
 }

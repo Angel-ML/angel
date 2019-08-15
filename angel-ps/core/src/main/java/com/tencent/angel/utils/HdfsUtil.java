@@ -20,7 +20,7 @@ package com.tencent.angel.utils;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.predict.PredictResult;
-import com.tencent.angel.worker.storage.DataBlock;
+import com.tencent.angel.ml.math2.utils.DataBlock;
 import com.tencent.angel.worker.task.TaskContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -51,7 +51,6 @@ public class HdfsUtil {
   public static final String NUM_INPUT_FILES = "mapreduce.input.fileinputformat.numinputfiles";
   public static final String INPUT_DIR_RECURSIVE =
     "mapreduce.input.fileinputformat.input.dir.recursive";
-
 
   private static class MultiPathFilter implements PathFilter {
     private List<PathFilter> filters;
@@ -365,9 +364,17 @@ public class HdfsUtil {
 
   public static void rename(Path tmpCombinePath, Path outputPath, FileSystem fs)
     throws IOException {
+    // If out path exist , just remove it first
     if (fs.exists(outputPath)) {
       fs.delete(outputPath, true);
     }
+
+    // Create parent directory if not exist
+    if(!fs.exists(outputPath.getParent())) {
+      fs.mkdirs(outputPath.getParent());
+    }
+
+    // Rename
     if (!fs.rename(tmpCombinePath, outputPath)) {
       throw new IOException("rename from " + tmpCombinePath + " to " + outputPath + " failed");
     }
@@ -418,5 +425,31 @@ public class HdfsUtil {
 
     rename(tmpOutFilePath, outFilePath, fs);
     LOG.info("rename " + tmpOutFilePath + " to " + outFilePath);
+  }
+
+  public static void remove(Configuration conf, String dir) throws IOException {
+    Path path = new Path(dir);
+    FileSystem fs = path.getFileSystem(conf);
+    boolean ret = fs.delete(path, true);
+    if(!ret) {
+      LOG.warn("delete " + dir + " failed!!");
+    } else {
+      LOG.info("delete " + dir + " success!!");
+    }
+  }
+
+  public static void removeIfEmpty(Configuration conf, String dir) throws IOException {
+    Path path = new Path(dir);
+    FileSystem fs = path.getFileSystem(conf);
+
+    FileStatus[] status = fs.listStatus(path);
+    if(status == null || status.length == 0) {
+      boolean ret = fs.delete(path, true);
+      if(!ret) {
+        LOG.warn("delete " + dir + " failed!!");
+      } else {
+        LOG.info("delete " + dir + " success!!");
+      }
+    }
   }
 }

@@ -18,45 +18,43 @@
 
 package com.tencent.angel.ps.storage.vector;
 
-import com.tencent.angel.ml.math2.vector.*;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.vector.IntIntVector;
+import com.tencent.angel.ml.math2.vector.LongIntVector;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
 import com.tencent.angel.ps.server.data.request.InitFunc;
-import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.func.IntElemUpdateFunc;
+import com.tencent.angel.ps.storage.vector.op.ILongIntOp;
+import com.tencent.angel.ps.storage.vector.storage.LongIntStorage;
 import io.netty.buffer.ByteBuf;
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
-import it.unimi.dsi.fastutil.longs.Long2IntMap;
-import it.unimi.dsi.fastutil.objects.ObjectIterator;
-
-import java.io.IOException;
 
 /**
  * The row with "long" index type and "int" value type in PS
  */
-public class ServerLongIntRow extends ServerIntRow {
+public class ServerLongIntRow extends ServerBasicTypeRow implements ILongIntOp {
+
   /**
    * Create a new ServerIntIntRow
    *
-   * @param rowId      row index
-   * @param rowType    row type
-   * @param startCol   start position
-   * @param endCol     end position
+   * @param rowId row index
+   * @param rowType row type
+   * @param startCol start position
+   * @param endCol end position
    * @param estElemNum the estimate element number
-   * @param innerRow   the inner row
+   * @param storage the inner storage
    */
   public ServerLongIntRow(int rowId, RowType rowType, long startCol, long endCol, int estElemNum,
-    IntVector innerRow) {
-    super(rowId, rowType, startCol, endCol, estElemNum, innerRow);
+      LongIntStorage storage) {
+    super(rowId, rowType, startCol, endCol, estElemNum, storage);
   }
 
   /**
    * Create a new ServerIntIntRow
    *
-   * @param rowId      row index
-   * @param rowType    row type
-   * @param startCol   start position
-   * @param endCol     end position
+   * @param rowId row index
+   * @param rowType row type
+   * @param startCol start position
+   * @param endCol end position
    * @param estElemNum the estimate element number
    */
   public ServerLongIntRow(int rowId, RowType rowType, long startCol, long endCol, int estElemNum) {
@@ -65,8 +63,6 @@ public class ServerLongIntRow extends ServerIntRow {
 
   /**
    * Create a new ServerLongIntRow
-   *
-   * @param rowType
    */
   public ServerLongIntRow(RowType rowType) {
     this(0, rowType, 0, 0, 0);
@@ -77,333 +73,75 @@ public class ServerLongIntRow extends ServerIntRow {
   // and call endWrite/endRead after
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
-  /**
-   * Get a element value with out lock operation
-   *
-   * @param index element index
-   * @return element value
-   */
+  @Override
+  public LongIntStorage getStorage() {
+    return (LongIntStorage) storage;
+  }
+
+  @Override
   public int get(long index) {
-    if (useIntKey) {
-      return ((IntIntVector) row).get((int) (index - startCol));
-    } else {
-      return ((LongIntVector) row).get(index - startCol);
-    }
+    return getStorage().get(index);
   }
 
-  /**
-   * Set a element value without lock operation
-   *
-   * @param index element index
-   * @param value element new value
-   */
+  @Override
   public void set(long index, int value) {
-    if (useIntKey) {
-      ((IntIntVector) row).set((int) (index - startCol), value);
-    } else {
-      ((LongIntVector) row).set(index - startCol, value);
-    }
+    getStorage().set(index, value);
   }
 
-  /**
-   * Get a batch elements values without lock
-   *
-   * @param indices elements indices
-   * @return elements values
-   */
+  @Override
   public int[] get(long[] indices) {
-    int[] values = new int[indices.length];
-    if (useIntKey) {
-      for (int i = 0; i < indices.length; i++) {
-        values[i] = ((IntIntVector) row).get((int) (indices[i] - startCol));
-      }
-    } else {
-      for (int i = 0; i < indices.length; i++) {
-        values[i] = ((LongIntVector) row).get(indices[i] - startCol);
-      }
-    }
-
-    return values;
+    return getStorage().get(indices);
   }
 
-  /**
-   * Set a batch elements values without lock
-   *
-   * @param indices elements indices
-   * @param values  elements values
-   */
+  @Override
   public void set(long[] indices, int[] values) {
     assert indices.length == values.length;
-    if (useIntKey) {
-      for (int i = 0; i < indices.length; i++) {
-        ((IntIntVector) row).set((int) (indices[i] - startCol), values[i]);
-      }
-    } else {
-      for (int i = 0; i < indices.length; i++) {
-        ((LongIntVector) row).set(indices[i] - startCol, values[i]);
-      }
-    }
+    getStorage().set(indices, values);
   }
 
-  /**
-   * Add a element value without lock
-   *
-   * @param index element index
-   * @param value element plus value
-   */
+  @Override
   public void addTo(long index, int value) {
-    set(index, get(index) + value);
+    getStorage().addTo(index, value);
   }
 
-  /**
-   * Add a batch elements values without lock
-   *
-   * @param indices elements indices
-   * @param values  elements plus values
-   */
+  @Override
   public void addTo(long[] indices, int[] values) {
     assert indices.length == values.length;
-    for (int i = 0; i < indices.length; i++) {
-      set(indices[i], get(indices[i]) + values[i]);
-    }
+    getStorage().addTo(indices, values);
   }
 
-  /**
-   * Get all element values without lock, you must check the storage is dense first use "isDense"
-   *
-   * @return all element values
-   */
-  private int[] getValues() {
-    if (useIntKey) {
-      return ((IntIntVector) row).getStorage().getValues();
-    } else {
-      return ((LongIntVector) row).getStorage().getValues();
-    }
+  @Override
+  public int size() {
+    return getStorage().size();
   }
 
-  @Override public void update(RowType updateType, ByteBuf buf, UpdateOp op) {
-    startWrite();
-    try {
-      switch (updateType) {
-        case T_INT_SPARSE_LONGKEY:
-        case T_INT_SPARSE_LONGKEY_COMPONENT:
-          updateUseLongIntSparse(buf, op);
-          break;
-
-        case T_INT_SPARSE:
-        case T_INT_SPARSE_COMPONENT:
-          updateUseIntIntSparse(buf, op);
-          break;
-
-        case T_INT_DENSE:
-        case T_INT_DENSE_COMPONENT:
-          updateUseIntIntDense(buf, op);
-          break;
-
-        default: {
-          throw new UnsupportedOperationException(
-            "Unsupport operation: update " + updateType + " to " + this.getClass().getName());
-        }
-      }
-
-      updateRowVersion();
-    } finally {
-      endWrite();
-    }
-  }
-
-  private void updateUseLongIntSparse(ByteBuf buf, UpdateOp op) {
-    int size = buf.readInt();
-    if (op == UpdateOp.PLUS) {
-      if (useIntKey) {
-        for (int i = 0; i < size; i++) {
-          int index = (int) buf.readLong();
-          ((IntIntVector) row).set(index, ((IntIntVector) row).get(index) + buf.readInt());
-        }
-      } else {
-        for (int i = 0; i < size; i++) {
-          long index = buf.readLong();
-          ((LongIntVector) row).set(index, ((LongIntVector) row).get(index) + buf.readInt());
-        }
-      }
-    } else {
-      if (useIntKey) {
-        for (int i = 0; i < size; i++) {
-          ((IntIntVector) row).set((int) buf.readLong(), buf.readInt());
-        }
-      } else {
-        for (int i = 0; i < size; i++) {
-          ((LongIntVector) row).set(buf.readLong(), buf.readInt());
-        }
-      }
-    }
-  }
-
-  private void updateUseIntIntSparse(ByteBuf buf, UpdateOp op) {
-    int size = buf.readInt();
-    if (op == UpdateOp.PLUS) {
-      if (useIntKey) {
-        for (int i = 0; i < size; i++) {
-          int index = buf.readInt();
-          ((IntIntVector) row).set(index, ((IntIntVector) row).get(index) + buf.readInt());
-        }
-      } else {
-        for (int i = 0; i < size; i++) {
-          long index = buf.readInt();
-          ((LongIntVector) row).set(index, ((LongIntVector) row).get(index) + buf.readInt());
-        }
-      }
-    } else {
-      if (useIntKey) {
-        for (int i = 0; i < size; i++) {
-          ((IntIntVector) row).set(buf.readInt(), buf.readInt());
-        }
-      } else {
-        for (int i = 0; i < size; i++) {
-          ((LongIntVector) row).set(buf.readInt(), buf.readInt());
-        }
-      }
-    }
-  }
-
-  private void updateUseIntIntDense(ByteBuf buf, UpdateOp op) {
-    int size = buf.readInt();
-    if (op == UpdateOp.PLUS) {
-      if (useIntKey) {
-        for (int i = 0; i < size; i++) {
-          ((IntIntVector) row).set(i, ((IntIntVector) row).get(i) + buf.readInt());
-        }
-      } else {
-        for (int i = 0; i < size; i++) {
-          ((LongIntVector) row).set(i, ((LongIntVector) row).get(i) + buf.readInt());
-        }
-      }
-    } else {
-      if (useIntKey) {
-        for (int i = 0; i < size; i++) {
-          ((IntIntVector) row).set(i, buf.readInt());
-        }
-      } else {
-        for (int i = 0; i < size; i++) {
-          ((LongIntVector) row).set(i, buf.readInt());
-        }
-      }
-    }
-  }
-
-  @Override public int size() {
-    if (useIntKey) {
-      return ((IntIntVector) row).size();
-    } else {
-      return (int) ((LongIntVector) row).size();
-    }
-  }
-
-  /**
-   * Merge this row split to a row
-   *
-   * @param mergedRow the dest row
-   */
+  @Override
   public void mergeTo(LongIntVector mergedRow) {
     startRead();
     try {
-      if (isDense()) {
-        int[] values = getValues();
-        for (int i = 0; i < values.length; i++) {
-          mergedRow.set(i + startCol, values[i]);
-        }
-      } else {
-        if (useIntKey) {
-          ObjectIterator<Int2IntMap.Entry> iter = ((IntIntVector) row).getStorage().entryIterator();
-          Int2IntMap.Entry entry;
-          while (iter.hasNext()) {
-            entry = iter.next();
-            mergedRow.set(entry.getIntKey() + startCol, entry.getIntValue());
-          }
-        } else {
-          ObjectIterator<Long2IntMap.Entry> iter =
-            ((LongIntVector) row).getStorage().entryIterator();
-          Long2IntMap.Entry entry;
-          while (iter.hasNext()) {
-            entry = iter.next();
-            mergedRow.set(entry.getLongKey() + startCol, entry.getIntValue());
-          }
-        }
-      }
+      getStorage().mergeTo(mergedRow);
     } finally {
       endRead();
     }
   }
 
-  @Override protected void serializeRow(ByteBuf buf) {
-    if (useIntKeySerialize()) {
-      if (useDenseSerialize()) {
-        int[] values = getValues();
-        for (int i = 0; i < values.length; i++) {
-          buf.writeInt(values[i]);
-        }
-      } else {
-        ObjectIterator<Int2IntMap.Entry> iter = ((IntIntVector) row).getStorage().entryIterator();
-        Int2IntMap.Entry entry;
-        while (iter.hasNext()) {
-          entry = iter.next();
-          buf.writeInt(entry.getIntKey());
-          buf.writeInt(entry.getIntValue());
-        }
-      }
-    } else {
-      ObjectIterator<Long2IntMap.Entry> iter = ((LongIntVector) row).getStorage().entryIterator();
-      Long2IntMap.Entry entry;
-      while (iter.hasNext()) {
-        entry = iter.next();
-        buf.writeLong(entry.getLongKey());
-        buf.writeInt(entry.getIntValue());
-      }
-    }
-  }
-
-  @Override protected void deserializeRow(ByteBuf buf) {
-    if (useIntKeySerialize()) {
-      IntIntVector intIntRow = (IntIntVector) row;
-      if (useDenseSerialize()) {
-        for (int i = 0; i < size; i++) {
-          intIntRow.set(i, buf.readInt());
-        }
-      } else {
-        for (int i = 0; i < size; i++) {
-          intIntRow.set(buf.readInt(), buf.readInt());
-        }
-      }
-    } else {
-      LongIntVector longIntRow = (LongIntVector) row;
-      for (int i = 0; i < size; i++) {
-        longIntRow.set(buf.readLong(), buf.readInt());
-      }
-    }
-  }
-
-  @Override protected int getRowSpace() {
-    if (useIntKeySerialize()) {
-      if (useDenseSerialize()) {
-        return size * 4;
-      } else {
-        return size * 8;
-      }
-    } else {
-      return size * 12;
-    }
-  }
-
-  @Override public ServerRow clone() {
+  @Override
+  public ServerRow deepClone() {
     startRead();
     try {
-      if (useIntKey) {
-        return new ServerLongIntRow(rowId, rowType, startCol, endCol, (int) estElemNum,
-          ((IntIntVector) row).clone());
-      } else {
-        return new ServerLongIntRow(rowId, rowType, startCol, endCol, (int) estElemNum,
-          ((LongIntVector) row).clone());
-      }
+      return new ServerLongIntRow(rowId, rowType, startCol, endCol, (int) estElemNum,
+          (LongIntStorage) getStorage().deepClone());
+    } finally {
+      endRead();
+    }
+  }
+
+  @Override
+  public ServerRow adaptiveClone() {
+    startRead();
+    try {
+      return new ServerLongIntRow(rowId, rowType, startCol, endCol, (int) estElemNum,
+          (LongIntStorage) getStorage().adaptiveClone());
     } finally {
       endRead();
     }
@@ -416,84 +154,21 @@ public class ServerLongIntRow extends ServerIntRow {
    * @return true means exist
    */
   public boolean exist(long index) {
-    if (useIntKey) {
-      if (row.isSparse()) {
-        return ((IntIntVector) row).getStorage().hasKey((int) (index - startCol));
-      } else {
-        return ((IntIntVector) row).getStorage().get((int) (index - startCol)) != 0;
-      }
-    } else {
-      if (row.isSparse()) {
-        return ((LongIntVector) row).getStorage().hasKey(index - startCol);
-      } else {
-        return ((LongIntVector) row).getStorage().get(index - startCol) != 0;
-      }
-    }
-  }
-
-  public int initAndGet(long index, InitFunc func) {
-    if (exist(index)) {
-      return get(index);
-    } else {
-      int value = (int) func.action();
-      set(index, value);
-      return value;
-    }
+    return getStorage().exist(index);
   }
 
   @Override
-  public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func)
-    throws IOException {
-    if (func != null) {
-      if (indexType == IndexType.INT) {
-        for (int i = 0; i < indexSize; i++) {
-          out.writeInt(initAndGet(in.readInt(), func));
-        }
-      } else {
-        for (int i = 0; i < indexSize; i++) {
-          out.writeInt(initAndGet(in.readLong(), func));
-        }
-      }
-    } else {
-      if (indexType == IndexType.INT) {
-        for (int i = 0; i < indexSize; i++) {
-          out.writeInt(get(in.readInt()));
-        }
-      } else {
-        for (int i = 0; i < indexSize; i++) {
-          out.writeInt(get(in.readLong()));
-        }
-      }
-    }
+  public int initAndGet(long index, InitFunc func) {
+    return getStorage().initAndGet(index, func);
   }
 
-  @Override public void setSplit(Vector row) {
-    super.setSplit(row);
+  @Override
+  public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func) {
+    getStorage().indexGet(indexType, indexSize, in, out, func);
   }
 
-  @Override public void elemUpdate(IntElemUpdateFunc func) {
-    if (isDense()) {
-      int[] values = getValues();
-      for (int i = 0; i < values.length; i++) {
-        values[i] = func.update();
-      }
-    } else {
-      if (useIntKey) {
-        ObjectIterator<Int2IntMap.Entry> iter = ((IntIntVector) row).getStorage().entryIterator();
-        Int2IntMap.Entry entry;
-        while (iter.hasNext()) {
-          entry = iter.next();
-          entry.setValue(func.update());
-        }
-      } else {
-        ObjectIterator<Long2IntMap.Entry> iter = ((LongIntVector) row).getStorage().entryIterator();
-        Long2IntMap.Entry entry;
-        while (iter.hasNext()) {
-          entry = iter.next();
-          entry.setValue(func.update());
-        }
-      }
-    }
+  @Override
+  public void elemUpdate(IntElemUpdateFunc func) {
+    getStorage().elemUpdate(func);
   }
-
 }

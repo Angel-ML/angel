@@ -19,7 +19,7 @@
 package com.tencent.angel.example.ml;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.conf.AngelMLConf;
 import com.tencent.angel.ml.lda.LDAModel;
 import com.tencent.angel.ml.lda.LDARunner;
 import org.apache.commons.logging.Log;
@@ -80,7 +80,7 @@ public class LDALocalExample {
 
     // Use local deploy mode and data format
     conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
-    conf.set(MLConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
+    conf.set(AngelMLConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
 
     // Set data path
     conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
@@ -104,7 +104,7 @@ public class LDALocalExample {
     // Set LDA algorithm parameters
     conf.setInt(LDAModel.WORD_NUM(), V);
     conf.setInt(LDAModel.TOPIC_NUM(), K);
-    conf.setInt(MLConf.ML_EPOCH_NUM(), 10);
+    conf.setInt(AngelMLConf.ML_EPOCH_NUM(), 10);
     conf.setBoolean(LDAModel.SAVE_DOC_TOPIC(), true);
     conf.setBoolean(LDAModel.SAVE_WORD_TOPIC(), true);
 

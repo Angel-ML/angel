@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ml.GBDT.param;
 
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.conf.AngelMLConf;
 import com.tencent.angel.ml.core.utils.Maths;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -31,28 +31,28 @@ public class RegTParam implements TrainParam {
   private static final Log LOG = LogFactory.getLog(RegTParam.class);
 
   // step size for a tree
-  public float learningRate = (float) MLConf.DEFAULT_ML_LEARN_RATE();
+  public float learningRate = (float) AngelMLConf.DEFAULT_ML_LEARN_RATE();
   // number of class
   public int numClass = 2;
   // minimum loss change required for a split
   public float minSplitLoss = 0;
   // maximum depth of a tree
-  public int maxDepth = MLConf.DEFAULT_ML_GBDT_TREE_DEPTH();
+  public int maxDepth = AngelMLConf.DEFAULT_ML_GBDT_TREE_DEPTH();
   // number of features
   public int numFeature;
   // number of nonzero
   public int numNonzero;
   // number of candidates split value
-  public int numSplit = MLConf.DEFAULT_ML_GBDT_SPLIT_NUM();
+  public int numSplit = AngelMLConf.DEFAULT_ML_GBDT_SPLIT_NUM();
   // ----- the rest parameters are less important ----
   // base instance weight
   public float baseWeight = 0;
   // minimum amount of hessian(weight) allowed in a child
-  public float minChildWeight = (float) MLConf.DEFAULT_ML_GBDT_MIN_CHILD_WEIGHT();
+  public float minChildWeight = (float) AngelMLConf.DEFAULT_ML_GBDT_MIN_CHILD_WEIGHT();
   // L2 regularization factor
-  public float regLambda = (float) MLConf.DEFAULT_ML_GBDT_REG_LAMBDA();
+  public float regLambda = (float) AngelMLConf.DEFAULT_ML_GBDT_REG_LAMBDA();
   // L1 regularization factor
-  public float regAlpha = (float) MLConf.DEFAULT_ML_GBDT_REG_ALPHA();
+  public float regAlpha = (float) AngelMLConf.DEFAULT_ML_GBDT_REG_ALPHA();
   // default direction choice
   public int defaultDirection;
   // maximum delta update we can add in weight estimation

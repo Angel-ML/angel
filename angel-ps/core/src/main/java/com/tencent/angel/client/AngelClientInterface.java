@@ -20,7 +20,7 @@ package com.tencent.angel.client;
 
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.model.MLModel;
+import com.tencent.angel.ml.model.OldMLModel;
 import com.tencent.angel.model.ModelLoadContext;
 import com.tencent.angel.model.ModelSaveContext;
 import com.tencent.angel.worker.task.BaseTask;
@@ -67,7 +67,7 @@ public interface AngelClientInterface {
    * @param model model
    * @throws AngelException
    */
-  void loadModel(MLModel model) throws AngelException;
+  void loadModel(OldMLModel model) throws AngelException;
 
   /**
    * Load the model from files
@@ -76,6 +76,14 @@ public interface AngelClientInterface {
    * @throws AngelException
    */
   void load(ModelLoadContext context) throws AngelException;
+
+  /**
+   * Recover the model from the checkpoint
+   * @param checkpointId the checkpoint id
+   * @param context load context
+   * @throws AngelException
+   */
+  void recover(int checkpointId, ModelLoadContext context) throws AngelException;
 
   /**
    * Accept specified task and start
@@ -108,7 +116,7 @@ public interface AngelClientInterface {
    * @param model model need to write to files.
    * @throws AngelException
    */
-  void saveModel(MLModel model) throws AngelException;
+  void saveModel(OldMLModel model) throws AngelException;
 
   /**
    * Save the model to files
@@ -117,6 +125,14 @@ public interface AngelClientInterface {
    * @throws AngelException
    */
   void save(ModelSaveContext context) throws AngelException;
+
+  /**
+   * Write the model checkpoint
+   * @param checkpointId the checkpoint id
+   * @param context save context
+   * @throws AngelException
+   */
+  void checkpoint(int checkpointId, ModelSaveContext context) throws AngelException;
 
   /**
    * Stop the whole application.

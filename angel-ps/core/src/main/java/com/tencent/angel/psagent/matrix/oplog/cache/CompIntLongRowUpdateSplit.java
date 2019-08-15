@@ -18,12 +18,14 @@
 
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
-import com.tencent.angel.ml.math2.storage.*;
-import com.tencent.angel.ml.math2.vector.IntIntVector;
+import com.tencent.angel.ml.math2.VFactory;
+import com.tencent.angel.ml.math2.storage.IntLongDenseVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntLongSortedVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntLongSparseVectorStorage;
+import com.tencent.angel.ml.math2.storage.IntLongVectorStorage;
 import com.tencent.angel.ml.math2.vector.IntLongVector;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import io.netty.buffer.ByteBuf;
-import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2LongMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
@@ -53,14 +55,28 @@ public class CompIntLongRowUpdateSplit extends RowUpdateSplit {
     this.split = split;
     this.maxItemNum = maxItemNum;
 
-    IntLongVectorStorage storage = split.getStorage();
-    if (storage instanceof IntLongDenseVectorStorage) {
-      rowType = RowType.T_LONG_DENSE_COMPONENT;
-    } else {
-      rowType = RowType.T_LONG_SPARSE_COMPONENT;
+    if (split != null) {
+      IntLongVectorStorage storage = split.getStorage();
+      if (storage instanceof IntLongDenseVectorStorage) {
+        rowType = RowType.T_LONG_DENSE_COMPONENT;
+      } else {
+        rowType = RowType.T_LONG_SPARSE_COMPONENT;
+      }
     }
   }
 
+  /**
+   * Create a empty CompIntLongRowUpdateSplit.
+   */
+  public CompIntLongRowUpdateSplit() {
+    this(-1, null, -1);
+  }
+
+  /**
+   * Get row update split vector
+   *
+   * @return row update split vector
+   */
   public IntLongVector getSplit() {
     return split;
   }
@@ -97,6 +113,28 @@ public class CompIntLongRowUpdateSplit extends RowUpdateSplit {
     } else {
       throw new UnsupportedOperationException(
           "unsupport split for storage " + storage.getClass().getName());
+    }
+  }
+
+  @Override
+  public void deserialize(ByteBuf buf) {
+    super.deserialize(buf);
+    int elemNum = buf.readInt();
+    if (rowType == RowType.T_LONG_DENSE_COMPONENT) {
+      long[] values = new long[elemNum];
+      for (int i = 0; i < elemNum; i++) {
+        values[i] = buf.readLong();
+      }
+      vector = VFactory.denseLongVector(values);
+    } else if (rowType == RowType.T_LONG_SPARSE_COMPONENT) {
+      vector = VFactory.sparseLongVector(
+          (int) (splitContext.getPartKey().getEndCol() - splitContext.getPartKey().getStartCol()),
+          elemNum);
+      for (int i = 0; i < elemNum; i++) {
+        ((IntLongVector) vector).set(buf.readInt(), buf.readLong());
+      }
+    } else {
+      throw new UnsupportedOperationException("Unsupport rowtype " + rowType);
     }
   }
 

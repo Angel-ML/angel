@@ -18,35 +18,35 @@
 
 package com.tencent.angel.ml.classification
 
-import com.tencent.angel.ml.core.conf.MLConf
-import com.tencent.angel.ml.core.graphsubmit.GraphModel
-import com.tencent.angel.ml.core.network.layers.Layer
-import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleInputLayer, SimpleLossLayer}
-import com.tencent.angel.ml.core.network.layers.join.SumPooling
-import com.tencent.angel.ml.core.network.layers.linear.BiInnerSumCross
-import com.tencent.angel.ml.core.network.transfunc.Identity
-import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
-import com.tencent.angel.ml.core.optimizer.loss.{LogLoss, LossFunc}
+import com.tencent.angel.ml.core.PSOptimizerProvider
+import com.tencent.angel.mlcore.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.core.graphsubmit.AngelModel
+import com.tencent.angel.mlcore.network.Identity
+import com.tencent.angel.mlcore.network.layers.multiary.SumPooling
+import com.tencent.angel.mlcore.network.layers.unary.BiInnerSumCross
+import com.tencent.angel.mlcore.network.layers.leaf.{Embedding, SimpleInputLayer}
+import com.tencent.angel.mlcore.network.layers.{Layer, LossLayer}
+import com.tencent.angel.mlcore.optimizer.loss.LogLoss
 import com.tencent.angel.worker.task.TaskContext
-import org.apache.hadoop.conf.Configuration
 
 
-class FactorizationMachines(conf: Configuration, _ctx: TaskContext = null) extends GraphModel(conf, _ctx) {
-  val numFields: Int = sharedConf.getInt(MLConf.ML_FIELD_NUM, MLConf.DEFAULT_ML_FIELD_NUM)
-  val numFactors: Int = sharedConf.getInt(MLConf.ML_RANK_NUM, MLConf.DEFAULT_ML_RANK_NUM)
-  val ipOptName: String = sharedConf.get(MLConf.ML_INPUTLAYER_OPTIMIZER, MLConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
-  val optimizer: Optimizer = OptUtils.getOptimizer(ipOptName)
+class FactorizationMachines(conf: SharedConf, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
+  val numFields: Int = conf.getInt(MLCoreConf.ML_FIELD_NUM, MLCoreConf.DEFAULT_ML_FIELD_NUM)
+  val numFactors: Int = conf.getInt(MLCoreConf.ML_RANK_NUM, MLCoreConf.DEFAULT_ML_RANK_NUM)
+  val optProvider = new PSOptimizerProvider(conf)
 
-  override val lossFunc: LossFunc = new LogLoss()
+  override def buildNetwork(): this.type = {
+    val inputOptName: String = conf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
+    val wide = new SimpleInputLayer("input", 1, new Identity(), optProvider.getOptimizer(inputOptName))
 
-  override def buildNetwork(): Unit = {
+    val embeddingOptName: String = conf.get(MLCoreConf.ML_EMBEDDING_OPTIMIZER, MLCoreConf.DEFAULT_ML_EMBEDDING_OPTIMIZER)
+    val embedding = new Embedding("embedding", numFields * numFactors, numFactors, optProvider.getOptimizer(embeddingOptName))
 
-    val wide = new SimpleInputLayer("input", 1, new Identity(), optimizer)
-    val embedding = new Embedding("embedding", numFields * numFactors, numFactors,
-      OptUtils.getOptimizer(sharedConf.get(MLConf.ML_EMBEDDING_OPTIMIZER, MLConf.DEFAULT_ML_EMBEDDING_OPTIMIZER)))
     val innerSumCross = new BiInnerSumCross("innerSumPooling", embedding)
     val join = new SumPooling("sumPooling", 1, Array[Layer](wide, innerSumCross))
 
-    new SimpleLossLayer("simpleLossLayer", join, lossFunc)
+    new LossLayer("simpleLossLayer", join, new LogLoss())
+
+    this
   }
 }

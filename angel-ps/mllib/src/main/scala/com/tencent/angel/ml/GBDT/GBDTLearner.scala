@@ -23,11 +23,11 @@ import com.tencent.angel.ml.GBDT.algo.RegTree.RegTDataStore
 import com.tencent.angel.ml.GBDT.algo.{GBDTController, GBDTPhase}
 import com.tencent.angel.ml.GBDT.param.{GBDTParam, RegTParam}
 import com.tencent.angel.ml.core.MLLearner
-import com.tencent.angel.ml.core.conf.MLConf
-import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.core.conf.AngelMLConf
+import com.tencent.angel.ml.math2.utils.{DataBlock, LabeledData}
 import com.tencent.angel.ml.metric.ErrorMetric
-import com.tencent.angel.ml.model.MLModel
-import com.tencent.angel.worker.storage.DataBlock
+import com.tencent.angel.ml.model.OldMLModel
+import com.tencent.angel.mlcore.optimizer.decayer.StepSizeScheduler
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
 
@@ -42,17 +42,17 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   def initParam(): Unit = {
 
     // 1. set training param
-    param.taskType = conf.get(MLConf.ML_GBDT_TASK_TYPE, MLConf.DEFAULT_ML_GBDT_TASK_TYPE)
-    param.numFeature = conf.getInt(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
-    param.numNonzero = conf.getInt(MLConf.ML_MODEL_SIZE, MLConf.DEFAULT_ML_MODEL_SIZE)
-    param.numSplit = conf.getInt(MLConf.ML_GBDT_SPLIT_NUM, MLConf.DEFAULT_ML_GBDT_SPLIT_NUM)
-    param.treeNum = conf.getInt(MLConf.ML_GBDT_TREE_NUM, MLConf.DEFAULT_ML_GBDT_TREE_NUM)
-    param.maxDepth = conf.getInt(MLConf.ML_GBDT_TREE_DEPTH, MLConf.DEFAULT_ML_GBDT_TREE_DEPTH)
-    param.colSample = conf.getFloat(MLConf.ML_GBDT_SAMPLE_RATIO, MLConf.DEFAULT_ML_GBDT_SAMPLE_RATIO)
-    param.learningRate = conf.getFloat(MLConf.ML_LEARN_RATE, MLConf.DEFAULT_ML_LEARN_RATE.asInstanceOf[Float])
-    param.maxThreadNum = conf.getInt(MLConf.ML_GBDT_THREAD_NUM, MLConf.DEFAULT_ML_GBDT_THREAD_NUM)
-    param.batchSize = conf.getInt(MLConf.ML_GBDT_BATCH_SIZE, MLConf.DEFAULT_ML_GBDT_BATCH_SIZE)
-    param.isServerSplit = conf.getBoolean(MLConf.ML_GBDT_SERVER_SPLIT, MLConf.DEFAULT_ML_GBDT_SERVER_SPLIT)
+    param.taskType = conf.get(AngelMLConf.ML_GBDT_TASK_TYPE, AngelMLConf.DEFAULT_ML_GBDT_TASK_TYPE)
+    param.numFeature = conf.getInt(AngelMLConf.ML_FEATURE_INDEX_RANGE, AngelMLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
+    param.numNonzero = conf.getInt(AngelMLConf.ML_MODEL_SIZE, AngelMLConf.DEFAULT_ML_MODEL_SIZE)
+    param.numSplit = conf.getInt(AngelMLConf.ML_GBDT_SPLIT_NUM, AngelMLConf.DEFAULT_ML_GBDT_SPLIT_NUM)
+    param.treeNum = conf.getInt(AngelMLConf.ML_GBDT_TREE_NUM, AngelMLConf.DEFAULT_ML_GBDT_TREE_NUM)
+    param.maxDepth = conf.getInt(AngelMLConf.ML_GBDT_TREE_DEPTH, AngelMLConf.DEFAULT_ML_GBDT_TREE_DEPTH)
+    param.colSample = conf.getFloat(AngelMLConf.ML_GBDT_SAMPLE_RATIO, AngelMLConf.DEFAULT_ML_GBDT_SAMPLE_RATIO)
+    param.learningRate = conf.getFloat(AngelMLConf.ML_LEARN_RATE, AngelMLConf.DEFAULT_ML_LEARN_RATE.asInstanceOf[Float])
+    param.maxThreadNum = conf.getInt(AngelMLConf.ML_GBDT_THREAD_NUM, AngelMLConf.DEFAULT_ML_GBDT_THREAD_NUM)
+    param.batchSize = conf.getInt(AngelMLConf.ML_GBDT_BATCH_SIZE, AngelMLConf.DEFAULT_ML_GBDT_BATCH_SIZE)
+    param.isServerSplit = conf.getBoolean(AngelMLConf.ML_GBDT_SERVER_SPLIT, AngelMLConf.DEFAULT_ML_GBDT_SERVER_SPLIT)
 
     // 2. set parameter name on PS
     param.sketchName = GBDTModel.SKETCH_MAT
@@ -87,8 +87,8 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
   def updateMetrics(controller: GBDTController): Unit = {
     val trainMetrics = controller.eval
     val validMetrics = controller.predict
-    globalMetrics.metric(MLConf.TRAIN_ERROR, trainMetrics._1)
-    globalMetrics.metric(MLConf.VALID_ERROR, validMetrics._1)
+    globalMetrics.metric(AngelMLConf.TRAIN_ERROR, trainMetrics._1)
+    globalMetrics.metric(AngelMLConf.VALID_ERROR, validMetrics._1)
   }
 
   /**
@@ -97,8 +97,7 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     * @param trainData      : trainning data storage
     * @param validationData : validation data storage
     */
-  override
-  def train(trainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData]): MLModel = {
+  override def trainOld(trainData: DataBlock[LabeledData], validationData: DataBlock[LabeledData]): OldMLModel = {
     LOG.debug("------GBDT starts training------")
 
     LOG.info("1. initialize")
@@ -119,8 +118,8 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
       trainDataStore, validDataStore, model)
     controller.init
 
-    globalMetrics.addMetric(MLConf.TRAIN_ERROR, ErrorMetric(trainDataStore.numRow))
-    globalMetrics.addMetric(MLConf.VALID_ERROR, ErrorMetric(validDataStore.numRow))
+    globalMetrics.addMetric(AngelMLConf.TRAIN_ERROR, ErrorMetric(trainDataStore.numRow))
+    globalMetrics.addMetric(AngelMLConf.VALID_ERROR, ErrorMetric(validDataStore.numRow))
 
     while (controller.phase != GBDTPhase.FINISHED) {
       LOG.info(s"******Current phase: ${controller.phase}, clock[${controller.clock}]******")
@@ -152,4 +151,9 @@ class GBDTLearner(override val ctx: TaskContext) extends MLLearner(ctx) {
     model
   }
 
+  override protected val ssScheduler: StepSizeScheduler = null
+
+  override protected def trainOneEpoch(epoch: Int, iter: Iterator[Array[LabeledData]], numBatch: Int): Double = ???
+
+  override protected def validate(epoch: Int, valiData: DataBlock[LabeledData]): Unit = ???
 }

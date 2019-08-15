@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -18,9 +18,11 @@
 
 package com.tencent.angel.ps.storage.vector;
 
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ps.storage.vector.element.IElement;
 
 public class ServerRowFactory {
+
   public static ServerRow createEmptyServerRow(RowType type) {
     switch (type) {
       case T_DOUBLE_DENSE:
@@ -47,34 +49,32 @@ public class ServerRowFactory {
       case T_LONG_SPARSE_COMPONENT:
         return new ServerIntLongRow(type);
 
-
       case T_DOUBLE_SPARSE_LONGKEY:
       case T_DOUBLE_SPARSE_LONGKEY_COMPONENT:
-        return new ServerLongDoubleRow(type);
-
       case T_DOUBLE_DENSE_LONGKEY_COMPONENT:
-        return new ServerCompDenseLongDoubleRow(type);
+        return new ServerLongDoubleRow(type);
 
       case T_FLOAT_SPARSE_LONGKEY:
       case T_FLOAT_SPARSE_LONGKEY_COMPONENT:
-        return new ServerLongFloatRow(type);
-
       case T_FLOAT_DENSE_LONGKEY_COMPONENT:
-        return new ServerCompDenseLongFloatRow(type);
+        return new ServerLongFloatRow(type);
 
       case T_INT_SPARSE_LONGKEY:
       case T_INT_SPARSE_LONGKEY_COMPONENT:
-        return new ServerLongIntRow(type);
-
       case T_INT_DENSE_LONGKEY_COMPONENT:
-        return new ServerCompDenseLongIntRow(type);
+        return new ServerLongIntRow(type);
 
       case T_LONG_SPARSE_LONGKEY:
       case T_LONG_SPARSE_LONGKEY_COMPONENT:
+      case T_LONG_DENSE_LONGKEY_COMPONENT:
         return new ServerLongLongRow(type);
 
-      case T_LONG_DENSE_LONGKEY_COMPONENT:
-        return new ServerCompDenseLongLongRow(type);
+      case T_ANY_INTKEY_DENSE:
+      case T_ANY_INTKEY_SPARSE:
+        return new ServerIntAnyRow(type);
+
+      case T_ANY_LONGKEY_SPARSE:
+        return new ServerLongAnyRow(type);
 
       default:
         throw new UnsupportedOperationException("unsupport row type " + type);
@@ -82,7 +82,7 @@ public class ServerRowFactory {
   }
 
   public static ServerRow createServerRow(int rowIndex, RowType rowType, long startCol, long endCol,
-    int estEleNum) {
+      int estEleNum, Class<? extends IElement> valueClass) {
     switch (rowType) {
       case T_DOUBLE_DENSE:
       case T_DOUBLE_DENSE_COMPONENT:
@@ -110,31 +110,32 @@ public class ServerRowFactory {
 
       case T_DOUBLE_SPARSE_LONGKEY:
       case T_DOUBLE_SPARSE_LONGKEY_COMPONENT:
-        return new ServerLongDoubleRow(rowIndex, rowType, startCol, endCol, estEleNum);
-
       case T_DOUBLE_DENSE_LONGKEY_COMPONENT:
-        return new ServerCompDenseLongDoubleRow(rowIndex, rowType, startCol, endCol, estEleNum);
+        return new ServerLongDoubleRow(rowIndex, rowType, startCol, endCol, estEleNum);
 
       case T_FLOAT_SPARSE_LONGKEY:
       case T_FLOAT_SPARSE_LONGKEY_COMPONENT:
-        return new ServerLongFloatRow(rowIndex, rowType, startCol, endCol, estEleNum);
-
       case T_FLOAT_DENSE_LONGKEY_COMPONENT:
-        return new ServerCompDenseLongFloatRow(rowIndex, rowType, startCol, endCol, estEleNum);
+        return new ServerLongFloatRow(rowIndex, rowType, startCol, endCol, estEleNum);
 
       case T_LONG_SPARSE_LONGKEY:
       case T_LONG_SPARSE_LONGKEY_COMPONENT:
-        return new ServerLongLongRow(rowIndex, rowType, startCol, endCol, estEleNum);
-
       case T_LONG_DENSE_LONGKEY_COMPONENT:
-        return new ServerCompDenseLongLongRow(rowIndex, rowType, startCol, endCol, estEleNum);
+        return new ServerLongLongRow(rowIndex, rowType, startCol, endCol, estEleNum);
 
       case T_INT_SPARSE_LONGKEY:
       case T_INT_SPARSE_LONGKEY_COMPONENT:
+      case T_INT_DENSE_LONGKEY_COMPONENT:
         return new ServerLongIntRow(rowIndex, rowType, startCol, endCol, estEleNum);
 
-      case T_INT_DENSE_LONGKEY_COMPONENT:
-        return new ServerCompDenseLongIntRow(rowIndex, rowType, startCol, endCol, estEleNum);
+      case T_ANY_INTKEY_DENSE:
+      case T_ANY_INTKEY_SPARSE:
+        return new ServerIntAnyRow(valueClass, rowIndex, rowType, (int) startCol, (int) endCol,
+            estEleNum);
+
+      case T_ANY_LONGKEY_SPARSE:
+        return new ServerLongAnyRow(valueClass, rowIndex, rowType, (int) startCol, (int) endCol,
+            estEleNum);
 
       default:
         throw new UnsupportedOperationException("unsupport vector type:" + rowType);

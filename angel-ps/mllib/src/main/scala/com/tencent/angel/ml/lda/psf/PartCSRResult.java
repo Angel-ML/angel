@@ -23,6 +23,7 @@ import com.tencent.angel.ml.math2.storage.IntIntDenseVectorStorage;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.storage.vector.ServerIntIntRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;
+import com.tencent.angel.ps.storage.vector.ServerRowUtils;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
@@ -69,7 +70,7 @@ public class PartCSRResult extends PartitionGetResult {
 
     try {
       row.startRead();
-      int[] values = ((IntIntDenseVectorStorage)(row.getSplit().getStorage())).getValues();
+      int[] values = ServerRowUtils.getVector(row).getStorage().getValues();
       int len = (int) (row.getEndCol() - row.getStartCol());
       int cnt = 0;
       for (int i = 0; i < len; i++)
@@ -102,7 +103,7 @@ public class PartCSRResult extends PartitionGetResult {
   public void serializeSparse(ByteBuf buf, ServerIntIntRow row) {
     try {
       row.startRead();
-      ObjectIterator<Int2IntMap.Entry> iterator = row.getIter();
+      ObjectIterator<Int2IntMap.Entry> iterator = ServerRowUtils.getVector(row).getStorage().entryIterator();
       buf.writeByte(1);
 
       int index = buf.writerIndex();
