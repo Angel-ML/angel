@@ -33,9 +33,9 @@ import org.apache.log4j.PropertyConfigurator;
 import java.io.File;
 import java.util.Scanner;
 
-public class WideAndDeepLocalExample {
+public class DCNLocalExample {
 
-  private static final Log LOG = LogFactory.getLog(WideAndDeepLocalExample.class);
+  private static final Log LOG = LogFactory.getLog(DCNLocalExample.class);
 
   private Configuration conf = new Configuration();
 
@@ -83,17 +83,17 @@ public class WideAndDeepLocalExample {
     if (mode == 1) {  // train mode
       conf.set(AngelConf.ANGEL_ACTION_TYPE, "train");
       conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, trainInput);
-      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/WideDeep");
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/DCN");
     } else if (mode == 2) { // incTrain mode
       conf.set(AngelConf.ANGEL_ACTION_TYPE, "inctrain");
       conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, trainInput);
-      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/WideDeep");
-      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/WideDeep-inc");
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/DCN");
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/ApFM-inc");
     } else if (mode == 3) {  // predict mode
       conf.set(AngelConf.ANGEL_ACTION_TYPE, "predict");
       conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, predictInput);
-      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/WideDeep");
-      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict/WideDeep");
+      conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/DCN");
+      conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict/DCN");
     }
     conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 
@@ -102,18 +102,20 @@ public class WideAndDeepLocalExample {
     conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
-    // Set WideAndDeep algorithm parameters
+    conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
+
+    // Set DCN algorithm parameters
     String angelConfFile = null;
     if (inPackage) {
-      angelConfFile = "../examples/src/jsons/daw.json";
+      angelConfFile = "../examples/src/jsons/dcn.json";
     } else {
-      angelConfFile = "angel-ps/examples/src/jsons/daw.json";
+      angelConfFile = "angel-ps/examples/src/jsons/dcn.json";
     }
     conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
+    conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
 
     // Set model class
     conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "AngelModel");
-    conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
   }
 
   public void train() {
@@ -124,7 +126,7 @@ public class WideAndDeepLocalExample {
       GraphRunner runner = new GraphRunner();
       runner.train(conf);
     } catch (Exception e) {
-      LOG.error("run WideAndDeepLocalExample:train failed.", e);
+      LOG.error("run DCNLocalExample:train failed.", e);
       throw e;
     }
 
@@ -139,7 +141,7 @@ public class WideAndDeepLocalExample {
       GraphRunner runner = new GraphRunner();
       runner.train(conf);
     } catch (Exception e) {
-      LOG.error("run WideAndDeepLocalExample:incTrain failed.", e);
+      LOG.error("run DCNLocalExample:incTrain failed.", e);
       throw e;
     }
 
@@ -154,13 +156,13 @@ public class WideAndDeepLocalExample {
       GraphRunner runner = new GraphRunner();
       runner.predict(conf);
     } catch (Exception e) {
-      LOG.error("run WideAndDeepLocalExample:predict failed.", e);
+      LOG.error("run DCNLocalExample:predict failed.", e);
       throw e;
     }
   }
 
   public static void main(String[] args) throws Exception {
-    WideAndDeepLocalExample example = new WideAndDeepLocalExample();
+    DCNLocalExample example = new DCNLocalExample();
     Scanner scanner = new Scanner(System.in);
     System.out.println("1-train 2-incTrain 3-predict");
     System.out.println("Please input the mode:");

@@ -32,7 +32,7 @@ We welcome everyone interested in machine learning to contribute code, create is
 
 ## Development
 * [Architecture](./docs/overview/architecture_en.md)
-* [Angel PS Service](./docs/overview/ps_service_en.md)
+* [Angel PS Service](./docs/overview/angel_ps_service_en.md)
 * [Core API]((./docs/apis/core_api_en.md))
 
 ## Community
@@ -51,3 +51,4 @@ We welcome everyone interested in machine learning to contribute code, create is
   3. Jie Jiang, Lele Yu, Jiawei Jiang, Yuhong Liu and Bin Cui. [Angel: a new large-scale machine learning system](http://net.pku.edu.cn/~cuibin/Papers/2017NSRangel.pdf). National Science Review (NSR), 2017
   4. Jie Jiang, Jiawei Jiang,  Bin Cui and Ce Zhang. [TencentBoost: A Gradient Boosting Tree System with Parameter Server](http://net.pku.edu.cn/~cuibin/Papers/2017%20ICDE%20boost.pdf).	ICDE, 2017
   5. Jiawei Jiang, Bin Cui, Ce Zhang and Fangcheng Fu. [DimBoost: Boosting Gradient Boosting Decision Tree to Higher Dimensions](https://dl.acm.org/citation.cfm?id=3196892). SIGMOD, 2018.
+

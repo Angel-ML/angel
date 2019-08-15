@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -16,7 +16,7 @@
  */
 
 
-package com.tencent.angel.ml.deepandwide;
+package com.tencent.angel.ml.dcn;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.core.PSOptimizerProvider;
@@ -34,16 +34,11 @@ import org.junit.Test;
 /**
  * Gradient descent LR UT.
  */
-public class WideDeepTest {
+public class DCNTest {
   private Configuration conf = new Configuration();
-  private static final Log LOG = LogFactory.getLog(WideDeepTest.class);
+  private static final Log LOG = LogFactory.getLog(DCNTest.class);
   private static String LOCAL_FS = FileSystem.DEFAULT_FS;
-<<<<<<< HEAD
-//  private static String CLASSBASE = "com.tencent.angel.ml.classification.";
-  private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.AngelModel";
-=======
   private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.";
->>>>>>> upstream/develop
   private static String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
 
   static {
@@ -69,28 +64,24 @@ public class WideDeepTest {
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
       //String savePath = LOCAL_FS + TMP_PATH + "/model/wideDeep";
-      String savePath = "file:///E:/model/wideDeep";
-      String logPath = LOCAL_FS + TMP_PATH + "/wideDeeplog";
+      String savePath = "file:///E:/model/DCN";
+      String logPath = LOCAL_FS + TMP_PATH + "/DCNlog";
       // Set save model path
       conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, savePath);
       // Set log path
       conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
       conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
 
-      String angelConfFile = "./src/test/jsons/daw.json";
+      String angelConfFile = "./src/test/jsons/dcn.json";
       conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
-<<<<<<< HEAD
-      conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE);
-=======
       conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "AngelModel");
->>>>>>> upstream/develop
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;
     }
   }
 
-  @Test public void testWideDeep() throws Exception {
+  @Test public void testDCN() throws Exception {
     setSystemConf();
     trainTest();
     //predictTest();
@@ -115,7 +106,7 @@ public class WideDeepTest {
   private void predictTest() throws Exception {
     try {
       String inputPath = "../../data/census/census_148d_test.dummy";
-      String modelPath = LOCAL_FS + TMP_PATH + "/model/wideDeep";
+      String modelPath = LOCAL_FS + TMP_PATH + "/model/DCN";
       String predictPath = LOCAL_FS + TMP_PATH + "/predict";
 
       // Set trainning data path

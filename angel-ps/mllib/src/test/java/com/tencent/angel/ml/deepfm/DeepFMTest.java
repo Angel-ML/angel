@@ -39,7 +39,7 @@ public class DeepFMTest {
   private Configuration conf = new Configuration();
   private static final Log LOG = LogFactory.getLog(DeepFMTest.class);
   private static String LOCAL_FS = FileSystem.DEFAULT_FS;
-  private static String CLASSBASE = "com.tencent.angel.ml.classification.";
+  private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.";
   private static String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
 
   static {
@@ -75,7 +75,7 @@ public class DeepFMTest {
 
       String angelConfFile = "./src/test/jsons/deepfm.json";
       conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
-      conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "DeepFM");
+      conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "AngelModel");
 
     } catch (Exception x) {
       LOG.error("setup failed ", x);
