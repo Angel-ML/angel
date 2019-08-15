@@ -44,12 +44,12 @@ object Word2vecExample {
     sc.setLogLevel("ERROR")
     PSContext.getOrCreate(sc)
 
-    val input = "data/text8/text8.split.remapping"
+    val input = "data/text8/text8.split.head"
 
     val data = sc.textFile(input)
     data.cache()
 
-    val (corpus) = Features.corpusStringToIntWithoutRemapping(sc.textFile(input))
+    val (corpus, _) = Features.corpusStringToInt(sc.textFile(input))
     val docs = corpus.repartition(1)
 
     docs.cache()
