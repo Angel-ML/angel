@@ -1,8 +1,8 @@
 ![](assets/angel_logo.png)
 
 
-[![license](http://img.shields.io/badge/license-BSD3-brightgreen.svg?style=flat)](https://github.com/tencent/angel/blob/master/LICENSE)
-[![Release Version](https://img.shields.io/badge/release-1.4.0-red.svg)](https://github.com/tencent/angel/releases)
+[![license](http://img.shields.io/badge/license-Apache2.0-brightgreen.svg?style=flat)](https://github.com/tencent/angel/blob/master/LICENSE)
+[![Release Version](https://img.shields.io/badge/release-2.2.0-red.svg)](https://github.com/tencent/angel/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/tencent/angel/pulls)
 
 **Angel** is a high-performance distributed machine learning platform based on the philosophy of Parameter Server. It is tuned for performance with big data from Tencent and has a wide range of applicability and stability, demonstrating increasing advantage in handling higher dimension model. Angel is jointly developed by Tencent and Peking University, taking account of both high availability  in industry and innovation in academia.
@@ -17,9 +17,11 @@ We welcome everyone interested in machine learning to contribute code, create is
 ## Quick Start
 * [Compilation Guide](./docs/deploy/source_compile_en.md)
 * [Running on Local](./docs/deploy/local_run_en.md)
+
+## Deployment
 * [Running on Yarn](./docs/deploy/run_on_yarn_en.md)
 * [Running on Kubernetes](./docs/deploy/run_on_kubernetes_en.md)
-
+* [Configuration Details](./docs/deploy/config_details_en.md)
 
 ## Algorithm
 * [**Algorithm Parameter Description**](./docs/algo/model_config_details.md)
@@ -32,13 +34,17 @@ We welcome everyone interested in machine learning to contribute code, create is
 * [Robust Regression](./docs/algo/robust_on_angel_en.md)
 * [Softmax Regression](./docs/algo/softmax_on_angel_en.md)
 
-## Deployment
-* [Configuration Details](./docs/deploy/config_details_en.md)
-
 ## Development
 * [Architecture](./docs/overview/architecture_en.md)
 * [Angel PS Service](./docs/overview/ps_service_en.md)
 * [Core API]((./docs/apis/core_api_en.md))
+
+## Community
+* Mailing list: angel-tsc@lists.deeplearningfoundation.org
+* Angel homepage in Linux FD: https://lists.deeplearningfoundation.org/g/angel-main
+* [TSC members & Committers](./Community.md)
+* [Contributing to Angel](./CONTRIBUTING.md)
+* [Roadmap](https://github.com/Angel-ML/angel/wiki/Roadmap)
 
 ## FAQ
 * [Angel FAQ](https://github.com/Tencent/angel/wiki/Angel%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
