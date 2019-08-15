@@ -11,4 +11,6 @@ trait CILSImpl {
   def doLoad[T](mCtx: MatrixContext, envCtx: EnvContext[T], path: String): Unit
 
   def doSave[T](mCtx: MatrixContext, indices: Array[Int], envCtx: EnvContext[T], path: String): Unit
+
+  def doRelease[T](mCtx: MatrixContext, envCtx: EnvContext[T]): Unit
 }
