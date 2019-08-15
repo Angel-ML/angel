@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ml.core.graphsubmit
 
-import com.tencent.angel.ml.core.{AngelEnvContext, PredictTask}
+import com.tencent.angel.ml.core.{AngelMasterContext, PredictTask}
 import com.tencent.angel.mlcore.conf.SharedConf
 import com.tencent.angel.mlcore.variable.VarState
 import com.tencent.angel.ml.math2.utils.LabeledData
@@ -31,7 +31,7 @@ class GraphPredictTask(ctx: TaskContext) extends PredictTask[LongWritable, Text]
     val modelClassName: String = sharedConf.modelClassName
     val model: AngelModel = AngelModel(modelClassName, sharedConf, ctx)
     model.buildNetwork()
-    model.createMatrices(AngelEnvContext(null))
+    model.createMatrices(AngelMasterContext(null))
     predict(ctx, model, taskDataBlock)
   }
 

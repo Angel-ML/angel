@@ -38,7 +38,8 @@ public class WideDeepTest {
   private Configuration conf = new Configuration();
   private static final Log LOG = LogFactory.getLog(WideDeepTest.class);
   private static String LOCAL_FS = FileSystem.DEFAULT_FS;
-  private static String CLASSBASE = "com.tencent.angel.ml.classification.";
+  private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.AngelModel";
+
   private static String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
 
   static {
@@ -74,7 +75,7 @@ public class WideDeepTest {
 
       String angelConfFile = "./src/test/jsons/daw.json";
       conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
-      conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "WideAndDeep");
+      conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE);
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;
