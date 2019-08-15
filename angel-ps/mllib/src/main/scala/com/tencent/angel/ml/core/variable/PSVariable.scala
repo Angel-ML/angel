@@ -3,6 +3,7 @@ package com.tencent.angel.ml.core.variable
 
 import java.util.concurrent.atomic.AtomicBoolean
 
+import com.tencent.angel.client.AngelPSClient
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.ml.core.conf.AngelMLConf
@@ -11,6 +12,7 @@ import com.tencent.angel.mlcore.network.EnvContext
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.mlcore.variable._
+import com.tencent.angel.psagent.PSAgent
 import org.apache.hadoop.conf.Configuration
 
 
@@ -35,7 +37,18 @@ abstract class PSVariable(name: String,
 
   protected def doCreate[T](envCtx: EnvContext[T]): Unit = {
     if (envCtx != null && envCtx.client != null) {
-      cilsImpl.doCreate(getMatrixCtx, envCtx)
+      envCtx.client match {
+        case _: PSAgent =>
+          if (matrixId == -1) {
+            matrixId = PSMatrixUtils.getMatrixId(name)
+          }
+
+          if (ctx == null) {
+            ctx = getMatrixCtx
+          }
+        case _ =>
+          cilsImpl.doCreate(getMatrixCtx, envCtx)
+      }
     } else {
       // create matrix in work, on worker
       // in fact, the matrix has created, just get the matrixId here
@@ -79,8 +92,21 @@ abstract class PSVariable(name: String,
   // call only on client
   protected override def doLoad[T](envCtx: EnvContext[T], path: String, conf: Configuration): Unit = {
     if (envCtx != null && envCtx.client != null) {
-      cilsImpl.doLoad(getMatrixCtx, envCtx, path)
+      envCtx.client match {
+        case _: PSAgent =>
+          if (matrixId == -1) {
+            matrixId = PSMatrixUtils.getMatrixId(name)
+          }
+
+          if (ctx == null) {
+            ctx = getMatrixCtx
+          }
+        case _ =>
+          cilsImpl.doLoad(getMatrixCtx, envCtx, path)
+      }
     } else {
+      // create matrix in work, on worker
+      // in fact, the matrix has created, just get the matrixId here
       if (matrixId == -1) {
         matrixId = PSMatrixUtils.getMatrixId(name)
       }
@@ -93,10 +119,38 @@ abstract class PSVariable(name: String,
 
   protected override def doSave[T](envCtx: EnvContext[T], path: String): Unit = {
     if (envCtx != null && envCtx.client != null) {
-      val withSlot: Boolean = conf.getBoolean(AngelMLConf.ML_VERABLE_SAVE_WITHSLOT,
-        AngelMLConf.DEFAULT_ML_VERABLE_SAVE_WITHSLOT)
-      val indices = rowsSaved(withSlot)
-      cilsImpl.doSave(getMatrixCtx, indices, envCtx, path)
+      envCtx.client match {
+        case _: PSAgent =>
+          if (matrixId == -1) {
+            matrixId = PSMatrixUtils.getMatrixId(name)
+          }
+
+          if (ctx == null) {
+            ctx = getMatrixCtx
+          }
+        case _ =>
+          val withSlot: Boolean = conf.getBoolean(AngelMLConf.ML_VERABLE_SAVE_WITHSLOT,
+            AngelMLConf.DEFAULT_ML_VERABLE_SAVE_WITHSLOT)
+          val indices = rowsSaved(withSlot)
+          cilsImpl.doSave(getMatrixCtx, indices, envCtx, path)
+      }
+    }
+  }
+
+  protected override def doRelease[T](envCtx: EnvContext[T]): Unit = {
+    if (envCtx != null && envCtx.client != null) {
+      envCtx.client match {
+        case _: PSAgent =>
+          if (matrixId == -1) {
+            matrixId = PSMatrixUtils.getMatrixId(name)
+          }
+
+          if (ctx == null) {
+            ctx = getMatrixCtx
+          }
+        case _ =>
+          cilsImpl.doRelease(getMatrixCtx, envCtx)
+      }
     }
   }
 }

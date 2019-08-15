@@ -8,6 +8,7 @@ import com.tencent.angel.mlcore.variable.{VarState, VariableManager}
 import com.tencent.angel.ml.core.variable.PSVariable
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
+import com.tencent.angel.psagent.PSAgent
 import org.apache.hadoop.conf.Configuration
 
 import scala.collection.JavaConversions._
@@ -17,7 +18,7 @@ class PSVariableManager(isSparseFormat: Boolean, conf: SharedConf)
 
   override def createALL[T](envCtx: EnvContext[T]): Unit = {
     envCtx match {
-      case AngelEnvContext(client: AngelClient) if client != null =>
+      case AngelMasterContext(client: AngelClient) if client != null =>
         getALLVariables.foreach {
           case variable: PSVariable => client.addMatrix(variable.getMatrixCtx)
           case _ =>
@@ -31,7 +32,7 @@ class PSVariableManager(isSparseFormat: Boolean, conf: SharedConf)
 
   override def loadALL[T](envCtx: EnvContext[T], path: String, conf: Configuration): Unit = {
     envCtx match {
-      case AngelEnvContext(client: AngelClient) if client != null =>
+      case AngelMasterContext(client: AngelClient) if client != null =>
         client.load()
         getALLVariables.foreach { variable => variable.setState(VarState.Initialized) }
       case _ =>
@@ -65,7 +66,7 @@ class PSVariableManager(isSparseFormat: Boolean, conf: SharedConf)
 
   override def saveALL[T](envCtx: EnvContext[T], path: String): Unit = {
     envCtx match {
-      case AngelEnvContext(client: AngelClient) if client != null =>
+      case AngelMasterContext(client: AngelClient) if client != null =>
         val saveContext = new ModelSaveContext
         getALLVariables.foreach { variable =>
           assert(variable.getState == VarState.Initialized || variable.getState == VarState.Ready)
@@ -77,6 +78,20 @@ class PSVariableManager(isSparseFormat: Boolean, conf: SharedConf)
         client.save(saveContext, deleteExistsFile)
       case _ =>
         getALLVariables.foreach { variable => variable.save(envCtx, path) }
+    }
+  }
+
+  override def releaseALL[T](envCtx: EnvContext[T]): Unit = {
+    envCtx match {
+      case ctx @ AngelWorkerContext(client: PSAgent) if client != null =>
+        getALLVariables.foreach {
+          case variable: PSVariable => variable.release(ctx)
+          case _ =>
+        }
+
+        variables.clear()
+        slots.clear()
+      case _ => throw new Exception("envCtx error!")
     }
   }
 }
