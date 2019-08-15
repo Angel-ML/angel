@@ -40,7 +40,7 @@ public class DeepFMLocalExample {
   private Configuration conf = new Configuration();
 
   private static boolean inPackage = false;
-  private static String CLASSBASE = "com.tencent.angel.ml.classification.";
+  private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.";
 
   static {
     File confFile = new File("../conf/log4j.properties");
@@ -113,7 +113,7 @@ public class DeepFMLocalExample {
     conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
 
     // Set model class
-    conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "DeepFM");
+    conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "AngelModel");
   }
 
   public void train() {

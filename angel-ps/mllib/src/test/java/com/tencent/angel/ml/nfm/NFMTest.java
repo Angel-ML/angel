@@ -76,7 +76,7 @@ public class NFMTest {
       String angelConfFile = "./src/test/jsons/nfm.json";
       conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
 
-      conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "GraphModel");
+      conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "AngelModel");
       conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
 
     } catch (Exception x) {
