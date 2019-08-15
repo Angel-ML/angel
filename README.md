@@ -5,11 +5,7 @@
 [![Release Version](https://img.shields.io/badge/release-2.2.0-red.svg)](https://github.com/tencent/angel/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/tencent/angel/pulls)
 
-**Angel** is a high-performance distributed machine learning platform based on the philosophy of Parameter Server. It is tuned for performance with big data from Tencent and has a wide range of applicability and stability, demonstrating increasing advantage in handling higher dimension model. Angel is jointly developed by Tencent and Peking University, taking account of both high availability  in industry and innovation in academia.
-
-With model-centered core design concept, **Angel** partitions parameters of complex models into multiple parameter-server nodes, and implements a variety of machine learning algorithms using efficient model-updating interfaces and functions, as well as flexible consistency model for synchronization.
-
-**Angel** is developed with **Java** and **Scala**.  It supports running on **Yarn** and **Kubernetes**. With **PS Service** abstraction, it supports **Spark on Angel** and **Pytorch on Angel** now.  Graph computing and deep learning frameworks support is under development and with be released in the future.
+This project **Angel** is a high-performance distributed machine learning platform based on the philosophy of Parameter Server. It is tuned for performance with big data from Tencent and has a wide range of applicability and stability, demonstrating increasing advantage in handling higher dimension model. Angel is jointly developed by Tencent and Peking University, taking account of both high availability  in industry and innovation in academia. **Angel** is developed with **Java** and **Scala**.  It supports running on **Yarn** and **Kubernetes**. With the **PS Service** abstraction, it provides two modules, namely **Spark on Angel** and **Pytorch on Angel** separately, which enable integrate the power of Spark/PyTorch and Parameter Server for distributed training.  Graph Computing and deep learning frameworks support is under development and will be released in the future.
 
 We welcome everyone interested in machine learning to contribute code, create issues or pull requests. Please refer to  [Angel Contribution Guide](https://github.com/Tencent/angel/blob/master/CONTRIBUTING.md) for more detail.
 
