@@ -22,7 +22,7 @@ The environment requirements for running Angel on Kubernetes include:
 * Docker images  
   Kubernetes requires users to supply images that can be deployed into containers within pods. The images are built to be run in a container runtime environment that Kubernetes supports. Docker is a container runtime 
   environment that is frequently used with Kubernetes. We provide a basic image for the user, you can pull it down and run or customize your own image through it. Follow the pull command:  
-  `docker pull 202102/angel:v3.0.0`
+  `docker pull tencentangel/angel:v3.0.0`
 
 * Distributed File System  
   we both support cephfs and hdfs distributed file system, to ensure that the kubernetes cluster's pods are accessible
@@ -52,7 +52,7 @@ The environment requirements for running Angel on Kubernetes include:
               -Dangel.kubernetes.master=<api_server_url> \
               -Dangel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
               -Dangel.action.type=train \
-              -Dangel.kubernetes.container.image=202102/angel:v3.0.0 \
+              -Dangel.kubernetes.container.image=tencentangel/angel:v3.0.0 \
               -Dangel.kubernetes.master.volumes.hostPath.test.mount.path=/angel/mountpath \
               -Dangel.kubernetes.master.volumes.hostPath.test.options.path=/cephfs/basepath/to/angel \
               -Dangel.kubernetes.executor.volumes.hostPath.test.mount.path=/angel/mountpath \
@@ -144,7 +144,7 @@ The following configurations are specific to Angel on Kubernetes.
 | --- | --- | --- |
 | angel.kubernetes.master | none | kubernetes cluster api server url |
 | angel.kubernetes.namespace  | default | The namespace that will be used for running the angel master and angel ps/worker pods. |
-| angel.kubernetes.container.image | none | Container image to use for the Angel application. This is usually of the form example.com/repo/angel:v3.0.0. This configuration is required and must be provided by the user, we provide a base image `docker pull 202102/angel:v3.0.0` . |
+| angel.kubernetes.container.image | none | Container image to use for the Angel application. This is usually of the form example.com/repo/angel:v3.0.0. This configuration is required and must be provided by the user, we provide a base image `docker pull tencentangel/angel:v3.0.0` . |
 | angel.kubernetes.container.image.pullPolicy | IfNotPresent | Container image pull policy used when pulling images within Kubernetes, valid values are `Always`, `Never`, and `IfNotPresent`. |
 | angel.kubernetes.serviceaccount | default | Service account that is used when running the angel master pod. The angel master pod uses this service account when requesting angel ps/worker pods from the API server |
 | angel.kubernetes.master.label.[LabelName] | none | Add the label specified by LabelName to the angel master pod. |
@@ -164,4 +164,6 @@ The following configurations are specific to Angel on Kubernetes.
 | angel.kubernetes.master.secrets.[SecretName] | none | Add the Kubernetes Secret named SecretName to the angel master pod on the path specified in the value. |
 | angel.kubernetes.executor.secrets.[SecretName] | none | Add the Kubernetes Secret named SecretName to the angel ps/worker pod on the path specified in the value. |
 
-All angel on kubernetes configuration information can be referred to `AngelConf` class.
+All angel on kubernetes configuration information can be referred to `AngelConf` class.  
+
+**Note**: If the you want to make your own image from the base image we provided, the `entrypoint.sh` and `Dockerfile` in source code `kubernetesmanager/scripts`.

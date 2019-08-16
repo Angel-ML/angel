@@ -1,6 +1,5 @@
-FROM spark:testing
-RUN rm /opt/entrypoint.sh
-COPY entrypoint.sh /opt
-COPY angel /opt/angel
-COPY lib /usr/lib
+FROM tencentangel/angel:v3.0.0
+
+#User-defined action
+
 ENTRYPOINT ["/opt/entrypoint.sh"]
