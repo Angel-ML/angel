@@ -4,6 +4,7 @@
 [![license](http://img.shields.io/badge/license-Apache2.0-brightgreen.svg?style=flat)](https://github.com/tencent/angel/blob/master/LICENSE)
 [![Release Version](https://img.shields.io/badge/release-2.2.0-red.svg)](https://github.com/tencent/angel/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/tencent/angel/pulls)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/3058/badge)](https://bestpractices.coreinfrastructure.org/projects/3058)
 
 This project **Angel** is a high-performance distributed machine learning platform based on the philosophy of Parameter Server. It is tuned for performance with big data from Tencent and has a wide range of applicability and stability, demonstrating increasing advantage in handling higher dimension model. Angel is jointly developed by Tencent and Peking University, taking account of both high availability  in industry and innovation in academia. **Angel** is developed with **Java** and **Scala**.  It supports running on **Yarn** and **Kubernetes**. With the **PS Service** abstraction, it provides two modules, namely **Spark on Angel** and **Pytorch on Angel** separately, which enable integrate the power of Spark/PyTorch and Parameter Server for distributed training.  Graph Computing and deep learning frameworks support is under development and will be released in the future.
 
@@ -21,19 +22,26 @@ We welcome everyone interested in machine learning to contribute code, create is
 
 ## Algorithm
 * [**Algorithm Parameter Description**](./docs/algo/model_config_details.md)
+* [LDA](./docs/algo/lda_on_angel_en.md)
+* [GBDT](./docs/algo/gbdt_on_angel_en.md)
+* [KMeans](./docs/algo/kmeans_on_angel_en.md)
 * [Logistic Regression](./docs/algo/lr_on_angel_en.md)
 * [SVM](./docs/algo/svm_on_angel_en.md)
-* [KMeans](./docs/algo/kmeans_on_angel_en.md)
-* [GBDT](./docs/algo/gbdt_on_angel_en.md)
-* [LDA](./docs/algo/lda_on_angel_en.md)
 * [Linear Regression](./docs/algo/linear_on_angel_en.md)
 * [Robust Regression](./docs/algo/robust_on_angel_en.md)
 * [Softmax Regression](./docs/algo/softmax_on_angel_en.md)
+* [Wide And Deep](./docs/algo/daw_on_angel_en.md)
+* [DeepFM](./docs/algo/deepfm_on_angel_en.md)
+* [DNN](./docs/algo/dnn_on_angel_en.md)
+* [NFM](./docs/algo/nfm_on_angel_en.md)
+* [PNN](./docs/algo/pnn_on_angel_en.md)
+* [DCN](./docs/algo/dcn_on_angel_en.md)
+* [AFM](./docs/algo/afm_on_angel_en.md)
 
 ## Development
 * [Architecture](./docs/overview/architecture_en.md)
 * [Angel PS Service](./docs/overview/angel_ps_service_en.md)
-* [Core API]((./docs/apis/core_api_en.md))
+* [Core API](./docs/apis/core_api2_en.md)
 
 ## Community
 * Mailing list: angel-tsc@lists.deeplearningfoundation.org
@@ -51,4 +59,7 @@ We welcome everyone interested in machine learning to contribute code, create is
   3. Jie Jiang, Lele Yu, Jiawei Jiang, Yuhong Liu and Bin Cui. [Angel: a new large-scale machine learning system](http://net.pku.edu.cn/~cuibin/Papers/2017NSRangel.pdf). National Science Review (NSR), 2017
   4. Jie Jiang, Jiawei Jiang,  Bin Cui and Ce Zhang. [TencentBoost: A Gradient Boosting Tree System with Parameter Server](http://net.pku.edu.cn/~cuibin/Papers/2017%20ICDE%20boost.pdf).	ICDE, 2017
   5. Jiawei Jiang, Bin Cui, Ce Zhang and Fangcheng Fu. [DimBoost: Boosting Gradient Boosting Decision Tree to Higher Dimensions](https://dl.acm.org/citation.cfm?id=3196892). SIGMOD, 2018.
+
+
+
 
