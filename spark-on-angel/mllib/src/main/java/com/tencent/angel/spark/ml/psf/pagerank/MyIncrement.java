@@ -26,8 +26,8 @@ public class MyIncrement extends IncrementRows {
     List<RowUpdateSplit> updates = param.getUpdates();
     for (RowUpdateSplit update: updates) {
       ServerRow row = psContext.getMatrixStorageManager().getRow(param.getPartKey(), update.getRowId());
+      row.startWrite();
       try {
-        row.startWrite();
         Vector vector = getVector(param.getMatrixId(), update.getRowId(), param.getPartKey());
         vector.iadd(update.getVector());
       } finally {
