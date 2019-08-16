@@ -10,7 +10,6 @@ set +e
 uidentry=$(getent passwd $myuid)
 set -e
 
-ANGEL_HOME=/opt/angel
 # If there is no passwd entry for the container UID, attempt to create one
 if [ -z "$uidentry" ] ; then
     if [ -w /etc/passwd ] ; then
