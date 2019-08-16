@@ -1,10 +1,9 @@
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.ml.core.{ArgsUtil, OnlineLearner}
+import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.graph.kcore5.KCore
 import com.tencent.angel.spark.ml.graph.utils.GraphIO
-import org.apache.commons.logging.LogFactory
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -41,7 +40,6 @@ object KCoreExample {
     val kCore = new KCore()
       .setPartitionNum(partitionNum)
       .setStorageLevel(storageLevel)
-//      .setBatchSize(batchSize)
       .setPSPartitionNum(psPartitionNum)
       .setSrcNodeIdCol("src")
       .setDstNodeIdCol("dst")
