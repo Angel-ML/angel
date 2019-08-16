@@ -27,15 +27,13 @@ public class SampleNodeFeats extends GetFunc {
   }
 
   public SampleNodeFeats() {
-    this((SampleNodeFeatsParam) null);
+    this(null);
   }
 
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam partParam) {
-    PartSampleNodeFeatsParam param = (PartSampleNodeFeatsParam) partParam;
-    ServerMatrix matrix = psContext.getMatrixStorageManager().getMatrix(partParam.getMatrixId());
-    ServerPartition part = matrix.getPartition(partParam.getPartKey().getPartitionId());
-    ServerLongAnyRow row = (ServerLongAnyRow) (((RowBasedPartition) part).getRow(0));
+    SampleNodeFeatsPartParam param = (SampleNodeFeatsPartParam) partParam;
+    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager().getRow(param.getPartKey(), 0);
 
     int size = Math.min(row.size(), param.getSize());
     IntFloatVector[] feats = new IntFloatVector[size];
@@ -45,10 +43,10 @@ public class SampleNodeFeats extends GetFunc {
     int skip = bound > 0 ? rand.nextInt(bound) : 0;
     ObjectIterator<Long2ObjectMap.Entry<IElement>> it = row.getStorage().iterator();
     it.skip(skip);
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++)
       feats[i] = ((Node) it.next().getValue()).getFeats();
-    }
-    return new PartGetNodeFeatsResult(part.getPartitionKey().getPartitionId(), feats);
+
+    return new PartGetNodeFeatsResult(param.getPartKey().getPartitionId(), feats);
   }
 
   @Override

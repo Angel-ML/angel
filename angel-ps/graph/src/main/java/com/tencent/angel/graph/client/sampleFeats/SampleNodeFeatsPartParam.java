@@ -4,16 +4,16 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import io.netty.buffer.ByteBuf;
 
-public class PartSampleNodeFeatsParam extends PartitionGetParam {
+public class SampleNodeFeatsPartParam extends PartitionGetParam {
 
   private int size;
 
-  public PartSampleNodeFeatsParam(int matrixId, PartitionKey part, int size) {
+  public SampleNodeFeatsPartParam(int matrixId, PartitionKey part, int size) {
     super(matrixId, part);
     this.size = size;
   }
 
-  public PartSampleNodeFeatsParam() {
+  public SampleNodeFeatsPartParam() {
     this(-1, null, 0);
   }
 

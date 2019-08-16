@@ -26,9 +26,9 @@ public class SampleNodeFeatsParam extends GetParam {
     List<PartitionGetParam> params = new ArrayList<>();
     List<PartitionKey> parts = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
     int eachSize = size / parts.size() + 1;
-    for (PartitionKey key : parts) {
-      params.add(new PartSampleNodeFeatsParam(matrixId, key, eachSize));
-    }
+    for (PartitionKey key : parts)
+      params.add(new SampleNodeFeatsPartParam(matrixId, key, eachSize));
+
     return params;
   }
 }
