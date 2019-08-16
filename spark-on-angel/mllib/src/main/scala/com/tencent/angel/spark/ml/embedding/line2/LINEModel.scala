@@ -364,6 +364,10 @@ class LINEModel(numNode: Int,
     save(new Path(modelPathRoot, s"CP_$epoch").toString)
   }
 
+  def destroy() = {
+    psMatrix.destroy()
+  }
+
   def save(modelPath: String): Unit = {
     logTime(s"saving model to $modelPath")
     val ss = SparkSession.builder().getOrCreate()
