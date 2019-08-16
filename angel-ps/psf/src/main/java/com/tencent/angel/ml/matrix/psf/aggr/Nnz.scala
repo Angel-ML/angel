@@ -22,7 +22,7 @@ package com.tencent.angel.ml.matrix.psf.aggr
 
 import com.tencent.angel.ml.math2.vector._
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.UnaryAggrFunc
-import com.tencent.angel.ps.storage.vector.ServerRow;
+import com.tencent.angel.ps.storage.vector.{ServerRow, ServerRowUtils};
 
 /**
   * `Nnz` will return the number of non-zero of the `rowId` row in `matrixId` matrix.
@@ -33,7 +33,7 @@ class Nnz(matrixId: Int, rowId: Int) extends UnaryAggrFunc(matrixId, rowId) {
   def this() = this(-1, -1)
 
   override protected def processRow(row: ServerRow): Double = {
-    row.getSplit match {
+    ServerRowUtils.getVector(row) match {
       case s: IntKeyVector => s.getDim - s.numZeros()
       case s: LongKeyVector => s.getDim - s.numZeros()
     }

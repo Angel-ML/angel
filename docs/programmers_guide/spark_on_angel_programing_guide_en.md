@@ -233,7 +233,7 @@ for (i <- 1 to ITERATIONS) {
 Example 3: In this third example, we describe how to use the Adam optimizer to accelerate the convergence speed. To use the Adam optimizer, we need to maintain another two vectors to calculate the historical gradients. Compared with the vanilla SGD, which allocates a PSMatrix with two rows, we allocates a PSMatrix with 4 rows
 ```scala
 import com.tencent.angel.ml.core.optimizer.Adam
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 
 
 // allocate a randomly initialized 4xdim PS matrix
@@ -289,7 +289,7 @@ To write a Logistic Regression algorithm, we write a class ``LogisticRegression`
 ```scala
 package com.tencent.angel.spark.ml.classification
 
-import com.tencent.angel.ml.core.conf.MLConf
+import com.tencent.angel.ml.core.conf.AngelMLConf
 import com.tencent.angel.ml.core.network.layers.verge.{SimpleLossLayer, SimpleInputLayer}
 import com.tencent.angel.ml.core.network.transfunc.Identity
 import com.tencent.angel.ml.core.optimizer.Adam
@@ -444,7 +444,7 @@ For FM algorithm, we only need to write an another class that extends the GraphM
 ```scala
 package com.tencent.angel.spark.ml.classification
 
-import com.tencent.angel.ml.core.conf.MLConf
+import com.tencent.angel.ml.core.conf.AngelMLConf
 import com.tencent.angel.ml.core.network.layers.verge.{Embedding, SimpleLossLayer, SimpleInputLayer}
 import com.tencent.angel.ml.core.network.layers.join.SumPooling
 import com.tencent.angel.ml.core.network.layers.linear.BiInnerSumCross

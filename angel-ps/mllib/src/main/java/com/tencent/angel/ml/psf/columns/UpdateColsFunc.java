@@ -18,7 +18,6 @@
 
 package com.tencent.angel.ml.psf.columns;
 
-
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math2.vector.CompIntDoubleVector;
 import com.tencent.angel.ml.math2.vector.CompIntFloatVector;
@@ -26,7 +25,7 @@ import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
 import com.tencent.angel.ps.storage.vector.ServerIntDoubleRow;
 import com.tencent.angel.ps.storage.vector.ServerIntFloatRow;
 import com.tencent.angel.ps.storage.vector.ServerLongDoubleRow;
@@ -52,7 +51,7 @@ public class UpdateColsFunc extends UpdateFunc {
     int matId = param.getMatrixId();
     int partitionId = param.getPartKey().getPartitionId();
 
-    ServerPartition partition = psContext.getMatrixStorageManager().getPart(matId, partitionId);
+    RowBasedPartition partition = (RowBasedPartition)psContext.getMatrixStorageManager().getPart(matId, partitionId);
 
     switch (partition.getRowType()) {
       case T_DOUBLE_DENSE:

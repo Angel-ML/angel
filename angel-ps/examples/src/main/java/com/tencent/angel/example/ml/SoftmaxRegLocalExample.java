@@ -1,9 +1,25 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
 package com.tencent.angel.example.ml;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.conf.AngelMLConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -81,7 +97,7 @@ public class SoftmaxRegLocalExample {
 
 	// Use local deploy mode and data format
 	conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
-	conf.set(MLConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
+	conf.set(AngelMLConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
 
 	// Set data path
 	conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
@@ -108,20 +124,20 @@ public class SoftmaxRegLocalExample {
 	conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
 	// Set Softmax algorithm parameters
-	conf.set(MLConf.ML_MODEL_TYPE(), modelType);
-	conf.setInt(MLConf.ML_NUM_CLASS(), classNum);
-	conf.set(MLConf.ML_DATA_LABEL_TRANS(), "SubOneTrans");
-	conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
-	conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
-	conf.set(MLConf.ML_BATCH_SAMPLE_RATIO(), String.valueOf(spRatio));
-	conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
-	conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
-	conf.set(MLConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
-	conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
-	conf.setLong(MLConf.ML_MODEL_SIZE(), 124L);
+	conf.set(AngelMLConf.ML_MODEL_TYPE(), modelType);
+	conf.setInt(AngelMLConf.ML_NUM_CLASS(), classNum);
+	conf.set(AngelMLConf.ML_DATA_LABEL_TRANS(), "SubOneTrans");
+	conf.set(AngelMLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
+	conf.set(AngelMLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
+	conf.set(AngelMLConf.ML_BATCH_SAMPLE_RATIO(), String.valueOf(spRatio));
+	conf.set(AngelMLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
+	conf.set(AngelMLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
+	conf.set(AngelMLConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
+	conf.set(AngelMLConf.ML_REG_L2(), String.valueOf(reg));
+	conf.setLong(AngelMLConf.ML_MODEL_SIZE(), 124L);
 
 	// Set model class
-	conf.set(MLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "SoftmaxRegression");
+	conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "SoftmaxRegression");
 
   }
 

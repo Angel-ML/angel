@@ -19,9 +19,11 @@
 package com.tencent.angel.ml.logisticregression;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.PSOptimizerProvider;
+import com.tencent.angel.ml.core.conf.AngelMLConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.mlcore.conf.MLCoreConf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -89,18 +91,19 @@ public class LRTest {
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 2);
 
       //set sgd LR algorithm parameters #feature #epoch
-      // conf.set(MLConf.ML_MODEL_TYPE(), modelType);
-      conf.setLong(MLConf.ML_FEATURE_INDEX_RANGE(), featureNum);
-      conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
-      conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
-      conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
-      conf.set(MLConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
-      conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
-      conf.setLong(MLConf.ML_MODEL_SIZE(), 123);
-      conf.set(MLConf.ML_INPUTLAYER_OPTIMIZER(), optimizer);
-      // conf.setDouble(MLConf.ML_DATA_POSNEG_RATIO(), posnegRatio);
-      conf.set(MLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "GraphModel");
+      // conf.set(AngelMLConf.ML_MODEL_TYPE(), modelType);
+      conf.setLong(AngelMLConf.ML_FEATURE_INDEX_RANGE(), featureNum);
+      conf.set(AngelMLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
+      conf.set(AngelMLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
+      conf.set(AngelMLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
+      conf.set(AngelMLConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
+      conf.set(AngelMLConf.ML_REG_L2(), String.valueOf(reg));
+      conf.setLong(AngelMLConf.ML_MODEL_SIZE(), 123);
+      conf.set(AngelMLConf.ML_INPUTLAYER_OPTIMIZER(), optimizer);
+      // conf.setDouble(AngelMLConf.ML_DATA_POSNEG_RATIO(), posnegRatio);
+      conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "AngelModel");
       conf.setStrings(AngelConf.ANGEL_ML_CONF, jsonFile);
+      conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;
@@ -110,7 +113,7 @@ public class LRTest {
   @Test public void testLR() throws Exception {
     setConf();
     trainTest();
-    // predictTest();
+    predictTest();
   }
 
   private void trainTest() throws Exception {
@@ -123,7 +126,7 @@ public class LRTest {
       String logPath = LOCAL_FS + TMP_PATH + "/LRlog";
 
       // Set data format
-      conf.set(MLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
+      conf.set(AngelMLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
 
       // Set trainning data path
       conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
@@ -132,7 +135,7 @@ public class LRTest {
       // Set log path
       conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
       // Set actionType train
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, AngelMLConf.ANGEL_ML_TRAIN());
 
       GraphRunner runner = new GraphRunner();
       runner.train(conf);
@@ -152,7 +155,7 @@ public class LRTest {
 
 
       // Set data format
-      conf.set(MLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
+      conf.set(AngelMLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
 
       // Set trainning data path
       conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);
@@ -161,9 +164,9 @@ public class LRTest {
       // Set predict result path
       conf.set(AngelConf.ANGEL_PREDICT_PATH, predictPath);
       // Set actionType prediction
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_INC_TRAIN());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, AngelMLConf.ANGEL_ML_INC_TRAIN());
 
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, AngelMLConf.ANGEL_ML_PREDICT());
       GraphRunner runner = new GraphRunner();
 
       runner.predict(conf);

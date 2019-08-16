@@ -22,7 +22,7 @@
   <parent>
     <groupId>com.tencent.angel</groupId>
     <artifactId>angel</artifactId>
-    <version>2.2.0</version>
+    <version>3.0.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
@@ -36,14 +36,49 @@
     <module>tools</module>
     <module>mllib</module>
     <module>examples</module>
+    <module>graph</module>
   </modules>
 
   <properties>
     <main.basedir>${project.parent.basedir}</main.basedir>
     <compile.scope>provided</compile.scope>
+    <spark.version>2.1.0</spark.version>
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>com.tencent.angel</groupId>
+      <artifactId>angel-math</artifactId>
+      <version>0.1.0-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tencent.angel</groupId>
+      <artifactId>angel-format</artifactId>
+      <version>0.1.0-SNAPSHOT</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.tencent.angel</groupId>
+          <artifactId>angel-ps-core</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-core_${scala.binary.version}</artifactId>
+      <version>${spark.version}</version>
+      <!--scope>${dist.deps.scope}</scope-->
+    </dependency>
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-mllib_${scala.binary.version}</artifactId>
+      <version>${spark.version}</version>
+      <!--scope>${dist.deps.scope}</scope-->
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>18.0</version>
+    </dependency>
     <dependency>
       <groupId>com.yahoo.datasketches</groupId>
       <artifactId>sketches-core</artifactId>
@@ -82,7 +117,8 @@
     <dependency>
       <groupId>org.json4s</groupId>
       <artifactId>json4s-jackson_2.11</artifactId>
-      <version>3.4.2</version>
+      <!--version>3.2.11</version-->
+      <version>${json4s.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -126,7 +162,12 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-all</artifactId>
-      <version>4.1.1.Final</version>
+      <version>4.1.17.Final</version>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty</artifactId>
+      <version>3.9.9.Final</version>
     </dependency>
     <dependency>
       <groupId>it.unimi.dsi</groupId>
@@ -353,11 +394,12 @@
       <plugin>
         <groupId>org.scalatest</groupId>
         <artifactId>scalatest-maven-plugin</artifactId>
-        <version>1.0</version>
+        <version>2.0.0</version>
         <configuration>
           <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
           <junitxml>.</junitxml>
           <filereports>WDF TestSuite.txt</filereports>
+          <skipTests>true</skipTests>
         </configuration>
         <executions>
           <execution>

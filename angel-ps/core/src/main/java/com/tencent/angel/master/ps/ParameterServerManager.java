@@ -18,6 +18,7 @@
 
 package com.tencent.angel.master.ps;
 
+import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.common.location.Location;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.AMContext;
@@ -34,6 +35,7 @@ import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.server.data.PSLocation;
 import com.tencent.angel.utils.StringUtils;
+import java.util.concurrent.LinkedBlockingDeque;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -113,6 +115,11 @@ public class ParameterServerManager extends AbstractService
    * parameter server attempt id to last heartbeat timestamp map
    */
   private final ConcurrentHashMap<PSAttemptId, Long> psLastHeartbeatTS = new ConcurrentHashMap<>();
+
+    /**
+     * parameter server attempt id queue for kubernetes allocator
+     */
+    private final LinkedBlockingDeque<PSAttemptId> psAttemptIdBlockingQueue = new LinkedBlockingDeque<>();
 
   /**
    * parameter server heartbeat timeout value in millisecond
@@ -207,6 +214,15 @@ public class ParameterServerManager extends AbstractService
   public Map<ParameterServerId, AMParameterServer> getParameterServerMap() {
     return psMap;
   }
+
+    /**
+     * parameter server attempt id queue
+     * @return LinkedBlockingDeque<PSAttemptId>
+     */
+
+    public LinkedBlockingDeque<PSAttemptId> getPsAttemptIdBlockingQueue() {
+        return psAttemptIdBlockingQueue;
+    }
 
   @Override public void handle(ParameterServerManagerEvent event) {
     LOG.debug("Processing event type " + event.getType());
@@ -328,7 +344,7 @@ public class ParameterServerManager extends AbstractService
   }
 
   public void psFailedReport(PSLocation psLoc) {
-    restartPS(psLoc);
+    //restartPS(psLoc);
   }
 
   private void restartPS(PSLocation psLoc) {
@@ -362,6 +378,9 @@ public class ParameterServerManager extends AbstractService
   public void register(PSAttemptId psAttemptId) {
     LOG.info("PS " + psAttemptId + " is registered in monitor!");
     psLastHeartbeatTS.put(psAttemptId, System.currentTimeMillis());
+    if (context.getDeployMode() == AngelDeployMode.KUBERNETES) {
+        psAttemptIdBlockingQueue.add(psAttemptId);
+    }
   }
 
   /**

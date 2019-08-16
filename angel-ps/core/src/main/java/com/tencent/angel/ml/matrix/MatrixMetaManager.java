@@ -184,6 +184,21 @@ public class MatrixMetaManager {
   }
 
   /**
+   * Get the stored pss for a matrix
+   *
+   * @param matrixId matrix id
+   * @return the stored pss
+   */
+  public List<ParameterServerId> getPss(int matrixId) {
+    MatrixMeta matrixMeta = matrixIdToMetaMap.get(matrixId);
+    if (matrixMeta == null) {
+      return null;
+    }
+
+    return matrixMeta.getPss();
+  }
+
+  /**
    * Remove the matrix
    *
    * @param matrixName matrix name

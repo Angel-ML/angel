@@ -1,3 +1,19 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
 package com.tencent.angel.ps.io;
 
 import com.tencent.angel.conf.AngelConf;
@@ -6,8 +22,10 @@ import com.tencent.angel.model.PSMatricesSaveContext;
 import com.tencent.angel.model.PSMatrixLoadContext;
 import com.tencent.angel.model.PSMatrixSaveContext;
 import com.tencent.angel.model.io.IOExecutors;
-import com.tencent.angel.model.output.format.MatrixFormat;
+import com.tencent.angel.model.io.PSMatrixLoaderSaver;
+import com.tencent.angel.model.output.format.Format;
 import com.tencent.angel.model.output.format.ModelFilesUtils;
+import com.tencent.angel.model.output.format.PSMatrixFilesUtils;
 import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.storage.matrix.ServerMatrix;
 import com.tencent.angel.utils.StringUtils;
@@ -207,18 +225,18 @@ public class PSModelIOExecutor {
   private void loadMatrix(PSMatrixLoadContext loadContext) throws IOException {
     ServerMatrix matrix = context.getMatrixStorageManager().getMatrix(loadContext.getMatrixId());
     if (matrix != null) {
-      MatrixFormat format = ModelFilesUtils
-          .initFormat(loadContext.getFormatClassName(), context.getConf());
-      format.load(matrix, loadContext, context.getConf());
+      Format format = ModelFilesUtils.initFormat(loadContext.getFormatClassName(), context.getConf());
+      PSMatrixLoaderSaver loaderSaver = PSMatrixFilesUtils.initLoaderSaver(format, context.getConf());
+      loaderSaver.load(matrix, loadContext, context.getConf());
     }
   }
 
   private void saveMatrix(PSMatrixSaveContext saveContext) throws IOException {
     ServerMatrix matrix = context.getMatrixStorageManager().getMatrix(saveContext.getMatrixId());
     if (matrix != null) {
-      MatrixFormat format = ModelFilesUtils
-          .initFormat(saveContext.getFormatClassName(), context.getConf());
-      format.save(matrix, saveContext, context.getConf());
+      Format format = ModelFilesUtils.initFormat(saveContext.getFormatClassName(), context.getConf());
+      PSMatrixLoaderSaver loaderSaver = PSMatrixFilesUtils.initLoaderSaver(format, context.getConf());
+      loaderSaver.save(matrix, saveContext, context.getConf());
     }
   }
 }

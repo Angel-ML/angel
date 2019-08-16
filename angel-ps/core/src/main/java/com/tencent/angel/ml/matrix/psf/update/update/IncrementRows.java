@@ -23,6 +23,10 @@ import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
+import com.tencent.angel.ps.storage.matrix.ServerMatrix;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
+import com.tencent.angel.ps.storage.vector.ServerRow;
+import com.tencent.angel.ps.storage.vector.ServerRowUtils;
 import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplit;
 import java.util.List;
 
@@ -52,8 +56,19 @@ public class IncrementRows extends UpdateFunc {
     }
   }
 
+  /**
+   * Get inner vector from server matrix, it is can be only use in RowBasedPartition and basic row
+   * type
+   *
+   * @param matrixId matrix id
+   * @param rowId row id
+   * @param part partition key
+   * @return inner vector
+   */
   protected Vector getVector(int matrixId, int rowId, PartitionKey part) {
-    return psContext.getMatrixStorageManager().getMatrix(matrixId)
-        .getPartition(part.getPartitionId()).getRow(rowId).getSplit();
+    ServerMatrix matrix = psContext.getMatrixStorageManager().getMatrix(matrixId);
+    ServerRow psRow = ((RowBasedPartition) matrix.getPartition(part.getPartitionId()))
+        .getRow(rowId);
+    return ServerRowUtils.getVector(psRow);
   }
 }

@@ -18,21 +18,20 @@
 
 package com.tencent.angel.ml.core.graphsubmit
 
-import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.core.PredictTask
-import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
-import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.core.{AngelMasterContext, PredictTask}
+import com.tencent.angel.mlcore.conf.SharedConf
+import com.tencent.angel.mlcore.variable.VarState
+import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.io.{LongWritable, Text}
 
 class GraphPredictTask(ctx: TaskContext) extends PredictTask[LongWritable, Text](ctx) {
 
-
-  def predict(ctx: TaskContext) {
-    val modelClassName = SharedConf.modelClassName
-    val model: GraphModel = GraphModel(modelClassName, conf, ctx)
+  override def predict(ctx: TaskContext): Unit = {
+    val modelClassName: String = sharedConf.modelClassName
+    val model: AngelModel = AngelModel(modelClassName, sharedConf, ctx)
     model.buildNetwork()
+    model.createMatrices(AngelMasterContext(null))
     predict(ctx, model, taskDataBlock)
   }
 

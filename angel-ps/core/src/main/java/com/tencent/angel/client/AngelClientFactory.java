@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import com.tencent.angel.api.python.PythonUtils;
+import com.tencent.angel.client.kubernetes.AngelKubernetesClient;
 import org.apache.hadoop.conf.Configuration;
 
 import com.tencent.angel.AngelDeployMode;
@@ -55,6 +56,8 @@ public class AngelClientFactory {
 
     if (mode.equals(AngelDeployMode.LOCAL.toString())) {
       return new AngelLocalClient(conf);
+    } else if(mode.equals(AngelDeployMode.KUBERNETES.toString())) {
+      return new AngelKubernetesClient(conf);
     } else {
       return new AngelYarnClient(conf);
     }

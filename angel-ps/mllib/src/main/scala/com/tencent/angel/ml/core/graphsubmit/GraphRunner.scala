@@ -20,15 +20,16 @@ package com.tencent.angel.ml.core.graphsubmit
 
 import com.tencent.angel.client.AngelClientFactory
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.core.MLRunner
-import com.tencent.angel.ml.core.conf.SharedConf
-import com.tencent.angel.ml.core.utils.paramsutils.JsonUtils
+import com.tencent.angel.mlcore.conf.SharedConf
+import com.tencent.angel.ml.core.utils.SConfHelper
+import com.tencent.angel.mlcore.variable.VarState
+import com.tencent.angel.ml.core.{AngelMasterContext, MLRunner}
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 
-class GraphRunner extends MLRunner {
+class GraphRunner extends MLRunner with SConfHelper {
 
-  val LOG = LogFactory.getLog(classOf[GraphRunner])
+  private val LOG = LogFactory.getLog(classOf[GraphRunner])
 
   /**
     * Run model train task
@@ -37,66 +38,63 @@ class GraphRunner extends MLRunner {
     */
   override def train(conf: Configuration): Unit = {
     val client = AngelClientFactory.get(conf)
+    val envCtx = AngelMasterContext(client)
+    val sharedConf = initConf(conf)
 
-    if (conf.get(AngelConf.ANGEL_ML_CONF) != null) {
-      SharedConf.get(conf)
-      JsonUtils.init()
-    } else
-      SharedConf.get(conf)
-
-    val modelClassName: String = SharedConf.modelClassName
-    val model: GraphModel = GraphModel(modelClassName, conf)
-    val saveModelPath = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH, "")
-    val loadModelPath = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
-
-    model.buildNetwork()
+    val saveModelPath = sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH, "")
+    val loadModelPath = sharedConf.get(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
 
     try {
       client.startPSServer()
-      model.createMatrices(client)
 
-      if (!loadModelPath.isEmpty)
-        model.loadModel(client, loadModelPath)
+      val modelClassName: String = sharedConf.modelClassName
+      val model: AngelModel = AngelModel(modelClassName, sharedConf)
+      model.buildNetwork()
+
+      model.createMatrices(envCtx)
+      if (!loadModelPath.isEmpty) {
+        model.loadModel(envCtx, loadModelPath, conf)
+      } else {
+        model.setState(VarState.Initialized)
+      }
 
       client.runTask(classOf[GraphTrainTask])
       client.waitForCompletion()
 
-      if (!saveModelPath.isEmpty)
-        model.saveModel(client, saveModelPath)
-        LOG.info(s"Start to save graph.json is $saveModelPath")
-        model.saveJson(saveModelPath)
+      if (!saveModelPath.isEmpty) {
+        model.saveModel(envCtx, saveModelPath)
+      }
     } finally {
       client.stop()
     }
   }
 
   /**
-   * Run model predict task
-   * @param conf: configuration for resource
-   */
+    * Run model predict task
+    *
+    * @param conf : configuration for resource
+    */
   override def predict(conf: Configuration): Unit = {
     val client = AngelClientFactory.get(conf)
-    if (conf.get(AngelConf.ANGEL_ML_CONF) != null) {
-      SharedConf.get(conf)
-      JsonUtils.init()
-    } else {
-      SharedConf.get(conf)
-    }
+    val envCtx = AngelMasterContext(client)
+    val sharedConf = initConf(conf)
 
-    val modelClassName: String = SharedConf.modelClassName
-    val model: GraphModel = GraphModel(modelClassName, conf)
-    model.buildNetwork()
-    val loadModelPath = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
+    val loadModelPath = sharedConf.getString(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
+    assert(!loadModelPath.isEmpty)
 
     try {
       client.startPSServer()
-      model.createMatrices(client)
-      if (!loadModelPath.isEmpty)
-        model.loadModel(client, loadModelPath)
+
+      val modelClassName: String = sharedConf.modelClassName
+      val model: AngelModel = AngelModel(modelClassName, sharedConf)
+      model.buildNetwork()
+
+      model.createMatrices(envCtx)
+      model.loadModel(envCtx, loadModelPath, conf)
       client.runTask(classOf[GraphPredictTask])
       client.waitForCompletion()
     } catch {
-      case x:Exception => LOG.error("predict failed ", x)
+      case x: Exception => LOG.error("predict failed ", x)
     } finally {
       client.stop(0)
     }

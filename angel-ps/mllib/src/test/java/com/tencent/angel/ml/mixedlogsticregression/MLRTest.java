@@ -19,9 +19,11 @@
 package com.tencent.angel.ml.mixedlogsticregression;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.PSOptimizerProvider;
+import com.tencent.angel.ml.core.conf.AngelMLConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.mlcore.conf.MLCoreConf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -82,10 +84,10 @@ public class MLRTest {
       conf.setInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS, 10);
       conf.setInt(AngelConf.ANGEL_WORKER_HEARTBEAT_INTERVAL_MS, 1000);
       conf.setInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS, 1000);
-      conf.setInt(MLConf.ML_MLR_RANK(), 3);
+      conf.setInt(AngelMLConf.ML_MLR_RANK(), 3);
 
       // Set data format
-      conf.set(MLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
+      conf.set(AngelMLConf.ML_DATA_INPUT_FORMAT(), dataFmt);
 
       //set angel resource parameters #worker, #task, #PS
       conf.setInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 1);
@@ -93,16 +95,16 @@ public class MLRTest {
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
       //set sgd LR algorithm parameters #feature #epoch
-      conf.set(MLConf.ML_MODEL_TYPE(), modelType);
-      conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
-      conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
-      conf.set(MLConf.ML_BATCH_SAMPLE_RATIO(), String.valueOf(spRatio));
-      conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
-      conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
-      conf.set(MLConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
-      conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
-      conf.setLong(MLConf.ML_MODEL_SIZE(), featureNum);
-      conf.set(MLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "MixedLogisticRegression");
+      conf.set(AngelMLConf.ML_MODEL_TYPE(), modelType);
+      conf.set(AngelMLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
+      conf.set(AngelMLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
+      conf.set(AngelMLConf.ML_BATCH_SAMPLE_RATIO(), String.valueOf(spRatio));
+      conf.set(AngelMLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
+      conf.set(AngelMLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
+      conf.set(AngelMLConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
+      conf.set(AngelMLConf.ML_REG_L2(), String.valueOf(reg));
+      conf.setLong(AngelMLConf.ML_MODEL_SIZE(), featureNum);
+      conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "MixedLogisticRegression");
     } catch (Exception x) {
       LOG.error("setup failed ", x);
       throw x;
@@ -128,7 +130,8 @@ public class MLRTest {
       // Set log path
       conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
       // Set actionType train
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, AngelMLConf.ANGEL_ML_TRAIN());
+      conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
 
       GraphRunner runner = new GraphRunner();
       runner.train(conf);
@@ -144,7 +147,7 @@ public class MLRTest {
       String loadPath = LOCAL_FS + TMP_PATH + "/MLR";
       String predictPath = LOCAL_FS + TMP_PATH + "/predict";
 
-      conf.set(MLConf.ML_DATA_INPUT_FORMAT(), "dummy");
+      conf.set(AngelMLConf.ML_DATA_INPUT_FORMAT(), "dummy");
 
       // Set trainning data path
       conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, inputPath);
@@ -153,7 +156,7 @@ public class MLRTest {
       // Set predict result path
       conf.set(AngelConf.ANGEL_PREDICT_PATH, predictPath);
       // Set actionType prediction
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, AngelMLConf.ANGEL_ML_PREDICT());
 
       GraphRunner runner = new GraphRunner();
 

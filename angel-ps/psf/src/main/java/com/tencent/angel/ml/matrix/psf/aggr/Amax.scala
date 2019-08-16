@@ -21,7 +21,7 @@ package com.tencent.angel.ml.matrix.psf.aggr
 
 import com.tencent.angel.ml.math2.storage.{DoubleVectorStorage, FloatVectorStorage, IntVectorStorage, LongVectorStorage}
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.UnaryAggrFunc
-import com.tencent.angel.ps.storage.vector.ServerRow
+import com.tencent.angel.ps.storage.vector.{ServerRow, ServerRowUtils}
 
 /**
   * `Amax` will aggregate the maximum absolute value of the `rowId` row in `matrixId` matrix.
@@ -32,7 +32,7 @@ class Amax(matrixId: Int, rowId: Int) extends UnaryAggrFunc(matrixId, rowId) {
   def this() = this(-1, -1)
 
   override protected def processRow(row: ServerRow): Double = {
-    row.getSplit.getStorage match {
+    ServerRowUtils.getVector(row).getStorage match {
       case s: DoubleVectorStorage => s.getValues.map(math.abs).max
       case s: FloatVectorStorage => s.getValues.map(math.abs).max
       case s: LongVectorStorage => s.getValues.map(math.abs).max

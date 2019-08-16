@@ -23,7 +23,7 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.WaitLockTimeOutException;
 import com.tencent.angel.ml.matrix.PartitionLocation;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
@@ -31,7 +31,8 @@ import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.server.data.request.*;
 import com.tencent.angel.ps.server.data.response.*;
 import com.tencent.angel.ps.storage.matrix.PartitionState;
-import com.tencent.angel.ps.storage.matrix.ServerPartition;
+import com.tencent.angel.ps.storage.partition.ServerPartition;
+import com.tencent.angel.ps.storage.vector.ServerBasicTypeRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.utils.ByteBufUtils;
 import com.tencent.angel.utils.StringUtils;
@@ -42,6 +43,7 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -240,6 +242,7 @@ public class WorkerPool {
       case INDEX_GET_ROW:
       case INDEX_GET_ROWS:
       case UPDATE_PSF:
+      case CHECKPOINT:
         return true;
 
       default:
@@ -499,7 +502,7 @@ public class WorkerPool {
       request.deserialize(in);
       PartitionKey partKey = request.getPartKey();
 
-      ServerRow row = context.getMatrixStorageManager()
+      ServerBasicTypeRow row = (ServerBasicTypeRow)context.getMatrixStorageManager()
               .getRow(request.getMatrixId(), request.getRowId(), partKey.getPartitionId());
       IndexType indexType = IndexType.valueOf(in.readInt());
       ValueType valueType = getValueType(row.getRowType());
@@ -623,7 +626,7 @@ public class WorkerPool {
         int markPos = in.readerIndex();
         for (int i = 0; i < rowNum; i++) {
           in.readerIndex(markPos);
-          ServerRow row = context.getMatrixStorageManager()
+          ServerBasicTypeRow row = (ServerBasicTypeRow)context.getMatrixStorageManager()
             .getRow(request.getMatrixId(), rowIds.get(i), partKey.getPartitionId());
           resultBuf.writeInt(rowIds.get(i));
           if(request.getFunc() == null) {
@@ -713,8 +716,7 @@ public class WorkerPool {
     }
   }
 
-  private Response handleRPC(int clientId, int seqId, ByteBuf in, TransportMethod method)
-    throws Throwable {
+  private Response handleRPC(int clientId, int seqId, ByteBuf in, TransportMethod method) {
     Response result;
     ServerState state = runningContext.getState();
     String log = "server is busy now, retry later";
@@ -771,6 +773,13 @@ public class WorkerPool {
         break;
       }
 
+      case GET_STATE: {
+        GetStateRequest request = new GetStateRequest();
+        request.deserialize(in);
+        result = new GetStateResponse(ResponseType.SUCCESS);
+        break;
+      }
+
       case UPDATE_PSF: {
         if (state == ServerState.BUSY) {
           result = new UpdaterResponse(ResponseType.SERVER_IS_BUSY, log);
@@ -815,17 +824,39 @@ public class WorkerPool {
         break;
       }
 
+      case CHECKPOINT: {
+        CheckpointPSRequest request = new CheckpointPSRequest();
+        request.deserialize(in);
+        result = checkpoint(request);
+        break;
+      }
+
       default:
         throw new UnsupportedOperationException("Unknown RPC type " + method);
     }
 
     if (state == ServerState.BUSY) {
       LOG.info("Hanle request " + requestToString(clientId, seqId) + " Server is BUSY now ");
-      runningContext.printToken();
+      //runningContext.printToken();
     }
     result.setState(state);
     LOG.debug("handle request " + seqId + " use time=" + (System.currentTimeMillis() - startTs));
     return result;
+  }
+
+  private Response checkpoint(CheckpointPSRequest request) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("checkpoint request=" + request);
+    }
+
+    try {
+      context.getSnapshotDumper().checkpoint(request.getMatrixId(), request.getCheckPointId());
+      return new CheckpointPSResponse(ResponseType.SUCCESS, "");
+    } catch (Throwable e) {
+      String detail = StringUtils.stringifyException(e);
+      LOG.error("checkpoint failed", e);
+      return new CheckpointPSResponse(ResponseType.SERVER_HANDLE_FAILED, detail);
+    }
   }
 
   private ByteBuf serializeResponse(int seqId, Response response) {
@@ -1265,7 +1296,7 @@ public class WorkerPool {
    * @return response
    */
   private Response recoverPart(RecoverPartRequest request) {
-    if (LOG.isDebugEnabled()) {
+    /*if (LOG.isDebugEnabled()) {
       LOG.debug("recover part request=" + request);
     }
 
@@ -1287,7 +1318,7 @@ public class WorkerPool {
     if (LOG.isDebugEnabled()) {
       LOG.debug("recover partition  request " + request + " use time=" + (System.currentTimeMillis()
         - startTs));
-    }
+    }*/
 
     return new Response(ResponseType.SUCCESS);
   }

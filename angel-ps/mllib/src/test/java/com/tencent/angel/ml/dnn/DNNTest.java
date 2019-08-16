@@ -19,8 +19,10 @@
 package com.tencent.angel.ml.dnn;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.PSOptimizerProvider;
+import com.tencent.angel.ml.core.conf.AngelMLConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
+import com.tencent.angel.mlcore.conf.MLCoreConf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -67,10 +69,10 @@ public class DNNTest {
       conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, savePath);
       // Set log path
       conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
-
+      conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
       String angelConfFile = "./src/test/jsons/dnn.json";
       conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
-      conf.set(MLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "GraphModel");
+      conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "AngelModel");
 
     } catch (Exception x) {
       LOG.error("setup failed ", x);
@@ -91,7 +93,7 @@ public class DNNTest {
       conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
 
       // Set actionType train
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_TRAIN());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, AngelMLConf.ANGEL_ML_TRAIN());
 
       GraphRunner runner = new GraphRunner();
       runner.train(conf);
@@ -116,7 +118,7 @@ public class DNNTest {
       conf.set(AngelConf.ANGEL_PREDICT_PATH, predictPath);
 
       // Set actionType prediction
-      conf.set(AngelConf.ANGEL_ACTION_TYPE, MLConf.ANGEL_ML_PREDICT());
+      conf.set(AngelConf.ANGEL_ACTION_TYPE, AngelMLConf.ANGEL_ML_PREDICT());
 
       GraphRunner runner = new GraphRunner();
       runner.predict(conf);

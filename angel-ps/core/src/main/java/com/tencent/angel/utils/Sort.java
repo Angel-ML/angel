@@ -271,6 +271,62 @@ public class Sort {
     }
   }
 
+  public static <T> void quickSort(int [] ids, T[] values, int low, int high) {
+    if (low < high) {
+      int tmp = ids[low];
+      T tmpValue = values[low];
+      int ii = low, jj = high;
+      while (ii < jj) {
+        while (ii < jj && ids[jj] >= tmp) {
+          jj--;
+        }
+
+        ids[ii] = ids[jj];
+        values[ii] = values[jj];
+
+        while (ii < jj && ids[ii] <= tmp) {
+          ii++;
+        }
+
+        ids[jj] = ids[ii];
+        values[jj] = values[ii];
+      }
+      ids[ii] = tmp;
+      values[ii] = tmpValue;
+
+      quickSort(ids, values, low, ii - 1);
+      quickSort(ids, values, ii + 1, high);
+    }
+  }
+
+  public static <T> void quickSort(long [] ids, T[] values, int low, int high) {
+    if (low < high) {
+      long tmp = ids[low];
+      T tmpValue = values[low];
+      int ii = low, jj = high;
+      while (ii < jj) {
+        while (ii < jj && ids[jj] >= tmp) {
+          jj--;
+        }
+
+        ids[ii] = ids[jj];
+        values[ii] = values[jj];
+
+        while (ii < jj && ids[ii] <= tmp) {
+          ii++;
+        }
+
+        ids[jj] = ids[ii];
+        values[jj] = values[ii];
+      }
+      ids[ii] = tmp;
+      values[ii] = tmpValue;
+
+      quickSort(ids, values, low, ii - 1);
+      quickSort(ids, values, ii + 1, high);
+    }
+  }
+
   public static void quickSort(double[] x, double[] y, int from, int to, DoubleComparator comp) {
     int len = to - from;
     if (len < 7) {

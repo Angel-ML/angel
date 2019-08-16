@@ -20,6 +20,8 @@ package com.tencent.angel.utils;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.InvalidParameterException;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -237,6 +239,17 @@ public class ConfUtils {
       conf.set(AngelConf.ANGEL_JOB_LIBJARS, sb.toString());
     } else {
       conf.set(AngelConf.ANGEL_JOB_LIBJARS, sb.toString() + "," + addJars);
+    }
+  }
+
+  public static void addResourceProperties(Configuration conf, String fileName) throws IOException {
+    Properties properties = new Properties();
+    InputStream inStream = new FileInputStream(fileName);
+    properties.load(inStream);
+    for (Map.Entry<Object, Object> confTuple : properties.entrySet()) {
+      String key = confTuple.getKey().toString();
+      String value = confTuple.getValue().toString();
+      conf.set(key, value);
     }
   }
 

@@ -22,7 +22,7 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.GBDT.algo.GBDTController;
 import com.tencent.angel.ml.GBDT.algo.tree.SplitEntry;
 import com.tencent.angel.ml.GBDT.param.GBDTParam;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.conf.AngelMLConf;
 import com.tencent.angel.ml.math2.storage.IntDoubleDenseVectorStorage;
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.math2.vector.IntFloatVector;
@@ -410,9 +410,9 @@ public class GradHistHelper {
             splitEntry.fvalue));
 
     int featureNum = WorkerContext.get().getConf()
-        .getInt(MLConf.ML_FEATURE_INDEX_RANGE(), MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE());
+        .getInt(AngelMLConf.ML_FEATURE_INDEX_RANGE(), AngelMLConf.DEFAULT_ML_FEATURE_INDEX_RANGE());
     int splitNum = WorkerContext.get().getConf()
-        .getInt(MLConf.ML_GBDT_SPLIT_NUM(), MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
+        .getInt(AngelMLConf.ML_GBDT_SPLIT_NUM(), AngelMLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
 
     if (histogram.getDim() != featureNum * 2 * splitNum) {
       LOG.debug("The size of histogram is not equal to 2 * featureNum*splitNum.");
@@ -442,7 +442,7 @@ public class GradHistHelper {
         histogram.getDim(), startIdx));
 
     int splitNum = WorkerContext.get().getConf()
-        .getInt(MLConf.ML_GBDT_SPLIT_NUM(), MLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
+        .getInt(AngelMLConf.ML_GBDT_SPLIT_NUM(), AngelMLConf.DEFAULT_ML_GBDT_SPLIT_NUM());
 
     SplitEntry splitEntry = new SplitEntry();
     // 1. set the feature id

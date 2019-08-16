@@ -30,7 +30,7 @@ model parameters:
 
 ```scala
 
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.spark.ml.online_learning.FtrlFM
 
 // allocate a ftrl optimizer with (lambda1, lambda2, alpha, beta)

@@ -19,7 +19,7 @@
 package com.tencent.angel.worker.task;
 
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.feature.LabeledData;
+import com.tencent.angel.ml.math2.utils.LabeledData;
 import com.tencent.angel.ml.math2.storage.IntKeyVectorStorage;
 import com.tencent.angel.ml.math2.vector.IntDummyVector;
 import com.tencent.angel.ml.math2.vector.Vector;

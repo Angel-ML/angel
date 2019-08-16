@@ -20,7 +20,7 @@ package com.tencent.angel.ps.server.data.request;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ps.server.data.TransportMethod;
 import com.tencent.angel.psagent.PSAgentContext;
 

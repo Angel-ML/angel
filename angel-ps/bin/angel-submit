@@ -13,12 +13,14 @@
 # or implied. See the License for the specific language governing permissions and limitations under
 # the License.
 
-export ANGEL_VERSION=2.2.0
+export ANGEL_VERSION=3.0.0-SNAPSHOT
 export PATH=${JAVA_HOME}/bin:$PATH
 
-if [ "${HADOOP_HOME}" = "" ]; then
-    echo "HADOOP_HOME is not set"
-    exit 1
+if [ "${HADOOP_HOME}" != "" ]; then
+    echo "HADOOP_HOME is set"
+    DEFAULT_LIBEXEC_DIR="${HADOOP_HOME}"/libexec
+    HADOOP_LIBEXEC_DIR=${HADOOP_LIBEXEC_DIR:-$DEFAULT_LIBEXEC_DIR}
+    . ${HADOOP_LIBEXEC_DIR}/hadoop-config.sh
 fi
 
 bin=`which $0`
@@ -29,10 +31,6 @@ conf="$bin"/../conf
 lib="$bin"/../lib
 
 export ANGEL_HOME="$bin/../"
-
-DEFAULT_LIBEXEC_DIR="${HADOOP_HOME}"/libexec
-HADOOP_LIBEXEC_DIR=${HADOOP_LIBEXEC_DIR:-$DEFAULT_LIBEXEC_DIR}
-. ${HADOOP_LIBEXEC_DIR}/hadoop-config.sh
 
 for f in "$lib"/*.jar; do
     if [ "${CLASSPATH}" ]; then
@@ -46,5 +44,6 @@ export CLASS="com.tencent.angel.utils.AngelRunJar"
 
 export CLASSPATH=${CLASSPATH}
 export PYTHONHASHSEED=0
+export JAVA=$JAVA_HOME/bin/java
 exec "${JAVA}" ${JAVA_HEAP_MAX} ${HADOOP_OPTS} ${CLASS} "$@"
 

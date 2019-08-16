@@ -22,6 +22,7 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.psagent.matrix.oplog.cache.splitter.ISplitter;
 import com.tencent.angel.utils.Sort;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -253,6 +254,62 @@ public class RowUpdateSplitUtils {
       RowUpdateSplit split = new SparseIntRowUpdateSplit(rowId, featureIndex - length, featureIndex,
           indices, values);
       ret.put(parts.get(partIndex), split);
+
+      partIndex++;
+    }
+
+    return ret;
+  }
+
+  public static class IntIndicesView {
+    private final int [] indices;
+    private final int start;
+    private final int end;
+
+    public IntIndicesView(int [] indices, int start, int end) {
+      this.indices = indices;
+      this.start = start;
+      this.end = end;
+    }
+
+    public int[] getIndices() {
+      return indices;
+    }
+
+    public int getStart() {
+      return start;
+    }
+
+    public int getEnd() {
+      return end;
+    }
+  }
+
+  public static Map<PartitionKey, IntIndicesView> split(int[] indices, List<PartitionKey> parts, boolean sorted) {
+    if (!sorted) {
+      Arrays.sort(indices);
+    }
+
+    Map<PartitionKey, IntIndicesView> ret = new HashMap<>();
+
+    int featureIndex = 0;
+    int partIndex = 0;
+
+    // For each partition, we generate a update split.
+    // Although the split is empty for partitions those without any update data,
+    // we still need to generate a update split to update the clock info on ps.
+    while (featureIndex < indices.length || partIndex < parts.size()) {
+      int length = 0;
+      int endOffset = (int) parts.get(partIndex).getEndCol();
+      while (featureIndex < indices.length && indices[featureIndex] < endOffset) {
+        featureIndex++;
+        length++;
+      }
+
+      if(length > 0) {
+        IntIndicesView split = new IntIndicesView(indices, featureIndex - length, featureIndex);
+        ret.put(parts.get(partIndex), split);
+      }
 
       partIndex++;
     }
@@ -557,4 +614,34 @@ public class RowUpdateSplitUtils {
     return ret;
   }
 
+
+  public static boolean isInRange(int[] sortedIndices, List<PartitionKey> sortedParts) {
+    if (sortedIndices == null || sortedIndices.length == 0) {
+      return true;
+    }
+
+    return sortedIndices[0] >= sortedParts.get(0).getStartCol()
+        && sortedIndices[sortedIndices.length - 1] < sortedParts.get(sortedParts.size() - 1)
+        .getEndCol();
+  }
+
+  public static boolean isInRange(long[] sortedIndices, List<PartitionKey> sortedParts) {
+    if (sortedIndices == null || sortedIndices.length == 0) {
+      return true;
+    }
+
+    return sortedIndices[0] >= sortedParts.get(0).getStartCol()
+        && sortedIndices[sortedIndices.length - 1] < sortedParts.get(sortedParts.size() - 1)
+        .getEndCol();
+  }
+
+  public static boolean isInRange(long[] indices, int[] sortedIndex,
+                                  List<PartitionKey> sortedParts) {
+    if (indices == null || indices.length == 0)
+      return true;
+
+    return indices[sortedIndex[0]] >= sortedParts.get(0).getStartCol()
+      && indices[sortedIndex[sortedIndex.length - 1]] < sortedParts.get(sortedParts.size() - 1)
+      .getEndCol();
+  }
 }

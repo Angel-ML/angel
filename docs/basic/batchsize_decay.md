@@ -12,7 +12,7 @@ val ssScheduler: StepSizeScheduler = StepSizeScheduler(SharedConf.getStepSizeSch
 - 一个mini-batch一次Decay
 - 一个epoch一次Decay
 
-通过"ml.opt.decay.on.batch"参数进行控制, 当其为true时, 一个mini-batch一次Decay, 当其为false(默认的方式)一个epoch一次Decay. 具体代码在`GraphLearner`类中的train方法与trainOneEpoch方法中.
+通过"ml.opt.decay.on.batch"参数进行控制, 当其为true时, 一个mini-batch一次Decay, 当其为flase(默认的方式)一个epoch一次Decay. 具体代码在`GraphLearner`类中的train方法与trainOneEpoch方法中.
 
 
 ## 1. ConstantLearningRate
@@ -41,7 +41,7 @@ ml.opt.decay.alpha=0.001
 第一部分就是StandardDecay, 它是正常的Decay, 延续二部分是修正项, 为Momentum设计, 它是运动量系数之和的倒数. 其中$\beta$必须与优化器中的momentum相等. 一般可设为0.9. 
 
 这种Decay的使用有两个注意点:
-- 动量计算公式应为: velocity = momentum * velocity + gradient, Angel中Momentum的实现已是这种方式
+- 动量计算公式应为: velocity = momentum * velocity + gradient, Angel中Momentum的实南已是这种方式
 - 要求一个mini-batch一次Decay, 因为要与参数的update同步
 
 配置样例:

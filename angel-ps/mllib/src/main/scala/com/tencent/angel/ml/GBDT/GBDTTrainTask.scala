@@ -19,9 +19,8 @@
 package com.tencent.angel.ml.GBDT
 
 import com.tencent.angel.ml.core.TrainTask
-import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
-import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.core.utils.DataParser
+import com.tencent.angel.ml.core.conf.AngelMLConf
+import com.tencent.angel.ml.math2.utils.LabeledData
 import com.tencent.angel.worker.storage.MemoryDataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.LogFactory
@@ -30,13 +29,11 @@ import org.apache.hadoop.io.{LongWritable, Text}
 class GBDTTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](ctx) {
   private val LOG = LogFactory.getLog(classOf[GBDTTrainTask])
 
-  private val indexRange: Long = conf.getLong(MLConf.ML_FEATURE_INDEX_RANGE, MLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
-  private val validRatio = conf.getDouble(MLConf.ML_VALIDATE_RATIO, MLConf.DEFAULT_ML_VALIDATE_RATIO)
+  private val indexRange: Long = conf.getLong(AngelMLConf.ML_FEATURE_INDEX_RANGE, AngelMLConf.DEFAULT_ML_FEATURE_INDEX_RANGE)
+  private val validRatio = conf.getDouble(AngelMLConf.ML_VALIDATE_RATIO, AngelMLConf.DEFAULT_ML_VALIDATE_RATIO)
 
   // validation data storage
   var validDataStorage = new MemoryDataBlock[LabeledData](-1)
-  val sharedConf = SharedConf.get(conf)
-  override val dataParser = DataParser(sharedConf)
 
   /**
     * @param ctx : task context
@@ -44,7 +41,7 @@ class GBDTTrainTask(val ctx: TaskContext) extends TrainTask[LongWritable, Text](
   @throws[Exception]
   def train(ctx: TaskContext) {
     val trainer = new GBDTLearner(ctx)
-    trainer.train(taskDataBlock, validDataStorage)
+    trainer.trainOld(taskDataBlock, validDataStorage)
   }
 
   /**

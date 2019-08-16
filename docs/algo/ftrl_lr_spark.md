@@ -30,7 +30,7 @@ where the ![](http://latex.codecogs.com/png.latex?\dpi{100}\inline%20{z_i}) and 
 ## Using the FTRL Optimizer
 ```scala
 
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.spark.ml.online_learning.FTRL
 
 // allocate a ftrl optimizer with (lambda1, lambda2, alpha, beta)

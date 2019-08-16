@@ -21,7 +21,7 @@ package com.tencent.angel.ml.matrix.psf.aggr
 
 import com.tencent.angel.ml.math2.vector.{DoubleVector, FloatVector, IntVector, LongVector}
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.UnaryAggrFunc
-import com.tencent.angel.ps.storage.vector.ServerRow
+import com.tencent.angel.ps.storage.vector.{ServerRow, ServerRowUtils}
 
 /**
   * `Max` will aggregate the maximum value of the `rowId` row in `matrixId` matrix.
@@ -32,7 +32,7 @@ class Max(matrixId: Int, rowId: Int) extends UnaryAggrFunc(matrixId, rowId) {
   def this() = this(-1, -1)
 
   override protected def processRow(row: ServerRow): Double = {
-    row.getSplit match {
+    ServerRowUtils.getVector(row) match {
       case s: DoubleVector => s.max()
       case s: FloatVector => s.max()
       case s: LongVector => s.max()

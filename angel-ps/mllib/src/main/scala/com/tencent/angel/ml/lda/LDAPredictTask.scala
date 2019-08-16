@@ -87,12 +87,12 @@ class LDAPredictTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, 
   }
 
   def loadModel(model: LDAModel): Unit = {
-    val paths = getPaths()
+    val paths = getPaths
     val update = VFactory.denseIntVector(model.K)
 
-    for (i <- 0 until paths.length) {
+    paths.indices.foreach { i =>
       val path = paths(i)
-      LOG.info(s"Load model from path ${path}")
+      LOG.info(s"Load model from path $path")
       val fs = path.getFileSystem(conf)
 
       val in = new BufferedReader(new InputStreamReader(fs.open(path)))
@@ -121,7 +121,7 @@ class LDAPredictTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, 
     model.tMat.syncClock()
   }
 
-  def getPaths(): Array[Path] = {
+  def getPaths: Array[Path] = {
     val taskId = ctx.getTaskIndex
     val total = ctx.getTotalTaskNum
     val dir = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH)
@@ -130,10 +130,10 @@ class LDAPredictTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, 
     val basePath = new Path(base)
     val fs = basePath.getFileSystem(conf)
     if (!fs.exists(basePath))
-      throw new AngelException(s"Model load path does not exist ${base}")
+      throw new AngelException(s"Model load path does not exist $base")
 
     if (!fs.isDirectory(basePath))
-      throw new AngelException(s"Model load path ${base} is not a directory")
+      throw new AngelException(s"Model load path $base is not a directory")
 
     val statuses = fs.listStatus(basePath)
     val ret = new ArrayBuffer[Path]()

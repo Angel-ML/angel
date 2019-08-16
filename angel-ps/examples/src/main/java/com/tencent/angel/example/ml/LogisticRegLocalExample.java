@@ -19,9 +19,11 @@
 package com.tencent.angel.example.ml;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.PSOptimizerProvider;
+import com.tencent.angel.ml.core.conf.AngelMLConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.mlcore.conf.MLCoreConf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -84,6 +86,13 @@ public class LogisticRegLocalExample {
     // Regularization coefficient
     double reg = 0.001;
 
+    String angelConfFile = null;
+    if (inPackage) {
+      angelConfFile = "../examples/src/jsons/logreg.json";
+    } else {
+      angelConfFile = "angel-ps/examples/src/jsons/logreg.json";
+    }
+
     // Set file system
     String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
     String TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp");
@@ -95,7 +104,9 @@ public class LogisticRegLocalExample {
 
     // Use local deploy mode and data format
     conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
-    conf.set(MLConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
+    conf.set(AngelMLConf.ML_DATA_INPUT_FORMAT(), String.valueOf(dataType));
+    conf.setStrings(AngelConf.ANGEL_ML_CONF, angelConfFile);
+    conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
 
     // Set data path
     conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
@@ -122,17 +133,17 @@ public class LogisticRegLocalExample {
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
     // Set LR algorithm parameters
-    conf.set(MLConf.ML_MODEL_TYPE(), modelType);
-    conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
-    conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
-    conf.set(MLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
-    conf.set(MLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
-    conf.set(MLConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
-    conf.set(MLConf.ML_REG_L2(), String.valueOf(reg));
-    conf.setLong(MLConf.ML_MODEL_SIZE(), featureNum);
+    conf.set(AngelMLConf.ML_MODEL_TYPE(), modelType);
+    conf.set(AngelMLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
+    conf.set(AngelMLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
+    conf.set(AngelMLConf.ML_VALIDATE_RATIO(), String.valueOf(vRatio));
+    conf.set(AngelMLConf.ML_LEARN_RATE(), String.valueOf(learnRate));
+    conf.set(AngelMLConf.ML_OPT_DECAY_ALPHA(), String.valueOf(decay));
+    conf.set(AngelMLConf.ML_REG_L2(), String.valueOf(reg));
+    conf.setLong(AngelMLConf.ML_MODEL_SIZE(), featureNum);
 
     // Set model class
-    conf.set(MLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "LogisticRegression");
+    conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "LogisticRegression");
 
   }
 

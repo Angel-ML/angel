@@ -40,7 +40,7 @@ public class ByteBufUtils {
   }
 
   public static ByteBuf newHeapByteBuf(int estimizeSerilizeSize) {
-    return getBufferAllocator().buffer(estimizeSerilizeSize);
+    return getBufferAllocator().heapBuffer(estimizeSerilizeSize);
   }
 
   public static ByteBuf newDirectByteBuf(int estimizeSerilizeSize) {

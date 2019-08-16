@@ -2,19 +2,19 @@
 Welcome to [report Issues](https://github.com/Tencent/angel/issues) or [pull requests](https://github.com/Tencent/angel/pulls). It's recommended to read the following Contributing Guide first before contributing. 
 
 
-## Issues
-We use Github Issues to track public bugs and feature requests.
+## Reporting Bugs and Feature Requests
+We use Github Issues to track bug reports and feature requests.
 
 ### Search Known Issues First
-Please search the existing issues to see if any similar issue or feature request has already been filed. You should make sure your issue isn't redundant.
+If you have a bug to report or intend to add a new feature to Angel, please search the existing issues to see if any similar issue or feature request has already been filed. You should make sure your issue isn't redundant prior to opening it.
 
 ### Reporting New Issues
-If you open an issue, the more information the better. Such as detailed description, screenshot or video of your problem, logcat or code blocks for your crash.
+After ensuring the bug or feature was not already reported, you can [open a new one](<https://github.com/Angel-ML/angel/issues/new>). The more information the better. Please be sure to provide as much information as possible, such as detailed description, screenshot or video of your problem, logcat or code blocks for your crash.
 
 ## Pull Requests
 We strongly welcome your pull request to make Angel better. 
 
-Ensure you have signed the [Contributor License Agreement (CLA).](master/CLA.md)
+Before opening a Pull Request, please make sure you have signed the [Contributor License Agreement (CLA).](master/CLA.md)
 
 
 ### Branch Management
@@ -36,7 +36,7 @@ There are three main branches here:
 Normal bugfix or feature request should be submitted to `specific version` branch. After full testing, we will merge them to `master` branch for the next release. 
 
 
-### Make Pull Requests
+### Open a Pull Request
 The code team will monitor all pull request, we run some code check and test on it. After all tests passed, we will accecpt this PR. But it won't merge to `master` branch at once, which have some delay.
 
 Before submitting a pull request, please make sure the followings are done:
@@ -49,8 +49,9 @@ Before submitting a pull request, please make sure the followings are done:
 6. Now, you can submit your pull request on  `specific version` branch.
 
 ## Code Style Guide
-Use [Code Style](https://github.com/Tencent/angel/blob/master/dev/checkstyle.xml) for Java and Scala .
+A [Checkstyle configuration](https://github.com/Tencent/angel/blob/master/dev/checkstyle.xml) is provided along with Angel. We STRONGLY suggest that all code contributions follow the Google Code Style for Java and Scala. 
 
 ## License
-By contributing to Angel, you agree that your contributions will be licensed
+By contributing to Angel, you accept and agree that your contributions will be licensed
 under its [ Apache License, Version 2.0](https://github.com/Tencent/angel/blob/master/LICENSE)
+

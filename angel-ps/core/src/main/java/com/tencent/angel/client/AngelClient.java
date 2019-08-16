@@ -28,14 +28,10 @@ import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.master.MasterProtocol;
 import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.model.MLModel;
+import com.tencent.angel.ml.model.OldMLModel;
 import com.tencent.angel.ml.model.PSModel;
-import com.tencent.angel.model.LoadState;
-import com.tencent.angel.model.MatrixLoadContext;
-import com.tencent.angel.model.MatrixSaveContext;
-import com.tencent.angel.model.ModelLoadContext;
-import com.tencent.angel.model.ModelSaveContext;
-import com.tencent.angel.model.SaveState;
+import com.tencent.angel.model.*;
+import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.CheckModelLoadedRequest;
@@ -134,6 +130,8 @@ public abstract class AngelClient implements AngelClientInterface {
 
   private final int hbIntervalMS;
 
+  private final int hbTimeoutMS;
+
   private final AtomicBoolean stopped = new AtomicBoolean(false);
 
   /**
@@ -148,6 +146,8 @@ public abstract class AngelClient implements AngelClientInterface {
     isFinished = false;
     hbIntervalMS = conf.getInt(AngelConf.ANGEL_CLIENT_HEARTBEAT_INTERVAL_MS,
         AngelConf.DEFAULT_ANGEL_CLIENT_HEARTBEAT_INTERVAL_MS);
+    hbTimeoutMS = conf.getInt(AngelConf.ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS,
+        AngelConf.DEFAULT_ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS);
   }
 
   @SuppressWarnings("rawtypes")
@@ -198,10 +198,18 @@ public abstract class AngelClient implements AngelClientInterface {
 
     LOG.info("clientId=" + clientId);
     hbThread = new Thread(() -> {
+      long lastHbTs = System.currentTimeMillis();
       while (!stopped.get() && !Thread.interrupted()) {
         try {
+          if (System.currentTimeMillis() - lastHbTs > hbTimeoutMS) {
+            LOG.fatal("can not connect to master in " + hbTimeoutMS
+                + " ms. the client will be killed by itself");
+            System.exit(-1);
+          }
+
           Thread.sleep(hbIntervalMS);
           master.keepAlive(null, KeepAliveRequest.newBuilder().setClientId(clientId).build());
+          lastHbTs = System.currentTimeMillis();
         } catch (Throwable e) {
           if (!stopped.get()) {
             LOG.error("AngelClient " + clientId + " send heartbeat to Master failed ", e);
@@ -212,6 +220,10 @@ public abstract class AngelClient implements AngelClientInterface {
 
     hbThread.setName("client-heartbeat");
     hbThread.start();
+  }
+
+  public void keepAlive() throws ServiceException {
+    master.keepAlive(null, KeepAliveRequest.newBuilder().setClientId(clientId).build());
   }
 
   @Override
@@ -247,7 +259,7 @@ public abstract class AngelClient implements AngelClientInterface {
 
   @SuppressWarnings("rawtypes")
   @Override
-  public void loadModel(MLModel model)
+  public void loadModel(OldMLModel model)
       throws AngelException {
     if (master == null) {
       throw new AngelException(
@@ -265,7 +277,7 @@ public abstract class AngelClient implements AngelClientInterface {
 
   @SuppressWarnings("rawtypes")
   @Override
-  public void saveModel(MLModel model)
+  public void saveModel(OldMLModel model)
       throws AngelException {
     if (master == null) {
       throw new AngelException(
@@ -301,40 +313,21 @@ public abstract class AngelClient implements AngelClientInterface {
     save(saveContext);
   }
 
-  @Override
-  public void save(ModelSaveContext saveContext) throws AngelException {
-    if(saveContext.getMatricesContext().size() == 0) {
+  public void save(ModelSaveContext saveContext, Boolean deleteExistsFile) throws AngelException {
+    if (saveContext.getMatricesContext().size() == 0) {
       throw new AngelException("Need save matrix name is empty, you should check it");
     }
 
-    if(saveContext.getSavePath() == null
+    if (saveContext.getSavePath() == null
         || saveContext.getSavePath().isEmpty()) {
       throw new AngelException("Save path is null, you should check it");
     }
 
     try {
-      /*UserGroupInformation ugi = UGITools.getCurrentUser(conf);
-      ugi.doAs(new PrivilegedExceptionAction<String>() {
-        @Override public String run() throws Exception {
-          Path savePath = new Path(saveContext.getSavePath());
-          FileSystem fs = savePath.getFileSystem(conf);
-          if(fs.exists(savePath)) {
-            if(conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
-                    AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST)) {
-              fs.delete(savePath, true);
-            } else {
-              throw new AngelException("Save path " + savePath + " already exist, you can set another save path or set angel.job.output.path.deleteonexist be true");
-            }
-          }
-          return "OK";
-        }
-      });
-      */
       Path savePath = new Path(saveContext.getSavePath());
       FileSystem fs = savePath.getFileSystem(conf);
       if (fs.exists(savePath)) {
-        if (conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
-            AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST)) {
+        if (deleteExistsFile) {
           fs.delete(savePath, true);
           if (fs.exists(savePath)) {
             throw new AngelException(
@@ -371,6 +364,23 @@ public abstract class AngelClient implements AngelClientInterface {
     if (appFailedMessage != null) {
       throw new AngelException("app run failed, " + appFailedMessage);
     }
+  }
+
+  @Override
+  public void save(ModelSaveContext saveContext) throws AngelException {
+    Boolean deleteExistsFile = conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
+        AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST);
+    save(saveContext, deleteExistsFile);
+  }
+
+  @Override
+  public void checkpoint(int checkpointId, ModelSaveContext saveContext) throws AngelException {
+    String tmpPath = conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
+    String snapshotDir = new Path(tmpPath, ModelFilesConstent.snapshotDirName).toString();
+    String checkpointItemPath = new Path(snapshotDir, "" + checkpointId).toString();
+    saveContext.setSavePath(checkpointItemPath);
+    saveContext.setCheckpoint(true);
+    save(saveContext);
   }
 
   @Override
@@ -429,6 +439,15 @@ public abstract class AngelClient implements AngelClientInterface {
     if (appFailedMessage != null) {
       throw new AngelException("app run failed, " + appFailedMessage);
     }
+  }
+
+  @Override
+  public void recover(int checkpointId, ModelLoadContext loadContext) throws AngelException {
+    String tmpPath = conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
+    String snapshotDir = new Path(tmpPath, ModelFilesConstent.snapshotDirName).toString();
+    String checkpointItemPath = new Path(snapshotDir, "" + checkpointId).toString();
+    loadContext.setLoadPath(checkpointItemPath);
+    load(loadContext);
   }
 
   @Override

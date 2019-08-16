@@ -22,7 +22,7 @@ import com.tencent.angel.common.Serialize
 import com.tencent.angel.ml.math2.ufuncs.executor.BinaryExecutor
 import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.func.Zip2MapFunc
 import com.tencent.angel.ml.matrix.psf.update.enhance.{MFUpdateFunc, MFUpdateParam}
-import com.tencent.angel.ps.storage.vector.ServerRow
+import com.tencent.angel.ps.storage.vector.{ServerRow, ServerRowUtils}
 
 
 /**
@@ -46,16 +46,16 @@ class Zip2Map(param: MFUpdateParam) extends MFUpdateFunc(param) {
       assert(rows(0) == rows(2), "Zip2Map with inplace op, but toId != fromId1")
       rows(0).startWrite()
       try {
-        BinaryExecutor.apply(rows(0).getSplit, rows(1).getSplit, op)
+        BinaryExecutor.apply(ServerRowUtils.getVector(rows(0)), ServerRowUtils.getVector(rows(1)), op)
       } finally {
         rows(0).endWrite()
       }
     } else {
-      val from1 = rows(0).getSplit
-      val from2 = rows(1).getSplit
+      val from1 = ServerRowUtils.getVector(rows(0))
+      val from2 = ServerRowUtils.getVector(rows(1))
       rows(2).startWrite()
       try {
-        rows(2).setSplit(BinaryExecutor.apply(from1, from2, op))
+        ServerRowUtils.setVector(rows(2), BinaryExecutor.apply(from1, from2, op))
       } finally {
         rows(2).endWrite()
       }

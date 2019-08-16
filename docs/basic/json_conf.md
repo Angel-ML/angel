@@ -96,7 +96,7 @@ batchsize |ml.minibatch.size | 这个参数只对Spark On Angel有用, 指mini-b
 lr |ml.learn.rate | 学习率
 decayclass |ml.opt.decay.class.name| 指定学习率衰减类
 decayalpha |ml.opt.decay.alpha| 指定学习率衰减参数据alpha
-decaybeta |ml.opt.decay.beta| 指定学习率衰减类数据beta
+decayalpha |ml.opt.decay.beta| 指定学习率衰减类数据beta
 其中有:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}lr_{epoch}=\max(\frac{lr}{\sqrt{1.0+decay*epoch}},\frac{lr}{5}))
@@ -147,7 +147,7 @@ Angel中的深度学习算法都表示为一个AngelGraph, 而AngelGraph中的�
 - linear: 有且仅有一个输入与一个输出的层
 - join: 有两个或多个输入, 一个输出的层
 
-注: 虽然Angel的层可以有多个输入, 但最多只有一个输出. 一个层的输出可以作为多个层的输入, 即输出可以"重复消费".
+注: 虽然Angel的层可以有多个输入, 但最多只有一个输入. 一个层的输出可以作为多个层的输入, 即输出可以"重复消费".
 
 在Json中, 所有与层相关的参数都放在一个列表中, 如下:
 ```json

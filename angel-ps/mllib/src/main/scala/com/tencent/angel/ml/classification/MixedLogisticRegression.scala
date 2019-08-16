@@ -18,16 +18,17 @@
 
 package com.tencent.angel.ml.classification
 
-import com.tencent.angel.ml.core.conf.MLConf
-import com.tencent.angel.ml.core.graphsubmit.GraphModel
-import com.tencent.angel.ml.core.network.layers.Layer
-import com.tencent.angel.ml.core.network.layers.verge.{SimpleInputLayer, SimpleLossLayer}
-import com.tencent.angel.ml.core.network.layers.join.DotPooling
-import com.tencent.angel.ml.core.network.transfunc.{Sigmoid, Softmax}
-import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
-import com.tencent.angel.ml.core.optimizer.loss.{CrossEntropyLoss, LossFunc}
+import com.tencent.angel.ml.core.PSOptimizerProvider
+import com.tencent.angel.ml.core.conf.AngelMLConf
+import com.tencent.angel.mlcore.conf.{MLCoreConf, SharedConf}
+import com.tencent.angel.ml.core.graphsubmit.AngelModel
+import com.tencent.angel.mlcore.network.{Sigmoid, Softmax}
+import com.tencent.angel.mlcore.network.layers.{Layer, LossLayer}
+import com.tencent.angel.mlcore.network.layers.multiary.DotPooling
+import com.tencent.angel.mlcore.network.layers.leaf.SimpleInputLayer
+import com.tencent.angel.mlcore.optimizer.loss.CrossEntropyLoss
 import com.tencent.angel.worker.task.TaskContext
-import org.apache.hadoop.conf.Configuration
+
 
 /**
   * LR model
@@ -35,19 +36,21 @@ import org.apache.hadoop.conf.Configuration
   */
 
 
-class MixedLogisticRegression(conf: Configuration, _ctx: TaskContext = null) extends GraphModel(conf, _ctx) {
-  override val lossFunc: LossFunc = new CrossEntropyLoss()
-  val rank: Int = sharedConf.getInt(MLConf.ML_MLR_RANK)
-  val ipOptName: String = sharedConf.get(MLConf.ML_INPUTLAYER_OPTIMIZER, MLConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
-  val optimizer: Optimizer = OptUtils.getOptimizer(ipOptName)
+class MixedLogisticRegression(conf: SharedConf, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
+  val rank: Int = conf.getInt(AngelMLConf.ML_MLR_RANK, AngelMLConf.DEFAULT_ML_MLR_RANK)
+  val optProvider = new PSOptimizerProvider(conf)
 
-  override def buildNetwork(): Unit = {
+  override def buildNetwork(): this.type = {
+    val ipOptName: String = conf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
+    val optimizer = optProvider.getOptimizer(ipOptName)
+
     val sigmoid = new SimpleInputLayer("sigmoid_layer", rank, new Sigmoid(), optimizer)
     val softmax = new SimpleInputLayer("softmax_layer", rank, new Softmax(), optimizer)
     // name: String, outputDim:Int, blockSize: Int, inputLayers: Array[Layer], conf: Configuration
     val conbined = new DotPooling("dotpooling_layer", 1, Array[Layer](sigmoid, softmax))
 
+    new LossLayer("simpleLossLayer", conbined, new CrossEntropyLoss())
 
-    new SimpleLossLayer("simpleLossLayer", conbined, lossFunc)
+    this
   }
 }

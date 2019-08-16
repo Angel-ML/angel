@@ -21,11 +21,17 @@ package com.tencent.angel.ml.matrix;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.model.output.format.MatrixFilesMeta;
+import com.tencent.angel.ps.storage.matrix.PSMatrixInit;
+import com.tencent.angel.ps.storage.partition.IServerPartition;
+import com.tencent.angel.ps.storage.partition.storage.IServerPartitionStorage;
+import com.tencent.angel.ps.storage.partition.ServerPartition;
 import com.tencent.angel.ps.storage.partitioner.Partitioner;
 import com.tencent.angel.ps.storage.partitioner.RangePartitioner;
 
+import com.tencent.angel.ps.storage.vector.element.IElement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -112,6 +118,12 @@ public class MatrixContext implements Serializable {
    * Matrix id
    */
   private int matrixId;
+
+  /**
+   * PS Matrix initialization function
+   */
+  private PSMatrixInit initFunc;
+
 
   /**
    * Creates a new MatrixContext by default.
@@ -441,6 +453,80 @@ public class MatrixContext implements Serializable {
   }
 
   /**
+   * Set matrix value type class, this parameter should be set if you use
+   * T_ANY_INTKEY_DENSE,T_ANY_INTKEY_SPARSE and T_ANY_LONGKEY_SPARSE
+   *
+   * @param valueClass matrix value type class
+   */
+  public void setValueType(Class<? extends IElement> valueClass) {
+    attributes.put(MatrixConf.VALUE_TYPE_CLASSNANE, valueClass.getName());
+  }
+
+  /**
+   * Get matrix value type class
+   *
+   * @return null if this parameter is not set
+   * @throws ClassNotFoundException if value class is not found
+   */
+  public Class<? extends IElement> getValueType() throws ClassNotFoundException {
+    String className = attributes.get(MatrixConf.VALUE_TYPE_CLASSNANE);
+    if (className == null) {
+      return null;
+    } else {
+      return (Class<? extends IElement>) Class.forName(className);
+    }
+  }
+
+  /**
+   * Get matrix server partition class
+   *
+   * @return matrix server partition class
+   * @throws ClassNotFoundException if server partition class is not found
+   */
+  public Class<? extends IServerPartition> getPartitionClass() throws ClassNotFoundException {
+    String className = attributes.get(MatrixConf.SERVER_PARTITION_CLASS);
+    if (className == null) {
+      return MatrixConf.DEFAULT_SERVER_PARTITION_CLASS;
+    } else {
+      return (Class<? extends ServerPartition>) Class.forName(className);
+    }
+  }
+
+  /**
+   * Set matrix server partition class
+   *
+   * @param partClass server partition class
+   */
+  public void setPartitionClass(Class<? extends IServerPartition> partClass) {
+    attributes.put(MatrixConf.SERVER_PARTITION_CLASS, partClass.getName());
+  }
+
+  /**
+   * Get matrix server partition storage class
+   *
+   * @return matrix server partition storage class, null means not set by user
+   * @throws ClassNotFoundException if server partition storage class is not found
+   */
+  public Class<? extends IServerPartitionStorage> getPartitionStorageClass()
+      throws ClassNotFoundException {
+    String className = attributes.get(MatrixConf.SERVER_PARTITION_STORAGE_CLASS);
+    if (className == null) {
+      return null;
+    } else {
+      return (Class<? extends IServerPartitionStorage>) Class.forName(className);
+    }
+  }
+
+  /**
+   * Set matrix server partition storage class
+   *
+   * @param partStorageClass matrix server partition storage class
+   */
+  public void setPartitionStorageClass(Class<? extends IServerPartitionStorage> partStorageClass) {
+    attributes.put(MatrixConf.SERVER_PARTITION_STORAGE_CLASS, partStorageClass.getName());
+  }
+
+  /**
    * Set matrix context.
    *
    * @param key the key
@@ -529,6 +615,22 @@ public class MatrixContext implements Serializable {
    */
   public int getMatrixId() {
     return matrixId;
+  }
+
+  /**
+   * Get PS matrix init function
+   * @return PS matrix init function
+   */
+  public PSMatrixInit getInitFunc() {
+    return initFunc;
+  }
+
+  /**
+   * Set PS matrix init function
+   * @param initFunc PS matrix init function
+   */
+  public void setInitFunc(PSMatrixInit initFunc) {
+    this.initFunc = initFunc;
   }
 
   /**

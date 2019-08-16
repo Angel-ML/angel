@@ -1,0 +1,321 @@
+19/08/05 19:16:12 INFO utils.UGITools : UGI_PROPERTY_NAME is null 
+19/08/05 19:16:13 INFO client.AngelClient : running mode = ANGEL_PS_WORKER
+19/08/05 19:16:13 INFO utils.HdfsUtil : tmp output dir is file:///tmp/rachelsun/application_1565003772725_-564496328_f7f8a054-0f71-4d80-8225-69c732010348
+19/08/05 19:16:13 INFO utils.HdfsUtil : tmp output dir is file:///tmp/rachelsun/application_1565003772725_-564496328_d4905ca4-304c-4090-9c21-fc7abf26978b
+19/08/05 19:16:13 INFO client.AngelClient : angel.tmp.output.path=file:/tmp/rachelsun/application_1565003772725_-564496328_f7f8a054-0f71-4d80-8225-69c732010348
+19/08/05 19:16:13 INFO client.AngelClient : internal state file is file:/tmp/rachelsun/application_1565003772725_-564496328_d4905ca4-304c-4090-9c21-fc7abf26978b/state
+19/08/05 19:16:13 INFO localcluster.LocalCluster : start local cluster abdc29ca-3f07-496d-b02c-5b1c78400176
+19/08/05 19:16:13 INFO localcluster.LocalResourceManager : local rm handle a event LocalRMEvent [appId=application_1565003772725_-564496328, type=ALLOCATE]
+19/08/05 19:16:13 INFO master.AngelApplicationMaster : app state output path = file:/tmp/rachelsun/application_1565003772725_-564496328_f7f8a054-0f71-4d80-8225-69c732010348/app
+19/08/05 19:16:13 INFO oplog.AppStateStorage : writeDir=file:/tmp/rachelsun/application_1565003772725_-564496328_f7f8a054-0f71-4d80-8225-69c732010348/app
+19/08/05 19:16:13 INFO master.AngelApplicationMaster : build app state storage success
+19/08/05 19:16:13 INFO master.AngelApplicationMaster : build event dispacher
+19/08/05 19:16:13 INFO master.AngelApplicationMaster : deploy mode=LOCAL
+19/08/05 19:16:13 INFO event.AsyncDispatcher : Registering class com.tencent.angel.master.deploy.ContainerAllocatorEventType for class com.tencent.angel.master.deploy.local.LocalContainerAllocator
+19/08/05 19:16:13 INFO master.AngelApplicationMaster : build containerAllocator success
+19/08/05 19:16:13 INFO event.AsyncDispatcher : Registering class com.tencent.angel.master.deploy.ContainerLauncherEventType for class com.tencent.angel.master.deploy.local.LocalContainerLauncher
+19/08/05 19:16:13 INFO master.AngelApplicationMaster : build containerLauncher success
+19/08/05 19:16:13 INFO master.AngelApplicationMaster : build master service success
+19/08/05 19:16:13 INFO master.AngelApplicationMaster : recoverPSAttemptIndex return is null
+19/08/05 19:16:13 INFO event.AsyncDispatcher : Registering class com.tencent.angel.master.ps.ParameterServerManagerEventType for class com.tencent.angel.master.ps.ParameterServerManager
+19/08/05 19:16:13 INFO event.AsyncDispatcher : Registering class com.tencent.angel.master.ps.ps.AMParameterServerEventType for class com.tencent.angel.master.AngelApplicationMaster$ParameterServerEventHandler
+19/08/05 19:16:13 INFO event.AsyncDispatcher : Registering class com.tencent.angel.master.ps.attempt.PSAttemptEventType for class com.tencent.angel.master.AngelApplicationMaster$PSAttemptEventDispatcher
+19/08/05 19:16:13 INFO master.AngelApplicationMaster : build PSManager success
+19/08/05 19:16:13 INFO master.AngelApplicationMaster : running mode=ANGEL_PS_WORKER
+19/08/05 19:16:13 INFO event.AsyncDispatcher : Registering class com.tencent.angel.master.worker.WorkerManagerEventType for class com.tencent.angel.master.worker.WorkerManager
+19/08/05 19:16:13 INFO event.AsyncDispatcher : Registering class com.tencent.angel.master.worker.workergroup.AMWorkerGroupEventType for class com.tencent.angel.master.AngelApplicationMaster$WorkerGroupEventHandler
+19/08/05 19:16:13 INFO event.AsyncDispatcher : Registering class com.tencent.angel.master.worker.worker.AMWorkerEventType for class com.tencent.angel.master.AngelApplicationMaster$WorkerEventHandler
+19/08/05 19:16:14 INFO event.AsyncDispatcher : Registering class com.tencent.angel.master.worker.attempt.WorkerAttemptEventType for class com.tencent.angel.master.AngelApplicationMaster$WorkerAttemptEventHandler
+19/08/05 19:16:14 INFO master.AngelApplicationMaster : build WorkerManager success
+19/08/05 19:16:14 INFO event.AsyncDispatcher : Registering class com.tencent.angel.master.metrics.MetricsEventType for class com.tencent.angel.master.metrics.MetricsService
+19/08/05 19:16:14 INFO event.AsyncDispatcher : Registering class com.tencent.angel.master.app.AppEventType for class com.tencent.angel.master.app.App
+19/08/05 19:16:14 INFO event.AsyncDispatcher : Registering class com.tencent.angel.master.app.AppFinishEventType for class com.tencent.angel.master.AngelApplicationMaster$AppFinishEventHandler
+19/08/05 19:16:14 INFO master.MasterService : listen ip:10.13.64.183, port:27829
+19/08/05 19:16:14 INFO local.AngelLocalClient : start to create rpc client to am
+19/08/05 19:16:14 WARN bootstrap.ServerBootstrap : Unknown channel option 'TCP_NODELAY' for channel '[id: 0xecb9d97d]'
+19/08/05 19:16:14 WARN bootstrap.ServerBootstrap : Unknown channel option 'SO_KEEPALIVE' for channel '[id: 0xecb9d97d]'
+19/08/05 19:16:14 INFO metrics.DistributeLog : algorithm log output directory=file:///C:\Users\RACHEL~1\AppData\Local\Temp\/log
+19/08/05 19:16:14 INFO slowcheck.SlowChecker : slowCheckEnable = false, checkIntervalMs = 60000
+19/08/05 19:16:14 INFO ps.AMParameterServer : schedule ps server, psId: ParameterServer_0
+19/08/05 19:16:14 INFO ps.AMParameterServer : scheduling PSAttempt_0_0
+19/08/05 19:16:14 INFO ps.AMParameterServer : ParameterServer_0 AMParameterServer Transitioned from NEW to SCHEDULED
+19/08/05 19:16:14 INFO attempt.PSAttempt : allocate ps server attempt resource, ps attempt id = PSAttempt_0_0
+19/08/05 19:16:14 INFO attempt.PSAttempt : PSAttempt_0_0 PSAttempt Transitioned from NEW to SCHEDULED
+19/08/05 19:16:14 INFO attempt.PSAttempt : PSAttempt_0_0 PSAttempt Transitioned from SCHEDULED to ASSIGNED
+19/08/05 19:16:14 INFO ps.ParameterServerManager : PS PSAttempt_0_0 is registered in monitor!
+19/08/05 19:16:14 INFO attempt.PSAttempt : has telled attempt started for attempid: PSAttempt_0_0
+19/08/05 19:16:14 INFO attempt.PSAttempt : PSAttempt_0_0 PSAttempt Transitioned from ASSIGNED to RUNNING
+19/08/05 19:16:14 INFO ps.AMParameterServer : ParameterServer_0 AMParameterServer Transitioned from SCHEDULED to RUNNING
+19/08/05 19:16:14 INFO ps.ParameterServer : Initialize a parameter server
+19/08/05 19:16:14 WARN bootstrap.ServerBootstrap : Unknown channel option 'TCP_NODELAY' for channel '[id: 0x23d1b1e9]'
+19/08/05 19:16:14 WARN bootstrap.ServerBootstrap : Unknown channel option 'SO_KEEPALIVE' for channel '[id: 0x23d1b1e9]'
+19/08/05 19:16:14 INFO control.ParameterServerService : Starting parameter server service at 10.13.64.183:29892
+19/08/05 19:16:14 INFO save.SnapshotDumper : Start snapshot dumper
+19/08/05 19:16:14 INFO data.MatrixTransportServer : Use nio channel
+19/08/05 19:16:14 INFO client.AngelClient : clientId=1
+19/08/05 19:16:14 INFO data.MatrixTransportServer : Server port = 29893
+19/08/05 19:16:14 WARN bootstrap.ServerBootstrap : Unknown channel option 'SO_SNDBUF' for channel '[id: 0x06a38a8c]'
+19/08/05 19:16:14 WARN bootstrap.ServerBootstrap : Unknown channel option 'SO_KEEPALIVE' for channel '[id: 0x06a38a8c]'
+19/08/05 19:16:14 INFO master.MasterService : PSAttempt_0_0 is registered now!
+19/08/05 19:16:14 INFO attempt.PSAttempt : PSAttempt_0_0 is registering, location: (10.13.64.183:29892)
+19/08/05 19:16:14 INFO master.MasterService : PSAttempt_0_0 register finished!
+19/08/05 19:16:14 INFO ps.ParameterServer : Register to AppMaster successfully
+19/08/05 19:16:14 INFO ps.ParameterServer : Starting HeartbeatThread, interval is 1000 ms
+19/08/05 19:16:14 INFO master.AngelApplicationMaster : appAttemptId.getAttemptId()=1
+19/08/05 19:16:14 INFO local.AngelLocalClient : start ps success
+19/08/05 19:16:14 INFO matrix.MatrixContext : Matrix context sparse_int_mat row=1 col=10000000000 start=0 end=10000000000
+19/08/05 19:16:14 INFO partitioner.RangePartitioner : start to split matrix MatrixContext{name='sparse_int_mat', rowNum=1, colNum=10000000000, validIndexNum=100, maxRowNumInBlock=-1, start=0, end=10000000000, maxColNumInBlock=-1, partitionerClass=class com.tencent.angel.ps.storage.partitioner.RangePartitioner, rowType=T_ANY_LONGKEY_SPARSE, attributes={matrix.value.type.classname=com.tencent.angel.ps.storage.vector.element.LongArrayElement}, matrixId=0}
+19/08/05 19:16:14 INFO partitioner.RangePartitioner : blockRow = 1, blockCol=10000000000
+19/08/05 19:16:14 INFO partitioner.RangePartitioner : partition count: 1
+19/08/05 19:16:15 INFO master.MasterService : check matrix created request = matrixNames: "sparse_int_mat"
+
+19/08/05 19:16:15 INFO matrix.ServerMatrix : Creating a Server Matrix, id: 0, name: sparse_int_mat
+19/08/05 19:16:15 INFO storage.MatrixStorageManager : MatrixId [0] added.
+19/08/05 19:16:16 INFO master.MasterService : check matrix created request = matrixNames: "sparse_int_mat"
+
+19/08/05 19:16:17 INFO master.MasterService : check matrix created request = matrixNames: "sparse_int_mat"
+
+19/08/05 19:16:17 INFO master.MasterService : start to calculation
+19/08/05 19:16:17 INFO app.App : Processing AppEvent type EventType: INIT
+19/08/05 19:16:17 INFO app.App : application_1565003772725_-564496328 Job Transitioned from NEW to INITED
+19/08/05 19:16:17 INFO app.App : Processing AppEvent type EventType: LAUNCH_WORKERS
+19/08/05 19:16:17 INFO worker.WorkerManager : to start all workers.....
+19/08/05 19:16:17 INFO workergroup.AMWorkerGroup : WorkerGroup_0 psserver Transitioned from NEW to INITED
+19/08/05 19:16:17 INFO worker.WorkerManager : to init taskClockManager!
+19/08/05 19:16:17 INFO worker.AMWorker : schedule worker, workerId = Worker_0_0
+19/08/05 19:16:17 INFO worker.AMWorker : scheduling WorkerAttempt_0_0_0
+19/08/05 19:16:17 INFO worker.AMWorker : Worker_0_0 Transitioned from NEW to SCHEDULED
+19/08/05 19:16:17 INFO app.App : application_1565003772725_-564496328 Job Transitioned from INITED to PREPARE_WORKERS
+19/08/05 19:16:17 INFO attempt.WorkerAttempt : allocate worker attempt resource, worker attempt id = WorkerAttempt_0_0_0, resource = <memory:4096, vCores:1>, priority = 20, hosts = 
+19/08/05 19:16:17 INFO attempt.WorkerAttempt : WorkerAttempt_0_0_0 psserver Transitioned from NEW to SCHEDULED
+19/08/05 19:16:17 INFO attempt.WorkerAttempt : WorkerAttempt_0_0_0 psserver Transitioned from SCHEDULED to ASSIGNED
+19/08/05 19:16:17 INFO attempt.WorkerAttempt : add WorkerAttempt_0_0_0 to monitor!
+19/08/05 19:16:17 INFO worker.WorkerManager : WorkerAttempt_0_0_0 is registered in monitor!
+19/08/05 19:16:17 INFO attempt.WorkerAttempt : WorkerAttempt_0_0_0 psserver Transitioned from ASSIGNED to LAUNCHED
+19/08/05 19:16:17 INFO worker.Worker : Init and start worker
+19/08/05 19:16:17 INFO worker.Worker : Init and start psagent for worker
+19/08/05 19:16:17 INFO master.MasterService : PSAgent register:psAgentId: 1
+location {
+  ip: "10.13.64.183"
+  port: 27723
+}
+
+19/08/05 19:16:17 INFO psagent.PSAgent : PSAgent get matrices from master,1
+19/08/05 19:16:17 INFO transport.MatrixTransportClient : Use nio channel
+19/08/05 19:16:17 INFO transport.MatrixTransportClient : ByteOrder.nativeOrder()=LITTLE_ENDIAN
+19/08/05 19:16:17 INFO worker.Worker : Init data block manager
+19/08/05 19:16:17 INFO worker.Worker : Init and start worker rpc server
+19/08/05 19:16:17 WARN bootstrap.ServerBootstrap : Unknown channel option 'TCP_NODELAY' for channel '[id: 0xbe45010c]'
+19/08/05 19:16:17 WARN bootstrap.ServerBootstrap : Unknown channel option 'SO_KEEPALIVE' for channel '[id: 0xbe45010c]'
+19/08/05 19:16:17 INFO worker.WorkerService : Starting workerserver service at 10.13.64.183:22020
+19/08/05 19:16:17 INFO worker.Worker : Init counter updater
+19/08/05 19:16:17 INFO util.ProcfsBasedProcessTree : ProcfsBasedProcessTree currently is supported only on Linux.
+19/08/05 19:16:17 INFO psagent.CounterUpdater :  Using ResourceCalculatorProcessTree : org.apache.hadoop.yarn.util.WindowsBasedProcessTree@19037a0
+19/08/05 19:16:17 INFO worker.Worker : Register to master and start the heartbeat thread
+19/08/05 19:16:17 INFO worker.Worker : Get data splits from master
+19/08/05 19:16:17 INFO worker.Worker : Register to master
+19/08/05 19:16:17 INFO master.MasterService : Worker WorkerAttempt_0_0_0 register, location=ip: "10.13.64.183"
+port: 22020
+, psagent id=1
+19/08/05 19:16:17 INFO master.MasterService : worker attempt WorkerAttempt_0_0_0 register finished!
+19/08/05 19:16:17 INFO attempt.WorkerAttempt : worker attempt: WorkerAttempt_0_0_0 is registering, location = (10.13.64.183:22020)
+19/08/05 19:16:17 INFO worker.Worker : worker register finished!
+19/08/05 19:16:17 INFO attempt.WorkerAttempt : WorkerAttempt_0_0_0 psserver Transitioned from LAUNCHED to RUNNING
+19/08/05 19:16:17 INFO worker.AMWorker : Worker_0_0 Transitioned from SCHEDULED to RUNNING
+19/08/05 19:16:17 INFO workergroup.AMWorkerGroup : now all workers in workerGroup WorkerGroup_0 are registered!
+19/08/05 19:16:17 INFO workergroup.AMWorkerGroup : WorkerGroup_0 psserver Transitioned from INITED to RUNNING
+19/08/05 19:16:17 INFO worker.WorkerManager : now all WorkerGroups are finished!
+19/08/05 19:16:17 INFO app.App : Processing AppEvent type EventType: ALL_WORKERS_LAUNCHED
+19/08/05 19:16:17 INFO app.App : application_1565003772725_-564496328 Job Transitioned from PREPARE_WORKERS to RUNNING
+19/08/05 19:16:18 INFO worker.Worker : Init and start task manager and all task
+19/08/05 19:16:18 INFO task.TaskManager : start all tasks
+19/08/05 19:16:18 INFO task.TaskManager : start task task_0 with context=TaskContext [taskId=task_0, taskIdProto=taskIndex: 0
+, context=com.tencent.angel.psagent.task.TaskContext@51b04ed8TaskContext [index=0, matrix clocks=]]
+19/08/05 19:16:18 INFO task.Task : task task_0 is running.
+19/08/05 19:16:18 INFO task.Task : userTaskClass = class com.tencent.angel.graph.DummyTask task index = 0, name = Thread-244
+19/08/05 19:16:19 INFO master.MasterService : keep alive clientId: 1
+
+19/08/05 19:16:22 INFO graph.InitNeighborTest : ==============================sample neighbors result============================
+19/08/05 19:16:22 INFO graph.InitNeighborTest : node id = 7, neighbors = []
+19/08/05 19:16:22 INFO graph.InitNeighborTest : node id = 8, neighbors = [3, 4]
+19/08/05 19:16:22 INFO graph.InitNeighborTest : node id = 3, neighbors = [4, 5]
+19/08/05 19:16:22 INFO graph.InitNeighborTest : node id = 5, neighbors = [6]
+19/08/05 19:16:22 INFO graph.InitNeighborTest : node id = 4, neighbors = [5, 6]
+19/08/05 19:16:22 INFO graph.InitNeighborTest : node id = 6, neighbors = []
+19/08/05 19:16:22 INFO graph.InitNeighborTest : node id = 2, neighbors = [4, 5]
+19/08/05 19:16:22 INFO graph.InitNeighborTest : node id = 1, neighbors = [5, 6]
+19/08/05 19:16:22 INFO matrix.MatrixClientImpl : checkpoint matrixId=0
+19/08/05 19:16:22 INFO save.SnapshotDumper : checkpoint matrixId=0
+19/08/05 19:16:22 INFO io.PSModelIOExecutor : start to save matrices :com.tencent.angel.model.PSMatricesSaveContext@de71f5a
+19/08/05 19:16:22 INFO format.MatrixFormatImpl : Commit partitions of matrix sparse_int_mat to path file:/tmp/rachelsun/application_1565003772725_-564496328_f7f8a054-0f71-4d80-8225-69c732010348/snapshot/ParameterServer_0/_tmp.0/sparse_int_mat
+19/08/05 19:16:22 INFO format.MatrixFormatImpl : Write partition 0 of matrix sparse_int_mat to file:/tmp/rachelsun/application_1565003772725_-564496328_f7f8a054-0f71-4d80-8225-69c732010348/snapshot/ParameterServer_0/_tmp.0/sparse_int_mat/_tmp.0
+19/08/05 19:16:22 INFO format.MatrixFormatImpl : Rename from file:/tmp/rachelsun/application_1565003772725_-564496328_f7f8a054-0f71-4d80-8225-69c732010348/snapshot/ParameterServer_0/_tmp.0/sparse_int_mat/_tmp.psmeta to file:/tmp/rachelsun/application_1565003772725_-564496328_f7f8a054-0f71-4d80-8225-69c732010348/snapshot/ParameterServer_0/_tmp.0/sparse_int_mat/psmeta
+19/08/05 19:16:22 INFO ps.ParameterServer : stop ps rpcServer!
+19/08/05 19:16:22 INFO ipc.NettyServer : Stopping server on 29892
+19/08/05 19:16:22 INFO ps.ParameterServer : stop heartbeat thread!
+19/08/05 19:16:22 ERROR transport.MatrixTransportClient : channel com.tencent.angel.common.transport.NettyChannel@6addf453 is not active
+19/08/05 19:16:22 ERROR transport.MatrixTransportClient : get channel for (10.13.64.183:29892) failed 
+java.io.IOException: channel com.tencent.angel.common.transport.NettyChannel@6addf453 is not active
+	at com.tencent.angel.psagent.matrix.transport.MatrixTransportClient$Requester.getChannel(MatrixTransportClient.java:2106)
+	at com.tencent.angel.psagent.matrix.transport.MatrixTransportClient$Requester.sendRequest(MatrixTransportClient.java:1957)
+	at com.tencent.angel.psagent.matrix.transport.MatrixTransportClient$Requester.run(MatrixTransportClient.java:1915)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+19/08/05 19:16:22 INFO transport.MatrixTransportClient : remove channel [id: 0x119dd1ef, L:0.0.0.0/0.0.0.0:59043]
+19/08/05 19:16:22 INFO transport.MatrixTransportClient : remove channel [id: 0x119dd1ef, L:0.0.0.0/0.0.0.0:59043], removeNum=0
+19/08/05 19:16:22 WARN transport.MatrixTransportClient : channel [id: 0x119dd1ef, L:0.0.0.0/0.0.0.0:59043] remote address is null
+19/08/05 19:16:22 INFO transport.MatrixTransportClient : remove channel [id: 0xe9e87941, L:0.0.0.0/0.0.0.0:59016]
+19/08/05 19:16:22 INFO transport.MatrixTransportClient : remove channel [id: 0xe9e87941, L:0.0.0.0/0.0.0.0:59016], removeNum=0
+19/08/05 19:16:22 WARN transport.MatrixTransportClient : channel [id: 0xe9e87941, L:0.0.0.0/0.0.0.0:59016] remote address is null
+19/08/05 19:16:22 INFO master.MasterService : error happened in psAttempt PSAttempt_0_0 error msg=out of memory
+19/08/05 19:16:22 INFO ps.ParameterServerManager : PS PSAttempt_0_0 is finished,  delete it in monitor!
+19/08/05 19:16:22 ERROR clock.ClockCache : Get clock from ps ParameterServer_0, failed. Detail log is NETWORK_ERROR:java.io.IOException: channel com.tencent.angel.common.transport.NettyChannel@6addf453 is not active
+	at com.tencent.angel.psagent.matrix.transport.MatrixTransportClient$Requester.getChannel(MatrixTransportClient.java:2106)
+	at com.tencent.angel.psagent.matrix.transport.MatrixTransportClient$Requester.sendRequest(MatrixTransportClient.java:1957)
+	at com.tencent.angel.psagent.matrix.transport.MatrixTransportClient$Requester.run(MatrixTransportClient.java:1915)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+
+19/08/05 19:16:22 WARN transport.MatrixTransportClient : PS ParameterServer_0 is in gray server list, Send hb to it to check
+19/08/05 19:16:22 INFO attempt.PSAttempt : Diagnostics report from PSAttempt_0_0: out of memory
+19/08/05 19:16:22 INFO ps.ParameterServerManager : PS PSAttempt_0_0 is finished,  delete it in monitor!
+19/08/05 19:16:22 INFO attempt.PSAttempt : PSAttempt_0_0 PSAttempt Transitioned from RUNNING to FAILED
+19/08/05 19:16:22 INFO ps.AMParameterServer : PS ParameterServer_0 failed, modify location and metadata
+19/08/05 19:16:22 INFO ps.AMParameterServer : scheduling PSAttempt_0_1
+19/08/05 19:16:22 INFO ps.ParameterServer : stop ps rpcServer!
+19/08/05 19:16:22 INFO ps.ParameterServer : stop heartbeat thread!
+19/08/05 19:16:22 INFO attempt.PSAttempt : allocate ps server attempt resource, ps attempt id = PSAttempt_0_1
+19/08/05 19:16:22 INFO attempt.PSAttempt : PSAttempt_0_1 PSAttempt Transitioned from NEW to SCHEDULED
+19/08/05 19:16:22 INFO attempt.PSAttempt : PSAttempt_0_1 PSAttempt Transitioned from SCHEDULED to ASSIGNED
+19/08/05 19:16:22 INFO ps.ParameterServerManager : PS PSAttempt_0_1 is registered in monitor!
+19/08/05 19:16:22 INFO attempt.PSAttempt : has telled attempt started for attempid: PSAttempt_0_1
+19/08/05 19:16:22 INFO attempt.PSAttempt : PSAttempt_0_1 PSAttempt Transitioned from ASSIGNED to RUNNING
+19/08/05 19:16:22 INFO ps.ParameterServer : Initialize a parameter server
+19/08/05 19:16:22 WARN bootstrap.ServerBootstrap : Unknown channel option 'TCP_NODELAY' for channel '[id: 0x01fb3787]'
+19/08/05 19:16:22 WARN bootstrap.ServerBootstrap : Unknown channel option 'SO_KEEPALIVE' for channel '[id: 0x01fb3787]'
+19/08/05 19:16:22 INFO control.ParameterServerService : Starting parameter server service at 10.13.64.183:22333
+19/08/05 19:16:22 INFO save.SnapshotDumper : Start snapshot dumper
+19/08/05 19:16:22 INFO data.MatrixTransportServer : Use nio channel
+19/08/05 19:16:22 INFO data.MatrixTransportServer : Server port = 22334
+19/08/05 19:16:22 WARN bootstrap.ServerBootstrap : Unknown channel option 'SO_SNDBUF' for channel '[id: 0x64a46231]'
+19/08/05 19:16:22 WARN bootstrap.ServerBootstrap : Unknown channel option 'SO_KEEPALIVE' for channel '[id: 0x64a46231]'
+19/08/05 19:16:22 INFO ps.ParameterServer : PS ParameterServer_0 running attempt 1 load matrices from snapshot if need
+19/08/05 19:16:23 INFO matrix.ServerMatrix : Creating a Server Matrix, id: 0, name: sparse_int_mat
+19/08/05 19:16:23 INFO storage.MatrixStorageManager : MatrixId [0] added.
+19/08/05 19:16:23 WARN load.SnapshotRecover : ps: ParameterServer_0, attempt 1 failed without write snapshots!
+19/08/05 19:16:23 INFO load.SnapshotRecover : find snapshot directory for PSAttempt_0_1, the path is file:/tmp/rachelsun/application_1565003772725_-564496328_f7f8a054-0f71-4d80-8225-69c732010348/snapshot/ParameterServer_0/0
+19/08/05 19:16:23 INFO io.PSModelIOExecutor : start to load matrices :com.tencent.angel.model.PSMatricesLoadContext@6a56a264
+19/08/05 19:16:23 INFO format.MatrixFormatImpl : load matrix sparse_int_mat from path file:/tmp/rachelsun/application_1565003772725_-564496328_f7f8a054-0f71-4d80-8225-69c732010348/snapshot/ParameterServer_0/0/sparse_int_mat
+19/08/05 19:16:23 INFO master.MasterService : PSAttempt_0_1 is registered now!
+19/08/05 19:16:23 INFO master.MasterService : PSAttempt_0_1 register finished!
+19/08/05 19:16:23 INFO attempt.PSAttempt : PSAttempt_0_1 is registering, location: (10.13.64.183:22333)
+19/08/05 19:16:23 INFO ps.ParameterServer : Register to AppMaster successfully
+19/08/05 19:16:23 INFO ps.ParameterServer : Starting HeartbeatThread, interval is 1000 ms
+19/08/05 19:16:23 ERROR transport.MatrixTransportClient : Send heartbeat to PSLocation{psId=ParameterServer_0, loc=(10.13.64.183:29892)} failed 
+com.google.protobuf.ServiceException: java.util.concurrent.ExecutionException: java.io.IOException: Error connecting to /10.13.64.183:29892
+	at com.tencent.angel.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:317)
+	at com.sun.proxy.$Proxy11.getState(Unknown Source)
+	at com.tencent.angel.psagent.client.PSControlClient.getState(PSControlClient.java:42)
+	at com.tencent.angel.psagent.matrix.transport.MatrixTransportClient.lambda$sendHeartBeat$0(MatrixTransportClient.java:921)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.util.concurrent.ExecutionException: java.io.IOException: Error connecting to /10.13.64.183:29892
+	at com.tencent.angel.ipc.CallFuture.get(CallFuture.java:121)
+	at com.tencent.angel.ipc.NettyTransceiver.call(NettyTransceiver.java:297)
+	at com.tencent.angel.ipc.ProtobufRpcEngine$Invoker.invoke(ProtobufRpcEngine.java:294)
+	... 6 more
+Caused by: java.io.IOException: Error connecting to /10.13.64.183:29892
+	at com.tencent.angel.ipc.NettyTransceiver.getChannel(NettyTransceiver.java:149)
+	at com.tencent.angel.ipc.NettyTransceiver.transceive(NettyTransceiver.java:338)
+	at com.tencent.angel.ipc.NettyTransceiver.call(NettyTransceiver.java:292)
+	... 7 more
+Caused by: io.netty.channel.AbstractChannel$AnnotatedConnectException: Connection refused: no further information: /10.13.64.183:29892
+	at sun.nio.ch.SocketChannelImpl.checkConnect(Native Method)
+	at sun.nio.ch.SocketChannelImpl.finishConnect(SocketChannelImpl.java:717)
+	at io.netty.channel.socket.nio.NioSocketChannel.doFinishConnect(NioSocketChannel.java:323)
+	at io.netty.channel.nio.AbstractNioChannel$AbstractNioUnsafe.finishConnect(AbstractNioChannel.java:340)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:633)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:580)
+	at io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:497)
+	at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:459)
+	at io.netty.util.concurrent.SingleThreadEventExecutor$5.run(SingleThreadEventExecutor.java:858)
+	at io.netty.util.concurrent.DefaultThreadFactory$DefaultRunnableDecorator.run(DefaultThreadFactory.java:138)
+	... 1 more
+Caused by: java.net.ConnectException: Connection refused: no further information
+	... 11 more
+19/08/05 19:16:24 INFO master.MasterService : keep alive clientId: 1
+
+19/08/05 19:16:27 ERROR transport.MatrixTransportClient : Channel for ps PSLocation{psId=ParameterServer_0, loc=(10.13.64.183:29892)} noactive channel happened time:1, success time:456, failed time:1
+19/08/05 19:16:27 WARN transport.MatrixTransportClient : PS ParameterServer_0 is in gray server list, Send hb to it to check
+19/08/05 19:16:27 ERROR transport.MatrixTransportClient : PS PSLocation{psId=ParameterServer_0, loc=(10.13.64.183:29892)} already exited, just remove from gray list and put it to failed list
+19/08/05 19:16:29 INFO master.MasterService : keep alive clientId: 1
+
+19/08/05 19:16:32 INFO transport.MatrixTransportClient : Refresh location for PS ParameterServer_0, new location=(10.13.64.183:22333)
+19/08/05 19:16:32 INFO transport.MatrixTransportClient : refresh location for server ParameterServer_0 success 
+19/08/05 19:16:32 INFO graph.InitNeighborTest : ==============================sample neighbors result============================
+19/08/05 19:16:32 INFO graph.InitNeighborTest : node id = 7, neighbors = []
+19/08/05 19:16:32 INFO graph.InitNeighborTest : node id = 8, neighbors = [3, 4]
+19/08/05 19:16:32 INFO graph.InitNeighborTest : node id = 3, neighbors = [4, 5, 6]
+19/08/05 19:16:32 INFO graph.InitNeighborTest : node id = 5, neighbors = [6]
+19/08/05 19:16:32 INFO graph.InitNeighborTest : node id = 4, neighbors = [5, 6]
+19/08/05 19:16:32 INFO graph.InitNeighborTest : node id = 6, neighbors = []
+19/08/05 19:16:32 INFO graph.InitNeighborTest : node id = 2, neighbors = [4, 5]
+19/08/05 19:16:32 INFO graph.InitNeighborTest : node id = 1, neighbors = [2, 3, 4, 5, 6]
+19/08/05 19:16:32 INFO graph.InitNeighborTest : stop local cluster
+19/08/05 19:16:32 INFO client.AngelClient : stop the application
+19/08/05 19:16:32 INFO client.AngelClient : master is not null, send stop command to Master, stateCode=0
+19/08/05 19:16:32 INFO master.MasterService : receive stop command from client, request=exitStatus: 0
+
+19/08/05 19:16:32 INFO app.App : Processing AppEvent type EventType: SUCCESS
+19/08/05 19:16:32 INFO app.App : application_1565003772725_-564496328 Job Transitioned from RUNNING to SUCCEEDED
+19/08/05 19:16:32 INFO master.AngelApplicationMaster : Calling stop for all the services
+19/08/05 19:16:32 INFO localcluster.LocalCluster : stop the cluster abdc29ca-3f07-496d-b02c-5b1c78400176
+19/08/05 19:16:32 INFO worker.Worker : stop workerService
+19/08/05 19:16:32 INFO worker.WorkerService : stop rpc server
+19/08/05 19:16:32 INFO ipc.NettyServer : Stopping server on 22020
+19/08/05 19:16:32 INFO master.HeartbeatMonitor : Heartbeat monitor stopped
+19/08/05 19:16:32 WARN master.HeartbeatMonitor : Heartbeat Timeout checker is interupted
+19/08/05 19:16:32 INFO committer.AMModelSaver : Model saver stopped
+19/08/05 19:16:32 INFO metrics.MetricsService : MasterService stopped
+19/08/05 19:16:32 INFO slowcheck.SlowChecker : Slow checker stopped
+19/08/05 19:16:32 INFO ps.ParameterServerManager : ParameterServerManager stopped
+19/08/05 19:16:32 INFO oplog.AppStateStorage : app-state-writter service stop!
+19/08/05 19:16:32 INFO app.App : App manager stopped
+19/08/05 19:16:32 INFO master.AngelApplicationMaster : start to write app state to file and clear tmp directory
+19/08/05 19:16:32 INFO master.AngelApplicationMaster : start to write app state to file file:/tmp/rachelsun/application_1565003772725_-564496328_d4905ca4-304c-4090-9c21-fc7abf26978b/state
+19/08/05 19:16:32 INFO worker.Worker : stop psagent
+19/08/05 19:16:32 INFO psagent.PSAgent : stop heartbeat thread!
+19/08/05 19:16:32 INFO psagent.PSAgent : stop op log merger
+19/08/05 19:16:32 WARN cache.MatrixOpLogCache : oplog-merge-dispatcher interrupted
+19/08/05 19:16:32 INFO psagent.PSAgent : stop clock cache
+19/08/05 19:16:32 INFO psagent.PSAgent : stop matrix cache
+19/08/05 19:16:32 INFO clock.ClockCache : sync thread is interrupted
+19/08/05 19:16:32 INFO psagent.PSAgent : stop user request adapater
+19/08/05 19:16:32 INFO psagent.PSAgent : stop rpc dispacher
+19/08/05 19:16:32 INFO transport.ChannelManager2 : Channel manager stop
+19/08/05 19:16:32 INFO worker.Worker : stop heartbeat thread
+19/08/05 19:16:32 INFO worker.Worker : stop taskmanager
+19/08/05 19:16:32 INFO worker.Worker : stop data block manager
+19/08/05 19:16:32 INFO ps.ParameterServer : stop ps rpcServer!
+19/08/05 19:16:32 INFO ps.ParameterServer : stop heartbeat thread!
+19/08/05 19:16:32 INFO ps.ParameterServer : stop ps rpcServer!
+19/08/05 19:16:32 INFO ipc.NettyServer : Stopping server on 22333
+19/08/05 19:16:32 INFO ps.ParameterServer : stop heartbeat thread!
+19/08/05 19:16:32 INFO app.App : write app report to file successfully jobReport {
+  jobState: J_SUCCEEDED
+  curIteration: 0
+  totalIteration: 100
+  diagnostics: ""
+}
+
+19/08/05 19:16:32 INFO master.AngelApplicationMaster : write app state over
+19/08/05 19:16:32 WARN master.AngelApplicationMaster : App Staging directory is null
+19/08/05 19:16:32 INFO master.AngelApplicationMaster : Deleting tmp output directory file:/tmp/rachelsun/application_1565003772725_-564496328_f7f8a054-0f71-4d80-8225-69c732010348
+19/08/05 19:16:42 INFO ipc.NettyServer : Stopping server on 27829
+19/08/05 19:16:42 INFO master.MasterService : WorkerPSService is stoped!
+19/08/05 19:16:42 INFO master.AngelApplicationMaster : Exiting Angel AppMaster..GoodBye!
+19/08/05 19:16:42 WARN localcluster.LocalResourceManager : event handler is interrupted
+19/08/05 19:16:44 INFO localcluster.LocalCluster : =============================================stop cluster over=======================================

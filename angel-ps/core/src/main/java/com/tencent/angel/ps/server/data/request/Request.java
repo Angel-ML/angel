@@ -21,7 +21,6 @@ package com.tencent.angel.ps.server.data.request;
 import com.tencent.angel.common.Serialize;
 import com.tencent.angel.ps.server.data.TransportMethod;
 import io.netty.buffer.ByteBuf;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -143,5 +142,9 @@ public abstract class Request implements Serialize {
   @Override
   public int hashCode() {
     return hashCode;
+  }
+
+  public boolean timeoutEnable() {
+    return true;
   }
 }

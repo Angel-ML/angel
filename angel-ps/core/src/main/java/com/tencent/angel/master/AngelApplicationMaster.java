@@ -22,6 +22,7 @@ import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.common.location.LocationManager;
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.kubernetesmanager.scheduler.KubernetesClusterManager;
 import com.tencent.angel.master.app.*;
 import com.tencent.angel.master.client.ClientManager;
 import com.tencent.angel.master.data.DataSpliter;
@@ -366,6 +367,10 @@ public class AngelApplicationMaster extends CompositeService {
       return conf;
     }
 
+    @Override public KubernetesClusterManager getK8sClusterManager() {
+      return null;
+    }
+
     @Override public WebApp getWebApp() {
       return webApp;
     }
@@ -491,7 +496,9 @@ public class AngelApplicationMaster extends CompositeService {
       LOG.info("Deleting tmp output directory " + tmpOutDir);
       Path tmpOutPath = new Path(tmpOutDir);
       FileSystem fs = tmpOutPath.getFileSystem(conf);
-      fs.delete(tmpOutPath, true);
+      if(!fs.delete(tmpOutPath, true)) {
+        LOG.error("Failed to cleanup staging dir " + tmpOutDir);
+      }
     } catch (IOException io) {
       LOG.error("Failed to cleanup staging dir " + tmpOutDir, io);
     }

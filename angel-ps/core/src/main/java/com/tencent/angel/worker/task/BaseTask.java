@@ -20,6 +20,7 @@ package com.tencent.angel.worker.task;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.math2.utils.DataBlock;
 import com.tencent.angel.worker.storage.*;
 import org.apache.hadoop.conf.Configuration;
 
@@ -30,7 +31,6 @@ import org.apache.hadoop.conf.Configuration;
  * The train data was read fully to {@link DataBlock} at pre-process as default.
  * <ol>
  * <li>
- * Normally communicate with {@link com.tencent.angel.ps.impl.ParameterServer}
  * do pull or push data(see more detail {@link com.tencent.angel.psagent.matrix.transport.MatrixTransportClient}).
  * </li>
  * <li>

@@ -56,6 +56,29 @@ public class AngelConf extends Configuration {
   private static final String ANGEL_TASK_PREFIX = "angel.task.";
   private static final String ANGEL_WORKERGROUP_PREFIX = "angel.workergroup.";
 
+  public static final String ANGEL_KUBERNETES_PREFIX = "angel.kubernetes.";
+  public static final String ANGEL_KUBERNETES_MASTER_LABEL_PREFIX = "angel.kubernetes.master.label.";
+  public static final String ANGEL_KUBERNETES_MASTER_ANNOTATION_PREFIX = "angel.kubernetes.master.annotation.";
+  public static final String ANGEL_KUBERNETES_MASTER_SECRETS_PREFIX = "angel.kubernetes.master.secrets.";
+  public static final String ANGEL_KUBERNETES_MASTER_SECRET_KEY_REF_PREFIX = "angel.kubernetes.master.secretKeyRef.";
+  public static final String ANGEL_KUBERNETES_MASTER_ENV_PREFIX = "angel.kubernetes.masterEnv.";
+  public static final String ANGEL_KUBERNETES_EXECUTOR_ENV_PREFIX = "angel.kubernetes.executorEnv.";
+  public static final String ANGEL_KUBERNETES_MASTER_VOLUMES_PREFIX = "angel.kubernetes.master.volumes.";
+  public static final String ANGEL_KUBERNETES_EXECUTOR_LABEL_PREFIX = "angel.kubernetes.executor.label.";
+  public static final String ANGEL_KUBERNETES_EXECUTOR_ANNOTATION_PREFIX = "angel.kubernetes.executor.annotation.";
+  public static final String ANGEL_KUBERNETES_EXECUTOR_SECRETS_PREFIX = "angel.kubernetes.executor.secrets.";
+  public static final String ANGEL_KUBERNETES_EXECUTOR_SECRET_KEY_REF_PREFIX = "angel.kubernetes.executor.secretKeyRef.";
+  public static final String ANGEL_KUBERNETES_EXECUTOR_VOLUMES_PREFIX = "angel.kubernetes.executor.volumes.";
+  public static final String ANGEL_KUBERNETES_VOLUMES_HOSTPATH_TYPE = "hostPath";
+  public static final String ANGEL_KUBERNETES_VOLUMES_PVC_TYPE = "persistentVolumeClaim";
+  public static final String ANGEL_KUBERNETES_VOLUMES_EMPTYDIR_TYPE = "emptyDir";
+  public static final String ANGEL_KUBERNETES_VOLUMES_MOUNT_PATH_KEY = "mount.path";
+  public static final String ANGEL_KUBERNETES_VOLUMES_MOUNT_READONLY_KEY = "mount.readOnly";
+  public static final String ANGEL_KUBERNETES_VOLUMES_OPTIONS_PATH_KEY = "options.path";
+  public static final String ANGEL_KUBERNETES_VOLUMES_OPTIONS_CLAIM_NAME_KEY = "options.claimName";
+  public static final String ANGEL_KUBERNETES_VOLUMES_OPTIONS_MEDIUM_KEY = "options.medium";
+  public static final String ANGEL_KUBERNETES_VOLUMES_OPTIONS_SIZE_LIMIT_KEY = "options.sizeLimit";
+
   // //////////////////////////////
   // Application Configs
   // //////////////////////////////
@@ -127,6 +150,20 @@ public class AngelConf extends Configuration {
   public static final boolean DEFAULT_ANGEL_SAVE_MODEL_EPOCH_TIGGER_ENABLE = false;
 
   /**
+   * Maximum save results number
+   */
+  public static final String ANGEL_SAVE_MODEL_MAX_RESULTS_FOR_SINGLE_MATRIX =
+      "angel.save.model.max.results.for.single.matrix";
+  public static final int DEFAULT_ANGEL_SAVE_MODEL_MAX_RESULTS_FOR_SINGLE_MATRIX = 2;
+
+  /**
+   * Maximum save results number
+   */
+  public static final String ANGEL_CHECKPOINT_MAX_RESULTS_FOR_SINGLE_MATRIX =
+      "angel.checkpoint.max.results.for.single.matrix";
+  public static final int DEFAULT_ANGEL_CHECKPOINT_MAX_RESULTS_FOR_SINGLE_MATRIX = 1;
+
+  /**
    * Save model every how many epochs, it is effective only as "angel.save.model.epoch.trigger.enable"
    * is set to true
    */
@@ -156,7 +193,7 @@ public class AngelConf extends Configuration {
    * Application deploy mode, now support YARN and LOCAL mode
    */
   public static final String ANGEL_DEPLOY_MODE = "angel.deploy.mode";
-  public static final String DEFAULT_ANGEL_DEPLOY_MODE = "YARN"; // YARN, LOCAL
+  public static final String DEFAULT_ANGEL_DEPLOY_MODE = "YARN"; // YARN, LOCAL, KUBERNETES
 
   /**
    * Application running mode, now support ANGEL_PS_WORKER and ANGEL_PS.
@@ -327,7 +364,7 @@ public class AngelConf extends Configuration {
 
   public static final String ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS =
       "angel.client.heartbeat.interval.timeout.ms";
-  public static final int DEFAULT_ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS = 30000;
+  public static final int DEFAULT_ANGEL_CLIENT_HEARTBEAT_INTERVAL_TIMEOUT_MS = 3000000;
 
   // //////////////////////////////
   // Master Configs
@@ -601,6 +638,81 @@ public class AngelConf extends Configuration {
   public static final float DEFAULT_ANGEL_WORKER_JVM_YOUNG_FACTOR = 0.4f;
 
   /**
+   * Enable G1 in Worker
+   */
+  public static final String ANGEL_WORKER_JVM_USE_G1 = ANGEL_WORKER_PREFIX + "jvm.use.g1";
+  public static final boolean DEFAULT_ANGEL_WORKER_JVM_USE_G1 = true;
+
+  /**
+   * Max GC pause time
+   */
+  public static final String ANGEL_WORKER_JVM_G1_MAXPAUSETIME_MS =
+      ANGEL_WORKER_PREFIX + "jvm.g1.maxpausetime.ms";
+  public static final int DEFAULT_ANGEL_WORKER_JVM_G1_MAXPAUSETIME_MS = 2000;
+
+  /**
+   * Minimal young region ratio
+   */
+  public static final String ANGEL_WORKER_JVM_G1_MIN_NEWRATIO =
+      ANGEL_WORKER_PREFIX + "jvm.g1.min.newratio";
+  public static final int DEFAULT_ANGEL_WORKER_JVM_G1_MIN_NEWRATIO = 5;
+
+  /**
+   * Maximal young region ratio
+   */
+  public static final String ANGEL_WORKER_JVM_G1_MAX_NEWRATIO =
+      ANGEL_WORKER_PREFIX + "jvm.g1.max.newratio";
+  public static final int DEFAULT_ANGEL_WORKER_JVM_G1_MAX_NEWRATIO = 60;
+
+  /**
+   * Region size
+   */
+  public static final String ANGEL_WORKER_JVM_G1_REGIONSIZE_MB =
+      ANGEL_WORKER_PREFIX + "jvm.g1.regionsize.mb";
+  public static final int DEFAULT_ANGEL_WORKER_JVM_G1_REGIONSIZE_MB = 32;
+
+  /**
+   * InitiatingHeapOccupancyPercent
+   */
+  public static final String ANGEL_WORKER_JVM_G1_IHOP = ANGEL_WORKER_PREFIX + "jvm.g1.ihop";
+  public static final int DEFAULT_ANGEL_WORKER_JVM_G1_IHOP = 60;
+
+  /**
+   * G1MixedGCLiveThresholdPercent
+   */
+  public static final String ANGEL_WORKER_JVM_G1_MIXGC_LIVE_THRESHOLD_PERCENT =
+      ANGEL_WORKER_PREFIX + "jvm.g1.mixgc.live.threshold.percent";
+  public static final int DEFAULT_ANGEL_WORKER_JVM_G1_MIXGC_LIVE_THRESHOLD_PERCENT = 65;
+
+  /**
+   * G1MixedGCCountTarget
+   */
+  public static final String ANGEL_WORKER_JVM_G1_MIXGC_TARGET_COUNT =
+      ANGEL_WORKER_PREFIX + "jvm.g1.mixgc.target.count";
+  public static final int DEFAULT_ANGEL_WORKER_JVM_G1_MIXGC_TARGET_COUNT = 8;
+
+  /**
+   * ParallelGCThreads
+   */
+  public static final String ANGEL_WORKER_JVM_G1_WORKER_NUM =
+      ANGEL_WORKER_PREFIX + "jvm.g1.worker.num";
+  public static final int DEFAULT_ANGEL_WORKER_JVM_G1_WORKER_NUM = 4;
+
+  /**
+   * ConcGCThreads
+   */
+  public static final String ANGEL_WORKER_JVM_G1_CONC_WORKER_NUM =
+      ANGEL_WORKER_PREFIX + "jvm.g1.conc.worker.num";
+  public static final int DEFAULT_ANGEL_WORKER_JVM_G1_CONC_WORKER_NUM = 4;
+
+  /**
+   * G1ReservePercent
+   */
+  public static final String ANGEL_WORKER_JVM_G1_RESERVE_PERCENT =
+      ANGEL_WORKER_PREFIX + "jvm.g1.reserve.percent";
+  public static final int DEFAULT_ANGEL_WORKER_JVM_G1_RESERVE_PERCENT = 10;
+
+  /**
    * The workers number for matrix operations
    */
   public static final String ANGEL_WORKER_MATRIX_EXECUTORS_NUM =
@@ -791,6 +903,12 @@ public class AngelConf extends Configuration {
   public static final int DEFAULT_ANGEL_PS_HA_SYNC_SEND_BUFFER_SIZE = 1024 * 1024;
 
   /**
+   * File read/write buffer size in PS
+   */
+  public static final String ANGEL_PS_IO_FILE_BUFFER_SIZE = ANGEL_PS_PREFIX + "io.file.buffer.size";
+  public static final int DEFAULT_ANGEL_PS_IO_FILE_BUFFER_SIZE = 4 * 1024 * 1024;
+
+  /**
    * Ps resource priority, it use to YARN container allocation. The smaller the priority, the higher
    * the priority.
    */
@@ -837,9 +955,15 @@ public class AngelConf extends Configuration {
   public static final String Angel_PS_PARTITION_CLASS =
       ANGEL_PS_PREFIX + "partition.class";
 
+  public static final String ANGEL_PS_CHECKPOINTS_MAX_NUM = ANGEL_PS_PREFIX + "checkpoint.max.num";
+  public static final int DEFAULT_ANGEL_PS_CHECKPOINTS_MAX_NUM = 1;
 
   public static final String ANGEL_PS_MAX_LOCK_WAITTIME_MS = ANGEL_PS_PREFIX + "max.lock.waittime";
   public static final int DEFAULT_ANGEL_PS_MAX_LOCK_WAITTIME_MS = 10000;
+
+  public static final String ANGEL_PS_USE_ADAPTIVE_KEY_ENABLE =
+      ANGEL_PS_PREFIX + "use.adaptive.key.enable";
+  public static final boolean DEFAULT_ANGEL_PS_USE_ADAPTIVE_KEY_ENABLE = true;
 
   public static final String ANGEL_PS_USE_ADAPTIVE_STORAGE_ENABLE =
       ANGEL_PS_PREFIX + "use.adaptive.storage.enable";
@@ -860,44 +984,198 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_PS_JVM_YOUNG_FACTOR = ANGEL_PS_PREFIX + "jvm.young.factor";
   public static final float DEFAULT_ANGEL_PS_JVM_YOUNG_FACTOR = 0.4f;
 
-  public static final String ANGEL_PS_JVM_USE_G1 = ANGEL_PS_PREFIX + "jvm.use.g1";
-  public static final boolean DEFAULT_ANGEL_PS_JVM_USE_G1 = false;
 
+  /**
+   * Enable G1 in PS
+   */
+  public static final String ANGEL_PS_JVM_USE_G1 = ANGEL_PS_PREFIX + "jvm.use.g1";
+  public static final boolean DEFAULT_ANGEL_PS_JVM_USE_G1 = true;
+
+  /**
+   * Max GC pause time
+   */
   public static final String ANGEL_PS_JVM_G1_MAXPAUSETIME_MS =
       ANGEL_PS_PREFIX + "jvm.g1.maxpausetime.ms";
-  public static final int DEFAULT_ANGEL_PS_JVM_G1_MAXPAUSETIME_MS = 500;
+  public static final int DEFAULT_ANGEL_PS_JVM_G1_MAXPAUSETIME_MS = 2000;
 
+  /**
+   * Minimal young region ratio
+   */
   public static final String ANGEL_PS_JVM_G1_MIN_NEWRATIO = ANGEL_PS_PREFIX + "jvm.g1.min.newratio";
   public static final int DEFAULT_ANGEL_PS_JVM_G1_MIN_NEWRATIO = 5;
 
+  /**
+   * Maximal young region ratio
+   */
   public static final String ANGEL_PS_JVM_G1_MAX_NEWRATIO = ANGEL_PS_PREFIX + "jvm.g1.max.newratio";
   public static final int DEFAULT_ANGEL_PS_JVM_G1_MAX_NEWRATIO = 60;
 
+  /**
+   * Region size
+   */
   public static final String ANGEL_PS_JVM_G1_REGIONSIZE_MB =
       ANGEL_PS_PREFIX + "jvm.g1.regionsize.mb";
-  public static final int DEFAULT_ANGEL_PS_JVM_G1_REGIONSIZE_MB = 16;
+  public static final int DEFAULT_ANGEL_PS_JVM_G1_REGIONSIZE_MB = 32;
 
+  /**
+   * InitiatingHeapOccupancyPercent
+   */
   public static final String ANGEL_PS_JVM_G1_IHOP = ANGEL_PS_PREFIX + "jvm.g1.ihop";
   public static final int DEFAULT_ANGEL_PS_JVM_G1_IHOP = 60;
 
+  /**
+   * G1MixedGCLiveThresholdPercent
+   */
   public static final String ANGEL_PS_JVM_G1_MIXGC_LIVE_THRESHOLD_PERCENT =
       ANGEL_PS_PREFIX + "jvm.g1.mixgc.live.threshold.percent";
   public static final int DEFAULT_ANGEL_PS_JVM_G1_MIXGC_LIVE_THRESHOLD_PERCENT = 65;
 
+  /**
+   * G1MixedGCCountTarget
+   */
   public static final String ANGEL_PS_JVM_G1_MIXGC_TARGET_COUNT =
       ANGEL_PS_PREFIX + "jvm.g1.mixgc.target.count";
   public static final int DEFAULT_ANGEL_PS_JVM_G1_MIXGC_TARGET_COUNT = 8;
 
+  /**
+   * ParallelGCThreads
+   */
   public static final String ANGEL_PS_JVM_G1_WORKER_NUM = ANGEL_PS_PREFIX + "jvm.g1.worker.num";
   public static final int DEFAULT_ANGEL_PS_JVM_G1_WORKER_NUM = 4;
 
+  /**
+   * ConcGCThreads
+   */
   public static final String ANGEL_PS_JVM_G1_CONC_WORKER_NUM =
       ANGEL_PS_PREFIX + "jvm.g1.conc.worker.num";
   public static final int DEFAULT_ANGEL_PS_JVM_G1_CONC_WORKER_NUM = 4;
 
+  /**
+   * G1ReservePercent
+   */
   public static final String ANGEL_PS_JVM_G1_RESERVE_PERCENT =
       ANGEL_PS_PREFIX + "jvm.g1.reserve.percent";
   public static final int DEFAULT_ANGEL_PS_JVM_G1_RESERVE_PERCENT = 10;
+
+  // //////////////////////////////
+  // Kubernetes Configs.
+  // //////////////////////////////
+  /**
+   * whether to wait for the application to finish before exiting the launcher process.
+   */
+  public static final String ANGEL_KUBERNETES_WAIT_FOR_APP_COMPLETION = ANGEL_KUBERNETES_PREFIX + "submission.waitAppCompletion";
+  public static final Boolean DEFAULT_ANGEL_KUBERNETES_WAIT_FOR_APP_COMPLETION = true;
+
+  /**
+   * kubernetes api server url.
+   */
+  public static final String ANGEL_KUBERNETES_MASTER = ANGEL_KUBERNETES_PREFIX + "master";
+
+  /**
+   * The namespace that will be used for running the master and executor pods.
+   */
+  public static final String ANGEL_KUBERNETES_NAMESPACE = ANGEL_KUBERNETES_PREFIX + "namespace";
+  public static final String DEFAULT_ANGEL_KUBERNETES_NAMESPACE = "default";
+
+  public static final String ANGEL_KUBERNETES_SERVICEACCOUNT = ANGEL_KUBERNETES_PREFIX + "serviceaccount";
+  public static final String DEFAULT_ANGEL_KUBERNETES_SERVICEACCOUNT = "default";
+
+  /**
+   * Kubernetes image pull policy. Valid values are Always, Never, and IfNotPresent.
+   */
+  public static final String ANGEL_KUBERNETES_CONTAINER_IMAGE_PULL_POLICY = ANGEL_KUBERNETES_PREFIX + "container.image.pullPolicy";
+  public static final String DEFAULT_ANGEL_KUBERNETES_CONTAINER_IMAGE_PULL_POLICY = "IfNotPresent";
+
+  /**
+   * Kubernetes executor pod role. Valid values are ps, worker
+   */
+  public static final String ANGEL_KUBERNETES_EXECUTOR_ROLE = ANGEL_KUBERNETES_PREFIX + "executor.role";
+  public static final String DEFAULT_ANGEL_KUBERNETES_EXECUTOR_ROLE = "ps";
+
+  /**
+   * Prefix to use in front of the executor pod names
+   */
+  public static final String ANGEL_KUBERNETES_EXECUTOR_POD_NAME_PREFIX = ANGEL_KUBERNETES_PREFIX + "executor.podNamePrefix";
+
+  public static final String ANGEL_KUBERNETES_AUTH_SUBMISSION_CONF_PREFIX = ANGEL_KUBERNETES_PREFIX + "authenticate.submission";
+
+  public static final String ANGEL_KUBERNETES_KUBERNETES_AUTH_CLIENT_MODE_PREFIX = ANGEL_KUBERNETES_PREFIX + "authenticate";
+
+  public static final String OAUTH_TOKEN_CONF_SUFFIX = "oauthToken";
+
+  public static final String OAUTH_TOKEN_FILE_CONF_SUFFIX = "oauthTokenFile";
+
+  public static final String CLIENT_KEY_FILE_CONF_SUFFIX = "clientKeyFile";
+
+  public static final String CLIENT_CERT_FILE_CONF_SUFFIX = "clientCertFile";
+
+  public static final String CA_CERT_FILE_CONF_SUFFIX = "caCertFile";
+
+  /**
+   * Interval between reports of the current app status, Logging interval must be a positive time value.
+   */
+  public static final String ANGEL_KUBERNETES_REPORT_INTERVAL = ANGEL_KUBERNETES_PREFIX + "report.interval";
+  public static final int DEFAULT_ANGEL_KUBERNETES_REPORT_INTERVAL = 1000;
+
+  /**
+   * Interval between successive inspection of executor events sent from the Kubernetes API.
+   */
+  public static final String ANGEL_KUBERNETES_EXECUTOR_EVENT_PROCESSING_INTERVAL = ANGEL_KUBERNETES_PREFIX + "executor.eventProcessingInterval";
+  public static final int DEFAULT_ANGEL_KUBERNETES_EXECUTOR_EVENT_PROCESSING_INTERVAL = 1000;
+
+  /**
+   * Container image to use for Angel containers.
+   */
+  public static final String ANGEL_KUBERNETES_CONTAINER_IMAGE = ANGEL_KUBERNETES_PREFIX + "container.image";
+
+  /**
+   * master and executor pods extra classpath
+   */
+  public static final String ANGEL_KUBERNETES_MASTER_EXTRA_CALSSPATH = ANGEL_KUBERNETES_PREFIX + "master.extraClassPath";
+
+  public static final String ANGEL_KUBERNETES_EXECUTOR_EXTRA_CALSSPATH = ANGEL_KUBERNETES_PREFIX + "executor.extraClassPath";
+
+  /**
+   * Specify the hard cpu limit for the angel pods
+   */
+  public static final String ANGEL_KUBERNETES_MASTER_LIMIT_CORES = ANGEL_KUBERNETES_PREFIX + "master.limit.cores";
+
+  public static final String ANGEL_KUBERNETES_PS_LIMIT_CORES = ANGEL_KUBERNETES_PREFIX + "ps.limit.cores";
+
+  public static final String ANGEL_KUBERNETES_WORKER_LIMIT_CORES = ANGEL_KUBERNETES_PREFIX + "worker.limit.cores";
+
+  public static final String ANGEL_KUBERNETES_MASTER_PORT = ANGEL_KUBERNETES_PREFIX + "master.port";
+  public static final int DEFAULT_ANGEL_KUBERNETES_MASTER_PORT = 9078;
+
+  public static final String ANGEL_KUBERNETES_MASTER_POD_IP = ANGEL_KUBERNETES_PREFIX + "master.pod.ip";
+
+  /**
+   * Number of pods to launch at once in each round of executor allocation.
+   */
+  public static final String ANGEL_KUBERNETES_ALLOCATION_BATCH_SIZE = ANGEL_KUBERNETES_PREFIX + "allocation.batch.size";
+  public static final int DEFAULT_ANGEL_KUBERNETES_ALLOCATION_BATCH_SIZE = 5;
+
+  /**
+   * Time to wait between each round of executor allocation.
+   */
+  public static final String ANGEL_KUBERNETES_ALLOCATION_BATCH_DELAY = ANGEL_KUBERNETES_PREFIX + "allocation.batch.delay";
+  public static final int DEFAULT_ANGEL_KUBERNETES_ALLOCATION_BATCH_DELAY = 1000;
+
+  /**
+   * Name of the angel master pod
+   */
+  public static final String ANGEL_KUBERNETES_MASTER_POD_NAME = ANGEL_KUBERNETES_PREFIX + "master.pod.name";
+
+  /**
+   * Interval between polls against the Kubernetes API server to inspect the state of executors.
+   */
+  public static final String ANGEL_KUBERNETES_EXECUTOR_API_POLLING_INTERVAL = ANGEL_KUBERNETES_PREFIX + "executor.apiPollingInterval";
+  public static final int DEFAULT_ANGEL_KUBERNETES_EXECUTOR_API_POLLING_INTERVAL = 30000;
+
+  public static final String ANGEL_KUBERNETES_APP_ID = ANGEL_KUBERNETES_PREFIX + "app.id";
+  public static final String ANGEL_KUBERNETES_APP_CLUSTERTIMESTAMP = ANGEL_KUBERNETES_PREFIX + "app.clusterTimestamp";
+  public static final String ANGEL_KUBERNETES_APP_RANDOMID = ANGEL_KUBERNETES_PREFIX + "app.randomId";
+
 
   // ////////////////// IPC //////////////////////////
   /**
@@ -1169,7 +1447,7 @@ public class AngelConf extends Configuration {
    */
   public static final String ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS =
       ANGEL_PREFIX + "matrixtransfer.request.timeout.ms";
-  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS = 30000;
+  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_REQUEST_TIMEOUT_MS = 120000;
 
   /**
    * The time interval in milliseconds of clock events. We will check timeout requests and retry
@@ -1206,7 +1484,7 @@ public class AngelConf extends Configuration {
 
   public static final String ANGEL_PSAGENT_TO_PS_HEARTBEAT_TIMEOUT_MS =
       ANGEL_PSAGENT_PREFIX + "to.ps.heartbeat.timeout.ms";
-  public static final int DEFAULT_ANGEL_PSAGENT_TO_PS_HEARTBEAT_TIMEOUT_MS = 20000;
+  public static final int DEFAULT_ANGEL_PSAGENT_TO_PS_HEARTBEAT_TIMEOUT_MS = 600000;
 
   public static final String ANGEL_PSAGENT_UPDATE_SPLIT_ADAPTION_ENABLE =
       ANGEL_PSAGENT_PREFIX + "update.split.adaption.enable";

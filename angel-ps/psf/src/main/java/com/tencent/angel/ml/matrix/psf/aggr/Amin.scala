@@ -22,7 +22,7 @@ package com.tencent.angel.ml.matrix.psf.aggr
 
 import com.tencent.angel.ml.math2.storage.{DoubleVectorStorage, FloatVectorStorage, IntVectorStorage, LongVectorStorage}
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.UnaryAggrFunc
-import com.tencent.angel.ps.storage.vector.ServerRow
+import com.tencent.angel.ps.storage.vector.{ServerRow, ServerRowUtils}
 
 /**
   * `Amin` will aggregate the minimum absolute value of the `rowId` row in `matrixId` matrix.
@@ -33,7 +33,7 @@ class Amin(matrixId: Int, rowId: Int) extends UnaryAggrFunc(matrixId, rowId) {
   def this() = this(-1, -1)
 
   override protected def processRow(row: ServerRow): Double = {
-    val v = row.getSplit
+    val v = ServerRowUtils.getVector(row)
     if (v.dim() != v.getSize) 0.0 else {
       v.getStorage match {
         case s: DoubleVectorStorage => s.getValues.map(math.abs).min

@@ -19,8 +19,10 @@
 package com.tencent.angel.example.ml;
 
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.ml.core.conf.MLConf;
+import com.tencent.angel.ml.core.PSOptimizerProvider;
+import com.tencent.angel.ml.core.conf.AngelMLConf;
 import com.tencent.angel.ml.core.graphsubmit.GraphRunner;
+import com.tencent.angel.mlcore.conf.MLCoreConf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -38,7 +40,7 @@ public class WideAndDeepLocalExample {
   private Configuration conf = new Configuration();
 
   private static boolean inPackage = false;
-  private static String CLASSBASE = "com.tencent.angel.ml.classification.";
+  private static String CLASSBASE = "com.tencent.angel.ml.core.graphsubmit.";
 
   static {
     File confFile = new File("../conf/log4j.properties");
@@ -110,7 +112,8 @@ public class WideAndDeepLocalExample {
     conf.set(AngelConf.ANGEL_ML_CONF, angelConfFile);
 
     // Set model class
-    conf.set(MLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "WideAndDeep");
+    conf.set(AngelMLConf.ML_MODEL_CLASS_NAME(), CLASSBASE + "AngelModel");
+    conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
   }
 
   public void train() {

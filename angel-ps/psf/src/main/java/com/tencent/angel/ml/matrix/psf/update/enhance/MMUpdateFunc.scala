@@ -19,6 +19,7 @@
 package com.tencent.angel.ml.matrix.psf.update.enhance
 
 import com.tencent.angel.ml.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc}
+import com.tencent.angel.ps.storage.partition.RowBasedPartition
 import com.tencent.angel.ps.storage.vector._
 
 /**
@@ -48,7 +49,7 @@ abstract class MMUpdateFunc(param: MMUpdateParam) extends UpdateFunc(param) {
       val rowIds = vs2.getRowIds
       val rows = new Array[ServerRow](rowIds.length)
       for (i <- 0 until rowIds.length) {
-        rows(i) = part.getRow(rowIds(i))
+        rows(i) = part.asInstanceOf[RowBasedPartition].getRow(rowIds(i))
       }
       update(rows, vs2.getScalars)
     }

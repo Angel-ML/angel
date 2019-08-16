@@ -18,6 +18,7 @@
 
 package com.tencent.angel.master.app;
 
+import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetJobReportResponse;
@@ -27,6 +28,7 @@ import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.utils.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.yarn.event.EventHandler;
@@ -125,6 +127,7 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
   }
 
   private static final AppSuccessTransition APP_SUCCESS_TRANSITION = new AppSuccessTransition();
+  private static final AppExecuteSuccessTransition APP_EXECUTE_SUCCESS_TRANSITION = new AppExecuteSuccessTransition();
   private static final AppKilledTransition APP_KILLED_TRANSITION = new AppKilledTransition();
   private static final AppFailedTransition APP_FAILED_TRANSITION = new AppFailedTransition();
 
@@ -141,13 +144,14 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
           .addTransition(AppState.INITED, AppState.KILLED, AppEventType.KILL, APP_KILLED_TRANSITION)
           .addTransition(AppState.INITED, AppState.FAILED, AppEventType.INTERNAL_ERROR,
               APP_FAILED_TRANSITION)
-
           .addTransition(AppState.PREPARE_WORKERS, AppState.RUNNING,
               AppEventType.ALL_WORKERS_LAUNCHED)
           .addTransition(AppState.PREPARE_WORKERS, AppState.KILLED, AppEventType.KILL, APP_KILLED_TRANSITION)
           .addTransition(AppState.PREPARE_WORKERS, AppState.FAILED, AppEventType.INTERNAL_ERROR,
               APP_FAILED_TRANSITION)
 
+          .addTransition(AppState.RUNNING, AppState.EXECUTE_SUCCESSED, AppEventType.EXECUTE_SUCESS,
+          APP_EXECUTE_SUCCESS_TRANSITION)
           .addTransition(AppState.RUNNING, AppState.EXECUTE_SUCCESSED, AppEventType.EXECUTE_SUCESS)
           .addTransition(AppState.RUNNING, AppState.KILLED, AppEventType.KILL,
               APP_KILLED_TRANSITION)
@@ -339,7 +343,7 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
           stateToTsMap.put(newState, context.getClock().getTime());
         }
         LOG.info(
-            context.getApplicationId() + "Job Transitioned from " + oldState + " to " + newState);
+          context.getApplicationId() + " Job Transitioned from " + oldState + " to " + newState);
       }
     } finally {
       writeLock.unlock();
@@ -492,7 +496,6 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
     }
   }
 
-
   public static class AppLaunchWorkersTransition implements SingleArcTransition<App, AppEvent> {
 
     @SuppressWarnings("unchecked")
@@ -505,6 +508,17 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
       }
     }
   }
+
+  public static class AppExecuteSuccessTransition implements SingleArcTransition<App, AppEvent> {
+
+    @SuppressWarnings("unchecked") @Override public void transition(App app, AppEvent event) {
+      if (app.context.getRunningMode() == RunningMode.ANGEL_PS_WORKER && app.context.getDeployMode() == AngelDeployMode.KUBERNETES) {
+        LOG.info("Now stop worker scheduler.");
+        app.context.getK8sClusterManager().stop("worker");
+      }
+    }
+  }
+
 
   public static class AppKilledTransition implements SingleArcTransition<App, AppEvent> {
 
