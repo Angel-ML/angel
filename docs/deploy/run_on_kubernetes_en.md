@@ -166,4 +166,4 @@ The following configurations are specific to Angel on Kubernetes.
 
 All angel on kubernetes configuration information can be referred to `AngelConf` class.  
 
-**Note**: If the you want to make your own image from the base image we provided, the `entrypoint.sh` and `Dockerfile` in source code `kubernetesmanager/scripts`.
+**Note**: If you want to make your own image from the base image we provided, the `entrypoint.sh` and `Dockerfile` sample in source code `kubernetesmanager/scripts`.
