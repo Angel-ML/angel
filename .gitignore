@@ -4,6 +4,7 @@
 *.ipr
 *.iws
 *.swp
+*.crc
 *~
 .DS_Store
 .cache
