@@ -66,6 +66,11 @@
       <artifactId>angel-ps-examples</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>angel-ps-graph</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <!--dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>angel-ps-serving</artifactId>
