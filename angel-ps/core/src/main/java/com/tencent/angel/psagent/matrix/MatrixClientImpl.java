@@ -38,11 +38,13 @@ import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Future;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 public class MatrixClientImpl extends MatrixClient {
   private static final Log LOG = LogFactory.getLog(MatrixClientImpl.class);
+
   public MatrixClientImpl() {
 
   }
@@ -57,7 +59,7 @@ public class MatrixClientImpl extends MatrixClient {
     MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
     if (rowId < 0 || rowId >= matrixMeta.getRowNum()) {
       throw new AngelException(
-          "Unvalid parameter, row id should in [0, " + matrixMeta.getRowNum() + "), but=" + rowId);
+        "Unvalid parameter, row id should in [0, " + matrixMeta.getRowNum() + "), but=" + rowId);
     }
   }
 
@@ -97,7 +99,7 @@ public class MatrixClientImpl extends MatrixClient {
 
   @Override
   public void increment(int rowId, Vector row, boolean disableCache)
-      throws AngelException {
+    throws AngelException {
     checkRowId(rowId);
     checkNotNull(row, "row");
 
@@ -106,7 +108,7 @@ public class MatrixClientImpl extends MatrixClient {
     try {
       if (disableCache) {
         PSAgentContext.get().getUserRequestAdapter().update(matrixId, rowId, row, UpdateOp.PLUS)
-            .get();
+          .get();
       } else {
         PSAgentContext.get().getOpLogCache().increment(taskContext, row);
       }
@@ -169,7 +171,7 @@ public class MatrixClientImpl extends MatrixClient {
 
   @Override
   public void increment(int[] rowIds, Vector[] rows, boolean disableCache)
-      throws AngelException {
+    throws AngelException {
     checkNotNull(rowIds, "rowIds");
     checkNotNull(rows, "rows");
 
@@ -184,7 +186,7 @@ public class MatrixClientImpl extends MatrixClient {
     try {
       if (disableCache) {
         PSAgentContext.get().getUserRequestAdapter().update(matrixId, rowIds, rows, UpdateOp.PLUS)
-            .get();
+          .get();
       } else {
         PSAgentContext.get().getOpLogCache().increment(taskContext, rows);
       }
@@ -201,7 +203,7 @@ public class MatrixClientImpl extends MatrixClient {
 
     try {
       PSAgentContext.get().getUserRequestAdapter().update(matrixId, rowId, row, UpdateOp.REPLACE)
-          .get();
+        .get();
     } catch (Throwable e) {
       throw new AngelException(e);
     }
@@ -268,7 +270,7 @@ public class MatrixClientImpl extends MatrixClient {
 
     try {
       PSAgentContext.get().getUserRequestAdapter().update(matrixId, rowIds, rows, UpdateOp.REPLACE)
-          .get();
+        .get();
     } catch (Throwable e) {
       throw new AngelException(e);
     }
@@ -339,14 +341,26 @@ public class MatrixClientImpl extends MatrixClient {
     MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
     RowType rowType = matrixMeta.getRowType();
     Vector vector;
-    if(rowType.isInt()) {
-      vector = VFactory.sparseIntVector(0,0);
-    } else if(rowType.isLong()) {
-      vector = VFactory.sparseLongVector(0, 0);
-    } else if(rowType.isFloat()) {
-      vector = VFactory.sparseFloatVector(0, 0);
-    } else if(rowType.isDouble()) {
-      vector = VFactory.sparseDoubleVector(0, 0);
+    if (rowType.isInt()) {
+      if (rowType.isLongKey())
+        vector = VFactory.sparseLongKeyIntVector(0, 0);
+      else
+        vector = VFactory.sparseIntVector(0, 0);
+    } else if (rowType.isLong()) {
+      if (rowType.isLongKey())
+        vector = VFactory.sparseLongKeyLongVector(0, 0);
+      else
+        vector = VFactory.sparseLongVector(0, 0);
+    } else if (rowType.isFloat()) {
+      if (rowType.isLongKey())
+        vector = VFactory.sparseLongKeyFloatVector(0, 0);
+      else
+        vector = VFactory.sparseFloatVector(0, 0);
+    } else if (rowType.isDouble()) {
+      if (rowType.isLongKey())
+        vector = VFactory.sparseLongKeyDoubleVector(0, 0);
+      else
+        vector = VFactory.sparseDoubleVector(0, 0);
     } else {
       throw new AngelException("Unsupport row type");
     }
@@ -355,9 +369,9 @@ public class MatrixClientImpl extends MatrixClient {
     return vector;
   }
 
-  private Vector [] generateEmptyVecs(int [] rowIds) {
-    Vector [] ret = new Vector[rowIds.length];
-    for(int i = 0; i < rowIds.length; i++) {
+  private Vector[] generateEmptyVecs(int[] rowIds) {
+    Vector[] ret = new Vector[rowIds.length];
+    for (int i = 0; i < rowIds.length; i++) {
       ret[i] = generateEmptyVec(rowIds[i]);
     }
     return ret;
@@ -503,7 +517,7 @@ public class MatrixClientImpl extends MatrixClient {
 
   @Override
   public Vector initAndGet(int rowId, int[] indices, InitFunc func)
-      throws AngelException {
+    throws AngelException {
     checkRowId(rowId);
     checkNotNull(indices, "indices");
     //checkNotNull(func, "func");
@@ -523,7 +537,7 @@ public class MatrixClientImpl extends MatrixClient {
 
   @Override
   public Future<Vector> asyncInitAndGet(int rowId, int[] indices, InitFunc func)
-      throws AngelException {
+    throws AngelException {
     checkRowId(rowId);
     checkNotNull(indices, "indices");
     //checkNotNull(func, "func");
@@ -545,7 +559,7 @@ public class MatrixClientImpl extends MatrixClient {
 
   @Override
   public Vector initAndGet(int rowId, long[] indices, InitFunc func)
-      throws AngelException {
+    throws AngelException {
     checkRowId(rowId);
     checkNotNull(indices, "indices");
     //checkNotNull(func, "func");
@@ -565,7 +579,7 @@ public class MatrixClientImpl extends MatrixClient {
 
   @Override
   public Future<Vector> asyncInitAndGet(int rowId, long[] indices, InitFunc func)
-      throws AngelException {
+    throws AngelException {
     checkRowId(rowId);
     checkNotNull(indices, "indices");
     //checkNotNull(func, "func");
@@ -587,7 +601,7 @@ public class MatrixClientImpl extends MatrixClient {
 
   @Override
   public Vector[] initAndGet(int[] rowIds, int[] indices, InitFunc func)
-      throws AngelException {
+    throws AngelException {
     checkNotNull(rowIds, "rowIds");
     checkNotNull(indices, "indices");
     //checkNotNull(func, "func");
@@ -605,7 +619,7 @@ public class MatrixClientImpl extends MatrixClient {
 
     try {
       return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowIds, indices, func)
-          .get();
+        .get();
     } catch (Throwable x) {
       throw new AngelException(x);
     }
@@ -613,7 +627,7 @@ public class MatrixClientImpl extends MatrixClient {
 
   @Override
   public Future<Vector[]> asyncInitAndGet(int[] rowIds, int[] indices, InitFunc func)
-      throws AngelException {
+    throws AngelException {
     checkNotNull(rowIds, "rowIds");
     checkNotNull(indices, "indices");
     //checkNotNull(func, "func");
@@ -642,7 +656,7 @@ public class MatrixClientImpl extends MatrixClient {
 
   @Override
   public Vector[] initAndGet(int[] rowIds, long[] indices, InitFunc func)
-      throws AngelException {
+    throws AngelException {
     checkNotNull(rowIds, "rowIds");
     checkNotNull(indices, "indices");
     //checkNotNull(func, "func");
@@ -660,7 +674,7 @@ public class MatrixClientImpl extends MatrixClient {
 
     try {
       return PSAgentContext.get().getUserRequestAdapter().get(matrixId, rowIds, indices, func)
-          .get();
+        .get();
     } catch (Throwable x) {
       throw new AngelException(x);
     }
@@ -668,7 +682,7 @@ public class MatrixClientImpl extends MatrixClient {
 
   @Override
   public Future<Vector[]> asyncInitAndGet(int[] rowIds, long[] indices, InitFunc func)
-      throws AngelException {
+    throws AngelException {
     checkNotNull(rowIds, "rowIds");
     checkNotNull(indices, "indices");
     //checkNotNull(func, "func");
@@ -822,7 +836,7 @@ public class MatrixClientImpl extends MatrixClient {
 
   @Override
   public GetRowsResult getRowsFlow(RowIndex index, int batchSize, boolean disableCache)
-      throws AngelException {
+    throws AngelException {
     checkNotNull(index, "index");
 
     index.setMatrixId(matrixId);
@@ -832,7 +846,7 @@ public class MatrixClientImpl extends MatrixClient {
         return PSAgentContext.get().getUserRequestAdapter().getRowsFlow(result, index, batchSize);
       } else {
         return PSAgentContext.get().getConsistencyController()
-            .getRowsFlow(taskContext, index, batchSize);
+          .getRowsFlow(taskContext, index, batchSize);
       }
     } catch (Throwable x) {
       throw new AngelException(x);
