@@ -3,13 +3,13 @@
 ## 1. Introduction
 DCN(Deep & Cross Network) explicitly applies feature crossing at each layer, requires no manual feature engineering, and adds negligible extra complexity to the DNN model.
 
-![DCN](../img/DCN.PNG)
+![DCN](../img/DCN.png)
 
 ### 1.1 Cross Layer
 
 DCN is combined of two parts: cross network and deep network. The deep network is a simple dnn, stacked by several fully connected layers. The Cross network, in other hands, is stacked by  several cross layers. Each cross layer has two inputs: the original embedding layer and the output of the last cross layer. The calculating method is as follows.
 
-![CrossLyer](../img/CrossLyer.PNG)
+![CrossLyer](../img/CrossLyer.png)
 
 ### 1.3 Combination
 
