@@ -11,15 +11,17 @@ export ANGEL_HOME=<ANGEL_HOME>
 export ANGEL_HDFS_HOME=<ANGEL_HDFS_HOME>
 export ANGEL_VERSION=<ANGEL_VERSION>
 
+
+
 scala_jar=scala-library-2.11.8.jar
-external_jar=fastutil-7.1.0.jar,htrace-core-2.05.jar,sizeof-0.3.0.jar,kryo-shaded-4.0.0.jar,minlog-1.3.0.jar,sketches-core-0.8.1.jar,memory-0.8.1.jar,commons-pool-1.6.jar,netty-all-4.1.1.Final.jar,hll-1.6.0.jar
-angel_ps_jar=angel-ps-core-${ANGEL_VERSION}.jar,angel-ps-mllib-${ANGEL_VERSION}.jar,angel-ps-examples-${ANGEL_VERSION}.jar,angel-ps-psf-${ANGEL_VERSION}.jar
+angel_ps_external_jar=fastutil-7.1.0.jar,htrace-core-2.05.jar,sizeof-0.3.0.jar,kryo-shaded-4.0.0.jar,minlog-1.3.0.jar,memory-0.8.1.jar,commons-pool-1.6.jar,netty-all-4.1.1.Final.jar,hll-1.6.0.jar
+angel_ps_jar=angel-ps-graph-${ANGEL_VERSION}.jar,angel-ps-core-${ANGEL_VERSION}.jar,angel-ps-psf-${ANGEL_VERSION}.jar,angel-ps-mllib-${ANGEL_VERSION}.jar,spark-on-angel-mllib-${ANGEL_VERSION}.jar
 
 sona_jar=spark-on-angel-core-${ANGEL_VERSION}.jar,spark-on-angel-mllib-${ANGEL_VERSION}.jar
-sona_psf_jar=spark-on-angel-mllib-${ANGEL_VERSION}-ps.jar,spark-on-angel-examples-${ANGEL_VERSION}-ps.jar
+sona_external_jar=fastutil-7.1.0.jar,htrace-core-2.05.jar,sizeof-0.3.0.jar,kryo-shaded-4.0.0.jar,minlog-1.3.0.jar,memory-0.8.1.jar,commons-pool-1.6.jar,netty-all-4.1.1.Final.jar,hll-1.6.0.jar,json4s-jackson_2.11-3.4.2.jar,json4s-ast_2.11-3.4.2.jar,json4s-core_2.11-3.4.2.jar,spark-toolkit_2.11-3.11.0.jar
 
-dist_jar=${external_jar},${angel_ps_jar},${sona_psf_jar},${scala_jar}
-local_jar=${external_jar},${angel_ps_jar},${sona_jar}
+dist_jar=${angel_ps_external_jar},${angel_ps_jar},${scala_jar}
+local_jar=${sona_external_jar},${angel_ps_jar},${sona_jar}
 
 unset SONA_ANGEL_JARS
 for f in `echo $dist_jar | awk -F, '{for(i=1; i<=NF; i++){ print $i}}'`; do
