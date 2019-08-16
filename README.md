@@ -49,6 +49,7 @@ We welcome everyone interested in machine learning to contribute code, create is
 * [TSC members & Committers](./Community.md)
 * [Contributing to Angel](./CONTRIBUTING.md)
 * [Roadmap](https://github.com/Angel-ML/angel/wiki/Roadmap)
+* [CoC](https://lfprojects.org/policies/)
 
 ## FAQ
 * [Angel FAQ](https://github.com/Tencent/angel/wiki/Angel%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
