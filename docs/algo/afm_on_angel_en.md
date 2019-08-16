@@ -3,7 +3,7 @@
 ## 1. Introduction
 AFM(Attention Neural Factorization Machines) is a improved FM method, which  which learns the importance of each feature interaction from data via a neural attention network.
 
-![AFM](../img/AFM.PNG)
+![AFM](../img/AFM.png)
 
 ### 1.1 BiInteractionCrossTiled layer
 BiInteractionCrossTiled is a layer that calculates each second-order feature interaction and concatenates them as a vector.
@@ -12,7 +12,7 @@ BiInteractionCrossTiled is a layer that calculates each second-order feature int
 
 ParamSharedFC layer is a fully connected layer with shared parameters, as explained in the following formulas, where w is the shared parameters for every feature interaction. h is another shared parameter vector for the next layer. The attention weights are calculated by applying a softmax operation on the layer's output. 
 
-![ParamSharedFC](../img/ParamSharedFC.PNG)
+![ParamSharedFC](../img/ParamSharedFC.png)
 
 ## 2. Execution & Performance
 ### 2.1 Network Construction by Json
