@@ -38,12 +38,12 @@ The environment requirements for running Angel on Kubernetes include:
   created above:  
   `kubectl create clusterrolebinding angel-role --clusterrole=edit --serviceaccount=angel-group:angel --namespace=angel-group`
 
-* Submitting the Job
+* **Submitting the Job**
   * data preparation  
   Put your data to cephfs or hdfs, angel example data in `$ANGEL_HOME/data`. This example uses `$ANGEL_HOME/data/a9a_123d_train.libsvm`  as data, assuming the data has been uploaded to cephfs.
     
   * Use `angel-submit` under the `bin` directory in the distribution package to submit Angel jobs to the Kubernetes cluster  
-  > **please make sure the cluster has enough resources; for the following example, at least 6GB memory and 3 vcores are needed to start the job**
+  > **please make sure the cluster has enough resources; for the following example, at least 9GB memory and 5 vcores are needed to start the job**
   
      ```$xslt
      export ANGEL_HOME=/path/to/angel 
