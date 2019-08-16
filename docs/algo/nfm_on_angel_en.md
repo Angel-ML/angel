@@ -58,9 +58,10 @@ Implemented as Scala code as:
   }
 ```
 
-## 2. Running and performance
+## 2. Running
 ### 2.1 Explanation of Json configuration File
-There are many parameters of NFM, which need to be specified by Json configuration file (for a complete description of Json configuration file, please refer to[Json explanation]()), A typical example is:
+There are many parameters of NFM, which need to be specified by Json configuration file (for a complete description of Json configuration file, please refer to[Json explanation](../basic/json_conf_en.md)), A typical example is:(see [data](https://github.com/Angel-ML/angel/tree/master/data/census))
+
 ```json
 {
   "data": {
@@ -139,24 +140,32 @@ There are many parameters of NFM, which need to be specified by Json configurati
 ```
 
 ### 2.2 Explanation of submit scripts
+
 ```shell
 runner="com.tencent.angel.ml.core.graphsubmit.GraphRunner"
-modelClass="com.tencent.angel.ml.classification.NeuralFactorizationMachines"
+modelClass="com.tencent.angel.ml.core.graphsubmit.AngelModel"
 
 $ANGEL_HOME/bin/angel-submit \
-    --angel.job.name DeepFM \
+    --angel.job.name NFM \
     --action.type train \
     --angel.app.submit.class $runner \
     --ml.model.class.name $modelClass \
     --angel.train.data.path $input_path \
+    --angel.save.model.path $model_path \
+    --angel.log.path $log_path \
     --angel.workergroup.number $workerNumber \
     --angel.worker.memory.gb $workerMemory  \
+    --angel.worker.task.number $taskNumber \
     --angel.ps.number $PSNumber \
-    --angel.ps.memory.gb $PSMemory \  
+    --angel.ps.memory.gb $PSMemory \
+    --angel.output.path.deleteonexist true \
     --angel.task.data.storage.level $storageLevel \
-    --angel.task.memorystorage.max.gb $taskMemory
+    --angel.task.memorystorage.max.gb $taskMemory \
+    --angel.worker.env "LD_PRELOAD=./libopenblas.so" \
+    --angel.ml.conf $nfm_json_path \
+    --ml.optimizer.json.provider com.tencent.angel.ml.core.PSOptimizerProvider
 ```
 
 For the deep learning model, its data, training and network configuration should be specified with the Json file first.
-
+Resources such as: worker,ps depend on detail dataset.
 

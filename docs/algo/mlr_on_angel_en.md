@@ -117,29 +117,92 @@ Each line of text represents a sample in the form of "y index 1: value 1 index 2
 
 * Submitting command
 
-You can submit LR algorithm training tasks to the Yarn cluster by using the following command:
-```java
-./bin/angel-submit \
+You can submit LR algorithm training tasks to the Yarn cluster by setting the parameters above one by one in submit script or using the following json file to construct the network:
+- If you use both parameters and json in script, parameters in script have higher priority.
+- If you only use parameters in script you must change `ml.model.class.name` as `--ml.model.class.name com.tencent.angel.ml.classification.MixedLogisticRegression` and do not set this parameter `angel.ml.conf` which is for json file path.
+Here we provide an example submitted by using json file(see [data](https://github.com/Angel-ML/angel/tree/master/data/census),see [Json description](../basic/json_conf_en.md) for a complete description of the Json configuration file)
+
+```json
+{
+  "data": {
+    "format": "dummy",
+    "indexrange": 148,
+    "validateratio": 0.1,
+    "numfield": 13,
+    "sampleratio": 0.2
+  },
+  "train": {
+    "epoch": 5,
+    "lr": 0.8,
+    "decayclass": "WarmRestarts",
+    "decayalpha": 0.05
+  },
+  "model": {
+    "modeltype": "T_FLOAT_DENSE",
+    "modelsize": 148
+  },
+  "default_optimize
+  "default_optimizer": {
+    "type": "momentum",
+    "momentum": 0.9,
+    "reg2": 0.01
+  },
+  "layers": [
+    {
+      "name": "sigmoid",
+      "type": "simpleinputlayer",
+      "outputdim": 10,
+      "transfunc": "sigmoid"
+    },
+    {
+      "name": "softmax",
+      "type": "simpleinputlayer",
+      "outputdim": 10,
+      "transfunc": "softmax"
+    },
+    {
+      "name": "dotpooling",
+      "type": "dotpooling",
+      "outputdim": 1,
+      "inputlayers": [
+        "sigmoid",
+        "softmax"
+      ]
+    },
+    {
+      "name": "simplelosslayer",
+      "type": "simplelosslayer",
+      "lossfunc": "CrossEntropyLoss",
+      "inputlayer": "dotpooling"
+    }
+  ]
+}
+```
+
+
+```shell
+runner="com.tencent.angel.ml.core.graphsubmit.GraphRunner"
+modelClass="com.tencent.angel.ml.core.graphsubmit.AngelModel"
+
+$ANGEL_HOME/bin/angel-submit \
+    --angel.job.name mlr \
     --action.type train \
-    --angel.app.submit.class com.tencent.angel.ml.classification.mlr.MLRRunner  \
+    --angel.app.submit.class $runner \
+    --ml.model.class.name $modelClass \
     --angel.train.data.path $input_path \
     --angel.save.model.path $model_path \
-    --angel.log.path $logpath \
-    --ml.epoch.num 10 \
-    --ml.num.update.per.epoch 10 \
-    --ml.feature.index.range 10000 \
-    --ml.data.validate.ratio 0.1 \
-    --ml.data.type dummy \
-    --ml.learn.rate 1 \
-    --ml.learn.decay 0.1 \
-    --ml.mlr.reg.l2 0 \
-    --ml.mlr.rank 5 \
-    --ml.mlr.v.init 0.00000001 \ 
-    --angel.workergroup.number 3 \
-    --angel.worker.task.number 3 \
-    --angel.ps.number 1 \
-    --angel.ps.memory.mb 5000 \
-    --angel.job.name=angel_lr_smalldata
+    --angel.log.path $log_path \
+    --angel.workergroup.number $workerNumber \
+    --angel.worker.memory.gb $workerMemory  \
+    --angel.worker.task.number $taskNumber \
+    --angel.ps.number $PSNumber \
+    --angel.ps.memory.gb $PSMemory \
+    --angel.output.path.deleteonexist true \
+    --angel.task.data.storage.level $storageLevel \
+    --angel.task.memorystorage.max.gb $taskMemory \
+    --angel.worker.env "LD_PRELOAD=./libopenblas.so" \
+    --angel.ml.conf $mixedlr_json_path \
+    --ml.optimizer.json.provider com.tencent.angel.ml.core.PSOptimizerProvider
 ```
 
 

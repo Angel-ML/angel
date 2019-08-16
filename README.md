@@ -20,7 +20,7 @@ We welcome everyone interested in machine learning to contribute code, create is
 * [Configuration Details](./docs/deploy/config_details_en.md)
 
 ## Algorithm
-* [**Algorithm Parameter Description**](./docs/algo/model_config_details.md)
+* [**Algorithm Parameter Description**](./docs/algo/model_config_details_en.md)
 * [LDA](./docs/algo/lda_on_angel_en.md)
 * [GBDT](./docs/algo/gbdt_on_angel_en.md)
 * [KMeans](./docs/algo/kmeans_on_angel_en.md)
@@ -29,6 +29,8 @@ We welcome everyone interested in machine learning to contribute code, create is
 * [Linear Regression](./docs/algo/linear_on_angel_en.md)
 * [Robust Regression](./docs/algo/robust_on_angel_en.md)
 * [Softmax Regression](./docs/algo/softmax_on_angel_en.md)
+* [FM](./docs/algo/fm_on_angel.md)
+* [MLR](./docs/algo/mlr_on_angel.md)
 * [Wide And Deep](./docs/algo/daw_on_angel_en.md)
 * [DeepFM](./docs/algo/deepfm_on_angel_en.md)
 * [DNN](./docs/algo/dnn_on_angel_en.md)
