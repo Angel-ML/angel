@@ -1,0 +1,91 @@
+{
+  "data": {
+    "format": "dummy",
+    "indexrange": 148,
+    "numfield": 13,
+    "validateratio": 0.1
+  },
+  "model": {
+    "modeltype": "T_FLOAT_SPARSE",
+    "modelsize": 148
+  },
+  "train": {
+    "epoch": 15,
+    "numupdateperepoch": 10,
+    "lr": 0.01,
+    "decayclass": "WarmRestarts",
+    "decayalpha": 0.05
+  },
+  "default_optimizer": "adam",
+  "layers": [
+    {
+      "name": "embedding",
+      "type": "embedding",
+      "numfactors": 8,
+      "outputdim": 104,
+      "optimizer": {
+        "type": "momentum",
+        "momentum": 0.9,
+        "reg2": 0.01
+      }
+    },
+    {
+      "name": "deep",
+      "type": "FCLayer",
+      "outputdims": [
+        400,
+        104
+
+      ],
+      "transfuncs": [
+        "relu",
+        "identity"
+      ],
+      "inputlayer": "embedding"
+    },
+    {
+      "name": "cross1",
+      "type": "CrossLayer",
+      "outputdim": 104,
+      "inputlayers": [
+        "embedding",
+        "embedding"
+      ]
+    },
+    {
+      "name": "cross2",
+      "type": "CrossLayer",
+      "outputdim": 104,
+      "inputlayers": [
+        "embedding",
+        "cross1"
+      ]
+    },
+    {
+      "name": "concat",
+      "type": "ConcatLayer",
+      "outputdim": 208,
+      "inputlayers": [
+        "deep",
+        "cross2"
+      ]
+    },
+    {
+      "name": "lr",
+      "type": "FCLayer",
+      "outputdims": [
+        1
+      ],
+      "transfuncs": [
+        "identity"
+      ],
+      "inputlayer": "concat"
+    },
+    {
+      "name": "simplelosslayer",
+      "type": "losslayer",
+      "lossfunc": "logloss",
+      "inputlayer": "lr"
+    }
+  ]
+}

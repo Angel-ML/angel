@@ -23,7 +23,7 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.mlcore.conf.SharedConf
 import com.tencent.angel.ml.core.utils.SConfHelper
 import com.tencent.angel.mlcore.variable.VarState
-import com.tencent.angel.ml.core.{AngelEnvContext, MLRunner}
+import com.tencent.angel.ml.core.{AngelMasterContext, MLRunner}
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 
@@ -38,7 +38,7 @@ class GraphRunner extends MLRunner with SConfHelper {
     */
   override def train(conf: Configuration): Unit = {
     val client = AngelClientFactory.get(conf)
-    val envCtx = AngelEnvContext(client)
+    val envCtx = AngelMasterContext(client)
     val sharedConf = initConf(conf)
 
     val saveModelPath = sharedConf.get(AngelConf.ANGEL_SAVE_MODEL_PATH, "")
@@ -76,7 +76,7 @@ class GraphRunner extends MLRunner with SConfHelper {
     */
   override def predict(conf: Configuration): Unit = {
     val client = AngelClientFactory.get(conf)
-    val envCtx = AngelEnvContext(client)
+    val envCtx = AngelMasterContext(client)
     val sharedConf = initConf(conf)
 
     val loadModelPath = sharedConf.getString(AngelConf.ANGEL_LOAD_MODEL_PATH, "")

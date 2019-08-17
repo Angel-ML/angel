@@ -21,7 +21,7 @@
     <groupId>com.tencent.angel</groupId>
     <artifactId>angel</artifactId>
     <packaging>pom</packaging>
-    <version>3.0.0-SNAPSHOT</version>
+    <version>3.0.0</version>
     <name>angel</name>
     <properties>
         <hadoop-version>2.7.3</hadoop-version>
@@ -29,7 +29,7 @@
         <java.version>1.8</java.version>
         <scala.binary.version>2.11</scala.binary.version>
         <scala.version>2.11.8</scala.version>
-        <json4s.version>3.5.3</json4s.version>
+        <json4s.version>3.2.11</json4s.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <dist.deps.scope>provided</dist.deps.scope>

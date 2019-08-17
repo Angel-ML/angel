@@ -1,0 +1,92 @@
+{
+  "data": {
+    "format": "dummy",
+    "indexrange": 148,
+    "numfield": 13,
+    "validateratio": 0.1
+  },
+  "model": {
+    "modeltype": "T_FLOAT_SPARSE",
+    "modelsize": 148
+  },
+  "train": {
+    "epoch": 5,
+    "numupdateperepoch": 10,
+    "lr": 1.0,
+    "decay": 0.01
+  },
+  "default_optimizer": "Momentum",
+  "layers": [
+    {
+      "name": "wide",
+      "type": "simpleinputlayer",
+      "outputdim": 1,
+      "transfunc": "identity"
+    },
+    {
+      "name": "embedding",
+      "type": "embedding",
+      "numfactors": 8,
+      "outputdim": 104,
+      "optimizer": {
+        "type": "momentum",
+        "momentum": 0.9,
+        "reg2": 0.01
+      }
+    },
+    {
+      "name": "biinteractioncrosstiled",
+      "type": "BiInteractionCrossTiled",
+      "outputdim": 624,
+      "inputlayer": "embedding"
+    },
+    {
+      "name": "paramsharedfc",
+      "type": "ParamSharedFC",
+      "outputdims": [
+        780,
+        78
+      ],
+      "transfuncs": [
+        "relu",
+        "softmax"
+      ],
+      "weightdims": [
+        10,
+        1
+      ],
+      "inputlayer": "biinteractioncrosstiled"
+    },
+    {
+      "name": "weightedsum",
+      "type": "WeightedSumLayer",
+      "outputdim": 8,
+      "inputlayers": [
+        "paramsharedfc",
+        "biinteractioncrosstiled"
+      ]
+    },
+    {
+      "name": "fclayer_1",
+      "type": "FCLayer",
+      "outputdims": [1],
+      "transfuncs": ["identity"],
+      "inputlayer": "weightedsum"
+    },
+    {
+      "name": "sumPooling",
+      "type": "SumPooling",
+      "outputdim": 1,
+      "inputlayers": [
+        "wide",
+        "fclayer_1"
+      ]
+    },
+    {
+      "name": "simplelosslayer",
+      "type": "losslayer",
+      "lossfunc": "logloss",
+      "inputlayer": "sumPooling"
+    }
+  ]
+}

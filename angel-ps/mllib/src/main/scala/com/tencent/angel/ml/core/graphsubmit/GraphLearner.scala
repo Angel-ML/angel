@@ -26,7 +26,7 @@ import com.tencent.angel.mlcore.network.layers.unary.KmeansInputLayer
 import com.tencent.angel.mlcore.optimizer.decayer.StepSizeScheduler
 import com.tencent.angel.mlcore.utils.ValidationUtils
 import com.tencent.angel.mlcore.MLModel
-import com.tencent.angel.ml.core.{AngelEnvContext, MLLearner}
+import com.tencent.angel.ml.core.{AngelMasterContext, MLLearner}
 import com.tencent.angel.ml.math2.utils.{DataBlock, LabeledData}
 import com.tencent.angel.ml.metric.LossMetric
 import com.tencent.angel.worker.task.TaskContext
@@ -45,7 +45,7 @@ class GraphLearner(conf: SharedConf, ctx: TaskContext) extends MLLearner(ctx) {
   val modelClassName: String = sharedConf.modelClassName
   val model: AngelModel = AngelModel(modelClassName, conf, ctx)
   model.buildNetwork()
-  model.createMatrices(AngelEnvContext(null))
+  model.createMatrices(AngelMasterContext(null))
   val graph: Graph = model.graph
   val ssScheduler: StepSizeScheduler = StepSizeScheduler(conf.stepSizeScheduler, lr0)
   val decayOnBatch: Boolean = conf.getBoolean(MLCoreConf.ML_OPT_DECAY_ON_BATCH,
@@ -124,7 +124,7 @@ class GraphLearner(conf: SharedConf, ctx: TaskContext) extends MLLearner(ctx) {
 
     val loadModelPath = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
     if (loadModelPath.isEmpty) {
-      model.init(AngelEnvContext(null))
+      model.init(AngelMasterContext(null))
     }
 
     barrier()
