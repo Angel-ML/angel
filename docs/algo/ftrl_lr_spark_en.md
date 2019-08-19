@@ -81,7 +81,34 @@ optim.saveWeight(output)
 optim.save(output + "/back")
 ```
 
-The example code can be find at https://github.com/Angel-ML/angel/blob/master/spark-on-angel/examples/src/main/scala/com/tencent/angel/spark/examples/cluster/FTRLExample.scala
+### Submit Command
+
+```shell
+source ./bin/spark-on-angel-env.sh
+ 
+$SPARK_HOME/bin/spark-submit \
+    --master yarn-cluster \
+    --conf spark.yarn.allocation.am.maxMemory=55g \
+    --conf spark.yarn.allocation.executor.maxMemory=55g \
+    --conf spark.driver.maxResultSize=20g \
+    --conf spark.kryoserializer.buffer.max=2000m\
+    --conf spark.ps.jars=$SONA_ANGEL_JARS \
+    --conf spark.ps.instances=1 \
+    --conf spark.ps.cores=2 \
+    --conf spark.ps.memory=5g \
+    --conf spark.ps.log.level=INFO \
+    --conf spark.offline.evaluate=200\
+    --jars $SONA_SPARK_JARS  \
+    --name "FTRL on Spark-on-Angel" \
+    --driver-memory 5g \
+    --num-executors 5 \
+    --executor-cores 2 \
+    --executor-memory 2g \
+    --class org.apache.spark.angel.examples.oneline_learning.FTRLExample \
+    ./lib/angelml-${SONA_version}.jar \
+    input:$input modelPath:$model dim:$dim batchSize:$batchSize actionType:train
+```
+[detail parameters](https://github.com/Angel-ML/sona/tree/master/angelml/src/main/scala/org/apache/spark/angel/examples/online_learning/FTRLExample) 
 
 ##References
 1. H. Brendan McMahan, Gary Holt, D. Sculley, Michael Young. Ad Click Prediction: a View from the Trenches.KDD’13, August 11–14, 2013

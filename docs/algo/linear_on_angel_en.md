@@ -77,98 +77,112 @@ The learning rate decays along iterations as ![](../img/LR_lr_ecay.gif), where:
 
 ###  **Submit Command**    
 
+you can submit job by setting the parameters above one by one in the script or construct network by json file as follows (see [Json description]() for a complete description of the Json configuration file)
+- If you use both parameters and json in script, parameters in script have higher priority.
+- If you only use parameters in script you must change `ml.model.class.name` as `--ml.model.class.name com.tencent.angel.ml.regression.LinearRegression` and do not set this parameter `angel.ml.conf` which is for json file path.
+Here we provide an example submitted by using json file
+
+```json
+{
+   "data": {
+     "format": "libsvm",
+     "indexrange": 150361,
+     "validateratio": 0.1
+   },
+   "train": {
+     "epoch": 10,
+     "lr": 0.2,
+     "numupdateperepoch": 10,
+     "decayclass": "StandardDecay",
+     "decayalpha": 0.001
+   },
+   "model": {
+     "modeltype": "T_FLOAT_DENSE"
+   },
+   "default_optimizer": {
+     "type": "momentum",
+     "momentum": 0.9,
+     "reg2": 0.01
+   },
+   "layers": [
+     {
+       "name": "wide",
+       "type": "simpleinputlayer",
+       "outputdim": 1,
+       "transfunc": "identity"
+     },
+     {
+       "name": "simplelosslayer",
+       "type": "simplelosslayer",
+       "lossfunc": "l2loss",
+       "inputlayer": "wide"
+     }
+   ]
+ }
+```
+
 * **Training Job**
 
-	```java
-	./bin/angel-submit \
-		--action.type=train \
-		--angel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
-		--ml.model.class.name=com.tencent.angel.ml.regression.LinearRegression \
-		--angel.train.data.path=$input_path \
-		--angel.save.model.path=$model_path \
-		--angel.log.path=$log_path \
-		--ml.data.is.classification=false \
-		--ml.model.is.classification=false \
-		--ml.epoch.num=10 \
-		--ml.feature.index.range=$featureNum+1 \
-		--ml.data.validate.ratio=0.1 \
-		--ml.learn.rate=0.1 \
-		--ml.learn.decay=1 \
-		--ml.reg.l2=0.001 \
-		--ml.num.update.per.epoch=10 \
-		--ml.worker.thread.num=4 \
-		--ml.data.type=libsvm \
-		--ml.model.type=T_FLOAT_DENSE \
-		--angel.workergroup.number=2 \
-		--angel.worker.memory.mb=5000 \
-		--angel.worker.task.number=1 \
-		--angel.ps.number=2 \
-		--angel.ps.memory.mb=5000 \
-		--angel.job.name=linearReg_network \
-		--angel.output.path.deleteonexist=true \
-	```
-
-* **IncTraining Job**
-```java
-	./bin/angel-submit \
-		--action.type=inctrain \
-		--angel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
-		--ml.model.class.name=com.tencent.angel.ml.regression.LinearRegression \
-		--angel.train.data.path=$input_path \
-		--angel.load.model.path=$model_path \
-		--angel.save.model.path=$model_path \
-		--angel.log.path=$log_path \
-		--ml.model.is.classification=false \
-		--ml.data.is.classification=false \
-		--ml.epoch.num=10 \
-		--ml.feature.index.range=$featureNum+1 \
-		--ml.data.validate.ratio=0.1 \
-		--ml.learn.rate=0.1 \
-		--ml.learn.decay=1 \
-		--ml.reg.l2=0.001 \
-		--ml.num.update.per.epoch=10 \
-		--ml.worker.thread.num=4 \
-		--ml.data.type=libsvm \
-		--ml.model.type=T_FLOAT_DENSE \
-		--angel.workergroup.number=2 \
-		--angel.worker.memory.mb=5000 \
-		--angel.worker.task.number=1 \
-		--angel.ps.number=2 \
-		--angel.ps.memory.mb=5000 \
-		--angel.job.name=linearReg_network \
-		--angel.output.path.deleteonexist=true
+	```shell
+	runner="com.tencent.angel.ml.core.graphsubmit.GraphRunner"
+	modelClass="com.tencent.angel.ml.core.graphsubmit.AngelModel"
+	
+	$ANGEL_HOME/bin/angel-submit \
+	    --angel.job.name linereg \
+	    --action.type train \
+	    --angel.app.submit.class $runner \
+	    --ml.model.class.name $modelClass \
+	    --angel.train.data.path $input_path \
+	    --angel.save.model.path $model_path \
+	    --angel.log.path $log_path \
+	    --ml.model.is.classification false \
+	    --angel.workergroup.number $workerNumber \
+	    --angel.worker.memory.gb $workerMemory  \
+	    --angel.worker.task.number $taskNumber \
+	    --angel.ps.number $PSNumber \
+	    --angel.ps.memory.gb $PSMemory \
+	    --angel.output.path.deleteonexist true \
+	    --angel.task.data.storage.level $storageLevel \
+	    --angel.task.memorystorage.max.gb $taskMemory \
+	    --angel.worker.env "LD_PRELOAD=./libopenblas.so" \
+	    --angel.ml.conf $linreg_json_path \
+	    --ml.optimizer.json.provider com.tencent.angel.ml.core.PSOptimizerProvider
 	```
 
 * **Prediction Job**
 
-    ```java
-	./bin/angel-submit \
-		--action.type=predict \
-		--angel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
-		--ml.model.class.name=com.tencent.angel.ml.regression.LinearRegression \
-		--angel.predict.data.path=$input_path \
-		--angel.save.model.path=$model_path \
-		--angel.predict.out.path $predict_path \
-		--angel.log.path=$log_path \
-		--ml.feature.index.range=$featureNum+1 \
-		--ml.data.type=libsvm \
-		--ml.model.type=T_FLOAT_DENSE \
-		--ml.worker.thread.num=4 \
-		--angel.workergroup.number=2 \
-		--angel.worker.memory.mb=5000 \
-		--angel.worker.task.number=1 \
-		--angel.ps.number=2 \
-		--angel.ps.memory.mb=5000 \
-		--angel.job.name=linearReg_network_predict \
-		--angel.output.path.deleteonexist=true \
+    ```shell
+	runner="com.tencent.angel.ml.core.graphsubmit.GraphRunner"
+	modelClass="com.tencent.angel.ml.core.graphsubmit.AngelModel"
+	
+	$ANGEL_HOME/bin/angel-submit \
+	    --angel.job.name linereg \
+	    --action.type predict \
+	    --angel.app.submit.class $runner \
+	    --ml.model.class.name $modelClass \
+	    --angel.predict.data.path $input_path \
+	    --angel.load.model.path $model_path \
+	    --angel.predict.out.path=$predictout \
+	    --angel.log.path $log_path \
+	    --ml.model.is.classification false \
+	    --angel.workergroup.number $workerNumber \
+	    --angel.worker.memory.gb $workerMemory  \
+	    --angel.worker.task.number $taskNumber \
+	    --angel.ps.number $PSNumber \
+	    --angel.ps.memory.gb $PSMemory \
+	    --angel.output.path.deleteonexist true \
+	    --angel.task.data.storage.level $storageLevel \
+	    --angel.task.memorystorage.max.gb $taskMemory \
+	    --angel.worker.env "LD_PRELOAD=./libopenblas.so" \
+	    --angel.ml.conf $linreg_json_path \
+	    --ml.optimizer.json.provider com.tencent.angel.ml.core.PSOptimizerProvider
 	```
 
 ### Performance
 * Data: E2006-tfidf, 1.5×10^5 features, 1.6×10^4 samples
 * Resources:
-	* Angel: executor: 2, 5G memory, 1 task; ps: 2, 5G memory
-* Time of 100 epochs:
-	* Angel: 25min
+	* Angel: woker: 2, 5G memory, 1 task; ps: 2, 5G memory
+
 
 
 

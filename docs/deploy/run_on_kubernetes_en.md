@@ -51,7 +51,7 @@ The environment requirements for running Angel on Kubernetes include:
               -Dangel.deploy.mode=KUBERNETES \
               -Dangel.kubernetes.master=<api_server_url> \
               -Dangel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
-              -Dangel.action.type=train \
+              -Daction.type=train \
               -Dangel.kubernetes.container.image=tencentangel/angel:v3.0.0 \
               -Dangel.kubernetes.master.volumes.hostPath.test.mount.path=/angel/mountpath \
               -Dangel.kubernetes.master.volumes.hostPath.test.options.path=/cephfs/basepath/to/angel \
@@ -166,4 +166,4 @@ The following configurations are specific to Angel on Kubernetes.
 
 All angel on kubernetes configuration information can be referred to `AngelConf` class.  
 
-**Note**: If the you want to make your own image from the base image we provided, the `entrypoint.sh` and `Dockerfile` in source code `kubernetesmanager/scripts`.
+**Note**: If you want to make your own image from the base image we provided, the `entrypoint.sh` and `Dockerfile` sample in source code `kubernetesmanager/scripts`.

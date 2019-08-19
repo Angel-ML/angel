@@ -13,7 +13,7 @@ set -e
 # If there is no passwd entry for the container UID, attempt to create one
 if [ -z "$uidentry" ] ; then
     if [ -w /etc/passwd ] ; then
-        echo "$myuid:x:$myuid:$mygid:anonymous uid:$SPARK_HOME:/bin/false" >> /etc/passwd
+        echo "$myuid:x:$myuid:$mygid:anonymous uid:$ANGEL_HOME:/bin/false" >> /etc/passwd
     else
         echo "Container ENTRYPOINT failed to add passwd entry for anonymous UID"
     fi
@@ -31,7 +31,6 @@ case "$ANGEL_ON_K8S_CMD" in
       exec "$@"
       ;;
 esac
-ANGEL_HOME=/opt/angel
 ANGEL_CLASSPATH="$ANGEL_CLASSPATH:${ANGEL_HOME}/lib/*:$CLASSPATH"
 env | grep ANGEL_JAVA_OPT_ | sort -t_ -k4 -n | sed 's/[^=]*=\(.*\)/\1/g' > /tmp/java_opts.txt
 readarray -t ANGEL_EXECUTOR_JAVA_OPTS < /tmp/java_opts.txt
