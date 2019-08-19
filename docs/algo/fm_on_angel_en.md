@@ -68,9 +68,12 @@ The model of the FM algorithm consists of two parts, wide and embedding, where w
     * ml.data.posneg.ratio: Positive and negative sample resampling ratio, useful for situations where the positive and negative samples differ greatly (eg, 5 times or more)
   
 * submit command
-    The FM algorithm can be submitted by the following command:
-```java
-../../bin/angel-submit \
+   The FM algorithm can be submitted by the following command or set construct a json file of compute network and run by json(see [Json description](../basic/json_conf_en.md):
+
+### submit by parameters
+
+```shell
+$ANGEL_HOME/bin/angel-submit \
     -Dml.epoch.num=20 \
     -Dangel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
     -Dml.model.class.name=com.tencent.angel.ml.classification.FactorizationMachines \
@@ -81,15 +84,112 @@ The model of the FM algorithm consists of two parts, wide and embedding, where w
     -Dml.learn.rate=0.1 \
     -Dml.reg.l2=0.03 \
     -Daction.type=train \
-    -Dml.fm.field.num=11 \
+    -Dml.fm.field.num=$fielNum \
     -Dml.fm.rank=8 \
     -Dml.inputlayer.optimizer=ftrl \
     -Dangel.train.data.path=$input_path \
-    -Dangel.workergroup.number=20 \
-    -Dangel.worker.memory.mb=20000 \
-    -Dangel.worker.task.number=1 \
-    -Dangel.ps.number=20 \
-    -Dangel.ps.memory.mb=10000 \
-    -Dangel.task.data.storage.level=memory \
-    -Dangel.job.name=angel_l1
+    -Dangel.save.model.path=$model_path \
+    -Dangel.log.path=$log_path \
+    -Dangel.workergroup.number $workerNumber \
+    -Dangel.worker.memory.gb $workerMemory  \
+    -Dangel.worker.task.number $taskNumber \
+    -Dangel.ps.number $PSNumber \
+    -Dangel.ps.memory.gb $PSMemory \
+    -Dangel.output.path.deleteonexist true \
+    -Dangel.task.data.storage.level $storageLevel \
+    -Dangel.task.memorystorage.max.gb $taskMemory \
+    -Dangel.worker.env "LD_PRELOAD=./libopenblas.so" \
+    -Dangel.job.name=fm \
+    -Dml.optimizer.json.provider com.tencent.angel.ml.core.PSOptimizerProvider
+```
+
+### submit by json
+
+json file as follows:(see [data](https://github.com/Angel-ML/angel/tree/master/data/census))
+
+```json
+{
+  "data": {
+    "format": "dummy",
+    "indexrange": 148,
+    "validateratio": 0.1,
+    "numfield": 13,
+    "sampleratio": 0.2
+  },
+  "train": {
+    "epoch": 5,
+    "lr": 0.8,
+    "decayclass": "WarmRestarts",
+    "decayalpha": 0.05
+  },
+  "model": {
+    "modeltype": "T_FLOAT_DENSE",
+    "modelsize": 148
+  },
+  "default_optimizer": {
+    "type": "momentum",
+    "reg2": 0.01
+  },
+  "layers": [
+    {
+      "name": "wide",
+      "type": "simpleinputlayer",
+      "outputdim": 1,
+      "transfunc": "identity"
+    },
+    {
+      "name": "embedding",
+      "type": "embedding",
+      "numfactors": 8,
+      "outputdim": 104
+    },
+    {
+      "name": "biinnersumcross",
+      "type": "BiInnerSumCross",
+      "inputlayer": "embedding",
+      "outputdim": 1
+    },
+    {
+      "name": "sumPooling",
+      "type": "SumPooling",
+      "outputdim": 1,
+      "inputlayers": [
+        "wide",
+        "biinnersumcross"
+      ]
+    },
+    {
+      "name": "simplelosslayer",
+      "type": "simplelosslayer",
+      "lossfunc": "logloss",
+      "inputlayer": "sumPooling"
+    }
+  ]
+}
+```
+*submit script
+
+```shell
+runner="com.tencent.angel.ml.core.graphsubmit.GraphRunner"
+modelClass="com.tencent.angel.ml.core.graphsubmit.AngelModel"
+
+$ANGEL_HOME/bin/angel-submit \
+    --angel.job.name fm \
+    --action.type train \
+    --angel.app.submit.class $runner \
+    --ml.model.class.name $modelClass \
+    --angel.train.data.path $input_path \
+    --angel.save.model.path $model_path \
+    --angel.log.path $log_path \
+    --angel.workergroup.number $workerNumber \
+    --angel.worker.memory.gb $workerMemory  \
+    --angel.worker.task.number $taskNumber \
+    --angel.ps.number $PSNumber \
+    --angel.ps.memory.gb $PSMemory \
+    --angel.output.path.deleteonexist true \
+    --angel.task.data.storage.level $storageLevel \
+    --angel.task.memorystorage.max.gb $taskMemory \
+    --angel.worker.env "LD_PRELOAD=./libopenblas.so" \
+    --angel.ml.conf $fm_json_path \
+    --ml.optimizer.json.provider com.tencent.angel.ml.core.PSOptimizerProvider
 ```

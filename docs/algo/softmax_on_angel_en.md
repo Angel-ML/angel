@@ -33,7 +33,7 @@ The softmax algorithm consists of only a single input layer, which can be "dense
 	    * prob: the probability that the sample is relative to the predicted result; 
 	    * label: the category to which the predicted sample is classified, and the sample is divided into one category which has the maximum probability, the category label starts counting from 0
     
-## 3. Execution & Performance
+## 3. Execution
 ### Input Format
 Data fromat is set in "ml.data.type", supporting "libsvm", "dense" and "dummy" types. For details, see [Angel Data Format](data_format_en.md)
 where the "libsvm" format is as follows:
@@ -68,88 +68,104 @@ where the "libsvm" format is as follows:
  
 ###  **Submit Command**    
   
+you can submit job by setting the parameters above one by one in the script or construct network by json file as follows (see [Json description](../basic/json_conf_en.md) for a complete description of the Json configuration file)
+- If you use both parameters and json in script, parameters in script have higher priority.
+- If you only use parameters in script you must change `ml.model.class.name` as `--ml.model.class.name com.tencent.angel.ml.classification.SoftmaxRegression` and do not set this parameter `angel.ml.conf` which is for json file path.
+here we provide an example submitted by using json file(see [data](https://github.com/Angel-ML/angel/tree/master/data/protein))
+
+```json
+{
+  "data": {
+    "format": "libsvm",
+    "indexrange": 357,
+    "validateratio": 0.1
+  },
+  "model": {
+    "modeltype": "T_DOUBLE_SPARSE",
+    "modelsize": 357
+  },
+  "train": {
+    "epoch": 10,
+    "numupdateperepoch": 10,
+    "lr": 0.1,
+    "decay": 0.8
+  },
+  "default_optimizer": {
+    "type": "momentum",
+    "momentum": 0.9,
+    "reg2": 0.01
+  },
+  "layers": [
+    {
+      "name": "wide",
+      "type": "simpleinputlayer",
+      "outputdim": 3,
+      "transfunc": "identity"
+    },
+    {
+      "name": "softmaxlosslayer",
+      "type": "simplelosslayer",
+      "lossfunc": "softmaxloss",
+      "inputlayer": "wide"
+    }
+  ]
+}
+
+```
+
+
 * **Submit Command**
     **Training Job**
-	```java
-	../../bin/angel-submit \
-		-Dml.epoch.num=20 \
-		-Dangel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
-		-Dml.model.class.name=com.tencent.angel.ml.classification.SoftmaxRegression \
-		-Dangel.train.data.path=$traindata \
-		-Dangel.save.model.path=$modelout \
-		-Dml.feature.index.range=$featureNum \
-		-Dml.feature.num=$featureNum \
-		-Dml.data.validate.ratio=0.1 \
-		-Dml.data.label.trans.class="SubOneTrans" \
-		-Dml.data.type=libsvm \
-		-Dml.learn.rate=0.1 \
-		-Dml.learn.decay=0.5 \
-		-Dml.reg.l2=0.03 \
-		-Daction.type=train \
-		-Dml.num.class=$classNum \
-		-Dangel.workergroup.number=10 \
-		-Dangel.worker.memory.mb=10000 \
-		-Dangel.worker.task.number=1 \
-		-Dangel.ps.number=4 \
-		-Dangel.ps.memory.mb=10000 \
-		-Dangel.task.data.storage.level=memory \
-		-Dangel.job.name=angel_train
-	```
 
-	**IncTraining Job**
-	```java
-	../../bin/angel-submit \
-		-Dml.epoch.num=20 \
-		-Dangel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
-		-Dml.model.class.name=com.tencent.angel.ml.classification.SoftmaxRegression \
-		-Dangel.train.data.path=$traindata \
-		-Dangel.load.model.path=$modelout \
-		-Dangel.save.model.path=$modelout \
-		-Dml.feature.index.range=$featureNum \
-		-Dml.feature.num=$featureNum \
-		-Dml.data.validate.ratio=0.1 \
-		-Dml.data.label.trans.class="SubOneTrans" \
-		-Dml.data.type=libsvm \
-		-Dml.learn.rate=0.1 \
-		-Dml.learn.decay=0.5 \
-		-Dml.reg.l2=0.03 \
-		-Daction.type=inctrain \
-		-Dml.num.class=$classNum \
-		-Dangel.workergroup.number=10 \
-		-Dangel.worker.memory.mb=10000 \
-		-Dangel.worker.task.number=1 \
-		-Dangel.ps.number=4 \
-		-Dangel.ps.memory.mb=10000 \
-		-Dangel.task.data.storage.level=memory \
-		-Dangel.job.name=angel_inctrain
+	```shell
+	runner="com.tencent.angel.ml.core.graphsubmit.GraphRunner"
+	modelClass="com.tencent.angel.ml.core.graphsubmit.AngelModel"
+	
+	$ANGEL_HOME/bin/angel-submit \
+	    --angel.job.name softmax \
+	    --action.type train \
+	    --angel.app.submit.class $runner \
+	    --ml.model.class.name $modelClass \
+	    --angel.train.data.path $input_path \
+	    --angel.save.model.path $model_path \
+	    --angel.log.path $log_path \
+	    --angel.workergroup.number $workerNumber \
+	    --angel.worker.memory.gb $workerMemory  \
+	    --angel.worker.task.number $taskNumber \
+	    --angel.ps.number $PSNumber \
+	    --angel.ps.memory.gb $PSMemory \
+	    --angel.output.path.deleteonexist true \
+	    --angel.task.data.storage.level $storageLevel \
+	    --angel.task.memorystorage.max.gb $taskMemory \
+	    --angel.worker.env "LD_PRELOAD=./libopenblas.so" \
+	    --angel.ml.conf $softmax_json_path \
+	    --ml.optimizer.json.provider com.tencent.angel.ml.core.PSOptimizerProvider
 	```
 
 	**Prediction Job**
-	```java
-	../../bin/angel-submit \
-		-Dml.epoch.num=20 \
-		-Dangel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner \
-		-Dml.model.class.name=com.tencent.angel.ml.classification.SoftmaxRegression \
-		-Dangel.predict.data.path=$predictdata \
-		-Dangel.load.model.path=$modelout \
-		-Dangel.predict.out.path=$predictout \
-		-Dml.feature.index.range=$featureNum \
-		-Dml.feature.num=$featureNum \
-		-Dml.data.type=libsvm \
-		-Daction.type=predict \
-		-Dml.num.class=$classNum \
-		-Dangel.workergroup.number=10 \
-		-Dangel.worker.memory.mb=10000 \
-		-Dangel.worker.task.number=1 \
-		-Dangel.ps.number=4 \
-		-Dangel.ps.memory.mb=10000 \
-		-Dangel.task.data.storage.level=memory \
-		-Dangel.job.name=angel_predict
-	```
 
-### Performance
-* data：SVHN，3×10^3 features，7×10^4 samples
-* resource：
-	* Angel：executor：10，10G memory，1task； ps：4，10G memory
-* Time of 100 epochs:
-	* Angel：55min
+	```shell
+	runner="com.tencent.angel.ml.core.graphsubmit.GraphRunner"
+	modelClass="com.tencent.angel.ml.core.graphsubmit.AngelModel"
+	
+	$ANGEL_HOME/bin/angel-submit \
+	    --angel.job.name softmax \
+	    --action.type predict \
+	    --angel.app.submit.class $runner \
+	    --ml.model.class.name $modelClass \
+	    --angel.predict.data.path $input_path \
+	    --angel.load.model.path $model_path \
+	    --angel.predict.out.path=$predictout \
+	    --angel.log.path $log_path \
+	    --angel.workergroup.number $workerNumber \
+	    --angel.worker.memory.gb $workerMemory  \
+	    --angel.worker.task.number $taskNumber \
+	    --angel.ps.number $PSNumber \
+	    --angel.ps.memory.gb $PSMemory \
+	    --angel.output.path.deleteonexist true \
+	    --angel.task.data.storage.level $storageLevel \
+	    --angel.task.memorystorage.max.gb $taskMemory \
+	    --angel.worker.env "LD_PRELOAD=./libopenblas.so" \
+	    --angel.ml.conf $softmax_json_path \
+	    --ml.optimizer.json.provider com.tencent.angel.ml.core.PSOptimizerProvider
+	```
