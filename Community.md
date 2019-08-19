@@ -1,4 +1,4 @@
-Welcome to the Angel community! This COMMUNITY.md explains where to get help, and different ways to be part of the community. 
+Welcome to the Angel community! This document explains where to get help, and different ways to be part of the community. 
 
 The Angel project community comprises a group of core committer and a sub-group that forms the Technical Steering Committee (the “TSC”) which governs the project.
 
@@ -95,3 +95,5 @@ We would like to sincerely thank the following community members for their contr
 - [endymecy](https://github.com/endymecy)
 - [StrikeW](https://github.com/StrikeW)
 - [wqh17101](https://github.com/wqh17101)
+- [Oneal65](<https://github.com/Oneal65>) - **Oneal Liu**
+- [cheney2015](<https://github.com/cheney2015>) - **Cristal Chen**
