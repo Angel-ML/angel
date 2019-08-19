@@ -32,9 +32,11 @@ The Deep and Wide algorithm directly extracts the results of Embedding into the 
   }
 ```
 
-## 2. Operation and Performance
+## 2. Operation
 ### 2.1 The description of Json configuration file
-When Deep and wide have more parameters, they need to be specified in the form of a Json configuration file(see [Json description]() for a complete description of the Json configuration file), A typical example is as follows:
+
+When Deep and wide have more parameters, they need to be specified in the form of a Json configuration file(see [Json description](../basic/json_conf_en.md) for a complete description of the Json configuration file), A typical example is as follows:(see [data](https://github.com/Angel-ML/angel/tree/master/data/census))
+
 ```json
 {
   "data": {
@@ -106,9 +108,10 @@ When Deep and wide have more parameters, they need to be specified in the form o
 ```
 
 ### 2.2 The description of submitting script
+
 ```shell
 runner="com.tencent.angel.ml.core.graphsubmit.GraphRunner"
-modelClass="com.tencent.angel.ml.classification.WideAndDeep"
+modelClass="com.tencent.angel.ml.core.graphsubmit.AngelModel"
 
 $ANGEL_HOME/bin/angel-submit \
     --angel.job.name DeepFM \
@@ -116,12 +119,20 @@ $ANGEL_HOME/bin/angel-submit \
     --angel.app.submit.class $runner \
     --ml.model.class.name $modelClass \
     --angel.train.data.path $input_path \
+    --angel.save.model.path $model_path \
+    --angel.log.path $log_path \
     --angel.workergroup.number $workerNumber \
     --angel.worker.memory.gb $workerMemory  \
+    --angel.worker.task.number $taskNumber \
     --angel.ps.number $PSNumber \
-    --angel.ps.memory.gb $PSMemory \  
+    --angel.ps.memory.gb $PSMemory \
+    --angel.output.path.deleteonexist true \
     --angel.task.data.storage.level $storageLevel \
-    --angel.task.memorystorage.max.gb $taskMemory
+    --angel.task.memorystorage.max.gb $taskMemory \
+    --angel.worker.env "LD_PRELOAD=./libopenblas.so" \
+    --angel.ml.conf $daw_json_path \
+    --ml.optimizer.json.provider com.tencent.angel.ml.core.PSOptimizerProvider
 ```
 
 For the deep learning model, its data, training and network configuration should be specified in Json file first.
+Resources such as: worker,ps depend on detail dataset.

@@ -89,60 +89,84 @@ The LR algorithm supports three types of models: DoubleDense, DoubleSparse, Doub
   * angel.ps.number: number of PS 
   * angel.ps.memory.mb: PS's memory requested in G   
 
-### **Output** 
-
 ###  **Submit Command**    
+
+You can submit job by setting the parameters above one by one in the script or construct network by json file as follows(see [Json description](../basic/json_conf_en.md) for a complete description of the Json configuration file)
+- If you use both parameters and json in script, parameters in script have higher priority. 
+- If you only use parameters in script you must change `ml.model.class.name` as `--ml.model.class.name com.tencent.angel.ml.classification.LogisticRegression` and do not set this parameter `angel.ml.conf` which is for json file path.
+Here we provide an example submitted by using json file.
+
+* **Json file**
+ 
+```json
+ {
+   "data": {
+     "format": "libsvm",
+     "indexrange": 1000000,
+     "validateratio": 0.1,
+     "useshuffle": true
+   },
+   "train": {
+     "epoch": 10,
+     "lr": 4.0,
+     "numupdateperepoch": 200,
+     "decayclass": "StandardDecay",
+     "decayalpha": 0.01
+   },
+   "model": {
+     "modeltype": "T_FLOAT_DENSE"
+   },
+   "default_optimizer": {
+      "type": "sgd"
+   },
+   "layers": [
+     {
+        "name": "wide",
+       "type": "simpleinputlayer",
+       "outputdim": 1,
+       "transfunc": "identity"
+     },
+     {
+       "name": "simplelosslayer",
+       "type": "simplelosslayer",
+       "lossfunc": "logloss",
+       "inputlayer": "wide"
+     }
+   ]
+ }
+```
 
 * **Training Job**
 
-```java
-./bin/angel-submit \
+```shell
+runner="com.tencent.angel.ml.core.graphsubmit.GraphRunner"
+modelClass="com.tencent.angel.ml.core.graphsubmit.AngelModel"
+
+$ANGEL_HOME/bin/angel-submit \
+    --angel.job.name lr \
     --action.type train \
-    --angel.app.submit.class com.tencent.angel.ml.classification.lr.LRRunner  \
+    --angel.app.submit.class $runner \
+    --ml.model.class.name $modelClass \
     --angel.train.data.path $input_path \
     --angel.save.model.path $model_path \
-    --angel.log.path $logpath \
-    --ml.epoch.num 10 \
-    --ml.num.update.per.epoch 10 \
-    --ml.feature.index.range 10000 \
-    --ml.data.validate.ratio 0.1 \
-    --ml.data.type dummy \
-    --ml.learn.rate 1 \
-    --ml.learn.decay 0.1 \
-    --ml.lr.reg.l2 0 \
-    --angel.workergroup.number 3 \
-    --angel.worker.task.number 3 \
-    --angel.ps.number 1 \
-    --angel.ps.memory.mb 5000 \
-    --angel.job.name=angel_lr_smalldata
+    --angel.log.path $log_path \
+    --angel.workergroup.number $workerNumber \
+    --angel.worker.memory.gb $workerMemory  \
+    --angel.worker.task.number $taskNumber \
+    --angel.ps.number $PSNumber \
+    --angel.ps.memory.gb $PSMemory \
+    --angel.output.path.deleteonexist true \
+    --angel.task.data.storage.level $storageLevel \
+    --angel.task.memorystorage.max.gb $taskMemory \
+    --angel.worker.env "LD_PRELOAD=./libopenblas.so" \
+    --angel.ml.conf $lr_json_path \
+    --ml.optimizer.json.provider com.tencent.angel.ml.core.PSOptimizerProvider
 ```
 
-* **Prediction Job**
-
-```java
-./bin/angel-submit \
-    --action.type predict \
-    --angel.app.submit.class com.tencent.angel.ml.classification.lr.LRRunner  \
-    --angel.load.model.path $model_path \
-    --angel.predict.out.path $predict_path \
-    --angel.train.data.path $input_path \
-    --angel.workergroup.number 3 \
-    --ml.data.type dummy \
-    --angel.worker.memory.mb 8000  \
-    --angel.worker.task.number 3 \
-    --angel.ps.number 1 \
-    --angel.ps.memory.mb 5000 \
-    --angel.job.name angel_lr_predict
-```
-
-### Performance
-* Data: internal video recommendation, 5×10^7 features, 8×10^7 data points
+Data: criteo.kaggle2014.train.svm.field, 1×10^6 features, 4×10^7 data points
 * Resources:
-	* Spark: executor: 50, 14G memory, 4 cores; driver: 5, 5G memory 
-	* Angel: executor: 50, 10G memory, 4 tasks; ps: 20, 5G memory
-* Time of 100 epochs:
-	* Angel: 20min
-	* Spark: 145min
+	* Angel: worker: 20, 30G memory, 2 tasks; ps: 10, 5G memory
+
 
 
 

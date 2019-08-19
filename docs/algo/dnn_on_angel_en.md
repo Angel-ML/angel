@@ -20,7 +20,7 @@ Angel provides the function of using Json to configure the algorithm, and also p
 ```
 Here we use a DenseInputLayer as the input layer, the output dimension is 500, and Relu is used as the transfer function. For other layers to refer to it, we name the input layer "denseinputlayer".
 
-In particular, Angel allows different parts of the network to use different optimizers. Here, we specify DenseInputLayer to use FTRL optimizer (about optimizer, please refer to [Optimizer in Angel](../basic/optimizer_on_angel.md)) 
+In particular, Angel allows different parts of the network to use different optimizers. Here, we specify DenseInputLayer to use FTRL optimizer (about optimizer, please refer to [Optimizer in Angel](../basic/optimizer_on_angel_en.md)) 
 
 ### 1.2 Definition of FClayer
 ```json
@@ -49,7 +49,7 @@ There are two FCLayer:
     - The output dimension is 1
     - The transfer function is "identity"
 
-As you can see from the above, FCLayer uses a simple writing method, please refer to [Json's definition](../basic/json_conf.md). The simple “inputlayer” is the input of the first FCLayer, The simple name is used as the name of the last FCLayer. The middle Layer is named by "fclayer_x", which means the number of the FCLayer, starting from 0.
+As you can see from the above, FCLayer uses a simple writing method, please refer to [Json's definition](../basic/json_conf_en.md). The simple “inputlayer” is the input of the first FCLayer, The simple name is used as the name of the last FCLayer. The middle Layer is named by "fclayer_x", which means the number of the FCLayer, starting from 0.
 
 In addition, the input of “FCLayer” is the output of the upper layer "denseinputlayer".
 
@@ -78,7 +78,7 @@ the type of loss function is SimpleLossLayer, the loss function is "logloss", an
   },
 ```
 
-Refer to [Json definition](../basic/json_conf.md) for the meaning of the detailed parameters. For example, some parameters are listed here:
+Refer to [Json definition](../basic/json_conf_en.md) for the meaning of the detailed parameters. For example, some parameters are listed here:
 
 - format: input data format
 - indexrange: feature dimension
@@ -92,7 +92,7 @@ Refer to [Json definition](../basic/json_conf.md) for the meaning of the detaile
     "modelsize": 300
   },
 ```
-Refer to [Json definition](../basic/json_conf.md) for the meaning of the detailed parameters. For example, some parameters are listed here:
+Refer to [Json definition](../basic/json_conf_en.md) for the meaning of the detailed parameters. For example, some parameters are listed here:
 
 - model type: T_DOUBLE_SPARSE
 - model size: the actual size of the model(number of valid features)
@@ -108,7 +108,7 @@ Refer to [Json definition](../basic/json_conf.md) for the meaning of the detaile
   },
 ```
 
-Refer to [Json definition](../basic/json_conf.md) for the meaning of the detailed parameters. For example, some parameters are listed here:
+Refer to [Json definition](../basic/json_conf_en.md) for the meaning of the detailed parameters. For example, some parameters are listed here:
 - epoch: number of training rounds
 - lr: learning rate
 - decayclass: learning rate attenuation      
@@ -117,6 +117,8 @@ Refer to [Json definition](../basic/json_conf.md) for the meaning of the detaile
 
 
 ## 5. Putting all the configurations together
+see [data](https://github.com/Angel-ML/angel/tree/master/data/w6a)
+
 ```json
 {
   "data": {
@@ -168,25 +170,30 @@ Refer to [Json definition](../basic/json_conf.md) for the meaning of the detaile
 ```
 
 ## 6. Submitting scripts
+
 ```shell
 runner="com.tencent.angel.ml.core.graphsubmit.GraphRunner"
-modelClass="com.tencent.angel.ml.core.graphsubmit.GraphModel"
+modelClass="com.tencent.angel.ml.core.graphsubmit.AngelModel"
 
 $ANGEL_HOME/bin/angel-submit \
-    --angel.job.name DeepFM \
+    --angel.job.name DNN \
     --action.type train \
     --angel.app.submit.class $runner \
     --ml.model.class.name $modelClass \
     --angel.train.data.path $input_path \
+    --angel.save.model.path $model_path \
+    --angel.log.path $log_path \
     --angel.workergroup.number $workerNumber \
     --angel.worker.memory.gb $workerMemory  \
+    --angel.worker.task.number $taskNumber \
     --angel.ps.number $PSNumber \
-    --angel.ps.memory.gb $PSMemory \  
+    --angel.ps.memory.gb $PSMemory \
+    --angel.output.path.deleteonexist true \
     --angel.task.data.storage.level $storageLevel \
-    --angel.task.memorystorage.max.gb $taskMemory
+    --angel.task.memorystorage.max.gb $taskMemory \
+    --angel.worker.env "LD_PRELOAD=./libopenblas.so" \
+    --angel.ml.conf $dnn_json_path \
+    --ml.optimizer.json.provider com.tencent.angel.ml.core.PSOptimizerProvider
 ```
 
-Note: Unlike other algorithms, which model class used is:
-"com.tencent.angel.ml.core.graphsubmit.GraphModel"
-
-All algorithms defined by Json use this model class.
+Resources such as: worker,ps depend on detail dataset.
