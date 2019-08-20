@@ -226,7 +226,7 @@ public class InitNeighborTest {
           "node id = " + entry.getIntKey() + ", neighbors = " + Arrays.toString(entry.getValue()));
     }
 
-    client.checkpoint();
+    client.checkpoint(0).get();
 
     ps.stop(-1);
     PSErrorRequest request = PSErrorRequest.newBuilder()

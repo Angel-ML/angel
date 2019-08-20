@@ -230,7 +230,7 @@ public class InitNeighborTest2 {
           "node id = " + entry.getLongKey() + ", neighbors = " + Arrays.toString(entry.getValue()));
     }
 
-    client.checkpoint().get();
+    client.checkpoint(0).get();
 
     ps.stop(-1);
     PSErrorRequest request = PSErrorRequest.newBuilder()
