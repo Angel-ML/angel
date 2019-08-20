@@ -22,7 +22,7 @@
     <parent>
         <groupId>com.tencent.angel</groupId>
         <artifactId>angel-ps</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>3.0.0</version>
 
         <relativePath>../pom.xml</relativePath>
     </parent>
@@ -60,7 +60,7 @@
             <groupId>com.tencent.angel</groupId>
             <artifactId>angel-mlcore</artifactId>
             <!--version>3.0.0</version-->
-            <version>0.1.0-SNAPSHOT</version>
+            <version>0.1.1</version>
             <exclusions>
                 <exclusion>
                     <artifactId>org.json4s</artifactId>
