@@ -49,12 +49,12 @@
     <dependency>
       <groupId>com.tencent.angel</groupId>
       <artifactId>angel-math</artifactId>
-      <version>0.1.0-SNAPSHOT</version>
+      <version>0.1.1</version>
     </dependency>
     <dependency>
       <groupId>com.tencent.angel</groupId>
       <artifactId>angel-format</artifactId>
-      <version>0.1.0-SNAPSHOT</version>
+      <version>0.1.1</version>
       <exclusions>
         <exclusion>
           <groupId>com.tencent.angel</groupId>
