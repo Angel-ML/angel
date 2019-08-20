@@ -98,8 +98,6 @@ public class LongFloatVectorStorage extends LongFloatStorage {
 
   @Override
   public void update(RowType updateType, ByteBuf buf, UpdateOp op) {
-    LOG.info("update type = " + updateType + ", rowId=" + vector.getRowId() + ", size=" + vector.getSize());
-    long startTs = System.currentTimeMillis();
     switch (updateType) {
       case T_FLOAT_SPARSE_LONGKEY:
       case T_FLOAT_SPARSE_LONGKEY_COMPONENT:
@@ -151,7 +149,6 @@ public class LongFloatVectorStorage extends LongFloatStorage {
             "Unsupport operation: update " + updateType + " to " + this.getClass().getName());
       }
     }
-    LOG.info("update use time = " + (System.currentTimeMillis() - startTs));
   }
 
 
