@@ -4,11 +4,10 @@ Local mode is mainly used for testing and debugging. Currently, local mode suppo
 
 ## 1. Execution Environment Requirements
 
-* Hadoop >= 2.2.0
 * Java version 1.8
 * Angel distribution package angel-&lt;version&gt;-bin.zip
 
-First, configure HADOOP_HOME and JAVA_HOME, and unzip Angel distribution package. Angel jobs can run on local now. 
+First, configure JAVA_HOME, and unzip Angel distribution package. Angel jobs can run on local now. 
 
 ## 2. LOCAL Examples
 
