@@ -99,7 +99,8 @@ Taking LogisticRegression as an example:
 	- **submit by json**
 		>when you submit job by json, you can define the basic parameters in script, and other parameters about algorithm can be defined in json file, as follows:
 		
-		>*[Notice]:here ```ml.model.class.name``` is ```com.tencent.angel.ml.core.graphsubmit.AngelModel``` 
+		>*[Notice]:here ```ml.model.class.name``` is ```com.tencent.angel.ml.core.graphsubmit.AngelModel```  
+		>```<localpath>/logreg.json``` is the json's path
 		
 		script:
 		```bsh
@@ -113,10 +114,12 @@ Taking LogisticRegression as an example:
 			--angel.job.name LR_test \
 			--angel.am.memory.gb 2 \
 			--angel.worker.memory.gb 2 \
-			--angel.ps.memory.gb 2
+			--angel.ps.memory.gb 2 \
+			--angel.ml.conf <localpath>/logreg.json \
+			--ml.optimizer.json.provider com.tencent.angel.ml.core.PSOptimizerProvider
 		```
 		
-		json file:
+		json file(logreg.json):
 		```json
 		{
 		  "data": {
@@ -156,6 +159,13 @@ Taking LogisticRegression as an example:
 		For the ease of usage, there are more other parameters that you can configure:
 
 		* json parameters: [Json description](../basic/json_conf_en.md)
+		
+	- **submit by json and parameters**
+		>when you submit job using both json and parameters, please pay attention to the following tips:
+		
+		- ```ml.model.class.name``` is ```com.tencent.angel.ml.core.graphsubmit.AngelModel``` 
+		- ```angel.ml.conf``` and ```ml.optimizer.json.provider=com.tencent.angel.ml.core.PSOptimizerProvider``` must be set
+		- parameters should be set in the script, and they have higher priority than parameters in json.
 
 3. **Monitoring the Progress**
 
