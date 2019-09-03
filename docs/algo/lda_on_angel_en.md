@@ -57,6 +57,41 @@ The overall framework for training LDA on Angel is shown in the figure below. Th
   * ml.lda.alpha: alpha
   * ml.lda.beta: beta
 
+### Submit Command
+
+```shell
+$ANGEL_HOME/bin/angel-submit \
+     -Dangel.app.submit.class=com.tencent.angel.ml.lda.LDARunner \
+     -Dangel.predict.data.path=$input\
+     -Dmapreduce.input.fileinputformat.input.dir.recursive=true \
+     -Dangel.load.model.path=$output \
+     -Dangel.log.path=$log \
+     -Dangel.predict.out.path=$predict \
+     -Dsave.doc.topic=true\
+     -Dsave.word.topic=true\
+     -Dsave.doc.topic.distribution=true\
+     -Dsave.topic.word.distribution=true\
+     -Dml.lda.topic.num=1000 \
+     -Dml.lda.word.num=141044 \
+     -Dangel.worker.thread.num=8\
+     -Dangel.worker.memory.mb=4000 \
+     -Dangel.ps.memory.mb=4000 \
+     -Dml.epoch.num=100 \
+     -Dangel.worker.task.number=1 \
+     -Dangel.ps.number=20 \
+     -Dangel.workergroup.number=20 \
+     -Dangel.am.log.level=INFO \
+     -Daction.type=predict \
+     -Dangel.worker.log.level=INFO \
+     -Dangel.ps.log.level=INFO \
+     -Dangel.task.data.storage.level=memory \
+     -Dangel.worker.priority=5 \
+     -Dqueue=$queue\
+     -Dangel.output.path.deleteonexist=true \
+     -Dangel.psagent.cache.sync.timeinterval.ms=100 \
+     -Dangel.job.name=lda
+``` 
+
 
 ### Performance
  
