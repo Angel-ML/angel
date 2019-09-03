@@ -48,12 +48,6 @@ class Adam(override var lr: Double, val beta: Double, val gamma: Double) extends
   override def toString: String = {
     s"Adam gamma=$gamma beta=$beta lr=$lr regL2=$regL2Param epsilon=$epsilon"
   }
-
-  override def toJson: JObject = {
-    (OptimizerKeys.typeKey -> s"${this.getClass.getSimpleName}") ~
-      (OptimizerKeys.betaKey-> beta) ~
-      (OptimizerKeys.gammaKey -> gamma)
-  }
 }
 
 object Adam {

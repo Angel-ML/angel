@@ -77,7 +77,7 @@ public class SoftmaxTest {
 
       String jsonFile = "./src/test/jsons/softmax.json";
 
-      // Set basic configuration keys
+       // Set basic configuration keys
       conf.setBoolean("mapred.mapper.new-api", true);
       conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
       conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
@@ -125,7 +125,7 @@ public class SoftmaxTest {
   private void trainTest() throws Exception {
     try {
       String inputPath = "../../data/protein/protein_357d_train.libsvm";
-      String savePath = LOCAL_FS + TMP_PATH + "/SoftMax";
+      String savePath = LOCAL_FS + TMP_PATH + "/model/SoftMax";
       String logPath = LOCAL_FS + TMP_PATH + "/SoftMaxlog";
 
       // Set log path
@@ -151,9 +151,9 @@ public class SoftmaxTest {
   private void incTrain() {
     try {
       String inputPath = "../../data/protein/protein_357d_train.libsvm";
-      String savePath = LOCAL_FS + TMP_PATH + "/SoftMax";
+      String savePath = LOCAL_FS + TMP_PATH + "/model/SoftMax";
       String logPath = LOCAL_FS + TMP_PATH + "/SoftMaxlog";
-      String newPath = LOCAL_FS + TMP_PATH + "/NewSoftMax";
+      String newPath = LOCAL_FS + TMP_PATH + "/model/NewSoftMax";
 
       // Set trainning data path
       conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
@@ -178,7 +178,7 @@ public class SoftmaxTest {
   private void predictTest() throws Exception {
     try {
       String inputPath = "../../data/protein/protein_357d_test.libsvm";
-      String loadPath = LOCAL_FS + TMP_PATH + "/SoftMax";
+      String loadPath = LOCAL_FS + TMP_PATH + "/model/SoftMax";
       String predictPath = LOCAL_FS + TMP_PATH + "/predict";
       String logPath = LOCAL_FS + TMP_PATH + "/SoftMaxlog";
 

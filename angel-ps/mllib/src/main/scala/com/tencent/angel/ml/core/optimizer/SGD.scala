@@ -46,10 +46,6 @@ class SGD(override var lr: Double) extends Optimizer {
   override def toString: String = {
     s"SGD lr=$lr regL2=$regL2Param regL1=$regL1Param"
   }
-
-  override def toJson: JObject = {
-    JObject(JField(OptimizerKeys.typeKey, JString(s"${this.getClass.getSimpleName}")))
-  }
 }
 
 

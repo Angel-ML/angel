@@ -65,10 +65,7 @@ public class DeepFMTest {
       conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
-      String savePath = LOCAL_FS + TMP_PATH + "/model/deepFM";
       String logPath = LOCAL_FS + TMP_PATH + "/DeepFMlog";
-      // Set save model path
-      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, savePath);
       // Set log path
       conf.set(AngelConf.ANGEL_LOG_PATH, logPath);
       conf.set(MLCoreConf.ML_OPTIMIZER_JSON_PROVIDER(), PSOptimizerProvider.class.getName());
@@ -94,6 +91,10 @@ public class DeepFMTest {
     try {
       String inputPath = "../../data/census/census_148d_train.dummy";
       conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, inputPath);
+
+      String savePath = LOCAL_FS + TMP_PATH + "/model/deepFM";
+      // Set save model path
+      conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, savePath);
 
       // Set actionType train
       conf.set(AngelConf.ANGEL_ACTION_TYPE, AngelMLConf.ANGEL_ML_TRAIN());
