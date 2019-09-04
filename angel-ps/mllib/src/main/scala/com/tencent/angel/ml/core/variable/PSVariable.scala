@@ -19,7 +19,6 @@ package com.tencent.angel.ml.core.variable
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-import com.tencent.angel.client.AngelPSClient
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.matrix.MatrixContext
 import com.tencent.angel.ml.core.conf.AngelMLConf
@@ -28,9 +27,10 @@ import com.tencent.angel.mlcore.network.EnvContext
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.math2.utils.RowType
 import com.tencent.angel.mlcore.variable._
+import com.tencent.angel.model.MatrixSaveContext
 import com.tencent.angel.psagent.PSAgent
 import org.apache.hadoop.conf.Configuration
-
+import java.util
 
 abstract class PSVariable(name: String,
                           rowType: RowType,
@@ -46,6 +46,16 @@ abstract class PSVariable(name: String,
   def getMatrixId: Int = matrixId
 
   val numFactors: Int
+
+  def getMatrixSaveContext(withSlot: Boolean = false): MatrixSaveContext = {
+    if (withSlot) {
+      new MatrixSaveContext(name, formatClassName)
+    } else {
+      val savedRowsId = new util.ArrayList[Integer]()
+      rowsSaved(withSlot).foreach(i => savedRowsId.add(i))
+      new MatrixSaveContext(name, savedRowsId, formatClassName)
+    }
+  }
 
   def getMatrixCtx: MatrixContext
 

@@ -20,7 +20,6 @@ package com.tencent.angel.ml.core.graphsubmit
 
 import com.tencent.angel.client.AngelClientFactory
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.mlcore.conf.SharedConf
 import com.tencent.angel.ml.core.utils.SConfHelper
 import com.tencent.angel.mlcore.variable.VarState
 import com.tencent.angel.ml.core.{AngelMasterContext, MLRunner}
