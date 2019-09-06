@@ -155,9 +155,9 @@ class GraphLearner(conf: SharedConf, ctx: TaskContext) extends MLLearner(ctx) {
       LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch start.")
 
       val iter = if (negTrainData == null) {
-        getBathDataIterator(posTrainData, batchData, numBatch)
+        getBatchDataIterator(posTrainData, batchData, numBatch)
       } else {
-        getBathDataIterator(posTrainData, negTrainData, batchData, numBatch)
+        getBatchDataIterator(posTrainData, negTrainData, batchData, numBatch)
       }
 
       val startTrain = System.currentTimeMillis()
@@ -189,7 +189,7 @@ class GraphLearner(conf: SharedConf, ctx: TaskContext) extends MLLearner(ctx) {
     model
   }
 
-  private def getBathDataIterator(trainData: DataBlock[LabeledData],
+  private def getBatchDataIterator(trainData: DataBlock[LabeledData],
                                   batchData: Array[LabeledData], numBatch: Int) = {
     trainData.resetReadIndex()
     assert(batchData.length > 1)
@@ -207,7 +207,7 @@ class GraphLearner(conf: SharedConf, ctx: TaskContext) extends MLLearner(ctx) {
     }
   }
 
-  private def getBathDataIterator(posData: DataBlock[LabeledData],
+  private def getBatchDataIterator(posData: DataBlock[LabeledData],
                                   negData: DataBlock[LabeledData],
                                   batchData: Array[LabeledData], numBatch: Int) = {
     posData.resetReadIndex()
