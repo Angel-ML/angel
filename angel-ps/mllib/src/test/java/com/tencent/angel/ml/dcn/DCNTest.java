@@ -63,8 +63,8 @@ public class DCNTest {
       conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
-      String savePath = LOCAL_FS + TMP_PATH + "/model/wideDeep";
       //String savePath = "file:///E:/model/DCN";
+      String savePath = LOCAL_FS + TMP_PATH + "/model/DCN";
       String logPath = LOCAL_FS + TMP_PATH + "/DCNlog";
       // Set save model path
       conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, savePath);

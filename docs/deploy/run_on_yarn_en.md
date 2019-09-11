@@ -34,7 +34,7 @@ Taking LogisticRegression as an example:
 	* upload the data 
 
 		```
-		hadoop fs -put data/exampledata/LRLocalExampleData/a9a.train hdfs://<hdfs name>/test/lr_data
+		hadoop fs -put data/a9a/a9a_123d_train.dummy hdfs://<hdfs name>/test/lr_data
 		```
 2. **Submitting the Job**
 
@@ -42,43 +42,130 @@ Taking LogisticRegression as an example:
 
 	> **please make sure the cluster has enough resources; for the following example, at least 6GB memory and 3 vcores are needed to start the job**
 	
+	> There are three ways to submit job for algorithms in angel,such as: by parameters, by json or by parameters and json, as for deep learning algorithms can be submitted only by json.
+	>
+	> If you use both parameters and json to submit job, you must konw parameters have higher priority than json. 
+
+    - **submit by parameters**
+	
 		```bsh
 		./angel-submit \
-			--angel.app.submit.class com.tencent.angel.example.quickstart.QSLRRunner\
+			--angel.app.submit.class com.tencent.angel.ml.core.graphsubmit.GraphRunner\
+			--ml.model.class.name com.tencent.angel.ml.classification.LogisticRegression \
 			--angel.train.data.path "hdfs://<hdfs name>/test/lr_data" \
 			--angel.log.path "hdfs://<hdfs name>/test/log" \
 			--angel.save.model.path "hdfs://<hdfs name>/test/model" \
 			--action.type train \
 			--ml.data.type dummy \
-			--ml.feature.num 1024 \
+			--ml.feature.index.range 123 \
 			--angel.job.name LR_test \
 			--angel.am.memory.gb 2 \
 			--angel.worker.memory.gb 2 \
-			--angel.ps.memory.gb 2
+			--angel.ps.memory.gb 2 \
+			--ml.epoch.num 5 \
+            --ml.data.validate.ratio 0.1 \
+            --ml.learn.rate 0.01 \
+            --ml.reg.l2 0.03
 		```
 
-	**Meaning of the Parameters**
+		- **Meaning of the Parameters**
 
+	
+		| Parameter    | Meaning  |
+		| --- | --- |
+		| action.type  | computing type, supporting "train" and "predict" for model training and prediction, respectively  |
+		| angel.app.submit.class | the entry point for your application: the run class of an algorithm|
+		| angel.train.data.path | training data path |
+		| angel.log.path | metrics log path |
+		| angel.save.model.path | save path |
+		| angel.job.name | job name |
+		| angel.am.memory.gb | requested memory for master |
+		| angel.worker.memory.gb | requested memory for each worker |
+		| angel.ps.memory.gb | requested memory for one PS|
+		| ml.model.class.name | model class name |
+		| ml.data.type | data type, supporting libsvm and dummy |
+		| ml.feature.index.range | number of features |
+		| ml.epoch.num | number of iterations |
+		| ml.data.validate.ratio | verification set sampling rate |
+		| ml.learn.rate | learning rate |
+		| ml.reg.l2 | l2 regularization |
+	
+	
+		For the ease of usage, there are more other parameters that you can configure:
 
-	| Parameter    | Meaning  |
-	| --- | --- |
-	| action.type  | computing type, supporting "train" and "predict" for model training and prediction, respectively  |
-	| angel.app.submit.class | the entry point for your application: the run class of an algorithm|
-	| angel.train.data.path | training data path |
-	| angel.log.path | metrics log path |
-	| angel.save.model.path | save path |
-	| ml.data.type | data type, supporting libsvm and dummy |
-	| ml.feature.num | number of features |
-	| angel.job.name | job name |
-	| angel.am.memory.gb | requested memory for master |
-	| angel.worker.memory.gb | requested memory for each worker |
-	| angel.ps.memory.gb | requested memory for one PS|
+		* system parameters: [system configuration](config_details_en.md)
+		* algorithm parameters: [Logistic Regression](../algo/lr_on_angel_en.md)
 
+	- **submit by json**
+		>when you submit job by json, you can define the basic parameters in script, and other parameters about algorithm can be defined in json file, as follows:
+		
+		>*[Notice]:here ```ml.model.class.name``` is ```com.tencent.angel.ml.core.graphsubmit.AngelModel```  
+		>```<localpath>/logreg.json``` is the json's path
+		
+		script:
+		```bsh
+		./angel-submit \
+			--angel.app.submit.class com.tencent.angel.ml.core.graphsubmit.GraphRunner\
+			--ml.model.class.name com.tencent.angel.ml.core.graphsubmit.AngelModel \
+			--angel.train.data.path "hdfs://<hdfs name>/test/lr_data" \
+			--angel.log.path "hdfs://<hdfs name>/test/log" \
+			--angel.save.model.path "hdfs://<hdfs name>/test/model" \
+			--action.type train \
+			--angel.job.name LR_test \
+			--angel.am.memory.gb 2 \
+			--angel.worker.memory.gb 2 \
+			--angel.ps.memory.gb 2 \
+			--angel.ml.conf <localpath>/logreg.json \
+			--ml.optimizer.json.provider com.tencent.angel.ml.core.PSOptimizerProvider
+		```
+		
+		json file(logreg.json):
+		```json
+		{
+		  "data": {
+		    "format": "dummy",
+		    "indexrange": 123,
+		    "validateratio": 0.1,
+		    "sampleratio": 1.0
+		  },
+		  "train": {
+		    "epoch": 10,
+		    "lr": 0.5
+		  },
+		  "model": {
+		    "modeltype": "T_FLOAT_SPARSE"
+		  },
+		  "default_optimizer": {
+		    "type": "momentum",
+		    "momentum": 0.9,
+		    "reg2": 0.001
+		  },
+		  "layers": [
+		    {
+		      "name": "wide",
+		      "type": "simpleinputlayer",
+		      "outputdim": 1,
+		      "transfunc": "identity"
+		    },
+		    {
+		      "name": "simplelosslayer",
+		      "type": "simplelosslayer",
+		      "lossfunc": "logloss",
+		      "inputlayer": "wide"
+		    }
+		  ]
+		}
+		```
+		For the ease of usage, there are more other parameters that you can configure:
 
-	For the ease of usage, there are more other parameters that you can configure:
-
-	* system parameters: [system configuration](config_details_en.md)
-	* algorithm parameters: [Logistic Regression](../algo/lr_on_angel_en.md)
+		* json parameters: [Json description](../basic/json_conf_en.md)
+		
+	- **submit by json and parameters**
+		>when you submit job using both json and parameters, please pay attention to the following tips:
+		
+		- ```ml.model.class.name``` is ```com.tencent.angel.ml.core.graphsubmit.AngelModel``` 
+		- ```angel.ml.conf``` and ```ml.optimizer.json.provider=com.tencent.angel.ml.core.PSOptimizerProvider``` must be set
+		- parameters should be set in the script, and they have higher priority than parameters in json.
 
 3. **Monitoring the Progress**
 
