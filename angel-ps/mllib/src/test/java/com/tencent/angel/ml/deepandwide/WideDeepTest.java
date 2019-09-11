@@ -64,8 +64,8 @@ public class WideDeepTest {
       conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
       conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
-      //String savePath = "file:///E:/model/wideDeep";
       String savePath = LOCAL_FS + TMP_PATH + "/model/wideDeep";
+      //String savePath = "file:///E:/model/wideDeep";
       String logPath = LOCAL_FS + TMP_PATH + "/wideDeeplog";
       // Set save model path
       conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, savePath);
