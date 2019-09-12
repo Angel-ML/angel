@@ -45,10 +45,6 @@ class KmeansOptimizer() extends Optimizer {
   override def toString: String = {
     s"KmeansOptimizer"
   }
-
-  override def toJson: JObject = {
-    JObject(JField(OptimizerKeys.typeKey, JString(s"${this.getClass.getSimpleName}")))
-  }
 }
 
 

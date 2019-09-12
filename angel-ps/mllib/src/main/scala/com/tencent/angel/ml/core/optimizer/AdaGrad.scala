@@ -47,10 +47,6 @@ class AdaGrad(override var lr: Double, val beta: Double) extends Optimizer {
     s"AdaGrad beta=$beta lr=$lr regL2=$regL2Param regL1=$regL1Param epsilon=$epsilon"
   }
 
-  override def toJson: JObject = {
-    (OptimizerKeys.typeKey -> s"${this.getClass.getSimpleName}") ~
-      (OptimizerKeys.betaKey -> beta)
-  }
 }
 
 object AdaGrad {

@@ -117,7 +117,7 @@ public class SVMTest {
   private void trainTest() throws Exception {
     try {
       String inputPath = "../../data/w6a/w6a_300d_train.dense";
-      String savePath = LOCAL_FS + TMP_PATH + "/SVM";
+      String savePath = LOCAL_FS + TMP_PATH + "/model/SVM";
       String logPath = LOCAL_FS + TMP_PATH + "/SVMlog";
 
       // Set trainning data path
@@ -140,7 +140,7 @@ public class SVMTest {
   private void predictTest() throws Exception {
     try {
       String inputPath = "../../data/w6a/w6a_300d_test.libsvm";
-      String loadPath = LOCAL_FS + TMP_PATH + "/SVM";
+      String loadPath = LOCAL_FS + TMP_PATH + "/model/SVM";
       String predictPath = LOCAL_FS + TMP_PATH + "/predict";
 
       conf.set(AngelMLConf.ML_DATA_INPUT_FORMAT(), "libsvm");

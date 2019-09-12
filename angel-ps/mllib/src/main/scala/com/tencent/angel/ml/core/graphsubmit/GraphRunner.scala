@@ -20,12 +20,13 @@ package com.tencent.angel.ml.core.graphsubmit
 
 import com.tencent.angel.client.AngelClientFactory
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.mlcore.conf.SharedConf
 import com.tencent.angel.ml.core.utils.SConfHelper
 import com.tencent.angel.mlcore.variable.VarState
 import com.tencent.angel.ml.core.{AngelMasterContext, MLRunner}
+import com.tencent.angel.mlcore.utils.JsonUtils
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, Path}
 
 class GraphRunner extends MLRunner with SConfHelper {
 
@@ -63,6 +64,17 @@ class GraphRunner extends MLRunner with SConfHelper {
 
       if (!saveModelPath.isEmpty) {
         model.saveModel(envCtx, saveModelPath)
+
+        try {
+          val fs = FileSystem.newInstance(conf)
+          val gjson = fs.create(new Path(saveModelPath, "graph.json"), true)
+          val jsonStr = JsonUtils.toJsonConfStr(sharedConf, model.graph)
+          gjson.writeBytes(jsonStr)
+          gjson.flush()
+          gjson.close()
+        } catch {
+          case e: Exception => LOG.warn(e.getMessage)
+        }
       }
     } finally {
       client.stop()

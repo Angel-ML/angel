@@ -48,12 +48,6 @@ class FTRL(override var lr: Double, val alpha: Double, val beta: Double) extends
   override def toString: String = {
     s"FTRL alpha=$alpha beta=$beta lr=$lr regL1=$regL1Param regL2=$regL2Param"
   }
-
-  override def toJson: JObject = {
-    (OptimizerKeys.typeKey -> s"${this.getClass.getSimpleName}") ~
-      (OptimizerKeys.alphaKey -> alpha) ~
-      (OptimizerKeys.betaKey -> beta)
-  }
 }
 
 object FTRL {

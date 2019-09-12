@@ -48,11 +48,6 @@ class AdaDelta(override var lr: Double, val alpha: Double, val beta: Double) ext
     s"AdaDelta alpha=$alpha beta=$beta lr=$lr regL2=$regL2Param regL1=$regL1Param epsilon=$epsilon"
   }
 
-  override def toJson: JObject = {
-    (OptimizerKeys.typeKey -> s"${this.getClass.getSimpleName}") ~
-      (OptimizerKeys.alphaKey -> alpha) ~
-      (OptimizerKeys.betaKey -> beta)
-  }
 }
 
 object AdaDelta {

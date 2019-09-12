@@ -18,6 +18,7 @@ package com.tencent.angel.ml.core
 
 import com.tencent.angel.client.AngelClient
 import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.ml.core.conf.AngelMLConf
 import com.tencent.angel.mlcore.conf.SharedConf
 import com.tencent.angel.mlcore.network.EnvContext
 import com.tencent.angel.mlcore.variable.{VarState, VariableManager}
@@ -84,9 +85,11 @@ class PSVariableManager(isSparseFormat: Boolean, conf: SharedConf)
     envCtx match {
       case AngelMasterContext(client: AngelClient) if client != null =>
         val saveContext = new ModelSaveContext
-        getALLVariables.foreach { variable =>
+        val withSlot: Boolean = conf.getBoolean(AngelMLConf.ML_VERABLE_SAVE_WITHSLOT,
+          AngelMLConf.DEFAULT_ML_VERABLE_SAVE_WITHSLOT)
+        getALLVariables.foreach { case variable: PSVariable =>
           assert(variable.getState == VarState.Initialized || variable.getState == VarState.Ready)
-          saveContext.addMatrix(new MatrixSaveContext(variable.name, variable.formatClassName))
+          saveContext.addMatrix(variable.getMatrixSaveContext(withSlot))
         }
         saveContext.setSavePath(conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH, ""))
         val deleteExistsFile = conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,

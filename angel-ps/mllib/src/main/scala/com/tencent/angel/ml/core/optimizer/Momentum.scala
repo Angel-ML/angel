@@ -48,11 +48,6 @@ class Momentum(override var lr: Double, val momentum: Double) extends Optimizer 
   override def toString: String = {
     s"Momentum momentum=$momentum lr=$lr regL2=$regL2Param"
   }
-
-  override def toJson: JObject = {
-    (OptimizerKeys.typeKey -> s"${this.getClass.getSimpleName}") ~
-      (OptimizerKeys.momentumKey -> momentum)
-  }
 }
 
 object Momentum {
