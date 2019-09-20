@@ -85,21 +85,21 @@ object FTRLExample {
 
     val inputData = sc.textFile(input)
     val data = dataType match {
-      case "libsvm" =>
-        inputData .map(s => (DataLoader.parseLongFloat(s, dim), DataLoader.parseLabel(s, false)))
+        case "libsvm" =>
+          inputData .map(s => (DataLoader.parseLongFloat(s, dim), DataLoader.parseLabel(s, false)))
           .map {
             f =>
               f._1.setY(f._2)
               f._1
           }
-      case "dummy" =>
-        inputData .map(s => (DataLoader.parseLongDummy(s, dim), DataLoader.parseLabel(s, false)))
-          .map {
-            f =>
-              f._1.setY(f._2)
-              f._1
-          }
-    }
+        case "dummy" =>
+          inputData .map(s => (DataLoader.parseLongDummy(s, dim), DataLoader.parseLabel(s, false)))
+            .map {
+              f =>
+                f._1.setY(f._2)
+                f._1
+            }
+      }
 
 
     data.persist(StorageLevel.DISK_ONLY)
@@ -112,9 +112,9 @@ object FTRLExample {
 
     if (withBalancePartition)
       opt.init(min, max + 1, rowType, data.map(f => f.getX),
-        new LoadBalancePartitioner(bits, numPartitions), modelPath + "/back")
+        new LoadBalancePartitioner(bits, numPartitions))
     else
-      opt.init(min, max + 1, -1, rowType, new ColumnRangePartitioner(), modelPath + "/back")
+      opt.init(min, max + 1, -1, rowType, new ColumnRangePartitioner())
 
     opt.setPossionRate(possionRate)
 
@@ -180,7 +180,7 @@ object FTRLExample {
 
     val max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.max).max()
     val min = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.min).min()
-    opt.init(min, max + 1, -1, RowType.T_FLOAT_SPARSE_LONGKEY, new ColumnRangePartitioner(), modelPath + "/weight")
+    opt.init(min, max + 1, -1, RowType.T_FLOAT_SPARSE_LONGKEY, new ColumnRangePartitioner())
 
     if (modelPath.size > 0) {
       opt.load(modelPath + "/weight")

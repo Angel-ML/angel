@@ -18,7 +18,6 @@
 
 package com.tencent.angel.spark.ml.online_learning
 
-import com.tencent.angel.conf.MatrixConf
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.storage.LongKeyVectorStorage
@@ -82,15 +81,6 @@ class FTRL() extends Serializable {
     init(ctx)
   }
 
-  def init(dim: Long, nnz: Long, rowType: RowType, partitioner: Partitioner, path: String): Unit = {
-    val ctx = new MatrixContext(name, 3, dim, nnz, -1, -1)
-    ctx.setRowType(rowType)
-    ctx.setPartitionerClass(partitioner.getClass)
-    if (path.length > 0)
-      ctx.set(MatrixConf.MATRIX_LOAD_PATH, path)
-    init(ctx)
-  }
-
   /**
     * create the model with a matrix-context and init three PSVector
     *
@@ -126,17 +116,6 @@ class FTRL() extends Serializable {
     init(ctx)
   }
 
-  def init(start: Long, end: Long, nnz: Long, rowType: RowType,
-           partitioner: Partitioner, path: String): Unit = {
-    val ctx = new MatrixContext(name, 3, start, end)
-    ctx.setPartitionerClass(partitioner.getClass)
-    ctx.setRowType(rowType)
-    ctx.setValidIndexNum(nnz)
-    if (path.length > 0)
-      ctx.set(MatrixConf.MATRIX_LOAD_PATH, path)
-    init(ctx)
-  }
-
   /**
     * Init model with the training data, this method will scan the index distribution in data
     * and automatically generate partitions with load balance into consideration
@@ -152,16 +131,6 @@ class FTRL() extends Serializable {
     val ctx = new MatrixContext(name, 3, start, end)
     ctx.setRowType(rowType)
     partitioner.partition(data, ctx)
-    init(ctx)
-  }
-
-  def init(start: Long, end: Long, rowType: RowType, data: RDD[Vector],
-           partitioner: AutoPartitioner, path: String): Unit = {
-    val ctx = new MatrixContext(name, 3, start, end)
-    ctx.setRowType(rowType)
-    partitioner.partition(data, ctx)
-    if (path.length > 0)
-      ctx.set(MatrixConf.MATRIX_LOAD_PATH, path)
     init(ctx)
   }
 
