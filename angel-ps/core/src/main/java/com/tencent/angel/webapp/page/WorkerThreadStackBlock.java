@@ -51,7 +51,7 @@ public class WorkerThreadStackBlock extends HtmlBlock {
       LOG.info("start init WorkerClient");
       workerClient = new WorkerClient(amContext, workerAttemptId);
       String info = workerClient.getThreadStack();
-      html.pre()._(info)._();
+      html.pre().__(info).__();
     } catch (IOException | UnvalidIdStrException | ServiceException e) {
       LOG.error("get stack for " + $(WORKER_ATTEMPT_ID) + " failed, ", e);
     }

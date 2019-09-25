@@ -25,9 +25,9 @@ import com.tencent.angel.master.ps.attempt.PSAttempt;
 import com.tencent.angel.master.ps.ps.AMParameterServer;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroup;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.DIV;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TABLE;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet.DIV;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet.TABLE;
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 import org.apache.hadoop.yarn.webapp.view.InfoBlock;
 
@@ -58,21 +58,21 @@ public class AngelAppBlock extends HtmlBlock {
       elaspedTs = System.currentTimeMillis() - app.getLaunchTime();
     }
 
-    info("Job Overview")._("Job Name:", amContext.getApplicationName())
-      ._("State:", app.getExternAppState().toString())._("Started:", new Date(app.getLaunchTime()))
-      ._("Elapsed:", StringUtils.formatTime(elaspedTs))
-      ._("Environment:", "nomeaning" == null ? "#" : "angel/EnvironmentPage",
+    info("Job Overview").__("Job Name:", amContext.getApplicationName())
+      .__("State:", app.getExternAppState().toString()).__("Started:", new Date(app.getLaunchTime()))
+      .__("Elapsed:", StringUtils.formatTime(elaspedTs))
+      .__("Environment:", "nomeaning" == null ? "#" : "angel/EnvironmentPage",
         "Runtime Information And Properties")
-      ._("Task Progress:", "nomeaning" == null ? "#" : "angel/ProgressPage", "progress")
-      ._("Master Threaddump:", "nomeaning" == null ? "#" : "angel/ExecutorsPage", "threaddump");
+      .__("Task Progress:", "nomeaning" == null ? "#" : "angel/ProgressPage", "progress")
+      .__("Master Threaddump:", "nomeaning" == null ? "#" : "angel/ExecutorsPage", "threaddump");
 
 
 
-    DIV<Hamlet> div = html._(InfoBlock.class).div(_INFO_WRAP);
+    DIV<Hamlet> div = html.__(InfoBlock.class).div(_INFO_WRAP);
 
     TABLE<DIV<Hamlet>> table = div.table("#job");
     table.tr().th(_TH, "module").th(_TH, "new").th(_TH, "running").th(_TH, "failed")
-      .th(_TH, "killed").th(_TH, "success")._();
+      .th(_TH, "killed").th(_TH, "success").__();
 
     int newGroupNum = 0;
     int runningGroupNum = 0;
@@ -141,20 +141,20 @@ public class AngelAppBlock extends HtmlBlock {
     }
 
     table.tr().td("workergroups").td()
-      .a(url("angel/workerGroupsPage", "NEW"), String.valueOf(newGroupNum))._().td()
-      .a(url("angel/workerGroupsPage", "RUNNING"), String.valueOf(runningGroupNum))._().td()
-      .a(url("angel/workerGroupsPage", "FAILED"), String.valueOf(failedGroupNum))._().td()
-      .a(url("angel/workerGroupsPage", "KILLED"), String.valueOf(killedGroupNum))._().td()
-      .a(url("angel/workerGroupsPage", "SUCCESS"), String.valueOf(successGroupNum))._()._().tr()
+      .a(url("angel/workerGroupsPage", "NEW"), String.valueOf(newGroupNum)).__().td()
+      .a(url("angel/workerGroupsPage", "RUNNING"), String.valueOf(runningGroupNum)).__().td()
+      .a(url("angel/workerGroupsPage", "FAILED"), String.valueOf(failedGroupNum)).__().td()
+      .a(url("angel/workerGroupsPage", "KILLED"), String.valueOf(killedGroupNum)).__().td()
+      .a(url("angel/workerGroupsPage", "SUCCESS"), String.valueOf(successGroupNum)).__().__().tr()
       .td("parameterservers").td()
-      .a(url("angel/parameterServersPage", "NEW"), String.valueOf(newPSNum))._().td()
-      .a(url("angel/parameterServersPage", "RUNNING"), String.valueOf(runningPSNum))._().td()
-      .a(url("angel/parameterServersPage", "FAILED"), String.valueOf(failedPSNum))._().td()
-      .a(url("angel/parameterServersPage", "KILLED"), String.valueOf(killedPSNum))._().td()
-      .a(url("angel/parameterServersPage", "SUCCESS"), String.valueOf(successPSNum))._()._();
+      .a(url("angel/parameterServersPage", "NEW"), String.valueOf(newPSNum)).__().td()
+      .a(url("angel/parameterServersPage", "RUNNING"), String.valueOf(runningPSNum)).__().td()
+      .a(url("angel/parameterServersPage", "FAILED"), String.valueOf(failedPSNum)).__().td()
+      .a(url("angel/parameterServersPage", "KILLED"), String.valueOf(killedPSNum)).__().td()
+      .a(url("angel/parameterServersPage", "SUCCESS"), String.valueOf(successPSNum)).__().__();
 
-    table._();
-    div._();
+    table.__();
+    div.__();
   }
 
 }

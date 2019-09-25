@@ -28,8 +28,8 @@ import com.tencent.angel.worker.WorkerAttemptId;
 import com.tencent.angel.worker.WorkerGroupId;
 import org.apache.hadoop.mapreduce.v2.util.MRWebAppUtil;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.*;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet.*;
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 
 import java.util.Date;
@@ -50,7 +50,7 @@ public class WorkerGroupBlock extends HtmlBlock {
   @Override protected void render(Block html) {
     String workerGroupIdSr = $(WORKERGROUP_ID);
     if (workerGroupIdSr.isEmpty()) {
-      html.p()._("Sorry, can't do anything without a WorkerGroupId.")._();
+      html.p().__("Sorry, can't do anything without a WorkerGroupId.").__();
       return;
     }
 
@@ -63,7 +63,7 @@ public class WorkerGroupBlock extends HtmlBlock {
     }
     AMWorkerGroup workerGroup = amContext.getWorkerManager().getWorkerGroup(workerGroupId);
     if (workerGroup == null) {
-      html.p()._("Sorry, can't find group " + workerGroupId)._();
+      html.p().__("Sorry, can't find group " + workerGroupId).__();
       return;
     }
 
@@ -77,7 +77,7 @@ public class WorkerGroupBlock extends HtmlBlock {
       .th(_TH, "end time").th(_TH, "elapsed time").th(_TH, "log").th(_TH, "threadstack")
       .th(_TH, "workercounter");
 
-    headTr._()._();
+    headTr.__().__();
 
     TBODY<TABLE<DIV<Hamlet>>> tbody = table.tbody();
     for (AMWorker worker : workerGroup.getWorkerSet()) {
@@ -93,7 +93,7 @@ public class WorkerGroupBlock extends HtmlBlock {
 
         if (workerAttempt.getNodeHttpAddr() == null) {
           tr.td().a(url("angel/workerPage", workerAttempt.getId().toString()),
-            workerAttempt.getId().toString())._().td(workerAttempt.getState().toString()).td("N/A")
+            workerAttempt.getId().toString()).__().td(workerAttempt.getState().toString()).td("N/A")
             .td((workerAttempt.getLaunchTime() == 0) ?
               "N/A" :
               new Date(workerAttempt.getLaunchTime()).toString()).td(
@@ -105,9 +105,9 @@ public class WorkerGroupBlock extends HtmlBlock {
         } else {
 
           tr.td().a(url("angel/workerPage", workerAttempt.getId().toString()),
-            workerAttempt.getId().toString())._().td(workerAttempt.getState().toString()).td()
+            workerAttempt.getId().toString()).__().td(workerAttempt.getState().toString()).td()
             .a(url(MRWebAppUtil.getYARNWebappScheme(), workerAttempt.getNodeHttpAddr()),
-              workerAttempt.getNodeHttpAddr())._().td((workerAttempt.getLaunchTime() == 0) ?
+              workerAttempt.getNodeHttpAddr()).__().td((workerAttempt.getLaunchTime() == 0) ?
             "N/A" :
             new Date(workerAttempt.getLaunchTime()).toString()).td(
             (workerAttempt.getFinishTime() == 0) ?
@@ -116,15 +116,15 @@ public class WorkerGroupBlock extends HtmlBlock {
             .td((elaspedTs == 0) ? "N/A" : StringUtils.formatTime(elaspedTs)).td().a(
             url(MRWebAppUtil.getYARNWebappScheme(), workerAttempt.getNodeHttpAddr(), "node",
               "containerlogs", workerAttempt.getContainerIdStr(), amContext.getUser().toString()),
-            "log")._().td().a(url("angel/workerThreadStackPage/", workerAttempt.getId().toString()),
-            "workerthreadstack")._().td()
+            "log").__().td().a(url("angel/workerThreadStackPage/", workerAttempt.getId().toString()),
+            "workerthreadstack").__().td()
             .a(url("angel/workerCounterPage/", workerAttempt.getId().toString()), "workercounter")
-            ._();
+            .__();
         }
-        tr._();
+        tr.__();
       }
     }
 
-    tbody._()._()._();
+    tbody.__().__().__();
   }
 }

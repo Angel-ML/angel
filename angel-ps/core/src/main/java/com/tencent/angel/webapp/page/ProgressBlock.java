@@ -25,7 +25,7 @@ import com.tencent.angel.master.worker.attempt.WorkerAttempt;
 import com.tencent.angel.master.worker.worker.AMWorker;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroup;
 import org.apache.hadoop.mapreduce.v2.util.MRWebAppUtil;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet;
 import org.apache.hadoop.yarn.webapp.view.HtmlBlock;
 
 import java.util.*;
@@ -48,7 +48,7 @@ public class ProgressBlock extends HtmlBlock {
     Hamlet.TR<Hamlet.THEAD<Hamlet.TABLE<Hamlet.DIV<Hamlet>>>> headTr = table.thead().tr();
 
     headTr.th(_TH, "taskid").th(_TH, "state").th(_TH, "current iteration").th(_TH, "workerlog");
-    headTr._()._();
+    headTr.__().__();
     float current_iteration_progress = (float) 0.0;
     float current_clock_progress = (float) 0.0;
     Hamlet.TBODY<Hamlet.TABLE<Hamlet.DIV<Hamlet>>> tbody = table.tbody();
@@ -88,10 +88,10 @@ public class ProgressBlock extends HtmlBlock {
         .td(String.valueOf(task.getIteration()) + "/" + amContext.getTotalIterationNum()).td().a(
         url(MRWebAppUtil.getYARNWebappScheme(), workerAttempt.getNodeHttpAddr(), "node",
           "containerlogs", workerAttempt.getContainerIdStr(), amContext.getUser().toString()),
-        workerAttempt.getId().toString())._();
-      tr._();
+        workerAttempt.getId().toString()).__();
+      tr.__();
     }
 
-    tbody._()._()._();
+    tbody.__().__().__();
   }
 }

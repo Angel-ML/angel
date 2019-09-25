@@ -165,8 +165,10 @@ public class CounterUpdater {
     }
     pTree.updateProcessTree();
     long cpuTime = pTree.getCumulativeCpuTime();
-    long pMem = pTree.getCumulativeRssmem();
-    long vMem = pTree.getCumulativeVmem();
+    //long pMem = pTree.getCumulativeRssmem();
+    //long vMem = pTree.getCumulativeVmem();
+    long pMem = pTree.getRssMemorySize();
+    long vMem = pTree.getVirtualMemorySize();
     // Remove the CPU time consumed previously by JVM reuse
     cpuTime -= initCpuCumulativeTime;
     PSAgentContext.get().getMetrics().put(AngelCounter.CPU_MILLISECONDS, Long.toString(cpuTime));

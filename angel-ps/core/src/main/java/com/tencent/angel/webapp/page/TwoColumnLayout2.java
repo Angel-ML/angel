@@ -20,6 +20,7 @@ package com.tencent.angel.webapp.page;
 
 import com.google.common.collect.Lists;
 import org.apache.hadoop.yarn.webapp.SubView;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet.HTML;
 import org.apache.hadoop.yarn.webapp.view.HtmlPage;
 import org.apache.hadoop.yarn.webapp.view.JQueryUI;
 import org.apache.hadoop.yarn.webapp.view.LipsumBlock;
@@ -34,18 +35,18 @@ import static org.apache.hadoop.yarn.util.StringHelper.join;
 
 public class TwoColumnLayout2 extends HtmlPage {
 
-  @Override protected void render(Page.HTML<_> html) {
+  @Override protected void render(HTML<__> html) {
     preHead(html);
     html.title($(TITLE)).link(root_url("static", "yarn.css"))
       .style("#layout { height: 100%; }", "#layout thead td { height: 3em; }",
         "#layout #navcell { width: 11em; padding: 0 1em; }",
         "#layout td.content { padding-top: 0 }", "#layout tbody { vertical-align: top; }",
-        "#layout tfoot td { height: 4em; }")._(JQueryUI.class);
+        "#layout tfoot td { height: 4em; }").__(JQueryUI.class);
     postHead(html);
     // JQueryUI.jsnotice(html);
-    html.table("#layout.ui-widget-content").thead().tr().td().$colspan(2)._(header())._()._()._()
-      .tfoot().tr().td().$colspan(2)._(footer())._()._()._().tbody().tr().td().$id("navcell")
-      ._(nav())._().td().$class("content")._(content())._()._()._()._()._();
+    html.table("#layout.ui-widget-content").thead().tr().td().$colspan(2).__(header()).__().__().__()
+      .tfoot().tr().td().$colspan(2).__(footer()).__().__().__().tbody().tr().td().$id("navcell")
+      .__(nav()).__().td().$class("content").__(content()).__().__().__().__().__();
   }
 
   /**
@@ -54,7 +55,7 @@ public class TwoColumnLayout2 extends HtmlPage {
    *
    * @param html the html to use to render.
    */
-  protected void preHead(Page.HTML<_> html) {
+  protected void preHead(HTML<__> html) {
   }
 
   /**
@@ -62,7 +63,7 @@ public class TwoColumnLayout2 extends HtmlPage {
    *
    * @param html the html to use to render.
    */
-  protected void postHead(Page.HTML<_> html) {
+  protected void postHead(HTML<__> html) {
   }
 
   /**
@@ -101,7 +102,7 @@ public class TwoColumnLayout2 extends HtmlPage {
    * @param tableId     the ID of the table to set styles on.
    * @param innerStyles any other styles to add to the table.
    */
-  protected void setTableStyles(Page.HTML<_> html, String tableId, String... innerStyles) {
+  protected void setTableStyles(Page.HTML<__> html, String tableId, String... innerStyles) {
     List<String> styles = Lists.newArrayList();
     styles.add(join('#', tableId, "_paginate span {font-weight:normal}"));
     styles.add(join('#', tableId, " .progress {width:8em}"));
