@@ -18,7 +18,6 @@
 
 package com.tencent.angel.ml.math2.vector;
 
-import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math2.MathObject;
 import com.tencent.angel.ml.math2.storage.IntKeyVectorStorage;
 import com.tencent.angel.ml.math2.storage.LongKeyVectorStorage;
@@ -91,7 +90,7 @@ public abstract class Vector extends MathObject implements Serializable {
   }
 
   public Vector imul(Vector other) {
-    throw new AngelException("The operation is not supported!");
+    return BinaryExecutor.apply(this, other, new Mul(true));
   }
 
   public Vector mul(Vector other) {
