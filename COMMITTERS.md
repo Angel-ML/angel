@@ -38,12 +38,14 @@ We would like to sincerely thank the following community members for their contr
 - [AugustoYao](https://github.com/AugustoYao) - **Augusto Yao**
 - [FLYINGQQ](https://github.com/FLYINGQQ)
 - [Morrissss](https://github.com/Morrissss)
+- [Hsword](https://github.com/Hsword) - **Hsword (PKU)**
 - [Oneal65](<https://github.com/Oneal65>) - **Oneal Liu**
 - [StrikeW](https://github.com/StrikeW)
 - [Suanec](https://github.com/Suanec)
 - [TAAAN](https://github.com/TAAAN) - **Yunkun Tan**
 - [ZuwenYou](https://github.com/ZuwenYou) - **Zuwen You**
 - [andyyehoo](https://github.com/andyyehoo) - **Andy Huang**
+- [ccchengff](https://github.com/ccchengff) - **ccchengff**
 - [cheney2015](<https://github.com/cheney2015>) - **Cristal Chen**
 - [duoyu119](https://github.com/duoyu119) - **Duo Yu**
 - [endymecy](https://github.com/endymecy)
@@ -67,6 +69,7 @@ We would like to sincerely thank the following community members for their contr
 - [rachelsunrh](https://github.com/rachelsunrh) - **Rachel Sun**
 - [shunanzhang](https://github.com/shunanzhang) - **Shunan Zhang**
 - [sunchenglong](https://github.com/sunchenglong) - **Chenglong Sun**
+- [sunnygao1980](https://github.com/sunnygao1980) - ** sunnygao**
 - [sustcsonglin](https://github.com/sustcsonglin)
 - [weiwee](https://github.com/weiwee) - **Wenbin Wei**
 - [witgo](https://github.com/witgo) - **Guoqiang Li**
