@@ -16,12 +16,14 @@
  */
 package com.tencent.angel.spark.examples.local
 
+import com.tencent.angel.ml.math2.vector.LongFloatVector
 import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.core.metric.AUC
 import com.tencent.angel.spark.ml.online_learning.FTRL
-import com.tencent.angel.spark.ml.util.DataLoader
+import com.tencent.angel.spark.ml.util.{DataLoader, LoadBalancePartitioner}
 import org.apache.hadoop.fs.Path
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -71,10 +73,16 @@ object FTRLExample {
     val partNum = params.getOrElse("partNum", "10").toInt
     val numEpoch = params.getOrElse("numEpoch", "3").toInt
     val output = params.getOrElse("output", "file:///model")
-    val loadPath = params.getOrElse("load", "")
+    val modelPath = params.getOrElse("model", "")
+
+    val withBalancePartition = params.getOrElse("balance", "false").toBoolean
+    val possionRate = params.getOrElse("possion", "1.0f").toFloat
+    val bits = params.getOrElse("bits", "20").toInt
+    val numPartitions = params.getOrElse("numPartitions", "100").toInt
 
     val opt = new FTRL(lambda1, lambda2, alpha, beta)
-    opt.init(dim, RowType.T_FLOAT_SPARSE_LONGKEY)
+    val rowType = RowType.T_FLOAT_SPARSE_LONGKEY
+//    opt.init(dim, RowType.T_FLOAT_SPARSE_LONGKEY)
 
     val sc = SparkContext.getOrCreate()
     val inputData = sc.textFile(input)
@@ -96,8 +104,20 @@ object FTRLExample {
     }
     val size = data.count()
 
-    if (loadPath.size > 0)
-      opt.load(loadPath + "/back")
+    val max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.max).max()
+    val min = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.min).min()
+
+    println(s"num examples = ${size} min_index=$min max_index=$max")
+
+    val loadPath = if (modelPath.length > 0) modelPath + "/back" else modelPath
+    if (withBalancePartition)
+      opt.init(min, max + 1, rowType, data.map(f => f.getX),
+        new LoadBalancePartitioner(bits, numPartitions), loadPath)
+    else
+      opt.init(min, max + 1, -1, rowType, new ColumnRangePartitioner(), loadPath)
+
+    if (modelPath.size > 0)
+      opt.load(modelPath + "/back")
 
     for (epoch <- 1 until numEpoch) {
       val totalLoss = data.mapPartitions {
@@ -119,6 +139,12 @@ object FTRLExample {
     if (output.length > 0) {
       val weight = opt.weight
       opt.save(output + "/back")
+
+      val path = new Path(output + "/weight")
+      val fs = path.getFileSystem(sc.hadoopConfiguration)
+      if (fs.exists(path)) {
+        fs.delete(path, true)
+      }
       opt.saveWeight(output + "/weight")
     }
   }
@@ -136,7 +162,7 @@ object FTRLExample {
 
 
     val opt = new FTRL()
-    opt.init(dim, RowType.T_FLOAT_SPARSE_LONGKEY)
+//    opt.init(dim, RowType.T_FLOAT_SPARSE_LONGKEY)
 
     val sc = SparkContext.getOrCreate()
 
@@ -150,6 +176,10 @@ object FTRLExample {
           (DataLoader.parseLongDummy(s, dim, isTraining, hasLabel)))
     }
 
+    val max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.max).max()
+    val min = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.min).min()
+    opt.init(min, max + 1, -1, RowType.T_FLOAT_SPARSE_LONGKEY, new ColumnRangePartitioner(), loadPath + "/weight")
+
     if (loadPath.size > 0) {
       opt.load(loadPath + "/weight")
     }
@@ -159,13 +189,20 @@ object FTRLExample {
         opt.predict(iterator.toArray, false).iterator
     }
 
+    val res = scores.map{
+      line =>
+        val label = line._1.toString
+        val pred = line._2.toString
+        label + " " +pred
+    }
+
     val path = new Path(predictPath)
     val fs = path.getFileSystem(sc.hadoopConfiguration)
     if (fs.exists(path)) {
       fs.delete(path, true)
     }
 
-    scores.saveAsTextFile(predictPath)
+    res.saveAsTextFile(predictPath)
   }
 
 }

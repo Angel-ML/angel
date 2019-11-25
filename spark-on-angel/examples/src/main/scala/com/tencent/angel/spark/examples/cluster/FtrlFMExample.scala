@@ -190,13 +190,20 @@ object FtrlFMExample {
         opt.predict(iterator.toArray, false).iterator
     }
 
+    val res = scores.map{
+      line =>
+        val label = line._1.toString
+        val pred = line._2.toString
+        label + " " +pred
+    }
+
     val path = new Path(predictPath)
     val fs = path.getFileSystem(sc.hadoopConfiguration)
     if (fs.exists(path)) {
       fs.delete(path, true)
     }
 
-    scores.saveAsTextFile(predictPath)
+    res.saveAsTextFile(predictPath)
   }
 
 }

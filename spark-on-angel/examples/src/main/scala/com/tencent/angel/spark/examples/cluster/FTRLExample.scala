@@ -110,11 +110,12 @@ object FTRLExample {
 
     println(s"num examples = ${size} min_index=$min max_index=$max")
 
+    val loadPath = if (modelPath.length > 0) modelPath + "/back" else modelPath
     if (withBalancePartition)
       opt.init(min, max + 1, rowType, data.map(f => f.getX),
-        new LoadBalancePartitioner(bits, numPartitions))
+        new LoadBalancePartitioner(bits, numPartitions), loadPath)
     else
-      opt.init(min, max + 1, -1, rowType, new ColumnRangePartitioner())
+      opt.init(min, max + 1, -1, rowType, new ColumnRangePartitioner(), loadPath)
 
     opt.setPossionRate(possionRate)
 
@@ -180,7 +181,7 @@ object FTRLExample {
 
     val max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.max).max()
     val min = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.min).min()
-    opt.init(min, max + 1, -1, RowType.T_FLOAT_SPARSE_LONGKEY, new ColumnRangePartitioner())
+    opt.init(min, max + 1, -1, RowType.T_FLOAT_SPARSE_LONGKEY, new ColumnRangePartitioner(), modelPath + "/weight")
 
     if (modelPath.size > 0) {
       opt.load(modelPath + "/weight")
@@ -191,12 +192,19 @@ object FTRLExample {
         opt.predict(iterator.toArray, false).iterator
     }
 
+    val res = scores.map{
+      line =>
+        val label = line._1.toString
+        val pred = line._2.toString
+        label + " " +pred
+    }
+
     val path = new Path(predictPath)
     val fs = path.getFileSystem(sc.hadoopConfiguration)
     if (fs.exists(path)) {
       fs.delete(path, true)
     }
 
-    scores.saveAsTextFile(predictPath)
+    res.saveAsTextFile(predictPath)
   }
 }

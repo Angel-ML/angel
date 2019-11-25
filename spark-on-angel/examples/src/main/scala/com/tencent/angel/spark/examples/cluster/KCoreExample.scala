@@ -52,7 +52,6 @@ object KCoreExample {
     }
 
 
-
     val kCore = new KCore()
       .setPartitionNum(partitionNum)
       .setStorageLevel(storageLevel)
@@ -72,9 +71,8 @@ object KCoreExample {
 
     // Add jvm parameters for executors
     var executorJvmOptions = conf.get("spark.executor.extraJavaOptions")
-    //executorJvmOptions += " -XX:+UseG1GC -XX:MaxGCPauseMillis=1000 -XX:G1HeapRegionSize=32M " +
-    //  "-XX:InitiatingHeapOccupancyPercent=50 -XX:ConcGCThreads=4 -XX:ParallelGCThreads=4 -Xss4M "
-    //conf.set("spark.executor.extraJavaOptions", executorJvmOptions)
+    executorJvmOptions += " -XX:ConcGCThreads=4 -XX:ParallelGCThreads=4 -Xss4M "
+    conf.set("spark.executor.extraJavaOptions", executorJvmOptions)
     println(s"executorJvmOptions = ${executorJvmOptions}")
 
     conf.setMaster(mode)
