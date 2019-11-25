@@ -186,7 +186,8 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
 //      jsonAst.asInstanceOf[JObject]
 //    } else {
       val data = (ParamKeys.format -> JString(SharedConf.inputDataFormat)) ~
-        (ParamKeys.indexRange -> JLong(SharedConf.indexRange)) ~
+        // (ParamKeys.indexRange -> JLong(SharedConf.indexRange)) ~
+        (ParamKeys.indexRange -> JInt(SharedConf.indexRange)) ~
         (ParamKeys.numField -> JInt(sharedConf.getInt(MLConf.ML_FIELD_NUM))) ~
         (ParamKeys.validateRatio -> JDouble(sharedConf.getDouble(MLConf.ML_VALIDATE_RATIO))) ~
         (ParamKeys.sampleRatio -> JDouble(sharedConf.getDouble(MLConf.ML_BATCH_SAMPLE_RATIO))) ~
@@ -195,7 +196,8 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
         (ParamKeys.transLabel -> JString(sharedConf.getString(MLConf.ML_DATA_LABEL_TRANS)))
 
       val model = (ParamKeys.modelType -> JString(SharedConf.modelType.toString)) ~
-        (ParamKeys.modelSize -> JLong(SharedConf.modelSize)) ~
+        //(ParamKeys.modelSize -> JLong(SharedConf.modelSize)) ~
+        (ParamKeys.modelSize -> JInt(SharedConf.modelSize)) ~
         (ParamKeys.blockSize -> JInt(sharedConf.getInt(MLConf.ML_BLOCK_SIZE)))
 
       val train = (ParamKeys.epoch -> JInt(SharedConf.epochNum)) ~

@@ -202,6 +202,8 @@ object MLConf {
   val DEFAULT_ML_GBDT_SERVER_SPLIT = false
   val ML_GBDT_CATE_FEAT = "ml.gbdt.cate.feat"
   val DEFAULT_ML_GBDT_CATE_FEAT = "none"
+  val ML_GBDT_FEAT_IMPORTANCE_TYPE = "ml.gbdt.feature.importance.type"
+  val DEFAULT_ML_GBDT_FEAT_IMPORTANCE_TYPE = "gain"
 
   val ML_GBDT_LOSS_FUNCTION: String = "ml.gbdt.loss.func"
   val DEFAULT_ML_GBDT_LOSS_FUNCTION: String = "binary:logistic"
@@ -224,7 +226,6 @@ object MLConf {
   val DEFAULT_ML_GBDT_MIN_NODE_INSTANCE = 1024
   val ML_GBDT_MIN_SPLIT_GAIN = "ml.gbdt.min.split.gain"
   val DEFAULT_ML_GBDT_MIN_SPLIT_GAIN = 0.0
-
   val ML_GBDT_MAX_LEAF_WEIGHT = "ml.gbdt.max.leaf.weight"
   val DEFAULT_ML_GBDT_MAX_LEAF_WEIGHT = 0.0
 
