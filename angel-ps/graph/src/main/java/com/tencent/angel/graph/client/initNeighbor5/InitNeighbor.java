@@ -20,11 +20,6 @@ import com.tencent.angel.graph.data.Node;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.LongArrays;
-import it.unimi.dsi.fastutil.objects.ObjectIterator;
-
-import java.util.Random;
 
 /* Mini-batch version of pushing csr neighbors */
 public class InitNeighbor extends UpdateFunc {
@@ -42,23 +37,22 @@ public class InitNeighbor extends UpdateFunc {
     InitNeighborPartParam param = (InitNeighborPartParam) partParam;
     ServerLongAnyRow row = (ServerLongAnyRow) (psContext.getMatrixStorageManager().getRow(param.getPartKey(), 0));
 
-    ObjectIterator<Long2ObjectMap.Entry<long[]>> it = param.getNodesToNeighbors()
-      .long2ObjectEntrySet().iterator();
-
-    Random random = new Random(System.currentTimeMillis());
+    long[] keys = param.getKeys();
+    long[][] neighborArrays = param.getNeighborArrays();
+    int[][] neighborTypes = param.getTypeArrays();
 
     row.startWrite();
     try {
-      while (it.hasNext()) {
-        Long2ObjectMap.Entry<long[]> entry = it.next();
-        Node node = (Node) row.get(entry.getLongKey());
+      for (int i = 0; i < keys.length; i++) {
+        Node node = (Node) row.get(keys[i]);
         if (node == null) {
           node = new Node();
-          row.set(entry.getLongKey(), node);
+          row.set(keys[i], node);
         }
-        long[] neighbor = entry.getValue();
-        LongArrays.shuffle(neighbor, random);
-        node.setNeighbors(neighbor);
+
+        node.setNeighbors(neighborArrays[i]);
+        if (neighborTypes != null)
+          node.setTypes(neighborTypes[i]);
       }
     } finally {
       row.endWrite();

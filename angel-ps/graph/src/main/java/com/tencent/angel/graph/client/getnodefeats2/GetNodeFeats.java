@@ -14,7 +14,6 @@
  * the License.
  *
  */
-
 package com.tencent.angel.graph.client.getnodefeats2;
 
 import com.tencent.angel.graph.data.Node;
