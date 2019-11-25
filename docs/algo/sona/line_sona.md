@@ -72,7 +72,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class org.apache.spark.angel.examples.graph.LINEExample2 \
-  ../lib/spark-on-angel-examples-2.3.0.jar
+  ../lib/spark-on-angel-examples-2.4.0.jar
   input:$input output:$output embedding:128 negative:5 epoch:100 stepSize:0.01 batchSize:1000 numParts:2 subSample:false remapping:false order:2 interval:5
 ```
 
