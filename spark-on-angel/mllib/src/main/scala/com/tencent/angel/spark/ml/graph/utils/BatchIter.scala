@@ -22,7 +22,7 @@ import scala.reflect.ClassTag
 object BatchIter {
   def apply[T: ClassTag](iterator: Iterator[T], batchSize: Int): Iterator[Array[T]] = {
     new Iterator[Array[T]] {
-      val buffer = new ArrayBuffer[T]()
+      val buffer = new ArrayBuffer[T](batchSize)
 
       override def hasNext: Boolean = iterator.hasNext
 

@@ -33,7 +33,7 @@ public class GetHyperLogLog extends GetFunc {
   }
 
   public GetHyperLogLog(int matrixId, long[] nodes) {
-    super(new GetHyperLogLogParam(matrixId, nodes, 0L));
+    super(new GetHyperLogLogParam(matrixId, nodes, 0L, false));
   }
 
   public GetHyperLogLog() {

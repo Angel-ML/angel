@@ -24,10 +24,17 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+/**
+ * A user-define data type that store node information on PS
+ */
 public class LINENode implements IElement {
 
   private float[] inputFeats;
   private float[] outputFeats;
+
+  // Use by line with weight
+  private transient int[] neighbors;
+  private transient float[] weights;
 
   public LINENode(float[] inputFeats, float[] outputFeats) {
     this.inputFeats = inputFeats;
@@ -52,6 +59,22 @@ public class LINENode implements IElement {
 
   public void setOutputFeats(float[] outputFeats) {
     this.outputFeats = outputFeats;
+  }
+
+  public int[] getNeighbors() {
+    return neighbors;
+  }
+
+  public void setNeighbors(int[] neighbors) {
+    this.neighbors = neighbors;
+  }
+
+  public float[] getWeights() {
+    return weights;
+  }
+
+  public void setWeights(float[] weights) {
+    this.weights = weights;
   }
 
   @Override
@@ -125,20 +148,6 @@ public class LINENode implements IElement {
       writeInt(data, 0, index);
     }
     output.write(data);
-
-    /*output.writeInt(inputFeats.length);
-    for(int i = 0; i < inputFeats.length; i++) {
-      output.writeFloat(inputFeats[i]);
-    }
-
-    if (outputFeats != null) {
-      output.writeInt(outputFeats.length);
-      for(int i = 0; i < outputFeats.length; i++) {
-        output.writeFloat(outputFeats[i]);
-      }
-    } else {
-      output.writeInt(0);
-    }*/
   }
 
   private int writeInt(byte[] data, int v, int index) {
@@ -150,11 +159,17 @@ public class LINENode implements IElement {
   }
 
   private int writeFloat(byte[] data, float v, int index) {
-    return writeInt(data, Float.floatToIntBits(v), index);
+    int iv = Float.floatToIntBits(v);
+    return writeInt(data, iv, index);
   }
 
   private int readInt(byte[] data, int index) {
-    return (data[index] << 24) + (data[index + 1] << 16) + (data[index + 2] << 8) + (data[index + 3]);
+    int ch1 = data[index] & 255;
+    int ch2 = data[index + 1] & 255;
+    int ch3 = data[index + 2] & 255;
+    int ch4 = data[index + 3] & 255;
+    int c =  (ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4);
+    return c;
   }
 
   private float readFloat(byte[] data, int index) {
@@ -164,7 +179,7 @@ public class LINENode implements IElement {
 
   @Override
   public void deserialize(DataInputStream input) throws IOException {
-    /*byte [] data = new byte[input.readInt()];
+    byte [] data = new byte[input.readInt()];
     input.readFully(data);
     int index = 0;
 
@@ -185,21 +200,6 @@ public class LINENode implements IElement {
       for(int i = 0; i < outputFeatLen; i++) {
         outputFeats[i] = readFloat(data, index);
         index += 4;
-      }
-    }
-    */
-
-    input.readInt();
-    inputFeats = new float[input.readInt()];
-    for(int i = 0; i < inputFeats.length; i++) {
-      inputFeats[i] = input.readFloat();
-    }
-
-    int size = input.readInt();
-    if(size > 0) {
-      outputFeats = new float[size];
-      for(int i = 0; i < outputFeats.length; i++) {
-        outputFeats[i] = input.readFloat();
       }
     }
   }

@@ -30,7 +30,7 @@ import com.tencent.angel.spark.ml.tree.gbdt.tree.{GBTSplit, GBTTree}
 import com.tencent.angel.spark.ml.tree.objective.ObjectiveFactory
 import com.tencent.angel.spark.ml.tree.objective.metric.EvalMetric.Kind
 import com.tencent.angel.spark.ml.tree.sketch.HeapQuantileSketch
-import com.tencent.angel.spark.ml.tree.util.{DataLoader, LogHelper, Maths}
+import com.tencent.angel.spark.ml.tree.util.{DataLoader, FeatureImportance, LogHelper, Maths}
 import com.tencent.angel.spark.ml.util.SparkUtils
 import org.apache.hadoop.fs.Path
 import org.apache.spark.broadcast.Broadcast
@@ -124,6 +124,7 @@ object GBDTTrainer {
 
     @transient implicit val sc = new SparkContext(conf)
 
+    var exitCode = 0
     try {
       val trainer = new GBDTTrainer(param)
       trainer.initialize(trainPath, validPath)
@@ -132,7 +133,9 @@ object GBDTTrainer {
     } catch {
       case e: Exception =>
         e.printStackTrace()
+        exitCode = -1
     } finally {
+      System.exit(exitCode)
     }
   }
 
@@ -546,12 +549,21 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
     forest
   }
 
-  def save(model: Seq[GBTTree], modelPath: String)(implicit sc: SparkContext): Unit = {
-    val path = new Path(modelPath)
+  def save(model: Seq[GBTTree], basePath: String)(implicit sc: SparkContext): Unit = {
+    val path = new Path(basePath)
     val fs = path.getFileSystem(sc.hadoopConfiguration)
     if (fs.exists(path)) fs.delete(path, true)
+
+    val modelPath = basePath + "/model"
     println(s"Model will be saved to $modelPath")
     sc.parallelize(Seq(model)).saveAsObjectFile(modelPath)
+
+    val featurePath = basePath + "/feature_importance"
+    println(s"Feature importance will be saved to $featurePath")
+    sc.parallelize(
+      FeatureImportance.featImportance(model, model.head.getParam.featureImportanceType)
+        .map(t => s"${t._1} ${t._2}")
+    ).repartition(1).saveAsTextFile(featurePath)
   }
 
 }

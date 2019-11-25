@@ -22,6 +22,10 @@ import com.tencent.angel.model.output.format.{ComplexRowFormat, IndexAndElement}
 import com.tencent.angel.ps.storage.vector.element.IElement
 import org.apache.hadoop.conf.Configuration
 
+/**
+  * The output format for LINE
+  * @param conf
+  */
 class TextLINEModelOutputFormat(conf:Configuration) extends ComplexRowFormat(conf) {
   val featSep = conf.get("line.feature.sep", " ")
   val keyValueSep = conf.get("line.keyvalue.sep", ":")

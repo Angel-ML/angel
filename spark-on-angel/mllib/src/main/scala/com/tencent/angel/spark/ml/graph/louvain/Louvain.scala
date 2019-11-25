@@ -61,6 +61,7 @@ class Louvain(override val uid: String) extends Transformer
     assert(dataset.sparkSession.sparkContext.getCheckpointDir.nonEmpty, "set checkpoint dir first")
     val rawEdges: RDD[((Long, Long), Float)] = {
       if ($(isWeighted)) {
+        dataset.rdd.take(2).foreach(println)
         dataset.select($(srcNodeIdCol), $(dstNodeIdCol), $(weightCol)).rdd.map { row =>
           (row.getLong(0), row.getLong(1), row.getFloat(2))
         }

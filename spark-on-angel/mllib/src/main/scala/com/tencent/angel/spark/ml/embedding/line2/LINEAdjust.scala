@@ -122,6 +122,10 @@ class LINEAdjustParam(matrixId: Int, inputUpdates: Int2ObjectOpenHashMap[Array[F
         val inputNodeIds = inputUpdates.keySet().toIntArray
         val indicesViews = RowUpdateSplitUtils.split(inputNodeIds, parts, false)
 
+        if(partToParams == null) {
+          partToParams = new util.HashMap[PartitionKey, PartitionUpdateParam]()
+        }
+
         val iter = indicesViews.entrySet().iterator()
         while (iter.hasNext) {
           val entry = iter.next()

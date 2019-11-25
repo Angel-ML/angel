@@ -16,16 +16,18 @@
  */
 package com.tencent.angel.spark.ml.psf.hyperanf;
 
-import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.matrix.psf.get.base.*;
 import com.tencent.angel.ml.matrix.psf.get.getrow.GetRowResult;
 import com.tencent.angel.ml.matrix.psf.get.indexed.IndexPartGetLongResult;
 import com.tencent.angel.ps.storage.partition.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
+import com.tencent.angel.ps.storage.vector.element.IElement;
 import com.tencent.angel.psagent.matrix.ResponseType;
 import com.tencent.angel.spark.ml.psf.pagerank.GetNodesParam;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 import java.util.List;
 
@@ -48,11 +50,18 @@ public class GetNodes extends GetFunc {
     ServerPartition part = psContext.getMatrixStorageManager().getPart(partParam.getPartKey());
     ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager().getRow(partParam.getPartKey(), 0);
     LongArrayList ret = new LongArrayList();
-    for (long node = partParam.getPartKey().getStartCol(); node < partParam.getPartKey().getEndCol(); node++) {
-      if (row.exist(node)) {
-        ret.add(node);
+
+    row.startRead();
+    try {
+      ObjectIterator<Long2ObjectMap.Entry<IElement>> it = row.iterator();
+      while (it.hasNext()) {
+        Long2ObjectMap.Entry<IElement> entry = it.next();
+        ret.add(entry.getLongKey() + partParam.getPartKey().getStartCol());
       }
+    } finally {
+      row.endRead();
     }
+
     return new IndexPartGetLongResult(part.getPartitionKey(), ret.toLongArray());
   }
 
@@ -67,6 +76,6 @@ public class GetNodes extends GetFunc {
       }
     }
     return new GetRowResult(ResponseType.SUCCESS,
-        VFactory.denseLongVector(ret.toLongArray()));
+      VFactory.denseLongVector(ret.toLongArray()));
   }
 }

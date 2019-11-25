@@ -44,6 +44,8 @@ public class GBDTParam extends RegTParam {
   public String multiStrategy; // strategy of multi-class classification (one-tree or multi-tree)
   public boolean multiGradCache; // use grad cache for multiclass-multitree, or calc grad for every tree
 
+  public String featureImportanceType; // used in saving feature importance
+
   public boolean isClassification() {
     return taskType.equalsIgnoreCase("classification");
   }
@@ -247,4 +249,3 @@ public class GBDTParam extends RegTParam {
     return sb.toString();
   }
 }
-

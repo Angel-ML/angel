@@ -25,7 +25,7 @@ import java.util.List;
 public class GetCloseness extends GetFunc {
 
   public GetCloseness(int matrixId, long[] nodes, long n) {
-    super(new GetHyperLogLogParam(matrixId, nodes, n));
+    super(new GetHyperLogLogParam(matrixId, nodes, n, false));
   }
 
   public GetCloseness(GetParam param) {

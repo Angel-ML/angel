@@ -14,11 +14,18 @@
  * the License.
  *
  */
+package com.tencent.angel.spark.ml.graph.params
 
-package com.tencent.angel.spark.ml.graph
+import org.apache.spark.ml.param.{FloatParam, Params}
 
-class Param extends Serializable {
-  var psPartNum: Int = _
-  var initBatchSize: Int = _
-  var maxIndex: Int = _
+trait HasDelta extends Params {
+
+  final val delta = new FloatParam(this, "delta", "delta of hanp")
+
+  final def getDelta: Float = $(delta)
+
+  setDefault(delta, 0.1f)
+
+  final def setDelta(percent: Float): this.type = set(delta, percent)
+
 }

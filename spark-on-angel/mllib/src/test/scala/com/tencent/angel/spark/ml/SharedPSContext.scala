@@ -57,7 +57,7 @@ trait SharedPSContext extends BeforeAndAfterAll with BeforeAndAfterEach {
 
     // Spark setup
     val builder = SparkSession.builder()
-      .master("local")
+      .master("local[4]")
       .appName("test")
       .config(psConf)
       .config(conf)

@@ -98,7 +98,8 @@ object Features {
 
       sentences.filter(f => f != null && f.length > 0).map { case line =>
         line.stripLineEnd.split("[\\s+|,]").map(s => map.get(s).toInt)
-      }}.flatMap(f => f)
+      }
+    }.flatMap(f => f)
 
 
     (ints, stringsWithIndex.map(f => (f._2.toInt, f._1)))

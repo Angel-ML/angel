@@ -33,7 +33,7 @@ class GBDTPredictor extends Serializable {
   var forest: Seq[GBTTree] = _
 
   def loadModel(sc: SparkContext, modelPath: String): Unit = {
-    forest = sc.objectFile[Seq[GBTTree]](modelPath).collect().head
+    forest = sc.objectFile[Seq[GBTTree]](modelPath + "/model").collect().head
     println(s"Reading model from $modelPath")
   }
 

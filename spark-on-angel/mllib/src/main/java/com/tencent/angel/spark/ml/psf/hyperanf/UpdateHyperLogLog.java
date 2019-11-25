@@ -52,7 +52,7 @@ public class UpdateHyperLogLog extends UpdateFunc {
         long outNode = entry.getLongKey();
         HyperLogLogPlus outCounter = entry.getValue();
         if (!row.exist(outNode)) {
-          row.set(outNode,new HyperLogLogPlusElement(outNode, param.getP(), param.getSp()));
+          row.set(outNode, new HyperLogLogPlusElement(outNode, param.getP(), param.getSp()));
         }
         HyperLogLogPlusElement hllElem = (HyperLogLogPlusElement) row.get(outNode);
         if (hllElem.isActive()) {

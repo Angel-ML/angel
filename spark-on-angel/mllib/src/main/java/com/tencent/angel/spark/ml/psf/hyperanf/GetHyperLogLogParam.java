@@ -31,11 +31,13 @@ public class GetHyperLogLogParam extends GetParam {
 
   private long[] nodes;
   private long n;
+  private boolean isDirected;
 
-  public GetHyperLogLogParam(int matrixId, long[] nodes, long n) {
+  public GetHyperLogLogParam(int matrixId, long[] nodes, long n, boolean isDirected) {
     super(matrixId);
     this.nodes = nodes;
     this.n = n;
+    this.isDirected = isDirected;
   }
 
   @Override
@@ -48,7 +50,7 @@ public class GetHyperLogLogParam extends GetParam {
     if (!RowUpdateSplitUtils.isInRange(nodes, parts)) {
       throw new AngelException(
           "node id is not in range [" + parts.get(0).getStartCol() + ", " + parts
-              .get(parts.size() - 1).getEndCol());
+              .get(parts.size() - 1).getEndCol() + ", nodes[0]=" + nodes[0] + ", nodes[-1]=" + nodes[nodes.length - 1]);
     }
 
     int nodeIndex = 0;
@@ -63,7 +65,7 @@ public class GetHyperLogLogParam extends GetParam {
 
       if (length > 0) {
         params.add(new GetHyperLogLogPartParam(matrixId,
-            parts.get(partIndex), nodes, n, nodeIndex - length, nodeIndex));
+            parts.get(partIndex), nodes, n, nodeIndex - length, nodeIndex, isDirected));
       }
       partIndex++;
     }

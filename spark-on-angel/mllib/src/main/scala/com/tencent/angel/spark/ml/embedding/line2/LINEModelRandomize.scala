@@ -21,11 +21,16 @@ import com.tencent.angel.ml.matrix.psf.update.base.{PartitionUpdateParam, Update
 import com.tencent.angel.ps.storage.partition.RowBasedPartition
 import com.tencent.angel.ps.storage.vector.ServerIntAnyRow
 import com.tencent.angel.psagent.PSAgentContext
-import com.tencent.angel.spark.ml.psf.embedding.NEModelRandomize.{RandomizePartitionUpdateParam, RandomizeUpdateParam}
+import io.netty.buffer.ByteBuf
 
 import scala.collection.JavaConversions._
 import scala.util.Random
 
+/**
+  * A PS function to initialize the embedding vector on PS
+  *
+  * @param param function parameters
+  */
 class LINEModelRandomize(param: RandomizeUpdateParam) extends UpdateFunc(param) {
   def this() = this(null)
 
@@ -34,11 +39,11 @@ class LINEModelRandomize(param: RandomizeUpdateParam) extends UpdateFunc(param) 
       partParam.getPartKey.getPartitionId).asInstanceOf[RowBasedPartition]
     if (part != null) {
       val ff = partParam.asInstanceOf[RandomizePartitionUpdateParam]
-      update(part, partParam.getPartKey, ff.partDim, ff.dim, ff.order, ff.seed)
+      update(part, partParam.getPartKey, ff.dim, ff.order, ff.seed)
     }
   }
 
-  private def update(part: RowBasedPartition, key: PartitionKey, partDim: Int, dim: Int, order: Int, seed:Int): Unit = {
+  private def update(part: RowBasedPartition, key: PartitionKey, dim: Int, order: Int, seed: Int): Unit = {
     val row: ServerIntAnyRow = part.getRow(0).asInstanceOf[ServerIntAnyRow]
     println(s"random seed in init=${seed}")
 
@@ -47,22 +52,55 @@ class LINEModelRandomize(param: RandomizeUpdateParam) extends UpdateFunc(param) 
 
       val embedding = new Array[Float](dim)
       for (i <- 0 until dim) {
-        embedding(i) = (rand.nextFloat() - 0.5f) / dim//colId.toFloat / 10000//
+        embedding(i) = (rand.nextFloat() - 0.5f) / dim
       }
-      if(order == 1) {
+      if (order == 1) {
         row.set(colId.toInt, new LINENode(embedding, null))
       } else {
         row.set(colId.toInt, new LINENode(embedding, new Array[Float](dim)))
       }
     })
   }
+}
 
-  class RandomizeUpdateParam(matrixId: Int, partDim: Int, dim: Int, order: Int, seed: Int)
-    extends UpdateParam(matrixId) {
-    override def split: java.util.List[PartitionUpdateParam] = {
-      PSAgentContext.get.getMatrixMetaManager.getPartitions(matrixId).map { part =>
-        new RandomizePartitionUpdateParam(matrixId, part, partDim, dim, order, seed + part.getPartitionId)
-      }
+class RandomizePartitionUpdateParam(matrixId: Int,
+                                    partKey: PartitionKey,
+                                    var dim: Int,
+                                    var order: Int,
+                                    var seed: Int)
+  extends PartitionUpdateParam(matrixId, partKey) {
+  def this() = this(-1, null, -1, -1, -1)
+
+  override def serialize(buf: ByteBuf): Unit = {
+    super.serialize(buf)
+    buf.writeInt(dim)
+    buf.writeInt(order)
+    buf.writeInt(seed)
+  }
+
+  override def deserialize(buf: ByteBuf): Unit = {
+    super.deserialize(buf)
+    this.dim = buf.readInt()
+    this.order = buf.readInt()
+    this.seed = buf.readInt()
+  }
+
+  override def bufferLen: Int = super.bufferLen + 12
+}
+
+/**
+  * Function parameter
+  *
+  * @param matrixId embedding matrix id
+  * @param dim      embedding vector dim
+  * @param order    order
+  * @param seed     random seed
+  */
+class RandomizeUpdateParam(matrixId: Int, dim: Int, order: Int, seed: Int)
+  extends UpdateParam(matrixId) {
+  override def split: java.util.List[PartitionUpdateParam] = {
+    PSAgentContext.get.getMatrixMetaManager.getPartitions(matrixId).map { part =>
+      new RandomizePartitionUpdateParam(matrixId, part, dim, order, seed + part.getPartitionId)
     }
   }
 }

@@ -25,4 +25,6 @@ package object data {
   type PartitionId = Int
 
   type VertexSet = LongOpenHashSet
+
+  type CounterTriangleDirected = Array[Int]
 }

@@ -25,13 +25,16 @@ public class GetHyperLogLogPartParam extends PartitionGetParam {
   private int startIndex;
   private int endIndex;
   private long n;
+  private boolean isDirected;
+
   public GetHyperLogLogPartParam(int matrixId, PartitionKey partKey,
-                                 long[] nodes, long n, int startIndex, int endIndex) {
+                                 long[] nodes, long n, int startIndex, int endIndex, boolean isDirected) {
     super(matrixId, partKey);
     this.nodes = nodes;
     this.startIndex = startIndex;
     this.endIndex = endIndex;
     this.n = n;
+    this.isDirected = isDirected;
   }
 
   public GetHyperLogLogPartParam() {
@@ -46,6 +49,10 @@ public class GetHyperLogLogPartParam extends PartitionGetParam {
     return n;
   }
 
+  public boolean isDirected() {
+    return isDirected;
+  }
+
   @Override
   public void serialize(ByteBuf buf) {
     super.serialize(buf);
@@ -53,6 +60,7 @@ public class GetHyperLogLogPartParam extends PartitionGetParam {
     for (int i = startIndex; i < endIndex; i++)
       buf.writeLong(nodes[i]);
     buf.writeLong(n);
+    buf.writeBoolean(isDirected);
   }
 
   @Override
@@ -63,6 +71,7 @@ public class GetHyperLogLogPartParam extends PartitionGetParam {
     for (int i = 0; i < len; i++)
       nodes[i] = buf.readLong();
     n = buf.readLong();
+    isDirected = buf.readBoolean();
   }
 
   @Override
@@ -71,6 +80,7 @@ public class GetHyperLogLogPartParam extends PartitionGetParam {
     len += 4;
     len += 8 * (endIndex - startIndex);
     len += 8;
+    len += 1;
     return len;
   }
 }

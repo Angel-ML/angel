@@ -188,7 +188,7 @@ object LoadBalancePartitioner {
     var p = percent
     var count = 2
     while (count > 0) {
-      val bits = (numBits(maxId) * percent).toInt
+      val bits = (numBits(maxId) * p).toInt
       println(s"bits used for load balance partition is $bits")
       val buckets = getBuckets(index, bits)
       val sum = buckets.map(f => f._2).sum

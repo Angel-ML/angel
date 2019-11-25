@@ -21,13 +21,8 @@ import java.util.{Arrays => JArrays}
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.LongIntVector
 import it.unimi.dsi.fastutil.ints.IntArrayList
-import it.unimi.dsi.fastutil.longs.{Long2IntOpenHashMap, LongArrayList}
+import it.unimi.dsi.fastutil.longs.LongArrayList
 
-private[kcore5]
-case class ReverseIndex(keys: Array[Long],
-                        indptr: Array[Int],
-                        neighbors: Array[Long],
-                        index: Long2IntOpenHashMap)
 
 private[kcore5]
 class KCoreGraphPartition(index: Int,
@@ -47,24 +42,10 @@ class KCoreGraphPartition(index: Int,
     msgs.size().toInt
   }
 
-  def msgsToString(msgs: LongIntVector): String = {
-    val it = msgs.getStorage.entryIterator()
-    val sb = new StringBuilder
-    while (it.hasNext) {
-      val entry = it.next()
-      sb.append(s"${entry.getLongKey}:${entry.getIntValue} ")
-    }
-    sb.toString()
-  }
-
   def process(model: KCorePSModel, numMsgs: Long, isFirstIteration: Boolean): KCoreGraphPartition = {
-    //    println(s"keys: ${keys.mkString(",")} neighbours: ${neighbors.distinct.mkString(",")}")
     if (numMsgs > indices.length || isFirstIteration) {
       val inMsgs = model.readMsgs(indices)
 
-
-      //      println(s"cores: ${msgsToString(cores)}")
-//      println(s"one inMsgs: ${msgsToString(inMsgs)}")
       val outMsgs = VFactory.sparseLongKeyIntVector(inMsgs.dim())
       for (idx <- keys.indices) {
         val newIndex = if (isFirstIteration) calcOneFirst(idx, inMsgs) else calcOne(idx, inMsgs)
@@ -76,15 +57,11 @@ class KCoreGraphPartition(index: Int,
 
       model.writeMsgs(outMsgs)
 
-//      println(s"after calc: keys:${keys.mkString(",")} cores:${keyCores.mkString(",")}")
-
       new KCoreGraphPartition(index, keys, indptr,
         neighbors, keyCores, neiCores, indices, hIndices)
     } else {
       val inMsgs = model.readAllMsgs()
       assert(inMsgs.size() == numMsgs)
-//      println(s"two inMsgs: ${msgsToString(inMsgs)}")
-
 
       val outMsgs = VFactory.sparseLongKeyIntVector(inMsgs.dim())
       for (idx <- keys.indices) {
@@ -95,7 +72,6 @@ class KCoreGraphPartition(index: Int,
         }
       }
 
-//      println(s"after calc: keys:${keys.mkString(",")} cores:${keyCores.mkString(",")}")
       model.writeMsgs(outMsgs)
 
       new KCoreGraphPartition(index, keys, indptr,
@@ -189,29 +165,4 @@ object KCoreGraphPartition {
       neighbors, keyCores, neiCores, indices, hIndices)
   }
 
-  //  def makeReverseIndex(keys: Array[Long],
-  //                       indptr: Array[Int],
-  //                       nodes: Array[Long]): ReverseIndex = {
-  //    val cnt = new Long2IntOpenHashMap()
-  //    for (idx <- keys.indices) {
-  //      var j = indptr(idx)
-  //      while (j < indptr(idx + 1)) {
-  //        cnt.addTo(nodes(j), 1)
-  //        j += 1
-  //      }
-  //    }
-  //
-  //    val rkeys = new LongArrayList()
-  //    val rindptr = new IntArrayList()
-  //    val rnodes = new LongArrayList()
-  //    val rindex = new Long2IntOpenHashMap()
-  //
-  //    for (idx <- keys.indices) {
-  //      var j = indptr(idx)
-  //      while (j < indptr(idx + 1)) {
-  //
-  //        j += 1
-  //      }
-  //    }
-  //  }
 }

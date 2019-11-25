@@ -31,10 +31,10 @@ class LINEModelSuite extends PSFunSuite with SharedPSContext {
   val output = "file:///E://model/"
   val numPartition = 1
   val lr = 0.025f
-  val dim = 32
+  val dim = 4
   val batchSize = 1024
   val numPSPart = 1
-  val numEpoch = 5
+  val numEpoch = 10
   val negative = 5
   val storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
   var param: Param = _

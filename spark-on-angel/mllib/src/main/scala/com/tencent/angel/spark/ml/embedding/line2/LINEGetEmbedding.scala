@@ -54,8 +54,20 @@ class LINEGetEmbedding(param: LINEGetEmbeddingParam) extends GetFunc(param) {
     var srcFeats:Int2ObjectOpenHashMap[Array[Float]] = null
     var targetFeats:Int2ObjectOpenHashMap[Array[Float]] = null
 
-    if (srcNodeIds != null) {
-      srcFeats = new Int2ObjectOpenHashMap[Array[Float]](srcNodeIds.length)
+
+
+    if(order == 1) {
+      if(srcNodeIds != null || targetNodeIds != null) {
+        var len = 0
+        if(srcNodeIds != null) len += srcNodeIds.length
+        if(targetNodeIds != null) len += targetNodeIds.length
+
+        srcFeats = new Int2ObjectOpenHashMap[Array[Float]](len)
+      }
+    } else {
+      if (srcNodeIds != null) {
+        srcFeats = new Int2ObjectOpenHashMap[Array[Float]](srcNodeIds.length)
+      }
     }
 
     if(targetNodeIds != null) {

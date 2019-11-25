@@ -18,17 +18,15 @@ package com.tencent.angel.spark.ml.psf.hyperanf;
 
 import com.tencent.angel.ml.matrix.psf.get.base.*;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
-import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import scala.Tuple2;
 import scala.Tuple3;
 
 import java.util.List;
 
 public class GetClosenessAndCardinality extends GetFunc {
 
-  public GetClosenessAndCardinality(int matrixId, long[] nodes, long n) {
-    super(new GetHyperLogLogParam(matrixId, nodes, n));
+  public GetClosenessAndCardinality(int matrixId, long[] nodes, long n, boolean isDirected) {
+    super(new GetHyperLogLogParam(matrixId, nodes, n, isDirected));
   }
 
   public GetClosenessAndCardinality(GetParam param) {
@@ -46,13 +44,21 @@ public class GetClosenessAndCardinality extends GetFunc {
 
     long n = param.getN();
     long[] nodes = param.getNodes();
+    boolean isDirected = param.isDirected();
+
     Long2ObjectOpenHashMap<Tuple3<Double, Long, Long>> closenesses = new Long2ObjectOpenHashMap<>();
     for (int i = 0; i < nodes.length; i++) {
       HyperLogLogPlusElement hllElem = (HyperLogLogPlusElement) row.get(nodes[i]);
-      if (hllElem.getCloseness() < n) {
-        closenesses.put(nodes[i], new Tuple3<>(0d, hllElem.getCardinality(), hllElem.getCloseness()));
+      if (isDirected) {
+        if (hllElem.getCloseness() < n) {
+          closenesses.put(nodes[i], new Tuple3<>(0d, hllElem.getCardinality(), hllElem.getCloseness()));
+        } else {
+          closenesses.put(nodes[i], new Tuple3<>(((double) n / (double) hllElem.getCloseness()),
+              hllElem.getCardinality(),
+              hllElem.getCloseness()));
+        }
       } else {
-        closenesses.put(nodes[i], new Tuple3<>(((double)n / (double)hllElem.getCloseness()),
+        closenesses.put(nodes[i], new Tuple3<>(((double) hllElem.getCardinality() / (double) hllElem.getCloseness()),
             hllElem.getCardinality(),
             hllElem.getCloseness()));
       }

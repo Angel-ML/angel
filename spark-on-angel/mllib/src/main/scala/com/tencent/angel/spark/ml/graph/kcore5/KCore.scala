@@ -17,7 +17,7 @@
 package com.tencent.angel.spark.ml.graph.kcore5
 
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.ml.graph.params.{HasDstNodeIdCol, HasOutputCoreIdCol, HasOutputNodeIdCol, HasPSPartitionNum, HasPartitionNum, HasSrcNodeIdCol, HasStorageLevel, HasUseBalancePartition}
+import com.tencent.angel.spark.ml.graph.params._
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.ParamMap
