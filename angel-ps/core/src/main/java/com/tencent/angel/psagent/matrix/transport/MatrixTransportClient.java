@@ -20,6 +20,7 @@ package com.tencent.angel.psagent.matrix.transport;
 
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.PartitionKey;
+import com.tencent.angel.common.AngelThreadFactory;
 import com.tencent.angel.common.location.Location;
 import com.tencent.angel.common.transport.ChannelManager2;
 import com.tencent.angel.common.transport.ChannelPoolParam;
@@ -367,11 +368,11 @@ public class MatrixTransportClient implements MatrixTransportInterface {
 
     requestThreadPool = Executors.newFixedThreadPool(conf
         .getInt(AngelConf.ANGEL_MATRIXTRANSFER_CLIENT_REQUESTER_POOL_SIZE,
-            AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_CLIENT_REQUESTER_POOL_SIZE));
+            AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_CLIENT_REQUESTER_POOL_SIZE), new AngelThreadFactory("RPCRequest"));
 
     responseThreadPool = Executors.newFixedThreadPool(conf
         .getInt(AngelConf.ANGEL_MATRIXTRANSFER_CLIENT_RESPONSER_POOL_SIZE,
-            AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_CLIENT_RESPONSER_POOL_SIZE));
+            AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_CLIENT_RESPONSER_POOL_SIZE), new AngelThreadFactory("RPCResponser"));
 
     ChannelPoolParam poolParam = new ChannelPoolParam();
     poolParam.maxActive = conf
@@ -396,7 +397,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     String channelType = conf.get(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_CLIENT_CHANNEL_TYPE,
         AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_CHANNEL_TYPE);
 
-    hbThreadPool = Executors.newFixedThreadPool(8);
+    hbThreadPool = Executors.newFixedThreadPool(8, new AngelThreadFactory("Heartbeat"));
 
     bootstrap = new Bootstrap();
     channelManager = new ChannelManager2(bootstrap, poolParam);
@@ -1573,8 +1574,14 @@ public class MatrixTransportClient implements MatrixTransportInterface {
     }
 
     if (isOverTryLimie(request, failedType, errorLog)) {
+      LOG.error("request " + request + " failed over " + maxTryNum + ", notify to caller");
       FutureResult response = requestToResultMap.remove(request);
-      response.setExecuteError(errorLog);
+      if(response != null) {
+        response.setExecuteError(errorLog);
+      } else {
+        LOG.warn("can not find response for request " + request);
+      }
+
       PSAgentContext.get().getPsAgent().getUserRequestAdapter()
           .notifySubTaskFailed(request.getUserRequestId(), request.getSeqId(), errorLog);
     }

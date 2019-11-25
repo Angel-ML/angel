@@ -134,7 +134,7 @@ public class ServerRowFactory {
             estEleNum);
 
       case T_ANY_LONGKEY_SPARSE:
-        return new ServerLongAnyRow(valueClass, rowIndex, rowType, (int) startCol, (int) endCol,
+        return new ServerLongAnyRow(valueClass, rowIndex, rowType, startCol, endCol,
             estEleNum);
 
       default:

@@ -374,4 +374,5 @@ public class RBCompIntDoubleMatrix extends RowBasedMatrix<CompIntDoubleVector> {
     }
     return new RBCompIntDoubleMatrix(matrixId, clock, newRows);
   }
+
 }

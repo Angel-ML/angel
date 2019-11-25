@@ -34,6 +34,7 @@ import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.server.data.PSLocation;
 import com.tencent.angel.utils.StringUtils;
+import java.util.Map.Entry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -119,6 +120,10 @@ public class ParameterServerManager extends AbstractService
    */
   private final long psTimeOutMS;
 
+  private final boolean useMiniBatch;
+  private final int miniBatchSize;
+  private final int requestIntervalMS;
+
 
   public ParameterServerManager(AMContext context,
     Map<ParameterServerId, Integer> psIdToAttemptIndexMap) {
@@ -142,6 +147,15 @@ public class ParameterServerManager extends AbstractService
       conf.getInt(AngelConf.ANGEL_PS_CPU_VCORES, AngelConf.DEFAULT_ANGEL_PS_CPU_VCORES);
 
     int psPriority = conf.getInt(AngelConf.ANGEL_PS_PRIORITY, AngelConf.DEFAULT_ANGEL_PS_PRIORITY);
+
+    useMiniBatch = conf.getBoolean(AngelConf.ANGEL_PS_REQUEST_RESOURCE_USE_MINIBATCH,
+        AngelConf.DEFAULT_ANGEL_PS_REQUEST_RESOURCE_USE_MINIBATCH);
+
+    miniBatchSize = conf.getInt(AngelConf.ANGEL_PS_REQUEST_RESOURCE_MINIBATCH_SIZE,
+        AngelConf.DEFAULT_ANGEL_PS_REQUEST_RESOURCE_MINIBATCH_SIZE);
+
+    requestIntervalMS = conf.getInt(AngelConf.ANGEL_PS_REQUEST_RESOURCE_MINIBATCH_INTERVAL_MS,
+        AngelConf.DEFAULT_ANGEL_PS_REQUEST_RESOURCE_MINIBATCH_INTERVAL_MS);
 
     psTimeOutMS = conf.getLong(AngelConf.ANGEL_PS_HEARTBEAT_TIMEOUT_MS,
       AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_TIMEOUT_MS);
@@ -193,9 +207,36 @@ public class ParameterServerManager extends AbstractService
    * Start all PS
    */
   public void startAllPS() {
-    for (Map.Entry<ParameterServerId, AMParameterServer> entry : psMap.entrySet()) {
-      entry.getValue()
-        .handle(new AMParameterServerEvent(AMParameterServerEventType.PS_SCHEDULE, entry.getKey()));
+    if(useMiniBatch) {
+      Thread requestThread = new RequestThread();
+      requestThread.setName("resource-requester");
+      requestThread.start();
+    } else {
+      for (Map.Entry<ParameterServerId, AMParameterServer> entry : psMap.entrySet()) {
+        entry.getValue()
+            .handle(new AMParameterServerEvent(AMParameterServerEventType.PS_SCHEDULE, entry.getKey()));
+      }
+    }
+  }
+
+  class RequestThread extends Thread {
+    @Override
+    public void run() {
+      int index = 0;
+      for (Map.Entry<ParameterServerId, AMParameterServer> entry : psMap.entrySet()) {
+        entry.getValue()
+            .handle(new AMParameterServerEvent(AMParameterServerEventType.PS_SCHEDULE, entry.getKey()));
+        index++;
+        if(index % miniBatchSize == 0) {
+          try {
+            Thread.sleep(requestIntervalMS);
+          } catch (InterruptedException e) {
+            if(!stopped.get()) {
+              LOG.error("interrupt where request resource ", e);
+            }
+          }
+        }
+      }
     }
   }
 

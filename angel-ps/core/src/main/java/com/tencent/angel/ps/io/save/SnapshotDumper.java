@@ -54,6 +54,11 @@ public class SnapshotDumper {
   private final PSContext context;
 
   /**
+   * Enable automatic backup
+   */
+  private final boolean autoEnable;
+
+  /**
    * Dump interval in milliseconds
    */
   private final int backupIntervalMs;
@@ -102,6 +107,10 @@ public class SnapshotDumper {
     lastIteration = 0;
     mode = context.getRunningMode();
 
+    autoEnable = context.getConf()
+        .getBoolean(AngelConf.ANGEL_PS_BACKUP_AUTO_ENABLE,
+            AngelConf.DEFAULT_ANGEL_PS_BACKUP_AUTO_ENABLE);
+
     backupIntervalMs = context.getConf()
         .getInt(AngelConf.ANGEL_PS_BACKUP_INTERVAL_MS,
             AngelConf.DEFAULT_ANGEL_PS_BACKUP_INTERVAL_MS);
@@ -133,28 +142,30 @@ public class SnapshotDumper {
    */
   public void start() {
     LOG.info("Start snapshot dumper");
-    dumpDispatcher = new Thread(() -> {
-      while (!stopped.get() && !Thread.currentThread().isInterrupted()) {
-        try {
-          Thread.sleep(backupIntervalMs);
+    if(autoEnable) {
+      dumpDispatcher = new Thread(() -> {
+        while (!stopped.get() && !Thread.currentThread().isInterrupted()) {
           try {
-            LOG.info("to writeSnapshots");
-            while (context.getRunningContext().getState() == ServerState.BUSY) {
-              Thread.sleep(5000);
+            Thread.sleep(backupIntervalMs);
+            try {
+              LOG.info("to writeSnapshots");
+              while (context.getRunningContext().getState() == ServerState.BUSY) {
+                Thread.sleep(5000);
+              }
+              writeSnapshots();
+            } catch (Exception ioe) {
+              LOG.error("write snapshots error: ", ioe);
             }
-            writeSnapshots();
-          } catch (Exception ioe) {
-            LOG.error("write snapshots error: ", ioe);
-          }
-        } catch (InterruptedException e) {
-          if (!stopped.get()) {
-            LOG.warn("Snapshot dump dispatcher is interrupted. Returning.");
+          } catch (InterruptedException e) {
+            if (!stopped.get()) {
+              LOG.warn("Snapshot dump dispatcher is interrupted. Returning.");
+            }
           }
         }
-      }
-    });
-    dumpDispatcher.setName("snapshot-dump-dispatcher");
-    dumpDispatcher.start();
+      });
+      dumpDispatcher.setName("snapshot-dump-dispatcher");
+      dumpDispatcher.start();
+    }
   }
 
   /**

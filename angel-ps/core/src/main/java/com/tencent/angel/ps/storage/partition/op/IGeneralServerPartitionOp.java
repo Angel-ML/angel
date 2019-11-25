@@ -18,6 +18,7 @@
 package com.tencent.angel.ps.storage.partition.op;
 
 import com.tencent.angel.common.Serialize;
+import com.tencent.angel.common.StreamSerialize;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
@@ -26,7 +27,7 @@ import io.netty.buffer.ByteBuf;
 /**
  * Basic operation for partition storage
  */
-public interface IGeneralServerPartitionOp extends Serialize {
+public interface IGeneralServerPartitionOp extends Serialize, StreamSerialize {
 
   /**
    * Init the storage

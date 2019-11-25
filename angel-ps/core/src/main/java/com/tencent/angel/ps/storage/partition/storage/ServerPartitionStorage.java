@@ -20,6 +20,9 @@ package com.tencent.angel.ps.storage.partition.storage;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import io.netty.buffer.ByteBuf;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 /**
  * Base class of server partition storage
@@ -28,7 +31,7 @@ public abstract class ServerPartitionStorage implements IServerPartitionStorage 
   /**
    * Row id offset
    */
-  protected int rowIdOffset;
+  protected volatile int rowIdOffset;
 
   public ServerPartitionStorage(int rowIdOffset) {
     this.rowIdOffset = rowIdOffset;
@@ -46,6 +49,21 @@ public abstract class ServerPartitionStorage implements IServerPartitionStorage 
 
   @Override
   public int bufferLen() {
+    return 4;
+  }
+
+  @Override
+  public void serialize(DataOutputStream output) throws IOException {
+    output.writeInt(rowIdOffset);
+  }
+
+  @Override
+  public void deserialize(DataInputStream input) throws IOException {
+    rowIdOffset = input.readInt();
+  }
+
+  @Override
+  public int dataLen() {
     return 4;
   }
 

@@ -65,7 +65,13 @@ public class ServerPartitionFactory {
           .getCSRStorage(storageClass, partKey, rowType);
       return new CSRPartition(partKey, estSparsity, storage, rowType);
     } else {
-      throw new UnsupportedOperationException("not support partition class " + partClass + " now ");
+      try {
+        ServerPartition part = (ServerPartition) partClass.newInstance();
+        part.setPartitionKey(partKey);
+        return part;
+      } catch (Throwable e) {
+        throw new UnsupportedOperationException("can not load partition class ", e);
+      }
     }
   }
 

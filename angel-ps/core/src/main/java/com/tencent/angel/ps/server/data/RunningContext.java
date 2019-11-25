@@ -49,6 +49,7 @@ public class RunningContext {
   private final float genFactor;
 
   public RunningContext(PSContext context) {
+    LOG.info("Runtime.getRuntime().availableProcessors() = " + Runtime.getRuntime().availableProcessors());
     int workerNum = context.getConf().getInt(AngelConf.ANGEL_MATRIXTRANSFER_SERVER_WORKER_POOL_SIZE,
       AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_WORKER_POOL_SIZE);
     float factor = context.getConf()
@@ -63,7 +64,9 @@ public class RunningContext {
       context.getConf().getInt(AngelConf.ANGEL_PS_MEMORY_GB, AngelConf.DEFAULT_ANGEL_PS_MEMORY_GB)
         * 1024;
     int estSize = (int) ((serverMem - 512) * 0.45 / 8);
-    int maxRPCCounter = Math.max(estSize, (int) (workerNum * factor));
+    //int maxRPCCounter = Math.max(estSize, (int) (workerNum * factor));
+
+    int maxRPCCounter = context.getConf().getInt("angel.ps.max.rpc.counter", 3000);
 
     maxRunningRPCCounter.set(maxRPCCounter);
     generalRunningRPCCounter.set((int) (maxRPCCounter * genFactor));
@@ -98,8 +101,9 @@ public class RunningContext {
           printTokenIfBusy();
         }
 
+        printToken();
         try {
-          Thread.sleep(5000);
+          Thread.sleep(30000);
         } catch (InterruptedException e) {
           if (!stopped.get()) {
             LOG.error("token-timeout-checker is interrupted");
@@ -131,10 +135,10 @@ public class RunningContext {
     LOG.info("generalRunningRPCCounter = " + generalRunningRPCCounter.get());
     LOG.info("lastOOMRunningRPCCounter = " + lastOOMRunningRPCCounter.get());
     LOG.info("totalRPCCounter = " + totalRPCCounter.get());
-    for (Map.Entry<Integer, ClientRunningContext> clientEntry : clientRPCCounters.entrySet()) {
-      LOG.info("client " + clientEntry.getKey() + " running context:");
-      clientEntry.getValue().printToken();
-    }
+    //for (Map.Entry<Integer, ClientRunningContext> clientEntry : clientRPCCounters.entrySet()) {
+    //  LOG.info("client " + clientEntry.getKey() + " running context:");
+    //  clientEntry.getValue().printToken();
+    //}
 
     LOG.info("total=" + WorkerPool.total.get());
     LOG.info("normal=" + WorkerPool.normal);

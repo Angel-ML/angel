@@ -209,7 +209,6 @@ public class MasterClient {
    * @throws Exception rpc failed
    */
   public void createMatrix(MatrixContext matrixContext, long timeOutMS) throws Exception {
-    matrixContext.init(PSAgentContext.get().getConf());
     List<MatrixContext> matrixContexts = new ArrayList<>(1);
     matrixContexts.add(matrixContext);
     createMatrices(matrixContexts, timeOutMS);

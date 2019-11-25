@@ -32,6 +32,7 @@ import com.tencent.angel.model.PSMatrixSaveContext;
 import com.tencent.angel.ps.storage.matrix.PartitionState;
 import com.tencent.angel.ps.storage.partition.RowBasedPartition;
 import com.tencent.angel.ps.storage.partition.ServerPartition;
+import com.tencent.angel.ps.storage.partition.UserDefinePartition;
 import com.tencent.angel.ps.storage.partition.storage.ServerRowsStorage;
 import com.tencent.angel.ps.storage.vector.ServerIntAnyRow;
 import com.tencent.angel.ps.storage.vector.ServerIntDoubleRow;
@@ -83,7 +84,16 @@ public class SnapshotFormat extends MatrixFormatImpl {
       PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
     if(part instanceof RowBasedPartition) {
       save((RowBasedPartition) part, partMeta, saveContext, output);
+    } else if(part instanceof UserDefinePartition) {
+      save((UserDefinePartition) part, partMeta, saveContext, output);
+    } else {
+      LOG.warn("Unsupport partition type!! Write snapshot failed");
     }
+  }
+
+  public void save(UserDefinePartition part, MatrixPartitionMeta partMeta,
+      PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
+    part.serialize(output);
   }
 
   @Override
@@ -91,7 +101,16 @@ public class SnapshotFormat extends MatrixFormatImpl {
       PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
     if(part instanceof RowBasedPartition) {
       load((RowBasedPartition) part, partMeta, loadContext, input);
+    } else if(part instanceof UserDefinePartition) {
+      load((UserDefinePartition) part, partMeta, loadContext, input);
+    } else {
+      LOG.warn("Unsupport partition type!! Load snapshot failed");
     }
+  }
+
+  public void load(UserDefinePartition part, MatrixPartitionMeta partMeta,
+      PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+    part.deserialize(input);
   }
 
   static enum SaveType {

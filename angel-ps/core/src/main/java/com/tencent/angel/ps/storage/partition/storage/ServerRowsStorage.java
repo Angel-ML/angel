@@ -68,6 +68,11 @@ public abstract class ServerRowsStorage extends ServerPartitionStorage implement
     if (elementNum <= 0) {
       elementNum = (int) ((endCol - startCol) * estSparsity);
     }
+
+    if(elementNum < 0) {
+      elementNum = 1024;
+    }
+
     for (int rowIndex = rowStart; rowIndex < rowEnd; rowIndex++) {
       ServerRow row = ServerRowFactory
           .createServerRow(rowIndex, rowType, startCol, endCol, elementNum, valueClass);
