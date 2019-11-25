@@ -280,11 +280,12 @@ private[spark] object AngelPSContext {
 
   def apply(executorId: String, sparkConf: SparkConf): AngelPSContext = {
     if (executorId == "driver") {
+      println("from driver start Angel PS! ")
       val angelContext = launchAngel(sparkConf)
       new AngelPSContext(-1, angelContext)
     } else {
       val taskConf = SparkHadoopUtil.get.newConfiguration(sparkConf)
-
+      println("from executor to connect Angel PS! ")
       val taskContext = TaskContext.get()
       val ip = taskContext.getLocalProperty(MASTER_IP)
       val port = taskContext.getLocalProperty(MASTER_PORT).toInt
