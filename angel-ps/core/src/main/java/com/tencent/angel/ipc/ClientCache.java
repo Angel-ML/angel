@@ -51,7 +51,7 @@ class ClientCache {
 
   protected ClientCache() {
     int nThreads =
-      conf.getInt(AngelConf.CLIENT_IO_THREAD, Runtime.getRuntime().availableProcessors() * 2);
+      conf.getInt(AngelConf.CLIENT_IO_THREAD, Math.max(8, (int)(Runtime.getRuntime().availableProcessors() * 0.25)));
     IOMode ioMode = IOMode.valueOf(conf.get(AngelConf.NETWORK_IO_MODE, "NIO"));
     workerGroup = NettyUtils.createEventLoop(ioMode, nThreads, "ML-client");
     pooledAllocator = NettyUtils.createPooledByteBufAllocator(true, true, nThreads);

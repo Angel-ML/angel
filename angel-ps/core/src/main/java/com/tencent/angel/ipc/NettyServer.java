@@ -74,7 +74,7 @@ public abstract class NettyServer implements RpcServer {
 
   public NettyServer(InetSocketAddress addr, Configuration conf) {
     int nThreads =
-      conf.getInt(AngelConf.SERVER_IO_THREAD, Runtime.getRuntime().availableProcessors() * 2);
+      conf.getInt(AngelConf.SERVER_IO_THREAD, Math.max(8, (int)(Runtime.getRuntime().availableProcessors() * 0.25)));
     IOMode ioMode = IOMode.valueOf(conf.get(AngelConf.NETWORK_IO_MODE, "NIO"));
     EventLoopGroup bossGroup = NettyUtils.createEventLoop(ioMode, nThreads, "ML-server");
     EventLoopGroup workerGroup = bossGroup;
