@@ -28,7 +28,6 @@ import com.tencent.angel.spark.ml.graph.data.NeighborTablePartition
 import com.tencent.angel.spark.models.PSMatrix
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap
 import org.apache.spark.SparkContext
-import org.apache.spark.internal.Logging
 import org.apache.spark.ml.Estimator
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.util.{DefaultParamsReadable, DefaultParamsWritable}
@@ -42,7 +41,7 @@ import scala.reflect.ClassTag
 import scala.util.Random
 
 class Node2Vec(override val uid: String) extends Estimator[Node2VecModel]
-  with Node2VecParams with DefaultParamsWritable with Logging {
+  with Node2VecParams with DefaultParamsWritable {
   val storageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK
 
   def this() {

@@ -28,13 +28,10 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 class LINEModelSuite2 extends PSFunSuite with SharedPSContext {
-  private val LOCAL_FS = FileSystem.DEFAULT_FS
-  private val TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp")
-
-  val input = "../../data/bc/edge"
-  val oldOutput = null
-  val output = LOCAL_FS + TMP_PATH + "/linemodel_v2"
-  //val tmpPath = "file:///E://temp"
+  val input = "../../data/bc/part-00000"
+  val output = "file:///E://model_new/"
+  val oldOutput = null//"file:///E:\\temp\\application_1565577700269_-1030306181_2e9fbfff-8f3c-41f4-b015-59490ef6daf5\\snapshot\\2"
+  val tmpPath = "file:///E://temp"
   val numPartition = 1
   val lr = 0.025f
   val dim = 32
