@@ -27,8 +27,7 @@ object KCoreExample {
   def main(args: Array[String]): Unit = {
 
     val params = ArgsUtil.parse(args)
-    val mode = params.getOrElse("mode", "yarn-cluster")
-    val sc = start(mode)
+    val sc = start()
 
     val input = params.getOrElse("input", null)
     val partitionNum = params.getOrElse("partitionNum", "100").toInt
@@ -60,22 +59,30 @@ object KCoreExample {
       .setDstNodeIdCol("dst")
       .setUseBalancePartition(useBalancePartition)
 
-    val df = GraphIO.load(input, isWeighted = false, srcIndex, dstIndex, sep = sep)
-    val mapping = kCore.transform(df)
-    GraphIO.save(mapping, output)
-    stop()
+    var exitCode = 0
+    try {
+      val df = GraphIO.load(input, isWeighted = false, srcIndex, dstIndex, sep = sep)
+      val mapping = kCore.transform(df)
+      GraphIO.save(mapping, output)
+    } catch {
+      case e: Exception =>
+        e.printStackTrace()
+        exitCode = -1
+    } finally {
+      stop()
+      System.exit(exitCode)
+    }
   }
 
-  def start(mode: String): SparkContext = {
+  def start(): SparkContext = {
     val conf = new SparkConf()
 
     // Add jvm parameters for executors
-    var executorJvmOptions = conf.get("spark.executor.extraJavaOptions")
+    var executorJvmOptions = conf.get("spark.executor.extraJavaOptions", "")
     executorJvmOptions += " -XX:ConcGCThreads=4 -XX:ParallelGCThreads=4 -Xss4M "
     conf.set("spark.executor.extraJavaOptions", executorJvmOptions)
     println(s"executorJvmOptions = ${executorJvmOptions}")
 
-    conf.setMaster(mode)
     conf.setAppName("K-Core")
     val sc = new SparkContext(conf)
     //PSContext.getOrCreate(sc)

@@ -20,10 +20,12 @@ package com.tencent.angel.ml.feature;
 
 import com.tencent.angel.ml.math2.vector.Vector;
 
+import java.io.Serializable;
+
 /**
  * training data with label
  */
-public class LabeledData {
+public class LabeledData implements Serializable {
 
   private Vector x;
   private double y;

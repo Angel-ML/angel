@@ -19,6 +19,7 @@ package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
+import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.embedding.line2.LINE
 import com.tencent.angel.spark.ml.graph.utils.GraphIO
@@ -30,22 +31,14 @@ import org.apache.spark.{SparkConf, SparkContext}
 object LINEExample2 {
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
-    val conf = new SparkConf().setMaster("yarn-cluster").setAppName("LINE")
+    val conf = new SparkConf().setAppName("LINE")
 
     val oldModelInput = params.getOrElse("oldmodelpath", null)
     if(oldModelInput != null) {
       conf.set(s"spark.hadoop.${AngelConf.ANGEL_LOAD_MODEL_PATH}", oldModelInput)
     }
 
-    val mode = params.getOrElse("mode", "yarn-cluster")
-    val sc = start(mode)
-
-    val executorJvmOptions = " -verbose:gc -XX:-PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:<LOG_DIR>/gc.log " +
-      "-XX:+UseG1GC -XX:MaxGCPauseMillis=1000 -XX:G1HeapRegionSize=32M " +
-      "-XX:InitiatingHeapOccupancyPercent=50 -XX:ConcGCThreads=4 -XX:ParallelGCThreads=4 "
-    println(s"executorJvmOptions = ${executorJvmOptions}")
-    conf.set("spark.executor.extraJavaOptions", executorJvmOptions)
-
+    val sc = start(conf)
     //PSContext.getOrCreate(sc)
 
     val input = params.getOrElse("input", null)
@@ -90,29 +83,39 @@ object LINEExample2 {
     val numDataPartitions = (numCores * 6.25).toInt
     println(s"numDataPartitions=$numDataPartitions")
 
-    val line = new LINE()
-      .setEmbedding(embeddingDim)
-      .setNegative(numNegSamples)
-      .setStepSize(stepSize)
-      .setOrder(order)
-      .setEpochNum(numEpoch)
-      .setBatchSize(batchSize)
-      .setPartitionNum(numDataPartitions)
-      .setPSPartitionNum(numPartitions)
-      .setIsWeighted(isWeight)
-      .setRemapping(withRemapping)
-      .setSaveModelInterval(saveModelInterval)
-      .setCheckpointInterval(checkpointInterval)
-      .setOutput(output)
-      .setSaveMeta(saveMeta)
+    var exitCode = 0
+    try {
+      val line = new LINE()
+        .setEmbedding(embeddingDim)
+        .setNegative(numNegSamples)
+        .setStepSize(stepSize)
+        .setOrder(order)
+        .setEpochNum(numEpoch)
+        .setBatchSize(batchSize)
+        .setPartitionNum(numDataPartitions)
+        .setPSPartitionNum(numPartitions)
+        .setIsWeighted(isWeight)
+        .setRemapping(withRemapping)
+        .setSaveModelInterval(saveModelInterval)
+        .setCheckpointInterval(checkpointInterval)
+        .setOutput(output)
+        .setSaveMeta(saveMeta)
 
-    line.transform(edges)
+      line.transform(edges)
 
-    line.save(output, numEpoch, saveMeta)
+      line.save(output, numEpoch, saveMeta)
+    } catch {
+      case e: Exception =>
+        e.printStackTrace()
+        exitCode = -1
+    } finally {
+      PSContext.stop()
+      sc.stop()
+      System.exit(exitCode)
+    }
   }
 
-  def start(mode: String): SparkContext = {
-    val conf = new SparkConf()
+  def start(conf: SparkConf): SparkContext = {
 
     // Set specific parameters for LINE
     conf.set(AngelConf.ANGEL_PS_PARTITION_SOURCE_CLASS, classOf[PartitionSourceArray].getName)
@@ -130,8 +133,6 @@ object LINEExample2 {
     println(s"executorJvmOptions = ${executorJvmOptions}")
     conf.set("spark.executor.extraJavaOptions", executorJvmOptions)
 
-    conf.setMaster(mode)
-    conf.setAppName("LINE")
     val sc = new SparkContext(conf)
     //PSContext.getOrCreate(sc)
     sc

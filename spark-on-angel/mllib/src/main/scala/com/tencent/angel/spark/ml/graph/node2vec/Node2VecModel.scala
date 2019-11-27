@@ -30,7 +30,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.ml.Model
 import org.apache.spark.ml.compat.Compat
 import org.apache.spark.ml.param.ParamMap
-import org.apache.spark.ml.util.{MLReadable, MLReader, MLWritable, MLWriter}
+import org.apache.spark.ml.util._
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 
@@ -107,7 +107,7 @@ object Node2VecModel extends MLReadable[Node2VecModel] {
     override def load(path: String): Node2VecModel = {
       val metadata = Compat.defaultParamsReader.loadMetadata(path, sc, className)
       val model = new Node2VecModel(metadata.uid)
-      Compat.defaultParamsReader.getAndSetParams(model, metadata)
+      metadata.getAndSetParams(model)
 
       val dataPath = new Path(path, "data").toString
       val data = sparkSession.read.format("parquet").load(dataPath)

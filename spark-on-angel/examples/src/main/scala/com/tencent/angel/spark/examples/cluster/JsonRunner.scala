@@ -59,13 +59,25 @@ object JsonRunner {
 
     val dim = SharedConf.indexRange.toInt
 
-    actionType match {
-      case MLConf.ANGEL_ML_TRAIN =>
+    var exitCode = 0
+    try {
+      actionType match {
+        case MLConf.ANGEL_ML_TRAIN =>
           learner.train(input, output, modelPath, dim, model)
 
-      case MLConf.ANGEL_ML_PREDICT =>
+        case MLConf.ANGEL_ML_PREDICT =>
           learner.predict(input, output, modelPath, dim, model)
+      }
+    } catch {
+      case e: Exception =>
+        e.printStackTrace()
+        exitCode = -1
+    } finally {
+      PSContext.stop()
+      sc.stop()
+      System.exit(exitCode)
     }
+
   }
 
 }

@@ -36,7 +36,7 @@ object LINEExample {
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
 
-    val conf = new SparkConf().setMaster("yarn-cluster").setAppName("LINE")
+    val conf = new SparkConf().setAppName("LINE")
     val sc = new SparkContext(conf)
 
     conf.set(AngelConf.ANGEL_PS_PARTITION_SOURCE_CLASS, classOf[PartitionSourceArray].getName)
@@ -112,11 +112,19 @@ object LINEExample {
       .setOrder(order)
       .setModelCPInterval(checkpointInterval)
 
-    val model = new LINEModel(param)
-    model.train(edges, param, output + "/embedding")
-    model.save(output + "/embedding", numEpoch)
-
-    PSContext.stop()
-    sc.stop()
+    var exitCode = 0
+    try {
+      val model = new LINEModel(param)
+      model.train(edges, param, output + "/embedding")
+      model.save(output + "/embedding", numEpoch)
+    } catch {
+      case e: Exception =>
+        e.printStackTrace()
+        exitCode = -1
+    } finally {
+      PSContext.stop()
+      sc.stop()
+      System.exit(exitCode)
+    }
   }
 }

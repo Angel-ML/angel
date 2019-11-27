@@ -59,6 +59,11 @@
             <version>0.13.1</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-client</artifactId>
+            <version>3.0.0</version>
+        </dependency>
     </dependencies>
 
     <build>
