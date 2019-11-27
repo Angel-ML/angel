@@ -83,7 +83,7 @@
     <dependency>
       <groupId>org.json4s</groupId>
       <artifactId>json4s-jackson_2.11</artifactId>
-      <version>3.4.2</version>
+      <version>3.2.11</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -127,7 +127,7 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-all</artifactId>
-      <version>4.1.1.Final</version>
+      <version>4.1.18.Final</version>
     </dependency>
     <dependency>
       <groupId>it.unimi.dsi</groupId>
