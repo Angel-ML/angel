@@ -86,10 +86,12 @@ public class PSContext {
    */
   public AngelDeployMode getDeployMode() {
     String mode =
-      ps.getConf().get(AngelConf.ANGEL_DEPLOY_MODE, AngelConf.DEFAULT_ANGEL_DEPLOY_MODE);
+            ps.getConf().get(AngelConf.ANGEL_DEPLOY_MODE, AngelConf.DEFAULT_ANGEL_DEPLOY_MODE);
 
     if (mode.equals(AngelDeployMode.LOCAL.toString())) {
       return AngelDeployMode.LOCAL;
+    } else if (mode.equals(AngelDeployMode.KUBERNETES.toString())) {
+      return AngelDeployMode.KUBERNETES;
     } else {
       return AngelDeployMode.YARN;
     }

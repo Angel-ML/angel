@@ -19,7 +19,7 @@ object Node2VecExample {
     val psPartNum = params.getOrElse("psPartNum", "2").toInt
     val dataPartNum = params.getOrElse("dataPartNum", "4").toInt
     val maxNodeId = params.getOrElse("maxNodeId", "10312").toInt
-    val mode = params.getOrElse("mode", "local[4]")
+    //val mode = params.getOrElse("mode", "local[4]")
     val walkLength = params.getOrElse("walkLength", "30").toInt
     val pValue = params.getOrElse("pValue", "0.8").toDouble
     val qValue = params.getOrElse("qValue", "1.2").toDouble
@@ -30,7 +30,6 @@ object Node2VecExample {
 
     // Spark setup
     val spark = SparkSession.builder()
-      .master(mode)
       .appName("node2vec")
       .getOrCreate()
 
@@ -61,23 +60,30 @@ object Node2VecExample {
       .setHitRatio(hitRatio)
       .setPullBatchSize(pullBatchSize)
 
-    println("begin to fit|train ...")
-    val model = n2v.fit(data)
-    println("fit|train finished!")
+    var exitCode = 0
+    try {
+      println("begin to fit|train ...")
+      val model = n2v.fit(data)
+      println("fit|train finished!")
 
-    println("start to save model")
-    model.write.overwrite().save(output)
-    println(s"finish to save model")
+      println("start to save model")
+      model.write.overwrite().save(output)
+      println(s"finish to save model")
 
-    val end = System.currentTimeMillis()
-    println(s"the elapsed time: ${1.0 * (end - start) / 1000}")
-
-    println("Stop PS ...")
-    Node2Vec.stopPS()
-    println("PS Stopped!")
-
-    println("Stop Spark ...")
-    spark.stop()
-    println("Spark Stopped!")
+      val end = System.currentTimeMillis()
+      println(s"the elapsed time: ${1.0 * (end - start) / 1000}")
+    } catch {
+      case e: Exception =>
+        e.printStackTrace()
+        exitCode = -1
+    } finally {
+      println("Stop PS ...")
+      Node2Vec.stopPS()
+      println("PS Stopped!")
+      println("Stop Spark ...")
+      spark.stop()
+      println("Spark Stopped!")
+      System.exit(exitCode)
+    }
   }
 }

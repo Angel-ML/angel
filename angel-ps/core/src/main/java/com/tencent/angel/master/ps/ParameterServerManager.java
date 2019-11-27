@@ -18,6 +18,7 @@
 
 package com.tencent.angel.master.ps;
 
+import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.common.location.Location;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.AMContext;
@@ -46,6 +47,7 @@ import org.apache.hadoop.yarn.factory.providers.RecordFactoryProvider;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -114,6 +116,11 @@ public class ParameterServerManager extends AbstractService
    * parameter server attempt id to last heartbeat timestamp map
    */
   private final ConcurrentHashMap<PSAttemptId, Long> psLastHeartbeatTS = new ConcurrentHashMap<>();
+
+  /**
+   * parameter server attempt id queue for kubernetes allocator
+   */
+  private final LinkedBlockingDeque<PSAttemptId> psAttemptIdBlockingQueue = new LinkedBlockingDeque<>();
 
   /**
    * parameter server heartbeat timeout value in millisecond
@@ -247,6 +254,15 @@ public class ParameterServerManager extends AbstractService
    */
   public Map<ParameterServerId, AMParameterServer> getParameterServerMap() {
     return psMap;
+  }
+
+  /**
+   * parameter server attempt id queue
+   * @return LinkedBlockingDeque<PSAttemptId>
+   */
+
+  public LinkedBlockingDeque<PSAttemptId> getPsAttemptIdBlockingQueue() {
+    return psAttemptIdBlockingQueue;
   }
 
   @Override public void handle(ParameterServerManagerEvent event) {
@@ -403,6 +419,9 @@ public class ParameterServerManager extends AbstractService
   public void register(PSAttemptId psAttemptId) {
     LOG.info("PS " + psAttemptId + " is registered in monitor!");
     psLastHeartbeatTS.put(psAttemptId, System.currentTimeMillis());
+    if (context.getDeployMode() == AngelDeployMode.KUBERNETES) {
+      psAttemptIdBlockingQueue.add(psAttemptId);
+    }
   }
 
   /**

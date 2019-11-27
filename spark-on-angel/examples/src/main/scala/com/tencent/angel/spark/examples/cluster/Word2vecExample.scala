@@ -110,13 +110,21 @@ object Word2vecExample {
       .setModel(modelType)
       .setModelCPInterval(checkpointInterval)
 
-    val model = new Word2VecModel(param)
-    model.train(docs, param, output + "/embedding")
-    model.save(output + "/embedding", numEpoch)
-    denseToString.map(rdd => rdd.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "/mapping"))
-
-    PSContext.stop()
-    sc.stop()
+    var exitCode = 0
+    try {
+      val model = new Word2VecModel(param)
+      model.train(docs, param, output + "/embedding")
+      model.save(output + "/embedding", numEpoch)
+      denseToString.map(rdd => rdd.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "/mapping"))
+    } catch {
+      case e: Exception =>
+        e.printStackTrace()
+        exitCode = -1
+    } finally {
+      PSContext.stop()
+      sc.stop()
+      System.exit(exitCode)
+    }
   }
 
 }

@@ -26,7 +26,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -237,6 +239,17 @@ public class ConfUtils {
       conf.set(AngelConf.ANGEL_JOB_LIBJARS, sb.toString());
     } else {
       conf.set(AngelConf.ANGEL_JOB_LIBJARS, sb.toString() + "," + addJars);
+    }
+  }
+
+  public static void addResourceProperties(Configuration conf, String fileName) throws IOException {
+    Properties properties = new Properties();
+    InputStream inStream = new FileInputStream(fileName);
+    properties.load(inStream);
+    for (Map.Entry<Object, Object> confTuple : properties.entrySet()) {
+      String key = confTuple.getKey().toString();
+      String value = confTuple.getValue().toString();
+      conf.set(key, value);
     }
   }
 

@@ -25,7 +25,6 @@
 		<version>2.4.0</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
-
 	<artifactId>spark-on-angel</artifactId>
 	<packaging>pom</packaging>
 	<name>spark-on-angel</name>
@@ -37,7 +36,7 @@
 	</modules>
 
 	<properties>
-		<spark.version>2.1.0</spark.version>
+		<spark.version>2.3.0</spark.version>
 		<PermGen>512m</PermGen>
 		<MaxPermGen>512m</MaxPermGen>
 		<CodeCacheSize>1024m</CodeCacheSize>

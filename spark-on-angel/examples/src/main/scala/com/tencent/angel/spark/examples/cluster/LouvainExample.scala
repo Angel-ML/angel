@@ -27,8 +27,7 @@ object LouvainExample {
   def main(args: Array[String]): Unit = {
 
     val params = ArgsUtil.parse(args)
-    val mode = params.getOrElse("mode", "yarn-cluster")
-    val sc = start(mode)
+    val sc = start()
 
     val input = params.getOrElse("input", null)
     val output = params.getOrElse("output", null)
@@ -57,29 +56,37 @@ object LouvainExample {
     .getOrElse(throw new Exception("checkpoint dir not provided"))
     sc.setCheckpointDir(cpDir)
 
-    val louvain = new Louvain()
-      .setPartitionNum(partitionNum)
-      .setPSPartitionNum(psPartitionNum)
-      .setStorageLevel(storageLevel)
-      .setNumFold(numFold)
-      .setNumOpt(numOpt)
-      .setBatchSize(batchSize)
-      .setDebugMode(enableCheck)
-      .setEps(eps)
-      .setBufferSize(bufferSize)
-      .setIsWeighted(isWeighted)
+    var exitCode = 0
+    try {
+      val louvain = new Louvain()
+        .setPartitionNum(partitionNum)
+        .setPSPartitionNum(psPartitionNum)
+        .setStorageLevel(storageLevel)
+        .setNumFold(numFold)
+        .setNumOpt(numOpt)
+        .setBatchSize(batchSize)
+        .setDebugMode(enableCheck)
+        .setEps(eps)
+        .setBufferSize(bufferSize)
+        .setIsWeighted(isWeighted)
 
-    val df = GraphIO.load(input, isWeighted = isWeighted,
-      srcIndex = srcIndex, dstIndex = dstIndex,
-      weightIndex = weightIndex, sep = sep)
-    val mapping = louvain.transform(df)
-    GraphIO.save(mapping, output)
-    stop()
+      val df = GraphIO.load(input, isWeighted = isWeighted,
+        srcIndex = srcIndex, dstIndex = dstIndex,
+        weightIndex = weightIndex, sep = sep)
+      val mapping = louvain.transform(df)
+      GraphIO.save(mapping, output)
+    } catch {
+      case e: Exception =>
+        e.printStackTrace()
+        exitCode = -1
+    } finally {
+      stop()
+      System.exit(exitCode)
+    }
   }
 
-  def start(mode: String): SparkContext = {
+  def start(): SparkContext = {
     val conf = new SparkConf()
-    conf.setMaster(mode)
     conf.setAppName("louvain")
     val sc = new SparkContext(conf)
     PSContext.getOrCreate(sc)

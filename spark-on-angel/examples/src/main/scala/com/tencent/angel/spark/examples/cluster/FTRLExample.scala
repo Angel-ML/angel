@@ -46,14 +46,23 @@ object FTRLExample {
   }
 
   def main(args: Array[String]): Unit = {
-    val params = ArgsUtil.parse(args)
-    val actionType = params.getOrElse("actionType", "train").toString
-    if (actionType == "train" || actionType == "incTrain") {
-      train(params)
-    } else {
-      predict(params)
+    var exitCode = 0
+    try {
+      val params = ArgsUtil.parse(args)
+      val actionType = params.getOrElse("actionType", "train").toString
+      if (actionType == "train" || actionType == "incTrain") {
+        train(params)
+      } else {
+        predict(params)
+      }
+    } catch {
+      case e: Exception =>
+        e.printStackTrace()
+        exitCode = -1
+    } finally {
+      stop()
+      System.exit(exitCode)
     }
-    stop()
   }
 
   def train(params: Map[String, String]): Unit = {
