@@ -106,20 +106,11 @@ object GBDTExample {
 
     @transient implicit val sc = new SparkContext(conf)
 
-    var exitCode = 0
-    try {
-      val trainer = new GBDTTrainer(param)
-      trainer.initialize(trainPath, validPath)
-      val model = trainer.train()
-      trainer.save(model, modelPath)
-    } catch {
-      case e: Exception =>
-        e.printStackTrace()
-        exitCode = -1
-    } finally {
-      sc.stop()
-      System.exit(exitCode)
-    }
+    val trainer = new GBDTTrainer(param)
+    trainer.initialize(trainPath, validPath)
+    val model = trainer.train()
+    trainer.save(model, modelPath)
+    sc.stop()
   }
 
   def predict(params: Map[String, String]): Unit = {
@@ -130,18 +121,9 @@ object GBDTExample {
     val predictPath = params(AngelConf.ANGEL_PREDICT_DATA_PATH)
     val outputPath = params(AngelConf.ANGEL_PREDICT_PATH)
 
-    var exitCode = 0
-    try {
-      val predictor = new GBDTPredictor
-      predictor.loadModel(sc, modelPath)
-      predictor.predict(sc, predictPath, outputPath)
-    } catch {
-      case e: Exception =>
-        e.printStackTrace()
-        exitCode = -1
-    } finally {
-      sc.stop()
-      System.exit(exitCode)
-    }
+    val predictor = new GBDTPredictor
+    predictor.loadModel(sc, modelPath)
+    predictor.predict(sc, predictPath, outputPath)
+    sc.stop()
   }
 }

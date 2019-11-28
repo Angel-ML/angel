@@ -71,26 +71,17 @@ object OfflineRunner {
 
     val sc   = new SparkContext(conf)
 
-    var exitCode = 0
-    try {
-      // start PS
-      PSContext.getOrCreate(sc)
+    // start PS
+    PSContext.getOrCreate(sc)
 
-      val className = "com.tencent.angel.spark.ml.classification." + network
-      val model = GraphModel(className)
-      val learner = new OfflineLearner
-      actionType match {
-        case MLConf.ANGEL_ML_TRAIN => learner.train(input, output, modelPath, dim, model)
-        case MLConf.ANGEL_ML_PREDICT => learner.predict(input, predictPath, output, dim, model)
-      }
-    } catch {
-      case e: Exception =>
-        e.printStackTrace()
-        exitCode = -1
-    } finally {
-      PSContext.stop()
-      sc.stop()
-      System.exit(exitCode)
+    val className = "com.tencent.angel.spark.ml.classification." + network
+    val model = GraphModel(className)
+    val learner = new OfflineLearner
+    actionType match {
+      case MLConf.ANGEL_ML_TRAIN => learner.train(input, output, modelPath, dim, model)
+      case MLConf.ANGEL_ML_PREDICT => learner.predict(input, predictPath, output, dim, model)
     }
+    PSContext.stop()
+    sc.stop()
   }
 }

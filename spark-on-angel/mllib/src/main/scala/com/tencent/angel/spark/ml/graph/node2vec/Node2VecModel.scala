@@ -107,7 +107,8 @@ object Node2VecModel extends MLReadable[Node2VecModel] {
     override def load(path: String): Node2VecModel = {
       val metadata = Compat.defaultParamsReader.loadMetadata(path, sc, className)
       val model = new Node2VecModel(metadata.uid)
-      metadata.getAndSetParams(model)
+      Compat.defaultParamsReader.getAndSetParams(model, metadata)
+      //metadata.getAndSetParams(model)
 
       val dataPath = new Path(path, "data").toString
       val data = sparkSession.read.format("parquet").load(dataPath)

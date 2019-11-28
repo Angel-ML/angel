@@ -60,30 +60,23 @@ object Node2VecExample {
       .setHitRatio(hitRatio)
       .setPullBatchSize(pullBatchSize)
 
-    var exitCode = 0
-    try {
-      println("begin to fit|train ...")
-      val model = n2v.fit(data)
-      println("fit|train finished!")
+    println("begin to fit|train ...")
+    val model = n2v.fit(data)
+    println("fit|train finished!")
 
-      println("start to save model")
-      model.write.overwrite().save(output)
-      println(s"finish to save model")
+    println("start to save model")
+    model.write.overwrite().save(output)
+    println(s"finish to save model")
 
-      val end = System.currentTimeMillis()
-      println(s"the elapsed time: ${1.0 * (end - start) / 1000}")
-    } catch {
-      case e: Exception =>
-        e.printStackTrace()
-        exitCode = -1
-    } finally {
-      println("Stop PS ...")
-      Node2Vec.stopPS()
-      println("PS Stopped!")
-      println("Stop Spark ...")
-      spark.stop()
-      println("Spark Stopped!")
-      System.exit(exitCode)
-    }
+    val end = System.currentTimeMillis()
+    println(s"the elapsed time: ${1.0 * (end - start) / 1000}")
+
+    println("Stop PS ...")
+    Node2Vec.stopPS()
+    println("PS Stopped!")
+
+    println("Stop Spark ...")
+    spark.stop()
+    println("Spark Stopped!")
   }
 }

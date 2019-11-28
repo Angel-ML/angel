@@ -56,33 +56,24 @@ object LouvainExample {
     .getOrElse(throw new Exception("checkpoint dir not provided"))
     sc.setCheckpointDir(cpDir)
 
-    var exitCode = 0
-    try {
-      val louvain = new Louvain()
-        .setPartitionNum(partitionNum)
-        .setPSPartitionNum(psPartitionNum)
-        .setStorageLevel(storageLevel)
-        .setNumFold(numFold)
-        .setNumOpt(numOpt)
-        .setBatchSize(batchSize)
-        .setDebugMode(enableCheck)
-        .setEps(eps)
-        .setBufferSize(bufferSize)
-        .setIsWeighted(isWeighted)
+    val louvain = new Louvain()
+      .setPartitionNum(partitionNum)
+      .setPSPartitionNum(psPartitionNum)
+      .setStorageLevel(storageLevel)
+      .setNumFold(numFold)
+      .setNumOpt(numOpt)
+      .setBatchSize(batchSize)
+      .setDebugMode(enableCheck)
+      .setEps(eps)
+      .setBufferSize(bufferSize)
+      .setIsWeighted(isWeighted)
 
-      val df = GraphIO.load(input, isWeighted = isWeighted,
-        srcIndex = srcIndex, dstIndex = dstIndex,
-        weightIndex = weightIndex, sep = sep)
-      val mapping = louvain.transform(df)
-      GraphIO.save(mapping, output)
-    } catch {
-      case e: Exception =>
-        e.printStackTrace()
-        exitCode = -1
-    } finally {
-      stop()
-      System.exit(exitCode)
-    }
+    val df = GraphIO.load(input, isWeighted = isWeighted,
+      srcIndex = srcIndex, dstIndex = dstIndex,
+      weightIndex = weightIndex, sep = sep)
+    val mapping = louvain.transform(df)
+    GraphIO.save(mapping, output)
+    stop()
   }
 
   def start(): SparkContext = {
