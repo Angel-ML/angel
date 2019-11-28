@@ -141,7 +141,6 @@ Here we provide an example submitted by using json file(see [data](https://githu
     "modeltype": "T_FLOAT_DENSE",
     "modelsize": 148
   },
-  "default_optimize
   "default_optimizer": {
     "type": "momentum",
     "momentum": 0.9,
