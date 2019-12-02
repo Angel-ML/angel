@@ -99,7 +99,7 @@ class LINEModelSuite2 extends PSFunSuite with SharedPSContext {
       .setSaveModelInterval(1)
       .setCheckpointInterval(1)
       .setIsWeighted(false)
-      //.setRemapping(true)
+      .setRemapping(true)
 
     model.transform(edges)
 
