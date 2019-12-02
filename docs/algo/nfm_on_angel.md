@@ -25,7 +25,7 @@ BiInteractionCross的计算公式如下:
       sum2Vector.iadd(vectorOuter.mul(vectorOuter))
     }
 
-    blasMat.setRow(row, sum1Vector.imul(sum1Vector).isub(sum2Vector).imul(0.5))
+    blasMat.setRow(row, sum1Vector.mul(sum1Vector).isub(sum2Vector).imul(0.5))
     sum1Vector.clear()
     sum2Vector.clear()
   }
