@@ -265,6 +265,7 @@ public class IntIntDenseVectorStorage implements IntIntVectorStorage {
   }
 
   public void setSize(int size) {
+    throw new UnsupportedOperationException("this operation is not support!");
   }
 
   @Override
