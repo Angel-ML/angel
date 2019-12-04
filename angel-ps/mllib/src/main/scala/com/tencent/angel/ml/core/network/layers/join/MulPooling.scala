@@ -39,7 +39,7 @@ class MulPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implic
           output = Ufuncs.mul(inputLayers(0).calOutput(), inputLayers(1).calOutput())
         } else if (inputLayers.length > 2) {
           output = Ufuncs.mul(inputLayers(0).calOutput(), inputLayers(1).calOutput())
-          inputLayers.tail.tail.foreach(layer => output.imul(layer.calOutput()))
+          inputLayers.tail.tail.foreach(layer => output = output.mul(layer.calOutput()))
         } else {
           throw new AngelException("At least two layers are required as input!")
         }

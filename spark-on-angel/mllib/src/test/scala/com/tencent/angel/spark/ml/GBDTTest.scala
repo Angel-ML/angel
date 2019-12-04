@@ -63,6 +63,7 @@ class GBDTTest extends PSFunSuite with SharedPSContext {
     param.regAlpha = 0.0f
     param.regLambda = 0.1f
     param.maxLeafWeight = 0.0f
+    param.featureImportanceType = "total_gain"
     println(s"Hyper-parameters:\n$param")
 
     trainer = new GBDTTrainer(param)
