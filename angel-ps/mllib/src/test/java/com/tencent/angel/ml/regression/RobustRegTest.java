@@ -48,7 +48,7 @@ public class RobustRegTest {
       // Feature number of train data
       int featureNum = 8;
       // Total iteration number
-      int epochNum = 5;
+      int epochNum = 2;
       // Validation sample Ratio
       double vRatio = 0.3;
       // Data format, libsvm or dummy

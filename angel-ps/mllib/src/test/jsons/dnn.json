@@ -10,7 +10,7 @@
     "modelsize": 300
   },
   "train": {
-    "epoch": 5,
+    "epoch": 2,
     "lr": 0.1,
     "decayclass": "WarmRestarts",
     "decayalpha": 0.05
