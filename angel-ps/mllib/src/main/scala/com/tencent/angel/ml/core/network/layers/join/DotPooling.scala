@@ -48,7 +48,7 @@ class DotPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implic
           }
         } else if (inputLayers.length > 2) {
           opTemp = Ufuncs.mul(inputLayers(0).calOutput(), inputLayers(1).calOutput())
-          inputLayers.tail.tail.foreach(layer => opTemp.imul(layer.calOutput()))
+          inputLayers.tail.tail.foreach(layer => opTemp = opTemp.mul(layer.calOutput()))
 
           opTemp.sum(1).getStorage match {
             case s: IntDoubleDenseVectorStorage =>
