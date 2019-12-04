@@ -112,19 +112,10 @@ object LINEExample {
       .setOrder(order)
       .setModelCPInterval(checkpointInterval)
 
-    var exitCode = 0
-    try {
-      val model = new LINEModel(param)
-      model.train(edges, param, output + "/embedding")
-      model.save(output + "/embedding", numEpoch)
-    } catch {
-      case e: Exception =>
-        e.printStackTrace()
-        exitCode = -1
-    } finally {
-      PSContext.stop()
-      sc.stop()
-      System.exit(exitCode)
-    }
+    val model = new LINEModel(param)
+    model.train(edges, param, output + "/embedding")
+    model.save(output + "/embedding", numEpoch)
+    PSContext.stop()
+    sc.stop()
   }
 }

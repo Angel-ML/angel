@@ -59,19 +59,10 @@ object KCoreExample {
       .setDstNodeIdCol("dst")
       .setUseBalancePartition(useBalancePartition)
 
-    var exitCode = 0
-    try {
-      val df = GraphIO.load(input, isWeighted = false, srcIndex, dstIndex, sep = sep)
-      val mapping = kCore.transform(df)
-      GraphIO.save(mapping, output)
-    } catch {
-      case e: Exception =>
-        e.printStackTrace()
-        exitCode = -1
-    } finally {
-      stop()
-      System.exit(exitCode)
-    }
+    val df = GraphIO.load(input, isWeighted = false, srcIndex, dstIndex, sep = sep)
+    val mapping = kCore.transform(df)
+    GraphIO.save(mapping, output)
+    stop()
   }
 
   def start(): SparkContext = {

@@ -83,36 +83,27 @@ object LINEExample2 {
     val numDataPartitions = (numCores * 6.25).toInt
     println(s"numDataPartitions=$numDataPartitions")
 
-    var exitCode = 0
-    try {
-      val line = new LINE()
-        .setEmbedding(embeddingDim)
-        .setNegative(numNegSamples)
-        .setStepSize(stepSize)
-        .setOrder(order)
-        .setEpochNum(numEpoch)
-        .setBatchSize(batchSize)
-        .setPartitionNum(numDataPartitions)
-        .setPSPartitionNum(numPartitions)
-        .setIsWeighted(isWeight)
-        .setRemapping(withRemapping)
-        .setSaveModelInterval(saveModelInterval)
-        .setCheckpointInterval(checkpointInterval)
-        .setOutput(output)
-        .setSaveMeta(saveMeta)
+    val line = new LINE()
+      .setEmbedding(embeddingDim)
+      .setNegative(numNegSamples)
+      .setStepSize(stepSize)
+      .setOrder(order)
+      .setEpochNum(numEpoch)
+      .setBatchSize(batchSize)
+      .setPartitionNum(numDataPartitions)
+      .setPSPartitionNum(numPartitions)
+      .setIsWeighted(isWeight)
+      .setRemapping(withRemapping)
+      .setSaveModelInterval(saveModelInterval)
+      .setCheckpointInterval(checkpointInterval)
+      .setOutput(output)
+      .setSaveMeta(saveMeta)
 
-      line.transform(edges)
+    line.transform(edges)
 
-      line.save(output, numEpoch, saveMeta)
-    } catch {
-      case e: Exception =>
-        e.printStackTrace()
-        exitCode = -1
-    } finally {
-      PSContext.stop()
-      sc.stop()
-      System.exit(exitCode)
-    }
+    line.save(output, numEpoch, saveMeta)
+    PSContext.stop()
+    sc.stop()
   }
 
   def start(conf: SparkConf): SparkContext = {

@@ -36,8 +36,7 @@
 	</modules>
 
 	<properties>
-    <spark.version>2.3.0</spark.version>
-		<PermGen>512m</PermGen>
+		<spark.version>2.3.0</spark.version>		<PermGen>512m</PermGen>
 		<MaxPermGen>512m</MaxPermGen>
 		<CodeCacheSize>1024m</CodeCacheSize>
 		<main.basedir>${project.parent.basedir}</main.basedir>
