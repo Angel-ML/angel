@@ -19,16 +19,17 @@ package com.tencent.angel.spark.ml.embedding
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
-
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
-
 import com.tencent.angel.spark.ml.embedding.line.LINEModel
 import com.tencent.angel.spark.ml.{PSFunSuite, SharedPSContext}
+import org.apache.hadoop.fs.FileSystem
 
 class LINEModelSuite extends PSFunSuite with SharedPSContext {
+  private val LOCAL_FS = FileSystem.DEFAULT_FS
+  private val TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp")
   val input = "../../data/bc/edge"
-  val output = "file:///E://model/"
+  val output = LOCAL_FS + TMP_PATH + "/model/line"
   val numPartition = 1
   val lr = 0.025f
   val dim = 4
