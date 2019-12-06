@@ -32,15 +32,27 @@ LINE V2采用完全不同的实现方式：它使用节点id范围划分模型�
 ## 3. 运行
 
 ### 算法IO参数
-  - input： hdfs路径，无向图，节点需要从0开始连续编号，以空白符或者逗号分隔，比如：
-          0	2
-          2	1
-          3	1
-          3	2
-          4	1
+  - input： hdfs路径，有向图格式，如果是无向图需要自己把边double一下，节点需要从0开始连续编号。数据格式为文本格式，每一行代表一条边。对于无权图，每一行只有两列，分别代表source节点编号和dest节点编号；如果是边带权重的图，每一行数据有3列，分别是souce节点编号、dest节点编号和边权重。列分隔符可以是空白符、逗号或者tab。
+  
+    无权图数据格式如下（列分隔符为空格）：
+  
+          0 2
+          2 1
+          3 1
+          3 2
+          4 1
+          
+    有权图数据格式如下（列分隔符为空格）：
+   
+          0 2 1.5
+          2 1 100
+          3 1 6.5
+          3 2 12.8
+          4 1 500
+          
   - output： hdfs路径， 最终的模型保存路径为 modelPath/epoch_checkpoint_x,其中x代表第x轮epoch
   - saveModelInterval：每隔多少个epoch保存一次模型
-  - checkpointInterval：每隔多少个epoch写一次checkpoint
+  - checkpointInterval：每隔多少个epoch写一次checkpoint，这个参数主要是容灾用，如果任务运行时间长，建议配置该参数
   
 ### 算法参数
   - embedding： 嵌入的向量空间维度，即为embedding向量和context的向量维度(意味着同样的参数下，二阶优化占用的模型空间为一阶优化的两倍)
@@ -48,9 +60,11 @@ LINE V2采用完全不同的实现方式：它使用节点id范围划分模型�
   - epoch：epoch 个数
   - stepSize： 学习率很影响该算法的结果，太高很容易引起模型跑飞的问题，如果发现结果量级太大，请降低该参数
   - batchSize： 每个mini batch的大小，一般选择1000~10000
-  - numParts：模型分区个数，推荐500以上
-  - subSample：是否进行sample，取值true或者false
+  - numParts：模型分区个数，一般是PS个数的4~5倍
   - remapping：是否需要对节点进行重新编码，取值true或者false
+  - order 取值1或者2，表示使用一阶相似度还是二阶相似度
+  - isWeight 边是否带有权重
+  - sep 数据列分隔符，可选comma（逗号）、space（空格）和 tab
 
 ### 任务提交示例
 进入angel环境bin目录下
@@ -65,7 +79,7 @@ $SPARK_HOME/bin/spark-submit \
   --conf spark.ps.cores=1 \
   --conf spark.ps.jars=$SONA_ANGEL_JARS \
   --conf spark.ps.memory=10g \
-  --name "kcore angel" \
+  --name "line angel" \
   --jars $SONA_SPARK_JARS  \
   --driver-memory 5g \
   --num-executors 1 \
@@ -73,10 +87,66 @@ $SPARK_HOME/bin/spark-submit \
   --executor-memory 10g \
   --class org.apache.spark.angel.examples.graph.LINEExample2 \
   ../lib/spark-on-angel-examples-2.4.0.jar
-  input:$input output:$output embedding:128 negative:5 epoch:100 stepSize:0.01 batchSize:1000 numParts:2 subSample:false remapping:false order:2 interval:5
+  input:$input output:$output embedding:128 negative:5 epoch:100 stepSize:0.01 batchSize:1000 numParts:2 subSample:false remapping:false order:2 saveModelInterval:5 checkpointInterval:1 isWeight:false sep:comma
 ```
+
+### 资源配置和性能数据举例
+以下数据均是来自于腾讯内部真实业务
+
+#### LINE边不带权版本
+
+**训练数据集大小**
+- 节点数8亿，边数125亿，边不带权的有向图，每个节点Embedding的维度为128
+
+**资源及参数配置**
+- 在公共Hadoop集群上测试，该集群非常繁忙，如果是比较空闲的集群，性能数据会远好于下面的数据
+- 总消耗资源：内存2.8TB，core总数800
+- 100个executor，每个executor 12G内存，4个core
+- 100个PS，每个PS 16G内存，4个core
+
+**算法参数配置**
+- 负采样数 **negative:5**
+- epoch数 **epoch:10**
+- 学习率 **stepSize:0.02**
+- mini-batch大小（每个mini-batch计算多少条边） **batchSize:5000**
+- 模型PS分区个数（模型被划分成多少块放置在PS上，最好是PS个数的整数倍，让每个PS承载的分区数量相等，让每个PS负载尽量均衡） **numParts:500** 
+- 节点ID是否需要重新映射（LINE目前只能支持节点ID属于一个连续的整数空间，最好在运行LINE之前做好ID的映射。如果设置为true，首先会做一次ID的映射并输出一个映射文件） **remapping:false**
+- 使用的是一阶相似度还是二阶相似度（1或者2） **order:2**
+- 每隔多少个epoch保存一次模型 **saveModelInterval:10**
+- 每隔多少个epoch做一次checkpoint **checkpointInterval:1**
+- 数据列分隔符 **sep:comma**
+
+**性能**
+- 每个epoch 45分钟
+
+
+#### LINE边带权版本
+
+**训练数据集大小**
+- 节点数8亿，边数70亿，边带权，每个节点编码成128位
+
+**资源及参数配置**
+- 在公共Hadoop集群上测试，该集群非常繁忙，如果是比较空闲的集群，性能数据会远好于下面的数据
+- 总消耗资源：内存3.2TB，core总数800
+- 100个executor，每个executor 12G内存，4个core
+- 100个PS，每个PS 20G内存，4个core
+
+**算法参数配置**
+- 负采样数 **negative:5**
+- epoch数 **epoch:10**
+- 学习率 **stepSize:0.02**
+- mini-batch大小（每个mini-batch计算多少条边） **batchSize:5000**
+- 模型PS分区个数（模型被划分成多少块放置在PS上，最好是PS个数的整数倍，让每个PS承载的分区数量相等，让每个PS负载尽量均衡） **numParts:500** 
+- 节点ID是否需要重新映射（LINE目前只能支持节点ID属于一个连续的整数空间，最好在运行LINE之前做好ID的映射。如果设置为true，首先会做一次ID的映射并输出一个映射文件） **remapping:false**
+- 使用的是一阶相似度还是二阶相似度（1或者2） **order:2**
+- 每隔多少个epoch保存一次模型 **saveModelInterval:10**
+- 每隔多少个epoch做一次checkpoint **checkpointInterval:1**
+- 数据列分隔符 **sep:comma**
+
+**性能**
+- 模型初始化+全局alias table构建时间20分钟，每个epoch 50分钟
 
 ### 常见问题
   - 在差不多10min的时候，任务挂掉： 很可能的原因是angel申请不到资源！由于LINE基于Spark On Angel开发，实际上涉及到Spark和Angel两个系统，它们的向Yarn申请资源是独立进行的。 在Spark任务拉起之后，由Spark向Yarn提交Angel的任务，如果不能在给定时间内申请到资源，就会报超时错误，任务挂掉！ 解决方案是： 1）确认资源池有足够的资源 2） 添加spakr conf: spark.hadoop.angel.am.appstate.timeout.ms=xxx 调大超时时间，默认值为600000，也就是10分钟
-  - 如何估算我需要配置多少Angel资源： 为了保证Angel不挂掉，需要配置模型大小两倍左右的内存。 模型大小的计算公式为： 节点数 * Embedding特征的维度 * order * 4 Byte，比如说1kw节点、100维、2阶的配置下，模型大小差不多有60G大小，那么配置instances=4, memory=30就差不多了。 另外，在可能的情况下，ps数目越小，数据传输的量会越小，但是单个ps的压力会越大，需要一定的权衡。
-  - Spark的资源配置： 同样主要考虑内存问题，最好能存下2倍的输入数据。 如果内存紧张，1倍也是可以接受的，但是相对会慢一点。 比如说100亿的边集大概有600G大小， 50G * 20 的配置是足够的。 在资源实在紧张的情况下， 尝试加大分区数目！
+  - 如何估算我需要配置多少Angel资源： 为了保证Angel不挂掉，需要配置模型大小两倍左右的内存。 模型大小的计算公式为： 节点数 * Embedding特征的维度 * order * 4 Byte，比如说1kw节点、100维、2阶的配置下，模型大小差不多有60G大小，那么配置instances=4, memory=30就差不多了。 
+  - Spark的资源配置： Spark资源配置灵活，可以根据实际资源情况自由配置
