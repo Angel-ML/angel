@@ -25,7 +25,6 @@ package object util {
 
   val MAX_INT_STR = Int.MaxValue.toString
 
-  val TDW_PREFIX = "tdw://"
   val HDFS_PREFIX = "hdfs://"
 
   val SPLIT_SEPARATOR = "\\s+|,"
@@ -34,7 +33,6 @@ package object util {
   object StorageType {
     val LOCAL = "LOCAL"
     val HDFS = "HDFS"
-    val TDW = "TDW"
   }
 
   object DataFormat {

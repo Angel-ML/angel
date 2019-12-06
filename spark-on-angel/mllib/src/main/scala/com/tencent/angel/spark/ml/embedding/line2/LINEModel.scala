@@ -68,7 +68,6 @@ class LINEModel(dataset: Dataset[_], embeddingDim: Int, negativeNum: Int, stepSi
     // Original edges
     var edges:RDD[(String, String)] = null
     if(dataset.schema.fields(0).dataType == LongType && dataset.schema.fields(1).dataType == LongType) {
-      // Load from tdw table
       edges = dataset.select(srcNodeIdCol, dstNodeIdCol).rdd
         .map(row => (row.getLong(0).toString, row.getLong(1).toString))
         .filter(f => f._1 != f._2)

@@ -68,14 +68,7 @@ object LINEExample2 {
       case "tab" => "\t"
     }
 
-    var edges:DataFrame = null
-    if (input.trim.startsWith("tdw://")) {
-      edges = GraphIO.load(input, isWeighted = isWeight,
-        srcIndex = srcIndex, dstIndex = dstIndex,
-        weightIndex = weightIndex, sep = sep)
-    } else {
-      edges = load(input, isWeight, sep)
-    }
+    var edges:DataFrame = load(input, isWeight, sep)
 
     val numCores = SparkUtils.getNumCores(conf)
 
