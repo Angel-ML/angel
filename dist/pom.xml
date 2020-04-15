@@ -24,7 +24,7 @@
   <parent>
     <groupId>com.tencent.angel</groupId>
     <artifactId>angel</artifactId>
-    <version>2.4.0</version>
+    <version>3.1.0</version>
   </parent>
 
   <artifactId>angel-dist</artifactId>
@@ -51,11 +51,6 @@
       <artifactId>angel-ps-mllib</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <!--<dependency>-->
-      <!--<groupId>${project.groupId}</groupId>-->
-      <!--<artifactId>angel-ps-testmath</artifactId>-->
-      <!--<version>${project.version}</version>-->
-    <!--</dependency>-->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>angel-ps-psf</artifactId>
@@ -71,11 +66,6 @@
       <artifactId>angel-ps-graph</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <!--dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>angel-ps-serving</artifactId>
-      <version>${project.version}</version>
-    </dependency-->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>spark-on-angel-core</artifactId>
@@ -86,11 +76,6 @@
       <artifactId>spark-on-angel-mllib</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <!--dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>spark-on-angel-examples</artifactId>
-      <version>${project.version}</version>
-    </dependency-->
   </dependencies>
 
   <build>
@@ -104,9 +89,6 @@
           <descriptors>
             <descriptor>${main.basedir}/assembly/dist-assembly.xml</descriptor>
           </descriptors>
-          <!--<descriptorRefs>-->
-          <!--<descriptorRef>jar-with-dependencies</descriptorRef>-->
-          <!--</descriptorRefs>-->
           <attach>false</attach>
         </configuration>
         <executions>
