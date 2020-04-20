@@ -14,34 +14,62 @@
  * the License.
  *
  */
-
 package com.tencent.angel.spark.ml.graph.kcore
 
-import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.vector.IntIntVector
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.math2.vector.LongIntVector
+import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
+import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.spark.models.PSVector
+import com.tencent.angel.spark.models.impl.PSVectorImpl
+import com.tencent.angel.ml.math2.vector.Vector
+import com.tencent.angel.spark.ml.util.LoadBalancePartitioner
+import com.tencent.angel.spark.util.VectorUtils
+import org.apache.spark.rdd.RDD
 
-private[kcore] class KCorePSModel(val core: PSVector) extends Serializable {
+private[kcore]
+class KCorePSModel(var inMsgs: PSVector,
+                   var outMsgs: PSVector) extends Serializable {
+  val dim: Long = inMsgs.dimension
 
-  private val dim: Int = core.dimension.toInt
+  def initMsgs(msgs: Vector): Unit =
+    inMsgs.update(msgs)
 
-  def updateCoreWithActive(keys: Array[Int], cores: Array[Int]): Unit = {
-    core.update(VFactory.sparseIntVector(dim, keys, cores))
+  def readMsgs(nodes: Array[Long]): LongIntVector =
+    inMsgs.pull(nodes).asInstanceOf[LongIntVector]
+
+  def readAllMsgs(): LongIntVector =
+    inMsgs.pull().asInstanceOf[LongIntVector]
+
+  def writeMsgs(msgs: Vector): Unit =
+    outMsgs.update(msgs)
+
+  def numMsgs(): Long =
+    VectorUtils.nnz(inMsgs)
+
+  def resetMsgs(): Unit = {
+    val temp = inMsgs
+    inMsgs = outMsgs
+    outMsgs = temp
+    outMsgs.reset
   }
 
-  def pull(nodes: Array[Int]): IntIntVector = {
-    core.pull(nodes).asInstanceOf[IntIntVector]
-  }
-
-  def updateCoreWithActive(vector: IntIntVector): Unit = {
-    core.update(vector)
-  }
 }
 
 private[kcore] object KCorePSModel {
-  def fromMaxId(maxId: Int): KCorePSModel = {
-    val cores = PSVector.dense(maxId, 1, rowType = RowType.T_INT_DENSE)
-    new KCorePSModel(cores)
+
+  def fromMinMax(minId: Long, maxId: Long, data: RDD[Long], psNumPartition: Int,
+                 useBalancePartition: Boolean, balancePartitionPercent: Float): KCorePSModel = {
+    val matrix = new MatrixContext("cores", 2, minId, maxId)
+    matrix.setValidIndexNum(-1)
+    matrix.setRowType(RowType.T_INT_SPARSE_LONGKEY)
+    // use balance partition
+    if (useBalancePartition)
+      LoadBalancePartitioner.partition(data, maxId, psNumPartition, matrix, balancePartitionPercent)
+
+    PSAgentContext.get().getMasterClient.createMatrix(matrix, 10000L)
+    val matrixId = PSAgentContext.get().getMasterClient.getMatrix("cores").getId
+    new KCorePSModel(new PSVectorImpl(matrixId, 0, maxId, matrix.getRowType),
+      new PSVectorImpl(matrixId, 1, maxId, matrix.getRowType))
   }
+
 }

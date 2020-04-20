@@ -20,16 +20,13 @@ import com.tencent.angel.graph.client.initneighbor2.{InitNeighbor => InitLongNei
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.ps.storage.vector.element.LongArrayElement
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.ml.graph.clusterrank.NeighborEdgesModel
 import com.tencent.angel.spark.ml.graph.data._
 import com.tencent.angel.spark.ml.psf.triangle._
 import com.tencent.angel.spark.models.PSMatrix
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap
 import org.apache.spark.SparkContext
-import org.apache.spark.graphx.Edge
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.Row
 
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
@@ -130,7 +127,7 @@ class NeighborTableOps(table: NeighborTableModel) extends Serializable {
       val edges: Array[Long] = elem.getNeighborIds
       val attrs: Array[ED] = elem.getAttrs.asInstanceOf[Array[ED]]
 
-      for (i <- 0 until elem.getNumNodes ) {
+      for (i <- 0 until elem.getNumNodes) {
         arr += ((edges(i), attrs(i)))
       }
       psNeighborTable.put(nodeId, arr.toArray)
@@ -142,25 +139,12 @@ class NeighborTableOps(table: NeighborTableModel) extends Serializable {
   def checkpoint(): Unit = table.checkpoint()
 
   def testPS[ED: ClassTag](neighborsRDD: RDD[NeighborTablePartition[ED]],
-                               num: Int = 10): NeighborTableModel = {
+                           num: Int = 10): NeighborTableModel = {
     val correct = neighborsRDD.map { part =>
       part.testPS(table, num)
     }.reduce(_ && _)
     assert(correct, "neighbor table is wrong")
     table
-  }
-
-  def calClusterRank[ED: ClassTag](neighborsRDD: RDD[NeighborTablePartition[ED]], degreeModel: OutDegreeModel,
-                                   neighborEdgesModel: NeighborEdgesModel): RDD[Row] = {
-    neighborsRDD.flatMap(_.calClusterRank(degreeModel, neighborEdgesModel))
-  }
-
-  def calLinkPrediction[ED: ClassTag](neighborsRDD: RDD[NeighborTablePartition[ED]]): RDD[Edge[LinkPredictionMetric]] = {
-    neighborsRDD.flatMap(_.calLinkPrediction(table))
-  }
-
-  def calTriangleUndirected[ED: ClassTag](neighborsRDD: RDD[NeighborTablePartition[ED]]): RDD[(VertexId, Long, Int, Seq[(Long, Long)])] = {
-    neighborsRDD.flatMap(_.calTriangleUndirected(table))
   }
 
   def calTriangleDirected[ED: ClassTag](neighborsRDD: RDD[NeighborTablePartition[ED]]): RDD[

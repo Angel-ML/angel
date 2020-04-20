@@ -61,6 +61,7 @@ object FtrlFMExample {
     val lambda1 = params.getOrElse("lambda1", "0.1").toDouble
     val lambda2 = params.getOrElse("lambda2", "5.0").toDouble
     val dim = params.getOrElse("dim", "-1").toInt
+    val maxIndex = params.getOrElse("maxIndex", "-1").toLong
     val input = params.getOrElse("input", "data/census/census_148d_train.libsvm")
     val dataType = params.getOrElse("dataType", "libsvm")
     val batchSize = params.getOrElse("batchSize", "100").toInt
@@ -104,8 +105,9 @@ object FtrlFMExample {
 
     val size = data.count()
 
-    val max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.max).max()
+    var max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.max).max()
     val min = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.min).min()
+    if (max < maxIndex) max = maxIndex
 
     println(s"num examples = ${size} min_index=$min max_index=$max")
 
@@ -150,6 +152,7 @@ object FtrlFMExample {
   def predict(params: Map[String, String]): Unit = {
 
     val dim = params.getOrElse("dim", "10000").toInt
+    val maxIndex = params.getOrElse("maxIndex", "-1").toLong
     val input = params.getOrElse("input", "data/census/census_148d_train.libsvm")
     val dataType = params.getOrElse("dataType", "libsvm")
     val partNum = params.getOrElse("partNum", "10").toInt
@@ -176,8 +179,9 @@ object FtrlFMExample {
 
     val size = data.count()
 
-    val max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.max).max()
+    var max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.max).max()
     val min = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.min).min()
+    if (max < maxIndex) max = maxIndex
 
     val opt = new FtrlFM()
     opt.init(min, max+1, -1, RowType.T_FLOAT_SPARSE_LONGKEY, factor, new ColumnRangePartitioner())

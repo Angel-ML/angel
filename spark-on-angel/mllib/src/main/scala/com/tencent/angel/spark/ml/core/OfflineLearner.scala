@@ -22,6 +22,7 @@ import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
 import com.tencent.angel.ml.core.optimizer.loss.{L2Loss, LogLoss}
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
+import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.context.AngelPSContext.convertToHadoop
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.metric.{AUC, Precision}
@@ -137,12 +138,19 @@ class OfflineLearner {
   def train(input: String,
             modelOutput: String,
             modelInput: String,
-            dim: Int,
+            dim: Long,
             model: GraphModel): Unit = {
     val conf = SparkContext.getOrCreate().getConf
+    val modelType = SharedConf.modelType
     val data = SparkContext.getOrCreate().textFile(input)
       .repartition(SparkUtils.getNumCores(conf))
-      .map(f => DataLoader.parseIntFloat(f, dim))
+      .map{ f =>
+        if(modelType.isLongKey) {
+          DataLoader.parseLongFloat(f, dim)
+        } else {
+          DataLoader.parseIntFloat(f, dim.toInt)
+        }
+      }
 
     model.init(data.getNumPartitions)
 
@@ -157,14 +165,20 @@ class OfflineLearner {
   def predict(input: String,
               output: String,
               modelInput: String,
-              dim: Int,
+              dim: Long,
               model: GraphModel): Unit = {
+    val modelType = SharedConf.modelType
     val dataWithLabels = SparkContext.getOrCreate().textFile(input)
-      .map(f => (DataLoader.parseIntFloat(f, dim), DataLoader.parseLabel(f)))
+      .map{f =>
+        if(modelType.isLongKey) {
+          (DataLoader.parseLongFloat(f, dim), DataLoader.parseLabel(f))
+        } else {
+          (DataLoader.parseIntFloat(f, dim.toInt), DataLoader.parseLabel(f))
+        }
+      }
 
     model.init(dataWithLabels.getNumPartitions)
     model.load(modelInput)
-
     val predicts = predict(dataWithLabels, model)
     if (output.length > 0)
       predicts.map(f => s"${f._1} ${f._2}").saveAsTextFile(output)

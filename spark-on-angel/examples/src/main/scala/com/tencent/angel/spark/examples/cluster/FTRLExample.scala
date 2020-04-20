@@ -63,6 +63,7 @@ object FTRLExample {
     val lambda1 = params.getOrElse("lambda1", "0.1").toDouble
     val lambda2 = params.getOrElse("lambda2", "5.0").toDouble
     val dim = params.getOrElse("dim", "-1").toLong
+    val maxIndex = params.getOrElse("maxIndex", "-1").toLong
     val input = params.getOrElse("input", "data/census/census_148d_train.libsvm")
     val dataType = params.getOrElse("dataType", "libsvm")
     val batchSize = params.getOrElse("batchSize", "100").toInt
@@ -105,8 +106,9 @@ object FTRLExample {
     data.persist(StorageLevel.DISK_ONLY)
     val size = data.count()
 
-    val max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.max).max()
+    var max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.max).max()
     val min = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.min).min()
+    if (max < maxIndex) max = maxIndex
 
     println(s"num examples = ${size} min_index=$min max_index=$max")
 
@@ -153,6 +155,7 @@ object FTRLExample {
   def predict(params: Map[String, String]): Unit = {
 
     val dim = params.getOrElse("dim", "149").toLong
+    val maxIndex = params.getOrElse("maxIndex", "-1").toLong
     val input = params.getOrElse("input", "data/census/census_148d_train.libsvm")
     val dataType = params.getOrElse("dataType", "libsvm")
     val partNum = params.getOrElse("partNum", "10").toInt
@@ -179,8 +182,9 @@ object FTRLExample {
           (DataLoader.parseLongDummy(s, dim, isTraining, hasLabel)))
     }
 
-    val max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.max).max()
+    var max = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.max).max()
     val min = data.map(f => f.getX.asInstanceOf[LongFloatVector].getStorage().getIndices.min).min()
+    if (max < maxIndex) max = maxIndex
     opt.init(min, max + 1, -1, RowType.T_FLOAT_SPARSE_LONGKEY, new ColumnRangePartitioner(), modelPath + "/weight")
 
     if (modelPath.size > 0) {

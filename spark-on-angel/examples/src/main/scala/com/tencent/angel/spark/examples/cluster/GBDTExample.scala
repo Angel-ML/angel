@@ -110,7 +110,6 @@ object GBDTExample {
     trainer.initialize(trainPath, validPath)
     val model = trainer.train()
     trainer.save(model, modelPath)
-    sc.stop()
   }
 
   def predict(params: Map[String, String]): Unit = {
@@ -124,6 +123,5 @@ object GBDTExample {
     val predictor = new GBDTPredictor
     predictor.loadModel(sc, modelPath)
     predictor.predict(sc, predictPath, outputPath)
-    sc.stop()
   }
 }

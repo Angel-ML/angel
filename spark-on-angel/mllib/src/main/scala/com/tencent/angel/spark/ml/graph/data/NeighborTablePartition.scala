@@ -17,7 +17,6 @@
 package com.tencent.angel.spark.ml.graph.data
 
 import com.tencent.angel.exception.AngelException
-import com.tencent.angel.spark.ml.graph.clusterrank.NeighborEdgesModel
 import com.tencent.angel.spark.ml.graph.triangle.TriangleCountingDirected
 import com.tencent.angel.spark.ml.graph.utils.BatchIter
 import com.tencent.angel.spark.ml.graph.{NeighborTableModel, OutDegreeModel}
@@ -30,6 +29,7 @@ import org.apache.spark.sql.Row
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
+import NeighborTablePartition._
 
 class NeighborTablePartition[@specialized(
   Byte, Boolean, Short, Int, Long, Float, Double) ED: ClassTag](isDirected: Boolean,
@@ -51,7 +51,7 @@ class NeighborTablePartition[@specialized(
   lazy val stats: GraphStats = {
     var minVertex = Long.MaxValue
     var maxVertex = Long.MinValue
-    (0 until numVertices.toInt).foreach{ pos =>
+    (0 until numVertices.toInt).foreach { pos =>
       minVertex = minVertex min srcIds(pos) min neighbors(pos).head
       maxVertex = maxVertex max srcIds(pos) max neighbors(pos).last
     }
@@ -62,7 +62,7 @@ class NeighborTablePartition[@specialized(
     val localSrcs = new ArrayBuffer[VertexId]
     val localNeighbors = new ArrayBuffer[Array[VertexId]]
     val localAttrs = new ArrayBuffer[Array[ED]]
-    data.foreach{ nt =>
+    data.foreach { nt =>
       localSrcs += nt.srcId
       localNeighbors += nt.neighborIds
       localAttrs += nt.attrs
@@ -93,7 +93,7 @@ class NeighborTablePartition[@specialized(
     override def next(): NeighborTable[ED] = {
       instance.srcId = srcIds(pos)
       instance.neighborIds = neighbors(pos)
-      instance.attrs = if(edgeAttrs == null || edgeAttrs.isEmpty) null else edgeAttrs(pos)
+      instance.attrs = if (edgeAttrs == null || edgeAttrs.isEmpty) null else edgeAttrs(pos)
       pos += 1
       instance
     }
@@ -137,44 +137,6 @@ class NeighborTablePartition[@specialized(
     correct
   }
 
-  def calLinkPrediction(psModel: NeighborTableModel): Iterator[Edge[LinkPredictionMetric]] = {
-    val batchSize = psModel.param.pullBatchSize
-    var totalRowNum = 0
-    var totalPullNum = 0
-    var startTs = System.currentTimeMillis()
-
-    makeBatchIterator(batchSize).flatMap { case (from, to) =>
-      println(s"partition $partitionID: last batch cost ${System.currentTimeMillis() - startTs} ms")
-      startTs = System.currentTimeMillis()
-      var numSrcNodes = 0
-      val pullNodes: mutable.HashSet[Long] = new mutable.HashSet[Long]()
-      val localNeighborTable: Long2ObjectOpenHashMap[Array[Long]] = new Long2ObjectOpenHashMap[Array[Long]](batchSize)
-      (from until to).foreach { pos =>
-        numSrcNodes += 1
-        localNeighborTable.put(srcIds(pos), neighbors(pos))
-        pullNodes ++= neighbors(pos)
-      }
-      val srcNodes = localNeighborTable.keySet().toLongArray
-      srcNodes.foreach { id => if(pullNodes.contains(id)) pullNodes.remove(id)}
-      val beforePullTs = System.currentTimeMillis()
-      val psNeighborsTable = psModel.getLongNeighborTable(pullNodes.toArray)
-      localNeighborTable.putAll(psNeighborsTable)
-      psNeighborsTable.clear()
-      totalRowNum += numSrcNodes
-      totalPullNum += pullNodes.size
-      println(s"partition $partitionID: process $numSrcNodes neighbor tables ($totalRowNum in total), " +
-        s"pull ${pullNodes.size} nodes from ps ($totalPullNum in total), " +
-        s"cost ${System.currentTimeMillis() - beforePullTs} ms")
-      srcNodes.flatMap { src =>
-        val srcNeighbors = localNeighborTable.get(src)
-        srcNeighbors.flatMap { dst =>
-          val metric = LinkPredictionMetric.getMetric(localNeighborTable, src, dst)
-          Iterator.single(Edge(src, dst, metric))
-        }
-      }
-    }
-  }
-
   def generateLongMsg(hashMap: mutable.HashMap[VertexId, Long], msg: (VertexId, Long)): Unit = {
     if (hashMap.contains(msg._1)) {
       val count = hashMap(msg._1)
@@ -185,65 +147,6 @@ class NeighborTablePartition[@specialized(
 
   }
 
-  def calTriangleUndirected(psModel: NeighborTableModel): Iterator[(VertexId, Long, Int, Seq[(Long, Long)])] =  {
-    val batchSize = psModel.param.pullBatchSize
-    var totalRowNum = 0
-    var totalPullNum = 0
-    val startTs = System.currentTimeMillis()
-
-    makeBatchIterator(batchSize).flatMap { case (from, to) =>
-      println(s"partition $partitionID: last batch cost ${System.currentTimeMillis() - startTs} ms")
-      var numSrcNodes = 0
-      val pullNodes: mutable.HashSet[Long] = new mutable.HashSet[Long]()
-      val localNeighborTable: Long2ObjectOpenHashMap[Array[VertexId]] = new Long2ObjectOpenHashMap[Array[VertexId]](batchSize)
-      (from until to).foreach { pos =>
-        numSrcNodes += 1
-        localNeighborTable.put(srcIds(pos), neighbors(pos))
-        pullNodes ++= neighbors(pos)
-      }
-      val beforePullTs = System.currentTimeMillis()
-      val psNeighborsTable = psModel.getLongNeighborTable(pullNodes.toArray)
-
-      totalRowNum += numSrcNodes
-      totalPullNum += pullNodes.size
-
-      println(s"partition $partitionID: process $numSrcNodes neighbor tables ($totalRowNum in total), " +
-        s"pull ${pullNodes.size} nodes from ps ($totalPullNum in total), " +
-        s"cost ${System.currentTimeMillis() - beforePullTs} ms")
-
-      val srcNodes = localNeighborTable.keySet().toLongArray
-      srcNodes.flatMap { src =>
-        val degree = localNeighborTable.get(src).length
-        val srcNeighbors = localNeighborTable.get(src).filter(_ > src)
-        val msgMap = new mutable.HashMap[Long, Long]()
-//        val records = new mutable.ListBuffer[(Long, Long)]()
-        val count: Long = srcNeighbors.flatMap { dst =>
-          val dstNeighbors = if (localNeighborTable.containsKey(dst)) localNeighborTable.get(dst)
-                             else psNeighborsTable.get(dst)
-
-          val commFriends = dstNeighbors.filter(_ > dst).intersect(srcNeighbors)
-
-          commFriends.foreach { w => generateLongMsg(msgMap, (w, 1L))}
-
-          generateLongMsg(msgMap, (dst, commFriends.length.toLong))
-          generateLongMsg(msgMap, (src, commFriends.length.toLong))
-
-//          commFriends.foreach{w => records += ((w, 1L))}
-//          records += ((dst, commFriends.length))
-//          records += ((src, commFriends.length))
-
-          Iterator.single(commFriends.length)
-        }.sum
-
-        val messages = new mutable.ArrayBuffer[(Long, Long)](msgMap.size)
-        msgMap.foreach(kv => messages += kv)
-        msgMap.clear()
-
-        // count is the deduplicated #triangles
-        Iterator.single((src, count, degree, messages));
-      }
-    }
-  }
 
   private[NeighborTablePartition]
   class NodeDeg(var outDeg: Int, var inDeg: Int) extends Serializable {
@@ -281,6 +184,7 @@ class NeighborTablePartition[@specialized(
 
   /**
     * Note: bidirectional edges are not merged for this method
+    *
     * @param psModel
     * @return
     */
@@ -354,7 +258,7 @@ class NeighborTablePartition[@specialized(
     var totalRowNum = 0
     var totalPullNum = 0
     var startTs = System.currentTimeMillis()
-    var computeStartTs = 0L
+    var computeStartTs = System.currentTimeMillis()
 
     println(s"partition $partitionID: #vertices: ${stats.numVertices}, #edges: ${stats.numEdges}")
     makeBatchIterator(batchSize).flatMap { case (from, to) =>
@@ -364,12 +268,12 @@ class NeighborTablePartition[@specialized(
       var numSrcNodes = 0
       val pullNodes: mutable.HashSet[VertexId] = new mutable.HashSet[VertexId]()
       val localNeighborTable: Long2ObjectOpenHashMap[Array[(VertexId, ED)]] =
-      new Long2ObjectOpenHashMap[Array[(VertexId, ED)]](batchSize)
+        new Long2ObjectOpenHashMap[Array[(VertexId, ED)]](batchSize)
 
       (from until to).foreach { pos =>
         numSrcNodes += 1
         val edgeWithAttrs = new ArrayBuffer[(VertexId, ED)](batchSize)
-          for (idx <- neighbors(pos).indices) {
+        for (idx <- neighbors(pos).indices) {
           val dst = neighbors(pos)(idx)
           val attr = edgeAttrs(pos)(idx)
           edgeWithAttrs += ((dst, attr))
@@ -386,8 +290,8 @@ class NeighborTablePartition[@specialized(
       totalPullNum += pullNodes.size
 
       println(s"partition $partitionID: process $numSrcNodes neighbor tables ($totalRowNum in total), " +
-      s"pull neighbors of ${pullNodes.size} nodes from PS ($totalPullNum in total), " +
-      s"cost ${System.currentTimeMillis() - beforePullTs} ms")
+        s"pull neighbors of ${pullNodes.size} nodes from PS ($totalPullNum in total), " +
+        s"cost ${System.currentTimeMillis() - beforePullTs} ms")
 
       val srcNodes = localNeighborTable.keySet().toLongArray
 
@@ -447,8 +351,8 @@ class NeighborTablePartition[@specialized(
     var startTs = System.currentTimeMillis()
     var computeStartTs = 0L
 
-//    val numNeighborTables: Int = batchSize * 100
-//    val neighborsCache = DegreeBasedCache.newInstance[VertexId, Array[(VertexId, ED)]](numNeighborTables)
+    //    val numNeighborTables: Int = batchSize * 100
+    //    val neighborsCache = DegreeBasedCache.newInstance[VertexId, Array[(VertexId, ED)]](numNeighborTables)
 
     println(s"partition $partitionID: #vertices: ${stats.numVertices}, #edges: ${stats.numEdges}")
     makeBatchIterator(batchSize).flatMap { case (from, to) =>
@@ -468,8 +372,8 @@ class NeighborTablePartition[@specialized(
           val attr = edgeAttrs(pos)(idx)
           edgeWithAttrs += ((dst, attr))
 
-//          if (!neighborsCache.contains(dst))
-//            pullNodes += dst
+          //          if (!neighborsCache.contains(dst))
+          //            pullNodes += dst
 
         }
         localNeighborTable.put(srcIds(pos), edgeWithAttrs.toArray)
@@ -487,7 +391,7 @@ class NeighborTablePartition[@specialized(
         s"cost ${System.currentTimeMillis() - beforePullTs} ms")
 
       val srcNodes = localNeighborTable.keySet().toLongArray
-//      val records = new ArrayBuffer[(VertexId, Long, Seq[(VertexId, CounterTriangleDirected)])](srcNodes.length)
+      //      val records = new ArrayBuffer[(VertexId, Long, Seq[(VertexId, CounterTriangleDirected)])](srcNodes.length)
 
       computeStartTs = System.currentTimeMillis()
       srcNodes.flatMap { src =>
@@ -497,8 +401,8 @@ class NeighborTablePartition[@specialized(
         val total: Long = srcNeighbors.flatMap { dst =>
           val dstNeighbors = if (localNeighborTable.containsKey(dst._1)) localNeighborTable.get(dst._1)
           else psNeighborsTable.get(dst._1)
-//            else if (neighborsCache.contains(dst._1)) neighborsCache.get(dst._1)
-//            else psNeighborsTable.get(dst._1)
+          //            else if (neighborsCache.contains(dst._1)) neighborsCache.get(dst._1)
+          //            else psNeighborsTable.get(dst._1)
 
           if (dstNeighbors != null && dstNeighbors.nonEmpty) {
             val srcDeg = new NodeDeg(0, 0)
@@ -581,7 +485,7 @@ class NeighborTablePartition[@specialized(
             Iterator.single(commonFriends.length)
           } else {
 
-            val zero = Array[Int](0,0,0,0,0,0,0)
+            val zero = Array[Int](0, 0, 0, 0, 0, 0, 0)
             generateArrayMsg(msgMap, (src, zero))
             generateArrayMsg(msgMap, (dst._1, zero))
 
@@ -598,64 +502,13 @@ class NeighborTablePartition[@specialized(
       }
 
       // update neighbors cache
-/*      for (nodeId <- pullNodes) {
-        val neighbors = psNeighborsTable.get(nodeId)
-        neighborsCache.put(nodeId, neighbors, neighbors.length)
-      }
+      /*      for (nodeId <- pullNodes) {
+              val neighbors = psNeighborsTable.get(nodeId)
+              neighborsCache.put(nodeId, neighbors, neighbors.length)
+            }
 
-      records.iterator*/
+            records.iterator*/
 
-    }
-  }
-
-  def calClusterRank(degreeModel: OutDegreeModel, neighborEdgesModel: NeighborEdgesModel): Iterator[Row] = {
-    val batchSize = degreeModel.param.pullBatchSize
-    var totalRowNum = 0
-    var totalPullNum = 0
-    var startTs = System.currentTimeMillis()
-    var computeStartTs = 0L
-
-    println(s"clusterRank: partition $partitionID: #vertices: ${stats.numVertices}, #edges: ${stats.numEdges}")
-    makeBatchIterator(batchSize).flatMap { case (from, to) =>
-      val endTs = System.currentTimeMillis()
-      println(s"clusterRank: partition $partitionID: last batch total_time: ${endTs - startTs} ms, comp_time: ${endTs - computeStartTs} ms")
-      startTs = System.currentTimeMillis()
-      var numSrcNodes = 0
-      val srcNeighborsBatch: mutable.HashSet[Long] = new mutable.HashSet[VertexId]()
-      val localNeighborTable: Long2ObjectOpenHashMap[Array[VertexId]] =
-        new Long2ObjectOpenHashMap[Array[VertexId]](batchSize)
-
-      (from until to).foreach { pos =>
-        numSrcNodes += 1
-        localNeighborTable.put(srcIds(pos), neighbors(pos))
-        srcNeighborsBatch ++= neighbors(pos)
-      }
-      val beforePullTs = System.currentTimeMillis()
-
-      totalRowNum += numSrcNodes
-      totalPullNum += srcNeighborsBatch.size
-
-      println(s"partition $partitionID: process $numSrcNodes neighbor tables ($totalRowNum in total), " +
-        s"pull neighbors of ${srcNeighborsBatch.size} nodes from PS ($totalPullNum in total), " +
-        s"cost ${System.currentTimeMillis() - beforePullTs} ms")
-
-      val srcNodes = localNeighborTable.keySet().toLongArray
-      val node2NumEdgesInNeighbor = neighborEdgesModel.getNumEdges(srcNodes)
-      val node2OutDegree = degreeModel.getOutDegrees(srcNeighborsBatch.toArray)
-
-
-      computeStartTs = System.currentTimeMillis()
-      srcNodes.flatMap { src =>
-        val kOut = node2OutDegree.get(src)
-        val numEdges = node2NumEdgesInNeighbor.get(src)
-        val lcc: Double = if (kOut > 1) numEdges.toDouble / (kOut * (kOut - 1)) else 0.0
-        var sum: Long = 0L
-
-        localNeighborTable.get(src).foreach( v => sum += (node2OutDegree.get(v) + 1) )
-        val clRank = math.pow(10.0, -lcc) * sum
-
-        Iterator.single(Row(src, clRank))
-      }
     }
   }
 }
@@ -668,7 +521,7 @@ object NeighborTablePartition {
       val localSrcs = new ArrayBuffer[VertexId]
       val localNeighbors = new ArrayBuffer[Array[VertexId]]
       val localAttrs = new ArrayBuffer[Array[ED]]
-      iter.foreach{ item =>
+      iter.foreach { item =>
         localSrcs += item.srcId
         localNeighbors += item.neighborIds
         if (item.attrs != null)
@@ -684,5 +537,4 @@ object NeighborTablePartition {
       )
     }
   }
-
 }

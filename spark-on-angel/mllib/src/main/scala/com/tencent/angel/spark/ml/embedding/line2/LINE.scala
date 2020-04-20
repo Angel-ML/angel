@@ -33,7 +33,7 @@ class LINE(override val uid: String) extends Transformer
   with HasCheckPointInterval with HasModelSaveInterval with HasSaveMeta with HasEpochNum with HasBatchSize
   with HasSrcNodeIdCol with HasDstNodeIdCol with HasNeedRemapping with HasSubSample with HasOutput
   with HasStorageLevel with HasPartitionNum with HasPSPartitionNum
-  with HasWeightCol with HasIsWeighted {
+  with HasWeightCol with HasIsWeighted with HasOldModelPath {
 
   def this() = this(Identifiable.randomUID("LINE"))
 
@@ -48,11 +48,11 @@ class LINE(override val uid: String) extends Transformer
     if(${isWeighted}) {
       model = new LINEWithWightModel(dataset, ${embedding}, ${negative}, ${stepSize}, ${order},
         ${psPartitionNum}, ${batchSize}, ${epochNum}, ${partitionNum}, ${srcNodeIdCol}, ${dstNodeIdCol},
-        ${weightCol}, ${remapping}, ${subSample}, ${output}, ${checkpointInterval}, ${saveModelInterval}, ${saveMeta})
+        ${weightCol}, ${remapping}, ${subSample}, ${output}, ${checkpointInterval}, ${saveModelInterval}, ${saveMeta}, ${oldModelPath})
     } else {
       model = new LINEModel(dataset, ${embedding}, ${negative}, ${stepSize}, ${order},
         ${psPartitionNum}, ${batchSize}, ${epochNum}, ${partitionNum}, ${srcNodeIdCol}, ${dstNodeIdCol},
-        ${remapping}, ${subSample}, ${output}, ${checkpointInterval}, ${saveModelInterval}, ${saveMeta})
+        ${remapping}, ${subSample}, ${output}, ${checkpointInterval}, ${saveModelInterval}, ${saveMeta}, ${oldModelPath})
     }
 
     model.train()

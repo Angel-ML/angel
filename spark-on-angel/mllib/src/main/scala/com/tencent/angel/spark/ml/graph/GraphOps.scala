@@ -50,11 +50,11 @@ object GraphOps {
       if (src == dst)
         Iterator.empty
       else if (src < dst) {
-        Iterator(((src, dst), (0,0)))
+        Iterator(((src, dst), (0, 0)))
       } else {
-        Iterator(((dst, src), (1,1)))
+        Iterator(((dst, src), (1, 1)))
       }
-    }.groupByKey(partitionNum). mapPartitions { iter =>
+    }.groupByKey(partitionNum).mapPartitions { iter =>
       if (iter.nonEmpty) {
         iter.flatMap { case (edge, seq) =>
           // emit bi-directional edges
@@ -63,7 +63,7 @@ object GraphOps {
       } else {
         Iterator.empty
       }
-    }.groupByKey(partitionNum).map {f => (f._1, f._2.size) }
+    }.groupByKey(partitionNum).map { f => (f._1, f._2.size) }
   }
 
   def loadEdges(dataset: Dataset[_],
@@ -127,10 +127,10 @@ object GraphOps {
     edges.flatMap { case (src, dst) =>
       if (src == dst)
         Iterator.empty
-      else if (src < dst) {  // small node comes first, use tag to denote direction
-        Iterator(((src, dst), (0,0)))   // src -> dst, tag: 0
+      else if (src < dst) { // small node comes first, use tag to denote direction
+        Iterator(((src, dst), (0, 0))) // src -> dst, tag: 0
       } else {
-        Iterator(((dst, src), (1,1)))   // dst <- src, tag: 1
+        Iterator(((dst, src), (1, 1))) // dst <- src, tag: 1
       }
     }.groupByKey(partitionNum).mapPartitions { iter =>
       if (iter.nonEmpty) {
@@ -139,12 +139,12 @@ object GraphOps {
           if (arr.length == 1) {
             val tup = arr(0)
             if (tup._1 == 0 && tup._2 == 0) {
-              Iterator((edge._1, (edge._2, 0.toByte)))    // edge._1 < edge._2, edge._1 -> edge._2
+              Iterator((edge._1, (edge._2, 0.toByte))) // edge._1 < edge._2, edge._1 -> edge._2
             } else {
-              Iterator((edge._1, (edge._2, 1.toByte)))    // edge._1 < edge._2, edge._1 <- edge._2
+              Iterator((edge._1, (edge._2, 1.toByte))) // edge._1 < edge._2, edge._1 <- edge._2
             }
           } else {
-            Iterator((edge._1, (edge._2, 2.toByte)))      // edge._1 < edge._2, edge._1 <-> edge._2
+            Iterator((edge._1, (edge._2, 2.toByte))) // edge._1 < edge._2, edge._1 <-> edge._2
           }
         }
       } else {
@@ -152,9 +152,9 @@ object GraphOps {
       }
     }.groupByKey(partitionNum).mapPartitions { iter =>
       if (iter.nonEmpty) {
-        iter.flatMap {case (src, seq) =>
-          val array = seq.toArray.sorted  // sort by nodeId
-          val neighbors = new ArrayBuffer[VertexId](array.length)
+        iter.flatMap { case (src, seq) =>
+          val array = seq.toArray.sorted // sort by nodeId
+        val neighbors = new ArrayBuffer[VertexId](array.length)
           val attrs = new ArrayBuffer[Byte](array.length)
           // process edges in seq
           for (e <- array) {
@@ -171,6 +171,166 @@ object GraphOps {
       }
     }
 
+  }
+
+
+  /**
+    *
+    * @param edges
+    * @param partitionNum
+    * @return
+    */
+  def edgesToNeighborTableWithBytes(edges: RDD[(Long, Long)], partitionNum: Int): (RDD[NeighborTable[Byte]], RDD[NeighborTable[Byte]]) = {
+    // assume there is no redundant edges
+    val edgeType = edges.flatMap { case (src, dst) =>
+      if (src == dst)
+        Iterator.empty
+      else if (src < dst) { // small node comes first, use tag to denote direction
+        Iterator(((src, dst), (0, 0))) // src -> dst, tag: 0
+      } else {
+        Iterator(((dst, src), (1, 1))) // dst <- src, tag: 1
+      }
+    }.reduceByKey((a, b) => (a._1 + b._1, a._2 & b._2),partitionNum)
+
+    //give each edge a tag [src < dst ,0],[src > dst,1] ,[src <-> dst, 2]
+    // use extreme strategy
+    val edgeTag = edgeType.map { case ((src, dst), (cnt, dir)) =>
+      if (cnt >= 1 && dir == 1) {
+        (src, (dst, 1.toByte))
+      } else if (cnt >= 1 && dir == 0) {
+        (src, (dst, 2.toByte))
+      } else {
+        (src, (dst, 0.toByte))
+      }
+    }
+
+    // neighbors should be complete on ps
+    val edgeDouble = edgeTag.flatMap { case (srcId, (dstId, tag)) =>
+      Iterator((srcId, (dstId, tag)), (dstId, (srcId, tag)))
+    }
+
+    // neighbors on spark worker only need extreme neighbors
+    val neighborForWorker = edgeTag.groupByKey().map {
+      case (src, seq) =>
+        // sort by nodeId
+        val seqSorted = seq.toArray.sorted
+        val (neighbors, tags) = seqSorted.unzip
+        NeighborTable(src, neighbors, tags)
+    }
+
+    val neighborTable = edgeDouble.groupByKey()
+      .map { case (src, seq) =>
+        // sort by nodeId
+        val seqSorted = seq.toArray.sorted
+        val (neighbors, tags) = seqSorted.unzip
+        NeighborTable(src, neighbors, tags)
+      }
+
+    (neighborForWorker, neighborTable)
+  }
+
+
+  def edgesToNeighborTableComplete(edges: RDD[(Long, Long)], partitionNum: Int): RDD[NeighborTable[Byte]] = {
+
+    // assume there is no redundant edges
+    val edgeType = edges.flatMap { case (src, dst) =>
+      if (src == dst)
+        Iterator.empty
+      else if (src < dst) { // small node comes first, use tag to denote direction
+        Iterator(((src, dst), (0, 0))) // src -> dst, tag: 0
+      } else {
+        Iterator(((dst, src), (1, 1))) // dst <- src, tag: 1
+      }
+    }.reduceByKey((a, b) => (a._1 + b._1, a._2 & b._2), partitionNum)
+
+    //give each edge a tag [src < dst ,0],[src > dst,1] ,[src <-> dst, 2]
+    // use extreme strategy
+    val edgeTag = edgeType.map { case ((src, dst), (cnt, dir)) =>
+      if (cnt >= 1 && dir == 1) {
+        (src, (dst, 1.toByte))
+      } else if (cnt >= 1 && dir == 0) {
+        (src, (dst, 2.toByte))
+      } else {
+        (src, (dst, 0.toByte))
+      }
+    }
+
+    // neighbors should be complete on ps
+    val edgeDouble = edgeTag.flatMap { case (srcId, (dstId, tag)) =>
+      Iterator((srcId, (dstId, tag)), (dstId, (srcId, tag)))
+    }
+
+    edgeDouble.groupByKey()
+      .map { case (src, seq) =>
+        // sort by nodeId
+        val seqSorted = seq.toArray.sorted
+        val (neighbors, tags) = seqSorted.unzip
+        NeighborTable(src, neighbors, tags)
+      }
+  }
+
+  def edgesToNeighbor(edges: RDD[(Long, Long)], partitionNum: Int): RDD[(Long, Iterable[(Long, Byte)])] = {
+    // assume there is no redundant edges
+    val edgeType = edges.flatMap { case (src, dst) =>
+      if (src == dst)
+        Iterator.empty
+      else if (src < dst) { // small node comes first, use tag to denote direction
+        Iterator(((src, dst), (0, 0))) // src -> dst, tag: 0
+      } else {
+        Iterator(((dst, src), (1, 1))) // dst <- src, tag: 1
+      }
+    }.reduceByKey((a, b) => (a._1 + b._1, a._2 & b._2),partitionNum)
+
+    val edgeTag = edgeType.map { case ((src, dst), (cnt, dir)) =>
+      if (cnt >= 1 && dir == 1) {
+        (src, (dst, 1.toByte))
+      } else if (cnt >= 1 && dir == 0) {
+        (src, (dst, 2.toByte))
+      } else {
+        (src, (dst, 0.toByte))
+      }
+    }
+
+    val edgeDouble = edgeTag.flatMap { case (srcId, (dstId, tag)) =>
+      Iterator((srcId, (dstId, tag)), (dstId, (srcId, tag)))
+    }
+
+    edgeDouble.groupByKey()
+  }
+
+  def edgesForTriangleWithBytes(edges: RDD[(Long, Long)], partitionNum: Int): RDD[NeighborTable[Byte]] = {
+    // assume there is no redundant edges
+    val edgeType = edges.flatMap { case (src, dst) =>
+      if (src == dst)
+        Iterator.empty
+      else if (src < dst) { // small node comes first, use tag to denote direction
+        Iterator(((src, dst), (0, 0))) // src -> dst, tag: 0
+      } else {
+        Iterator(((dst, src), (1, 1))) // dst <- src, tag: 1
+      }
+    }.reduceByKey((a, b) => (a._1 + b._1, a._2 & b._2),partitionNum)
+
+    val edgeTag = edgeType.map { case ((src, dst), (cnt, dir)) =>
+      if (cnt >= 1 && dir == 1) {
+        (src, (dst, 1.toByte))
+      } else if (cnt >= 1 && dir == 0) {
+        (src, (dst, 2.toByte))
+      } else {
+        (src, (dst, 0.toByte))
+      }
+    }
+
+
+    val neighborForWorker = edgeTag.groupByKey().map {
+      case (src, seq) =>
+        // sort by nodeId
+        val seqSorted = seq.toArray.sorted
+        val (neighbors, tags) = seqSorted.unzip
+        NeighborTable(src, neighbors, tags)
+    }
+
+
+    neighborForWorker
   }
 
   def buildNeighborTablePartition[ED: ClassTag](data: RDD[NeighborTable[ED]],

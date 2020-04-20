@@ -18,7 +18,7 @@ package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.spark.ml.graph.kcore5.KCore
+import com.tencent.angel.spark.ml.graph.kcore.KCore
 import com.tencent.angel.spark.ml.graph.utils.GraphIO
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
@@ -27,7 +27,8 @@ object KCoreExample {
   def main(args: Array[String]): Unit = {
 
     val params = ArgsUtil.parse(args)
-    val sc = start()
+    val mode = params.getOrElse("mode", "yarn-cluster")
+    val sc = start(mode)
 
     val input = params.getOrElse("input", null)
     val partitionNum = params.getOrElse("partitionNum", "100").toInt
@@ -39,6 +40,7 @@ object KCoreExample {
     val psPartitionNum = params.getOrElse("psPartitionNum",
       sc.getConf.get("spark.ps.instances", "10")).toInt
     val useBalancePartition = params.getOrElse("useBalancePartition", "false").toBoolean
+    val balancePartitionPercent = params.getOrElse("balancePartitionPercent", "0.7").toFloat
 
     val cpDir = params.get("cpDir").filter(_.nonEmpty).orElse(GraphIO.defaultCheckpointDir)
       .getOrElse(throw new Exception("checkpoint dir not provided"))
@@ -58,6 +60,7 @@ object KCoreExample {
       .setSrcNodeIdCol("src")
       .setDstNodeIdCol("dst")
       .setUseBalancePartition(useBalancePartition)
+      .setBalancePartitionPercent(balancePartitionPercent)
 
     val df = GraphIO.load(input, isWeighted = false, srcIndex, dstIndex, sep = sep)
     val mapping = kCore.transform(df)
@@ -65,15 +68,16 @@ object KCoreExample {
     stop()
   }
 
-  def start(): SparkContext = {
+  def start(mode: String): SparkContext = {
     val conf = new SparkConf()
 
     // Add jvm parameters for executors
-    var executorJvmOptions = conf.get("spark.executor.extraJavaOptions", "")
+    var executorJvmOptions = conf.get("spark.executor.extraJavaOptions")
     executorJvmOptions += " -XX:ConcGCThreads=4 -XX:ParallelGCThreads=4 -Xss4M "
     conf.set("spark.executor.extraJavaOptions", executorJvmOptions)
     println(s"executorJvmOptions = ${executorJvmOptions}")
 
+    conf.setMaster(mode)
     conf.setAppName("K-Core")
     val sc = new SparkContext(conf)
     //PSContext.getOrCreate(sc)

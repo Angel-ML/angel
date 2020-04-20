@@ -27,7 +27,8 @@ object LouvainExample {
   def main(args: Array[String]): Unit = {
 
     val params = ArgsUtil.parse(args)
-    val sc = start()
+    val mode = params.getOrElse("mode", "yarn-cluster")
+    val sc = start(mode)
 
     val input = params.getOrElse("input", null)
     val output = params.getOrElse("output", null)
@@ -76,8 +77,9 @@ object LouvainExample {
     stop()
   }
 
-  def start(): SparkContext = {
+  def start(mode: String): SparkContext = {
     val conf = new SparkConf()
+    conf.setMaster(mode)
     conf.setAppName("louvain")
     val sc = new SparkContext(conf)
     PSContext.getOrCreate(sc)

@@ -50,7 +50,7 @@ object OfflineRunner {
     // build SharedConf with params
     SharedConf.addMap(params)
 
-    val dim = SharedConf.indexRange.toInt
+    val dim = SharedConf.indexRange
 
     println(s"dim=$dim")
 
@@ -77,11 +77,10 @@ object OfflineRunner {
     val className = "com.tencent.angel.spark.ml.classification." + network
     val model = GraphModel(className)
     val learner = new OfflineLearner
+
     actionType match {
       case MLConf.ANGEL_ML_TRAIN => learner.train(input, output, modelPath, dim, model)
       case MLConf.ANGEL_ML_PREDICT => learner.predict(input, predictPath, output, dim, model)
     }
-    PSContext.stop()
-    sc.stop()
   }
 }

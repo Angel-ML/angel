@@ -17,13 +17,16 @@
 
 package com.tencent.angel.spark.ml.embedding.line2
 
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
+import com.tencent.angel.model.output.format.{MatrixFilesMeta, ModelFilesConstent}
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
+import com.tencent.angel.spark.ml.util.LogUtils
 import com.tencent.angel.spark.models.PSMatrix
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import org.apache.hadoop.fs.Path
@@ -154,7 +157,7 @@ class LINEPSModel(embeddingMatrix: PSMatrix, minNodeId: Int, maxNodeId: Int) ext
     if(!saveMeta) {
       // Remove the meta file
       try {
-        val metaPath = new Path(new Path(modelPath, embeddingMatrix.name), "meta")
+        val metaPath = new Path(new Path(modelPath, embeddingMatrix.name), ModelFilesConstent.modelMetaFileName)
         // Build hadoop conf
         val conf = AngelPSContext.convertToHadoop(SparkContext.getOrCreate().getConf)
         val fs = metaPath.getFileSystem(conf)
@@ -204,11 +207,17 @@ object LINEPSModel {
   val aliasTable = "aliasTable"
 
   def fromMinMax(minId: Long, maxId: Long, psNumPartition: Int, order: Int, dimension: Int,
-                 isWeighted: Boolean): LINEPSModel = {
+                 isWeighted: Boolean, oldModelPath: String): LINEPSModel = {
     // Create a matrix for embedding vectors
-    val embeddingContext: MatrixContext = new MatrixContext(embedding, 1, maxId)
+    val rawMaxId = maxId
+    var matrixMaxId = maxId
+    if (oldModelPath != null && oldModelPath.length > 0) {
+      matrixMaxId = getMaxId(oldModelPath)
+      LogUtils.logTime("Load model's max id is: " + matrixMaxId)
+    }
+    val embeddingContext: MatrixContext = new MatrixContext(embedding, 1, matrixMaxId)
     embeddingContext.setMaxRowNumInBlock(1)
-    embeddingContext.setMaxColNumInBlock(maxId / psNumPartition)
+    embeddingContext.setMaxColNumInBlock(matrixMaxId / psNumPartition)
     embeddingContext.setRowType(RowType.T_ANY_INTKEY_DENSE)
     embeddingContext.setValueType(classOf[LINENode])
     embeddingContext.setInitFunc(new LINEInitFunc(order, dimension))
@@ -218,20 +227,44 @@ object LINEPSModel {
     var model: LINEPSModel = null
     if (isWeighted) {
       // Create a matrix for alias table
-      val aliasTableContext = new MatrixContext(aliasTable, 1, maxId)
+      val aliasTableContext = new MatrixContext(aliasTable, 1, matrixMaxId)
       aliasTableContext.setMaxRowNumInBlock(1)
-      aliasTableContext.setMaxColNumInBlock(maxId / psNumPartition)
+      aliasTableContext.setMaxColNumInBlock(matrixMaxId / psNumPartition)
       aliasTableContext.setRowType(RowType.T_INT_DENSE)
       aliasTableContext.setPartitionClass(classOf[EdgeAliasTablePartition])
       val aliasTableMatrix: PSMatrix = PSMatrix.matrix(aliasTableContext)
 
-      model = new LINEWithWeightPSModel(embeddingMatrix, embeddingMatrix, aliasTableMatrix, minId.toInt, maxId.toInt)
+      model = new LINEWithWeightPSModel(embeddingMatrix, embeddingMatrix, aliasTableMatrix, minId.toInt, rawMaxId.toInt)
     } else {
-      model = new LINEPSModel(embeddingMatrix, minId.toInt, maxId.toInt)
+      model = new LINEPSModel(embeddingMatrix, minId.toInt, rawMaxId.toInt)
     }
 
-    model.randomInitialize(model.hashCode(), dimension, order)
+    if (oldModelPath != null && oldModelPath.length > 0) {
+      LogUtils.logTime("Old model path is: " + oldModelPath + " now loading...")
+      model.load(oldModelPath)
+    } else {
+      model.randomInitialize(model.hashCode(), dimension, order)
+    }
+
     model
+  }
+
+  def getMaxId(oldModelPath: String): Long = {
+    val meteFilePath = new Path(new Path(oldModelPath, LINEPSModel.embedding), ModelFilesConstent.modelMetaFileName)
+    val meta = new MatrixFilesMeta
+    val conf = AngelPSContext.convertToHadoop(SparkContext.getOrCreate().getConf)
+    val fs = meteFilePath.getFileSystem(conf)
+    if (!fs.exists(meteFilePath)) throw new IOException("matrix meta file does not exist ")
+    val input = fs.open(meteFilePath)
+    try
+      meta.read(input)
+    catch {
+      case e: Throwable =>
+        throw new IOException("Read meta failed ", e)
+    } finally input.close()
+    val colNum = meta.getCol
+    LogUtils.logTime("Load model max col is: " + colNum)
+    colNum
   }
 }
 

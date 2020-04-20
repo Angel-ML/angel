@@ -29,7 +29,7 @@ trait HasBatchSize extends Params {
   /** @group getParam */
   final def getBatchSize: Int = $(batchSize)
 
-  setDefault(batchSize, 10000)
+  setDefault(batchSize, 1000)
 
   /** @group setParam */
   final def setBatchSize(size: Int): this.type = set(batchSize, size)

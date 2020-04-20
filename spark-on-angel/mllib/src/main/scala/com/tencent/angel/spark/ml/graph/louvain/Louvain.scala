@@ -136,7 +136,7 @@ class Louvain(override val uid: String) extends Transformer
     val outputSchema = transformSchema(dataset.schema)
     dataset.sparkSession.createDataFrame({
       reIndexer.decodeInt2IntPSVector(model.node2CommunityPSVector
-      ).map { case (id, c) =>
+      ).sortByKey().map { case (id, c) =>
         Row.fromSeq(Seq(id, c))
       }
     }, outputSchema)

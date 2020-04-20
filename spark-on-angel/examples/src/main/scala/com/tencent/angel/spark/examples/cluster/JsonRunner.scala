@@ -61,13 +61,11 @@ object JsonRunner {
 
     actionType match {
       case MLConf.ANGEL_ML_TRAIN =>
-        learner.train(input, output, modelPath, dim, model)
+          learner.train(input, output, modelPath, dim, model)
 
       case MLConf.ANGEL_ML_PREDICT =>
-        learner.predict(input, output, modelPath, dim, model)
+          learner.predict(input, output, modelPath, dim, model)
     }
-    PSContext.stop()
-    sc.stop()
   }
 
 }

@@ -57,7 +57,7 @@ import scala.collection.mutable.ArrayBuffer
 class LINEModel(dataset: Dataset[_], embeddingDim: Int, negativeNum: Int, stepSize: Float, order: Int,
                 psPartNum: Int, batchSize: Int, epochNum: Int, dataPartNum: Int, srcNodeIdCol: String,
                 dstNodeIdCol: String, needMapping: Boolean, needSumSampling: Boolean,
-                output: String, checkpointInterval: Int, modelSaveInterval: Int, saveMeta: Boolean) extends Serializable {
+                output: String, checkpointInterval: Int, modelSaveInterval: Int, saveMeta: Boolean, oldModelPath: String) extends Serializable {
 
   /**
     * Model on PS
@@ -98,13 +98,12 @@ class LINEModel(dataset: Dataset[_], embeddingDim: Int, negativeNum: Int, stepSi
 
     // Create matrix and init PS model
     LogUtils.logTime("Create matrices in PS")
-    initPSModel(maxId, maxId)
+    initPSModel(maxId, maxId, oldModelPath)
 
     // Get mini-batch data set
     val trainBatches = buildDataBatches(newEdges, batchSize)
 
-    var startTs = System.currentTimeMillis()
-
+    val startTs = System.currentTimeMillis()
     // Before training, checkpoint the model
     getPSModel.checkpointEmbeddingMatrix(0)
     LogUtils.logTime(s"Write checkpoint use time=${System.currentTimeMillis() - startTs}")
@@ -244,8 +243,8 @@ class LINEModel(dataset: Dataset[_], embeddingDim: Int, negativeNum: Int, stepSi
     * @param minId min node id
     * @param maxId max node id
     */
-  def initPSModel(minId: Int, maxId: Int) = {
-    psModel = LINEPSModel.fromMinMax(maxId, maxId + 1, psPartNum, order, embeddingDim, false)
+  def initPSModel(minId: Int, maxId: Int, oldModelPath: String) = {
+    psModel = LINEPSModel.fromMinMax(maxId, maxId + 1, psPartNum, order, embeddingDim, false, oldModelPath)
   }
 
   def getPSModel = psModel
@@ -582,9 +581,9 @@ class LINEModel(dataset: Dataset[_], embeddingDim: Int, negativeNum: Int, stepSi
 class LINEWithWightModel(dataset: Dataset[_], embeddingDim: Int, negativeNum: Int, stepSize: Float, order: Int,
                          psPartNum: Int, batchSize: Int, epochNum: Int, dataPartNum: Int, srcNodeIdCol: String,
                          dstNodeIdCol: String, weightCol: String, needMapping: Boolean, needSumSampling: Boolean,
-                         output: String, checkpointInterval: Int, modelSaveInterval: Int, saveMeta: Boolean)
+                         output: String, checkpointInterval: Int, modelSaveInterval: Int, saveMeta: Boolean, oldModelPath: String)
   extends LINEModel(dataset, embeddingDim, negativeNum, stepSize, order, psPartNum, batchSize,
-    epochNum, dataPartNum, srcNodeIdCol, dstNodeIdCol, needMapping, needSumSampling, output, checkpointInterval, modelSaveInterval, saveMeta) {
+    epochNum, dataPartNum, srcNodeIdCol, dstNodeIdCol, needMapping, needSumSampling, output, checkpointInterval, modelSaveInterval, saveMeta, oldModelPath) {
 
   override def train() = {
     // Generate edge table with weight
@@ -622,7 +621,7 @@ class LINEWithWightModel(dataset: Dataset[_], embeddingDim: Int, negativeNum: In
 
     // Create matrix and init PS model
     LogUtils.logTime("Create matrices in PS")
-    initPSModel(maxId, maxId)
+    initPSModel(maxId, maxId, oldModelPath)
 
     // Group by the edge use src node id
     LogUtils.logTime("Group by the edge use src node id")
@@ -728,8 +727,8 @@ class LINEWithWightModel(dataset: Dataset[_], embeddingDim: Int, negativeNum: In
     (loss, dots.length.toLong, Array(sampleWeightsTime, sampleTime, getEmbeddingTime, dotTime, gradientTime, calUpdateTime, pushTime))
   }
 
-  override def initPSModel(minId: Int, maxId: Int) = {
-    psModel = LINEPSModel.fromMinMax(maxId, maxId + 1, psPartNum, order, embeddingDim, true)
+  override def initPSModel(minId: Int, maxId: Int, oldModelPath: String) = {
+    psModel = LINEPSModel.fromMinMax(maxId, maxId + 1, psPartNum, order, embeddingDim, true, oldModelPath)
   }
 
   override def getPSModel: LINEWithWeightPSModel = super.getPSModel.asInstanceOf[LINEWithWeightPSModel]

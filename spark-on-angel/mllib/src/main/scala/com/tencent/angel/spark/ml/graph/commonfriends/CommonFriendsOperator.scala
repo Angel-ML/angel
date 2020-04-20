@@ -184,4 +184,42 @@ object CommonFriendsOperator {
     }
   }
 
+//  def runNeighborPartitionTag(iter: Iterator[(Long, Array[(Long,Byte)])], partitionId: Int, psModel: CommonFriendsPSModel): Iterator[Row] = {
+//    val batchSize = psModel.neighborTable.param.pullBatchSize
+//    var totalRowNum = 0
+//    var totalPullNum = 0
+//    var startTs = System.currentTimeMillis()
+//    BatchIter(iter, batchSize).flatMap { batchIter =>
+//      println(s"partition $partitionId: last batch cost ${System.currentTimeMillis() - startTs} ms")
+//      startTs = System.currentTimeMillis()
+//      var numSrcNodes = 0
+//      val pullNodes: mutable.HashSet[Long] = new mutable.HashSet[Long]()
+//      val localNeighborTable: Long2ObjectOpenHashMap[Array[Long]] = new Long2ObjectOpenHashMap[Array[Long]](batchSize)
+//      batchIter.foreach { case (src, neighbors) =>
+//        numSrcNodes += 1
+//        val (nbrs,nbrsTag) =  neighbors.unzip
+//        localNeighborTable.put(src,nbrs)
+//        if (localNeighborTable.containsKey(src))
+//          pullNodes ++= nbrs
+//      }
+//      val beforePullTs = System.currentTimeMillis()
+//      val psNeighborsTable = psModel.getLongNeighborTable(pullNodes.toArray)
+//      totalRowNum += numSrcNodes
+//      totalPullNum += pullNodes.size
+//      println(s"partition $partitionId: process $numSrcNodes neighbor tables ($totalRowNum in total), " +
+//        s"pull ${pullNodes.size} nodes from ps ($totalPullNum in total), " +
+//        s"cost ${System.currentTimeMillis() - beforePullTs} ms")
+//      val srcNodes = localNeighborTable.keySet().toLongArray
+//      srcNodes.flatMap { src =>
+//        val srcNeighbors = localNeighborTable.get(src)
+//        srcNeighbors.flatMap { dst =>
+//          val dstNeighbors = if (localNeighborTable.containsKey(dst)) localNeighborTable.get(dst) else psNeighborsTable.get(dst)
+//          val commonNbrsCount = ArrayUtils.intersectCount(srcNeighbors, dstNeighbors)
+//          if()
+//          Iterator.single(Row(src, dst,commonNbrsCount ))
+//        }
+//      }
+//    }
+//  }
+
 }
