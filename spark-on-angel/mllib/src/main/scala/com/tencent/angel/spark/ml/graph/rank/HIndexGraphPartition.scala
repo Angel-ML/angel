@@ -53,11 +53,9 @@ class HIndexGraphPartition(index: Int,
   /**
     *
     * @param model
-    * @param numMsgs
-    * @param isFirstIteration
     * @return
     */
-  def process(model: HIndexPSModel, numMsgs: Long): (Array[Long], Array[(Int, Int, Int)]) = {
+  def process(model: HIndexPSModel): (Array[Long], Array[(Int, Int, Int)]) = {
     val inMsgs = model.readMsgs(indices) // read all nodes of this subGraph,include srcIds and dstIds
     var sum = 0
     for (idx <- srcNodes.indices) { //handle each srcNode

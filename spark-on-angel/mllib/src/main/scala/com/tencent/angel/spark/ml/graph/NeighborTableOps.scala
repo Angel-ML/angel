@@ -147,9 +147,8 @@ class NeighborTableOps(table: NeighborTableModel) extends Serializable {
     table
   }
 
-  def calTriangleDirected[ED: ClassTag](neighborsRDD: RDD[NeighborTablePartition[ED]]): RDD[
-    (VertexId, Long, Seq[(VertexId, CounterTriangleDirected)])] = {
-    neighborsRDD.flatMap(_.calTriangleDirected(table))
+  def calTriangleUndirected[ED: ClassTag](neighborsRDD: RDD[NeighborTablePartition[ED]], computeLCC: Boolean): RDD[(VertexId, Int, Float)] = {
+    neighborsRDD.flatMap(_.calTriangleUndirected(table, computeLCC))
   }
 
   def calNumEdgesInNeighbor[ED: ClassTag](neighborsRDD: RDD[NeighborTablePartition[ED]]): RDD[

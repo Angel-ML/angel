@@ -102,9 +102,7 @@ object GraphOps {
     edges.groupByKey(partitionNum).mapPartitions { iter =>
       if (iter.nonEmpty) {
         iter.flatMap { case (src, group) =>
-          Iterator.single(NeighborTable(
-            src,
-            group.toArray.filter(_ != src).sorted))
+          Iterator.single(NeighborTable(src, group.toArray.distinct.filter(_ != src).sorted))
         }
       } else {
         Iterator.empty
