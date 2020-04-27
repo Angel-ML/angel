@@ -12,13 +12,49 @@ Louvain算法包含两个过程
 
 ## 2. 运行
 
-### 参数
+### 算法IO参数
 
 - input： hdfs路径，输入网络数据，每行两个长整形id表示的节点（如果是带权网络，第三个float表示权重），以空白符或者逗号分隔，表示一条边
 - output： hdfs路径， 输出节点对应的社区归属， 每行一条数据，表示节点对应的社区id值，以tap符分割
+- sep: 输入数据分隔符，支持：空格，逗号，tab，默认为空格
+- isWeighted：是否带权
+- srcIndex： 源节点索引，默认为0
+- dstIndex： 目标节点索引，默认为1
+- weightIndex： 权重索引，默认为2
+
+  
+### 算法参数
 - numFold： 折叠次数
 - numOpt：每轮模块度优化次数
 - eps：模块度增量下限
 - batchSize：节点更新batch的大小
 - partitionNum： 输入数据分区数
-- isWeighted：是否带权
+- psPartitionNum： ps分区数
+- enableCheck：是否对社区id或度进行检查
+- bufferSize： 缓冲区大小
+- storageLevel： 存储级别
+
+
+### 任务提交示例
+进入angel环境bin目录下
+```
+input=hdfs://my-hdfs/data
+output=hdfs://my-hdfs/model
+
+source ./spark-on-angel-env.sh
+$SPARK_HOME/bin/spark-submit \
+  --master yarn-cluster\
+  --conf spark.ps.instances=1 \
+  --conf spark.ps.cores=1 \
+  --conf spark.ps.jars=$SONA_ANGEL_JARS \
+  --conf spark.ps.memory=10g \
+  --name "kcore angel" \
+  --jars $SONA_SPARK_JARS  \
+  --driver-memory 5g \
+  --num-executors 1 \
+  --executor-cores 4 \
+  --executor-memory 10g \
+  --class com.tencent.angel.spark.examples.cluster.LouvainExample \
+  ../lib/spark-on-angel-examples-3.1.0.jar
+  input:$input output:$output numFold:10 numOpt:3 eps:0.0 batchSize:1000 partitionNum:2 psPartitionNum:2 enableCheck:false bufferSize:1000000 storageLevel:MEMORY_ONLY
+```
