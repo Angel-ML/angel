@@ -32,8 +32,6 @@ object HIndexExample {
     val mode = params.getOrElse("mode", "yarn-cluster")
     val sc = start(mode)
     val input = params.getOrElse("input", null)
-    val srcIndex = params.getOrElse("src", "0").toInt
-    val dstIndex = params.getOrElse("dst", "1").toInt
     val output = params.getOrElse("output", null)
     val partitionNum = params.getOrElse("partitionNum", "100").toInt
     val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
@@ -52,7 +50,7 @@ object HIndexExample {
       .setPSPartitionNum(psPartitionNum)
       .setUseBalancePartition(useBalancePartition)
 
-    val df = GraphIO.load(input, isWeighted = false, srcIndex, dstIndex, sep = sep)
+    val df = GraphIO.load(input, isWeighted = false, sep = sep)
     val mapping = hindex.transform(df)
     GraphIO.save(mapping, output)
     stop()

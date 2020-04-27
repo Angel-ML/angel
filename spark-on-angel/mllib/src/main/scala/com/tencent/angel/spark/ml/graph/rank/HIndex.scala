@@ -36,12 +36,12 @@ class HIndex(override val uid: String) extends Transformer
   def this() = this(Identifiable.randomUID("H-Index"))
 
   override def transform(dataset: Dataset[_]): DataFrame = {
-    //read edges
+    // read edges
     val edges = dataset.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd
       .filter(row => !row.anyNull)
       .map(row => (row.getLong(0), row.getLong(1)))
       .filter(e => e._1 != e._2)
-    //edges's storageLevel choose  Disk_Only
+    // persist edges using Disk_Only
     edges.persist(StorageLevel.DISK_ONLY)
 
     val maxId = edges.map(e => math.max(e._1, e._2)).max() + 1
@@ -51,40 +51,34 @@ class HIndex(override val uid: String) extends Transformer
 
     println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
 
-    // Start PS and init the model
+    // start PS
     println("start to run ps")
+    val beforeStartPS = System.currentTimeMillis()
     PSContext.getOrCreate(SparkContext.getOrCreate())
+    println(s"Starting ps cost ${System.currentTimeMillis() - beforeStartPS} ms")
 
+    // init the model
     val model = HIndexPSModel.fromMinMax(minId, maxId, nodes, $(psPartitionNum), $(useBalancePartition))
-    var graph = edges.flatMap { case (srcId, dstId) => Iterator((srcId, dstId), (dstId, srcId)) }
+
+    // create sub-graph partitions
+    val graph = edges.flatMap { case (srcId, dstId) => Iterator((srcId, dstId), (dstId, srcId)) }
       .groupByKey($(partitionNum))
       .mapPartitionsWithIndex((index, adjTable) => Iterator(HIndexGraphPartition.apply(index, adjTable)))
-
-
     graph.persist($(storageLevel))
     graph.foreachPartition(_ => Unit)
+
     //init msgs with each node's degree
     graph.foreach(_.initMsgs(model))
 
-    val numMsgs = model.numMsgs()
-    println(s"numMsgs=$numMsgs")
-
-    val res = graph.map(_.process(model, numMsgs))
+    // compute hindex, windex and gindex for each node
+    val res = graph.map(_.process(model))
     res.persist()
     res.count()
-//    graph.persist($(storageLevel))
-//    graph.count()
 
-    val retRDD_ = res.flatMap { case (nodes, cores) => nodes.zip(cores) }
-//    val retRDD_ = graph.map(_.save()).flatMap { case (nodes, cores) => nodes.zip(cores) }
-    println(s"retRDD_ length: ${retRDD_.count()}")
+    val retRDD = res.flatMap { case (node, cores) => node.zip(cores) }
+    val result = retRDD.map(r => Row.fromSeq(Seq[Any](r._1, r._2._1, r._2._2, r._2._3)))
 
-    val retRDD = retRDD_.filter(x => x._2 != null)
-    println(s"retRDD length: ${retRDD.count()}")
-
-    val ret = retRDD.map(r => Row.fromSeq(Seq[Any](r._1, r._2._1, r._2._2, r._2._3)))
-
-    dataset.sparkSession.createDataFrame(ret, transformSchema(dataset.schema))
+    dataset.sparkSession.createDataFrame(result, transformSchema(dataset.schema))
 
   }
 

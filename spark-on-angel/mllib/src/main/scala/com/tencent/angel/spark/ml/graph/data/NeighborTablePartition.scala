@@ -16,20 +16,15 @@
  */
 package com.tencent.angel.spark.ml.graph.data
 
-import com.tencent.angel.exception.AngelException
-import com.tencent.angel.spark.ml.graph.triangle.TriangleCountingDirected
 import com.tencent.angel.spark.ml.graph.utils.BatchIter
-import com.tencent.angel.spark.ml.graph.{NeighborTableModel, OutDegreeModel}
+import com.tencent.angel.spark.ml.graph.NeighborTableModel
 import com.tencent.angel.utils.ArrayUtils
+import com.tencent.angel.spark.ml.util.ArrayUtils.intersect
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap
-import org.apache.spark.graphx.Edge
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.Row
-
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
-import NeighborTablePartition._
 
 class NeighborTablePartition[@specialized(
   Byte, Boolean, Short, Int, Long, Float, Double) ED: ClassTag](isDirected: Boolean,
@@ -306,7 +301,7 @@ class NeighborTablePartition[@specialized(
 
           if (dstNeighbors != null && dstNeighbors.nonEmpty) {
             // get the common nodes of srcNeighbors and dstNeighbors, and return the attribute on the edges
-            val commonFriends = TriangleCountingDirected.intersect[ED](srcNeighbors, dstNeighbors)
+            val commonFriends = intersect[ED](srcNeighbors, dstNeighbors)
             var sum = 0L
 
             // suppose the common neighbor is node u
@@ -344,171 +339,75 @@ class NeighborTablePartition[@specialized(
 
   }
 
-  def calTriangleDirected(psModel: NeighborTableModel): Iterator[(VertexId, Long, Seq[(VertexId, CounterTriangleDirected)])] = {
+  def intersections(arr1: Array[Long], arr2: Array[Long]): Array[Long] = {
+    val re = new ArrayBuffer[Long]()
+    var i = 0
+    var j = 0
+    while (i < arr1.length && j < arr2.length) {
+      if (arr1(i) < arr2(j))
+        i += 1
+      else if (arr1(i) > arr2(j))
+        j += 1
+      else {
+        re += arr1(i)
+        i += 1
+        j += 1
+      }
+    }
+    re.toArray
+  }
+
+  def calTriangleUndirected(psModel: NeighborTableModel, computeLCC: Boolean): Iterator[(VertexId, Int, Float)] = {
     val batchSize = psModel.param.pullBatchSize
     var totalRowNum = 0
     var totalPullNum = 0
     var startTs = System.currentTimeMillis()
-    var computeStartTs = 0L
 
-    //    val numNeighborTables: Int = batchSize * 100
-    //    val neighborsCache = DegreeBasedCache.newInstance[VertexId, Array[(VertexId, ED)]](numNeighborTables)
-
-    println(s"partition $partitionID: #vertices: ${stats.numVertices}, #edges: ${stats.numEdges}")
     makeBatchIterator(batchSize).flatMap { case (from, to) =>
-      val endTs = System.currentTimeMillis()
-      println(s"partition $partitionID: last batch total_time: ${endTs - startTs} ms, compute_time: ${endTs - computeStartTs} ms")
+      println(s"partition $partitionID: last batch cost ${System.currentTimeMillis() - startTs} ms")
       startTs = System.currentTimeMillis()
       var numSrcNodes = 0
       val pullNodes: mutable.HashSet[Long] = new mutable.HashSet[Long]()
-      val localNeighborTable: Long2ObjectOpenHashMap[Array[(Long, ED)]] =
-        new Long2ObjectOpenHashMap[Array[(Long, ED)]](batchSize)
-
+      val localNeighborTable: Long2ObjectOpenHashMap[Array[VertexId]] = new Long2ObjectOpenHashMap[Array[VertexId]](batchSize)
       (from until to).foreach { pos =>
         numSrcNodes += 1
-        val edgeWithAttrs = new ArrayBuffer[(Long, ED)](batchSize)
-        for (idx <- neighbors(pos).indices) {
-          val dst = neighbors(pos)(idx)
-          val attr = edgeAttrs(pos)(idx)
-          edgeWithAttrs += ((dst, attr))
-
-          //          if (!neighborsCache.contains(dst))
-          //            pullNodes += dst
-
-        }
-        localNeighborTable.put(srcIds(pos), edgeWithAttrs.toArray)
+        localNeighborTable.put(srcIds(pos), neighbors(pos))
         pullNodes ++= neighbors(pos)
       }
-
       val beforePullTs = System.currentTimeMillis()
-      val psNeighborsTable = psModel.getAttrLongNeighborTable[ED](pullNodes.toArray)
+      val psNeighborsTable = psModel.getLongNeighborTable(pullNodes.toArray)
 
       totalRowNum += numSrcNodes
       totalPullNum += pullNodes.size
 
       println(s"partition $partitionID: process $numSrcNodes neighbor tables ($totalRowNum in total), " +
-        s"pull neighbors of ${pullNodes.size} nodes from PS ($totalPullNum in total), " +
+        s"pull ${pullNodes.size} nodes from ps ($totalPullNum in total), " +
         s"cost ${System.currentTimeMillis() - beforePullTs} ms")
 
       val srcNodes = localNeighborTable.keySet().toLongArray
-      //      val records = new ArrayBuffer[(VertexId, Long, Seq[(VertexId, CounterTriangleDirected)])](srcNodes.length)
-
-      computeStartTs = System.currentTimeMillis()
       srcNodes.flatMap { src =>
-        val srcNeighbors = localNeighborTable.get(src).filter(_._1 > src)
-        val msgMap = new mutable.HashMap[VertexId, CounterTriangleDirected]()
-
-        val total: Long = srcNeighbors.flatMap { dst =>
-          val dstNeighbors = if (localNeighborTable.containsKey(dst._1)) localNeighborTable.get(dst._1)
-          else psNeighborsTable.get(dst._1)
-          //            else if (neighborsCache.contains(dst._1)) neighborsCache.get(dst._1)
-          //            else psNeighborsTable.get(dst._1)
-
-          if (dstNeighbors != null && dstNeighbors.nonEmpty) {
-            val srcDeg = new NodeDeg(0, 0)
-            val dstDeg = new NodeDeg(0, 0)
-            val uDeg = new NodeDeg(0, 0)
-            // get the common nodes of srcNeighbors and dstNeighbors, and return the attribute on the edges
-            val commonFriends = TriangleCountingDirected.intersect[ED](srcNeighbors, dstNeighbors)
-            val sum = new CounterTriangleDirected(7)
-
-            // suppose the common friend is node u,
-            // the triangle is formed by edges (src, dst), (dst, u), (src, u)
-            for (u <- commonFriends) {
-              // count the out degree and in degree for src, dst and u
-              uDeg.outDeg = 0; uDeg.inDeg = 0
-              srcDeg.outDeg = 0; srcDeg.inDeg = 0
-              dstDeg.outDeg = 0; dstDeg.inDeg = 0
-
-              // (src, dst)
-              dst._2 match {
-                case 0 => srcDeg.outDeg += 1; dstDeg.inDeg += 1
-                case 1 => srcDeg.inDeg += 1; dstDeg.outDeg += 1
-                case 2 => srcDeg.outDeg += 1; srcDeg.inDeg += 1; dstDeg.outDeg += 1; dstDeg.inDeg += 1
-              }
-
-              // (src, u)
-              u._2._1 match {
-                case 0 => srcDeg.outDeg += 1; uDeg.inDeg += 1
-                case 1 => srcDeg.inDeg += 1; uDeg.outDeg += 1
-                case 2 => srcDeg.outDeg += 1; srcDeg.inDeg += 1; uDeg.outDeg += 1; uDeg.inDeg += 1
-              }
-
-              // (dst, u)
-              u._2._2 match {
-                case 0 => dstDeg.outDeg += 1; uDeg.inDeg += 1
-                case 1 => dstDeg.inDeg += 1; uDeg.outDeg += 1
-                case 2 => dstDeg.outDeg += 1; dstDeg.inDeg += 1; uDeg.outDeg += 1; uDeg.inDeg += 1
-              }
-
-              assert(srcDeg.outDeg < 3 && srcDeg.inDeg < 3)
-              assert(dstDeg.outDeg < 3 && dstDeg.inDeg < 3)
-
-              val hset = new mutable.HashSet[NodeDeg]()
-              hset.add(srcDeg)
-              hset.add(dstDeg)
-              hset.add(uDeg)
-
-              // map (srcDeg, dstDeg, uDeg) to [0,6]
-              val temp = new NodeDeg(1, 1)
-              for (deg <- hset) {
-                temp.outDeg = temp.outDeg * deg.outDeg
-                temp.inDeg = temp.inDeg * deg.inDeg
-              }
-
-              val idx = (temp.outDeg, temp.inDeg) match {
-                case (0, 0) => 0
-                case (2, 0) => 1
-                case (0, 2) => 2
-                case (1, 1) => 3
-                case (2, 2) if hset.size == 3 => 4
-                case (4, 4) => 5
-                case (2, 2) if hset.size == 1 => 6
-                case _ => 7
-              }
-
-              if (idx == 7) {
-                throw new AngelException("Unexpected idx. outdeg: " + temp.outDeg + ", indeg: " + temp.inDeg)
-              }
-
-              // emit for common friends
-              val uCount = new CounterTriangleDirected(7)
-              uCount(idx) += 1
-              generateArrayMsg(msgMap, (u._1, uCount))
-
-              sum(idx) += 1
-            }
-
-            generateArrayMsg(msgMap, (src, sum))
-            generateArrayMsg(msgMap, (dst._1, sum))
-
-            Iterator.single(commonFriends.length)
-          } else {
-
-            val zero = Array[Int](0, 0, 0, 0, 0, 0, 0)
-            generateArrayMsg(msgMap, (src, zero))
-            generateArrayMsg(msgMap, (dst._1, zero))
-
-            Iterator.single(0)
+        val srcNeighbors = localNeighborTable.get(src)
+        var triangleCount = 0
+        var numEdges = 0 // num of edges between neighbors
+        srcNeighbors.foreach { dst =>
+          val dstNeighbors = if (localNeighborTable.containsKey(dst)) localNeighborTable.get(dst)
+          else psNeighborsTable.get(dst)
+          val comFriends =intersections(dstNeighbors, srcNeighbors)
+          if (computeLCC) {
+            numEdges += comFriends.count(_ > dst)
           }
-        }.sum
-
-        val messages = new mutable.ArrayBuffer[(Long, CounterTriangleDirected)](msgMap.size)
-        msgMap.foreach(kv => messages += kv)
-        msgMap.clear()
-
-        // total is the deduplicated number of triangles which src belongs to
-        Iterator.single((src, total, messages))
+          triangleCount += comFriends.length
+        }
+        if (computeLCC) {
+          val full = if (srcNeighbors.length > 1)
+            srcNeighbors.length * (srcNeighbors.length - 1) / 2
+          else 0
+          val lcc = if (full == 0) 0f else numEdges.toFloat / full
+          Iterator.single((src, triangleCount / 2, lcc))
+        }
+        else
+          Iterator.single((src, triangleCount / 2, 0f))
       }
-
-      // update neighbors cache
-      /*      for (nodeId <- pullNodes) {
-              val neighbors = psNeighborsTable.get(nodeId)
-              neighborsCache.put(nodeId, neighbors, neighbors.length)
-            }
-
-            records.iterator*/
-
     }
   }
 }
