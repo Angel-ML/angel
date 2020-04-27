@@ -27,6 +27,10 @@ import org.apache.spark.sql.types.{LongType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.storage.StorageLevel
 
+/**
+  * Louvain algorithm implementation
+  * @param uid
+  */
 class Louvain(override val uid: String) extends Transformer
   with HasWeightCol with HasSrcNodeIdCol with HasDstNodeIdCol
   with HasOutputNodeIdCol with HasOutputCommunityIdCol

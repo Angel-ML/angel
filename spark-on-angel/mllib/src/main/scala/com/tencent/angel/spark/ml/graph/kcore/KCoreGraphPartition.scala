@@ -23,7 +23,17 @@ import com.tencent.angel.ml.math2.vector.LongIntVector
 import it.unimi.dsi.fastutil.ints.IntArrayList
 import it.unimi.dsi.fastutil.longs.LongArrayList
 
-
+/**
+  * KCoreGraphPartition implementation
+  * @param index: partition index
+  * @param keys: node ids in this partition
+  * @param indptr: node neighbor index, the ith node neighbors index range is [indptr(i), indptr(i+1))
+  * @param neighbors: node neighbors
+  * @param keyCores: node core
+  * @param neiCores: neighbor core
+  * @param indices: node index, contains keys and their neighbors
+  * @param hIndices: hIndices
+  */
 private[kcore]
 class KCoreGraphPartition(index: Int,
                           keys: Array[Long],

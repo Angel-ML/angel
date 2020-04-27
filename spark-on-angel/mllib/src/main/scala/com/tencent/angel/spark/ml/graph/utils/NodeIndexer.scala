@@ -31,6 +31,9 @@ import org.apache.spark.storage.StorageLevel
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
 
+/**
+  * Node Indexer, encode from Long to Int and decode from Int to Long
+  */
 class NodeIndexer extends Serializable {
 
   import NodeIndexer._
@@ -63,6 +66,7 @@ class NodeIndexer extends Serializable {
     val exceedNum = nodesNum - intRange
     assert(exceedNum <= 0, s"nodesNum exceeds intRange: $nodesNum vs $intRange, could not trans nodeId to int type.")
     val offset = if (nodesNum > Int.MaxValue) nodesNum - Int.MaxValue else 0
+    //create Long to Int mapping
     val nodeIndex = nodes.map((_, null)).sortByKey().zipWithIndex().map(x => (x._1._1, x._2 - offset))
     this.numNodes = nodesNum.toInt
 
@@ -132,7 +136,6 @@ class NodeIndexer extends Serializable {
   def decodePartition[C: ClassTag, U: ClassTag](rdd: RDD[C])(func: PSVector => Iterator[C] => Iterator[U]): RDD[U] = {
     rdd.mapPartitions(func(int2long))
   }
-
 
   def decodeInt2IntPSVector(ps: PSVector): RDD[(Long, Long)] = {
     val sc = SparkContext.getOrCreate()
