@@ -78,22 +78,6 @@ class LPAGraphPartition(index: Int,
     label
   }
 
-  //  def calcFirst(idx: Int, inMsgs: LongLongVector): Long = {
-  //    labels(index) = inMsgs.get(keys(idx))
-  //    var j = indptr(idx)
-  //    val labelCount = new Long2IntOpenHashMap()
-  //
-  //    while (j < indptr(idx + 1)) {
-  //      neiCores(j) = inMsgs.get(neighbors(j))
-  //      j += 1
-  //    }
-  //  }
-
-  //  def calcLabelOne(neighLabels:Array[Long],from:Int,to:Int):Long = {
-  //
-  //  }
-
-
   def save(): (Array[Long], Array[Long]) =
     (keys, labels)
 }

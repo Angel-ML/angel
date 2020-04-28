@@ -16,7 +16,7 @@
  */
 package com.tencent.angel.spark.ml.graph.connectedcomponent.wcc
 
-import com.tencent.angel.ml.math2.vector.{LongIntVector, LongLongVector, Vector}
+import com.tencent.angel.ml.math2.vector.{LongLongVector, Vector}
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.spark.models.PSVector
@@ -48,13 +48,6 @@ class WCCPSModel(var inMsgs: PSVector,
 	def numMsgs(): Long = {
 		VectorUtils.nnz(inMsgs)
 	}
-
-//	def resetMsgs(): Unit = {
-//		val temp = inMsgs
-//		inMsgs = outMsgs
-//		outMsgs = temp
-//		outMsgs.reset
-//	}
 
 }
 
