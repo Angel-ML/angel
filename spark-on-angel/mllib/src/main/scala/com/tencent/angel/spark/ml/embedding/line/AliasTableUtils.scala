@@ -15,7 +15,7 @@
  *
  */
 
-package com.tencent.angel.spark.ml.embedding.line2
+package com.tencent.angel.spark.ml.embedding.line
 
 import java.util.Random
 
@@ -29,7 +29,7 @@ object AliasTableUtils {
     * @param weights edge weights
     * @return alias table
     */
-  def buildAliasTable(weights: Array[Float]) = {
+  def buildAliasTable(weights: Array[Float]): (Array[Float], Array[Int]) = {
     // Get weight sum
     var sum = 0.0
     weights.foreach(f => sum += f)
@@ -42,7 +42,7 @@ object AliasTableUtils {
     var smallNum = 0
     var bigNum = 0
 
-    for (index <- (0 until weights.length)) {
+    for (index <- weights.indices) {
       weights(index) = (weights(index) * edgeNum / sum).toFloat
       if (weights(index) < 1.0) {
         smallNum += 1
@@ -56,8 +56,7 @@ object AliasTableUtils {
     var bigIndex = 0
     var smallIndex = 0
 
-    for (index <- (0 until weights.length).reverse) {
-      // println(s"index = ${index}")
+    for (index <- weights.indices.reverse) {
       if (weights(index) < 1) {
         smallEdges(smallIndex) = index
         smallIndex += 1
@@ -109,7 +108,7 @@ object AliasTableUtils {
     * @param weights edge weights
     * @return alias table
     */
-  def buildAliasTable(weights: Array[Double]) = {
+  def buildAliasTable(weights: Array[Double]): (Array[Double], Array[Int]) = {
     // Get weight sum
     var sum = 0.0
     weights.foreach(f => sum += f)
@@ -122,7 +121,7 @@ object AliasTableUtils {
     var smallNum = 0
     var bigNum = 0
 
-    for (index <- (0 until weights.length)) {
+    for (index <- weights.indices) {
       weights(index) = weights(index) * edgeNum / sum
       if (weights(index) < 1.0) {
         smallNum += 1
@@ -136,8 +135,7 @@ object AliasTableUtils {
     var bigIndex = 0
     var smallIndex = 0
 
-    for (index <- (0 until weights.length).reverse) {
-      // println(s"index = ${index}")
+    for (index <- weights.indices.reverse) {
       if (weights(index) < 1) {
         smallEdges(smallIndex) = index
         smallIndex += 1
@@ -180,8 +178,8 @@ object AliasTableUtils {
       prob(smallEdges(smallIndex)) = 1.0f
     }
 
-    for (i <- (0 until weights.length)) {
-      println(s"i=${i}, prob=${prob(i)}, alias=${alias(i)}")
+    for (i <- weights.indices) {
+      println(s"i=$i, prob=${prob(i)}, alias=${alias(i)}")
     }
 
     (prob, alias)
@@ -196,9 +194,9 @@ object AliasTableUtils {
     * @param sampleNum sample number
     * @return samples
     */
-  def batchSample(rand: Random, prob: Array[Float], alias: Array[Int], sampleNum: Int) = {
+  def batchSample(rand: Random, prob: Array[Float], alias: Array[Int], sampleNum: Int): Array[Int] = {
     val indices = new Array[Int](sampleNum)
-    for (i <- (0 until sampleNum)) {
+    for (i <- 0 until sampleNum) {
       val id = rand.nextInt(prob.length)
       val v = rand.nextDouble().toFloat
       if (v < prob(id)) {
@@ -219,9 +217,9 @@ object AliasTableUtils {
     * @param sampleNum sample number
     * @return samples
     */
-  def batchSample(rand: Random, prob: Array[Double], alias: Array[Int], sampleNum: Int) = {
+  def batchSample(rand: Random, prob: Array[Double], alias: Array[Int], sampleNum: Int): Array[Int] = {
     val indices = new Array[Int](sampleNum)
-    for (i <- (0 until sampleNum)) {
+    for (i <- 0 until sampleNum) {
       val id = rand.nextInt(prob.length)
       val v = rand.nextDouble()
       if (v < prob(id)) {

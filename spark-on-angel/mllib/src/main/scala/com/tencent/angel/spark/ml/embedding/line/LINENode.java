@@ -16,7 +16,7 @@
  */
 
 
-package com.tencent.angel.spark.ml.embedding.line2;
+package com.tencent.angel.spark.ml.embedding.line;
 
 import com.tencent.angel.ps.storage.vector.element.IElement;
 import io.netty.buffer.ByteBuf;
@@ -134,15 +134,15 @@ public class LINENode implements IElement {
     int index = 0;
     output.writeInt(data.length);
     index = writeInt(data, inputFeats.length, index);
-    for(int i = 0; i < inputFeats.length; i++) {
-      index = writeFloat(data, inputFeats[i], index);
+    for (float inputFeat : inputFeats) {
+      index = writeFloat(data, inputFeat, index);
     }
 
     if (outputFeats != null) {
       index = writeInt(data, outputFeats.length, index);
 
-      for(int i = 0; i < outputFeats.length; i++) {
-        index = writeFloat(data, outputFeats[i], index);
+      for (float outputFeat : outputFeats) {
+        index = writeFloat(data, outputFeat, index);
       }
     } else {
       writeInt(data, 0, index);
@@ -154,7 +154,7 @@ public class LINENode implements IElement {
     data[index] = (byte)((v >>> 24) & 0xFF);
     data[index + 1] = (byte)((v >>> 16) & 0xFF);
     data[index + 2] = (byte)((v >>> 8) & 0xFF);
-    data[index + 3] = (byte)((v >>> 0) & 0xFF);
+    data[index + 3] = (byte)((v) & 0xFF);
     return index + 4;
   }
 

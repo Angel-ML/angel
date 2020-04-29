@@ -15,7 +15,7 @@
  *
  */
 
-package com.tencent.angel.spark.ml.embedding.line2
+package com.tencent.angel.spark.ml.embedding.line
 
 import java.io.{DataInputStream, DataOutputStream}
 import java.util.Random
@@ -78,7 +78,7 @@ object EdgeAliasTablePartition {
 
     val storeage = new EdgeAliasTableStorage(0, srcNodes, dstNodes, weights)
     storeage.init()
-    storeage.buildAliasTable
+    storeage.buildAliasTable()
 
     val samples = storeage.batchSample(100000000)
     val srcs = samples._1
@@ -111,14 +111,14 @@ class EdgeAliasTableStorage(@transient var rowOffset: Int, @transient var srcNod
 
   def this() = this(-1, null, null, null)
 
-  @volatile var prob: Array[Float] = null
-  @volatile var alias: Array[Int] = null
+  @volatile var prob: Array[Float] = _
+  @volatile var alias: Array[Int] = _
   val rand = new Random(System.currentTimeMillis())
   @volatile var sum:Double = 0.0
 
   override def init(): Unit = {}
 
-  def buildAliasTable: Unit = {
+  def buildAliasTable(): Unit = {
     weights.foreach(e => sum += e)
     val aliasTable = AliasTableUtils.buildAliasTable(weights)
     prob = aliasTable._1
@@ -143,7 +143,7 @@ class EdgeAliasTableStorage(@transient var rowOffset: Int, @transient var srcNod
   override def batchSample(number: Int): (Array[Int], Array[Int]) = {
     val srcSampleEdges = new Array[Int](number)
     val dstSampleEdges = new Array[Int](number)
-    for (i <- (0 until number)) {
+    for (i <- 0 until number) {
       val id = rand.nextInt(prob.length)
       val v = rand.nextDouble().toFloat
       if (v < prob(id)) {
@@ -174,7 +174,7 @@ class EdgeAliasTableStorage(@transient var rowOffset: Int, @transient var srcNod
       output.writeBoolean(true)
       output.writeDouble(sum)
       output.writeInt(srcNodes.length)
-      for(i <- (0 until srcNodes.length)) {
+      for(i <- 0 until srcNodes.length) {
         output.writeInt(srcNodes(i))
         output.writeInt(dstNodes(i))
         output.writeFloat(prob(i))
@@ -200,7 +200,7 @@ class EdgeAliasTableStorage(@transient var rowOffset: Int, @transient var srcNod
       prob = new Array[Float](len)
       alias = new Array[Int](len)
 
-      for(i <- (0 until len)) {
+      for(i <- 0 until len) {
         srcNodes(i) = input.readInt()
         dstNodes(i) = input.readInt()
         prob(i) = input.readFloat()

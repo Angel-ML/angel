@@ -15,13 +15,14 @@
  *
  */
 
-package com.tencent.angel.spark.ml.embedding.line2
+package com.tencent.angel.spark.ml.embedding.line
 
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
+import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.model.output.format.{MatrixFilesMeta, ModelFilesConstent}
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
@@ -51,13 +52,12 @@ class LINEPSModel(embeddingMatrix: PSMatrix, minNodeId: Int, maxNodeId: Int) ext
     * @param seed      random seed
     * @return sample results
     */
-  def negativeSample(nodeIds: Array[Int], dstNodeIds: Array[Int], sampleNum: Int, seed: Int) = {
-    //val seed = UUID.randomUUID().hashCode()
+  def negativeSample(nodeIds: Array[Int], dstNodeIds: Array[Int], sampleNum: Int, seed: Int): Array[Array[Int]] = {
     val rand = new Random(seed)
     val sampleNodes = new Array[Array[Int]](nodeIds.length)
     var nodeIndex: Int = 0
 
-    for (i <- (0 until nodeIds.length)) {
+    for (i <- nodeIds.indices) {
       var sampleIndex: Int = 0
       sampleNodes(nodeIndex) = new Array[Int](sampleNum)
       while (sampleIndex < sampleNum) {
@@ -80,7 +80,7 @@ class LINEPSModel(embeddingMatrix: PSMatrix, minNodeId: Int, maxNodeId: Int) ext
     * @param order         order
     * @return future object for async
     */
-  def adjust(inputUpdates: Int2ObjectOpenHashMap[Array[Float]], outputUpdates: Int2ObjectOpenHashMap[Array[Float]], order: Int) = {
+  def adjust(inputUpdates: Int2ObjectOpenHashMap[Array[Float]], outputUpdates: Int2ObjectOpenHashMap[Array[Float]], order: Int): VoidResult = {
     embeddingMatrix.asyncPsfUpdate(new LINEAdjust(
       new LINEAdjustParam(embeddingMatrix.id, inputUpdates, outputUpdates, order))).get(600000, TimeUnit.MILLISECONDS)
   }
@@ -95,7 +95,7 @@ class LINEPSModel(embeddingMatrix: PSMatrix, minNodeId: Int, maxNodeId: Int) ext
     * @param order           order
     * @return node id to embedding vector map
     */
-  def getEmbedding(srcNodes: Array[Int], destNodes: Array[Int], negativeSamples: Array[Array[Int]], negative: Int, order: Int) = {
+  def getEmbedding(srcNodes: Array[Int], destNodes: Array[Int], negativeSamples: Array[Array[Int]], negative: Int, order: Int): (Int2ObjectOpenHashMap[Array[Float]], Int2ObjectOpenHashMap[Array[Float]]) = {
     embeddingMatrix.asyncPsfGet(new LINEGetEmbedding(new LINEGetEmbeddingParam(embeddingMatrix.id, srcNodes, destNodes,
       negativeSamples, order, negative))).get(600000, TimeUnit.MILLISECONDS).asInstanceOf[LINEGetEmbeddingResult].getResult
   }
@@ -107,7 +107,7 @@ class LINEPSModel(embeddingMatrix: PSMatrix, minNodeId: Int, maxNodeId: Int) ext
     * @param dimension embedding vector dimension
     * @param order     order
     */
-  def randomInitialize(seed: Int, dimension: Int, order: Int) = {
+  def randomInitialize(seed: Int, dimension: Int, order: Int): Unit = {
     val beforeRandomize = System.currentTimeMillis()
     embeddingMatrix.asyncPsfUpdate(new LINEModelRandomize(
       new RandomizeUpdateParam(embeddingMatrix.id, dimension, order, seed)))
@@ -120,7 +120,7 @@ class LINEPSModel(embeddingMatrix: PSMatrix, minNodeId: Int, maxNodeId: Int) ext
     *
     * @param checkpointId checkpoint id
     */
-  def checkpointEmbeddingMatrix(checkpointId: Int) = {
+  def checkpointEmbeddingMatrix(checkpointId: Int): Unit = {
     val matrixNames = new Array[String](1)
     matrixNames(0) = embeddingMatrix.name
     CheckpointUtils.checkpoint(checkpointId, matrixNames)
@@ -285,7 +285,7 @@ class LINEWithWeightPSModel(embeddingMatrix: PSMatrix, neighborTableMatrix: PSMa
     *
     * @return
     */
-  def initNeighborsOver() = {
+  def initNeighborsOver(): VoidResult = {
     neighborTableMatrix.asyncPsfUpdate(new InitAliasTable(new InitAliasTableParam(neighborTableMatrix.id,
       aliasTableMatrix.id))).get(1800000, TimeUnit.MILLISECONDS)
   }
@@ -296,7 +296,7 @@ class LINEWithWeightPSModel(embeddingMatrix: PSMatrix, neighborTableMatrix: PSMa
     * @param pairs nodes to neighbor table map
     * @return
     */
-  def initNeighbors(pairs: Seq[(Int, Iterable[(Int, Float)])]) = {
+  def initNeighbors(pairs: Seq[(Int, Iterable[(Int, Float)])]): VoidResult = {
     var index = 0
     val nodeIds = new Array[Int](pairs.size)
     val edgeWightPairs = new Array[EdgeWeightPairs](pairs.size)
@@ -328,7 +328,7 @@ class LINEWithWeightPSModel(embeddingMatrix: PSMatrix, neighborTableMatrix: PSMa
     * @param sampleBatchSize sample batch size
     * @return sampled edges
     */
-  def sampleEdges(batchSize: Int, sampleBatchSize: Int) = {
+  def sampleEdges(batchSize: Int, sampleBatchSize: Int): (Array[Int], Array[Int]) = {
     val table = PSPartitionAliasTable.get(aliasTableMatrix)
     val sampleResult = aliasTableMatrix.asyncPsfGet(new SampleWithWeight(new SampleWithWeightParam(aliasTableMatrix.id,
       batchSize, sampleBatchSize, table))).get(600000, TimeUnit.MILLISECONDS).asInstanceOf[SampleWithWeightResult]
@@ -340,7 +340,7 @@ class LINEWithWeightPSModel(embeddingMatrix: PSMatrix, neighborTableMatrix: PSMa
     *
     * @param checkpointId checkpoint id
     */
-  def checkpointEmbeddingAndAliasTable(checkpointId: Int) = {
+  def checkpointEmbeddingAndAliasTable(checkpointId: Int): Unit = {
     val matrixNames = new Array[String](2)
     matrixNames(0) = embeddingMatrix.name
     matrixNames(1) = aliasTableMatrix.name

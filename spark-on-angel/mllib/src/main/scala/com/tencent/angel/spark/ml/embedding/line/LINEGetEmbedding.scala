@@ -14,7 +14,7 @@
  * the License.
  *
  */
-package com.tencent.angel.spark.ml.embedding.line2
+package com.tencent.angel.spark.ml.embedding.line
 
 import java.util
 
@@ -128,7 +128,7 @@ class LINEGetEmbedding(param: LINEGetEmbeddingParam) extends GetFunc(param) {
 
 class LINEGetEmbeddingResult(srcFeats: Int2ObjectOpenHashMap[Array[Float]],
                              targetFeats:Int2ObjectOpenHashMap[Array[Float]]) extends GetResult {
-  def getResult = (srcFeats, targetFeats)
+  def getResult: (Int2ObjectOpenHashMap[Array[Float]], Int2ObjectOpenHashMap[Array[Float]]) = (srcFeats, targetFeats)
 }
 
 class LINEGetEmbeddingParam(matrixId: Int, srcNodes: Array[Int], dstNodes: Array[Int],
@@ -149,7 +149,7 @@ class LINEGetEmbeddingParam(matrixId: Int, srcNodes: Array[Int], dstNodes: Array
     val targetNodeIds = new Array[Int](dstNodes.length + negative * negativeSamples.length)
     Array.copy(dstNodes, 0, targetNodeIds, offset, dstNodes.length)
     offset += dstNodes.length
-    for (i <- 0 until negativeSamples.length) {
+    for (i <- negativeSamples.indices) {
       Array.copy(negativeSamples(i), 0, targetNodeIds, offset, negativeSamples(i).length)
       offset += negativeSamples(i).length
     }
@@ -278,7 +278,7 @@ class PartLINEGetEmbeddingResult(var part: PartitionKey,  var srcFeats: Int2Obje
         NodeUtils.serialize(entry.getValue, output)
       }
     } else {
-      output.writeInt(0);
+      output.writeInt(0)
     }
 
     if(targetFeats != null) {
@@ -353,7 +353,5 @@ class PartLINEGetEmbeddingResult(var part: PartitionKey,  var srcFeats: Int2Obje
 
     len
   }
-
-
 }
 

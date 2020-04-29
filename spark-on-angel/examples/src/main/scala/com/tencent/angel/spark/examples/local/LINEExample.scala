@@ -17,16 +17,13 @@
 
 package com.tencent.angel.spark.examples.local
 
-import scala.util.Random
-
-import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
-
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.ml.embedding.Param
-import com.tencent.angel.spark.ml.embedding.line.LINEModel
+import com.tencent.angel.spark.ml.embedding.line.LINE
+import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.types.{FloatType, StringType, StructField, StructType}
 
 object LINEExample {
 
@@ -43,43 +40,52 @@ object LINEExample {
 
     val sc = new SparkContext(conf)
     sc.setLogLevel("WARN")
-    PSContext.getOrCreate(sc)
 
     val input = "data/bc/edge"
     val output = "model/"
-    val numPartition = 4
-    val storageLevel = StorageLevel.MEMORY_ONLY
 
-    val data = sc.textFile(input).map{line =>
-      val arr = line.split(" ")
-      val src = arr(0).toInt
-      val dst = arr(1).toInt
-      (Random.nextInt(numPartition), (src, dst))
-    }.repartition(numPartition).values.persist(storageLevel)
+    val line = new LINE()
+      .setEmbedding(10)
+      .setNegative(5)
+      .setStepSize(0.1f)
+      .setOrder(2)
+      .setEpochNum(10)
+      .setBatchSize(100)
+      .setPartitionNum(50)
+      .setPSPartitionNum(10)
+      .setIsWeighted(false)
+      .setRemapping(false)
+      .setOutput(output)
+      .setSaveMeta(false)
 
-    val numEdge = data.count()
-    val maxNodeId = data.map{case (src, dst) => math.max(src, dst)}.max().toLong + 1
-
-    println(s"numEdge=$numEdge maxNodeId=$maxNodeId")
-
-    val param = new Param()
-    param.setLearningRate(0.025f)
-    param.setEmbeddingDim(128)
-    param.setBatchSize(128)
-    param.setSeed(Random.nextInt())
-    param.setNumPSPart(Some(2))
-    param.setNumEpoch(30)
-    param.setNegSample(5)
-    param.setMaxIndex(maxNodeId)
-    param.setOrder(2)
-    param.setModelCPInterval(1000)
-
-    val model = new LINEModel(param)
-    model.train(data, param, "")
-    model.save(output, 0)
+    val edges: DataFrame = load(input, false, " ")
+    line.transform(edges)
+    line.save(output, 10, false)
 
     PSContext.stop()
     sc.stop()
+  }
+
+  def load(input:String, isWeighted:Boolean, sep: String = " "): DataFrame = {
+    val ss = SparkSession.builder().getOrCreate()
+
+    val schema = if (isWeighted) {
+      StructType(Seq(
+        StructField("src", StringType, nullable = false),
+        StructField("dst", StringType, nullable = false),
+        StructField("weight", FloatType, nullable = false)
+      ))
+    } else {
+      StructType(Seq(
+        StructField("src", StringType, nullable = false),
+        StructField("dst", StringType, nullable = false)
+      ))
+    }
+    ss.read
+      .option("sep", sep)
+      .option("header", "false")
+      .schema(schema)
+      .csv(input)
   }
 
 }

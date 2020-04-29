@@ -15,7 +15,7 @@
  *
  */
 
-package com.tencent.angel.spark.ml.embedding.line2
+package com.tencent.angel.spark.ml.embedding.line
 
 import java.util
 import java.util.Random
@@ -31,14 +31,14 @@ import scala.collection.JavaConversions._
   * A alias table to choose a PS partition
   */
 class PSPartitionAliasTable() {
-  @volatile var prob: Array[Double] = null
-  @volatile var alias: Array[Int] = null
+  @volatile var prob: Array[Double] = _
+  @volatile var alias: Array[Int] = _
 
   def init(psMatrix: PSMatrix) = {
     // Get weight sums for all ps partitions
     val weights = psMatrix.psfGet(new GetPSPartWeight(new GetParam(psMatrix.id))).asInstanceOf[GetPSPartWeightResult].getWeights
-    for (i <- (0 until weights.length)) {
-      println(s"index = ${i}, value=${weights(i)}")
+    for (i <- weights.indices) {
+      println(s"index = $i, value=${weights(i)}")
     }
 
     // Build the alias table
@@ -47,15 +47,15 @@ class PSPartitionAliasTable() {
     alias = aliasTable._2
   }
 
-  def batchSample(rand: Random, sampleNum: Int) = {
+  def batchSample(rand: Random, sampleNum: Int): Array[Int] = {
     AliasTableUtils.batchSample(rand, prob, alias, sampleNum)
   }
 }
 
 object PSPartitionAliasTable {
-  var instance: PSPartitionAliasTable = null
+  var instance: PSPartitionAliasTable = _
 
-  def get(psMatrix: PSMatrix) = {
+  def get(psMatrix: PSMatrix): PSPartitionAliasTable = {
     PSPartitionAliasTable.getClass.synchronized {
       if (instance == null) {
         instance = new PSPartitionAliasTable()
@@ -104,7 +104,7 @@ class GetPSPartWeight(param: GetParam) extends GetFunc(param) {
 }
 
 class GetPSPartWeightResult(weights: Array[Double]) extends GetResult {
-  def getWeights = weights
+  def getWeights: Array[Double] = weights
 }
 
 class PartGetPSPartWeightResult(var partKey: PartitionKey, var partWeight: Double) extends PartitionGetResult() {

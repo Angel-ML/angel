@@ -14,7 +14,7 @@
  * the License.
  *
  */
-package com.tencent.angel.spark.ml.embedding.line2
+package com.tencent.angel.spark.ml.embedding.line
 
 import java.io.{DataInputStream, DataOutputStream}
 
@@ -27,9 +27,9 @@ import org.apache.hadoop.conf.Configuration
   * @param conf
   */
 class TextLINEModelOutputFormat(conf:Configuration) extends ComplexRowFormat(conf) {
-  val featSep = conf.get("line.feature.sep", " ")
-  val keyValueSep = conf.get("line.keyvalue.sep", ":")
-  val modelOrder = conf.get("line.model.order", "2").toInt
+  val featSep: String = conf.get("line.feature.sep", " ")
+  val keyValueSep: String = conf.get("line.keyvalue.sep", ":")
+  val modelOrder: Int = conf.get("line.model.order", "2").toInt
 
   override def load(input: DataInputStream): IndexAndElement = {
     val line = input.readLine()

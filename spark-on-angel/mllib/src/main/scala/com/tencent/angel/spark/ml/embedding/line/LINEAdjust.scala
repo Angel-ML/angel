@@ -14,7 +14,7 @@
  * the License.
  *
  */
-package com.tencent.angel.spark.ml.embedding.line2
+package com.tencent.angel.spark.ml.embedding.line
 
 import java.util
 
@@ -69,8 +69,8 @@ class LINEAdjust(var param: LINEAdjustParam) extends UpdateFunc(param) {
     }
   }
 
-  def inc(dst: Array[Float], src: Array[Float]) = {
-    for (i <- 0 until dst.length) {
+  def inc(dst: Array[Float], src: Array[Float]): Unit = {
+    for (i <- dst.indices) {
       dst(i) += src(i)
     }
   }
@@ -216,11 +216,11 @@ class PartLINEAdjustParam(matrixId: Int, part: PartitionKey, var order: Int, var
     var len = super.bufferLen()
     len += 4
     len += 4
-    if (inputNodeIds != null && inputNodeIds.length > 0) {
+    if (inputNodeIds != null && inputNodeIds.nonEmpty) {
       len += (intputEnd - inputStart) * (4 + NodeUtils.dataLen(inputUpdates.get(inputNodeIds(inputStart))))
     }
 
-    if (outputNodeIds != null && outputNodeIds.length > 0) {
+    if (outputNodeIds != null && outputNodeIds.nonEmpty) {
       len += (outputEnd - outputStart) * (4 + NodeUtils.dataLen(outputUpdates.get(outputNodeIds(outputStart))))
     }
 

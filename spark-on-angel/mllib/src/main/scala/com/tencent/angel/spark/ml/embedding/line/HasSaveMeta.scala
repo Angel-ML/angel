@@ -15,11 +15,22 @@
  *
  */
 
-package com.tencent.angel.spark.ml.embedding.line2
+package com.tencent.angel.spark.ml.embedding.line
 
-/**
-  * Base PS model for algorithm
-  */
-class AlgoPSModel extends Serializable {
-  val checkpointContext = new CheckpointContext
+import org.apache.spark.ml.param.{BooleanParam, Params}
+
+trait HasSaveMeta extends Params {
+  /**
+    * Param for isWeighted.
+    *
+    * @group param
+    */
+  final val saveMeta = new BooleanParam(this, "saveMeta", "Save meta or not")
+
+  /** @group getParam */
+  final def getSaveMeta: Boolean = $(saveMeta)
+
+  setDefault(saveMeta, false)
+
+  final def setSaveMeta(bool: Boolean): this.type = set(saveMeta, bool)
 }

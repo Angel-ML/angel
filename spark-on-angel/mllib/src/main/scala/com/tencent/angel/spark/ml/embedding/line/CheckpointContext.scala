@@ -15,22 +15,28 @@
  *
  */
 
-package com.tencent.angel.spark.ml.embedding.line2
+package com.tencent.angel.spark.ml.embedding.line
 
-import org.apache.spark.ml.param.{BooleanParam, Params}
+import java.util
 
-trait HasSaveMeta extends Params {
+import com.tencent.angel.spark.models.PSMatrix
+
+/**
+  * Checkpoint context
+  */
+class CheckpointContext extends Serializable {
   /**
-    * Param for isWeighted.
-    *
-    * @group param
+    * Read and write ps matrices
     */
-  final val saveMeta = new BooleanParam(this, "saveMeta", "Save meta or not")
+  val readWriteMatrices = new util.ArrayList[PSMatrix]()
 
-  /** @group getParam */
-  final def getSaveMeta: Boolean = $(saveMeta)
+  /**
+    * Read only ps matrices
+    */
+  val readOnlyMatrices = new util.ArrayList[PSMatrix]()
 
-  setDefault(saveMeta, false)
+  def addReadWriteMatrix(matrix:PSMatrix): Boolean = readWriteMatrices.add(matrix)
 
-  final def setSaveMeta(bool: Boolean): this.type = set(saveMeta, bool)
+  def addReadOnlyMatrix(matrix:PSMatrix): Boolean = readOnlyMatrices.add(matrix)
+
 }

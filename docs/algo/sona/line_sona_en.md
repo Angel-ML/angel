@@ -10,70 +10,43 @@ The LINE algorithm is a network representation learning algorithm(also be consid
 
 where, p_1 characterizes the first-order similarity between nodes (direct edge), and p_2 depicts the second-order similarity between nodes (similar neighbors). in other words,
 
-- If there are joints between two nodes, then the two nodes are also close in the embedded vector space
-- If the neighbors of two nodes are similar, then in the embedded vector space, the two nodes are also close
+  - If there are joints between two nodes, then the two nodes are also close in the embedded vector space
+  - If the neighbors of two nodes are similar, then in the embedded vector space, the two nodes are also close
 
 For more details, please refer to the paper [[1]](https://arxiv.org/abs/1503.03578)
-
-## Distributed Implemention
-There are currently two completely different implementation versions in Spark On Angel: **LINE V1** and **LINE V2**. Each of these two methods has advantages and disadvantages and application scenarios.
-
-In LINE V1, we push the training data to the PS and then training the model in PS. It can avoid a large amount of network IO caused by pulling the model, but it is not suitable for scenes with smaller node embedding dimensions, because it has some limitations: the number of model partitions must be smaller than the node embedding dimension, and the node embedding dimension must be the integer number of partitions. If the node dimension is small, the number of model partitions must be very small, PS is easy to become a bottleneck.
-
-in LINE V2, we pull model from PS to Worker, then training the model in Worker, so it is suitable for the case where the node embedding dimension is not very high. In addition, LINE V2 is much more stable. **In general, we strongly recommend LINE V2**.
-
-### LINE V1
-
-The implementation of the LINE algorithm refers to Yahoo's paper [[2]](https://arxiv.org/abs/1606.08495), which
-
-The model is divided by column, it means that each partition contains all nodes.
-
-1. split the Embedding vector into multiple PSs by dimension
-
-2. process the dot product between nodes partially in each PS,  and merge in spark executors. 
-
-3. calculate the gradient for each node in executors
-
-4. push the gradient to all PS, and then update vectors
-
-
-### LINE V2
-
-The model is divided by node id range, it means that each partition contains part of node
-
-1. negative sample and pull the nodes embedding from PSs
-
-2. process the dot product between nodes in executors
-
-3. calculate the gradient for each node in executors
-
-4. push the gradient to all PS, and then update nodes embedding
 
 ## Running
 
 ### Algorithm IO parameters
 
-- input: hdfs path, undirected graph, nodes need to be consecutively numbered starting from 0, separated by white space or comma, for example:
+  - input: hdfs path, undirected graph, nodes need to be consecutively numbered starting from 0, separated by white space or comma, for example:
         0	2
         2	1
         3	1
         3	2
         4	1
-- output: hdfs path, the final model save path is output/epoch_checkpoint_x, where x represents the xth round epoch
-- saveModelInterval: save the model every few rounds of epoch
-- checkpointInterval: write the model checkpoint every few rounds of epoch
+  - output: hdfs path, the final model save path is output/CP_x, where x represents the xth round epoch
+  - saveModelInterval: save the model every few rounds of epoch
+  - checkpointInterval: write the model checkpoint every few rounds of epoch
 
 ### Algorithm parameters
 
-- embedding: The vector space dimension of the embedding vector and the vector dimension of the context (meaning that the model space occupied by the second-order optimization is twice the first-order optimization under the same parameters)
-- negative: The algorithm samples negative sampling optimization, indicating the number of negative sampling nodes used by each pair
-- stepSize: The learning rate affects the results of the algorithm
-- batchSize: the size of each mini batch
-- epoch: the number of rounds used by the sample, the sample will be shuffled after each round
-- order: Optimize the order, 1 or 2
-- subSample sub sample or not, true or false
-- remapping: remapping the node id or not, true or false
+  - embedding: The vector space dimension of the embedding vector and the vector dimension of the context (meaning that the model space occupied by the second-order optimization is twice the first-order optimization under the same parameters)
+  - negative: The algorithm samples negative sampling optimization, indicating the number of negative sampling nodes used by each pair
+  - stepSize: The learning rate affects the results of the algorithm
+  - batchSize: the size of each mini batch
+  - epoch: the number of rounds used by the sample, the sample will be shuffled after each round
+  - order: Optimize the order, 1 or 2
+  - remapping: Remapping the node id or not, true or false
+  - psPartitionNum：The number of model partitions is preferably an integer multiple of the number of parameter servers, so that the number of partitions carried by each ps is equal, and the load of each PS is balanced as much as possible. If the amount of data is large, more than 500 is recommended.
+  - dataPartitionNum：The number of input data partitions is generally set to 3-4 times the number of spark executors times the number of executor cores
+  - sep：Data column separator (space, comma and tab are optional), the default is space
+  
+### Resource parameters
 
+  - Angel PS number and memory: The product of ps.instance and ps.memory is the total configuration memory of ps. In order to ensure that Angel does not hang, you need to configure the memory about twice the size of the data storage on ps. For LINE, the calculation formula of the model size is: number of nodes * dimension of Embedding feature * order * 4 Byte, for example, 1kw node, 100-dimensional, 2nd order configuration, the model size is almost 60G, then configure instances = 4, memory = 30 is almost the same. In addition, when possible, the smaller the number of ps, the smaller the amount of data transmission, but the pressure of a single ps will be greater, requiring certain trade-offs.
+  - Spark resource configuration: The product of num-executors and executor-memory is the total configuration memory of executors, and it is best to store twice the input data. If the memory is tight, 1 times is also acceptable, but relatively slower. For example, a 10 billion edge set is about 600G in size, and a 50G * 20 configuration is sufficient. In a situation where resources are really tight, try to increase the number of partitions!
+  
 ### Submitting scripts
 ```
 input=hdfs://my-hdfs/data
@@ -92,7 +65,10 @@ $SPARK_HOME/bin/spark-submit \
   --num-executors 1 \
   --executor-cores 4 \
   --executor-memory 10g \
-  --class org.apache.spark.angel.examples.graph.LINEExample2 \
-  ./lib/angelml-0.1.0-SNAPSHOT.jar
-  input:$input output:$output embedding:128 negative:5 epoch:100 stepSize:0.01 batchSize:1000 numParts:2 subSample:false remapping:false order:2 interval:5
+  --class com.tencent.angel.spark.examples.cluster.LINEExample \
+  ../lib/spark-on-angel-examples-3.1.0.jar
+  input:$input output:$output embedding:128 negative:5 epoch:10 stepSize:0.01 batchSize:1000 numParts:10 remapping:false order:2
 ```
+
+### FAQ
+  - At about 10 minutes, the task hangs: The most likely reason is that Angel cannot apply for resources! Since LINE is developed based on Spark On Angel, it actually involves two systems, Spark and Angel, and their application for resources from Yarn is carried out independently. After the Spark task is started, Spark submits the Angel task to Yarn. If the resource cannot be applied for within a given time, a timeout error will be reported and the task will hang! The solution is: 1) Confirm that the resource pool has sufficient resources 2) Add spakr conf: spark.hadoop.angel.am.appstate.timeout.ms = xxx to increase the timeout time, the default value is 600000, which is 10 minutes

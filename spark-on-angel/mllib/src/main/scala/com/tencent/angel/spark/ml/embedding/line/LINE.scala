@@ -15,7 +15,7 @@
  *
  */
 
-package com.tencent.angel.spark.ml.embedding.line2
+package com.tencent.angel.spark.ml.embedding.line
 
 import com.tencent.angel.spark.ml.graph.params._
 import org.apache.spark.ml.Transformer
@@ -37,12 +37,10 @@ class LINE(override val uid: String) extends Transformer
 
   def this() = this(Identifiable.randomUID("LINE"))
 
-  // val edgeCounter = new Object2IntOpenHashMap[Edge]()
-
   /**
     * LINE PS model
     */
-  @volatile var model:LINEModel = null
+  @volatile var model:LINEModel = _
 
   override def transform(dataset: Dataset[_]): DataFrame = {
     if(${isWeighted}) {

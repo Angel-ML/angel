@@ -15,28 +15,11 @@
  *
  */
 
-package com.tencent.angel.spark.ml.embedding.line2
-
-import com.tencent.angel.model.output.format.SnapshotFormat
-import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
-import com.tencent.angel.spark.context.PSContext
+package com.tencent.angel.spark.ml.embedding.line
 
 /**
-  * Checkpoint tools
+  * Base PS model for algorithm
   */
-object CheckpointUtils {
-  /**
-    * Write checkpoint for a batch of matrices
-    *
-    * @param checkpointId checkpoint id
-    * @param names        matrices names
-    */
-  def checkpoint(checkpointId: Int, names: Array[String]) = {
-    val saveContext = new ModelSaveContext()
-    names.foreach(matrix => {
-      saveContext.addMatrix(new MatrixSaveContext(matrix, classOf[SnapshotFormat].getTypeName))
-    })
-
-    PSContext.instance().checkpoint(checkpointId, saveContext)
-  }
+class AlgoPSModel extends Serializable {
+  val checkpointContext = new CheckpointContext
 }

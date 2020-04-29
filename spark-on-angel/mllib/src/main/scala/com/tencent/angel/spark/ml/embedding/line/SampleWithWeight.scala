@@ -15,7 +15,7 @@
  *
  */
 
-package com.tencent.angel.spark.ml.embedding.line2
+package com.tencent.angel.spark.ml.embedding.line
 
 import java.util
 import java.util.Random
@@ -99,7 +99,7 @@ class SampleWithWeightParam(matrixId: Int, sampleNum: Int, sampleBatchSize: Int,
     var lastIndex = 0
 
     // Counter the sample number for each partition
-    for (index <- (0 until partSamples.length)) {
+    for (index <- partSamples.indices) {
       if (partSamples(index) != partId) {
         partParams.add(new PartSampleWithWeightParam(matrixId, parts(partId), index - lastIndex))
         lastIndex = index
@@ -114,11 +114,8 @@ class SampleWithWeightParam(matrixId: Int, sampleNum: Int, sampleBatchSize: Int,
     partParams
   }
 
-  def samples(num: Int, aliasTable: PSPartitionAliasTable) = {
+  def samples(num: Int, aliasTable: PSPartitionAliasTable): Array[Int] = {
     val samples = aliasTable.batchSample(new Random(this.hashCode()), num)
-    //val counter = new Int2IntOpenHashMap()
-    //samples.foreach(e => counter.addTo(e, 1))
-    //counter.foreach(e => println(s"key=${e._1}, value=${e._2}"))
     samples
   }
 }
@@ -145,9 +142,9 @@ class PartSampleWithWeightParam(matrixId: Int, part: PartitionKey, var number: I
 }
 
 class SampleWithWeightResult(srcNodes: Array[Int], dstNodes: Array[Int]) extends GetResult {
-  def getSrcNodes = srcNodes
+  def getSrcNodes: Array[Int] = srcNodes
 
-  def getDstNodes = dstNodes
+  def getDstNodes: Array[Int] = dstNodes
 }
 
 class PartSampleWithWeightResult(var srcNodes: Array[Int], var dstNodes: Array[Int]) extends PartitionGetResult {
@@ -174,11 +171,11 @@ class PartSampleWithWeightResult(var srcNodes: Array[Int], var dstNodes: Array[I
     val len = input.readInt()
     srcNodes = new Array[Int](len)
     dstNodes = new Array[Int](len)
-    for (index <- (0 until len)) {
+    for (index <- 0 until len) {
       srcNodes(index) = input.readInt()
     }
 
-    for (index <- (0 until len)) {
+    for (index <- 0 until len) {
       dstNodes(index) = input.readInt()
     }
   }

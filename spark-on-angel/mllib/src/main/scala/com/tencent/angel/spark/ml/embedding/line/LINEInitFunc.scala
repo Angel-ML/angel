@@ -15,7 +15,7 @@
  *
  */
 
-package com.tencent.angel.spark.ml.embedding.line2
+package com.tencent.angel.spark.ml.embedding.line
 
 import java.util.UUID
 
@@ -38,9 +38,9 @@ class LINEInitFunc(var order:Int, var dim:Int) extends PSMatrixInit {
 
     for(part <- parts) {
       val row: ServerIntAnyRow = part.asInstanceOf[RowBasedPartition].getRow(0).asInstanceOf[ServerIntAnyRow]
-      println(s"random seed in init=${seed}")
+      println(s"random seed in init=$seed")
 
-      (row.getStartCol until row.getEndCol).map(colId => {
+      (row.getStartCol until row.getEndCol).foreach(colId => {
         val embedding = new Array[Float](dim)
         for (i <- 0 until dim) {
           embedding(i) = (rand.nextFloat() - 0.5f) / dim

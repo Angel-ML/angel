@@ -15,7 +15,7 @@
  *
  */
 
-package com.tencent.angel.spark.ml.embedding.line2
+package com.tencent.angel.spark.ml.embedding.line
 
 import java.util
 
@@ -74,7 +74,7 @@ class InitAliasTable(param: InitAliasTableParam) extends UpdateFunc(param) {
       val node = e._1.asInstanceOf[LINENode]
       val nodeId = e._2 + offset
       if (node.getNeighbors != null) {
-        for (i <- (posOffset until posOffset + node.getNeighbors.length)) {
+        for (i <- posOffset until posOffset + node.getNeighbors.length) {
           srcNodes(i) = nodeId
         }
         System.arraycopy(node.getNeighbors, 0, dstNodes, posOffset, node.getNeighbors.length)
@@ -85,7 +85,7 @@ class InitAliasTable(param: InitAliasTableParam) extends UpdateFunc(param) {
 
     // Build the alias table
     val storage = new EdgeAliasTableStorage(offset, srcNodes, dstNodes, weights)
-    storage.buildAliasTable
+    storage.buildAliasTable()
     aliasTablePart.setStorage(storage)
   }
 }

@@ -16,7 +16,7 @@
  */
 
 
-package com.tencent.angel.spark.ml.embedding.line2
+package com.tencent.angel.spark.ml.embedding.line
 
 import java.util
 
@@ -123,7 +123,7 @@ class PartInitEgdeWeightParam(matrixId: Int, partKey: PartitionKey, var srcNodes
     srcNodes = new Array[Int](len)
     edges = new Array[EdgeWeightPairs](len)
 
-    for (i <- (0 until len)) {
+    for (i <- 0 until len) {
       srcNodes(i) = input.readInt()
       if (input.readBoolean()) {
         edges(i) = new EdgeWeightPairs()
@@ -136,7 +136,7 @@ class PartInitEgdeWeightParam(matrixId: Int, partKey: PartitionKey, var srcNodes
     var len = super.bufferLen()
     len += 4
 
-    for (i <- (0 until srcNodes.length)) {
+    for (i <- 0 until srcNodes.length) {
       len += 4
       if (edges(i) != null) {
         len += (4 + edges(i).bufferLen())
@@ -173,11 +173,11 @@ class EdgeWeightPairs(var dstNodes: Array[Int], var weights: Array[Float]) exten
     dstNodes = new Array[Int](len)
     weights = new Array[Float](len)
 
-    for (i <- (0 until len)) {
+    for (i <- 0 until len) {
       dstNodes(i) = input.readInt()
     }
 
-    for (i <- (0 until len)) {
+    for (i <- 0 until len) {
       weights(i) = input.readFloat()
     }
   }

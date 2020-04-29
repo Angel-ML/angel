@@ -15,28 +15,28 @@
  *
  */
 
-package com.tencent.angel.spark.ml.embedding.line2
+package com.tencent.angel.spark.ml.embedding.line
 
-import java.util
-
-import com.tencent.angel.spark.models.PSMatrix
+import com.tencent.angel.model.output.format.SnapshotFormat
+import com.tencent.angel.model.{MatrixSaveContext, ModelSaveContext}
+import com.tencent.angel.spark.context.PSContext
 
 /**
-  * Checkpoint context
+  * Checkpoint tools
   */
-class CheckpointContext extends Serializable {
+object CheckpointUtils {
   /**
-    * Read and write ps matrices
+    * Write checkpoint for a batch of matrices
+    *
+    * @param checkpointId checkpoint id
+    * @param names        matrices names
     */
-  val readWriteMatrices = new util.ArrayList[PSMatrix]()
+  def checkpoint(checkpointId: Int, names: Array[String]): Unit = {
+    val saveContext = new ModelSaveContext()
+    names.foreach(matrix => {
+      saveContext.addMatrix(new MatrixSaveContext(matrix, classOf[SnapshotFormat].getTypeName))
+    })
 
-  /**
-    * Read only ps matrices
-    */
-  val readOnlyMatrices = new util.ArrayList[PSMatrix]()
-
-  def addReadWriteMatrix(matrix:PSMatrix) = readWriteMatrices.add(matrix)
-
-  def addReadOnlyMatrix(matrix:PSMatrix) = readOnlyMatrices.add(matrix)
-
+    PSContext.instance().checkpoint(checkpointId, saveContext)
+  }
 }

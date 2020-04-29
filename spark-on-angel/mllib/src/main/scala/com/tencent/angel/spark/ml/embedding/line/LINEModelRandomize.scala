@@ -14,7 +14,7 @@
  * the License.
  *
  */
-package com.tencent.angel.spark.ml.embedding.line2
+package com.tencent.angel.spark.ml.embedding.line
 
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.ml.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc, UpdateParam}
@@ -48,7 +48,7 @@ class LINEModelRandomize(param: RandomizeUpdateParam) extends UpdateFunc(param) 
     println(s"random seed in init=${seed}")
 
     val rand = new Random(seed)
-    (row.getStartCol until row.getEndCol).map(colId => {
+    (row.getStartCol until row.getEndCol).foreach(colId => {
 
       val embedding = new Array[Float](dim)
       for (i <- 0 until dim) {

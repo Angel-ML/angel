@@ -14,30 +14,32 @@
  * the License.
  *
  */
-
 package com.tencent.angel.spark.ml.embedding
 
-import scala.collection.mutable.ArrayBuffer
-import scala.util.Random
-import org.apache.spark.rdd.RDD
-import org.apache.spark.storage.StorageLevel
-import com.tencent.angel.spark.ml.embedding.line.LINEModel
+import com.tencent.angel.spark.ml.embedding.line.LINE
 import com.tencent.angel.spark.ml.{PSFunSuite, SharedPSContext}
 import org.apache.hadoop.fs.FileSystem
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.types._
+import org.apache.spark.storage.StorageLevel
 
-class LINEModelSuite extends PSFunSuite with SharedPSContext {
+import scala.util.Random
+
+class LINEModelSuite2 extends PSFunSuite with SharedPSContext {
   private val LOCAL_FS = FileSystem.DEFAULT_FS
   private val TMP_PATH = System.getProperty("java.io.tmpdir", "/tmp")
   val input = "../../data/bc/edge"
   val output = LOCAL_FS + TMP_PATH + "/model/line"
   val numPartition = 1
   val lr = 0.025f
-  val dim = 4
+  val dim = 32
   val batchSize = 1024
-  val numPSPart = 1
+  val numPSPart = 2
   val numEpoch = 10
   val negative = 5
-  val storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY
+  val order = 2
+  val storageLevel: StorageLevel = StorageLevel.DISK_ONLY
   var param: Param = _
   var data: RDD[(Int, Int)] = _
 
@@ -56,70 +58,66 @@ class LINEModelSuite extends PSFunSuite with SharedPSContext {
     val maxNodeId = data.map { case (src, dst) => math.max(src, dst) }.max().toLong + 1
     println(s"numEdge=$numEdge maxNodeId=$maxNodeId")
 
+
     param = new Param()
     param.setLearningRate(lr)
     param.setEmbeddingDim(dim)
     param.setBatchSize(batchSize)
     param.setNumPSPart(Some(numPSPart))
+    param.setMaxIndex(maxNodeId)
     param.setNumEpoch(numEpoch)
     param.setNegSample(negative)
-    param.setMaxIndex(maxNodeId)
-    param.setModelCPInterval(1000)
+    param.setModelCPInterval(1)
+    param.setModelSaveInterval(1)
+
   }
 
-  test("first order") {
-    param.setOrder(1)
-    val model = new LINEModel(param) {
-      val messages = new ArrayBuffer[String]()
-
-      // mock logs
-      override def logTime(msg: String): Unit = {
-        if (null != messages) {
-          messages.append(msg)
-        }
-        println(msg)
-      }
-    }
-    model.train(data, param, "")
-    model.save(output, 0)
-    model.destroy()
-
-    // extract loss
-    val loss = model.messages.filter(_.contains("loss=")).map { line =>
-      line.split(" ")(1).split("=").last.toFloat
-    }
-
-    for (i <- 0 until numEpoch - 1) {
-      assert(loss(i + 1) < loss(i), s"loss increase: ${loss.mkString("->")}")
-    }
-  }
-
-  test("second order") {
+  test("line_weight") {
     param.setOrder(2)
-    val model = new LINEModel(param) {
-      val messages = new ArrayBuffer[String]()
+    val sep = " "
 
-      // mock logs
-      override def logTime(msg: String): Unit = {
-        if (null != messages) {
-          messages.append(msg)
-        }
-        println(msg)
-      }
-    }
-    model.train(data, param, "")
-    model.save(output, 0)
-    model.destroy()
+    val edges = load(input, true, sep = sep)
 
-    // extract loss
-    val loss = model.messages.filter(_.contains("loss=")).map { line =>
-      line.split(" ")(1).split("=").last.toFloat
-    }
+    val model = new LINE()
+    model
+      .setEmbedding(dim)
+      .setNegative(negative)
+      .setStepSize(lr)
+      .setOrder(order)
+      .setEpochNum(numEpoch)
+      .setBatchSize(batchSize)
+      .setPartitionNum(numPartition)
+      .setPSPartitionNum(numPSPart)
+      .setOutput(output)
+      .setSaveModelInterval(1)
+      .setCheckpointInterval(1)
+      .setIsWeighted(false)
+      .setRemapping(true)
 
-    for (i <- 0 until numEpoch - 1) {
-      assert(loss(i + 1) < loss(i), s"loss increase: ${loss.mkString("->")}")
-    }
+    model.transform(edges)
+
+    model.save(output, numEpoch, false)
   }
 
+  def load(input:String, isWeighted:Boolean, sep: String = " "): DataFrame = {
+    val ss = SparkSession.builder().getOrCreate()
 
+    val schema = if (isWeighted) {
+      StructType(Seq(
+        StructField("src", StringType, nullable = false),
+        StructField("dst", StringType, nullable = false),
+        StructField("weight", FloatType, nullable = false)
+      ))
+    } else {
+      StructType(Seq(
+        StructField("src", StringType, nullable = false),
+        StructField("dst", StringType, nullable = false)
+      ))
+    }
+    ss.read
+      .option("sep", sep)
+      .option("header", "false")
+      .schema(schema)
+      .csv(input)
+  }
 }
