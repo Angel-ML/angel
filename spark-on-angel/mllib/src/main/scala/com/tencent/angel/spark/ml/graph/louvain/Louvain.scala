@@ -27,6 +27,10 @@ import org.apache.spark.sql.types.{LongType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.storage.StorageLevel
 
+/**
+  * Louvain algorithm implementation
+  * @param uid
+  */
 class Louvain(override val uid: String) extends Transformer
   with HasWeightCol with HasSrcNodeIdCol with HasDstNodeIdCol
   with HasOutputNodeIdCol with HasOutputCommunityIdCol
@@ -80,9 +84,10 @@ class Louvain(override val uid: String) extends Transformer
     }.distinct($(partitionNum))
 
     val reIndexer = new NodeIndexer()
-    reIndexer.train($(psPartitionNum), nodes)
+    reIndexer.train($(psPartitionNum), nodes, $(batchSize))
 
-    val edges: RDD[(Int, Int, Float)] = reIndexer.encode(rawEdges, 1000000) { case (iter, ps) =>
+    //reindex edges from (Long, Long, Float) to (Int, Int, Float)
+    val edges: RDD[(Int, Int, Float)] = reIndexer.encode(rawEdges, $(batchSize)) { case (iter, ps) =>
       val keys = iter.flatMap { case ((src, dst), _) => Iterator(src, dst) }.distinct
       val map = ps.pull(keys).asInstanceOf[LongIntVector]
       iter.map { case ((src, dst), wgt) =>
@@ -150,8 +155,4 @@ class Louvain(override val uid: String) extends Transformer
   }
 
   override def copy(extra: ParamMap): Transformer = defaultCopy(extra)
-}
-
-object Louvain {
-
 }

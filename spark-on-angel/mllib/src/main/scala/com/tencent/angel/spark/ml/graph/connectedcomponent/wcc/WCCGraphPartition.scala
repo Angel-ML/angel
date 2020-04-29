@@ -16,10 +16,8 @@
  */
 package com.tencent.angel.spark.ml.graph.connectedcomponent.wcc
 
-import java.util.{Arrays => JArrays}
-
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.vector.{LongIntVector, LongLongVector}
+import com.tencent.angel.ml.math2.vector.{LongLongVector}
 import it.unimi.dsi.fastutil.ints.IntArrayList
 import it.unimi.dsi.fastutil.longs.LongArrayList
 
@@ -37,7 +35,9 @@ class WCCGraphPartition(index: Int,
     model.initMsgs(msgs)
     msgs.size().toInt
   }
-
+  
+  // if label of node is larger than its neighbors',
+  // change it into min among its neighbors' labels
   def process(model: WCCPSModel, numMsgs: Long, isFirstIteration: Boolean): Int = {
     var changedNum = 0
     if (numMsgs > indices.length || isFirstIteration) {
@@ -55,7 +55,6 @@ class WCCGraphPartition(index: Int,
       }
       model.writeMsgs(outMsgs)
       changedNum
-//      new WCCGraphPartition(index, keys, indptr, neighbors, keyLabels, indices)
     }
     else {
       val inMsgs = model.readAllMsgs()
@@ -72,7 +71,6 @@ class WCCGraphPartition(index: Int,
 
       model.writeMsgs(outMsgs)
       changedNum
-//      new WCCGraphPartition(index, keys, indptr, neighbors, keyLabels, indices)
     }
   }
   

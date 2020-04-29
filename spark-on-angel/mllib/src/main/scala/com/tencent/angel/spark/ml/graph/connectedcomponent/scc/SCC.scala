@@ -81,12 +81,10 @@ class SCC(override val uid: String) extends Transformer
       var totalDroppedNum = 0L
       do {
         dropCnt = 0L
-        graph.map(_.dropSingle(model, numMsgs)).collect().foreach(n => dropCnt += n)
-        
-//        model.tagPSModel.resetMsgs()
-//        model.colorPSModel.resetMsgs()
+        dropCnt = graph.map(_.dropSingle(model, numMsgs)).reduce((n1, n2) => n1 + n2)
+
         totalDroppedNum += dropCnt
-//        println(s"dropCnt=$dropCnt")
+        println(s"$dropCnt nodes dropped")
       } while (dropCnt > 0)
       println(s"curIteration=$curIteration dropped single nodes num=$totalDroppedNum")
       
@@ -101,34 +99,31 @@ class SCC(override val uid: String) extends Transformer
       var totalSelectedNum = 0L
       do {
         changedCnt = 0L
-        graph.map(_.propagate(model, numMsgs)).collect().foreach(n => changedCnt += n)
-//        model.colorPSModel.resetMsgs()
+        changedCnt = graph.map(_.propagate(model, numMsgs)).reduce((n1, n2) => n1 + n2)
         totalSelectedNum += changedCnt
       } while (changedCnt > 0)
       println(s"curIteration=$curIteration color label propagated")
+      
       // second
       // set the root node false,
       // if a node can reach a node that is false,
       // set it false, too
-      
       var newFinalCnt = 0L
       totalNewFinalNum = 0L
       println(s"curIteration=$curIteration start process connected nodes")
       do {
         newFinalCnt = 0
-        graph.map(_.process(model, numMsgs)).collect().foreach(n => newFinalCnt += n)
-//        model.tagPSModel.resetMsgs()
+        newFinalCnt = graph.map(_.process(model, numMsgs)).reduce((n1, n2) => n1 + n2)
         totalNewFinalNum += newFinalCnt
       } while (newFinalCnt > 0)
       println(s"curIteration=$curIteration new connected final nodes=$totalNewFinalNum")
-      
+    
       newFinialNodesAll = totalNewFinalNum + totalDroppedNum
       println(s"curIteration=$curIteration new nodes processed=$newFinialNodesAll")
       
       // node with tag true, should recover from the changed color
       println(s"curIteration=$curIteration start repainting graph")
       graph.foreach(_.repaint(model, colorRecord))
-//      model.colorPSModel.resetMsgs()
       println(s"curIteration=$curIteration graph repainted")
     } while (totalNewFinalNum > 0)
     

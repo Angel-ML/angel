@@ -21,6 +21,7 @@ import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.{IntIntVector, IntLongVector}
 import com.tencent.angel.ml.matrix.{MatrixContext, PartContext, RowType}
 import com.tencent.angel.psagent.PSAgentContext
+import com.tencent.angel.spark.ml.util.LoadBalancePartitioner
 import com.tencent.angel.spark.models.PSVector
 import com.tencent.angel.spark.models.impl.PSVectorImpl
 import org.apache.spark._
@@ -30,6 +31,9 @@ import org.apache.spark.storage.StorageLevel
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
 
+/**
+  * Node Indexer, encode from Long to Int and decode from Int to Long
+  */
 class NodeIndexer extends Serializable {
 
   import NodeIndexer._
@@ -44,46 +48,46 @@ class NodeIndexer extends Serializable {
     numNodes
   }
 
-  def train(numPSPartition: Int, nodes: RDD[Long]): Unit = {
+  def train(numPSPartition: Int, nodes: RDD[Long], batchSize: Int = 1000000): Unit = {
     this.numPSPartition = numPSPartition
+    val maxId = nodes.max() + 1
+    val minId = nodes.min()
+    val nodesNum = nodes.count()
     nodes.persist(StorageLevel.DISK_ONLY)
 
-    // calc bounds by sampling
-    val bounds = RangeBounds.rangeBoundsBySample(numPSPartition, nodes)
-
     // create ps for encoder mapping
-    val ctx = new MatrixContext(LONG2INT, 1, -1)
+    val ctx = new MatrixContext(LONG2INT, 1, minId, maxId)
     ctx.setRowType(RowType.T_INT_SPARSE_LONGKEY)
-    PartitionTools.addPartition(ctx, bounds)
+    LoadBalancePartitioner.partition(nodes, maxId, numPSPartition, ctx)
     this.long2int = new PSVectorImpl(PSMatrixUtils.createPSMatrix(ctx),
-      0, Long.MaxValue, RowType.T_INT_SPARSE_LONGKEY)
+      0, maxId, RowType.T_INT_SPARSE_LONGKEY)
 
-    // partition nodes rdd by range partitioner and zip with index
-    // the range segment of nodes id and the range segment of indexes are 1-1
-    val partitioner = PartitionTools.rangePartitionerFromBounds(bounds)
-    val mappingRDD = nodes.map((_, null)).partitionBy(partitioner).map(_._1).zipWithIndex().cache()
-    this.numNodes = mappingRDD.count().toInt
+    val intRange = Int.MaxValue.toLong - Int.MinValue.toLong + 1l
+    val exceedNum = nodesNum - intRange
+    assert(exceedNum <= 0, s"nodesNum exceeds intRange: $nodesNum vs $intRange, could not trans nodeId to int type.")
+    val offset = if (nodesNum > Int.MaxValue) nodesNum - Int.MaxValue else 0
+    //create Long to Int mapping
+    val nodeIndex = nodes.map((_, null)).sortByKey().zipWithIndex().map(x => (x._1._1, x._2 - offset))
+    this.numNodes = nodesNum.toInt
+
     nodes.unpersist(false)
 
     // create ps for decoder mapping
     val ctx2 = new MatrixContext(INT2LONG, 1, this.numNodes)
     ctx2.setRowType(RowType.T_LONG_DENSE)
-    mappingRDD.mapPartitions { iter =>
+    nodeIndex.mapPartitions { iter =>
       val first = iter.next()._2
-      var last = first
-      while (iter.hasNext) {
-        last = iter.next()._2
-      }
+      val last = iter.toArray.last._2
       Iterator.single((first, last))
     }.collect().foreach { case (start, end) =>
-      ctx2.addPart(new PartContext(0, 1, start, end + 1L, (end - start).toInt))
+      ctx2.addPart(new PartContext(0, 1, start, end + 1L, (end - start + 1).toInt))
     }
     this.int2long = new PSVectorImpl(PSMatrixUtils.createPSMatrix(ctx2),
-      0, Long.MaxValue, RowType.T_LONG_DENSE)
+      0, numNodes + 1, RowType.T_LONG_DENSE)
 
     // update mapping to ps
-    mappingRDD.foreachPartition { iter =>
-      BatchIter(iter, 1000000).foreach { batch =>
+    nodeIndex.foreachPartition { iter =>
+      BatchIter(iter, batchSize).foreach { batch =>
         val (key, value) = batch.unzip
         val intValues = value.map(_.toInt)
         val long2intVec = VFactory.sparseLongKeyIntVector(Long.MaxValue, key, intValues)
@@ -92,7 +96,7 @@ class NodeIndexer extends Serializable {
         int2long.update(int2longVec)
       }
     }
-    mappingRDD.unpersist(false)
+    nodeIndex.unpersist(false)
   }
 
   def encode[C: ClassTag, U: ClassTag](rdd: RDD[C], batchSize: Int)(
@@ -132,7 +136,6 @@ class NodeIndexer extends Serializable {
   def decodePartition[C: ClassTag, U: ClassTag](rdd: RDD[C])(func: PSVector => Iterator[C] => Iterator[U]): RDD[U] = {
     rdd.mapPartitions(func(int2long))
   }
-
 
   def decodeInt2IntPSVector(ps: PSVector): RDD[(Long, Long)] = {
     val sc = SparkContext.getOrCreate()
