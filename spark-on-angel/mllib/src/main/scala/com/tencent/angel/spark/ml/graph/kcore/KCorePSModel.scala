@@ -26,6 +26,11 @@ import com.tencent.angel.spark.ml.util.LoadBalancePartitioner
 import com.tencent.angel.spark.util.VectorUtils
 import org.apache.spark.rdd.RDD
 
+/**
+  * KCorePSModel implementation
+  * @param inMsgs: use to store the last updated node
+  * @param outMsgs: use to store the updated node
+  */
 private[kcore]
 class KCorePSModel(var inMsgs: PSVector,
                    var outMsgs: PSVector) extends Serializable {

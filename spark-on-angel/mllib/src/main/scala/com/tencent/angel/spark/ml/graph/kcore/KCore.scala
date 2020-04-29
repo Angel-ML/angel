@@ -26,6 +26,10 @@ import org.apache.spark.sql.types.{IntegerType, LongType, StructField, StructTyp
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.storage.StorageLevel
 
+/**
+  * KCore algorithm implementation
+  * @param uid
+  */
 class KCore(override val uid: String) extends Transformer
   with HasSrcNodeIdCol with HasDstNodeIdCol with HasOutputNodeIdCol with HasOutputCoreIdCol
   with HasStorageLevel with HasPartitionNum with HasPSPartitionNum with HasUseBalancePartition
