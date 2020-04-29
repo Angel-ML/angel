@@ -39,7 +39,7 @@ We welcome everyone interested in machine learning to contribute code, create is
 * [Core API](./docs/apis/core_api_en.md)
 
 
-## Algorithm
+## ML Algorithm
 
 * [**Algorithm Parameter Description**](./docs/algo/model_config_details.md)
 * [Logistic Regression](./docs/algo/lr_on_angel_en.md)
@@ -52,6 +52,25 @@ We welcome everyone interested in machine learning to contribute code, create is
 * [Linear Regression](./docs/algo/linear_on_angel_en.md)
 * [Robust Regression](./docs/algo/robust_on_angel_en.md)
 * [Softmax Regression](./docs/algo/softmax_on_angel_en.md)
+
+## Graph Algorithm
+
+### Traditional Graph Learning Algorithms
+
+* [TriangleCounting](./docs/algo/sona/)
+* [CC/SCC](./docs/algo/sona/)
+* [LPA](./docs/algo/sona/)
+* [Louvain (Fast Unfolding)](./docs/algo/sona/louvain_sona_en.md)
+* [CommonFriends](./docs/algo/sona/)
+* [PageRank](./docs/algo/sona/)
+* [K-Core](./docs/algo/sona/kcore_sona_en.md)
+* [H-Index](./docs/algo/sona/)
+* [Closeness](./docs/algo/sona/)
+
+### Graph Embedding Algorithms
+
+* [LINE](./docs/algo/sona/line_sona_en.md)
+* [Word2Vec](./docs/algo/sona/word2vec_sona_en.md)
 
 ## Deployment
 
