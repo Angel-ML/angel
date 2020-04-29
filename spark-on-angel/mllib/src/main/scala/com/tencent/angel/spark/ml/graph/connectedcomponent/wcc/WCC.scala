@@ -67,17 +67,16 @@ class WCC(override val uid: String) extends Transformer
 		
 		var numMsgs = model.numMsgs()
 		var curIteration = 0
-//		var prev = graph
 		println(s"numMsgs=$numMsgs")
+		
+		// each node change its label into the min id of its neighbors (including itself).
     var changedCnt = 0
 		do {
 			curIteration += 1
       changedCnt = 0
-			graph.map(_.process(model, numMsgs, curIteration == 1)).collect().foreach(n => changedCnt += n)
+			changedCnt = graph.map(_.process(model, numMsgs, curIteration == 1)).reduce((n1, n2) => n1 + n2)
 			graph.persist($(storageLevel))
 			graph.count()
-//			model.resetMsgs()
-//			numMsgs = model.numMsgs()
 			println(s"curIteration=$curIteration numMsgs=$changedCnt")
 		} while (changedCnt > 0)
 

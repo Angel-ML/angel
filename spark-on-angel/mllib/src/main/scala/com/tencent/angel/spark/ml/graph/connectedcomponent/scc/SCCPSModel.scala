@@ -16,7 +16,6 @@
  */
 package com.tencent.angel.spark.ml.graph.connectedcomponent.scc
 
-import com.tencent.angel.ml.core.optimizer.decayer.ConstantLearningRate
 import com.tencent.angel.ml.math2.vector.{LongIntVector, LongLongVector, Vector}
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.psagent.PSAgentContext
@@ -33,11 +32,7 @@ class SCCPSModel(colorPS: ColorPSModel, tagPS: TagPSModel) extends Serializable 
   def numMsgs(): Long = {
     colorPSModel.numMsgs()
   }
-  
-//  def resetMsgs(): Unit = {
-//    colorPSModel.resetMsgs()
-//    tagPSModel.resetMsgs()
-//  }
+
 }
 
 class ColorPSModel(var inMsgs: PSVector,
@@ -63,14 +58,7 @@ class ColorPSModel(var inMsgs: PSVector,
   def numMsgs(): Long = {
     VectorUtils.nnz(inMsgs)
   }
-  
-//  def resetMsgs(): Unit = {
-//    val temp = inMsgs
-//    inMsgs = outMsgs
-//    outMsgs = temp
-//    outMsgs.reset
-//  }
-//
+
 }
 
 class TagPSModel(var inMsgs: PSVector,
@@ -90,21 +78,13 @@ class TagPSModel(var inMsgs: PSVector,
   }
   
   def writeMsgs(msgs: Vector): Unit = {
-//    outMsgs.update(msgs)
     inMsgs.update(msgs)
   }
   
   def numMsgs(): Long = {
     VectorUtils.nnz(inMsgs)
   }
-  
-//  def resetMsgs(): Unit = {
-//    val temp = inMsgs
-//    inMsgs = outMsgs
-//    outMsgs = temp
-//    outMsgs.reset
-//  }
-//
+
 }
 
 object SCCPSModel {

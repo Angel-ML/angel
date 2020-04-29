@@ -47,22 +47,17 @@ class SCCGraphPartition(index: Int,
   
   def dropSingle(model: SCCPSModel, numMsgs: Long): Long = {
     val inTagMsgs = model.tagPSModel.readAllMsgs()
-//    val inColorMsgs = model.colorPSModel.readAllMsgs()
-//    val outTagMsgs = inTagMsgs.clone()
     val outTagMsgs = VFactory.sparseLongKeyIntVector(inTagMsgs.dim())
-//    val outColorMsgs = inColorMsgs.clone()
-    
+
     var dropCnt = 0L
     for (idx <- keys.indices) {
       if ((inTagMsgs.get(keys(idx)) == 1) && isSingle(idx, inTagMsgs)) {
         outTagMsgs.set(keys(idx), 0)
-//        outColorMsgs.set(keys(idx), 0)
         colorLabels(idx) = keys(idx)
         dropCnt += 1
       }
     }
     model.tagPSModel.writeMsgs(outTagMsgs)
-//    model.colorPSModel.writeMsgs(outColorMsgs)
     dropCnt
   }
   
@@ -107,7 +102,7 @@ class SCCGraphPartition(index: Int,
   def propagate(model: SCCPSModel, numMsgs: Long): Long = {
     val inColorMsgs = model.colorPSModel.readAllMsgs()
     val inTagMsgs = model.tagPSModel.readAllMsgs()
-//    val colorOutMsgs = inColorMsgs.clone()
+
     val colorOutMsgs = VFactory.sparseLongKeyLongVector(inColorMsgs.dim())
     var changedNum = 0L
     for (idx <- keys.indices) {
