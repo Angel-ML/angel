@@ -388,21 +388,15 @@ class NeighborTablePartition[@specialized(
       srcNodes.flatMap { src =>
         val srcNeighbors = localNeighborTable.get(src)
         var triangleCount = 0
-        var numEdges = 0 // num of edges between neighbors
         srcNeighbors.foreach { dst =>
           val dstNeighbors = if (localNeighborTable.containsKey(dst)) localNeighborTable.get(dst)
           else psNeighborsTable.get(dst)
-          val comFriends =intersections(dstNeighbors, srcNeighbors)
-          if (computeLCC) {
-            numEdges += comFriends.count(_ > dst)
-          }
-          triangleCount += comFriends.length
+          val comFriends =ArrayUtils.intersectCount(dstNeighbors, srcNeighbors)
+          triangleCount += comFriends
         }
         if (computeLCC) {
-          val full = if (srcNeighbors.length > 1)
-            srcNeighbors.length * (srcNeighbors.length - 1) / 2
-          else 0
-          val lcc = if (full == 0) 0f else numEdges.toFloat / full
+          val numCompleteEdges = if (srcNeighbors.length > 1) srcNeighbors.length * (srcNeighbors.length - 1) / 2 else 0
+          val lcc = if (numCompleteEdges == 0) 0f else triangleCount.toFloat / 2 / numCompleteEdges
           Iterator.single((src, triangleCount / 2, lcc))
         }
         else
