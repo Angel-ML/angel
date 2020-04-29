@@ -33,9 +33,9 @@ object PageRankExample {
     val sc = start(mode)
 
     val input = params.getOrElse("input", "")
-    val partitionNum = params.getOrElse("partitionNum", "100").toInt
+    val partitionNum = params.getOrElse("dataPartitionNum", "100").toInt
     val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
-    val output = params.getOrElse("output", null)
+    val output = params.getOrElse("output", "")
     val psPartitionNum = params.getOrElse("psPartitionNum",
       sc.getConf.get("spark.ps.instances", "10")).toInt
     val tol = params.getOrElse("tol", "0.01").toFloat

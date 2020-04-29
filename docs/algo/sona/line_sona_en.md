@@ -15,7 +15,7 @@ where, p_1 characterizes the first-order similarity between nodes (direct edge),
 
 For more details, please refer to the paper [[1]](https://arxiv.org/abs/1503.03578)
 
-## Running
+## Running example
 
 ### Algorithm IO parameters
 

@@ -16,9 +16,6 @@
  */
 package com.tencent.angel.spark.ml.graph.pagerank.vertexcut
 
-import java.util.Collections
-
-import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.graph.pagerank.PageRankOps
 import com.tencent.angel.spark.ml.graph.params._
@@ -28,7 +25,6 @@ import org.apache.spark.ml.param.{BooleanParam, FloatParam, IntParam, ParamMap}
 import org.apache.spark.ml.util.Identifiable
 import org.apache.spark.sql.types.{FloatType, LongType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
-import org.apache.spark.storage.StorageLevel
 
 class PageRank(override val uid: String) extends Transformer
   with HasSrcNodeIdCol with HasDstNodeIdCol with HasOutputNodeIdCol with HasOutputPageRankCol

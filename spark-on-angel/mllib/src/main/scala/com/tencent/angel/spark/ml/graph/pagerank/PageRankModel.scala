@@ -20,7 +20,7 @@ import com.tencent.angel.ml.math2.storage.IntLongDenseVectorStorage
 import com.tencent.angel.ml.math2.vector.{IntLongVector, LongFloatVector, Vector}
 import com.tencent.angel.ml.matrix.psf.get.getrow.GetRowResult
 import com.tencent.angel.ml.matrix.psf.update.update.IncrementRowsParam
-import com.tencent.angel.spark.ml.psf.pagerank.{ComputeRank2, GetNodes, MyIncrement, NormalizeRank}
+import com.tencent.angel.spark.ml.psf.pagerank.{ComputeRank, GetNodes, MyIncrement, NormalizeRank}
 import com.tencent.angel.spark.models.PSVector
 import com.tencent.angel.spark.util.VectorUtils
 
@@ -47,7 +47,7 @@ class PageRankModel(readMsgs: PSVector,
     readMsgs.pull().asInstanceOf[LongFloatVector]
 
   def computeRanks(initRanks: Float, resetProb: Float): Unit = {
-    val func = new ComputeRank2(readMsgs.poolId,
+    val func = new ComputeRank(readMsgs.poolId,
       Array(readMsgs.id, writeMsgs.id, ranks.id),
       initRanks, resetProb)
 

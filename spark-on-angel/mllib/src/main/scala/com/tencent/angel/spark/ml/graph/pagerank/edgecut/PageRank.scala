@@ -16,9 +16,6 @@
  */
 package com.tencent.angel.spark.ml.graph.pagerank.edgecut
 
-import java.util.Collections
-
-import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.graph.pagerank.PageRankOps
 import com.tencent.angel.spark.ml.graph.params._
