@@ -22,9 +22,8 @@ import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 
 import scala.util.Random
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.ml.embedding.Param
-import com.tencent.angel.spark.ml.embedding.word2vec.Word2VecModel
-import com.tencent.angel.spark.ml.feature.{Features, SubSampling}
+import com.tencent.angel.spark.ml.embedding.word2vec.{Word2VecModel, Word2VecParam}
+import com.tencent.angel.spark.ml.feature.Features
 import org.apache.spark.{SparkConf, SparkContext}
 
 object Word2vecExample {
@@ -44,13 +43,15 @@ object Word2vecExample {
     sc.setLogLevel("ERROR")
     PSContext.getOrCreate(sc)
 
-    val input = "data/text8/text8.split.remapping"
+    val input = "data/text8/text8.split.head"
+    val output = "/tmp/word2vec"
 
     val data = sc.textFile(input)
     data.cache()
-
-    val (corpus) = Features.corpusStringToIntWithoutRemapping(sc.textFile(input))
-    val docs = corpus.repartition(1)
+    val temp = Features.corpusStringToInt(data)
+    val corpus = temp._1
+    val denseToString = Some(temp._2)
+    val docs = corpus.repartition(10)
 
     docs.cache()
     docs.count()
@@ -63,24 +64,25 @@ object Word2vecExample {
     val maxLength = docs.map(_.length).max()
 
     println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens")
+    PSContext.getOrCreate(sc)
 
-    val param = new Param()
-    param.setLearningRate(0.1f)
-    param.setEmbeddingDim(10)
-    param.setWindowSize(5)
-    param.setBatchSize(100)
-    param.setSeed(2017)
-    param.setNumPSPart(Some(1))
-    param.setNumEpoch(5)
-    param.setNegSample(5)
-    param.setMaxIndex(maxWordId)
-    param.setMaxLength(maxLength)
-    param.setModel("cbow")
-    param.setModelCPInterval(1000)
+    val param = new Word2VecParam()
+      .setLearningRate(0.1f)
+      .setDecayRate(0.5f)
+      .setEmbeddingDim(32)
+      .setBatchSize(50)
+      .setWindowSize(10)
+      .setNumPSPart(Some(10))
+      .setSeed(Random.nextInt())
+      .setNumEpoch(5)
+      .setNegSample(5)
+      .setMaxIndex(maxWordId)
+      .setNumRowDataSet(numDocs)
+      .setMaxLength(maxLength)
 
     val model = new Word2VecModel(param)
-    model.train(docs, param, "")
-
+    model.train(docs, param, output)
+    denseToString.foreach(rdd => rdd.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "/mapping"))
     PSContext.stop()
     sc.stop()
   }
