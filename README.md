@@ -8,7 +8,7 @@
 
 **Angel**是一个基于参数服务器（Parameter Server）理念开发的高性能分布式机器学习和图计算平台，它基于腾讯内部的海量数据进行了反复的调优，并具有广泛的适用性和稳定性，模型维度越高，优势越明显。 **Angel**由腾讯和北京大学联合开发，兼顾了工业界的高可用性和学术界的创新性。
 
-**Angel**的核心设计理念围绕**模型**。它将高维度的大模型合理切分到多个参数服务器节点，并通过高效的**模型更新接口和运算函数**，以及灵活的**同步协议**，轻松实现各种高效的机器学习。
+**Angel**的核心设计理念围绕**模型**。它将高维度的大模型合理切分到多个参数服务器节点，并通过高效的**模型更新接口和运算函数**，以及灵活的**同步协议**，轻松实现各种高效的机器学习和图算法。
 
 **Angel**基于**Java**和**Scala**开发，能在社区的**Yarn**上直接调度运行，并基于**PS Service**，支持**Spark on Angel**，集成了图计算和深度学习算法。
 
@@ -64,25 +64,29 @@
 		* [KMeans](./docs/algo/kmeans_on_angel.md)
 		* [GBDT](./docs/algo/gbdt_on_angel.md)
 		* [LDA\*](./docs/algo/lda_on_angel.md) ([WrapLDA](./docs/algo/wrap_lda_on_angel.md))
-	* **Deep Learning Methods**
-		* [Deep Neural Network(DNN)](./docs/algo/dnn_on_angel.md)
-		* [Mix Logistic Regression(MLR)](./docs/algo/mlr_on_angel.md)
-		* [Deep And Wide(DAW)](./docs/algo/daw_on_angel.md)
-		* [Deep Factorization Machine(DeepFM)](./docs/algo/deepfm_on_angel.md)
-		* [Neural Factorization Machine(NFM)](./docs/algo/nfm_on_angel.md)
-		* [Product Neural Network(PNN)](./docs/algo/pnn_on_angel.md)
 * **Spark on Angel**
 	* **Angel-Mllib**
-		* [FTRL](./docs/algo/ftrl_lr_spark.md)
-		* [Logistic Regression(LR)](./docs/algo/sona/lr_sona.md)
-		* [Word2Vec](./docs/algo/sona/word2vec_sona.md)
-		* [LINE](./docs/algo/sona/line_sona.md)
-		* [FTRLFM](./docs/algo/ftrl_fm_spark_en.md)
-		* [GBDT](./docs/algo/sona/feature_gbdt_sona.md)
+		* [FM](https://github.com/Angel-ML/PyTorch-On-Angel/blob/master/docs/recommendation.md)
+		* [DeepFM](https://github.com/Angel-ML/PyTorch-On-Angel/blob/master/docs/recommendation.md)
+		* [DeepAndWide](https://github.com/Angel-ML/PyTorch-On-Angel/blob/master/docs/recommendation.md)
+		* [DCN](https://github.com/Angel-ML/PyTorch-On-Angel/blob/master/docs/recommendation.md)
+		* [XDeepFM](https://github.com/Angel-ML/PyTorch-On-Angel/blob/master/docs/recommendation.md)
+		* [AttentionFM](https://github.com/Angel-ML/PyTorch-On-Angel/blob/master/docs/recommendation.md)
+  	* [PNN](https://github.com/Angel-ML/PyTorch-On-Angel/blob/master/docs/recommendation.md)
+    * [FTRL](./docs/algo/ftrl_lr_spark.md)
+    * [Logistic Regression(LR)](./docs/algo/sona/lr_sona.md)
+    * [FTRLFM](./docs/algo/ftrl_fm_spark_en.md)
+    * [GBDT](./docs/algo/sona/feature_gbdt_sona.md)
   * **Angel-Graph**
     * [PageRank](./docs/algo/sona/pagerank_on_sona.md)
     * [KCORE](./docs/algo/sona/kcore_sona.md)
+    * [HIndex](./docs/algo/sona/hindex_sona.md)
+    * [Closeness](./docs/algo/sona/closeness_sona.md)
+    * [CommonFriends](./docs/algo/sona/commonfriends_sona.md)
+    * [ConnectedComponents](./docs/algo/sona/CC_sona.md)
+    * [TriangleCountingUndirected](./docs/algo/sona/triangle_count_undirected.md)
     * [Louvain](./docs/algo/sona/louvain_sona.md)
+    * [LPA](./docs/algo/sona/LPA_sona.md)
     * [LINE](./docs/algo/sona/line_sona.md)
     * [Word2Vec](./docs/algo/sona/word2vec_sona.md)
     * [GraphSage](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/graph.md)
@@ -129,3 +133,4 @@
 2. [方圆并济：基于 Spark on Angel 的高性能机器学习](./docs/slides/Angel_QCon_2017.pdf).  QCon ShangHai China, 2017
 
 3. [基于Angel和Spark Streaming的高维度Online Learning](./docs/slides/Angel_GIAC_2017.pdf). GIAC China, 2017
+
