@@ -19,8 +19,8 @@ package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.spark.ml.graph.triangle.TriangleCountingUndirected
-import com.tencent.angel.spark.ml.graph.utils.{Delimiter, GraphIO}
+import com.tencent.angel.graph.triangle.TriangleCountingUndirected
+import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 

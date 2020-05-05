@@ -18,8 +18,6 @@
 
 package com.tencent.angel.spark.context
 
-import java.security.PrivilegedExceptionAction
-import java.util
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -38,19 +36,17 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.util.ShutdownHookManager
 import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.{SparkConf, SparkContext, SparkEnv, TaskContext}
+import org.apache.spark.{SparkConf, SparkEnv, TaskContext}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{Map, mutable}
-import org.apache.commons.httpclient.URI
 import com.tencent.angel.ps.storage.partitioner.Partitioner
-import org.apache.hadoop.security.UserGroupInformation
 
 /**
   * AngelPSContext for driver and executor, it is an implement of `PSContext`
   */
-private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) extends PSContext {
+class AngelPSContext(contextId: Int, angelCtx: AngelContext) extends PSContext {
 
   import AngelPSContext._
 
@@ -268,7 +264,7 @@ private[spark] class AngelPSContext(contextId: Int, angelCtx: AngelContext) exte
   override def recover(checkpointId:Int, ctx: ModelLoadContext): Unit = AngelPSContext.recover(checkpointId, ctx)
 }
 
-private[spark] object AngelPSContext {
+object AngelPSContext {
 
   private val MASTER_IP = "angel.master.ip"
   private val MASTER_PORT = "angel.master.port"
