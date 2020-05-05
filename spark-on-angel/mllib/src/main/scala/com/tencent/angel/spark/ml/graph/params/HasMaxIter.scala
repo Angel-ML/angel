@@ -18,19 +18,19 @@ package com.tencent.angel.spark.ml.graph.params
 
 import org.apache.spark.ml.param.{IntParam, Params}
 
-trait HasMaxIteration extends Params {
+trait HasMaxIter extends Params {
   /**
     * Param for batch size.
     *
     * @group param
     */
-  final val maxIteration = new IntParam(this, "maxIteration", "maxIteration")
+  final val maxIter = new IntParam(this, "maxIter", "maxIter")
 
   /** @group getParam */
-  final def getMaxIteration: Int = $(maxIteration)
+  final def getMaxIteration: Int = $(maxIter)
 
-  setDefault(maxIteration, 10000)
+  setDefault(maxIter, 10000)
 
   /** @group setParam */
-  final def setMaxIteration(size: Int): this.type = set(maxIteration, size)
+  final def setMaxIteration(size: Int): this.type = set(maxIter, size)
 }

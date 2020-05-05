@@ -31,24 +31,24 @@ object ClosenessExample {
     val sc = start(mode)
 
     val input = params.getOrElse("input", "")
-    val partitionNum = params.getOrElse("partitionNum", "100").toInt
-    val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
-    val batchSize = params.getOrElse("batchSize", "10000").toInt
     val output = params.getOrElse("output", null)
+    val partitionNum = params.getOrElse("partitionNum", "100").toInt
     val psPartitionNum = params.getOrElse("psPartitionNum",
       sc.getConf.get("spark.ps.instances", "10")).toInt
-    val isWeight = params.getOrElse("isWeight", "false").toBoolean
+    val msgNumBatch = params.getOrElse("msgNumBatch", "4").toInt
+    val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
+
     val srcIndex = params.getOrElse("srcIndex", "0").toInt
     val dstIndex = params.getOrElse("dstIndex", "1").toInt
-    val weightIndex = params.getOrElse("weightIndex", "2").toInt
+    val maxIter = params.getOrElse("maxIter", "100").toInt
     val useBalancePartition = params.getOrElse("useBalancePartition", "false").toBoolean
-    val p = params.getOrElse("p", "6").toInt
-    val msgNumBatch = params.getOrElse("msgNumBatch", "4").toInt
-    val verboseSaving = params.getOrElse("verboseSaving", "true").toBoolean
-    val isDirected = params.getOrElse("isDirected", "true").toBoolean
     val percent = params.getOrElse("balancePartitionPercent", "0.7").toFloat
 
-    val sep = params.getOrElse("sep",  "space") match {
+    val p = params.getOrElse("p", "6").toInt
+    val verboseSaving = params.getOrElse("verboseSaving", "true").toBoolean
+
+    val isDirected = params.getOrElse("isDirected", "true").toBoolean
+    val sep = params.getOrElse("sep", "space") match {
       case "space" => " "
       case "comma" => ","
       case "tab" => "\t"
@@ -57,18 +57,17 @@ object ClosenessExample {
     val closeness = new Closeness()
       .setPartitionNum(partitionNum)
       .setPSPartitionNum(psPartitionNum)
-      .setStorageLevel(storageLevel)
-      .setBatchSize(batchSize)
-      .setP(p)
-      .setUseBalancePartition(useBalancePartition)
       .setMsgNumBatch(msgNumBatch)
+      .setMaxIter(maxIter)
+      .setStorageLevel(storageLevel)
+      .setP(p)
       .setVerboseSaving(verboseSaving)
-      .setIsDirected(isDirected)
+      .setUseBalancePartition(useBalancePartition)
       .setBalancePartitionPercent(percent)
+      .setIsDirected(isDirected)
 
-    val df = GraphIO.load(input, isWeighted = isWeight,
-      srcIndex = srcIndex, dstIndex = dstIndex,
-      weightIndex = weightIndex, sep = sep)
+    val df = GraphIO.load(input, false,
+      srcIndex = srcIndex, dstIndex = dstIndex, sep = sep)
 
     val mapping = closeness.transform(df)
     GraphIO.save(mapping, output)
