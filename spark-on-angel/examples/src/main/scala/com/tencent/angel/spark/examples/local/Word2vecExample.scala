@@ -22,7 +22,7 @@ import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 
 import scala.util.Random
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.ml.embedding.word2vec.{Word2VecModel, Word2VecParam}
+import com.tencent.angel.graph.embedding.word2vec.{Word2VecModel, Word2VecParam}
 import com.tencent.angel.spark.ml.feature.Features
 import org.apache.spark.{SparkConf, SparkContext}
 

@@ -21,7 +21,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.ml.embedding.line.LINE
+import com.tencent.angel.graph.embedding.line.LINE
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.types.{FloatType, StringType, StructField, StructType}
 

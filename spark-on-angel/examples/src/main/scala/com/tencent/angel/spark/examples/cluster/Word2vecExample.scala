@@ -21,7 +21,7 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.spark.ml.embedding.word2vec.{Word2VecModel, Word2VecParam}
+import com.tencent.angel.graph.embedding.word2vec.{Word2VecModel, Word2VecParam}
 import com.tencent.angel.spark.ml.feature.{Features, SubSampling}
 import com.tencent.angel.spark.ml.util.SparkUtils
 import org.apache.spark.rdd.RDD

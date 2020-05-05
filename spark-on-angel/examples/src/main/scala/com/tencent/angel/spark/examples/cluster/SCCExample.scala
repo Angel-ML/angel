@@ -18,8 +18,8 @@ package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.spark.ml.graph.connectedcomponent.scc.SCC
-import com.tencent.angel.spark.ml.graph.utils.GraphIO
+import com.tencent.angel.graph.connectedcomponent.scc.SCC
+import com.tencent.angel.graph.utils.GraphIO
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.storage.StorageLevel
 

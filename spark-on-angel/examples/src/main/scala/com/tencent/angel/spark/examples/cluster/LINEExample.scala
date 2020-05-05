@@ -21,8 +21,8 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.spark.ml.embedding.line.LINE
-import com.tencent.angel.spark.ml.graph.utils.GraphIO
+import com.tencent.angel.graph.embedding.line.LINE
+import com.tencent.angel.graph.utils.GraphIO
 import com.tencent.angel.spark.ml.util.SparkUtils
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.{SparkConf, SparkContext}

@@ -76,6 +76,11 @@
       <artifactId>spark-on-angel-mllib</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>spark-on-angel-graph</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
   <build>
