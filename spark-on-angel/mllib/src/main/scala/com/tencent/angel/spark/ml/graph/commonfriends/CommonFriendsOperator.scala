@@ -31,7 +31,9 @@ object CommonFriendsOperator {
                 srcNodeIdCol: String,
                 dstNodeIdCol: String
                ): RDD[(Long, Long)] = {
-    dataset.select(srcNodeIdCol, dstNodeIdCol).rdd.mapPartitions { iter =>
+    dataset.select(srcNodeIdCol, dstNodeIdCol).rdd
+      .filter(row => !row.anyNull)
+      .mapPartitions { iter =>
       iter.flatMap { row =>
         if (row.getLong(0) == row.getLong(1))
           Iterator.empty
@@ -46,7 +48,9 @@ object CommonFriendsOperator {
                 dstNodeIdCol: String,
                 compressCol: String
                ): RDD[(Long, Long)] = {
-    dataset.select(srcNodeIdCol, dstNodeIdCol, compressCol).rdd.mapPartitions { iter =>
+    dataset.select(srcNodeIdCol, dstNodeIdCol, compressCol).rdd
+      .filter(row => !row.anyNull)
+      .mapPartitions { iter =>
       iter.flatMap { row =>
         if (row.getLong(0) == row.getLong(1))
           Iterator.empty
