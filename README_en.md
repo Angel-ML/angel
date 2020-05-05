@@ -2,16 +2,16 @@
 
 
 [![license](http://img.shields.io/badge/license-BSD3-brightgreen.svg?style=flat)](https://github.com/tencent/angel/blob/master/LICENSE)
-[![Release Version](https://img.shields.io/badge/release-1.4.0-red.svg)](https://github.com/tencent/angel/releases)
+[![Release Version](https://img.shields.io/badge/release-3.1.0-red.svg)](https://github.com/tencent/angel/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/tencent/angel/pulls)
 
-**Angel** is a high-performance distributed machine learning platform based on the philosophy of Parameter Server. It is tuned for performance with big data from Tencent and has a wide range of applicability and stability, demonstrating increasing advantage in handling higher dimension model. Angel is jointly developed by Tencent and Peking University, taking account of both high availability  in industry and innovation in academia.
+**Angel** is a high-performance distributed machine learning and graph computing platform based on the philosophy of Parameter Server. It is tuned for performance with big data from Tencent and has a wide range of applicability and stability, demonstrating increasing advantage in handling higher dimension model. Angel is jointly developed by Tencent and Peking University, taking account of both high availability  in industry and innovation in academia.
 
 With model-centered core design concept, **Angel** partitions parameters of complex models into multiple parameter-server nodes, and implements a variety of machine learning algorithms using efficient model-updating interfaces and functions, as well as flexible consistency model for synchronization.
 
 **Angel** is developed with **Java** and **Scala**.  It supports running on **Yarn**. With **PS Service** abstraction, it supports **Spark on Angel**.  Graph computing and deep learning frameworks support is under development and with be released in the future.
 
-We welcome everyone interested in machine learning to contribute code, create issues or pull requests. Please refer to  [Angel Contribution Guide](https://github.com/Tencent/angel/blob/master/CONTRIBUTING.md) for more detail.
+We welcome everyone interested in machine learning or graph computing to contribute code, create issues or pull requests. Please refer to  [Angel Contribution Guide](https://github.com/Tencent/angel/blob/master/CONTRIBUTING.md) for more detail.
 
 ## Introduction to Angel
 
@@ -19,6 +19,15 @@ We welcome everyone interested in machine learning to contribute code, create is
 * [Code Framework](./docs/overview/code_framework_en.md)
 * [Design](./docs/overview/design_philosophy_en.md)
 * [Spark on Angel](./docs/overview/spark_on_angel_en.md)
+  * [Machine Learning](./docs/overview/spark_on_angel_mllib.md)
+  * [Graph Computing](./docs/overview/angel_graph_sona.md)
+
+## Design
+
+- [Model Partitioner](./docs/design/model_partitioner_en.md)
+- [SyncController](./docs/design/sync_controller_en.md)
+- [psFunc](./docs/design/psfFunc_en.md)
+- [Core API](./docs/apis/core_api_en.md)
 
 
 ## Quick Start
@@ -31,46 +40,45 @@ We welcome everyone interested in machine learning to contribute code, create is
 * [Angel Programming Guide](./docs/programmers_guide/angel_programing_guide_en.md)
 * [Spark on Angel Programming Guide](./docs/programmers_guide/spark_on_angel_programing_guide_en.md)
 
-## Design
+## Algorithm
 
-* [Model Partitioner](./docs/design/model_partitioner_en.md)
-* [SyncController](./docs/design/sync_controller_en.md)
-* [psFunc](./docs/design/psfFunc_en.md)
-* [Core API](./docs/apis/core_api_en.md)
-
-
-## ML Algorithm
-
-* [**Algorithm Parameter Description**](./docs/algo/model_config_details.md)
-* [Logistic Regression](./docs/algo/lr_on_angel_en.md)
-* [Matrix Factorization](./docs/algo/mf_on_angel_en.md)
-* [SVM](./docs/algo/svm_on_angel_en.md)
-* [KMeans](./docs/algo/kmeans_on_angel_en.md)
-* [GBDT](./docs/algo/gbdt_on_angel_en.md)
-* [LDA](./docs/algo/lda_on_angel_en.md)
-* [LR (Spark on Angel)](./docs/algo/spark_on_angel_optimizer_en.md)
-* [Linear Regression](./docs/algo/linear_on_angel_en.md)
-* [Robust Regression](./docs/algo/robust_on_angel_en.md)
-* [Softmax Regression](./docs/algo/softmax_on_angel_en.md)
-
-## Graph Algorithm
-
-### Traditional Graph Learning Algorithms
-
-* [TriangleCounting](./docs/algo/sona/)
-* [CC/SCC](./docs/algo/sona/)
-* [LPA](./docs/algo/sona/)
-* [Louvain (Fast Unfolding)](./docs/algo/sona/louvain_sona_en.md)
-* [CommonFriends](./docs/algo/sona/)
-* [PageRank](./docs/algo/sona/)
-* [K-Core](./docs/algo/sona/kcore_sona_en.md)
-* [H-Index](./docs/algo/sona/)
-* [Closeness](./docs/algo/sona/)
-
-### Graph Embedding Algorithms
-
-* [LINE](./docs/algo/sona/line_sona_en.md)
-* [Word2Vec](./docs/algo/sona/word2vec_sona_en.md)
+- [**Angel or Spark On Angel？**](./docs/algo/angel_or_spark_on_angel.md)
+- [**Algorithm Parameter Description**](./docs/algo/model_config_details.md)
+- **Angel**
+  - **Traditional Machine Learning Methods**
+    - [Logistic Regression(LR)](./docs/algo/lr_on_angel.md)
+    - [Support Vector Machine(SVM)](./docs/algo/svm_on_angel.md)
+    - [Factorization Machine(FM)](./docs/algo/fm_on_angel.md)
+    - [Linear Regression](./docs/algo/linear_on_angel.md)
+    - [Robust Regression](./docs/algo/robust_on_angel.md)
+    - [Softmax Regression](./docs/algo/softmax_on_angel.md)
+    - [KMeans](./docs/algo/kmeans_on_angel.md)
+    - [GBDT](./docs/algo/gbdt_on_angel.md)
+    - [LDA\*](./docs/algo/lda_on_angel.md) ([WrapLDA](./docs/algo/wrap_lda_on_angel.md))
+  - **Deep Learning Methods**
+    - [Deep Neural Network(DNN)](./docs/algo/dnn_on_angel.md)
+    - [Mix Logistic Regression(MLR)](./docs/algo/mlr_on_angel.md)
+    - [Deep And Wide(DAW)](./docs/algo/daw_on_angel.md)
+    - [Deep Factorization Machine(DeepFM)](./docs/algo/deepfm_on_angel.md)
+    - [Neural Factorization Machine(NFM)](./docs/algo/nfm_on_angel.md)
+    - [Product Neural Network(PNN)](./docs/algo/pnn_on_angel.md)
+- **Spark on Angel**
+  - **Angel-Mllib**
+    - [FTRL](./docs/algo/ftrl_lr_spark.md)
+    - [Logistic Regression(LR)](./docs/algo/sona/lr_sona.md)
+    - [Word2Vec](./docs/algo/sona/word2vec_sona.md)
+    - [LINE](./docs/algo/sona/line_sona.md)
+    - [FTRLFM](./docs/algo/ftrl_fm_spark_en.md)
+    - [GBDT](./docs/algo/sona/feature_gbdt_sona.md)
+  - **Angel-Graph**
+    - [PageRank](./docs/algo/sona/pagerank_on_sona.md)
+    - [KCORE](./docs/algo/sona/kcore_sona.md)
+    - [Louvain](./docs/algo/sona/louvain_sona.md)
+    - [LINE](./docs/algo/sona/line_sona.md)
+    - [Word2Vec](./docs/algo/sona/word2vec_sona.md)
+    - [GraphSage](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/graph.md)
+    - [GCN](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/graph.md)
+    - [DGI](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/graph.md)
 
 ## Deployment
 
@@ -89,3 +97,4 @@ We welcome everyone interested in machine learning to contribute code, create is
   3. Jie Jiang, Lele Yu, Jiawei Jiang, Yuhong Liu and Bin Cui. [Angel: a new large-scale machine learning system](http://net.pku.edu.cn/~cuibin/Papers/2017NSRangel.pdf). National Science Review (NSR), 2017
   4. Jie Jiang, Jiawei Jiang,  Bin Cui and Ce Zhang. [TencentBoost: A Gradient Boosting Tree System with Parameter Server](http://net.pku.edu.cn/~cuibin/Papers/2017%20ICDE%20boost.pdf).	ICDE, 2017
   5. Jiawei Jiang, Bin Cui, Ce Zhang and Fangcheng Fu. [DimBoost: Boosting Gradient Boosting Decision Tree to Higher Dimensions](https://dl.acm.org/citation.cfm?id=3196892). SIGMOD, 2018.
+    6. Jiawei Jiang, Pin Xiao, Lele Yu, Xiaosen Li.[PSGraph: How Tencent trains extremely large-scale graphs with Spark?](https://conferences.computer.org/icde/2020/pdfs/ICDE2020-5acyuqhpJ6L9P042wmjY1p/290300b549/290300b549.pdf).ICDE, 2020.
