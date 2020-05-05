@@ -1,19 +1,18 @@
 ![](assets/angel_logo.png)
 
-
 [![license](http://img.shields.io/badge/license-Apache2.0-blue.svg?style=flat)](https://github.com/tencent/angel/blob/master/LICENSE)
-[![Release Version](https://img.shields.io/badge/release-2.0.0-red.svg)](https://github.com/tencent/angel/releases)
+[![Release Version](https://img.shields.io/badge/release-3.1.0-red.svg)](https://github.com/tencent/angel/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/tencent/angel/pulls)
 
 [(English Documents Available)](./README_en.md)
 
-**Angel**是一个基于参数服务器（Parameter Server）理念开发的高性能分布式机器学习平台，它基于腾讯内部的海量数据进行了反复的调优，并具有广泛的适用性和稳定性，模型维度越高，优势越明显。 **Angel**由腾讯和北京大学联合开发，兼顾了工业界的高可用性和学术界的创新性。
+**Angel**是一个基于参数服务器（Parameter Server）理念开发的高性能分布式机器学习和图计算平台，它基于腾讯内部的海量数据进行了反复的调优，并具有广泛的适用性和稳定性，模型维度越高，优势越明显。 **Angel**由腾讯和北京大学联合开发，兼顾了工业界的高可用性和学术界的创新性。
 
-**Angel**的核心设计理念围绕**模型**。它将高维度的大模型合理切分到多个参数服务器节点，并通过高效的**模型更新接口和运算函数**，以及灵活的**同步协议**，轻松实现各种高效的机器学习算法。
+**Angel**的核心设计理念围绕**模型**。它将高维度的大模型合理切分到多个参数服务器节点，并通过高效的**模型更新接口和运算函数**，以及灵活的**同步协议**，轻松实现各种高效的机器学习。
 
-**Angel**基于**Java**和**Scala**开发，能在社区的**Yarn**上直接调度运行，并基于**PS Service**，支持**Spark on Angel**，集成了部分图计算和深度学习算法。
+**Angel**基于**Java**和**Scala**开发，能在社区的**Yarn**上直接调度运行，并基于**PS Service**，支持**Spark on Angel**，集成了图计算和深度学习算法。
 
-欢迎对机器学习有兴趣的同仁一起贡献代码，提交Issues或者Pull Requests。请先查阅: [Angel Contribution Guide](https://github.com/Tencent/angel/blob/master/CONTRIBUTING.md)
+欢迎对机器学习、图计算有兴趣的同仁一起贡献代码，提交Issues或者Pull Requests。请先查阅: [Angel Contribution Guide](https://github.com/Tencent/angel/blob/master/CONTRIBUTING.md)
 
 ## Overview
 
@@ -21,6 +20,8 @@
 * [代码结构](./docs/overview/code_framework.md)
 * [设计理念](./docs/overview/design_philosophy.md)
 * [Spark on Angel](./docs/overview/spark_on_angel.md)
+  * [机器学习](./docs/overview/spark_on_angel_mllib.md)
+  * [图计算](./docs/overview/angel_graph_sona.md)
 
 
 ## Design
@@ -71,14 +72,22 @@
 		* [Neural Factorization Machine(NFM)](./docs/algo/nfm_on_angel.md)
 		* [Product Neural Network(PNN)](./docs/algo/pnn_on_angel.md)
 * **Spark on Angel**
-	* [FTRL](./docs/algo/ftrl_lr_spark.md)
-	* [Logistic Regression(LR)](./docs/algo/sona/lr_sona.md)
-	* [Word2Vec](./docs/algo/sona/word2vec_sona.md)
-	* [LINE](./docs/algo/sona/line_sona.md)
-	* [KCORE](./docs/algo/sona/kcore_sona.md)
-	* [Louvain](./docs/algo/sona/louvain_sona.md)
-	* [FTRLFM](./docs/algo/ftrl_fm_spark_en.md)
-  * [GBDT](./docs/algo/sona/feature_gbdt_sona.md)
+	* **Angel-Mllib**
+		* [FTRL](./docs/algo/ftrl_lr_spark.md)
+		* [Logistic Regression(LR)](./docs/algo/sona/lr_sona.md)
+		* [Word2Vec](./docs/algo/sona/word2vec_sona.md)
+		* [LINE](./docs/algo/sona/line_sona.md)
+		* [FTRLFM](./docs/algo/ftrl_fm_spark_en.md)
+		* [GBDT](./docs/algo/sona/feature_gbdt_sona.md)
+  * **Angel-Graph**
+    * [PageRank](./docs/algo/sona/pagerank_on_sona.md)
+    * [KCORE](./docs/algo/sona/kcore_sona.md)
+    * [Louvain](./docs/algo/sona/louvain_sona.md)
+    * [LINE](./docs/algo/sona/line_sona.md)
+    * [Word2Vec](./docs/algo/sona/word2vec_sona.md)
+    * [GraphSage](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/graph.md)
+    * [GCN](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/graph.md)
+    * [DGI](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/graph.md)
 
 
 ## Deployment
@@ -111,6 +120,7 @@
   3. Jie Jiang, Lele Yu, Jiawei Jiang, Yuhong Liu and Bin Cui. [Angel: a new large-scale machine learning system](https://academic.oup.com/nsr/article/3052720). National Science Review (NSR), 2017
   4. Jie Jiang, Jiawei Jiang,  Bin Cui and Ce Zhang. [TencentBoost: A Gradient Boosting Tree System with Parameter Server](http://ieeexplore.ieee.org/abstract/document/7929984/).	ICDE, 2017
   5. Jiawei Jiang, Bin Cui, Ce Zhang and Fangcheng Fu. [DimBoost: Boosting Gradient Boosting Decision Tree to Higher Dimensions](https://dl.acm.org/citation.cfm?id=3196892). SIGMOD, 2018.
+    6. Jiawei Jiang, Pin Xiao, Lele Yu, Xiaosen Li.[PSGraph: How Tencent trains extremely large-scale graphs with Spark?](https://conferences.computer.org/icde/2020/pdfs/ICDE2020-5acyuqhpJ6L9P042wmjY1p/290300b549/290300b549.pdf).ICDE, 2020.
 
 ## Presentation
 
