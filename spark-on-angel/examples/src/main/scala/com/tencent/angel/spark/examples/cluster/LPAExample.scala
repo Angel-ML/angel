@@ -46,6 +46,8 @@ object LPAExample {
       .getOrElse(throw new Exception("checkpoint dir not provided"))
     sc.setCheckpointDir(cpDir)
 
+    val maxIter = params.getOrElse("maxIter", "10").toInt
+    
     val sep = params.getOrElse("sep", "space") match {
       case "space" => " "
       case "comma" => ","
@@ -59,6 +61,7 @@ object LPAExample {
       .setSrcNodeIdCol("src")
       .setDstNodeIdCol("dst")
       .setUseBalancePartition(useBalancePartition)
+      .setMaxIter(maxIter)
 
     val df = GraphIO.load(input, isWeighted = false, srcIndex, dstIndex, sep = sep)
     val mapping = lpa.transform(df)
