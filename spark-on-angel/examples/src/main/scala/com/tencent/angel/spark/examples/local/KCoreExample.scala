@@ -28,7 +28,7 @@ object KCoreExample {
   def main(args: Array[String]): Unit = {
     val mode = "local"
     val input = "data/bc/edge"
-    val output = "model/kcore5/edge"
+    val output = "model/kcore/edge"
     val partitionNum = 3
     val storageLevel = StorageLevel.MEMORY_ONLY
     val batchSize = 100

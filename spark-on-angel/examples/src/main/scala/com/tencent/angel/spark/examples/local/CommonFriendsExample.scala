@@ -24,7 +24,7 @@ object CommonFriendsExample {
     val compressIndex = 2
     val srcIndex = 0
     val dstIndex = 1
-    val sep = "tab"
+    val sep = " "
 
     start(mode)
     val commonfriends = new CommonFriends()

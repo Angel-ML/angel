@@ -9,8 +9,8 @@ import org.apache.spark.storage.StorageLevel
 
 object PageRankExample {
   def main(args: Array[String]): Unit = {
-    val input = "data/bc/flickr.emmm"
-    val output = "model/angel/flickr"
+    val input = "data/bc/edge"
+    val output = "model/pagerank"
     val partitionNum = 3
     val storageLevel = StorageLevel.MEMORY_ONLY
     val batchSize = 100
