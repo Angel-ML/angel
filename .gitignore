@@ -33,6 +33,7 @@ angel-ps/graph/log/
 angel-ps/log/
 dist/target/
 spark-on-angel/core/target/
+spark-on-angel/graph/target/
 spark-on-angel/examples/target/
 spark-on-angel/mllib/target/
 spark-on-angel/automl/target/
