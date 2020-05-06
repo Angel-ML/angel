@@ -66,3 +66,11 @@ Python Client：利用TorchScript语法编写算法模型，交给Spark Executor
 
 
 
+## BenchMark性能测试
+
+我们在两份真实的数据集下对比Graphx和Angel Graph的性能，其中DS1为8亿顶点，110亿边金融支付网络；DS2为20亿顶点，1400亿边的社交网络，性能测试结果如下所示：
+
+![angel-graph-benchmark](../img/angel_graph_benchmark.png)
+
+
+

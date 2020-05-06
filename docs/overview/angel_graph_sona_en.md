@@ -66,3 +66,12 @@ In order to use this graph computing framework easily, we have implemented sever
 
 
 
+## BenchMark Performance
+
+We compare the performance of graphx and angel graph in two real datasets. The first dataset DS1 contains 0.8 billion vertices and 11 billion edges. The second dataset DS2 contains
+2 billion vertices and 140 billion edges. Performance comparison on traditional graph algorithms：
+
+![angel-graph-benchmark](F:/Github/img/angel_graph_benchmark.png)
+
+
+
