@@ -66,17 +66,17 @@
 		* [LDA\*](./docs/algo/lda_on_angel.md) ([WrapLDA](./docs/algo/wrap_lda_on_angel.md))
 * **Spark on Angel**
 	* **Angel-Mllib**
-		* [FM](https://github.com/Angel-ML/PyTorch-On-Angel/blob/master/docs/recommendation.md)
-		* [DeepFM](https://github.com/Angel-ML/PyTorch-On-Angel/blob/master/docs/recommendation.md)
-		* [DeepAndWide](https://github.com/Angel-ML/PyTorch-On-Angel/blob/master/docs/recommendation.md)
-		* [DCN](https://github.com/Angel-ML/PyTorch-On-Angel/blob/master/docs/recommendation.md)
-		* [XDeepFM](https://github.com/Angel-ML/PyTorch-On-Angel/blob/master/docs/recommendation.md)
-		* [AttentionFM](https://github.com/Angel-ML/PyTorch-On-Angel/blob/master/docs/recommendation.md)
-  	* [PNN](https://github.com/Angel-ML/PyTorch-On-Angel/blob/master/docs/recommendation.md)
-    * [FTRL](./docs/algo/ftrl_lr_spark.md)
-    * [Logistic Regression(LR)](./docs/algo/sona/lr_sona.md)
-    * [FTRLFM](./docs/algo/ftrl_fm_spark_en.md)
-    * [GBDT](./docs/algo/sona/feature_gbdt_sona.md)
+		* [FM](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/recommendation.md)
+		* [DeepFM](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/recommendation.md)
+		* [DeepAndWide](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/recommendation.md)
+		* [DCN](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/recommendation.md)
+		* [XDeepFM](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/recommendation.md)
+		* [AttentionFM](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/recommendation.md)
+  	    * [PNN](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/recommendation.md)
+        * [FTRL](./docs/algo/ftrl_lr_spark.md)
+        * [Logistic Regression(LR)](./docs/algo/sona/lr_sona.md)
+        * [FTRLFM](./docs/algo/ftrl_fm_spark_en.md)
+        * [GBDT](./docs/algo/sona/feature_gbdt_sona.md)
   * **Angel-Graph**
     * [PageRank](./docs/algo/sona/pagerank_on_sona.md)
     * [KCORE](./docs/algo/sona/kcore_sona.md)
@@ -106,7 +106,7 @@
 ## Community
 * Mailing list: angel-tsc@lists.deeplearningfoundation.org
 * Angel homepage in Linux FD: https://lists.deeplearningfoundation.org/g/angel-main
-* [TSC members & Committers](./Community.md)
+* [Committers & Contributors](./COMMITTERS.md)
 * [Contributing to Angel](./CONTRIBUTING.md)
 * [Roadmap](https://github.com/Angel-ML/angel/wiki/Roadmap)
 
@@ -123,8 +123,8 @@
   2. Jiawei Jiang, Bin Cui, Ce Zhang, Lele Yu. [Heterogeneity-aware Distributed Parameter Servers](http://dl.acm.org/citation.cfm?id=3035933). SIGMOD, 2017
   3. Jie Jiang, Lele Yu, Jiawei Jiang, Yuhong Liu and Bin Cui. [Angel: a new large-scale machine learning system](https://academic.oup.com/nsr/article/3052720). National Science Review (NSR), 2017
   4. Jie Jiang, Jiawei Jiang,  Bin Cui and Ce Zhang. [TencentBoost: A Gradient Boosting Tree System with Parameter Server](http://ieeexplore.ieee.org/abstract/document/7929984/).	ICDE, 2017
-    5. Jiawei Jiang, Bin Cui, Ce Zhang and Fangcheng Fu. [DimBoost: Boosting Gradient Boosting Decision Tree to Higher Dimensions](https://dl.acm.org/citation.cfm?id=3196892). SIGMOD, 2018.
-    6. Jiawei Jiang, Pin Xiao, Lele Yu, Xiaosen Li.[PSGraph: How Tencent trains extremely large-scale graphs with Spark?](https://conferences.computer.org/icde/2020/pdfs/ICDE2020-5acyuqhpJ6L9P042wmjY1p/290300b549/290300b549.pdf).ICDE, 2020.
+  5. Jiawei Jiang, Bin Cui, Ce Zhang and Fangcheng Fu. [DimBoost: Boosting Gradient Boosting Decision Tree to Higher Dimensions](https://dl.acm.org/citation.cfm?id=3196892). SIGMOD, 2018.
+  6. Jiawei Jiang, Pin Xiao, Lele Yu, Xiaosen Li.[PSGraph: How Tencent trains extremely large-scale graphs with Spark?](https://conferences.computer.org/icde/2020/pdfs/ICDE2020-5acyuqhpJ6L9P042wmjY1p/290300b549/290300b549.pdf).ICDE, 2020.
 
 ## Presentation
 
