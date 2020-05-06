@@ -12,10 +12,10 @@ object HIndexExample {
   def main(args: Array[String]): Unit = {
     val mode = "local"
     val input = "data/bc/edge"
-    val output = "model/angel/hindex"
+    val output = "model/hindex"
     val partitionNum = 1
     val storageLevel = StorageLevel.MEMORY_ONLY
-    val batchSize = 100
+    val batchSize = 3000
     val psPartitionNum = 1
 
     start(mode)
@@ -24,7 +24,7 @@ object HIndexExample {
       .setStorageLevel(storageLevel)
       .setPSPartitionNum(psPartitionNum)
 
-    val df = GraphIO.load(input, isWeighted = false, sep = "\t")
+    val df = GraphIO.load(input, isWeighted = false, sep = " ")
     val mapping = hindex.transform(df)
     GraphIO.save(mapping, output)
     stop()
