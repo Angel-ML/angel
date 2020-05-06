@@ -72,7 +72,7 @@ We would like to sincerely thank the following community members for their contr
 - [rachelsunrh](https://github.com/rachelsunrh) - **Rachel Sun**
 - [shunanzhang](https://github.com/shunanzhang) - **Shunan Zhang**
 - [sunchenglong](https://github.com/sunchenglong) - **Chenglong Sun**
-- [sunnygao1980](https://github.com/sunnygao1980) - ** sunnygao**
+- [sunnygao1980](https://github.com/sunnygao1980) - **sunnygao**
 - [sustcsonglin](https://github.com/sustcsonglin)
 - [weiwee](https://github.com/weiwee) - **Wenbin Wei**
 - [witgo](https://github.com/witgo) - **Guoqiang Li**
