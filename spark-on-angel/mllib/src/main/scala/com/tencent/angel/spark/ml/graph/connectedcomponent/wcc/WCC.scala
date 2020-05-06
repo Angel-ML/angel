@@ -60,13 +60,14 @@ class WCC(override val uid: String) extends Transformer
 		// make un-directed graph, for wcc
 		var graph = edges.flatMap { case (srcId, dstId) => Iterator((srcId, dstId), (dstId, srcId)) }
 			.groupByKey($(partitionNum))
-			.mapPartitionsWithIndex((index, adjTable) => Iterator(WCCGraphPartition.apply(index, adjTable)))
+			.mapPartitionsWithIndex((index, adjTable) => Iterator((0, WCCGraphPartition.apply(index, adjTable))))
 		graph.persist($(storageLevel))
 		graph.foreachPartition(_ => Unit)
-		graph.foreach(_.initMsgs(model))
+		graph.foreach(_._2.initMsgs(model))
 		
 		var numMsgs = model.numMsgs()
 		var curIteration = 0
+		var prev = graph
 		println(s"numMsgs=$numMsgs")
 		
 		// each node change its label into the min id of its neighbors (including itself).
@@ -74,13 +75,19 @@ class WCC(override val uid: String) extends Transformer
 		do {
 			curIteration += 1
       changedCnt = 0
-			changedCnt = graph.map(_.process(model, numMsgs, curIteration == 1)).reduce((n1, n2) => n1 + n2)
+			//changedCnt = graph.map(_.process(model, numMsgs, curIteration == 1)).reduce((n1, n2) => n1 + n2)
+			graph = prev.map(_._2.process(model, numMsgs, curIteration == 1))
 			graph.persist($(storageLevel))
 			graph.count()
+			changedCnt = graph.map(_._1).reduce((n1, n2) => n1 + n2)
+			prev.unpersist(true)
+			prev = graph
+			model.resetMsgs()
+			
 			println(s"curIteration=$curIteration numMsgs=$changedCnt")
 		} while (changedCnt > 0)
 
-		val retRDD = graph.map(_.save()).flatMap(f => f._1.zip(f._2))
+		val retRDD = graph.map(_._2.save()).flatMap(f => f._1.zip(f._2))
 			.map(f => Row.fromSeq(Seq[Any](f._1, f._2)))
    
 		dataset.sparkSession.createDataFrame(retRDD, transformSchema(dataset.schema))

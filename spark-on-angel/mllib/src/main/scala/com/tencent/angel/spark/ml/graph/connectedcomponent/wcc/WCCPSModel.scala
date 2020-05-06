@@ -42,13 +42,19 @@ class WCCPSModel(var inMsgs: PSVector,
 	}
 
 	def writeMsgs(msgs: Vector): Unit = {
-		inMsgs.update(msgs)
+		outMsgs.update(msgs)
 	}
 
 	def numMsgs(): Long = {
 		VectorUtils.nnz(inMsgs)
 	}
-
+	
+	def resetMsgs(): Unit = {
+		val temp = inMsgs
+		inMsgs = outMsgs
+		outMsgs = temp
+		outMsgs.reset
+	}
 }
 
 object WCCPSModel {

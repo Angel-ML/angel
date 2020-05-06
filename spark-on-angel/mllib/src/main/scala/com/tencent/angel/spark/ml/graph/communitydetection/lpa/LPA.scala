@@ -20,7 +20,7 @@ import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.graph.params._
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.Transformer
-import org.apache.spark.ml.param.ParamMap
+import org.apache.spark.ml.param.{IntParam, ParamMap}
 import org.apache.spark.ml.util.Identifiable
 import org.apache.spark.sql.types.{IntegerType, LongType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
@@ -29,11 +29,13 @@ import org.apache.spark.storage.StorageLevel
 class LPA(override val uid: String) extends Transformer
   with HasSrcNodeIdCol with HasDstNodeIdCol with HasOutputNodeIdCol with HasOutputCoreIdCol
   with HasStorageLevel with HasPartitionNum with HasPSPartitionNum with HasUseBalancePartition {
-
-
+  
+  final val maxIter = new IntParam(this, "maxIter", "maxIter")
+  final def setMaxIter(numIter: Int): this.type = set(maxIter, numIter)
+  setDefault(maxIter, 10)
+  
   def this() = this(Identifiable.randomUID("LPA"))
-
-
+  
   override def transform(dataset: Dataset[_]): DataFrame = {
     val edges = dataset.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd
       .filter(row => !row.anyNull)
@@ -68,7 +70,7 @@ class LPA(override val uid: String) extends Transformer
     var curIteration = 0
     var numMsgs = model.numMsgs()
     var prev = graph
-
+    val maxIters = $(maxIter)
     println(s"numMsgs = $numMsgs")
 
     do {
@@ -81,7 +83,7 @@ class LPA(override val uid: String) extends Transformer
       model.resetMsgs()
       numMsgs = model.numMsgs()
       println(s"curIteration=$curIteration numMsgs=$numMsgs")
-    } while (curIteration < 10)
+    } while (curIteration < maxIters)
 
     val retRDD = graph.map(_.save).flatMap(f => f._1.zip(f._2))
       .sortBy(_._2)

@@ -60,6 +60,7 @@ class LPAGraphPartition(index: Int,
     model.writeMsgs(outMsgs)
 
     new LPAGraphPartition(index, keys, indptr, neighbors, labels, indices)
+  
   }
 
   def calcLabel(idx: Int, inMsgs: LongLongVector): Long = {

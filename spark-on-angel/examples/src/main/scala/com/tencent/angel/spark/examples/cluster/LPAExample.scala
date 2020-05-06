@@ -41,11 +41,13 @@ object LPAExample {
     val psPartitionNum = params.getOrElse("psPartitionNum",
       sc.getConf.get("spark.ps.instances", "10")).toInt
     val useBalancePartition = params.getOrElse("useBalancePartition", "false").toBoolean
-
+    
     val cpDir = params.get("cpDir").filter(_.nonEmpty).orElse(GraphIO.defaultCheckpointDir)
       .getOrElse(throw new Exception("checkpoint dir not provided"))
     sc.setCheckpointDir(cpDir)
 
+    val maxIter = params.getOrElse("maxIter", "10").toInt
+    
     val sep = params.getOrElse("sep", "space") match {
       case "space" => " "
       case "comma" => ","
@@ -59,6 +61,7 @@ object LPAExample {
       .setSrcNodeIdCol("src")
       .setDstNodeIdCol("dst")
       .setUseBalancePartition(useBalancePartition)
+      .setMaxIter(maxIter)
 
     val df = GraphIO.load(input, isWeighted = false, srcIndex, dstIndex, sep = sep)
     val mapping = lpa.transform(df)
