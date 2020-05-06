@@ -39,7 +39,8 @@ Angel Graph中的Spark On Angel模块将Angel灵活的参数服务器插件式�
 
 #### Pytorch组件
 
-Python Client：利用TorchScript语法编写算法模型，交给Spark Executor加载，并通过Angel PS完成模型的分布式训练和预测。
+- Python Client：利用TorchScript语法编写算法模型，交给Spark Executor加载，并通过Angel PS完成模型的分布式训练和预测。
+
 
 
 
@@ -72,5 +73,5 @@ Python Client：利用TorchScript语法编写算法模型，交给Spark Executor
 
 ![angel-graph-benchmark](../img/angel_graph_benchmark.png)
 
-
+有关Angel Graph的详细介绍，可以参考这篇论文 [PSGraph: How Tencent trains extremely large-scale graphs with Spark?](https://conferences.computer.org/icde/2020/pdfs/ICDE2020-5acyuqhpJ6L9P042wmjY1p/290300b549/290300b549.pdf)
 
