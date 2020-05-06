@@ -39,7 +39,8 @@ The spark on angel module in Angel graph enables angel's flexible parameter serv
 
 #### Pytorch Component 
 
-Python Client：use torchscript syntax to write algorithm model, submit it to spark executor for loading, and complete distributed training and prediction of the model through angel PS
+- Python Client：use torchscript syntax to write algorithm model, submit it to spark executor for loading, and complete distributed training and prediction of the model through angel PS
+
 
 
 
@@ -72,6 +73,8 @@ We compare the performance of graphx and angel graph in two real datasets. The f
 2 billion vertices and 140 billion edges. Performance comparison on traditional graph algorithms：
 
 ![angel-graph-benchmark](F:/Github/img/angel_graph_benchmark.png)
+
+The detailed introduction to Angel graph, please refer to this paper [PSGraph: How Tencent trains extremely large-scale graphs with Spark?](https://conferences.computer.org/icde/2020/pdfs/ICDE2020-5acyuqhpJ6L9P042wmjY1p/290300b549/290300b549.pdf)
 
 
 
