@@ -75,7 +75,6 @@ class WCC(override val uid: String) extends Transformer
 		do {
 			curIteration += 1
       changedCnt = 0
-			//changedCnt = graph.map(_.process(model, numMsgs, curIteration == 1)).reduce((n1, n2) => n1 + n2)
 			graph = prev.map(_._2.process(model, numMsgs, curIteration == 1))
 			graph.persist($(storageLevel))
 			graph.count()
