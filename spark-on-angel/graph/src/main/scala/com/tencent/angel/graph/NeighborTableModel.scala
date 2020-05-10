@@ -92,6 +92,11 @@ class NeighborTableModel(@BeanProperty val param: Param) extends Serializable {
     this
   }
 
+  /**
+    * push the neighborsTable to Parameter Server
+    * @param data
+    * @return
+    */
   def initLongNeighbor(data: RDD[(Long, Array[Long])]): NeighborTableModel = {
     // Neighbor table : a (1, maxIndex + 1) dimension matrix
     val mc: MatrixContext = new MatrixContext()
@@ -101,6 +106,7 @@ class NeighborTableModel(@BeanProperty val param: Param) extends Serializable {
     mc.setColNum(param.maxIndex)
     mc.setMaxColNumInBlock(param.maxIndex / param.psPartNum)
 
+    // the key's value is LongArrayElemnt type
     mc.setValueType(classOf[LongArrayElement])
     psMatrix = PSMatrix.matrix(mc)
 
@@ -113,13 +119,21 @@ class NeighborTableModel(@BeanProperty val param: Param) extends Serializable {
     this
   }
 
+  /**
+    * push the mini-batch neighbors to ps
+    * @param psMatrix
+    * @param pairs
+    * @return
+    */
   def initLongNeighbors(psMatrix: PSMatrix, pairs: Seq[(Long, Array[Long])]): NeighborTableModel = {
     val nodeIdToNeighbors = new Long2ObjectOpenHashMap[Array[Long]](pairs.length)
     pairs.foreach { case (src, neighbors) =>
       require(src < this.param.maxIndex, s"$src exceeds the maximal node index ${this.param.maxIndex}")
       nodeIdToNeighbors.put(src, neighbors)
     }
+    // create psfunc
     val func = new InitLongNeighbor(new InitLongNeighborParam(psMatrix.id, nodeIdToNeighbors))
+    // it means async push the nodes->neighbors to parameter server
     psMatrix.asyncPsfUpdate(func).get()
     nodeIdToNeighbors.clear()
     println(s"init ${pairs.length} long neighbors")

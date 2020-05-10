@@ -23,7 +23,7 @@ import it.unimi.dsi.fastutil.longs.{Long2IntOpenHashMap, LongArrayList}
 
 class LPAGraphPartition(index: Int,
                         keys: Array[Long],
-                        indptr: Array[Int],
+                        idxptr: Array[Int],
                         neighbors: Array[Long],
                         labels: Array[Long],
                         indices: Array[Long]) {
@@ -59,14 +59,14 @@ class LPAGraphPartition(index: Int,
 
     model.writeMsgs(outMsgs)
 
-    new LPAGraphPartition(index, keys, indptr, neighbors, labels, indices)
+    new LPAGraphPartition(index, keys, idxptr, neighbors, labels, indices)
   }
 
   def calcLabel(idx: Int, inMsgs: LongLongVector): Long = {
-    var j = indptr(idx)
+    var j = idxptr(idx)
     val labelCount = new Long2IntOpenHashMap()
-    var (label, count) = (neighbors(j), 1)
-    while (j < indptr(idx + 1)) {
+    var (label, count) = (inMsgs.get(neighbors(j)), 1)
+    while (j < idxptr(idx + 1)) {
       labelCount.addTo(inMsgs.get(neighbors(j)), 1)
       if (labelCount.get(inMsgs.get(neighbors(j))) > count) {
         label = inMsgs.get(neighbors(j))
@@ -86,15 +86,15 @@ object LPAGraphPartition {
 
   def apply(index: Int, iterator: Iterator[(Long, Iterable[Long])]): LPAGraphPartition = {
 
-    val indptr = new IntArrayList()
+    val idxptr = new IntArrayList()
     val keys = new LongArrayList()
     val neighbors = new LongArrayList()
 
-    indptr.add(0)
+    idxptr.add(0)
     while (iterator.hasNext) {
       val (nodes, ns) = iterator.next()
       ns.toArray.distinct.foreach(n => neighbors.add(n))
-      indptr.add(neighbors.size())
+      idxptr.add(neighbors.size())
       keys.add(nodes)
     }
 
@@ -102,7 +102,7 @@ object LPAGraphPartition {
     val neighborsArray = neighbors.toLongArray()
 
     new LPAGraphPartition(index, keysArray,
-      indptr.toIntArray(), neighborsArray,
+      idxptr.toIntArray(), neighborsArray,
       new Array[Long](keysArray.length), keysArray.union(neighborsArray).distinct)
   }
 }

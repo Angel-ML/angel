@@ -34,7 +34,6 @@ object LPAExample {
     val input = params.getOrElse("input", null)
     val partitionNum = params.getOrElse("partitionNum", "100").toInt
     val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
-    val batchSize = params.getOrElse("batchSize", "10000").toInt
     val output = params.getOrElse("output", null)
     val srcIndex = params.getOrElse("src", "0").toInt
     val dstIndex = params.getOrElse("dst", "1").toInt
