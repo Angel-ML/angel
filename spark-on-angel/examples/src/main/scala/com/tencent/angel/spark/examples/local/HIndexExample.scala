@@ -15,7 +15,6 @@ object HIndexExample {
     val output = "model/hindex"
     val partitionNum = 1
     val storageLevel = StorageLevel.MEMORY_ONLY
-    val batchSize = 3000
     val psPartitionNum = 1
 
     start(mode)
