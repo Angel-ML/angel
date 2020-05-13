@@ -47,7 +47,7 @@ class DeepFM(conf: SharedConf, _ctx: TaskContext = null) extends AngelModel(conf
     // outputDim:transFunc:optimizer
     var fcLayer: Layer = innerSumCross
     val fclayerParams = conf.get(MLCoreConf.ML_FCLAYER_PARAMS, MLCoreConf.DEFAULT_ML_FCLAYER_PARAMS)
-    fclayerParams.split("|").zipWithIndex.foreach{ case (params: String, idx: Int) =>
+    fclayerParams.split("\\|").zipWithIndex.foreach{ case (params: String, idx: Int) =>
       val name = s"fclayer_$idx"
       params.split(":") match {
         case Array(outputDim: String, transFunc: String, optimizer: String) =>
