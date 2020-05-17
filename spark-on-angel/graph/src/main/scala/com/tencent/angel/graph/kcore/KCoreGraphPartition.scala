@@ -43,7 +43,11 @@ class KCoreGraphPartition(index: Int,
                           neiCores: Array[Int],
                           indices: Array[Long],
                           hIndices: Array[Int]) extends Serializable {
-
+  /**
+    * use the degree to init vertices core-value
+    * @param model
+    * @return
+    */
   def initMsgs(model: KCorePSModel): Int = {
     val msgs = VFactory.sparseLongKeyIntVector(model.dim)
     for (i <- keys.indices)
@@ -53,40 +57,20 @@ class KCoreGraphPartition(index: Int,
   }
 
   def process(model: KCorePSModel, numMsgs: Long, isFirstIteration: Boolean): KCoreGraphPartition = {
-    if (numMsgs > indices.length || isFirstIteration) {
-      val inMsgs = model.readMsgs(indices)
 
-      val outMsgs = VFactory.sparseLongKeyIntVector(inMsgs.dim())
-      for (idx <- keys.indices) {
-        val newIndex = if (isFirstIteration) calcOneFirst(idx, inMsgs) else calcOne(idx, inMsgs)
-        if (newIndex < keyCores(idx)) {
-          outMsgs.set(keys(idx), newIndex)
-          keyCores(idx) = newIndex
-        }
+    val inMsgs = if(numMsgs > indices.length || isFirstIteration) model.readMsgs(indices) else model.readAllMsgs()
+    val outMsgs = VFactory.sparseLongKeyIntVector(inMsgs.dim())
+    for (idx <- keys.indices) {
+      val newIndex = if (isFirstIteration) calcOneFirst(idx, inMsgs) else calcOne(idx, inMsgs)
+      if (newIndex < keyCores(idx)) {
+        outMsgs.set(keys(idx), newIndex)
+        keyCores(idx) = newIndex
       }
-
-      model.writeMsgs(outMsgs)
-
-      new KCoreGraphPartition(index, keys, idxptr,
-        neighbors, keyCores, neiCores, indices, hIndices)
-    } else {
-      val inMsgs = model.readAllMsgs()
-      assert(inMsgs.size() == numMsgs)
-
-      val outMsgs = VFactory.sparseLongKeyIntVector(inMsgs.dim())
-      for (idx <- keys.indices) {
-        val newIndex = calcOne(idx, inMsgs)
-        if (newIndex < keyCores(idx)) {
-          keyCores(idx) = newIndex
-          outMsgs.set(keys(idx), newIndex)
-        }
-      }
-
-      model.writeMsgs(outMsgs)
-
-      new KCoreGraphPartition(index, keys, idxptr,
-        neighbors, keyCores, neiCores, indices, hIndices)
     }
+
+    model.writeMsgs(outMsgs)
+    new KCoreGraphPartition(index, keys, idxptr, neighbors, keyCores, neiCores, indices, hIndices)
+
   }
 
   def calcOne(idx: Int, inMsgs: LongIntVector): Int = {
