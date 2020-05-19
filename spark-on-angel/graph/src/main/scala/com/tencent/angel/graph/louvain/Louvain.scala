@@ -65,7 +65,7 @@ class Louvain(override val uid: String) extends Transformer
     assert(dataset.sparkSession.sparkContext.getCheckpointDir.nonEmpty, "set checkpoint dir first")
     val rawEdges: RDD[((Long, Long), Float)] = {
       if ($(isWeighted)) {
-        dataset.rdd.take(2).foreach(println)
+//        dataset.rdd.take(2).foreach(println)
         dataset.select($(srcNodeIdCol), $(dstNodeIdCol), $(weightCol)).rdd.map { row =>
           (row.getLong(0), row.getLong(1), row.getFloat(2))
         }
@@ -83,6 +83,7 @@ class Louvain(override val uid: String) extends Transformer
       Iterator(src, dst)
     }.distinct($(partitionNum))
 
+    //node reindex, long to int,and int to long
     val reIndexer = new NodeIndexer()
     reIndexer.train($(psPartitionNum), nodes, $(batchSize))
 
@@ -95,8 +96,7 @@ class Louvain(override val uid: String) extends Transformer
       }.toIterator
     }
 
-    val graph: RDD[LouvainGraphPartition] = LouvainGraph.edgeTripleRDD2GraphPartitions(edges,
-      storageLevel = $(storageLevel))
+    val graph: RDD[LouvainGraphPartition] = LouvainGraph.edgeTripleRDD2GraphPartitions(edges, storageLevel = $(storageLevel))
 
     // destroys the lineage and close encoder of node indexer
     graph.checkpoint()
