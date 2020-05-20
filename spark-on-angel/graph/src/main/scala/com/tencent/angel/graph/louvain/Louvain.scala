@@ -79,16 +79,16 @@ class Louvain(override val uid: String) extends Transformer
     }.reduceByKey(_ + _, $(partitionNum))
       .persist(StorageLevel.DISK_ONLY)
 
-    val nodes = rawEdges.flatMap { case ((src, dst), _) =>
+    val vertexRDD = rawEdges.flatMap { case ((src, dst), _) =>
       Iterator(src, dst)
     }.distinct($(partitionNum))
 
     //node reindex, long to int,and int to long
     val reIndexer = new NodeIndexer()
-    reIndexer.train($(psPartitionNum), nodes, $(batchSize))
+    reIndexer.train($(psPartitionNum), vertexRDD, $(batchSize))
 
     //reindex edges from (Long, Long, Float) to (Int, Int, Float)
-    val edges: RDD[(Int, Int, Float)] = reIndexer.encode(rawEdges, $(batchSize)) { case (iter, ps) =>
+    val edgeTriplet: RDD[(Int, Int, Float)] = reIndexer.encode(rawEdges, $(batchSize)) { case (iter, ps) =>
       val keys = iter.flatMap { case ((src, dst), _) => Iterator(src, dst) }.distinct
       val map = ps.pull(keys).asInstanceOf[LongIntVector]
       iter.map { case ((src, dst), wgt) =>
@@ -96,7 +96,7 @@ class Louvain(override val uid: String) extends Transformer
       }.toIterator
     }
 
-    val graph: RDD[LouvainGraphPartition] = LouvainGraph.edgeTripleRDD2GraphPartitions(edges, storageLevel = $(storageLevel))
+    val graph: RDD[LouvainGraphPartition] = LouvainGraph.edgeTriplet2GraphPartitions(edgeTriplet, storageLevel = $(storageLevel))
 
     // destroys the lineage and close encoder of node indexer
     graph.checkpoint()
