@@ -15,14 +15,13 @@ In the implementation of closeness, hyperloglog + + cardinal counter is used to 
 ### Algorithm IO parameters
 
   - input： hdfs path for a undirected and unweighted graph, each row represents an edge in the form of `srcId | dstId
-  - output： hdfs path for output, each row represents the vertex and its closeness value.
+  - output： hdfs path for output, each row represents the vertex and its closeness value，include nodeId(long) | closeness(float) | node cardinality | adius weighted sum , the larger the closeness value, the more important the node is
   - sep:  the separation in input file to separate the srcId and dstId, could be tab, space or comma
 ### Algorithm parameters
 
   - partitionNum： The number of input data partitions is generally set to 3-4 times the number of spark executors times the number of executor cores
   - psPartitionNum：  The number of model partitions is preferably an integer multiple of the number of parameter servers, so that the number of partitions carried by each ps is equal, and the load of each PS is balanced as much as possible. If the amount of data is large, more than 500 is recommended
   - msgNumBatch： Number of batch calculations per RDD partition of spark
-  - pullBatchSize：  the mini batchSize of vertices when calculating closeness for each vertex
   - useBalancePartition：whether to use balancePartition strategy, `true` / `false`, `true` is suggested when the distribution of graph vertices is unbalanced
   - balancePartitionPercent：use balancePartition strategy 
   - verboseSaving: Save closeness intermediate results in detail
