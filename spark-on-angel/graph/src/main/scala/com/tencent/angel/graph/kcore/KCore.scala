@@ -28,6 +28,7 @@ import org.apache.spark.storage.StorageLevel
 
 /**
   * KCore algorithm implementation
+  *
   * @param uid
   */
 class KCore(override val uid: String) extends Transformer
@@ -38,7 +39,9 @@ class KCore(override val uid: String) extends Transformer
   def this() = this(Identifiable.randomUID("KCore"))
 
   override def transform(dataset: Dataset[_]): DataFrame = {
+    //graph edges
     val edges = dataset.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd
+      .filter(row => !row.anyNull)
       .map(row => (row.getLong(0), row.getLong(1)))
       .filter(f => f._1 != f._2)
 
@@ -46,7 +49,8 @@ class KCore(override val uid: String) extends Transformer
 
     val maxId = edges.flatMap(f => Iterator(f._1, f._2)).max() + 1
     val minId = edges.flatMap(f => Iterator(f._1, f._2)).min()
-    val index = edges.flatMap(f => Iterator(f._1, f._2))
+    // graph vertices
+    val vertices = edges.flatMap(f => Iterator(f._1, f._2))
     val numEdges = edges.count()
 
     println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
@@ -55,32 +59,33 @@ class KCore(override val uid: String) extends Transformer
     println("start to run ps")
     PSContext.getOrCreate(SparkContext.getOrCreate())
 
-    val model = KCorePSModel.fromMinMax(minId, maxId, index, $(psPartitionNum),
-      $(useBalancePartition), ${balancePartitionPercent})
+    //create KcorePSModel
+    val model = KCorePSModel.fromMinMax(minId, maxId, vertices, $(psPartitionNum), $(useBalancePartition), $(balancePartitionPercent))
+
+    //build graph  from edges
     var graph = edges.flatMap(f => Iterator((f._1, f._2), (f._2, f._1)))
       .groupByKey($(partitionNum))
-      .mapPartitionsWithIndex((index, it) =>
-        Iterator(KCoreGraphPartition.apply(index, it)))
+      .mapPartitionsWithIndex((index, it) => Iterator(KCoreGraphPartition.apply(index, it)))
 
     graph.persist($(storageLevel))
     graph.foreachPartition(_ => Unit)
     graph.foreach(_.initMsgs(model))
 
-    var curIteration = 0
+    var curIter = 0
     var numMsgs = model.numMsgs()
     var prev = graph
     println(s"numMsgs=$numMsgs")
 
     do {
-      curIteration += 1
-      graph = prev.map(_.process(model, numMsgs, curIteration == 1))
+      curIter += 1
+      graph = prev.map(_.process(model, numMsgs, curIter == 1))
       graph.persist($(storageLevel))
       graph.count()
       prev.unpersist(true)
       prev = graph
       model.resetMsgs()
       numMsgs = model.numMsgs()
-      println(s"curIteration=$curIteration numMsgs=$numMsgs")
+      println(s"curIteration=$curIter numMsgs=$numMsgs")
     } while (numMsgs > 0)
 
     val retRDD = graph.map(_.save()).flatMap(f => f._1.zip(f._2))

@@ -89,13 +89,13 @@ class HIndex(override val uid: String) extends Transformer
         $(outputNodeIdCol)
       }", LongType, nullable = false),
       StructField(s"${
-        "HIndex"
+        "h-index"
       }", IntegerType, nullable = false),
       StructField(s"${
-        "GIndex"
+        "g-index"
       }", IntegerType, nullable = false),
       StructField(s"${
-        "WIndex"
+        "w-index"
       }", IntegerType, nullable = false)
     ))
   }

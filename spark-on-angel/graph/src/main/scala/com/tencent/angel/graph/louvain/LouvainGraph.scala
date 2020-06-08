@@ -17,7 +17,7 @@
 package com.tencent.angel.graph.louvain
 
 import com.tencent.angel.ml.math2.vector.IntFloatVector
-import com.tencent.angel.graph.louvain.LouvainGraph.edgeTripleRDD2GraphPartitions
+import com.tencent.angel.graph.louvain.LouvainGraph.edgeTriplet2GraphPartitions
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 
@@ -31,38 +31,49 @@ import scala.collection.mutable.ArrayBuffer
 
 object LouvainGraph {
 
-  def edgeTripleRDD2GraphPartitions(tripleRdd: RDD[(Int, Int, Float)],
-                                    model: LouvainPSModel = null,
-                                    numPartition: Option[Int] = None,
-                                    storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
+  /**
+    *
+    * @param tripleRdd
+    * @param model
+    * @param numPartition
+    * @param storageLevel
+    * @return
+    */
+  def edgeTriplet2GraphPartitions(tripletRdd: RDD[(Int, Int, Float)],
+                                  model: LouvainPSModel = null,
+                                  numPartition: Option[Int] = None,
+                                  storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
   : RDD[LouvainGraphPartition] = {
 
-    val partNum = numPartition.getOrElse(tripleRdd.getNumPartitions)
-    tripleRdd.flatMap { case (src, dst, wgt) =>
+    val partNum = numPartition.getOrElse(tripletRdd.getNumPartitions)
+
+    val edgePartition = tripletRdd.flatMap { case (src, dst, wgt) =>
       Iterator((src, (dst, wgt)), (dst, (src, wgt)))
     }.groupByKey(partNum).mapPartitions { iter =>
       if (iter.nonEmpty) {
-        val keys = new ArrayBuffer[Int]()
-        val neighbors = new ArrayBuffer[Array[Int]]()
-        val weights = new ArrayBuffer[Array[Float]]()
-        iter.foreach { case (key, group) =>
-          keys += key
+        val localSrcIds = new ArrayBuffer[Int](iter.size)
+        val neighbors = new ArrayBuffer[Array[Int]](iter.size)
+        val edgeAttrs = new ArrayBuffer[Array[Float]](iter.size)
+        iter.foreach { case (vertex, group) =>
+          localSrcIds += vertex
           val (e, w) = group.unzip
           neighbors += e.toArray
-          weights += w.toArray
+          edgeAttrs += w.toArray
         }
-        Iterator.single((keys.toArray, neighbors.toArray, weights.toArray))
+        Iterator.single((localSrcIds.toArray, neighbors.toArray, edgeAttrs.toArray))
       } else {
         Iterator.empty
       }
-    }.map { case (keys, neighbors, weights) =>
+    }
+
+    edgePartition.map { case (localSrcIds, neighbors, edgeAttrs) =>
       // calc nodeWeights
       val nodeWeights = if (null != model) {
-        model.getCommInfo(keys).get(keys)
+        model.getCommInfo(localSrcIds).get(localSrcIds)
       } else {
-        weights.map(_.sum)
+        edgeAttrs.map(_.sum)
       }
-      new LouvainGraphPartition(keys, neighbors, weights, nodeWeights)
+      new LouvainGraphPartition(localSrcIds, neighbors, edgeAttrs, nodeWeights)
     }.persist(storageLevel)
   }
 }
@@ -226,7 +237,7 @@ class LouvainGraph(
     }.reduceByKey(_ + _).map { case ((src, dst), wgt) =>
       (src, dst, wgt / 2.0f)
     }
-    val newGraph = edgeTripleRDD2GraphPartitions(newEdges, louvainPSModel)
+    val newGraph = edgeTriplet2GraphPartitions(newEdges, louvainPSModel)
     newGraph.foreachPartition(_ => Unit)
     this.graph.unpersist()
     println(s"folding, takes ${System.currentTimeMillis() - curTime}ms")

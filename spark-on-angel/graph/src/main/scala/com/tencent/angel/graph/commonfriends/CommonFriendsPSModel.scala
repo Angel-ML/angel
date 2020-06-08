@@ -23,12 +23,21 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap
 import org.apache.spark.rdd.RDD
 
+/**
+  * CommonFriendsPSModel use the neighborTableModel(a PSModel) to
+  * init or get node's adjacency table (neighborTable)
+  * @param neighborTable
+  */
 class CommonFriendsPSModel(val neighborTable: NeighborTableModel) extends Serializable {
 
   def initNeighborTable(data: RDD[(Int, Int)]): Unit = {
     neighborTable.initNeighbor(data)
   }
 
+  /**
+    *
+    * @param data  which store nodes,and its neighbors
+    */
   def initLongNeighborTable(data: RDD[(Long, Array[Long])]): Unit = {
     neighborTable.initLongNeighbor(data)
   }

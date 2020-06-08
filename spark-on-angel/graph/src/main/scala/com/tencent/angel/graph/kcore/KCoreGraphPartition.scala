@@ -37,62 +37,46 @@ import it.unimi.dsi.fastutil.longs.LongArrayList
 private[kcore]
 class KCoreGraphPartition(index: Int,
                           keys: Array[Long],
-                          indptr: Array[Int],
+                          idxptr: Array[Int],
                           neighbors: Array[Long],
                           keyCores: Array[Int],
                           neiCores: Array[Int],
                           indices: Array[Long],
                           hIndices: Array[Int]) extends Serializable {
-
+  /**
+    * use the degree to init vertices core-value
+    * @param model
+    * @return
+    */
   def initMsgs(model: KCorePSModel): Int = {
     val msgs = VFactory.sparseLongKeyIntVector(model.dim)
     for (i <- keys.indices)
-      msgs.set(keys(i), indptr(i + 1) - indptr(i))
+      msgs.set(keys(i), idxptr(i + 1) - idxptr(i))
     model.initMsgs(msgs)
     msgs.size().toInt
   }
 
   def process(model: KCorePSModel, numMsgs: Long, isFirstIteration: Boolean): KCoreGraphPartition = {
-    if (numMsgs > indices.length || isFirstIteration) {
-      val inMsgs = model.readMsgs(indices)
 
-      val outMsgs = VFactory.sparseLongKeyIntVector(inMsgs.dim())
-      for (idx <- keys.indices) {
-        val newIndex = if (isFirstIteration) calcOneFirst(idx, inMsgs) else calcOne(idx, inMsgs)
-        if (newIndex < keyCores(idx)) {
-          outMsgs.set(keys(idx), newIndex)
-          keyCores(idx) = newIndex
-        }
+    val inMsgs = if(numMsgs > indices.length || isFirstIteration) model.readMsgs(indices) else model.readAllMsgs()
+    val outMsgs = VFactory.sparseLongKeyIntVector(inMsgs.dim())
+    for (idx <- keys.indices) {
+      val newIndex = if (isFirstIteration) calcOneFirst(idx, inMsgs) else calcOne(idx, inMsgs)
+      if (newIndex < keyCores(idx)) {
+        outMsgs.set(keys(idx), newIndex)
+        keyCores(idx) = newIndex
       }
-
-      model.writeMsgs(outMsgs)
-
-      new KCoreGraphPartition(index, keys, indptr,
-        neighbors, keyCores, neiCores, indices, hIndices)
-    } else {
-      val inMsgs = model.readAllMsgs()
-      assert(inMsgs.size() == numMsgs)
-
-      val outMsgs = VFactory.sparseLongKeyIntVector(inMsgs.dim())
-      for (idx <- keys.indices) {
-        val newIndex = calcOne(idx, inMsgs)
-        if (newIndex < keyCores(idx)) {
-          keyCores(idx) = newIndex
-          outMsgs.set(keys(idx), newIndex)
-        }
-      }
-
-      model.writeMsgs(outMsgs)
-
-      new KCoreGraphPartition(index, keys, indptr,
-        neighbors, keyCores, neiCores, indices, hIndices)
     }
+
+    model.writeMsgs(outMsgs)
+    new KCoreGraphPartition(index, keys, idxptr, neighbors, keyCores, neiCores, indices, hIndices)
+
   }
 
   def calcOne(idx: Int, inMsgs: LongIntVector): Int = {
-    var j = indptr(idx)
+    var j = idxptr(idx)
     var flag = false
-    while (j < indptr(idx + 1)) {
+    while (j < idxptr(idx + 1)) {
       val t = inMsgs.get(neighbors(j))
       if (t != 0 && t != neiCores(j)) {
         neiCores(j) = t
@@ -102,19 +86,19 @@ class KCoreGraphPartition(index: Int,
     }
 
     if (flag)
-      calcHIndex(neiCores, indptr(idx), indptr(idx + 1))
+      calcHIndex(neiCores, idxptr(idx), idxptr(idx + 1))
     else
       keyCores(idx)
   }
 
   def calcOneFirst(idx: Int, inMsgs: LongIntVector): Int = {
     keyCores(idx) = inMsgs.get(keys(idx))
-    var j = indptr(idx)
-    while (j < indptr(idx + 1)) {
+    var j = idxptr(idx)
+    while (j < idxptr(idx + 1)) {
       neiCores(j) = inMsgs.get(neighbors(j))
       j += 1
     }
-    calcHIndex(neiCores, indptr(idx), indptr(idx + 1))
+    calcHIndex(neiCores, idxptr(idx), idxptr(idx + 1))
   }
 
   def calcHIndex(citations: Array[Int], from: Int, to: Int): Int = {
@@ -138,18 +122,25 @@ class KCoreGraphPartition(index: Int,
 
 private[kcore]
 object KCoreGraphPartition {
+  /**
+    * user CSR (index pointer) store the adjacency table of vertex
+    * @param index
+    * @param iterator Adjacency table of vertex
+    * @return
+    */
   def apply(index: Int, iterator: Iterator[(Long, Iterable[Long])]): KCoreGraphPartition = {
-    val indptr = new IntArrayList()
+    //csr index pointer
+    val idxptr = new IntArrayList()
     val keys = new LongArrayList()
     val neighbours = new LongArrayList()
 
-    indptr.add(0)
+    idxptr.add(0)
     var maxDegree: Int = 0
     while (iterator.hasNext) {
       val entry = iterator.next()
       val (node, ns) = (entry._1, entry._2.toArray.distinct)
       ns.foreach(n => neighbours.add(n))
-      indptr.add(neighbours.size())
+      idxptr.add(neighbours.size())
       keys.add(node)
       maxDegree = math.max(ns.size, maxDegree)
     }
@@ -157,7 +148,7 @@ object KCoreGraphPartition {
     val keysArray = keys.toLongArray()
     val neighboursArray = neighbours.toLongArray()
 
-    new KCoreGraphPartition(index, keysArray, indptr.toIntArray(),
+    new KCoreGraphPartition(index, keysArray, idxptr.toIntArray(),
       neighboursArray, new Array[Int](keysArray.length),
       new Array[Int](neighboursArray.length),
       keysArray.union(neighboursArray).distinct,
@@ -165,13 +156,13 @@ object KCoreGraphPartition {
   }
 
   def apply(index: Int, keys: Array[Long],
-            indptr: Array[Int],
+            idxptr: Array[Int],
             neighbors: Array[Long],
             keyCores: Array[Int],
             neiCores: Array[Int],
             indices: Array[Long],
             hIndices: Array[Int]): KCoreGraphPartition = {
-    new KCoreGraphPartition(index, keys, indptr,
+    new KCoreGraphPartition(index, keys, idxptr,
       neighbors, keyCores, neiCores, indices, hIndices)
   }
 

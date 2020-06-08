@@ -14,13 +14,12 @@ Closeness的实现过程中，采用HyperLogLog++基数计数器记录每个顶�
 
 ### 算法IO参数
   - input： 输入，hdfs路径，无向图/有向图，不带权，每行表示一条边，srcId 分隔符 dstId，分隔符可以为空白符、tab或逗号等
-  - output： 输出，hdfs路径，保存计算结果。每行表示srcId dstId 共同好友数。
+  - output： 输出，hdfs路径，保存计算结果。输出为nodeId(long) | closeness(float) | 节点cardinality | 半径加权求和的cardinality, closeness值越大表示节点越重要
   - sep: 分隔符，输入中每条边的起始顶点、目标顶点之间的分隔符: `tab`, `空格`等
 ### 算法参数
   - partitionNum： 数据分区数，worker端spark rdd的数据分区数量，一般设为spark executor个数乘以executor core数的3-4倍，
   - psPartitionNum： 参数服务器上模型的分区数量，最好是parameter server个数的整数倍，让每个ps承载的分区数量相等，让每个PS负载尽量均衡, 数据量大的话推荐500以上
   - msgNumBatch： spark每个rdd分区分批计算的次数
-  - pullBatchSize： 每个mini batch的大小
   - useBalancePartition：是否使用均衡分区，默认为false
   - balancePartitionPercent：均衡分区度，默认为0.7
   - verboseSaving: 详细保存closeness中间结果
