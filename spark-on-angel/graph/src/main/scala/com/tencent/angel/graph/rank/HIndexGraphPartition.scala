@@ -89,11 +89,15 @@ class HIndexGraphPartition(index: Int,
     (calcHIndex(start, end), calcGIndex(start, end), calcWIndex(start, end))
   }
 
-
+  /**
+    * compute h-index
+    * @param start the start index of a node's neighbors
+    * @param end the end index of a node's neighbors
+    * @return h-index value
+    */
   def calcHIndex(start: Int, end: Int): Int = {
     var i = end - 1
     var cnt = 1
-    //compute h-index
     while (i >= start && hIndex(i) >= cnt) {
       cnt += 1
       i -= 1
@@ -102,24 +106,36 @@ class HIndexGraphPartition(index: Int,
     cnt - 1
   }
 
+  /**
+    * compute g-index
+    * @param start the start index of a node's neighbors
+    * @param end the end index of a node's neighbors
+    * @return g-index value
+    */
   def calcGIndex(start: Int, end: Int): Int = {
     var i = end - 1
     var cnt = 0
-    var g2 = 0
+    var g = 0
     var gIndex = 0
-    while (i >= start && cnt >= g2) {
+    while (i >= start && cnt >= g) {
       gIndex += 1
       cnt += hIndex(i)
-      g2 = (end - i) * (end - i)
+      g = (end - i) * (end - i)
       i -= 1
     }
-    if (cnt >= g2) {
+    if (cnt >= g) {
       gIndex
     } else {
       gIndex - 1
     }
   }
 
+  /**
+    * compute w-index
+    * @param start the start index of a node's neighbors
+    * @param end the end index of a node's neighbors
+    * @return w-index value
+    */
   def calcWIndex(start: Int, end: Int): Int = {
     var i = end - 1
     var cnt = 1
@@ -134,6 +150,10 @@ class HIndexGraphPartition(index: Int,
     cnt - 1
   }
 
+  /**
+    * save the  h-index, g-index and w-index of node
+    * @return nodes and the index result
+    */
   def save(): (Array[Long], Array[(Int, Int, Int)]) =
     (srcNodes, srcNodesHIndex)
 
@@ -142,6 +162,12 @@ class HIndexGraphPartition(index: Int,
 object HIndexGraphPartition {
 
 
+  /**
+    *  graph partition, store  node and it's neighbors in CSR format
+    * @param index partition id
+    * @param iterator node and it's neighbors
+    * @return graph partition
+    */
   def apply(index: Int, iterator: Iterator[(Long, Iterable[Long])]): HIndexGraphPartition = {
     val csrPointer = new IntArrayList()
     csrPointer.add(0)
