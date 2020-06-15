@@ -28,12 +28,12 @@ class LPAGraphPartition(index: Int,
                         labels: Array[Long],
                         indices: Array[Long]) {
 
-  def initMsgs(model: LPAPSModel): Int = {
+  def initMsgs(model: LPAPSModel): Long = {
     val msgs = VFactory.sparseLongKeyLongVector(model.dim)
     for (i <- keys.indices)
       msgs.set(keys(i), keys(i))
     model.initMsgs(msgs)
-    msgs.size().toInt
+    msgs.size()
   }
 
   def msgToString(msgs: LongLongVector): String = {
@@ -47,19 +47,22 @@ class LPAGraphPartition(index: Int,
   }
 
 
-  def process(model: LPAPSModel, numMsgs: Long): LPAGraphPartition = {
+  def process(model: LPAPSModel): (LPAGraphPartition, Long) = {
     val inMsgs = model.readMsgs(indices) //todo 如果ps的inMsgs没有key，会返回0
     val outMsgs = VFactory.sparseLongKeyLongVector(inMsgs.dim())
-
+    var numChanged = 0
     for (idx <- keys.indices) {
       val newLabel = calcLabel(idx, inMsgs)
+      if (inMsgs.get(keys(idx)) != newLabel) {
+        numChanged += 1
+      }
       outMsgs.set(keys(idx), newLabel)
       labels(idx) = newLabel
     }
 
     model.writeMsgs(outMsgs)
 
-    new LPAGraphPartition(index, keys, idxptr, neighbors, labels, indices)
+    (new LPAGraphPartition(index, keys, idxptr, neighbors, labels, indices), numChanged)
   }
 
   def calcLabel(idx: Int, inMsgs: LongLongVector): Long = {
@@ -84,7 +87,7 @@ class LPAGraphPartition(index: Int,
 
 object LPAGraphPartition {
 
-  def apply(index: Int, iterator: Iterator[(Long, Iterable[Long])]): LPAGraphPartition = {
+  def apply(index: Int, iterator: Iterator[(Long, Iterable[Long])]): (LPAGraphPartition, Long) = {
 
     val idxptr = new IntArrayList()
     val keys = new LongArrayList()
@@ -100,9 +103,10 @@ object LPAGraphPartition {
 
     val keysArray = keys.toLongArray()
     val neighborsArray = neighbors.toLongArray()
+    val nodes = keysArray.union(neighborsArray).distinct
 
-    new LPAGraphPartition(index, keysArray,
+    (new LPAGraphPartition(index, keysArray,
       idxptr.toIntArray(), neighborsArray,
-      new Array[Long](keysArray.length), keysArray.union(neighborsArray).distinct)
+      new Array[Long](keysArray.length), nodes), nodes.length)
   }
 }

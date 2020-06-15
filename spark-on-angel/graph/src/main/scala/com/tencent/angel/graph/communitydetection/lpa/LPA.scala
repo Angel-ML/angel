@@ -29,13 +29,15 @@ import org.apache.spark.storage.StorageLevel
 class LPA(override val uid: String) extends Transformer
   with HasSrcNodeIdCol with HasDstNodeIdCol with HasOutputNodeIdCol with HasOutputCoreIdCol
   with HasStorageLevel with HasPartitionNum with HasPSPartitionNum with HasUseBalancePartition {
-  
+
   final val maxIter = new IntParam(this, "maxIter", "maxIter")
+
   final def setMaxIter(numIters: Int): this.type = set(maxIter, numIters)
+
   setDefault(maxIter, 10)
-  
+
   def this() = this(Identifiable.randomUID("LPA"))
-  
+
   override def transform(dataset: Dataset[_]): DataFrame = {
     val edges = dataset.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd
       .filter(row => !row.anyNull)
@@ -62,30 +64,27 @@ class LPA(override val uid: String) extends Transformer
       .mapPartitionsWithIndex((index, it) =>
         Iterator(LPAGraphPartition.apply(index, it)))
 
-
     graph.persist($(storageLevel))
     graph.foreachPartition(_ => Unit)
-    graph.foreach(_.initMsgs(model))
 
+    var numChanged = graph.map(_._1.initMsgs(model)).reduce(_ + _)
     var curIteration = 0
-    var numMsgs = model.numMsgs()
     var prev = graph
     val maxIterNum = $(maxIter)
-    println(s"numMsgs = $numMsgs")
-
+    println(s"numChanged = $numChanged")
     do {
       curIteration += 1
-      graph = prev.map(_.process(model, numMsgs))
+      graph = prev.map(_._1.process(model))
       graph.persist($(storageLevel))
+      numChanged = graph.map(_._2).reduce(_ + _)
       graph.count()
       prev.unpersist(true)
       prev = graph
       model.resetMsgs()
-      numMsgs = model.numMsgs()
-      println(s"curIteration=$curIteration numMsgs=$numMsgs")
-    } while (curIteration < maxIterNum)
+      println(s"curIteration=$curIteration numChanged=$numChanged")
+    } while (curIteration < maxIterNum && numChanged > 0)
 
-    val retRDD = graph.map(_.save).flatMap(f => f._1.zip(f._2))
+    val retRDD = graph.map(_._1.save).flatMap(f => f._1.zip(f._2))
       .sortBy(_._2)
       .map(f => Row.fromSeq(Seq[Any](f._1, f._2)))
 
