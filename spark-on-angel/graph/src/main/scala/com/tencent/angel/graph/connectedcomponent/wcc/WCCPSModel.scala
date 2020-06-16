@@ -28,27 +28,51 @@ import org.apache.spark.rdd.RDD
 class WCCPSModel(var inMsgs: PSVector,
 								 var outMsgs: PSVector) extends Serializable {
 	val dim: Long = inMsgs.dimension
-	
+
+	/**
+		* init ccid for each node
+		* @param msgs
+		*/
 	def initMsgs(msgs: Vector): Unit = {
 		inMsgs.update(msgs)
 	}
-	
+
+	/**
+		* read nodes ccids
+		* @param nodes
+		* @return
+		*/
 	def readMsgs(nodes: Array[Long]): LongLongVector = {
 		inMsgs.pull(nodes).asInstanceOf[LongLongVector]
 	}
-	
+
+	/**
+		* when only a little nodes active(changed ccid), read all messages
+		* @return
+		*/
 	def readAllMsgs(): LongLongVector = {
 		inMsgs.pull().asInstanceOf[LongLongVector]
 	}
-	
+
+	/**
+		* write ccids to nodes
+		* @param msgs
+		*/
 	def writeMsgs(msgs: Vector): Unit = {
 		outMsgs.update(msgs)
 	}
-	
+
+	/**
+		* active messages num
+		* @return
+		*/
 	def numMsgs(): Long = {
 		VectorUtils.nnz(inMsgs)
 	}
-	
+
+	/**
+		* two PSVector exchange data
+		*/
 	def resetMsgs(): Unit = {
 		val temp = inMsgs
 		inMsgs = outMsgs
