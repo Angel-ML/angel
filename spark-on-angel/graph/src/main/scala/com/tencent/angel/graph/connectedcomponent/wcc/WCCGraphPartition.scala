@@ -27,24 +27,24 @@ class WCCGraphPartition(index: Int,
                         neighbors: Array[Long],
                         keyLabels: Array[Long],
                         indices: Array[Long]) extends Serializable {
-  def initMsgs(model: WCCPSModel): Int = {
+  def initMsgs(model: WCCPSModel): Long = {
     val msgs = VFactory.sparseLongKeyLongVector(model.dim)
-    for (i <- keys.indices){
+    for (i <- keys.indices) {
       msgs.set(keys(i), keys(i))
       keyLabels(i) = keys(i)
     }
     model.initMsgs(msgs)
-    msgs.size().toInt
+    msgs.size()
   }
-  
+
   // if label of node is larger than its neighbors',
   // change it into min among its neighbors' labels
-  def process(model: WCCPSModel, numMsgs: Long, isFirstIteration: Boolean): (Int, WCCGraphPartition) = {
+  def process(model: WCCPSModel, numMsgs: Long, isFirstIteration: Boolean): (WCCGraphPartition, Long) = {
     var changedNum = 0
     if (numMsgs > indices.length || isFirstIteration) {
       val inMsgs = model.readMsgs(indices)
       val outMsgs = VFactory.sparseLongKeyLongVector(inMsgs.dim())
-      
+
       for (idx <- keys.indices) {
         keyLabels(idx) = inMsgs.get(keys(idx))
         val newLabel = minNbrLabel(idx, inMsgs)
@@ -55,13 +55,13 @@ class WCCGraphPartition(index: Int,
         outMsgs.set(keys(idx), newLabel)
       }
       model.writeMsgs(outMsgs)
-      (changedNum, new WCCGraphPartition(index, keys, indptr, neighbors, keyLabels, indices))
-      
+      (new WCCGraphPartition(index, keys, indptr, neighbors, keyLabels, indices), changedNum)
+
     }
     else {
       val inMsgs = model.readAllMsgs()
       val outMsgs = VFactory.sparseLongKeyLongVector(inMsgs.dim())
-      
+
       for (idx <- keys.indices) {
         val newLabel = minNbrLabel(idx, inMsgs)
         if (newLabel < keyLabels(idx)) {
@@ -70,16 +70,16 @@ class WCCGraphPartition(index: Int,
         }
         outMsgs.set(keys(idx), newLabel)
       }
-      
+
       model.writeMsgs(outMsgs)
-      (changedNum, new WCCGraphPartition(index, keys, indptr, neighbors, keyLabels, indices))
+      (new WCCGraphPartition(index, keys, indptr, neighbors, keyLabels, indices),changedNum)
     }
   }
-  
+
   def save(): (Array[Long], Array[Long]) = {
     (keys, keyLabels)
   }
-  
+
   def minNbrLabel(idx: Int, inMsgs: LongLongVector): Long = {
     var j = indptr(idx)
     var minLabel = keyLabels(idx)
@@ -91,29 +91,29 @@ class WCCGraphPartition(index: Int,
       j += 1
     }
     minLabel
-    
+
   }
 }
 
 object WCCGraphPartition {
-  def apply(index: Int, iterator: Iterator[(Long, Iterable[Long])]): WCCGraphPartition = {
+  def apply(index: Int, iterator: Iterator[(Long, Iterable[Long])]): (WCCGraphPartition, Long) = {
     val indptr = new IntArrayList()
     val keys = new LongArrayList()
     val neighbors = new LongArrayList()
-    
+
     indptr.add(0)
-    
+
     while (iterator.hasNext) {
       val (node, ns) = iterator.next()
       keys.add(node)
       ns.toArray.distinct.foreach(n => neighbors.add(n))
       indptr.add(neighbors.size())
     }
-    
+
     val keysArray = keys.toLongArray()
     val neighborsArray = neighbors.toLongArray()
-    
-    new WCCGraphPartition(index, keysArray, indptr.toIntArray(),
-      neighborsArray, new Array[Long](keysArray.length), keysArray.union(neighborsArray).distinct)
+    val nodes = keysArray.union(neighborsArray).distinct
+    (new WCCGraphPartition(index, keysArray, indptr.toIntArray(),
+      neighborsArray, new Array[Long](keysArray.length), nodes), nodes.length)
   }
 }

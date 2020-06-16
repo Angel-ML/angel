@@ -15,6 +15,7 @@
  *
  */
 package com.tencent.angel.graph.connectedcomponent.wcc
+
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.graph.params._
 import org.apache.spark.ml.Transformer
@@ -27,78 +28,77 @@ import org.apache.spark.storage.StorageLevel
 
 
 class WCC(override val uid: String) extends Transformer
-	with HasWeightCol with HasSrcNodeIdCol with HasDstNodeIdCol
-	with HasOutputNodeIdCol with HasOutputCoreIdCol with HasBalancePartitionPercent
-	with HasIsWeighted with HasPartitionNum with HasPSPartitionNum
-	with HasStorageLevel with HasBatchSize with HasPullBatchSize
-	with HasBufferSize with HasUseBalancePartition {
-	
-	def this() = this(Identifiable.randomUID("WCC"))
-	
-	override def transform(dataset: Dataset[_]): DataFrame = {
-		// read edges
-		val edges = dataset.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd
-			.filter(row => !row.anyNull)
-			.map(row => (row.getLong(0), row.getLong(1)))
-			.filter(e => e._1 != e._2)
-		
-		edges.persist(StorageLevel.DISK_ONLY)
-		
-		val maxId = edges.map(e => math.max(e._1, e._2)).max() + 1
-		val minId = edges.map(e => math.min(e._1, e._2)).min()
-		val nodes = edges.flatMap(e => Iterator(e._1, e._2))
-		val numEdges = edges.count()
-		
-		println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
-		
-		// Start PS and init the model
-		println("start to run ps")
-		PSContext.getOrCreate(SparkContext.getOrCreate())
-		
-		val model = WCCPSModel.fromMinMax(minId, maxId, nodes, $(psPartitionNum), $(useBalancePartition), $(balancePartitionPercent))
-		
-		// make un-directed graph, for wcc
-		var graph = edges.flatMap { case (srcId, dstId) => Iterator((srcId, dstId), (dstId, srcId)) }
-			.groupByKey($(partitionNum))
-			.mapPartitionsWithIndex((index, adjTable) => Iterator((0, WCCGraphPartition.apply(index, adjTable))))
-		graph.persist($(storageLevel))
-		graph.foreachPartition(_ => Unit)
-		graph.foreach(_._2.initMsgs(model))
-		
-		var numMsgs = model.numMsgs()
-		var curIteration = 0
-		var prev = graph
-		println(s"numMsgs=$numMsgs")
-		
-		// each node change its label into the min id of its neighbors (including itself).
-		var changedCnt = 0
-		do {
-			curIteration += 1
-			changedCnt = 0
-			graph = prev.map(_._2.process(model, numMsgs, curIteration == 1))
-			graph.persist($(storageLevel))
-			graph.count()
-			changedCnt = graph.map(_._1).reduce((n1, n2) => n1 + n2)
-			prev.unpersist(true)
-			prev = graph
-			model.resetMsgs()
-			
-			println(s"curIteration=$curIteration numMsgs=$changedCnt")
-		} while (changedCnt > 0)
-		
-		val retRDD = graph.map(_._2.save()).flatMap(f => f._1.zip(f._2))
-			.map(f => Row.fromSeq(Seq[Any](f._1, f._2)))
-		
-		dataset.sparkSession.createDataFrame(retRDD, transformSchema(dataset.schema))
-	}
-	
-	override def transformSchema(schema: StructType): StructType = {
-		StructType(Seq(
-			StructField(s"${$(outputNodeIdCol)}", LongType, nullable = false),
-			StructField(s"${$(outputCoreIdCol)}", LongType, nullable = false)
-		))
-	}
-	
-	override def copy(extra: ParamMap): Transformer = defaultCopy(extra)
-	
+  with HasWeightCol with HasSrcNodeIdCol with HasDstNodeIdCol
+  with HasOutputNodeIdCol with HasOutputCoreIdCol with HasBalancePartitionPercent
+  with HasIsWeighted with HasPartitionNum with HasPSPartitionNum
+  with HasStorageLevel with HasBatchSize with HasPullBatchSize
+  with HasBufferSize with HasUseBalancePartition {
+
+  def this() = this(Identifiable.randomUID("WCC"))
+
+  override def transform(dataset: Dataset[_]): DataFrame = {
+    // read edges
+    val edges = dataset.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd
+      .filter(row => !row.anyNull)
+      .map(row => (row.getLong(0), row.getLong(1)))
+      .filter(e => e._1 != e._2)
+
+    edges.persist(StorageLevel.DISK_ONLY)
+
+    val maxId = edges.map(e => math.max(e._1, e._2)).max() + 1
+    val minId = edges.map(e => math.min(e._1, e._2)).min()
+    val nodes = edges.flatMap(e => Iterator(e._1, e._2))
+    val numEdges = edges.count()
+
+    println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
+
+    // Start PS and init the model
+    println("start to run ps")
+    PSContext.getOrCreate(SparkContext.getOrCreate())
+
+    val model = WCCPSModel.fromMinMax(minId, maxId, nodes, $(psPartitionNum), $(useBalancePartition), $(balancePartitionPercent))
+
+    // make un-directed graph, for wcc
+    var graph = edges.flatMap { case (srcId, dstId) => Iterator((srcId, dstId), (dstId, srcId)) }
+      .groupByKey($(partitionNum))
+      .mapPartitionsWithIndex((index, adjTable) => Iterator(WCCGraphPartition.apply(index, adjTable)))
+    graph.persist($(storageLevel))
+    graph.foreachPartition(_ => Unit)
+
+    var numChanged = graph.map(_._1.initMsgs(model)).reduce(_ + _)
+    var curIteration = 0
+    var prev = graph
+    println(s"numChanged=$numChanged")
+
+    // each node change its label into the min id of its neighbors (including itself).
+    var changedCnt = 0
+    do {
+      curIteration += 1
+      changedCnt = 0
+      graph = prev.map(_._1.process(model, numChanged, curIteration == 1))
+      graph.persist($(storageLevel))
+      numChanged = graph.map(_._2).reduce(_ + _)
+      graph.count()
+      prev.unpersist(true)
+      prev = graph
+      model.resetMsgs()
+
+      println(s"curIteration=$curIteration changedCnt=$changedCnt")
+    } while (changedCnt > 0)
+
+    val retRDD = graph.map(_._1.save()).flatMap(f => f._1.zip(f._2))
+      .map(f => Row.fromSeq(Seq[Any](f._1, f._2)))
+
+    dataset.sparkSession.createDataFrame(retRDD, transformSchema(dataset.schema))
+  }
+
+  override def transformSchema(schema: StructType): StructType = {
+    StructType(Seq(
+      StructField(s"${$(outputNodeIdCol)}", LongType, nullable = false),
+      StructField(s"${$(outputCoreIdCol)}", LongType, nullable = false)
+    ))
+  }
+
+  override def copy(extra: ParamMap): Transformer = defaultCopy(extra)
+
 }
