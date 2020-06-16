@@ -29,22 +29,31 @@ class LPAPSModel(var inMsgs: PSVector,
                  var outMsgs: PSVector) extends Serializable {
   val dim: Long = inMsgs.dimension
 
-
+  /**
+    * init nodes label
+    * @param msgs
+    */
   def initMsgs(msgs: Vector): Unit =
     inMsgs.update(msgs)
 
+  /**
+    * read nodes label
+    * @param nodes
+    * @return
+    */
   def readMsgs(nodes: Array[Long]): LongLongVector =
     inMsgs.pull(nodes).asInstanceOf[LongLongVector]
 
-  def readAllMsgs(): LongIntVector =
-    inMsgs.pull().asInstanceOf[LongIntVector]
-
+  /**
+    * write nodes label
+    * @param msgs
+    */
   def writeMsgs(msgs: Vector): Unit =
     outMsgs.update(msgs)
 
-  def numMsgs(): Long =
-    VectorUtils.nnz(inMsgs)
-
+  /**
+    * two PSVector exchange data
+    */
   def resetMsgs(): Unit = {
     val temp = inMsgs
     inMsgs = outMsgs
