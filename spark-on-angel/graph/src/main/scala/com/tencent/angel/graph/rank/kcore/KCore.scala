@@ -14,40 +14,43 @@
  * the License.
  *
  */
-package com.tencent.angel.graph.connectedcomponent.wcc
+package com.tencent.angel.graph.rank.kcore
 
-import com.tencent.angel.graph.params._
 import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.graph.params._
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.util.Identifiable
-import org.apache.spark.sql.types._
+import org.apache.spark.sql.types.{IntegerType, LongType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.storage.StorageLevel
 
+/**
+  * KCore algorithm implementation
+  *
+  * @param uid
+  */
+class KCore(override val uid: String) extends Transformer
+  with HasSrcNodeIdCol with HasDstNodeIdCol with HasOutputNodeIdCol with HasOutputCoreIdCol
+  with HasStorageLevel with HasPartitionNum with HasPSPartitionNum with HasUseBalancePartition
+  with HasBalancePartitionPercent {
 
-class WCC(override val uid: String) extends Transformer
-  with HasWeightCol with HasSrcNodeIdCol with HasDstNodeIdCol
-  with HasOutputNodeIdCol with HasOutputCoreIdCol with HasBalancePartitionPercent
-  with HasIsWeighted with HasPartitionNum with HasPSPartitionNum
-  with HasStorageLevel with HasBatchSize with HasPullBatchSize
-  with HasBufferSize with HasUseBalancePartition {
-
-  def this() = this(Identifiable.randomUID("WCC"))
+  def this() = this(Identifiable.randomUID("KCore"))
 
   override def transform(dataset: Dataset[_]): DataFrame = {
-    // read edges
+    //graph edges
     val edges = dataset.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd
       .filter(row => !row.anyNull)
       .map(row => (row.getLong(0), row.getLong(1)))
-      .filter(e => e._1 != e._2)
+      .filter(f => f._1 != f._2)
 
     edges.persist(StorageLevel.DISK_ONLY)
 
-    val maxId = edges.map(e => math.max(e._1, e._2)).max() + 1
-    val minId = edges.map(e => math.min(e._1, e._2)).min()
-    val nodes = edges.flatMap(e => Iterator(e._1, e._2))
+    val maxId = edges.flatMap(f => Iterator(f._1, f._2)).max() + 1
+    val minId = edges.flatMap(f => Iterator(f._1, f._2)).min()
+    // graph vertices
+    val vertices = edges.flatMap(f => Iterator(f._1, f._2))
     val numEdges = edges.count()
 
     println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
@@ -56,37 +59,36 @@ class WCC(override val uid: String) extends Transformer
     println("start to run ps")
     PSContext.getOrCreate(SparkContext.getOrCreate())
 
-    val model = WCCPSModel.fromMinMax(minId, maxId, nodes, $(psPartitionNum), $(useBalancePartition), $(balancePartitionPercent))
+    //create KcorePSModel
+    val model = KCorePSModel.fromMinMax(minId, maxId, vertices, $(psPartitionNum), $(useBalancePartition), $(balancePartitionPercent))
 
-    // make un-directed graph, for wcc
-    var graph = edges.flatMap { case (srcId, dstId) => Iterator((srcId, dstId), (dstId, srcId)) }
+    //build graph  from edges
+    var graph = edges.flatMap(f => Iterator((f._1, f._2), (f._2, f._1)))
       .groupByKey($(partitionNum))
-      .mapPartitionsWithIndex((index, adjTable) => Iterator(WCCGraphPartition.apply(index, adjTable)))
+      .mapPartitionsWithIndex((index, it) => Iterator(KCoreGraphPartition.apply(index, it)))
+
     graph.persist($(storageLevel))
     graph.foreachPartition(_ => Unit)
+    graph.foreach(_.initMsgs(model))
 
-    var numChanged = graph.map(_._1.initMsgs(model)).reduce(_ + _)
-    var curIteration = 0
+    var curIter = 0
+    var numMsgs = model.numMsgs()
     var prev = graph
-    println(s"numChanged=$numChanged")
+    println(s"numMsgs=$numMsgs")
 
-    // each node change its label into the min id of its neighbors (including itself).
-    var changedCnt = 0
     do {
-      curIteration += 1
-      changedCnt = 0
-      graph = prev.map(_._1.process(model, numChanged, curIteration == 1))
+      curIter += 1
+      graph = prev.map(_.process(model, numMsgs, curIter == 1))
       graph.persist($(storageLevel))
-      numChanged = graph.map(_._2).reduce(_ + _)
       graph.count()
       prev.unpersist(true)
       prev = graph
       model.resetMsgs()
+      numMsgs = model.numMsgs()
+      println(s"curIteration=$curIter numMsgs=$numMsgs")
+    } while (numMsgs > 0)
 
-      println(s"curIteration=$curIteration changedCnt=$changedCnt")
-    } while (changedCnt > 0)
-
-    val retRDD = graph.map(_._1.save()).flatMap(f => f._1.zip(f._2))
+    val retRDD = graph.map(_.save()).flatMap(f => f._1.zip(f._2))
       .map(f => Row.fromSeq(Seq[Any](f._1, f._2)))
 
     dataset.sparkSession.createDataFrame(retRDD, transformSchema(dataset.schema))
@@ -95,7 +97,7 @@ class WCC(override val uid: String) extends Transformer
   override def transformSchema(schema: StructType): StructType = {
     StructType(Seq(
       StructField(s"${$(outputNodeIdCol)}", LongType, nullable = false),
-      StructField(s"${$(outputCoreIdCol)}", LongType, nullable = false)
+      StructField(s"${$(outputCoreIdCol)}", IntegerType, nullable = false)
     ))
   }
 

@@ -17,7 +17,7 @@
 package com.tencent.angel.graph.connectedcomponent.wcc
 
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.vector.{LongLongVector}
+import com.tencent.angel.ml.math2.vector.LongLongVector
 import it.unimi.dsi.fastutil.ints.IntArrayList
 import it.unimi.dsi.fastutil.longs.LongArrayList
 

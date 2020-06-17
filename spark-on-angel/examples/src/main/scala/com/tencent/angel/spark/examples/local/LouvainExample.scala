@@ -18,7 +18,7 @@ package com.tencent.angel.spark.examples.local
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.graph.louvain.Louvain
+import com.tencent.angel.graph.clustering.louvain.Louvain
 import com.tencent.angel.graph.utils.GraphIO
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
