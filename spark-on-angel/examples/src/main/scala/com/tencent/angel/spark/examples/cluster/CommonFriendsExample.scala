@@ -21,7 +21,7 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.graph.commonfriends._
+import com.tencent.angel.graph.statistics.commonfriends._
 import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}

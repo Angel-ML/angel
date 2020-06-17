@@ -17,9 +17,9 @@
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.graph.rank.closeness.Closeness
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.graph.hyperanf.Closeness
 import com.tencent.angel.graph.utils.GraphIO
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}

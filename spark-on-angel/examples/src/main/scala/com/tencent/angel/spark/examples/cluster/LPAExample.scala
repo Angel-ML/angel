@@ -18,7 +18,7 @@ package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.graph.communitydetection.lpa.LPA
+import com.tencent.angel.graph.clustering.lpa.LPA
 import com.tencent.angel.graph.utils.GraphIO
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.storage.StorageLevel

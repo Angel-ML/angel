@@ -18,8 +18,8 @@ package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.graph.pagerank.edgecut.{PageRank => EdgeCutPageRank}
-import com.tencent.angel.graph.pagerank.vertexcut.{PageRank => VertexCutPageRank}
+import com.tencent.angel.graph.rank.pagerank.edgecut.{PageRank => EdgeCutPageRank}
+import com.tencent.angel.graph.rank.pagerank.vertexcut.{PageRank => VertexCutPageRank}
 import com.tencent.angel.graph.utils.GraphIO
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.storage.StorageLevel

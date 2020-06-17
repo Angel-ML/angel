@@ -1,7 +1,7 @@
 package com.tencent.angel.spark.examples.local
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.graph.hyperanf.Closeness
+import com.tencent.angel.graph.rank.closeness.Closeness
 import com.tencent.angel.graph.utils.GraphIO
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil

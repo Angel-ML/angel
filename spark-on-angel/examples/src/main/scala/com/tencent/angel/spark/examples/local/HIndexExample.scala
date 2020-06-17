@@ -1,7 +1,7 @@
 package com.tencent.angel.spark.examples.local
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.graph.rank.HIndex
+import com.tencent.angel.graph.rank.hindex.HIndex
 import com.tencent.angel.graph.utils.GraphIO
 import com.tencent.angel.spark.context.PSContext
 import org.apache.spark.{SparkConf, SparkContext}

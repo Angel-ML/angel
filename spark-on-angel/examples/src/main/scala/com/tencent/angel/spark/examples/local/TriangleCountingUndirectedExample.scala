@@ -1,6 +1,6 @@
 package com.tencent.angel.spark.examples.local
 
-import com.tencent.angel.graph.triangle.TriangleCountingUndirected
+import com.tencent.angel.graph.statistics.triangle.TriangleCountingUndirected
 import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
