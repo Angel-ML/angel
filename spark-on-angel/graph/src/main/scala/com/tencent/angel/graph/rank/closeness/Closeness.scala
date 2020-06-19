@@ -18,7 +18,7 @@ package com.tencent.angel.graph.rank.closeness
 
 import java.util.Collections
 
-import com.tencent.angel.graph.params._
+import com.tencent.angel.graph.utils.params._
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.{BooleanParam, IntParam, ParamMap}

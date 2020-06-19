@@ -18,7 +18,7 @@ package com.tencent.angel.graph.rank.pagerank.vertexcut
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.graph.rank.pagerank.PageRankOps
-import com.tencent.angel.graph.params._
+import com.tencent.angel.graph.utils.params._
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.{BooleanParam, FloatParam, IntParam, ParamMap}

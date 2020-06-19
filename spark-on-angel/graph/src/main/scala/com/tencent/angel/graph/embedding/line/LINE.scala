@@ -17,7 +17,7 @@
 
 package com.tencent.angel.graph.embedding.line
 
-import com.tencent.angel.graph.params._
+import com.tencent.angel.graph.utils.params._
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.util.Identifiable

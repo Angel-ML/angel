@@ -17,7 +17,7 @@
 package com.tencent.angel.graph.clustering.louvain
 
 import com.tencent.angel.ml.math2.vector.LongIntVector
-import com.tencent.angel.graph.params._
+import com.tencent.angel.graph.utils.params._
 import com.tencent.angel.graph.utils.NodeIndexer
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param._
