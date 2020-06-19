@@ -16,7 +16,7 @@
  */
 package com.tencent.angel.graph.connectedcomponent.wcc
 
-import com.tencent.angel.graph.params._
+import com.tencent.angel.graph.utils.params._
 import com.tencent.angel.spark.context.PSContext
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.Transformer

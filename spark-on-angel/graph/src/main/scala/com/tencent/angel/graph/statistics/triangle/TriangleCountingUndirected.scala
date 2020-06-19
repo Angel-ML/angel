@@ -16,7 +16,7 @@
  */
 package com.tencent.angel.graph.statistics.triangle
 
-import com.tencent.angel.graph.params._
+import com.tencent.angel.graph.utils.params._
 import com.tencent.angel.graph.{GraphOps, NeighborTableModel}
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.ParamMap
