@@ -19,8 +19,9 @@ package com.tencent.angel.graph
 import com.tencent.angel.ml.math2.storage.IntLongDenseVectorStorage
 import com.tencent.angel.ml.math2.vector.IntLongVector
 import com.tencent.angel.ml.matrix.psf.get.getrow.GetRowResult
-import com.tencent.angel.graph.data.{GraphStats, NeighborTable, NeighborTablePartition, VertexId}
+import com.tencent.angel.graph.utils.element.{GraphStats, NeighborTable, NeighborTablePartition}
 import com.tencent.angel.graph.psf.pagerank.GetNodes
+import com.tencent.angel.graph.utils.element.Element.VertexId
 import com.tencent.angel.spark.models.PSVector
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Dataset
