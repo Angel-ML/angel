@@ -22,6 +22,8 @@ import com.tencent.angel.ps.storage.vector.element.LongArrayElement
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.graph.data._
 import com.tencent.angel.graph.psf.triangle._
+import com.tencent.angel.graph.utils.element.Element.VertexId
+import com.tencent.angel.graph.utils.element.{NeighborTable, NeighborTablePartition}
 import com.tencent.angel.spark.models.PSMatrix
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap

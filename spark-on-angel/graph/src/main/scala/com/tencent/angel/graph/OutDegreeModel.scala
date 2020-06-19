@@ -18,7 +18,7 @@ package com.tencent.angel.graph
 
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.graph.data.VertexId
+import com.tencent.angel.graph.utils.element.Element.VertexId
 import com.tencent.angel.graph.utils.BatchIter
 import com.tencent.angel.graph.psf.clusterrank._
 import com.tencent.angel.spark.models.PSMatrix
