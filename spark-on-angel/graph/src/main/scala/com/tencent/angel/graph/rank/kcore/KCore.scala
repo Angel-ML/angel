@@ -74,7 +74,7 @@ class KCore(override val uid: String) extends Transformer
     var curIter = 0
     var numMsgs = model.numMsgs()
     var prev = graph
-    println(s"numMsgs=$numMsgs")
+    println(s"numMsgs = $numMsgs")
 
     do {
       curIter += 1
@@ -85,7 +85,7 @@ class KCore(override val uid: String) extends Transformer
       prev = graph
       model.resetMsgs()
       numMsgs = model.numMsgs()
-      println(s"curIteration=$curIter numMsgs=$numMsgs")
+      println(s"curIter = $curIter numMsgs = $numMsgs")
     } while (numMsgs > 0)
 
     val retRDD = graph.map(_.save()).flatMap(f => f._1.zip(f._2))
