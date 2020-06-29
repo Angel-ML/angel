@@ -71,7 +71,9 @@ object GraphOps {
                 srcNodeIdCol: String,
                 dstNodeIdCol: String
                ): RDD[(VertexId, VertexId)] = {
-    dataset.select(srcNodeIdCol, dstNodeIdCol).rdd.mapPartitions { iter =>
+    dataset.select(srcNodeIdCol, dstNodeIdCol).rdd
+      .filter(row => !row.anyNull)
+      .mapPartitions { iter =>
       iter.flatMap { row =>
         if (row.getLong(0) == row.getLong(1))
           Iterator.empty
