@@ -54,11 +54,13 @@ class PageRank(override val uid: String) extends Transformer
   override def transform(dataset: Dataset[_]): DataFrame = {
     val edges = if ($(isWeighted)) {
       dataset.select(${srcNodeIdCol}, ${dstNodeIdCol}, ${weightCol}).rdd
+        .filter(row => !row.anyNull)
         .map(row => (row.getLong(0), row.getLong(1), row.getFloat(2)))
         .filter(f => f._1 != f._2)
         .filter(f => f._3 != 0)
     } else {
       dataset.select(${srcNodeIdCol}, ${dstNodeIdCol}).rdd
+        .filter(row => !row.anyNull)
         .map(row => (row.getLong(0), row.getLong(1), 1.0f))
         .filter(f => f._1 != f._2)
     }
