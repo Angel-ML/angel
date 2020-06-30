@@ -1,6 +1,6 @@
 package com.tencent.angel.spark.examples.local
 
-import com.tencent.angel.graph.clustering.lpa.LPA
+import com.tencent.angel.graph.community.lpa.LPA
 import com.tencent.angel.graph.utils.GraphIO
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
