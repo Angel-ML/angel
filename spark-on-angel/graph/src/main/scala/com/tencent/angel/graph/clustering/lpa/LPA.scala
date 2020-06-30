@@ -46,9 +46,9 @@ class LPA(override val uid: String) extends Transformer
 
     edges.persist(StorageLevel.DISK_ONLY)
 
-    val maxId = edges.flatMap(f => Iterator(f._1, f._2)).max() + 1
-    val minId = edges.flatMap(f => Iterator(f._1, f._2)).min()
     val index = edges.flatMap(f => Iterator(f._1, f._2))
+    val maxId = index.max() + 1
+    val minId = index.min()
     val numEdges = edges.count()
 
     println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
