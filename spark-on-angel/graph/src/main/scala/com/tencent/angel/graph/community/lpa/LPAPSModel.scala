@@ -14,7 +14,7 @@
  * the License.
  *
  */
-package com.tencent.angel.graph.clustering.lpa
+package com.tencent.angel.graph.community.lpa
 
 import com.tencent.angel.ml.math2.vector.{LongIntVector, LongLongVector, Vector}
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}

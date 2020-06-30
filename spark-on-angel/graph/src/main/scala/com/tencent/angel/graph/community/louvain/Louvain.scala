@@ -14,7 +14,7 @@
  * the License.
  *
  */
-package com.tencent.angel.graph.clustering.louvain
+package com.tencent.angel.graph.community.louvain
 
 import com.tencent.angel.ml.math2.vector.LongIntVector
 import com.tencent.angel.graph.utils.params._

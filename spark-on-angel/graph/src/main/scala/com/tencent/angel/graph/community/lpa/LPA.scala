@@ -14,7 +14,7 @@
  * the License.
  *
  */
-package com.tencent.angel.graph.clustering.lpa
+package com.tencent.angel.graph.community.lpa
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.graph.utils.params._
