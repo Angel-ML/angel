@@ -14,7 +14,7 @@
  * the License.
  *
  */
-package com.tencent.angel.graph.clustering.louvain
+package com.tencent.angel.graph.community.louvain
 
 import com.tencent.angel.ml.math2.vector.{IntFloatVector, IntIntVector}
 import org.apache.spark.SparkPrivateClassProxy

@@ -14,10 +14,10 @@
  * the License.
  *
  */
-package com.tencent.angel.graph.clustering.louvain
+package com.tencent.angel.graph.community.louvain
 
 import com.tencent.angel.ml.math2.vector.IntFloatVector
-import com.tencent.angel.graph.clustering.louvain.LouvainGraph.edgeTriplet2GraphPartitions
+import com.tencent.angel.graph.community.louvain.LouvainGraph.edgeTriplet2GraphPartitions
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 
