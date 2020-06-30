@@ -44,9 +44,9 @@ class HIndex(override val uid: String) extends Transformer
     // persist edges using Disk_Only
     edges.persist(StorageLevel.DISK_ONLY)
 
-    val maxId = edges.map(e => math.max(e._1, e._2)).max() + 1
-    val minId = edges.map(e => math.min(e._1, e._2)).min()
     val nodes = edges.flatMap(e => Iterator(e._1, e._2))
+    val maxId = nodes.max() + 1
+    val minId = nodes.min()
     val numEdges = edges.count()
 
     println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
