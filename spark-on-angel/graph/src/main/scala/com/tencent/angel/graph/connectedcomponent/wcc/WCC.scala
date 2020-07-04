@@ -71,10 +71,8 @@ class WCC(override val uid: String) extends Transformer
     println(s"numChanged=$numChanged")
 
     // each node change its label into the min id of its neighbors (including itself).
-    var changedCnt = 0
     do {
       curIteration += 1
-      changedCnt = 0
       graph = prev.map(_._1.process(model, numChanged, curIteration == 1))
       graph.persist($(storageLevel))
       numChanged = graph.map(_._2).reduce(_ + _)
@@ -83,8 +81,8 @@ class WCC(override val uid: String) extends Transformer
       prev = graph
       model.resetMsgs()
 
-      println(s"curIteration=$curIteration changedCnt=$changedCnt")
-    } while (changedCnt > 0)
+      println(s"curIteration=$curIteration numChanged=$numChanged")
+    } while (numChanged > 0)
 
     val retRDD = graph.map(_._1.save()).flatMap(f => f._1.zip(f._2))
       .map(f => Row.fromSeq(Seq[Any](f._1, f._2)))
