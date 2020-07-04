@@ -24,7 +24,7 @@ object CCExample {
     val useBalancePartition = false
 
 
-    val sep = Delimiter.parse(params.getOrElse("sep", Delimiter.SPACE))
+    val sep = Delimiter.parse(params.getOrElse("sep",Delimiter.SPACE))
     start(mode)
 
     val cc = new WCC()
