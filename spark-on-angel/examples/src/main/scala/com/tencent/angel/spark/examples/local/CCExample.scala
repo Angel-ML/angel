@@ -6,6 +6,7 @@ import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.storage.StorageLevel
+import com.tencent.angel.graph.utils.Delimiter
 
 object CCExample {
   def main(args: Array[String]): Unit = {
@@ -23,11 +24,7 @@ object CCExample {
     val useBalancePartition = false
 
 
-    val sep = params.getOrElse("sep", "space") match {
-      case "space" => " "
-      case "comma" => ","
-      case "tab" => "\t"
-    }
+    val sep = Delimiter.parse(params.getOrElse("sep", Delimiter.SPACE))
     start(mode)
 
     val cc = new WCC()
