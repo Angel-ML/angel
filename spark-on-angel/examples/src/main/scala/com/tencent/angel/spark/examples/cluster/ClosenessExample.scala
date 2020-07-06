@@ -20,7 +20,7 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.graph.rank.closeness.Closeness
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.graph.utils.GraphIO
+import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -48,11 +48,8 @@ object ClosenessExample {
     val verboseSaving = params.getOrElse("verboseSaving", "true").toBoolean
 
     val isDirected = params.getOrElse("isDirected", "true").toBoolean
-    val sep = params.getOrElse("sep", "space") match {
-      case "space" => " "
-      case "comma" => ","
-      case "tab" => "\t"
-    }
+    val sep = Delimiter.parse(params.getOrElse("sep",Delimiter.SPACE))
+
 
     val closeness = new Closeness()
       .setPartitionNum(partitionNum)

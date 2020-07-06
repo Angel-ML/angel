@@ -20,7 +20,7 @@ import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.graph.rank.pagerank.edgecut.{PageRank => EdgeCutPageRank}
 import com.tencent.angel.graph.rank.pagerank.vertexcut.{PageRank => VertexCutPageRank}
-import com.tencent.angel.graph.utils.GraphIO
+import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
@@ -48,11 +48,8 @@ object PageRankExample {
     val balancePartitionPercent = params.getOrElse("balancePartitionPercent", "0.7").toFloat
     val version = params.getOrElse("version", "edge-cut")
     val numBatch = params.getOrElse("numBatch", "1").toInt
-    val sep = params.getOrElse("sep", "space") match {
-      case "space" => " "
-      case "comma" => ","
-      case "tab" => "\t"
-    }
+    val sep = Delimiter.parse(params.getOrElse("sep",Delimiter.SPACE))
+
 
     val edges = GraphIO.load(input, isWeighted = isWeight,
       srcIndex = srcIndex, dstIndex = dstIndex,
