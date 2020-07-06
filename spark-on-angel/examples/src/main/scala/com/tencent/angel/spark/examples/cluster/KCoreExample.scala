@@ -19,7 +19,7 @@ package com.tencent.angel.spark.examples.cluster
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.graph.rank.kcore.KCore
-import com.tencent.angel.graph.utils.GraphIO
+import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -46,11 +46,8 @@ object KCoreExample {
       .getOrElse(throw new Exception("checkpoint dir not provided"))
     sc.setCheckpointDir(cpDir)
 
-    val sep = params.getOrElse("sep",  "space") match {
-      case "space" => " "
-      case "comma" => ","
-      case "tab" => "\t"
-    }
+    val sep = Delimiter.parse(params.getOrElse("sep",Delimiter.SPACE))
+
 
 
     val kCore = new KCore()

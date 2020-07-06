@@ -19,7 +19,7 @@ package com.tencent.angel.spark.examples.cluster
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.graph.community.louvain.Louvain
-import com.tencent.angel.graph.utils.GraphIO
+import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -47,11 +47,8 @@ object LouvainExample {
     val eps = params.getOrElse("eps", "0.0").toDouble
     val bufferSize = params.getOrElse("bufferSize", "1000000").toInt
 
-    val sep = params.getOrElse("sep",  "space") match {
-      case "space" => " "
-      case "comma" => ","
-      case "tab" => "\t"
-    }
+    val sep = Delimiter.parse(params.getOrElse("sep",Delimiter.SPACE))
+
 
     val cpDir = params.get("cpDir").filter(_.nonEmpty).orElse(GraphIO.defaultCheckpointDir)
     .getOrElse(throw new Exception("checkpoint dir not provided"))

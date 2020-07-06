@@ -1,7 +1,7 @@
 package com.tencent.angel.spark.examples.local
 
 import com.tencent.angel.graph.community.lpa.LPA
-import com.tencent.angel.graph.utils.GraphIO
+import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import org.apache.spark.{SparkConf, SparkContext}
@@ -23,11 +23,8 @@ object LPAExample {
     val maxIter = params.getOrElse("maxIter", "10").toInt
     val sc = start(mode)
 
-    val sep = params.getOrElse("sep", "space") match {
-      case "space" => " "
-      case "comma" => ","
-      case "tab" => "\t"
-    }
+    val sep = Delimiter.parse(params.getOrElse("sep",Delimiter.SPACE))
+
 
     val lpa = new LPA()
       .setPartitionNum(partitionNum)

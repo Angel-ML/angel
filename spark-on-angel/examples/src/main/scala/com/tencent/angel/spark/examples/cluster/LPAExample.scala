@@ -19,7 +19,7 @@ package com.tencent.angel.spark.examples.cluster
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.graph.community.lpa.LPA
-import com.tencent.angel.graph.utils.GraphIO
+import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.storage.StorageLevel
 
@@ -46,12 +46,9 @@ object LPAExample {
     sc.setCheckpointDir(cpDir)
 
     val maxIter = params.getOrElse("maxIter", "10").toInt
-    
-    val sep = params.getOrElse("sep", "space") match {
-      case "space" => " "
-      case "comma" => ","
-      case "tab" => "\t"
-    }
+
+    val sep = Delimiter.parse(params.getOrElse("sep",Delimiter.SPACE))
+
 
     val lpa = new LPA()
       .setPartitionNum(partitionNum)

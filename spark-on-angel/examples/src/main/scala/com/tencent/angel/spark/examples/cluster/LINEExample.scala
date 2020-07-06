@@ -22,7 +22,7 @@ import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.graph.embedding.line.LINE
-import com.tencent.angel.graph.utils.GraphIO
+import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
 import com.tencent.angel.spark.ml.util.SparkUtils
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.{SparkConf, SparkContext}
@@ -49,11 +49,8 @@ object LINEExample {
     val saveMeta = params.getOrElse("saveMeta", "false").toBoolean
 
     val isWeight = params.getOrElse("isWeight", "false").toBoolean
-    val sep = params.getOrElse("sep", "space") match {
-      case "space" => " "
-      case "comma" => ","
-      case "tab" => "\t"
-    }
+    val sep = Delimiter.parse(params.getOrElse("sep",Delimiter.SPACE))
+
 
     val sc = start()
     val numCores = SparkUtils.getNumCores(sc.getConf)
