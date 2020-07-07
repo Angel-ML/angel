@@ -58,7 +58,7 @@ class Louvain(override val uid: String) extends Transformer
   setDefault(numFold, 3)
   setDefault(eps, 0.0)
 
-  def this() = this(Identifiable.randomUID("louvain"))
+  def this() = this(Identifiable.randomUID("Louvain"))
 
   override def transform(dataset: Dataset[_]): DataFrame = {
 

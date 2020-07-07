@@ -29,7 +29,7 @@ class TriangleCountingUndirected(override val uid: String) extends Transformer
   with HasStorageLevel with HasBatchSize with HasPullBatchSize with HasOutputTriangleCol
   with HasSrcNodeLccCol with HasComputeLcc {
 
-  def this() = this(Identifiable.randomUID("triangle_counting_undirected"))
+  def this() = this(Identifiable.randomUID("TriangleCountingUndirected"))
 
   override def transform(dataset: Dataset[_]): DataFrame = {
     // load edges
