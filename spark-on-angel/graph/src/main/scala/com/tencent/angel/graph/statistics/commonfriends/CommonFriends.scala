@@ -35,7 +35,7 @@ class CommonFriends(override val uid: String) extends Transformer
   with HasSrcNodeIndex with HasDstNodeIndex with HasCompressIndex
   with HasInput with HasExtraInputs with HasDelimiter {
 
-  def this() = this(Identifiable.randomUID("commonfriends"))
+  def this() = this(Identifiable.randomUID("CommonFriends"))
 
   override def transform(dataset: Dataset[_]): DataFrame = {
 

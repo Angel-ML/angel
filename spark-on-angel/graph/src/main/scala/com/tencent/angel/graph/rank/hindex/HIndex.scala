@@ -33,7 +33,7 @@ class HIndex(override val uid: String) extends Transformer
   with HasStorageLevel with HasBatchSize with HasPullBatchSize
   with HasBufferSize with HasUseBalancePartition {
 
-  def this() = this(Identifiable.randomUID("H-Index"))
+  def this() = this(Identifiable.randomUID("HIndex"))
 
   override def transform(dataset: Dataset[_]): DataFrame = {
     // read edges

@@ -48,7 +48,7 @@ object KCoreExample {
   def start(mode: String = "local"): Unit = {
     val conf = new SparkConf()
     conf.setMaster(mode)
-    conf.setAppName("k-core")
+    conf.setAppName("kcore")
     conf.set(AngelConf.ANGEL_PSAGENT_UPDATE_SPLIT_ADAPTION_ENABLE, "false")
     val sc = new SparkContext(conf)
     sc.setLogLevel("WARN")
