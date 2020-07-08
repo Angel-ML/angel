@@ -31,7 +31,7 @@ import it.unimi.dsi.fastutil.longs.LongArrayList
   * @param neighbors: node neighbors
   * @param keyCores: node core
   * @param neiCores: neighbor core
-  * @param indices: node index, contains keys and their neighbors
+  * @param indices: all node in this partition
   * @param hIndices: hIndices
   */
 private[kcore]

@@ -23,10 +23,16 @@ import com.tencent.angel.ml.math2.vector.LongIntVector
 import it.unimi.dsi.fastutil.ints.IntArrayList
 import it.unimi.dsi.fastutil.longs.LongArrayList
 
-
 /**
   * A neighbor table tool for H-Index , Weighted H-Index and G-Index
-  *
+  * @param index    EdgePartition's partition id
+  * @param srcNodes src nodes
+  * @param indptr   csr pointer index
+  * @param neighbors each src node's neighbors
+  * @param srcNodesHIndex store each src node's h-index value, w-index and g-index
+  * @param neiCores neighbor core
+  * @param indices all node in this partition
+  * @param hIndex
   */
 class HIndexGraphPartition(index: Int,
                            srcNodes: Array[Long],
@@ -188,11 +194,11 @@ object HIndexGraphPartition {
     val srcNodesArray = srcNodes.toLongArray()
     val neighborsArray = neighbors.toLongArray()
 
-    new HIndexGraphPartition(index,
-      srcNodesArray,
-      csrPointer.toIntArray(),
-      neighborsArray,
-      new Array[(Int, Int, Int)](srcNodesArray.length), //srcNodes length
+    new HIndexGraphPartition(index, // EdgePartition partition id
+      srcNodesArray,// all src nodes
+      csrPointer.toIntArray(), // csr pointer
+      neighborsArray, // all src node's neighbors
+      new Array[(Int, Int, Int)](srcNodesArray.length), //src node's h-index,w-index,and g-index
       new Array[Int](neighborsArray.length), // neighbors length
       srcNodesArray.union(neighborsArray).distinct, // all nodes include srcNodes and dstNodes
       new Array[Int](maxDegree)
