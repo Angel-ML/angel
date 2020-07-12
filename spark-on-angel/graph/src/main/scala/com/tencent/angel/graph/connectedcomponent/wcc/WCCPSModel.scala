@@ -26,75 +26,80 @@ import com.tencent.angel.spark.util.VectorUtils
 import org.apache.spark.rdd.RDD
 
 class WCCPSModel(var inMsgs: PSVector,
-								 var outMsgs: PSVector) extends Serializable {
-	val dim: Long = inMsgs.dimension
+                 var outMsgs: PSVector) extends Serializable {
+  val dim: Long = inMsgs.dimension
 
-	/**
-		* init ccid for each node
-		* @param msgs
-		*/
-	def initMsgs(msgs: Vector): Unit = {
-		inMsgs.update(msgs)
-	}
+  /**
+    * init ccid for each node
+    *
+    * @param msgs  < node,ccId > key-value vector
+    */
+  def initMsgs(msgs: Vector): Unit = {
+    inMsgs.update(msgs)
+  }
 
-	/**
-		* read nodes ccids
-		* @param nodes
-		* @return
-		*/
-	def readMsgs(nodes: Array[Long]): LongLongVector = {
-		inMsgs.pull(nodes).asInstanceOf[LongLongVector]
-	}
+  /**
+    * read nodes ccids
+    *
+    * @param nodes  < node,ccId > key-value vector
+    * @return
+    */
+  def readMsgs(nodes: Array[Long]): LongLongVector = {
+    inMsgs.pull(nodes).asInstanceOf[LongLongVector]
+  }
 
-	/**
-		* when only a little nodes active(changed ccid), read all messages
-		* @return
-		*/
-	def readAllMsgs(): LongLongVector = {
-		inMsgs.pull().asInstanceOf[LongLongVector]
-	}
+  /**
+    * when only a little nodes active(changed ccid), read all messages
+    *
+    * @return   < node,ccId > key-value vector
+    */
+  def readAllMsgs(): LongLongVector = {
+    inMsgs.pull().asInstanceOf[LongLongVector]
+  }
 
-	/**
-		* write ccids to nodes
-		* @param msgs
-		*/
-	def writeMsgs(msgs: Vector): Unit = {
-		outMsgs.update(msgs)
-	}
+  /**
+    * write ccids to nodes
+    *
+    * @param msgs < node,ccId > key-value vector
+    */
+  def writeMsgs(msgs: Vector): Unit = {
+    outMsgs.update(msgs)
+  }
 
-	/**
-		* active messages num
-		* @return
-		*/
-	def numMsgs(): Long = {
-		VectorUtils.nnz(inMsgs)
-	}
+  /**
+    * active messages num
+    *
+    * @return
+    */
+  def numMsgs(): Long = {
+    VectorUtils.nnz(inMsgs)
+  }
 
-	/**
-		* two PSVector exchange data
-		*/
-	def resetMsgs(): Unit = {
-		val temp = inMsgs
-		inMsgs = outMsgs
-		outMsgs = temp
-		outMsgs.reset
-	}
+  /**
+    * two PSVector exchange data
+    */
+  def resetMsgs(): Unit = {
+    val temp = inMsgs
+    inMsgs = outMsgs
+    outMsgs = temp
+    outMsgs.reset
+  }
 }
 
 object WCCPSModel {
-	def fromMinMax(minId: Long, maxId: Long, data: RDD[Long], psNumPartition: Int,
-								 useBalancePartition: Boolean, balancePartitionPercent: Float): WCCPSModel = {
-		val matrix = new MatrixContext("labels", 2, minId, maxId)
-		matrix.setValidIndexNum(-1)
-		matrix.setRowType(RowType.T_LONG_SPARSE_LONGKEY)
-		
-		if (useBalancePartition) {
-			LoadBalancePartitioner.partition(data, maxId, psNumPartition, matrix, balancePartitionPercent)
-		}
-		
-		PSAgentContext.get().getMasterClient.createMatrix(matrix, 10000L)
-		val matrixId = PSAgentContext.get().getMasterClient.getMatrix("labels").getId
-		new WCCPSModel(new PSVectorImpl(matrixId, 0, maxId, matrix.getRowType),
-			new PSVectorImpl(matrixId, 1, maxId, matrix.getRowType))
-	}
+  def fromMinMax(minId: Long, maxId: Long, data: RDD[Long], psNumPartition: Int,
+                 useBalancePartition: Boolean, balancePartitionPercent: Float): WCCPSModel = {
+    val matrix = new MatrixContext("labels", 2, minId, maxId)
+    matrix.setValidIndexNum(-1)
+    matrix.setRowType(RowType.T_LONG_SPARSE_LONGKEY)
+
+    if (useBalancePartition) {
+      LoadBalancePartitioner.partition(data, maxId, psNumPartition, matrix, balancePartitionPercent)
+    }
+
+    PSAgentContext.get().getMasterClient.createMatrix(matrix, 10000L)
+    val matrixId = PSAgentContext.get().getMasterClient.getMatrix("labels").getId
+    new WCCPSModel(new PSVectorImpl(matrixId, 0, maxId, matrix.getRowType),
+      new PSVectorImpl(matrixId, 1, maxId, matrix.getRowType))
+  }
 }

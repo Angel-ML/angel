@@ -72,7 +72,7 @@ class WCCGraphPartition(index: Int,
       }
 
       model.writeMsgs(outMsgs)
-      (new WCCGraphPartition(index, keys, indptr, neighbors, keyLabels, indices),changedNum)
+      (new WCCGraphPartition(index, keys, indptr, neighbors, keyLabels, indices), changedNum)
     }
   }
 
