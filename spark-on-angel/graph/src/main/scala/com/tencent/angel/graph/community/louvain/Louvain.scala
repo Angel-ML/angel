@@ -29,6 +29,7 @@ import org.apache.spark.storage.StorageLevel
 
 /**
   * Louvain algorithm implementation
+  *
   * @param uid
   */
 class Louvain(override val uid: String) extends Transformer
@@ -68,14 +69,14 @@ class Louvain(override val uid: String) extends Transformer
         dataset.select($(srcNodeIdCol), $(dstNodeIdCol), $(weightCol)).rdd
           .filter(row => !row.anyNull)
           .map { row =>
-          (row.getLong(0), row.getLong(1), row.getFloat(2))
-        }
+            (row.getLong(0), row.getLong(1), row.getFloat(2))
+          }
       } else {
         dataset.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd
           .filter(row => !row.anyNull)
           .map { row =>
-          (row.getLong(0), row.getLong(1), 1.0f)
-        }
+            (row.getLong(0), row.getLong(1), 1.0f)
+          }
       }
     }.map { case (src, dst, wgt) =>
       if (src < dst) ((src, dst), wgt) else ((dst, src), wgt)

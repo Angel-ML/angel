@@ -31,14 +31,16 @@ class LPAPSModel(var inMsgs: PSVector,
 
   /**
     * init nodes label
-    * @param msgs
+    *
+    * @param msgs init  < node,labelId > key-value vector from ps
     */
   def initMsgs(msgs: Vector): Unit =
     inMsgs.update(msgs)
 
   /**
     * read nodes label
-    * @param nodes
+    *
+    * @param nodes read < node,labelId > key-value vector from ps
     * @return
     */
   def readMsgs(nodes: Array[Long]): LongLongVector =
@@ -46,7 +48,8 @@ class LPAPSModel(var inMsgs: PSVector,
 
   /**
     * write nodes label
-    * @param msgs
+    *
+    * @param msgs write < node,labelId > key-value vector from ps
     */
   def writeMsgs(msgs: Vector): Unit =
     outMsgs.update(msgs)
@@ -64,6 +67,15 @@ class LPAPSModel(var inMsgs: PSVector,
 
 object LPAPSModel {
 
+  /**
+    * to balance < node, labelId > key-value vector on ps
+    * @param minId minId in nodes
+    * @param maxId maxId in nodes
+    * @param data nodes
+    * @param psNumPartition ps-partition num
+    * @param useBalancePartition to balance ps-partition region
+    * @return
+    */
   def fromMinMax(minId: Long, maxId: Long, data: RDD[Long], psNumPartition: Int, useBalancePartition: Boolean): LPAPSModel = {
     val matrix = new MatrixContext("lpa", 2, minId, maxId)
     matrix.setValidIndexNum(-1)
