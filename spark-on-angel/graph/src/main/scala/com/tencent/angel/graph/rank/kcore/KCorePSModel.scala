@@ -28,8 +28,9 @@ import org.apache.spark.rdd.RDD
 
 /**
   * KCorePSModel implementation
-  * @param inMsgs: use to store the last updated node
-  * @param outMsgs: use to store the updated node
+  *
+  * @param inMsgs  : use to store the last updated node
+  * @param outMsgs : use to store the updated node
   */
 private[kcore]
 class KCorePSModel(var inMsgs: PSVector,
@@ -63,7 +64,7 @@ class KCorePSModel(var inMsgs: PSVector,
 private[kcore] object KCorePSModel {
 
   def fromMinMax(minId: Long, maxId: Long, data: RDD[Long], psNumPartition: Int,
-                 useBalancePartition: Boolean, balancePartitionPercent: Float): KCorePSModel = {
+                 useBalancePartition: Boolean, balancePartitionPercent: Float = 0.7f): KCorePSModel = {
     val matrix = new MatrixContext("cores", 2, minId, maxId)
     matrix.setValidIndexNum(-1)
     matrix.setRowType(RowType.T_INT_SPARSE_LONGKEY)

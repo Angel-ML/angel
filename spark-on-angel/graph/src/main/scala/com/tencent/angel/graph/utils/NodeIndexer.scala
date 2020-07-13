@@ -48,7 +48,7 @@ class NodeIndexer extends Serializable {
     numNodes
   }
 
-  def train(numPSPartition: Int, nodes: RDD[Long], batchSize: Int = 1000000): Unit = {
+  def train(numPSPartition: Int, nodes: RDD[Long], batchSize: Int = 1000000, balancePartitionPercent: Float = 0.7f): Unit = {
     this.numPSPartition = numPSPartition
     val maxId = nodes.max() + 1
     val minId = nodes.min()
@@ -58,7 +58,7 @@ class NodeIndexer extends Serializable {
     // create ps for encoder mapping
     val ctx = new MatrixContext(LONG2INT, 1, minId, maxId)
     ctx.setRowType(RowType.T_INT_SPARSE_LONGKEY)
-    LoadBalancePartitioner.partition(nodes, maxId, numPSPartition, ctx)
+    LoadBalancePartitioner.partition(nodes, maxId, numPSPartition, ctx, balancePartitionPercent)
     this.long2int = new PSVectorImpl(PSMatrixUtils.createPSMatrix(ctx),
       0, maxId, RowType.T_INT_SPARSE_LONGKEY)
 

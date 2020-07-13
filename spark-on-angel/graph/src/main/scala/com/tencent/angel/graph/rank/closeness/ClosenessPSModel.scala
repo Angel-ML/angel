@@ -94,7 +94,7 @@ object ClosenessPSModel {
                  index: RDD[Long],
                  psNumPartition: Int,
                  useBalancePartition: Boolean,
-                 percent: Float): ClosenessPSModel = {
+                 balancePartitionPercent: Float = 0.7f): ClosenessPSModel = {
     val matrix = new MatrixContext("closeness", 1, minId, maxId)
     matrix.setValidIndexNum(-1)
     matrix.setRowType(RowType.T_ANY_LONGKEY_SPARSE)
@@ -102,7 +102,7 @@ object ClosenessPSModel {
     matrix.setValueType(classOf[HyperLogLogPlusElement])
 
     if (useBalancePartition)
-      LoadBalancePartitioner.partition(index, maxId, psNumPartition, matrix, percent)
+      LoadBalancePartitioner.partition(index, maxId, psNumPartition, matrix, balancePartitionPercent)
 
     PSAgentContext.get().getMasterClient.createMatrix(matrix, 10000L)
     val matrixId = PSAgentContext.get().getMasterClient.getMatrix("closeness").getId

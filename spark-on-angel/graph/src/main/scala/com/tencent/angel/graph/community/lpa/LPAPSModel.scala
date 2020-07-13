@@ -16,11 +16,12 @@
  */
 package com.tencent.angel.graph.community.lpa
 
+import com.tencent.angel.graph.utils.params.HasBalancePartitionPercent
 import com.tencent.angel.ml.math2.vector.{LongIntVector, LongLongVector, Vector}
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.spark.ml.util.LoadBalancePartitioner
-import com.tencent.angel.spark.models.{PSVector}
+import com.tencent.angel.spark.models.PSVector
 import com.tencent.angel.spark.models.impl.PSVectorImpl
 import com.tencent.angel.spark.util.VectorUtils
 import org.apache.spark.rdd.RDD
@@ -69,20 +70,22 @@ object LPAPSModel {
 
   /**
     * to balance < node, labelId > key-value vector on ps
-    * @param minId minId in nodes
-    * @param maxId maxId in nodes
-    * @param data nodes
-    * @param psNumPartition ps-partition num
-    * @param useBalancePartition to balance ps-partition region
+    *
+    * @param minId                   minId in nodes
+    * @param maxId                   maxId in nodes
+    * @param data                    nodes
+    * @param psNumPartition          ps-partition num
+    * @param useBalancePartition     to balance ps-partition region
+    * @param balancePartitionPercent the max partition cannot  store more than 70%  < node,labelId>  key-value
     * @return
     */
-  def fromMinMax(minId: Long, maxId: Long, data: RDD[Long], psNumPartition: Int, useBalancePartition: Boolean): LPAPSModel = {
+  def fromMinMax(minId: Long, maxId: Long, data: RDD[Long], psNumPartition: Int, useBalancePartition: Boolean, balancePartitionPercent: Float = 0.7f): LPAPSModel = {
     val matrix = new MatrixContext("lpa", 2, minId, maxId)
     matrix.setValidIndexNum(-1)
     matrix.setRowType(RowType.T_LONG_SPARSE_LONGKEY)
     // use balance partition
     if (useBalancePartition)
-      LoadBalancePartitioner.partition(data, maxId, psNumPartition, matrix)
+      LoadBalancePartitioner.partition(data, maxId, psNumPartition, matrix, balancePartitionPercent)
 
     PSAgentContext.get().getMasterClient.createMatrix(matrix, 10000L)
     val matrixId = PSAgentContext.get().getMasterClient.getMatrix("lpa").getId
