@@ -82,7 +82,7 @@ object LoadBalanceWithEstimatePartitioner {
     println(s"split matrix ${ctx.getName} into ${ctx.getParts.size()} partitions")
   }
 
-  def partition(index: RDD[Long], maxId: Long, psPartitionNum: Int, ctx: MatrixContext, percent: Float = 0.7f): Unit = {
+  def partition(index: RDD[Long], maxId: Long, psPartitionNum: Int, ctx: MatrixContext, percent: Float): Unit = {
     var p = percent
     var count = 2
     while (count > 0) {
