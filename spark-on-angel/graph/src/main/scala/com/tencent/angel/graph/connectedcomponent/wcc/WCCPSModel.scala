@@ -32,7 +32,7 @@ class WCCPSModel(var inMsgs: PSVector,
   /**
     * init ccid for each node
     *
-    * @param msgs  < node,ccId > key-value vector
+    * @param msgs < node,ccId > key-value vector
     */
   def initMsgs(msgs: Vector): Unit = {
     inMsgs.update(msgs)
@@ -41,7 +41,7 @@ class WCCPSModel(var inMsgs: PSVector,
   /**
     * read nodes ccids
     *
-    * @param nodes  < node,ccId > key-value vector
+    * @param nodes < node,ccId > key-value vector
     * @return
     */
   def readMsgs(nodes: Array[Long]): LongLongVector = {
@@ -51,7 +51,7 @@ class WCCPSModel(var inMsgs: PSVector,
   /**
     * when only a little nodes active(changed ccid), read all messages
     *
-    * @return   < node,ccId > key-value vector
+    * @return < node,ccId > key-value vector
     */
   def readAllMsgs(): LongLongVector = {
     inMsgs.pull().asInstanceOf[LongLongVector]
@@ -87,8 +87,19 @@ class WCCPSModel(var inMsgs: PSVector,
 }
 
 object WCCPSModel {
+  /**
+    * to balance < node, labelId > key-value vector on ps
+    *
+    * @param minId               minId in nodes
+    * @param maxId               maxId in nodes
+    * @param data                nodes
+    * @param psNumPartition      ps-partition num
+    * @param useBalancePartition to balance ps-partition region
+    * @param balancePartitionPercent the max partition cannot  store more than 70%  < node,labelId>  key-value
+    * @return
+    */
   def fromMinMax(minId: Long, maxId: Long, data: RDD[Long], psNumPartition: Int,
-                 useBalancePartition: Boolean, balancePartitionPercent: Float): WCCPSModel = {
+                 useBalancePartition: Boolean, balancePartitionPercent: Float = 0.7f): WCCPSModel = {
     val matrix = new MatrixContext("labels", 2, minId, maxId)
     matrix.setValidIndexNum(-1)
     matrix.setRowType(RowType.T_LONG_SPARSE_LONGKEY)

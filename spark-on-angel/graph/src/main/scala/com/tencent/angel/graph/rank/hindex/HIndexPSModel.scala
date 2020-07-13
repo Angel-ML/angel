@@ -27,7 +27,7 @@ import org.apache.spark.rdd.RDD
 
 
 class HIndexPSModel(var inMsgs: PSVector,
-                   var outMsgs: PSVector) extends Serializable {
+                    var outMsgs: PSVector) extends Serializable {
   val dim: Long = inMsgs.dimension
 
   def initMsgs(msgs: Vector): Unit =
@@ -57,7 +57,7 @@ class HIndexPSModel(var inMsgs: PSVector,
 object HIndexPSModel {
 
 
-  def fromMinMax(minId: Long, maxId: Long, data: RDD[Long], psNumPartition: Int, useBalancePartition: Boolean): HIndexPSModel = {
+  def fromMinMax(minId: Long, maxId: Long, data: RDD[Long], psNumPartition: Int, useBalancePartition: Boolean, balancePartitionPercent: Float = 0.7f): HIndexPSModel = {
     val matrix = new MatrixContext("hindex", 2, minId, maxId)
     matrix.setValidIndexNum(-1)
 
@@ -65,7 +65,7 @@ object HIndexPSModel {
     matrix.setRowType(RowType.T_INT_SPARSE_LONGKEY)
     // use balance partition
     if (useBalancePartition)
-      LoadBalancePartitioner.partition(data, maxId, psNumPartition, matrix)
+      LoadBalancePartitioner.partition(data, maxId, psNumPartition, matrix, balancePartitionPercent)
 
     PSAgentContext.get().getMasterClient.createMatrix(matrix, 10000L)
     val matrixId = PSAgentContext.get().getMasterClient.getMatrix("hindex").getId

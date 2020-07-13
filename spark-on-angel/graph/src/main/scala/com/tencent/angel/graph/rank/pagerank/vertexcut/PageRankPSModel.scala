@@ -49,7 +49,7 @@ class PageRankPSModel(readMsgs: PSVector,
 private[vertexcut] object PageRankPSModel {
   def fromMinMax(minId: Long, maxId: Long, data: RDD[Long], psNumPartition: Int,
                  useBalancePartition: Boolean, useEstimatePartitioner: Boolean,
-                 balancePartitionPercent: Float): PageRankPSModel = {
+                 balancePartitionPercent: Float = 0.7f): PageRankPSModel = {
     val matrix = new MatrixContext("pagerank", 4, minId, maxId)
     matrix.setValidIndexNum(-1)
     matrix.setRowType(RowType.T_FLOAT_SPARSE_LONGKEY)
