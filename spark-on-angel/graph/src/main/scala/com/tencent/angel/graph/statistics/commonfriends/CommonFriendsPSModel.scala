@@ -26,6 +26,7 @@ import org.apache.spark.rdd.RDD
 /**
   * CommonFriendsPSModel use the neighborTableModel(a PSModel) to
   * init or get node's adjacency table (neighborTable)
+  *
   * @param neighborTable
   */
 class CommonFriendsPSModel(val neighborTable: NeighborTableModel) extends Serializable {
@@ -35,8 +36,9 @@ class CommonFriendsPSModel(val neighborTable: NeighborTableModel) extends Serial
   }
 
   /**
+    * init node neighborTable on ps
     *
-    * @param data  which store nodes,and its neighbors
+    * @param data which store nodes,and its neighbors
     */
   def initLongNeighborTable(data: RDD[(Long, Array[Long])]): Unit = {
     neighborTable.initLongNeighbor(data)

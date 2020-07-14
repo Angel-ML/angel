@@ -25,13 +25,14 @@ import it.unimi.dsi.fastutil.longs.LongArrayList
 
 /**
   * A neighbor table tool for H-Index , Weighted H-Index and G-Index
-  * @param index    EdgePartition's partition id
-  * @param srcNodes src nodes
-  * @param indptr   csr pointer index
-  * @param neighbors each src node's neighbors
+  *
+  * @param index          EdgePartition's partition id
+  * @param srcNodes       src nodes
+  * @param indptr         csr pointer index
+  * @param neighbors      each src node's neighbors
   * @param srcNodesHIndex store each src node's h-index value, w-index and g-index
-  * @param neiCores neighbor core
-  * @param indices all node in this partition
+  * @param neiCores       neighbor core
+  * @param indices        all node in this partition
   * @param hIndex
   */
 class HIndexGraphPartition(index: Int,
@@ -98,8 +99,9 @@ class HIndexGraphPartition(index: Int,
 
   /**
     * compute h-index
+    *
     * @param start the start index of a node's neighbors
-    * @param end the end index of a node's neighbors
+    * @param end   the end index of a node's neighbors
     * @return h-index value
     */
   def calcHIndex(start: Int, end: Int): Int = {
@@ -115,8 +117,9 @@ class HIndexGraphPartition(index: Int,
 
   /**
     * compute g-index
+    *
     * @param start the start index of a node's neighbors
-    * @param end the end index of a node's neighbors
+    * @param end   the end index of a node's neighbors
     * @return g-index value
     */
   def calcGIndex(start: Int, end: Int): Int = {
@@ -139,8 +142,9 @@ class HIndexGraphPartition(index: Int,
 
   /**
     * compute w-index
+    *
     * @param start the start index of a node's neighbors
-    * @param end the end index of a node's neighbors
+    * @param end   the end index of a node's neighbors
     * @return w-index value
     */
   def calcWIndex(start: Int, end: Int): Int = {
@@ -159,6 +163,7 @@ class HIndexGraphPartition(index: Int,
 
   /**
     * save the  h-index, g-index and w-index of node
+    *
     * @return nodes and the index result
     */
   def save(): (Array[Long], Array[(Int, Int, Int)]) =
@@ -170,8 +175,9 @@ object HIndexGraphPartition {
 
 
   /**
-    *  graph partition, store  node and it's neighbors in CSR format
-    * @param index partition id
+    * graph partition, store  node and it's neighbors in CSR format
+    *
+    * @param index    partition id
     * @param iterator node and it's neighbors
     * @return graph partition
     */
@@ -195,7 +201,7 @@ object HIndexGraphPartition {
     val neighborsArray = neighbors.toLongArray()
 
     new HIndexGraphPartition(index, // EdgePartition partition id
-      srcNodesArray,// all src nodes
+      srcNodesArray, // all src nodes
       csrPointer.toIntArray(), // csr pointer
       neighborsArray, // all src node's neighbors
       new Array[(Int, Int, Int)](srcNodesArray.length), //src node's h-index,w-index,and g-index

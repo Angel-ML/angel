@@ -57,10 +57,10 @@ class CommonFriends(override val uid: String) extends Transformer
     val firstNeighbors: RDD[(Long, Array[Long])] =
       CommonFriendsOperator.edges2NeighborTable(firstEdges, $(partitionNum)).persist($(storageLevel))
 
-//    println(s"======sample neighbor tables======")
-//    firstNeighbors.take(10).foreach { case (src, neighbors) =>
-//      println(s"src = $src, neighbors = ${neighbors.mkString(",")}")
-//    }
+    //    println(s"======sample neighbor tables======")
+    //    firstNeighbors.take(10).foreach { case (src, neighbors) =>
+    //      println(s"src = $src, neighbors = ${neighbors.mkString(",")}")
+    //    }
 
     println(s"======statistics of the data======")
     val stats = CommonFriendsOperator.statsByNeighborTable(firstNeighbors)
