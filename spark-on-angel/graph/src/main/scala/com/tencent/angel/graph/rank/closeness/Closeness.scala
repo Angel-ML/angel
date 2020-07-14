@@ -47,7 +47,7 @@ class Closeness(override val uid: String) extends Transformer
     */
   final val p = new IntParam(this, "p", "p")
   final val sp = new IntParam(this, "sp", "sp")
- // final val maxIter = new IntParam(this, "maxIter", "maxIter")
+  // final val maxIter = new IntParam(this, "maxIter", "maxIter")
   final val msgNumBatch = new IntParam(this, "msgBatchSize", "msgBatchSize")
   final val verboseSaving = new BooleanParam(this, "verboseSaving", "verboseSaving")
   final val isDirected = new BooleanParam(this, "isDirected", "isDirected")

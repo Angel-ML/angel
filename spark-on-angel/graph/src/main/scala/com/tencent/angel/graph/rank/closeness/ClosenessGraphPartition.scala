@@ -22,7 +22,7 @@ import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus
 import it.unimi.dsi.fastutil.ints.IntArrayList
 import it.unimi.dsi.fastutil.longs.{Long2ObjectOpenHashMap, LongArrayList}
 
-private [closeness]
+private[closeness]
 class ClosenessGraphPartition(index: Int,
                               keys: Array[Long],
                               indptr: Array[Int],
@@ -87,7 +87,7 @@ class ClosenessGraphPartition(index: Int,
   }
 
   def saveClosenessAndCentrality(model: ClosenessPSModel, partitionIds: Array[Int],
-           ends: Array[Int], numNodes: Long, isDirected: Boolean): (Array[Long], Array[(JDouble, JLong, JLong)]) = {
+                                 ends: Array[Int], numNodes: Long, isDirected: Boolean): (Array[Long], Array[(JDouble, JLong, JLong)]) = {
     val length = if (index > 0) ends(index) - ends(index - 1) else ends(0)
     val start = if (index > 0) ends(index - 1) else 0
     val myPartitionIds = new Array[Int](length)
@@ -109,7 +109,7 @@ class ClosenessGraphPartition(index: Int,
   }
 }
 
-private [closeness]
+private[closeness]
 object ClosenessGraphPartition {
   def apply(index: Int, iter: Iterator[(Long, Iterable[Long])], p: Int, sp: Int): ClosenessGraphPartition = {
     val indptr = new IntArrayList()
@@ -121,7 +121,7 @@ object ClosenessGraphPartition {
     while (iter.hasNext) {
       val entry = iter.next()
       val (node, outs) = (entry._1, entry._2)
-      outs.toArray.distinct.foreach {n => outNodes.add(n)}
+      outs.toArray.distinct.foreach { n => outNodes.add(n) }
       indptr.add(outNodes.size())
       keys.add(node)
       idx += 1

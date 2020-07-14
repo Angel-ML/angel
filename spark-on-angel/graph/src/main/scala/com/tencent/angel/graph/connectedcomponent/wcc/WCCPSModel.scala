@@ -90,11 +90,11 @@ object WCCPSModel {
   /**
     * to balance < node, labelId > key-value vector on ps
     *
-    * @param minId               minId in nodes
-    * @param maxId               maxId in nodes
-    * @param data                nodes
-    * @param psNumPartition      ps-partition num
-    * @param useBalancePartition to balance ps-partition region
+    * @param minId                   minId in nodes
+    * @param maxId                   maxId in nodes
+    * @param data                    nodes
+    * @param psNumPartition          ps-partition num
+    * @param useBalancePartition     to balance ps-partition region
     * @param balancePartitionPercent the max partition cannot  store more than 70%  < node,labelId>  key-value
     * @return
     */

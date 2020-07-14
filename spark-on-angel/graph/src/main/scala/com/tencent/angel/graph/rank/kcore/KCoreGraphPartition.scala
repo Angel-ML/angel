@@ -25,14 +25,15 @@ import it.unimi.dsi.fastutil.longs.LongArrayList
 
 /**
   * KCoreGraphPartition implementation
-  * @param index: partition index
-  * @param keys: node ids in this partition
-  * @param indptr: node neighbor index, the ith node neighbors index range is [indptr(i), indptr(i+1))
-  * @param neighbors: node neighbors
-  * @param keyCores: node core
-  * @param neiCores: neighbor core
-  * @param indices: all node in this partition
-  * @param hIndices: hIndices
+  *
+  * @param index     partition index
+  * @param keys      node ids in this partition
+  * @param indptr    node neighbor index, the ith node neighbors index range is [indptr(i), indptr(i+1))
+  * @param neighbors node neighbors
+  * @param keyCores  node core
+  * @param neiCores  neighbor core
+  * @param indices   all node in this partition
+  * @param hIndices  hIndices
   */
 private[kcore]
 class KCoreGraphPartition(index: Int,
@@ -45,6 +46,7 @@ class KCoreGraphPartition(index: Int,
                           hIndices: Array[Int]) extends Serializable {
   /**
     * use the degree to init vertices core-value
+    *
     * @param model
     * @return
     */
@@ -58,7 +60,7 @@ class KCoreGraphPartition(index: Int,
 
   def process(model: KCorePSModel, numMsgs: Long, isFirstIteration: Boolean): KCoreGraphPartition = {
 
-    val inMsgs = if(numMsgs > indices.length || isFirstIteration) model.readMsgs(indices) else model.readAllMsgs()
+    val inMsgs = if (numMsgs > indices.length || isFirstIteration) model.readMsgs(indices) else model.readAllMsgs()
     val outMsgs = VFactory.sparseLongKeyIntVector(inMsgs.dim())
     for (idx <- keys.indices) {
       val newIndex = if (isFirstIteration) calcOneFirst(idx, inMsgs) else calcOne(idx, inMsgs)
@@ -124,6 +126,7 @@ private[kcore]
 object KCoreGraphPartition {
   /**
     * user CSR (index pointer) store the adjacency table of vertex
+    *
     * @param index
     * @param iterator Adjacency table of vertex
     * @return

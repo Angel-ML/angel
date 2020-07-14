@@ -34,32 +34,32 @@ object CommonFriendsOperator {
     dataset.select(srcNodeIdCol, dstNodeIdCol).rdd
       .filter(row => !row.anyNull)
       .mapPartitions { iter =>
-      iter.flatMap { row =>
-        if (row.getLong(0) == row.getLong(1))
-          Iterator.empty
-        else
-          Iterator.single(row.getLong(0), row.getLong(1))
+        iter.flatMap { row =>
+          if (row.getLong(0) == row.getLong(1))
+            Iterator.empty
+          else
+            Iterator.single(row.getLong(0), row.getLong(1))
+        }
       }
-    }
   }
 
   def loadCompressedEdges(dataset: Dataset[_],
-                srcNodeIdCol: String,
-                dstNodeIdCol: String,
-                compressCol: String
-               ): RDD[(Long, Long)] = {
+                          srcNodeIdCol: String,
+                          dstNodeIdCol: String,
+                          compressCol: String
+                         ): RDD[(Long, Long)] = {
     dataset.select(srcNodeIdCol, dstNodeIdCol, compressCol).rdd
       .filter(row => !row.anyNull)
       .mapPartitions { iter =>
-      iter.flatMap { row =>
-        if (row.getLong(0) == row.getLong(1))
-          Iterator.empty
-        else if (row.getFloat(2) == 1)
-          Iterator((row.getLong(0), row.getLong(1)), (row.getLong(1), row.getLong(0)))
-        else
-          Iterator.single(row.getLong(0), row.getLong(1))
+        iter.flatMap { row =>
+          if (row.getLong(0) == row.getLong(1))
+            Iterator.empty
+          else if (row.getFloat(2) == 1)
+            Iterator((row.getLong(0), row.getLong(1)), (row.getLong(1), row.getLong(0)))
+          else
+            Iterator.single(row.getLong(0), row.getLong(1))
+        }
       }
-    }
   }
 
   def edges2NeighborTable(edges: RDD[(Long, Long)],
@@ -81,24 +81,24 @@ object CommonFriendsOperator {
       var max = Long.MinValue
       var numEdges = 0L
       var numNodes = 0L
-      iter.foreach { case(src, neighbors) =>
+      iter.foreach { case (src, neighbors) =>
         min = math.min(min, math.min(src, neighbors.head))
         max = math.max(max, math.max(src, neighbors.last))
         numNodes += 1
         numEdges += neighbors.length
       }
       Iterator.single((min, max, numNodes, numEdges))
-    }.reduce{ case (c1: (Long, Long, Long, Long), c2: (Long, Long, Long, Long)) =>
+    }.reduce { case (c1: (Long, Long, Long, Long), c2: (Long, Long, Long, Long)) =>
       (c1._1 min c2._1, c1._2 max c2._2, c1._3 + c2._3, c1._4 + c2._4)
     }
   }
 
   def testPS(neighborsRDD: RDD[(Long, Array[Long])], psModel: CommonFriendsPSModel, num: Int): Unit = {
     println(s"======test PS======")
-    val nodeIds= neighborsRDD.take(num).map(_._1)
+    val nodeIds = neighborsRDD.take(num).map(_._1)
     val nodeNeighbors = psModel.getLongNeighborTable(nodeIds)
     val iter = nodeNeighbors.long2ObjectEntrySet().fastIterator()
-    while(iter.hasNext) {
+    while (iter.hasNext) {
       val entry = iter.next()
       println(s"node id = ${entry.getLongKey}, neighbors = ${entry.getValue.mkString(",")}")
     }
@@ -110,7 +110,7 @@ object CommonFriendsOperator {
     var correct = true
     for (i <- 0 until sampled.length - 1) {
       val item1 = sampled(i)
-      val item2 = sampled(i+1)
+      val item2 = sampled(i + 1)
       val trueNum = ArrayUtils.intersectCount(item1._2, item2._2)
       val fromPS = psModel.getLongNeighborTable(Array(item1._1, item2._1))
       val psNum = ArrayUtils.intersectCount(fromPS.get(item1._1), fromPS.get(item2._1))
@@ -188,42 +188,42 @@ object CommonFriendsOperator {
     }
   }
 
-//  def runNeighborPartitionTag(iter: Iterator[(Long, Array[(Long,Byte)])], partitionId: Int, psModel: CommonFriendsPSModel): Iterator[Row] = {
-//    val batchSize = psModel.neighborTable.param.pullBatchSize
-//    var totalRowNum = 0
-//    var totalPullNum = 0
-//    var startTs = System.currentTimeMillis()
-//    BatchIter(iter, batchSize).flatMap { batchIter =>
-//      println(s"partition $partitionId: last batch cost ${System.currentTimeMillis() - startTs} ms")
-//      startTs = System.currentTimeMillis()
-//      var numSrcNodes = 0
-//      val pullNodes: mutable.HashSet[Long] = new mutable.HashSet[Long]()
-//      val localNeighborTable: Long2ObjectOpenHashMap[Array[Long]] = new Long2ObjectOpenHashMap[Array[Long]](batchSize)
-//      batchIter.foreach { case (src, neighbors) =>
-//        numSrcNodes += 1
-//        val (nbrs,nbrsTag) =  neighbors.unzip
-//        localNeighborTable.put(src,nbrs)
-//        if (localNeighborTable.containsKey(src))
-//          pullNodes ++= nbrs
-//      }
-//      val beforePullTs = System.currentTimeMillis()
-//      val psNeighborsTable = psModel.getLongNeighborTable(pullNodes.toArray)
-//      totalRowNum += numSrcNodes
-//      totalPullNum += pullNodes.size
-//      println(s"partition $partitionId: process $numSrcNodes neighbor tables ($totalRowNum in total), " +
-//        s"pull ${pullNodes.size} nodes from ps ($totalPullNum in total), " +
-//        s"cost ${System.currentTimeMillis() - beforePullTs} ms")
-//      val srcNodes = localNeighborTable.keySet().toLongArray
-//      srcNodes.flatMap { src =>
-//        val srcNeighbors = localNeighborTable.get(src)
-//        srcNeighbors.flatMap { dst =>
-//          val dstNeighbors = if (localNeighborTable.containsKey(dst)) localNeighborTable.get(dst) else psNeighborsTable.get(dst)
-//          val commonNbrsCount = ArrayUtils.intersectCount(srcNeighbors, dstNeighbors)
-//          if()
-//          Iterator.single(Row(src, dst,commonNbrsCount ))
-//        }
-//      }
-//    }
-//  }
+  //  def runNeighborPartitionTag(iter: Iterator[(Long, Array[(Long,Byte)])], partitionId: Int, psModel: CommonFriendsPSModel): Iterator[Row] = {
+  //    val batchSize = psModel.neighborTable.param.pullBatchSize
+  //    var totalRowNum = 0
+  //    var totalPullNum = 0
+  //    var startTs = System.currentTimeMillis()
+  //    BatchIter(iter, batchSize).flatMap { batchIter =>
+  //      println(s"partition $partitionId: last batch cost ${System.currentTimeMillis() - startTs} ms")
+  //      startTs = System.currentTimeMillis()
+  //      var numSrcNodes = 0
+  //      val pullNodes: mutable.HashSet[Long] = new mutable.HashSet[Long]()
+  //      val localNeighborTable: Long2ObjectOpenHashMap[Array[Long]] = new Long2ObjectOpenHashMap[Array[Long]](batchSize)
+  //      batchIter.foreach { case (src, neighbors) =>
+  //        numSrcNodes += 1
+  //        val (nbrs,nbrsTag) =  neighbors.unzip
+  //        localNeighborTable.put(src,nbrs)
+  //        if (localNeighborTable.containsKey(src))
+  //          pullNodes ++= nbrs
+  //      }
+  //      val beforePullTs = System.currentTimeMillis()
+  //      val psNeighborsTable = psModel.getLongNeighborTable(pullNodes.toArray)
+  //      totalRowNum += numSrcNodes
+  //      totalPullNum += pullNodes.size
+  //      println(s"partition $partitionId: process $numSrcNodes neighbor tables ($totalRowNum in total), " +
+  //        s"pull ${pullNodes.size} nodes from ps ($totalPullNum in total), " +
+  //        s"cost ${System.currentTimeMillis() - beforePullTs} ms")
+  //      val srcNodes = localNeighborTable.keySet().toLongArray
+  //      srcNodes.flatMap { src =>
+  //        val srcNeighbors = localNeighborTable.get(src)
+  //        srcNeighbors.flatMap { dst =>
+  //          val dstNeighbors = if (localNeighborTable.containsKey(dst)) localNeighborTable.get(dst) else psNeighborsTable.get(dst)
+  //          val commonNbrsCount = ArrayUtils.intersectCount(srcNeighbors, dstNeighbors)
+  //          if()
+  //          Iterator.single(Row(src, dst,commonNbrsCount ))
+  //        }
+  //      }
+  //    }
+  //  }
 
 }

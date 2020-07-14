@@ -61,14 +61,13 @@ class TriangleCountingUndirected(override val uid: String) extends Transformer
     println(s"pushing neighbor table to ps cost ${System.currentTimeMillis() - initTableStartTime} ms")
 
     // triangle counting
-    val resRdd = neighborModel.calTriangleUndirected(neighborPartitions,
-      ${computeLcc}).persist($(storageLevel))
+    val resRdd = neighborModel.calTriangleUndirected(neighborPartitions, $(computeLcc)).persist($(storageLevel))
 
-    val res = if (${computeLcc}) {
-      dataset.sparkSession.createDataFrame(resRdd.map( r => Row(r._1, r._2, r._3)),
+    val res = if ($(computeLcc)) {
+      dataset.sparkSession.createDataFrame(resRdd.map(r => Row(r._1, r._2, r._3)),
         transformSchemaWithLCC(dataset.schema))
     } else {
-      dataset.sparkSession.createDataFrame(resRdd.map( r => Row(r._1, r._2)),
+      dataset.sparkSession.createDataFrame(resRdd.map(r => Row(r._1, r._2)),
         transformSchema(dataset.schema))
     }
     res

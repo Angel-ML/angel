@@ -40,8 +40,11 @@ class PageRank(override val uid: String) extends Transformer
   final val numBatch = new IntParam(this, "numBatch", "numBatch")
 
   final def setTol(error: Float): this.type = set(tol, error)
+
   final def setResetProb(prob: Float): this.type = set(resetProb, prob)
+
   final def setIsLeakInserted(isLeakInsert: Boolean): this.type = set(isLeakInserted, isLeakInsert)
+
   final def setNumBatch(batch: Int): this.type = set(numBatch, batch)
 
   setDefault(tol, 0.01f)
@@ -53,13 +56,13 @@ class PageRank(override val uid: String) extends Transformer
 
   override def transform(dataset: Dataset[_]): DataFrame = {
     val edges = if ($(isWeighted)) {
-      dataset.select(${srcNodeIdCol}, ${dstNodeIdCol}, ${weightCol}).rdd
+      dataset.select($(srcNodeIdCol), $(dstNodeIdCol), $(weightCol)).rdd
         .filter(row => !row.anyNull)
         .map(row => (row.getLong(0), row.getLong(1), row.getFloat(2)))
         .filter(f => f._1 != f._2)
         .filter(f => f._3 != 0)
     } else {
-      dataset.select(${srcNodeIdCol}, ${dstNodeIdCol}).rdd
+      dataset.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd
         .filter(row => !row.anyNull)
         .map(row => (row.getLong(0), row.getLong(1), 1.0f))
         .filter(f => f._1 != f._2)
@@ -101,7 +104,7 @@ class PageRank(override val uid: String) extends Transformer
     println(s"numMsgs=$numMsgs")
 
     do {
-      graph.map(_.process(model, $(resetProb), ${tol}, numMsgs)).reduce(_ + _)
+      graph.map(_.process(model, $(resetProb), $(tol), numMsgs)).reduce(_ + _)
       model.computeRanks(initRank, $(resetProb))
       numMsgs = model.numMsgs()
       println(s"numIteration=$numIterations numMsgs=$numMsgs")
@@ -113,7 +116,7 @@ class PageRank(override val uid: String) extends Transformer
     val (partitionIds, ends) = PageRankOps.splitPartitionIds(model.matrixId, graph.getNumPartitions)
     val retRDD = graph.flatMap(f => PageRankOps.save(f.getIndex, model, partitionIds, ends, $(numBatch)))
       .flatMap(f => f._1.zip(f._2))
-      .map { case (node, rank) => Row.fromSeq(Seq[Any](node, rank))}
+      .map { case (node, rank) => Row.fromSeq(Seq[Any](node, rank)) }
 
     val outputSchema = transformSchema(dataset.schema)
     dataset.sparkSession.createDataFrame(retRDD, outputSchema)
