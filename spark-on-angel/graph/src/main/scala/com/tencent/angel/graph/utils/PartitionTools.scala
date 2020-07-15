@@ -14,6 +14,7 @@
  * the License.
  *
  */
+
 package com.tencent.angel.graph.utils
 
 import com.tencent.angel.ml.matrix.{MatrixContext, PartContext}

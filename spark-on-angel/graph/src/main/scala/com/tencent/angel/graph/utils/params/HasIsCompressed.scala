@@ -26,9 +26,9 @@ trait HasIsCompressed extends Params {
     */
   final val isCompressed = new BooleanParam(this, "isCompressed", "is compressed edge or not")
 
-  final def getIsCompressed : Boolean = $(isCompressed)
+  final def getIsCompressed: Boolean = $(isCompressed)
 
   setDefault(isCompressed, false)
 
-  final def setIsCompressed (bool: Boolean): this.type = set(isCompressed, bool)
+  final def setIsCompressed(bool: Boolean): this.type = set(isCompressed, bool)
 }

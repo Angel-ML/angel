@@ -26,6 +26,7 @@ import org.apache.spark.sql.{DataFrame, Dataset}
 
 /**
   * LINE
+  *
   * @param uid
   */
 class LINE(override val uid: String) extends Transformer
@@ -40,17 +41,89 @@ class LINE(override val uid: String) extends Transformer
   /**
     * LINE PS model
     */
-  @volatile var model:LINEModel = _
+  @volatile var model: LINEModel = _
 
   override def transform(dataset: Dataset[_]): DataFrame = {
-    if(${isWeighted}) {
-      model = new LINEWithWightModel(dataset, ${embedding}, ${negative}, ${stepSize}, ${order},
-        ${psPartitionNum}, ${batchSize}, ${epochNum}, ${partitionNum}, ${srcNodeIdCol}, ${dstNodeIdCol},
-        ${weightCol}, ${remapping}, ${subSample}, ${output}, ${checkpointInterval}, ${saveModelInterval}, ${saveMeta}, ${oldModelPath})
+    if ($ {
+      isWeighted
+    }) {
+      model = new LINEWithWightModel(dataset, $ {
+        embedding
+      }, $ {
+        negative
+      }, $ {
+        stepSize
+      }, $ {
+        order
+      },
+        $ {
+          psPartitionNum
+        }, $ {
+          batchSize
+        }, $ {
+          epochNum
+        }, $ {
+          partitionNum
+        }, $ {
+          srcNodeIdCol
+        }, $ {
+          dstNodeIdCol
+        },
+        $ {
+          weightCol
+        }, $ {
+          remapping
+        }, $ {
+          subSample
+        }, $ {
+          output
+        }, $ {
+          checkpointInterval
+        }, $ {
+          saveModelInterval
+        }, $ {
+          saveMeta
+        }, $ {
+          oldModelPath
+        })
     } else {
-      model = new LINEModel(dataset, ${embedding}, ${negative}, ${stepSize}, ${order},
-        ${psPartitionNum}, ${batchSize}, ${epochNum}, ${partitionNum}, ${srcNodeIdCol}, ${dstNodeIdCol},
-        ${remapping}, ${subSample}, ${output}, ${checkpointInterval}, ${saveModelInterval}, ${saveMeta}, ${oldModelPath})
+      model = new LINEModel(dataset, $ {
+        embedding
+      }, $ {
+        negative
+      }, $ {
+        stepSize
+      }, $ {
+        order
+      },
+        $ {
+          psPartitionNum
+        }, $ {
+          batchSize
+        }, $ {
+          epochNum
+        }, $ {
+          partitionNum
+        }, $ {
+          srcNodeIdCol
+        }, $ {
+          dstNodeIdCol
+        },
+        $ {
+          remapping
+        }, $ {
+          subSample
+        }, $ {
+          output
+        }, $ {
+          checkpointInterval
+        }, $ {
+          saveModelInterval
+        }, $ {
+          saveMeta
+        }, $ {
+          oldModelPath
+        })
     }
 
     model.train()
@@ -66,7 +139,7 @@ class LINE(override val uid: String) extends Transformer
   override def transformSchema(schema: StructType): StructType = ???
 }
 
-case class Edge(src:Int, dst:Int) {
+case class Edge(src: Int, dst: Int) {
   override def hashCode() = {
     src * 13 + dst * 17
   }

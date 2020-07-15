@@ -14,6 +14,7 @@
  * the License.
  *
  */
+
 package com.tencent.angel.graph
 
 import com.tencent.angel.graph.client.initneighbor2.{InitNeighbor => InitLongNeighbor, InitNeighborParam => InitLongNeighborParam}

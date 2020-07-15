@@ -24,9 +24,10 @@ import org.apache.hadoop.conf.Configuration
 
 /**
   * The output format for LINE
+  *
   * @param conf
   */
-class TextLINEModelOutputFormat(conf:Configuration) extends ComplexRowFormat(conf) {
+class TextLINEModelOutputFormat(conf: Configuration) extends ComplexRowFormat(conf) {
   val featSep: String = conf.get("line.feature.sep", " ")
   val keyValueSep: String = conf.get("line.keyvalue.sep", ":")
   val modelOrder: Int = conf.get("line.model.order", "2").toInt
@@ -36,7 +37,7 @@ class TextLINEModelOutputFormat(conf:Configuration) extends ComplexRowFormat(con
     val indexAndElement = new IndexAndElement
     val keyValues = line.split(keyValueSep)
 
-    if(featSep.equals(keyValueSep)) {
+    if (featSep.equals(keyValueSep)) {
       indexAndElement.index = keyValues(0).toLong
       val feats = new Array[Float](keyValues.length - 1)
       (1 until keyValues.length).foreach(i => feats(i - 1) = keyValues(i).toFloat)
@@ -44,7 +45,7 @@ class TextLINEModelOutputFormat(conf:Configuration) extends ComplexRowFormat(con
     } else {
       indexAndElement.index = keyValues(0).toLong
       val inputFeats = keyValues(1).split(featSep).map(f => f.toFloat)
-      if(modelOrder == 1) {
+      if (modelOrder == 1) {
         indexAndElement.element = new LINENode(inputFeats, null)
       } else {
         indexAndElement.element = new LINENode(inputFeats, new Array[Float](inputFeats.length))
@@ -67,7 +68,7 @@ class TextLINEModelOutputFormat(conf:Configuration) extends ComplexRowFormat(con
     var index = 0
     val len = feats.length
     feats.foreach(f => {
-      if(index < len - 1) {
+      if (index < len - 1) {
         sb.append(f).append(featSep)
       } else {
         sb.append(f).append("\n")

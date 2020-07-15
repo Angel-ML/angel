@@ -14,6 +14,7 @@
  * the License.
  *
  */
+
 package com.tencent.angel.graph
 
 import com.tencent.angel.ml.math2.storage.IntLongDenseVectorStorage
@@ -74,13 +75,13 @@ object GraphOps {
     dataset.select(srcNodeIdCol, dstNodeIdCol).rdd
       .filter(row => !row.anyNull)
       .mapPartitions { iter =>
-      iter.flatMap { row =>
-        if (row.getLong(0) == row.getLong(1))
-          Iterator.empty
-        else
-          Iterator.single((row.getLong(0), row.getLong(1)))
+        iter.flatMap { row =>
+          if (row.getLong(0) == row.getLong(1))
+            Iterator.empty
+          else
+            Iterator.single((row.getLong(0), row.getLong(1)))
+        }
       }
-    }
   }
 
   def loadEdgesWithAttr[@specialized(
@@ -191,7 +192,7 @@ object GraphOps {
       } else {
         Iterator(((dst, src), (1, 1))) // dst <- src, tag: 1
       }
-    }.reduceByKey((a, b) => (a._1 + b._1, a._2 & b._2),partitionNum)
+    }.reduceByKey((a, b) => (a._1 + b._1, a._2 & b._2), partitionNum)
 
     //give each edge a tag [src < dst ,0],[src > dst,1] ,[src <-> dst, 2]
     // use extreme strategy
@@ -280,7 +281,7 @@ object GraphOps {
       } else {
         Iterator(((dst, src), (1, 1))) // dst <- src, tag: 1
       }
-    }.reduceByKey((a, b) => (a._1 + b._1, a._2 & b._2),partitionNum)
+    }.reduceByKey((a, b) => (a._1 + b._1, a._2 & b._2), partitionNum)
 
     val edgeTag = edgeType.map { case ((src, dst), (cnt, dir)) =>
       if (cnt >= 1 && dir == 1) {
@@ -309,7 +310,7 @@ object GraphOps {
       } else {
         Iterator(((dst, src), (1, 1))) // dst <- src, tag: 1
       }
-    }.reduceByKey((a, b) => (a._1 + b._1, a._2 & b._2),partitionNum)
+    }.reduceByKey((a, b) => (a._1 + b._1, a._2 & b._2), partitionNum)
 
     val edgeTag = edgeType.map { case ((src, dst), (cnt, dir)) =>
       if (cnt >= 1 && dir == 1) {

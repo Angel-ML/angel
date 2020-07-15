@@ -23,5 +23,5 @@ class Param(@BeanProperty val maxIndex: Long,
             @BeanProperty val batchSize: Int,
             @BeanProperty val pullBatchSize: Int,
             @BeanProperty val psPartNum: Int
-            ) extends Serializable {
+           ) extends Serializable {
 }

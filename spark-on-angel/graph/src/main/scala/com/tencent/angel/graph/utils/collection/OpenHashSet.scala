@@ -155,11 +155,12 @@ class OpenHashSet[@specialized(Long, Int) T: ClassTag](
 
   /**
     * Rehash the set if it is overloaded.
-    * @param k A parameter unused in the function, but to force the Scala compiler to specialize
-    *          this method.
+    *
+    * @param k            A parameter unused in the function, but to force the Scala compiler to specialize
+    *                     this method.
     * @param allocateFunc Callback invoked when we are allocating a new, larger array.
-    * @param moveFunc Callback invoked when we move the key from one position (in the old data array)
-    *                 to a new position (in the new data array).
+    * @param moveFunc     Callback invoked when we move the key from one position (in the old data array)
+    *                     to a new position (in the new data array).
     */
   def rehashIfNeeded(k: T, allocateFunc: (Int) => Unit, moveFunc: (Int, Int) => Unit) {
     if (_size > _growThreshold) {
@@ -192,7 +193,9 @@ class OpenHashSet[@specialized(Long, Int) T: ClassTag](
 
   def iterator: Iterator[T] = new Iterator[T] {
     var pos = nextPos(0)
+
     override def hasNext: Boolean = pos != INVALID_POS
+
     override def next(): T = {
       val tmp = getValue(pos)
       pos = nextPos(pos + 1)
@@ -216,11 +219,11 @@ class OpenHashSet[@specialized(Long, Int) T: ClassTag](
     * so Scala compiler can specialize this method (which leads to calling the specialized version
     * of putInto).
     *
-    * @param k A parameter unused in the function, but to force the Scala compiler to specialize
-    *          this method.
+    * @param k            A parameter unused in the function, but to force the Scala compiler to specialize
+    *                     this method.
     * @param allocateFunc Callback invoked when we are allocating a new, larger array.
-    * @param moveFunc Callback invoked when we move the key from one position (in the old data array)
-    *                 to a new position (in the new data array).
+    * @param moveFunc     Callback invoked when we move the key from one position (in the old data array)
+    *                     to a new position (in the new data array).
     */
   private def rehash(k: T, allocateFunc: (Int) => Unit, moveFunc: (Int, Int) => Unit) {
     val newCapacity = _capacity * 2
