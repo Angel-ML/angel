@@ -154,7 +154,7 @@ class LINEPSModel(embeddingMatrix: PSMatrix, minNodeId: Int, maxNodeId: Int) ext
     PSContext.instance().save(saveContext)
 
 
-    if(!saveMeta) {
+    if (!saveMeta) {
       // Remove the meta file
       try {
         val metaPath = new Path(new Path(modelPath, embeddingMatrix.name), ModelFilesConstent.modelMetaFileName)
@@ -163,11 +163,11 @@ class LINEPSModel(embeddingMatrix: PSMatrix, minNodeId: Int, maxNodeId: Int) ext
         val fs = metaPath.getFileSystem(conf)
         // Remove
         val ret = fs.delete(metaPath, true)
-        if(!ret) {
+        if (!ret) {
           logTime(s"Warning: remove meta file failed !!!")
         }
       } catch {
-        case e:Throwable => logTime(s"Warning: remove meta file failed !!!")
+        case e: Throwable => logTime(s"Warning: remove meta file failed !!!")
       }
     }
   }

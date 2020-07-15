@@ -27,7 +27,7 @@ import io.netty.buffer.ByteBuf
 import scala.util.Random
 import scala.collection.JavaConversions._
 
-class LINEInitFunc(var order:Int, var dim:Int) extends PSMatrixInit {
+class LINEInitFunc(var order: Int, var dim: Int) extends PSMatrixInit {
 
   def this() = this(-1, -1)
 
@@ -36,7 +36,7 @@ class LINEInitFunc(var order:Int, var dim:Int) extends PSMatrixInit {
     val seed = UUID.randomUUID().hashCode();
     val rand = new Random(seed)
 
-    for(part <- parts) {
+    for (part <- parts) {
       val row: ServerIntAnyRow = part.asInstanceOf[RowBasedPartition].getRow(0).asInstanceOf[ServerIntAnyRow]
       println(s"random seed in init=$seed")
 
@@ -45,7 +45,7 @@ class LINEInitFunc(var order:Int, var dim:Int) extends PSMatrixInit {
         for (i <- 0 until dim) {
           embedding(i) = (rand.nextFloat() - 0.5f) / dim
         }
-        if(order == 1) {
+        if (order == 1) {
           row.set(colId.toInt, new LINENode(embedding, null))
         } else {
           row.set(colId.toInt, new LINENode(embedding, new Array[Float](dim)))

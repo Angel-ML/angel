@@ -377,7 +377,7 @@ class NeighborTablePartition[@specialized(
         srcNeighbors.foreach { dst =>
           val dstNeighbors = if (localNeighborTable.containsKey(dst)) localNeighborTable.get(dst)
           else psNeighborsTable.get(dst)
-          val comFriends =ArrayUtils.intersectCount(dstNeighbors, srcNeighbors)
+          val comFriends = ArrayUtils.intersectCount(dstNeighbors, srcNeighbors)
           triangleCount += comFriends
         }
         if (computeLCC) {

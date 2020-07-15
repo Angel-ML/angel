@@ -29,8 +29,8 @@ import scala.reflect.ClassTag
   * distinguish between the 0/0.0/0L and non-exist value
   */
 
-class OpenHashMap[K : ClassTag, @specialized(Long, Int, Double) V: ClassTag](
-                                                                              initialCapacity: Int)
+class OpenHashMap[K: ClassTag, @specialized(Long, Int, Double) V: ClassTag](
+                                                                             initialCapacity: Int)
   extends Iterable[(K, V)]
     with Serializable {
 

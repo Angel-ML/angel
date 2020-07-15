@@ -61,9 +61,9 @@ abstract class NEModel(numNode: Int,
 
   def getDotFunc(data: NEDataSet, batchSeed: Int, ns: Int, partitionId: Int): GetFunc
 
-  def getAdjustFunc(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float],  partitionId: Int): UpdateFunc
+  def getAdjustFunc(data: NEDataSet, batchSeed: Int, ns: Int, grad: Array[Float], partitionId: Int): UpdateFunc
 
-  def getInitFunc(numPartitions: Int, maxIndex: Int, maxLength: Int, negative:Int, window: Int): UpdateFunc = {
+  def getInitFunc(numPartitions: Int, maxIndex: Int, maxLength: Int, negative: Int, window: Int): UpdateFunc = {
     val param = new InitParam(matrixId, numPartitions, maxIndex, maxLength, negative, order, partDim, window)
     new Init(param)
   }
@@ -78,7 +78,7 @@ abstract class NEModel(numNode: Int,
             checkpointInterval: Int = 10,
             path: String): Unit = {
     for (epoch <- 1 to numEpoch) {
-//      val alpha = learningRate * (1 - math.sqrt(epoch / numEpoch)).toFloat
+      //      val alpha = learningRate * (1 - math.sqrt(epoch / numEpoch)).toFloat
       val alpha = learningRate
       val data = trainBatches.next()
       val numPartitions = data.getNumPartitions
@@ -170,7 +170,7 @@ abstract class NEModel(numNode: Int,
       psfUpdate(getAdjustFunc(batch, seed, negative, dots, partitionId))
       end = System.currentTimeMillis()
       val adjustTime = end - start
-//       return loss
+      //       return loss
       if ((batchId + 1) % 100 == 0)
         logTime(s"batchId=$batchId dotTime=$dotTime gradientTime=$gradientTime adjustTime=$adjustTime")
       (loss, dots.length.toLong, Array(dotTime, gradientTime, adjustTime))
@@ -243,7 +243,7 @@ abstract class NEModel(numNode: Int,
     loss
   }
 
-  def destroy(): Unit ={
+  def destroy(): Unit = {
     psMatrix.destroy()
   }
 

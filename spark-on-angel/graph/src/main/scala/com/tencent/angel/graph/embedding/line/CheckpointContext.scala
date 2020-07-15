@@ -35,8 +35,8 @@ class CheckpointContext extends Serializable {
     */
   val readOnlyMatrices = new util.ArrayList[PSMatrix]()
 
-  def addReadWriteMatrix(matrix:PSMatrix): Boolean = readWriteMatrices.add(matrix)
+  def addReadWriteMatrix(matrix: PSMatrix): Boolean = readWriteMatrices.add(matrix)
 
-  def addReadOnlyMatrix(matrix:PSMatrix): Boolean = readOnlyMatrices.add(matrix)
+  def addReadOnlyMatrix(matrix: PSMatrix): Boolean = readOnlyMatrices.add(matrix)
 
 }

@@ -114,7 +114,7 @@ class EdgeAliasTableStorage(@transient var rowOffset: Int, @transient var srcNod
   @volatile var prob: Array[Float] = _
   @volatile var alias: Array[Int] = _
   val rand = new Random(System.currentTimeMillis())
-  @volatile var sum:Double = 0.0
+  @volatile var sum: Double = 0.0
 
   override def init(): Unit = {}
 
@@ -167,14 +167,14 @@ class EdgeAliasTableStorage(@transient var rowOffset: Int, @transient var srcNod
     */
   override def serialize(output: DataOutputStream): Unit = {
     super.serialize(output)
-    if(srcNodes == null || dstNodes == null || prob == null || alias == null) {
+    if (srcNodes == null || dstNodes == null || prob == null || alias == null) {
       output.writeBoolean(false)
       EdgeAliasTableStorage.LOG.warn("Alias table is not valid, write snapshot failed ")
     } else {
       output.writeBoolean(true)
       output.writeDouble(sum)
       output.writeInt(srcNodes.length)
-      for(i <- 0 until srcNodes.length) {
+      for (i <- 0 until srcNodes.length) {
         output.writeInt(srcNodes(i))
         output.writeInt(dstNodes(i))
         output.writeFloat(prob(i))
@@ -190,7 +190,7 @@ class EdgeAliasTableStorage(@transient var rowOffset: Int, @transient var srcNod
     */
   override def deserialize(input: DataInputStream): Unit = {
     super.deserialize(input)
-    if(!input.readBoolean()) {
+    if (!input.readBoolean()) {
       throw new RuntimeException("Recover alias table failed!!!")
     } else {
       sum = input.readDouble()
@@ -200,7 +200,7 @@ class EdgeAliasTableStorage(@transient var rowOffset: Int, @transient var srcNod
       prob = new Array[Float](len)
       alias = new Array[Int](len)
 
-      for(i <- 0 until len) {
+      for (i <- 0 until len) {
         srcNodes(i) = input.readInt()
         dstNodes(i) = input.readInt()
         prob(i) = input.readFloat()

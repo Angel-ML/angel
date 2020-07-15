@@ -14,6 +14,7 @@
  * the License.
  *
  */
+
 package com.tencent.angel.graph.embedding.line
 
 import java.util
@@ -51,16 +52,15 @@ class LINEGetEmbedding(param: LINEGetEmbeddingParam) extends GetFunc(param) {
     val order = getEmbeddingParam.order
 
     // Get the number of nodes that need get feats
-    var srcFeats:Int2ObjectOpenHashMap[Array[Float]] = null
-    var targetFeats:Int2ObjectOpenHashMap[Array[Float]] = null
+    var srcFeats: Int2ObjectOpenHashMap[Array[Float]] = null
+    var targetFeats: Int2ObjectOpenHashMap[Array[Float]] = null
 
 
-
-    if(order == 1) {
-      if(srcNodeIds != null || targetNodeIds != null) {
+    if (order == 1) {
+      if (srcNodeIds != null || targetNodeIds != null) {
         var len = 0
-        if(srcNodeIds != null) len += srcNodeIds.length
-        if(targetNodeIds != null) len += targetNodeIds.length
+        if (srcNodeIds != null) len += srcNodeIds.length
+        if (targetNodeIds != null) len += targetNodeIds.length
 
         srcFeats = new Int2ObjectOpenHashMap[Array[Float]](len)
       }
@@ -70,7 +70,7 @@ class LINEGetEmbedding(param: LINEGetEmbeddingParam) extends GetFunc(param) {
       }
     }
 
-    if(targetNodeIds != null) {
+    if (targetNodeIds != null) {
       targetFeats = new Int2ObjectOpenHashMap[Array[Float]](targetNodeIds.length)
     }
 
@@ -114,11 +114,11 @@ class LINEGetEmbedding(param: LINEGetEmbeddingParam) extends GetFunc(param) {
     val targetFetas = new Int2ObjectOpenHashMap[Array[Float]](param.targetNodeNum)
 
     for (partResult <- partResults) {
-      if(partResult.asInstanceOf[PartLINEGetEmbeddingResult].srcFeats != null) {
+      if (partResult.asInstanceOf[PartLINEGetEmbeddingResult].srcFeats != null) {
         srcFeats.putAll(partResult.asInstanceOf[PartLINEGetEmbeddingResult].srcFeats)
       }
 
-      if(partResult.asInstanceOf[PartLINEGetEmbeddingResult].targetFeats != null) {
+      if (partResult.asInstanceOf[PartLINEGetEmbeddingResult].targetFeats != null) {
         targetFetas.putAll(partResult.asInstanceOf[PartLINEGetEmbeddingResult].targetFeats)
       }
     }
@@ -127,7 +127,7 @@ class LINEGetEmbedding(param: LINEGetEmbeddingParam) extends GetFunc(param) {
 }
 
 class LINEGetEmbeddingResult(srcFeats: Int2ObjectOpenHashMap[Array[Float]],
-                             targetFeats:Int2ObjectOpenHashMap[Array[Float]]) extends GetResult {
+                             targetFeats: Int2ObjectOpenHashMap[Array[Float]]) extends GetResult {
   def getResult: (Int2ObjectOpenHashMap[Array[Float]], Int2ObjectOpenHashMap[Array[Float]]) = (srcFeats, targetFeats)
 }
 
@@ -257,7 +257,7 @@ class PartLINEGetEmbeddingParam(matrixId: Int, part: PartitionKey, var srcNodeId
   }
 }
 
-class PartLINEGetEmbeddingResult(var part: PartitionKey,  var srcFeats: Int2ObjectOpenHashMap[Array[Float]],
+class PartLINEGetEmbeddingResult(var part: PartitionKey, var srcFeats: Int2ObjectOpenHashMap[Array[Float]],
                                  var targetFeats: Int2ObjectOpenHashMap[Array[Float]]) extends PartitionGetResult {
 
   def this() = this(null, null, null)
@@ -268,11 +268,11 @@ class PartLINEGetEmbeddingResult(var part: PartitionKey,  var srcFeats: Int2Obje
     * @param output the Netty ByteBuf
     */
   override def serialize(output: ByteBuf): Unit = {
-    if(srcFeats != null) {
+    if (srcFeats != null) {
       output.writeInt(srcFeats.size())
 
       val resIter = srcFeats.int2ObjectEntrySet().fastIterator()
-      while(resIter.hasNext) {
+      while (resIter.hasNext) {
         val entry = resIter.next()
         output.writeInt(entry.getIntKey)
         NodeUtils.serialize(entry.getValue, output)
@@ -281,11 +281,11 @@ class PartLINEGetEmbeddingResult(var part: PartitionKey,  var srcFeats: Int2Obje
       output.writeInt(0)
     }
 
-    if(targetFeats != null) {
+    if (targetFeats != null) {
       output.writeInt(targetFeats.size())
 
       val resIter = targetFeats.int2ObjectEntrySet().fastIterator()
-      while(resIter.hasNext) {
+      while (resIter.hasNext) {
         val entry = resIter.next()
         output.writeInt(entry.getIntKey)
         NodeUtils.serialize(entry.getValue, output)
@@ -302,7 +302,7 @@ class PartLINEGetEmbeddingResult(var part: PartitionKey,  var srcFeats: Int2Obje
     */
   override def deserialize(input: ByteBuf): Unit = {
     var len = input.readInt()
-    if(len > 0) {
+    if (len > 0) {
       srcFeats = new Int2ObjectOpenHashMap[Array[Float]](len)
       for (i <- 0 until len) {
         srcFeats.put(input.readInt(), NodeUtils.deserializeFloats(input))
@@ -310,7 +310,7 @@ class PartLINEGetEmbeddingResult(var part: PartitionKey,  var srcFeats: Int2Obje
     }
 
     len = input.readInt()
-    if(len > 0) {
+    if (len > 0) {
       targetFeats = new Int2ObjectOpenHashMap[Array[Float]](len)
       for (i <- 0 until len) {
         targetFeats.put(input.readInt(), NodeUtils.deserializeFloats(input))
@@ -327,10 +327,10 @@ class PartLINEGetEmbeddingResult(var part: PartitionKey,  var srcFeats: Int2Obje
     var len = 8
 
     var elemLen = 0
-    if(srcFeats != null) {
+    if (srcFeats != null) {
       val resIter = srcFeats.int2ObjectEntrySet().fastIterator()
       var break = false
-      while(resIter.hasNext && !break) {
+      while (resIter.hasNext && !break) {
         val entry = resIter.next()
         elemLen = 4 + NodeUtils.dataLen(entry.getValue)
         break = true
@@ -339,10 +339,10 @@ class PartLINEGetEmbeddingResult(var part: PartitionKey,  var srcFeats: Int2Obje
       len += elemLen * srcFeats.size()
     }
 
-    if(targetFeats != null) {
+    if (targetFeats != null) {
       val resIter = targetFeats.int2ObjectEntrySet().fastIterator()
       var break = false
-      while(resIter.hasNext && !break) {
+      while (resIter.hasNext && !break) {
         val entry = resIter.next()
         elemLen = 4 + NodeUtils.dataLen(entry.getValue)
         break = true

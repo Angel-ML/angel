@@ -23,7 +23,7 @@ class EdgePartition[@specialized(
     val localSrcs = new ArrayBuffer[VertexId]
     val localDsts = new ArrayBuffer[VertexId]
     val localAttrs = new ArrayBuffer[ED]
-    data.foreach{ edge =>
+    data.foreach { edge =>
       localSrcs += edge.srcId
       localDsts += edge.dstId
       localAttrs += edge.attr
@@ -36,7 +36,7 @@ class EdgePartition[@specialized(
 
   lazy val numEdges: Long = srcIds.length.toLong
 
-  lazy val numVertices: Long =  {
+  lazy val numVertices: Long = {
     val vertexSet = new VertexSet
     srcIds.foreach(vertexSet.add)
     dstIds.foreach(vertexSet.add)
@@ -47,7 +47,7 @@ class EdgePartition[@specialized(
     var minVertex = Long.MaxValue
     var maxVertex = Long.MinValue
     var numEdges = 0L
-    (0 until numEdges.toInt).foreach{ pos =>
+    (0 until numEdges.toInt).foreach { pos =>
       minVertex = minVertex min srcIds(pos) min dstIds(pos)
       maxVertex = maxVertex max srcIds(pos) max dstIds(pos)
       numEdges += 1
@@ -82,7 +82,7 @@ object EdgePartition {
       val localSrcs = new ArrayBuffer[VertexId]
       val localDsts = new ArrayBuffer[VertexId]
       val localAttrs = new ArrayBuffer[ED]
-      iter.map{ edge =>
+      iter.map { edge =>
         localSrcs += edge.srcId
         localDsts += edge.dstId
         localAttrs += edge.attr

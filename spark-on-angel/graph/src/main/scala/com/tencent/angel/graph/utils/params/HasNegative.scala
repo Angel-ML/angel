@@ -2,7 +2,7 @@ package com.tencent.angel.graph.utils.params
 
 import org.apache.spark.ml.param.{IntParam, Params}
 
-trait HasNegative extends Params{
+trait HasNegative extends Params {
   /**
     * Param for buffer size.
     *
