@@ -14,6 +14,7 @@
  * the License.
  *
  */
+
 package com.tencent.angel.graph.embedding.line
 
 import java.io.{DataInputStream, DataOutputStream}

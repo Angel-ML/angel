@@ -14,6 +14,7 @@
  * the License.
  *
  */
+
 package com.tencent.angel.graph.rank.kcore
 
 import com.tencent.angel.ml.math2.vector.LongIntVector

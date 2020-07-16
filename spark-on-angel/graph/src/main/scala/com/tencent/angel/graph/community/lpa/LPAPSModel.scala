@@ -16,14 +16,12 @@
  */
 package com.tencent.angel.graph.community.lpa
 
-import com.tencent.angel.graph.utils.params.HasBalancePartitionPercent
-import com.tencent.angel.ml.math2.vector.{LongIntVector, LongLongVector, Vector}
+import com.tencent.angel.ml.math2.vector.{ LongLongVector, Vector}
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.spark.ml.util.LoadBalancePartitioner
 import com.tencent.angel.spark.models.PSVector
 import com.tencent.angel.spark.models.impl.PSVectorImpl
-import com.tencent.angel.spark.util.VectorUtils
 import org.apache.spark.rdd.RDD
 
 class LPAPSModel(var inMsgs: PSVector,

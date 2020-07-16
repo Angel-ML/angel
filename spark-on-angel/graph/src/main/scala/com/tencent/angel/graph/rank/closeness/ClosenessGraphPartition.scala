@@ -14,6 +14,7 @@
  * the License.
  *
  */
+
 package com.tencent.angel.graph.rank.closeness
 
 import java.lang.{Double => JDouble, Long => JLong}

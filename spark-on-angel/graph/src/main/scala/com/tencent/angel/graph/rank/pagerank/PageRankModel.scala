@@ -14,9 +14,9 @@
  * the License.
  *
  */
+
 package com.tencent.angel.graph.rank.pagerank
 
-import com.tencent.angel.graph.psf.pagerank.ComputeRank
 import com.tencent.angel.ml.math2.storage.IntLongDenseVectorStorage
 import com.tencent.angel.ml.math2.vector.{IntLongVector, LongFloatVector, Vector}
 import com.tencent.angel.ml.matrix.psf.get.getrow.GetRowResult

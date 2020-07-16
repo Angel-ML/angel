@@ -14,6 +14,7 @@
  * the License.
  *
  */
+
 package com.tencent.angel.graph.rank.pagerank.vertexcut
 
 import com.tencent.angel.ml.math2.vector.{LongFloatVector, Vector}
