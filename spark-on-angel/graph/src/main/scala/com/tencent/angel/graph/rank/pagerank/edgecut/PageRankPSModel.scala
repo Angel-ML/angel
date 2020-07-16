@@ -14,6 +14,7 @@
  * the License.
  *
  */
+
 package com.tencent.angel.graph.rank.pagerank.edgecut
 
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}

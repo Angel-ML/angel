@@ -14,12 +14,12 @@
  * the License.
  *
  */
+
 package com.tencent.angel.graph.rank.pagerank
 
 import java.util.Collections
 
 import com.tencent.angel.psagent.PSAgentContext
-import com.tencent.angel.graph.rank.pagerank.edgecut.PageRankPSModel
 
 object PageRankOps {
 

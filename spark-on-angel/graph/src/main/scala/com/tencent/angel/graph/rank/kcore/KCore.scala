@@ -14,6 +14,7 @@
  * the License.
  *
  */
+
 package com.tencent.angel.graph.rank.kcore
 
 import com.tencent.angel.spark.context.PSContext

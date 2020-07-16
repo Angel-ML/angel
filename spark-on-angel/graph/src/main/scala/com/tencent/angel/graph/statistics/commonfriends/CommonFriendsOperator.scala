@@ -14,6 +14,7 @@
  * the License.
  *
  */
+
 package com.tencent.angel.graph.statistics.commonfriends
 
 import com.tencent.angel.graph.utils.BatchIter

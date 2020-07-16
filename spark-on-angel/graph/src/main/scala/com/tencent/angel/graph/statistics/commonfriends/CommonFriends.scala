@@ -14,12 +14,13 @@
  * the License.
  *
  */
+
 package com.tencent.angel.graph.statistics.commonfriends
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.graph.utils.params._
-import com.tencent.angel.graph.utils.{BatchIter, GraphIO, PartitionTools}
-import org.apache.spark.{SparkConf, SparkContext}
+import com.tencent.angel.graph.utils.{GraphIO, PartitionTools}
+import org.apache.spark.{SparkContext}
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.util.Identifiable

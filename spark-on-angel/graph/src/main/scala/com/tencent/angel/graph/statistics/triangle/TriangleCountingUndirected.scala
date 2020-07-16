@@ -14,6 +14,7 @@
  * the License.
  *
  */
+
 package com.tencent.angel.graph.statistics.triangle
 
 import com.tencent.angel.graph.utils.params._

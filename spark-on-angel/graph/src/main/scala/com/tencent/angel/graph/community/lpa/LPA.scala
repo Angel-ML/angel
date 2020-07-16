@@ -14,6 +14,7 @@
  * the License.
  *
  */
+
 package com.tencent.angel.graph.community.lpa
 
 import com.tencent.angel.spark.context.PSContext
@@ -22,7 +23,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.{IntParam, ParamMap}
 import org.apache.spark.ml.util.Identifiable
-import org.apache.spark.sql.types.{IntegerType, LongType, StructField, StructType}
+import org.apache.spark.sql.types.{LongType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.storage.StorageLevel
 
@@ -51,7 +52,7 @@ class LPA(override val uid: String) extends Transformer
     val minId = index.min()
     val numEdges = edges.count()
 
-    println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
+    println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${storageLevel}")
 
     // Start PS and init the model
     println("start to run ps")
@@ -93,8 +94,8 @@ class LPA(override val uid: String) extends Transformer
 
   override def transformSchema(schema: StructType): StructType = {
     StructType(Seq(
-      StructField(s"${$(outputNodeIdCol)}", LongType, nullable = false),
-      StructField(s"${$(outputCoreIdCol)}", LongType, nullable = false)
+      StructField(s"${outputNodeIdCol}", LongType, nullable = false),
+      StructField(s"${outputCoreIdCol}", LongType, nullable = false)
     ))
   }
 
