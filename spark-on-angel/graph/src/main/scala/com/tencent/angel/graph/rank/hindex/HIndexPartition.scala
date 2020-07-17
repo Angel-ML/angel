@@ -35,14 +35,14 @@ import it.unimi.dsi.fastutil.longs.LongArrayList
   * @param indices        all node in this partition
   * @param hIndex
   */
-class HIndexGraphPartition(index: Int,
-                           srcNodes: Array[Long],
-                           indptr: Array[Int],
-                           neighbors: Array[Long],
-                           srcNodesHIndex: Array[(Int, Int, Int)],
-                           neiCores: Array[Int],
-                           indices: Array[Long],
-                           hIndex: Array[Int]) extends Serializable {
+class HIndexPartition(index: Int,
+                      srcNodes: Array[Long],
+                      indptr: Array[Int],
+                      neighbors: Array[Long],
+                      srcNodesHIndex: Array[(Int, Int, Int)],
+                      neiCores: Array[Int],
+                      indices: Array[Long],
+                      hIndex: Array[Int]) extends Serializable {
   /**
     * init degree of each node
     *
@@ -171,7 +171,7 @@ class HIndexGraphPartition(index: Int,
 
 }
 
-object HIndexGraphPartition {
+object HIndexPartition {
 
 
   /**
@@ -181,7 +181,7 @@ object HIndexGraphPartition {
     * @param iterator node and it's neighbors
     * @return graph partition
     */
-  def apply(index: Int, iterator: Iterator[(Long, Iterable[Long])]): HIndexGraphPartition = {
+  def apply(index: Int, iterator: Iterator[(Long, Iterable[Long])]): HIndexPartition = {
     val csrPointer = new IntArrayList()
     csrPointer.add(0)
 
@@ -200,7 +200,7 @@ object HIndexGraphPartition {
     val srcNodesArray = srcNodes.toLongArray()
     val neighborsArray = neighbors.toLongArray()
 
-    new HIndexGraphPartition(index, // EdgePartition partition id
+    new HIndexPartition(index, // EdgePartition partition id
       srcNodesArray, // all src nodes
       csrPointer.toIntArray(), // csr pointer
       neighborsArray, // all src node's neighbors

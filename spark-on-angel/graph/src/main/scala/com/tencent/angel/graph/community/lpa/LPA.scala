@@ -63,7 +63,7 @@ class LPA(override val uid: String) extends Transformer
     var graph = edges.flatMap(f => Iterator((f._1, f._2), (f._2, f._1)))
       .groupByKey($(partitionNum))
       .mapPartitionsWithIndex((index, it) =>
-        Iterator(LPAGraphPartition.apply(index, it)))
+        Iterator(LPAPartition.apply(index, it)))
 
     graph.persist($(storageLevel))
     graph.foreachPartition(_ => Unit)

@@ -37,14 +37,14 @@ import it.unimi.dsi.fastutil.longs.LongArrayList
   * @param hIndices  hIndices
   */
 private[kcore]
-class KCoreGraphPartition(index: Int,
-                          keys: Array[Long],
-                          idxptr: Array[Int],
-                          neighbors: Array[Long],
-                          keyCores: Array[Int],
-                          neiCores: Array[Int],
-                          indices: Array[Long],
-                          hIndices: Array[Int]) extends Serializable {
+class KCorePartition(index: Int,
+                     keys: Array[Long],
+                     idxptr: Array[Int],
+                     neighbors: Array[Long],
+                     keyCores: Array[Int],
+                     neiCores: Array[Int],
+                     indices: Array[Long],
+                     hIndices: Array[Int]) extends Serializable {
   /**
     * use the degree to init vertices core-value
     *
@@ -59,7 +59,7 @@ class KCoreGraphPartition(index: Int,
     msgs.size().toInt
   }
 
-  def process(model: KCorePSModel, numMsgs: Long, isFirstIteration: Boolean): KCoreGraphPartition = {
+  def process(model: KCorePSModel, numMsgs: Long, isFirstIteration: Boolean): KCorePartition = {
 
     val inMsgs = if (numMsgs > indices.length || isFirstIteration) model.readMsgs(indices) else model.readAllMsgs()
     val outMsgs = VFactory.sparseLongKeyIntVector(inMsgs.dim())
@@ -72,7 +72,7 @@ class KCoreGraphPartition(index: Int,
     }
 
     model.writeMsgs(outMsgs)
-    new KCoreGraphPartition(index, keys, idxptr, neighbors, keyCores, neiCores, indices, hIndices)
+    new KCorePartition(index, keys, idxptr, neighbors, keyCores, neiCores, indices, hIndices)
 
   }
 
@@ -124,7 +124,7 @@ class KCoreGraphPartition(index: Int,
 
 
 private[kcore]
-object KCoreGraphPartition {
+object KCorePartition {
   /**
     * user CSR (index pointer) store the adjacency table of vertex
     *
@@ -132,7 +132,7 @@ object KCoreGraphPartition {
     * @param iterator Adjacency table of vertex
     * @return
     */
-  def apply(index: Int, iterator: Iterator[(Long, Iterable[Long])]): KCoreGraphPartition = {
+  def apply(index: Int, iterator: Iterator[(Long, Iterable[Long])]): KCorePartition = {
     //csr index pointer
     val idxptr = new IntArrayList()
     val keys = new LongArrayList()
@@ -152,7 +152,7 @@ object KCoreGraphPartition {
     val keysArray = keys.toLongArray()
     val neighboursArray = neighbours.toLongArray()
 
-    new KCoreGraphPartition(index, keysArray, idxptr.toIntArray(),
+    new KCorePartition(index, keysArray, idxptr.toIntArray(),
       neighboursArray, new Array[Int](keysArray.length),
       new Array[Int](neighboursArray.length),
       keysArray.union(neighboursArray).distinct,
@@ -165,8 +165,8 @@ object KCoreGraphPartition {
             keyCores: Array[Int],
             neiCores: Array[Int],
             indices: Array[Long],
-            hIndices: Array[Int]): KCoreGraphPartition = {
-    new KCoreGraphPartition(index, keys, idxptr,
+            hIndices: Array[Int]): KCorePartition = {
+    new KCorePartition(index, keys, idxptr,
       neighbors, keyCores, neiCores, indices, hIndices)
   }
 

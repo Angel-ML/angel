@@ -24,11 +24,11 @@ import it.unimi.dsi.fastutil.ints.IntArrayList
 import it.unimi.dsi.fastutil.longs.{Long2ObjectOpenHashMap, LongArrayList}
 
 private[closeness]
-class ClosenessGraphPartition(index: Int,
-                              keys: Array[Long],
-                              indptr: Array[Int],
-                              outNodes: Array[Long],
-                              p: Int, sp: Int) {
+class ClosenessPartition(index: Int,
+                         keys: Array[Long],
+                         indptr: Array[Int],
+                         outNodes: Array[Long],
+                         p: Int, sp: Int) {
 
   def init(model: ClosenessPSModel): Unit = {
     model.init(keys.clone(), p, sp)
@@ -111,8 +111,8 @@ class ClosenessGraphPartition(index: Int,
 }
 
 private[closeness]
-object ClosenessGraphPartition {
-  def apply(index: Int, iter: Iterator[(Long, Iterable[Long])], p: Int, sp: Int): ClosenessGraphPartition = {
+object ClosenessPartition {
+  def apply(index: Int, iter: Iterator[(Long, Iterable[Long])], p: Int, sp: Int): ClosenessPartition = {
     val indptr = new IntArrayList()
     val outNodes = new LongArrayList()
     val keys = new LongArrayList()
@@ -128,7 +128,7 @@ object ClosenessGraphPartition {
       idx += 1
     }
 
-    new ClosenessGraphPartition(index,
+    new ClosenessPartition(index,
       keys.toLongArray(),
       indptr.toIntArray(),
       outNodes.toLongArray(),

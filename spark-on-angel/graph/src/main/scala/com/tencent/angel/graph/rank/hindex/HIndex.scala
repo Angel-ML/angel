@@ -64,7 +64,7 @@ class HIndex(override val uid: String) extends Transformer
     // create sub-graph partitions
     val graph = edges.flatMap { case (srcId, dstId) => Iterator((srcId, dstId), (dstId, srcId)) }
       .groupByKey($(partitionNum))
-      .mapPartitionsWithIndex((index, adjTable) => Iterator(HIndexGraphPartition.apply(index, adjTable)))
+      .mapPartitionsWithIndex((index, adjTable) => Iterator(HIndexPartition.apply(index, adjTable)))
     graph.persist($(storageLevel))
     graph.foreachPartition(_ => Unit)
 

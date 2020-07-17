@@ -61,7 +61,7 @@ class WCC(override val uid: String) extends Transformer
     // make un-directed graph, for wcc
     var graph = edges.flatMap { case (srcId, dstId) => Iterator((srcId, dstId), (dstId, srcId)) }
       .groupByKey($(partitionNum))
-      .mapPartitionsWithIndex((index, adjTable) => Iterator(WCCGraphPartition.apply(index, adjTable)))
+      .mapPartitionsWithIndex((index, adjTable) => Iterator(WCCPartition.apply(index, adjTable)))
     graph.persist($(storageLevel))
     graph.foreachPartition(_ => Unit)
 
