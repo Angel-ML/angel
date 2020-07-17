@@ -26,12 +26,12 @@ import it.unimi.dsi.fastutil.longs.{Long2FloatOpenHashMap, LongArrayList, LongOp
 import java.util.{Arrays => JArrays}
 
 private[vertexcut]
-class PageRankGraphPartition(index: Int,
-                             srcs: Array[Long],
-                             dsts: Array[Long],
-                             sums: Array[Float],
-                             weights: Array[Float],
-                             keys: Array[Long]) extends Serializable {
+class PageRankPartition(index: Int,
+                        srcs: Array[Long],
+                        dsts: Array[Long],
+                        sums: Array[Float],
+                        weights: Array[Float],
+                        keys: Array[Long]) extends Serializable {
   assert(srcs.length == dsts.length)
 
   def getIndex: Int = index
@@ -110,19 +110,19 @@ class PageRankGraphPartition(index: Int,
     msgs.size().toInt
   }
 
-  def toPartitionWithSum(model: PageRankPSModel): PageRankGraphPartition = {
+  def toPartitionWithSum(model: PageRankPSModel): PageRankPartition = {
     val msgs = model.readSums(keys)
     val sums = new Array[Float](srcs.length)
     for (idx <- srcs.indices)
       sums(idx) = msgs.get(srcs(idx))
 
-    new PageRankGraphPartition(index, srcs, dsts, sums, weights, keys)
+    new PageRankPartition(index, srcs, dsts, sums, weights, keys)
   }
 }
 
 private[vertexcut]
-object PageRankGraphPartition {
-  def apply(index: Int, iterator: Iterator[(Long, Long, Float)]): PageRankGraphPartition = {
+object PageRankPartition {
+  def apply(index: Int, iterator: Iterator[(Long, Long, Float)]): PageRankPartition = {
     val srcs = new LongArrayList()
     val dsts = new LongArrayList()
     val weights = new FloatArrayList()
@@ -134,7 +134,7 @@ object PageRankGraphPartition {
       weights.add(entry._3)
       keys.add(entry._1)
     }
-    new PageRankGraphPartition(index,
+    new PageRankPartition(index,
       srcs.toLongArray(),
       dsts.toLongArray(),
       null,
@@ -146,7 +146,7 @@ object PageRankGraphPartition {
                     srcs: LongArrayList,
                     dsts: LongArrayList,
                     weights: FloatArrayList,
-                    keys: LongOpenHashSet): PageRankGraphPartition = {
+                    keys: LongOpenHashSet): PageRankPartition = {
     val index = new Array[Int](srcs.size())
     for (i <- index.indices) index(i) = i
     IntArrays.quickSort(index, new LongArrayListIndexComparator(srcs))
@@ -160,7 +160,7 @@ object PageRankGraphPartition {
     }
     val keysArray = keys.toLongArray()
     JArrays.sort(keysArray)
-    new PageRankGraphPartition(partId, srcsArray, dstsArray,
+    new PageRankPartition(partId, srcsArray, dstsArray,
       null,
       weightsArray, keysArray)
   }

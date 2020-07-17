@@ -21,12 +21,12 @@ import com.tencent.angel.ml.math2.vector._
 import it.unimi.dsi.fastutil.ints.IntArrayList
 import it.unimi.dsi.fastutil.longs.{Long2IntOpenHashMap, LongArrayList}
 
-class LPAGraphPartition(index: Int,
-                        keys: Array[Long],
-                        idxptr: Array[Int],
-                        neighbors: Array[Long],
-                        labels: Array[Long],
-                        indices: Array[Long]) {
+class LPAPartition(index: Int,
+                   keys: Array[Long],
+                   idxptr: Array[Int],
+                   neighbors: Array[Long],
+                   labels: Array[Long],
+                   indices: Array[Long]) {
 
   def initMsgs(model: LPAPSModel): Long = {
     val msgs = VFactory.sparseLongKeyLongVector(model.dim)
@@ -47,7 +47,7 @@ class LPAGraphPartition(index: Int,
   }
 
 
-  def process(model: LPAPSModel): (LPAGraphPartition, Long) = {
+  def process(model: LPAPSModel): (LPAPartition, Long) = {
     val inMsgs = model.readMsgs(indices) //todo 如果ps的inMsgs没有key，会返回0
     val outMsgs = VFactory.sparseLongKeyLongVector(inMsgs.dim())
     var numChanged = 0
@@ -62,7 +62,7 @@ class LPAGraphPartition(index: Int,
 
     model.writeMsgs(outMsgs)
 
-    (new LPAGraphPartition(index, keys, idxptr, neighbors, labels, indices), numChanged)
+    (new LPAPartition(index, keys, idxptr, neighbors, labels, indices), numChanged)
   }
 
   def calcLabel(idx: Int, inMsgs: LongLongVector): Long = {
@@ -85,9 +85,9 @@ class LPAGraphPartition(index: Int,
     (keys, labels)
 }
 
-object LPAGraphPartition {
+object LPAPartition {
 
-  def apply(index: Int, iterator: Iterator[(Long, Iterable[Long])]): (LPAGraphPartition, Long) = {
+  def apply(index: Int, iterator: Iterator[(Long, Iterable[Long])]): (LPAPartition, Long) = {
 
     val idxptr = new IntArrayList()
     val keys = new LongArrayList()
@@ -105,8 +105,8 @@ object LPAGraphPartition {
     val neighborsArray = neighbors.toLongArray()
     val nodes = keysArray.union(neighborsArray).distinct
 
-    (new LPAGraphPartition(index, keysArray,
-      idxptr.toIntArray(), neighborsArray,
-      new Array[Long](keysArray.length), nodes), nodes.length)
+    val graphPartition = new LPAPartition(index, keysArray, idxptr.toIntArray(),
+      neighborsArray, new Array[Long](keysArray.length), nodes)
+    (graphPartition, nodes.length)
   }
 }

@@ -85,7 +85,7 @@ class PageRank(override val uid: String) extends Transformer
     val model = PageRankPSModel.fromMinMax(minId, maxId + 1, index,
       $(psPartitionNum), $(useBalancePartition), $(useEstimatePartition), $(balancePartitionPercent))
 
-    val edgeGraph = edges.mapPartitionsWithIndex((index, it) => Iterator(PageRankGraphPartition.apply(index, it)))
+    val edgeGraph = edges.mapPartitionsWithIndex((index, it) => Iterator(PageRankPartition.apply(index, it)))
     edgeGraph.map(_.calcWeightSums(model)).reduce(_ + _)
     val graph = edgeGraph.map(_.toPartitionWithSum(model))
     graph.persist($(storageLevel))

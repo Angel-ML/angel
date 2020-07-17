@@ -25,11 +25,11 @@ import it.unimi.dsi.fastutil.ints.IntArrayList
 import it.unimi.dsi.fastutil.longs.{Long2FloatOpenHashMap, LongArrayList}
 
 private[edgecut]
-class PageRankGraphPartition(index: Int,
-                             keys: Array[Long], indptr: Array[Int],
-                             sums: Array[Float],
-                             outNodes: Array[Long],
-                             weights: Array[Float]) {
+class PageRankPartition(index: Int,
+                        keys: Array[Long], indptr: Array[Int],
+                        sums: Array[Float],
+                        outNodes: Array[Long],
+                        weights: Array[Float]) {
 
   assert(keys.length == indptr.length - 1)
 
@@ -89,8 +89,8 @@ class PageRankGraphPartition(index: Int,
 
 }
 
-private[edgecut] object PageRankGraphPartition {
-  def apply(index: Int, iter: Iterator[(Long, Iterable[(Long, Float)])]): PageRankGraphPartition = {
+private[edgecut] object PageRankPartition {
+  def apply(index: Int, iter: Iterator[(Long, Iterable[(Long, Float)])]): PageRankPartition = {
     val indptr = new IntArrayList()
     val outNodes = new LongArrayList()
     val keys = new LongArrayList()
@@ -112,7 +112,7 @@ private[edgecut] object PageRankGraphPartition {
       idx += 1
     }
 
-    new PageRankGraphPartition(index,
+    new PageRankPartition(index,
       keys.toLongArray(),
       indptr.toIntArray(),
       sums.toFloatArray(),

@@ -66,7 +66,7 @@ class KCore(override val uid: String) extends Transformer
     //build graph  from edges
     var graph = edges.flatMap(f => Iterator((f._1, f._2), (f._2, f._1)))
       .groupByKey($(partitionNum))
-      .mapPartitionsWithIndex((index, it) => Iterator(KCoreGraphPartition.apply(index, it)))
+      .mapPartitionsWithIndex((index, it) => Iterator(KCorePartition.apply(index, it)))
 
     graph.persist($(storageLevel))
     graph.foreachPartition(_ => Unit)

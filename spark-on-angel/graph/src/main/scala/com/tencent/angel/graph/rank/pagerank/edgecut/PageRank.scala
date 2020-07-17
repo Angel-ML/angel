@@ -88,7 +88,7 @@ class PageRank(override val uid: String) extends Transformer
 
     val graph = edges.map(sd => (sd._1, (sd._2, sd._3)))
       .groupByKey($(partitionNum))
-      .mapPartitionsWithIndex((index, it) => Iterator.single(PageRankGraphPartition.apply(index, it)))
+      .mapPartitionsWithIndex((index, it) => Iterator.single(PageRankPartition.apply(index, it)))
 
     graph.persist($(storageLevel))
     graph.foreachPartition(_ => Unit)

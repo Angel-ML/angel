@@ -100,7 +100,7 @@ class Louvain(override val uid: String) extends Transformer
       }.toIterator
     }
 
-    val graph: RDD[LouvainGraphPartition] = LouvainGraph.edgeTriplet2GraphPartitions(edgeTriplet, storageLevel = $(storageLevel))
+    val graph: RDD[LouvainPartition] = LouvainGraph.edgeTriplet2GraphPartitions(edgeTriplet, storageLevel = $(storageLevel))
 
     // destroys the lineage and close encoder of node indexer
     graph.checkpoint()

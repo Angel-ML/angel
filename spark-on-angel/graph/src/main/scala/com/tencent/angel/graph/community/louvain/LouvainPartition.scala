@@ -23,7 +23,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 
-class LouvainGraphPartition(
+class LouvainPartition(
                              var superNodes: Array[Int],
                              var adj: Array[Array[Int]],
                              var adjWeights: Array[Array[Float]],

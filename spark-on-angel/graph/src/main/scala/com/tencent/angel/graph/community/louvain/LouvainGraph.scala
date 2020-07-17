@@ -43,7 +43,7 @@ object LouvainGraph {
                                   model: LouvainPSModel = null,
                                   numPartition: Option[Int] = None,
                                   storageLevel: StorageLevel = StorageLevel.MEMORY_ONLY)
-  : RDD[LouvainGraphPartition] = {
+  : RDD[LouvainPartition] = {
 
     val partNum = numPartition.getOrElse(tripletRdd.getNumPartitions)
 
@@ -73,14 +73,14 @@ object LouvainGraph {
       } else {
         edgeAttrs.map(_.sum)
       }
-      new LouvainGraphPartition(localSrcIds, neighbors, edgeAttrs, nodeWeights)
+      new LouvainPartition(localSrcIds, neighbors, edgeAttrs, nodeWeights)
     }.persist(storageLevel)
   }
 }
 
 
 class LouvainGraph(
-                    @transient val graph: RDD[LouvainGraphPartition],
+                    @transient val graph: RDD[LouvainPartition],
                     louvainPSModel: LouvainPSModel) extends Serializable {
 
   private lazy val totalWeights: Double = {

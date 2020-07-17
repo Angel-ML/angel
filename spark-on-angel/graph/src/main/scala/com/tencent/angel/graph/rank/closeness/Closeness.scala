@@ -99,7 +99,7 @@ class Closeness(override val uid: String) extends Transformer
       partitionNum
     })
       .mapPartitionsWithIndex((index, it) =>
-        Iterator.single(ClosenessGraphPartition.apply(index, it, $(p), $(sp))))
+        Iterator.single(ClosenessPartition.apply(index, it, $(p), $(sp))))
 
     graph.persist($(storageLevel))
     graph.foreachPartition(_ => Unit)
