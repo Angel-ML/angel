@@ -72,21 +72,21 @@ class KCore(override val uid: String) extends Transformer
     graph.foreachPartition(_ => Unit)
     graph.foreach(_.initMsgs(model))
 
-    var curIter = 0
+    var iter = 0
     var numMsgs = model.numMsgs()
     var prev = graph
     println(s"numMsgs = $numMsgs")
 
     do {
-      curIter += 1
-      graph = prev.map(_.process(model, numMsgs, curIter == 1))
+      iter += 1
+      graph = prev.map(_.process(model, numMsgs, iter == 1))
       graph.persist($(storageLevel))
       graph.count()
       prev.unpersist(true)
       prev = graph
       model.resetMsgs()
       numMsgs = model.numMsgs()
-      println(s"curIter = $curIter numMsgs = $numMsgs")
+      println(s"KCore finished iteration + $iter, and the number of msg is $numMsgs")
     } while (numMsgs > 0)
 
     val retRDD = graph.map(_.save()).flatMap(f => f._1.zip(f._2))

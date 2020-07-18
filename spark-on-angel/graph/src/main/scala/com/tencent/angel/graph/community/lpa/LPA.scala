@@ -69,12 +69,12 @@ class LPA(override val uid: String) extends Transformer
     graph.foreachPartition(_ => Unit)
 
     var numChanged = graph.map(_._1.initMsgs(model)).reduce(_ + _)
-    var curIteration = 0
+    var iter = 0
     var prev = graph
     val maxIterNum = $(maxIter)
     println(s"numChanged = $numChanged")
     do {
-      curIteration += 1
+      iter += 1
       graph = prev.map(_._1.process(model))
       graph.persist($(storageLevel))
       numChanged = graph.map(_._2).reduce(_ + _)
@@ -82,8 +82,8 @@ class LPA(override val uid: String) extends Transformer
       prev.unpersist(true)
       prev = graph
       model.resetMsgs()
-      println(s"curIteration=$curIteration numChanged=$numChanged")
-    } while (curIteration < maxIterNum && numChanged > 0)
+      println(s"LPA finished iteration + $iter, and $numChanged nodes changed  lpa label")
+    } while (iter < maxIterNum && numChanged > 0)
 
     val retRDD = graph.map(_._1.save).flatMap(f => f._1.zip(f._2))
       .sortBy(_._2)
