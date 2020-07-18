@@ -62,18 +62,19 @@ class WCC(override val uid: String) extends Transformer
     var graph = edges.flatMap { case (srcId, dstId) => Iterator((srcId, dstId), (dstId, srcId)) }
       .groupByKey($(partitionNum))
       .mapPartitionsWithIndex((index, adjTable) => Iterator(WCCPartition.apply(index, adjTable)))
+
     graph.persist($(storageLevel))
     graph.foreachPartition(_ => Unit)
 
     var numChanged = graph.map(_._1.initMsgs(model)).reduce(_ + _)
-    var curIteration = 0
+    var iter = 0
     var prev = graph
-    println(s"numChanged=$numChanged")
-
+    println(s"init wcc labels to all vertices ")
     // each node change its label into the min id of its neighbors (including itself).
+
     do {
-      curIteration += 1
-      graph = prev.map(_._1.process(model, numChanged, curIteration == 1))
+      iter += 1
+      graph = prev.map(_._1.process(model, numChanged, iter == 1))
       graph.persist($(storageLevel))
       numChanged = graph.map(_._2).reduce(_ + _)
       graph.count()
@@ -81,7 +82,7 @@ class WCC(override val uid: String) extends Transformer
       prev = graph
       model.resetMsgs()
 
-      println(s"curIteration=$curIteration numChanged=$numChanged")
+      println(s"WCC finished iteration + $iter, and $numChanged nodes changed  wcc label")
     } while (numChanged > 0)
 
     val retRDD = graph.map(_._1.save()).flatMap(f => f._1.zip(f._2))
