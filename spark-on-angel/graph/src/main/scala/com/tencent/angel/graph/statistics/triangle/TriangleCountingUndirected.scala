@@ -17,6 +17,7 @@
 
 package com.tencent.angel.graph.statistics.triangle
 
+import com.tencent.angel.graph.utils.io.Log
 import com.tencent.angel.graph.utils.params._
 import com.tencent.angel.graph.{GraphOps, NeighborTableModel}
 import org.apache.spark.ml.Transformer
@@ -46,12 +47,12 @@ class TriangleCountingUndirected(override val uid: String) extends Transformer
 
     // calculate stats of graph
     val stats = GraphOps.getStats(neighborPartitions)
-    println(stats)
+    Log.withTimePrintln(stats.toString)
 
     // start parameter server
     val psStartTime = System.currentTimeMillis()
     NeighborTableModel.startPS(dataset.sparkSession.sparkContext)
-    println(s"starting ps cost ${System.currentTimeMillis() - psStartTime} ms")
+    Log.withTimePrintln(s"starting ps cost ${System.currentTimeMillis() - psStartTime} ms")
 
     // push neighbor table to parameter server
     val initTableStartTime = System.currentTimeMillis()
@@ -59,7 +60,7 @@ class TriangleCountingUndirected(override val uid: String) extends Transformer
       $(batchSize), $(pullBatchSize), $(psPartitionNum))
 
     neighborModel.initLongNeighbor(neighborPartitions)
-    println(s"pushing neighbor table to ps cost ${System.currentTimeMillis() - initTableStartTime} ms")
+    Log.withTimePrintln(s"pushing neighbor table to ps cost ${System.currentTimeMillis() - initTableStartTime} ms")
 
     // triangle counting
     val resRdd = neighborModel.calTriangleUndirected(neighborPartitions, $(computeLcc)).persist($(storageLevel))
