@@ -44,86 +44,16 @@ class LINE(override val uid: String) extends Transformer
   @volatile var model: LINEModel = _
 
   override def transform(dataset: Dataset[_]): DataFrame = {
-    if ($ {
-      isWeighted
-    }) {
-      model = new LINEWithWightModel(dataset, $ {
-        embedding
-      }, $ {
-        negative
-      }, $ {
-        stepSize
-      }, $ {
-        order
-      },
-        $ {
-          psPartitionNum
-        }, $ {
-          batchSize
-        }, $ {
-          epochNum
-        }, $ {
-          partitionNum
-        }, $ {
-          srcNodeIdCol
-        }, $ {
-          dstNodeIdCol
-        },
-        $ {
-          weightCol
-        }, $ {
-          remapping
-        }, $ {
-          subSample
-        }, $ {
-          output
-        }, $ {
-          checkpointInterval
-        }, $ {
-          saveModelInterval
-        }, $ {
-          saveMeta
-        }, $ {
-          oldModelPath
-        })
+    if ($(isWeighted)) {
+      model = new LINEWithWightModel(dataset, $(embedding), $(negative), $(stepSize),
+        $(order), $(psPartitionNum), $(batchSize), $(epochNum), $(partitionNum),
+        $(srcNodeIdCol), $(dstNodeIdCol), $(weightCol), $(remapping), $(subSample),
+        $(output), $(checkpointInterval), $(saveModelInterval), $(saveMeta), $(oldModelPath))
     } else {
-      model = new LINEModel(dataset, $ {
-        embedding
-      }, $ {
-        negative
-      }, $ {
-        stepSize
-      }, $ {
-        order
-      },
-        $ {
-          psPartitionNum
-        }, $ {
-          batchSize
-        }, $ {
-          epochNum
-        }, $ {
-          partitionNum
-        }, $ {
-          srcNodeIdCol
-        }, $ {
-          dstNodeIdCol
-        },
-        $ {
-          remapping
-        }, $ {
-          subSample
-        }, $ {
-          output
-        }, $ {
-          checkpointInterval
-        }, $ {
-          saveModelInterval
-        }, $ {
-          saveMeta
-        }, $ {
-          oldModelPath
-        })
+      model = new LINEModel(dataset, $(embedding), $(negative), $(stepSize), $(order),
+        $(psPartitionNum), $(batchSize), $(epochNum), $(partitionNum), $(srcNodeIdCol),
+        $(dstNodeIdCol), $(remapping), $(subSample), $(output), $(checkpointInterval),
+        $(saveModelInterval), $(saveMeta), $(oldModelPath))
     }
 
     model.train()
