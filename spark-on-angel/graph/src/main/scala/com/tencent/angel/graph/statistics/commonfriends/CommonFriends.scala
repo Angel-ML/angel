@@ -133,9 +133,9 @@ class CommonFriends(override val uid: String) extends Transformer
 
   override def transformSchema(schema: StructType): StructType = {
     StructType(Seq(
-      StructField($(srcNodeIdCol), LongType, nullable = false),
-      StructField($(dstNodeIdCol), LongType, nullable = false),
-      StructField($(numCommonFriendsCol), IntegerType, nullable = false)
+      StructField(s"$srcNodeIdCol", LongType, nullable = false),
+      StructField(s"$dstNodeIdCol", LongType, nullable = false),
+      StructField(s"$numCommonFriendsCol", IntegerType, nullable = false)
     ))
   }
 
