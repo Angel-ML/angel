@@ -87,18 +87,10 @@ class HIndex(override val uid: String) extends Transformer
 
   override def transformSchema(schema: StructType): StructType = {
     StructType(Seq(
-      StructField(s"${
-        $(outputNodeIdCol)
-      }", LongType, nullable = false),
-      StructField(s"${
-        "h-index"
-      }", IntegerType, nullable = false),
-      StructField(s"${
-        "g-index"
-      }", IntegerType, nullable = false),
-      StructField(s"${
-        "w-index"
-      }", IntegerType, nullable = false)
+      StructField(s"$outputNodeIdCol", LongType, nullable = false),
+      StructField(s"h-index", IntegerType, nullable = false),
+      StructField(s"g-index", IntegerType, nullable = false),
+      StructField(s"w-index", IntegerType, nullable = false)
     ))
   }
 

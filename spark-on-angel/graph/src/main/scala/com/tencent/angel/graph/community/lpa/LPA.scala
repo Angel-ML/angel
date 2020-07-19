@@ -96,8 +96,8 @@ class LPA(override val uid: String) extends Transformer
 
   override def transformSchema(schema: StructType): StructType = {
     StructType(Seq(
-      StructField(s"${outputNodeIdCol}", LongType, nullable = false),
-      StructField(s"${outputCoreIdCol}", LongType, nullable = false)
+      StructField(s"$outputNodeIdCol", LongType, nullable = false),
+      StructField(s"$outputCoreIdCol", LongType, nullable = false)
     ))
   }
 

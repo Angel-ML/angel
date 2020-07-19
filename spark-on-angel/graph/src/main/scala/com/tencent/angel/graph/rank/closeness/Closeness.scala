@@ -96,9 +96,7 @@ class Closeness(override val uid: String) extends Transformer
     Log.withTimePrintln(s"minId=$minId maxId=$maxId numEdges=$numEdges p=${$(p)} sp=${$(sp)}")
 
     val model = ClosenessPSModel.fromMinMax(minId, maxId + 1, index, $(psPartitionNum), $(useBalancePartition), $(balancePartitionPercent))
-    val graph = edges.groupByKey($ {
-      partitionNum
-    })
+    val graph = edges.groupByKey($(partitionNum))
       .mapPartitionsWithIndex((index, it) =>
         Iterator.single(ClosenessPartition.apply(index, it, $(p), $(sp))))
 
@@ -180,23 +178,23 @@ class Closeness(override val uid: String) extends Transformer
 
   override def transformSchema(schema: StructType): StructType = {
     StructType(Seq(
-      StructField(s"${$(outputNodeIdCol)}", LongType, nullable = false),
-      StructField(s"${$(outputCentralityCol)}", FloatType, nullable = false)
+      StructField(s"$outputNodeIdCol", LongType, nullable = false),
+      StructField(s"$outputCentralityCol", FloatType, nullable = false)
     ))
   }
 
   def schema(verbose: Boolean): StructType = {
     if (verbose)
       StructType(Seq(
-        StructField(s"${$(outputNodeIdCol)}", LongType, nullable = false),
-        StructField(s"${$(outputCentralityCol)}", FloatType, nullable = false),
+        StructField(s"$outputNodeIdCol", LongType, nullable = false),
+        StructField(s"$outputCentralityCol", FloatType, nullable = false),
         StructField(s"cardinality", LongType, nullable = false),
         StructField(s"distSum", LongType, nullable = false)
       ))
     else
       StructType(Seq(
-        StructField(s"${$(outputNodeIdCol)}", LongType, nullable = false),
-        StructField(s"${$(outputCentralityCol)}", FloatType, nullable = false)
+        StructField(s"$outputNodeIdCol", LongType, nullable = false),
+        StructField(s"$outputCentralityCol", FloatType, nullable = false)
       ))
   }
 

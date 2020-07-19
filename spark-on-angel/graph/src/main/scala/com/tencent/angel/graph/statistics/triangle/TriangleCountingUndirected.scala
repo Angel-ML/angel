@@ -85,8 +85,8 @@ class TriangleCountingUndirected(override val uid: String) extends Transformer
 
   override def transformSchema(schema: StructType): StructType = {
     StructType(Seq(
-      StructField($(srcNodeIdCol), LongType, nullable = false),
-      StructField($(outputTriangleCol), IntegerType, nullable = false)
+      StructField(s"$srcNodeIdCol", LongType, nullable = false),
+      StructField(s"$outputTriangleCol", IntegerType, nullable = false)
     ))
   }
 
