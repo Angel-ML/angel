@@ -17,10 +17,11 @@
 
 package com.tencent.angel.graph.statistics.commonfriends
 
+import com.tencent.angel.graph.utils.io.Log
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.graph.utils.params._
 import com.tencent.angel.graph.utils.{GraphIO, PartitionTools}
-import org.apache.spark.{SparkContext}
+import org.apache.spark.SparkContext
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.util.Identifiable
@@ -43,10 +44,7 @@ class CommonFriends(override val uid: String) extends Transformer
     val sc = dataset.sparkSession.sparkContext
     assert(sc.getCheckpointDir.nonEmpty, "set checkpoint dir first")
 
-    val partNum = sc.getConf.getInt("spark.default.parallelism", $(partitionNum))
-    println(s"partition number: ${partNum}")
-
-    println(s"======load edges from the first input======")
+    Log.withTimePrintln(s"======load edges from the first input======")
     val firstEdges: RDD[(Long, Long)] = {
       if ($(isCompressed))
         CommonFriendsOperator.loadCompressedEdges(dataset, $(srcNodeIdCol), $(dstNodeIdCol), $(compressCol))
@@ -54,26 +52,21 @@ class CommonFriends(override val uid: String) extends Transformer
         CommonFriendsOperator.loadEdges(dataset, $(srcNodeIdCol), $(dstNodeIdCol))
     }
 
-    println(s"======convert edges to neigbors tables======")
+    Log.withTimePrintln(s"======convert edges to neigbor tables======")
     val firstNeighbors: RDD[(Long, Array[Long])] =
       CommonFriendsOperator.edges2NeighborTable(firstEdges, $(partitionNum)).persist($(storageLevel))
 
-    //    println(s"======sample neighbor tables======")
-    //    firstNeighbors.take(10).foreach { case (src, neighbors) =>
-    //      println(s"src = $src, neighbors = ${neighbors.mkString(",")}")
-    //    }
-
-    println(s"======statistics of the data======")
+    Log.withTimePrintln(s"======statistics of the data======")
     val stats = CommonFriendsOperator.statsByNeighborTable(firstNeighbors)
-    println(s"num of nodes = ${stats._3}")
-    println(s"num of edges = ${stats._4}")
-    println(s"min node id = ${stats._1}, max node id = ${stats._2}")
+    Log.withTimePrintln(s"num of nodes = ${stats._3}")
+    Log.withTimePrintln(s"num of edges = ${stats._4}")
+    Log.withTimePrintln(s"min node id = ${stats._1}, max node id = ${stats._2}")
 
-    println(s"======start parameter server======")
+    Log.withTimePrintln(s"======start parameter server======")
     val psStartTime = System.currentTimeMillis()
     startPS(dataset.sparkSession.sparkContext)
 
-    println(s"======push neighbor tables to parameter server======")
+    Log.withTimePrintln(s"======push neighbor tables to parameter server======")
     val psModel = CommonFriendsPSModel(stats._2 + 1, $(batchSize), $(pullBatchSize), $(psPartitionNum))
     psModel.initLongNeighborTable(firstNeighbors)
     psModel.checkpoint()
@@ -82,7 +75,7 @@ class CommonFriends(override val uid: String) extends Transformer
     val checkValid = CommonFriendsOperator.checkValid(firstNeighbors, psModel, 10)
     require(checkValid, s"result with executor RDD and that with PS are different")
 
-    println(s"======load edges from the second input======")
+    Log.withTimePrintln(s"======load edges from the second input======")
     val extraInput = $(extraInputs)
     assert(extraInput.length == 1, s"multiple inputs for non-friends are not supported")
     val isOneInput = extraInput(0).equals($(input))
@@ -112,9 +105,9 @@ class CommonFriends(override val uid: String) extends Transformer
     } else sc.emptyRDD
 
     val numSecondEdges = secondEdges.count()
-    println(s"num of edges in the second input = $numSecondEdges")
+    Log.withTimePrintln(s"num of edges in the second input = $numSecondEdges")
 
-    println(s"======start calculation======")
+    Log.withTimePrintln(s"======start calculation======")
     val rawResult: RDD[Row] = if (!isOneInput) {
       secondEdges.mapPartitionsWithIndex { case (partId, iter) =>
         CommonFriendsOperator.runEdgePartition(iter, partId, psModel)
@@ -125,9 +118,9 @@ class CommonFriends(override val uid: String) extends Transformer
       }
     }
 
-    println(s"======sample results======")
+    Log.withTimePrintln(s"======sample results======")
     rawResult.take(10).foreach { row =>
-      println(s"src = ${row.getLong(0)}, dst = ${row.getLong(1)}, num of common friends = ${row.getInt(2)}")
+      Log.withTimePrintln(s"src = ${row.getLong(0)}, dst = ${row.getLong(1)}, num of common friends = ${row.getInt(2)}")
     }
 
     val outputSchema = transformSchema(dataset.schema)
@@ -147,34 +140,4 @@ class CommonFriends(override val uid: String) extends Transformer
   }
 
   override def copy(extra: ParamMap): Transformer = defaultCopy(extra)
-}
-
-object CommonFriends {
-
-  //  def computeUnlinkedEdge(edges: RDD[(Long, Long)], psModel: CommonFriendsPSModel): RDD[Row] = {
-  //    edges.mapPartitionsWithIndex { case (partId, iter) =>
-  //      CommonFriendsOperator.runEdgePartition(iter, partId, psModel)
-  //    }
-  //  }
-  //
-  //  def computeLinkedEdge(edges: RDD[(Long, Array[Long])], psModel: CommonFriendsPSModel): RDD[Row] = {
-  //
-  //    val originalEdges = edges.flatMap { case (src, nbrs) =>
-  //      nbrs.map { b => if (src < b) ((src, b), (0,0)) else ((b, src), (1,1)) }
-  //    }.reduceByKey((a, b) => (a._1 + b._1, a._2 & b._2))
-  //
-  //    val edgeTag = originalEdges.map { case ((src, dst), (cnt, dir)) =>
-  //      if (cnt >= 1 && dir == 1) {
-  //        (src, (dst, 1.toByte))
-  //      } else if (cnt >= 1 && dir == 0) {
-  //        (src, (dst, 2.toByte))
-  //      } else {
-  //        (src, (dst, 0.toByte))
-  //      }
-  //    }
-  //
-  //    edgeTag.mapPartitionsWithIndex { case (partId, iter) =>
-  //      CommonFriendsOperator.runNeighborPartition(iter, partId, psModel)
-  //    }
-  //  }
 }
