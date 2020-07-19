@@ -19,6 +19,7 @@ package com.tencent.angel.graph.rank.pagerank.edgecut
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.graph.rank.pagerank.PageRankOps
+import com.tencent.angel.graph.utils.io.Log
 import com.tencent.angel.graph.utils.params._
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.Transformer
@@ -76,10 +77,10 @@ class PageRank(override val uid: String) extends Transformer
 
     val initRank = $(resetProb)
 
-    println(s"minId=$minId maxId=$maxId numEdges=$numEdges tol=${$(tol)}")
+    Log.withTimePrintln(s"minId=$minId maxId=$maxId numEdges=$numEdges tol=${$(tol)}")
 
     // Start PS and init the model
-    println("start to run ps")
+    Log.withTimePrintln("start to run ps")
     PSContext.getOrCreate(SparkContext.getOrCreate())
 
     // Create matrix
@@ -99,18 +100,18 @@ class PageRank(override val uid: String) extends Transformer
     val nodesWithoutInLinks = graph.map(_.setMissRanks(model, initRank)).reduce(_ + _)
     val numNodes = model.numNodes()
 
-    println(s"There are $nodesWithoutInLinks nodes without in-degrees")
-    println(s"There are $numNodes nodes in total")
+    Log.withTimePrintln(s"There are $nodesWithoutInLinks nodes without in-degrees")
+    Log.withTimePrintln(s"There are $numNodes nodes in total")
 
     var numMsgs = model.numMsgs()
     var iter = 1
-    println(s"numMsgs=$numMsgs")
+    Log.withTimePrintln(s"numMsgs=$numMsgs")
 
     do {
       graph.map(_.process(model, $(resetProb), $(tol), numMsgs)).reduce(_ + _)
       model.computeRanks(initRank, $(resetProb))
       numMsgs = model.numMsgs()
-      println(s"PageRank finished iteration + $iter, and the number of msg is $numMsgs")
+      Log.withTimePrintln(s"PageRank finished iteration + $iter, and the number of msg is $numMsgs")
       iter += 1
     } while (numMsgs > 0)
 

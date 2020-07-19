@@ -19,6 +19,7 @@ package com.tencent.angel.graph.community.louvain
 import com.tencent.angel.ml.math2.vector.LongIntVector
 import com.tencent.angel.graph.utils.params._
 import com.tencent.angel.graph.utils.NodeIndexer
+import com.tencent.angel.graph.utils.io.Log
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param._
 import org.apache.spark.ml.util.Identifiable
@@ -133,7 +134,7 @@ class Louvain(override val uid: String) extends Transformer
 
       // correctIds
       totalSum = louvain.checkTotalSum(model)
-      println(s"total = $totalSum")
+      Log.withTimePrintln(s"total = $totalSum")
       louvain.correctCommunityId(model, $(bufferSize))
       if (foldIter < $(numFold) && $(debugMode)) {
         assert(louvain.checkCommId(model) == 0)

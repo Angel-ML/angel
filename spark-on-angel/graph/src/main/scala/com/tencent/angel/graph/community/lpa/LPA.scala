@@ -17,6 +17,7 @@
 
 package com.tencent.angel.graph.community.lpa
 
+import com.tencent.angel.graph.utils.io.Log
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.graph.utils.params._
 import org.apache.spark.SparkContext
@@ -52,10 +53,10 @@ class LPA(override val uid: String) extends Transformer
     val minId = index.min()
     val numEdges = edges.count()
 
-    println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${storageLevel}")
+    Log.withTimePrintln(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${storageLevel}")
 
     // Start PS and init the model
-    println("start to run ps")
+    Log.withTimePrintln("start to run ps")
     PSContext.getOrCreate(SparkContext.getOrCreate())
 
     val model = LPAPSModel.fromMinMax(minId, maxId, index, $(psPartitionNum), $(useBalancePartition))
@@ -72,7 +73,8 @@ class LPA(override val uid: String) extends Transformer
     var iter = 0
     var prev = graph
     val maxIterNum = $(maxIter)
-    println(s"numChanged = $numChanged")
+    Log.withTimePrintln(s"numChanged = $numChanged")
+
     do {
       iter += 1
       graph = prev.map(_._1.process(model))
@@ -82,7 +84,7 @@ class LPA(override val uid: String) extends Transformer
       prev.unpersist(true)
       prev = graph
       model.resetMsgs()
-      println(s"LPA finished iteration + $iter, and $numChanged nodes changed  lpa label")
+      Log.withTimePrintln(s"LPA finished iteration + $iter, and $numChanged nodes changed  lpa label")
     } while (iter < maxIterNum && numChanged > 0)
 
     val retRDD = graph.map(_._1.save).flatMap(f => f._1.zip(f._2))

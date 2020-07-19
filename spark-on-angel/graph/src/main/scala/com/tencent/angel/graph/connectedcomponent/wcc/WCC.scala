@@ -16,6 +16,7 @@
  */
 package com.tencent.angel.graph.connectedcomponent.wcc
 
+import com.tencent.angel.graph.utils.io.Log
 import com.tencent.angel.graph.utils.params._
 import com.tencent.angel.spark.context.PSContext
 import org.apache.spark.SparkContext
@@ -50,10 +51,10 @@ class WCC(override val uid: String) extends Transformer
     val minId = nodes.min()
     val numEdges = edges.count()
 
-    println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
+    Log.withTimePrintln(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
 
     // Start PS and init the model
-    println("start to run ps")
+    Log.withTimePrintln("start to run ps")
     PSContext.getOrCreate(SparkContext.getOrCreate())
 
     val model = WCCPSModel.fromMinMax(minId, maxId, nodes, $(psPartitionNum), $(useBalancePartition), $(balancePartitionPercent))
@@ -69,7 +70,7 @@ class WCC(override val uid: String) extends Transformer
     var numChanged = graph.map(_._1.initMsgs(model)).reduce(_ + _)
     var iter = 0
     var prev = graph
-    println(s"init wcc labels to all vertices ")
+    Log.withTimePrintln(s"init wcc labels to all vertices ")
     // each node change its label into the min id of its neighbors (including itself).
 
     do {
@@ -82,7 +83,7 @@ class WCC(override val uid: String) extends Transformer
       prev = graph
       model.resetMsgs()
 
-      println(s"WCC finished iteration + $iter, and $numChanged nodes changed  wcc label")
+      Log.withTimePrintln(s"WCC finished iteration + $iter, and $numChanged nodes changed  wcc label")
     } while (numChanged > 0)
 
     val retRDD = graph.map(_._1.save()).flatMap(f => f._1.zip(f._2))
