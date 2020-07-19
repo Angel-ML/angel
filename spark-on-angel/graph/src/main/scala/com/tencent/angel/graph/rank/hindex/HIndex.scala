@@ -17,6 +17,7 @@
 
 package com.tencent.angel.graph.rank.hindex
 
+import com.tencent.angel.graph.utils.io.Log
 import com.tencent.angel.graph.utils.params._
 import com.tencent.angel.spark.context.PSContext
 import org.apache.spark.SparkContext
@@ -50,13 +51,13 @@ class HIndex(override val uid: String) extends Transformer
     val minId = nodes.min()
     val numEdges = edges.count()
 
-    println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
+    Log.withTimePrintln(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
 
     // start PS
-    println("start to run ps")
+    Log.withTimePrintln("start to run ps")
     val beforeStartPS = System.currentTimeMillis()
     PSContext.getOrCreate(SparkContext.getOrCreate())
-    println(s"Starting ps cost ${System.currentTimeMillis() - beforeStartPS} ms")
+    Log.withTimePrintln(s"Starting ps cost ${System.currentTimeMillis() - beforeStartPS} ms")
 
     // init the model
     val model = HIndexPSModel.fromMinMax(minId, maxId, nodes, $(psPartitionNum), $(useBalancePartition))

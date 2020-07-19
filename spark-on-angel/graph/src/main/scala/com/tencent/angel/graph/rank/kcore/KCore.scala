@@ -26,6 +26,7 @@ import org.apache.spark.ml.util.Identifiable
 import org.apache.spark.sql.types.{IntegerType, LongType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.storage.StorageLevel
+import com.tencent.angel.graph.utils.io.Log
 
 /**
   * KCore algorithm implementation
@@ -54,10 +55,10 @@ class KCore(override val uid: String) extends Transformer
     val minId = vertices.min()
     val numEdges = edges.count()
 
-    println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
+    Log.withTimePrintln(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
 
     // Start PS and init the model
-    println("start to run ps")
+    Log.withTimePrintln("start to run ps")
     PSContext.getOrCreate(SparkContext.getOrCreate())
 
     //create KcorePSModel
@@ -75,7 +76,7 @@ class KCore(override val uid: String) extends Transformer
     var iter = 0
     var numMsgs = model.numMsgs()
     var prev = graph
-    println(s"numMsgs = $numMsgs")
+    Log.withTimePrintln(s"numMsgs = $numMsgs")
 
     do {
       iter += 1
@@ -86,7 +87,7 @@ class KCore(override val uid: String) extends Transformer
       prev = graph
       model.resetMsgs()
       numMsgs = model.numMsgs()
-      println(s"KCore finished iteration + $iter, and the number of msg is $numMsgs")
+      Log.withTimePrintln(s"KCore finished iteration + $iter, and the number of msg is $numMsgs")
     } while (numMsgs > 0)
 
     val retRDD = graph.map(_.save()).flatMap(f => f._1.zip(f._2))

@@ -19,6 +19,7 @@ package com.tencent.angel.graph.rank.closeness
 
 import java.util.Collections
 
+import com.tencent.angel.graph.utils.io.Log
 import com.tencent.angel.graph.utils.params._
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.spark.ml.Transformer
@@ -92,7 +93,7 @@ class Closeness(override val uid: String) extends Transformer
     val index = edges.flatMap(f => Array(f._1, f._2))
     val (minId, maxId, numEdges) = edges.mapPartitions(summarizeApplyOp).reduce(summarizeReduceOp)
 
-    println(s"minId=$minId maxId=$maxId numEdges=$numEdges p=${$(p)} sp=${$(sp)}")
+    Log.withTimePrintln(s"minId=$minId maxId=$maxId numEdges=$numEdges p=${$(p)} sp=${$(sp)}")
 
     val model = ClosenessPSModel.fromMinMax(minId, maxId + 1, index, $(psPartitionNum), $(useBalancePartition), $(balancePartitionPercent))
     val graph = edges.groupByKey($ {
@@ -111,13 +112,13 @@ class Closeness(override val uid: String) extends Transformer
     do {
       numActives = graph.map(_.process(model, $(msgNumBatch))).reduce(_ + _)
       model.computeCloseness(r)
-      println(s"Closeness finished iteration + $r, and the number of active msg is $numActives")
+      Log.withTimePrintln(s"Closeness finished iteration + $r, and the number of active msg is $numActives")
       r += 1
     } while (r <= $(maxIter) && numActives > 0)
 
     val numNodes = model.numNodes()
     val maxCardinality = model.maxCardinality()
-    println(s"numNodes=$numNodes maxCardinality=$maxCardinality")
+    Log.withTimePrintln(s"numNodes=$numNodes maxCardinality=$maxCardinality")
 
     val (partitionIds, ends) = splitPartitionIds(model)
     val retRDD = if ($(verboseSaving)) {
