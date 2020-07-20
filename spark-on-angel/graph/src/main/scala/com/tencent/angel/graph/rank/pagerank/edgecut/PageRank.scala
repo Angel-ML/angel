@@ -103,6 +103,7 @@ class PageRank(override val uid: String) extends Transformer
     Log.withTimePrintln(s"There are $nodesWithoutInLinks nodes without in-degrees")
     Log.withTimePrintln(s"There are $numNodes nodes in total")
 
+    //Loop
     var numMsgs = model.numMsgs()
     var iter = 1
     Log.withTimePrintln(s"numMsgs=$numMsgs")

@@ -105,14 +105,15 @@ class Closeness(override val uid: String) extends Transformer
 
     graph.map(_.init(model)).collect()
 
-    var r = 1
+    //Loop
+    var i = 1
     var numActives = 1L
     do {
       numActives = graph.map(_.process(model, $(msgNumBatch))).reduce(_ + _)
-      model.computeCloseness(r)
-      Log.withTimePrintln(s"Closeness finished iteration + $r, and the number of active msg is $numActives")
-      r += 1
-    } while (r <= $(maxIter) && numActives > 0)
+      model.computeCloseness(i)
+      Log.withTimePrintln(s"Closeness finished iteration + $i, and the number of active msg is $numActives")
+      i += 1
+    } while (i <= $(maxIter) && numActives > 0)
 
     val numNodes = model.numNodes()
     val maxCardinality = model.maxCardinality()

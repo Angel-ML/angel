@@ -125,7 +125,7 @@ class Louvain(override val uid: String) extends Transformer
       assert(total == totalSum, s"$total != $totalSum")
     }
 
-
+    //Loop
     var foldIter = 0
     while (foldIter < $(numFold)) {
       foldIter += 1
