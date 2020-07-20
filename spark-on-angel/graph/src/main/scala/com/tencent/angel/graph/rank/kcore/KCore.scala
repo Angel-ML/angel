@@ -73,6 +73,7 @@ class KCore(override val uid: String) extends Transformer
     graph.foreachPartition(_ => Unit)
     graph.foreach(_.initMsgs(model))
 
+    //Loop
     var iter = 0
     var numMsgs = model.numMsgs()
     var prev = graph
