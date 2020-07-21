@@ -65,19 +65,16 @@ class Louvain(override val uid: String) extends Transformer
   override def transform(dataset: Dataset[_]): DataFrame = {
 
     assert(dataset.sparkSession.sparkContext.getCheckpointDir.nonEmpty, "set checkpoint dir first")
+    //edges
     val rawEdges: RDD[((Long, Long), Float)] = {
       if ($(isWeighted)) {
         dataset.select($(srcNodeIdCol), $(dstNodeIdCol), $(weightCol)).rdd
           .filter(row => !row.anyNull)
-          .map { row =>
-            (row.getLong(0), row.getLong(1), row.getFloat(2))
-          }
+          .map(row => (row.getLong(0), row.getLong(1), row.getFloat(2)))
       } else {
         dataset.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd
           .filter(row => !row.anyNull)
-          .map { row =>
-            (row.getLong(0), row.getLong(1), 1.0f)
-          }
+          .map(row => (row.getLong(0), row.getLong(1), 1.0f))
       }
     }.map { case (src, dst, wgt) =>
       if (src < dst) ((src, dst), wgt) else ((dst, src), wgt)
