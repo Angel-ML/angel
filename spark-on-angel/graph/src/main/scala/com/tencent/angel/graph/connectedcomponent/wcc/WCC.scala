@@ -67,15 +67,16 @@ class WCC(override val uid: String) extends Transformer
     graph.persist($(storageLevel))
     graph.foreachPartition(_ => Unit)
 
+    //Loop
     var numChanged = graph.map(_._1.initMsgs(model)).reduce(_ + _)
-    var iter = 0
+    var i = 0
     var prev = graph
     Log.withTimePrintln(s"init wcc labels to all vertices ")
     // each node change its label into the min id of its neighbors (including itself).
 
     do {
-      iter += 1
-      graph = prev.map(_._1.process(model, numChanged, iter == 1))
+      i += 1
+      graph = prev.map(_._1.process(model, numChanged, i == 1))
       graph.persist($(storageLevel))
       numChanged = graph.map(_._2).reduce(_ + _)
       graph.count()
@@ -83,7 +84,7 @@ class WCC(override val uid: String) extends Transformer
       prev = graph
       model.resetMsgs()
 
-      Log.withTimePrintln(s"WCC finished iteration + $iter, and $numChanged nodes changed  wcc label")
+      Log.withTimePrintln(s"WCC finished iteration + $i, and $numChanged nodes changed  wcc label")
     } while (numChanged > 0)
 
     val retRDD = graph.map(_._1.save()).flatMap(f => f._1.zip(f._2))
