@@ -55,7 +55,7 @@ class KCore(override val uid: String) extends Transformer
     val minId = vertices.min()
     val numEdges = edges.count()
 
-    Log.withTimePrintln(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
+    Log.withTimePrintln(s"minId=$minId maxId=$maxId numEdges=$numEdges storageLevel=${$(storageLevel)}")
 
     // Start PS and init the model
     Log.withTimePrintln("start to run ps")
