@@ -13,7 +13,6 @@ object PageRankExample {
     val output = "model/pagerank"
     val partitionNum = 3
     val storageLevel = StorageLevel.MEMORY_ONLY
-    val batchSize = 100
     val psPartitionNum = 2
 
     start()
