@@ -17,25 +17,16 @@
 
 package com.tencent.angel.graph
 
-import com.tencent.angel.ml.math2.storage.IntLongDenseVectorStorage
-import com.tencent.angel.ml.math2.vector.IntLongVector
-import com.tencent.angel.ml.matrix.psf.get.getrow.GetRowResult
 import com.tencent.angel.graph.utils.element.{GraphStats, NeighborTable, NeighborTablePartition}
-import com.tencent.angel.graph.psf.pagerank.GetNodes
 import com.tencent.angel.graph.utils.element.Element.VertexId
-import com.tencent.angel.spark.models.PSVector
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Dataset
 
-import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
 object GraphOps {
 
-  def loadEdges(dataset: Dataset[_],
-                srcNodeIdCol: String,
-                dstNodeIdCol: String
-               ): RDD[(VertexId, VertexId)] = {
+  def loadEdges(dataset: Dataset[_], srcNodeIdCol: String, dstNodeIdCol: String): RDD[(VertexId, VertexId)] = {
     dataset.select(srcNodeIdCol, dstNodeIdCol).rdd
       .filter(row => !row.anyNull)
       .mapPartitions { iter =>
@@ -48,9 +39,7 @@ object GraphOps {
       }
   }
 
-
-  def edgesToNeighborTable(edges: RDD[(Long, Long)],
-                           partitionNum: Int): RDD[NeighborTable[Object]] = {
+  def edgesToNeighborTable(edges: RDD[(Long, Long)], partitionNum: Int): RDD[NeighborTable[Object]] = {
     edges.groupByKey(partitionNum).mapPartitions { iter =>
       if (iter.nonEmpty) {
         iter.flatMap { case (src, group) =>
@@ -61,8 +50,6 @@ object GraphOps {
       }
     }
   }
-
-
 
 
   def buildNeighborTablePartition[ED: ClassTag](data: RDD[NeighborTable[ED]],
