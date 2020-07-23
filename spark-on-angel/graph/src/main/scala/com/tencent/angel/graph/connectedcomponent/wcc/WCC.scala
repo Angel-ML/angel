@@ -14,6 +14,7 @@
  * the License.
  *
  */
+
 package com.tencent.angel.graph.connectedcomponent.wcc
 
 import com.tencent.angel.graph.utils.io.Log
@@ -31,9 +32,8 @@ import org.apache.spark.storage.StorageLevel
 class WCC(override val uid: String) extends Transformer
   with HasWeightCol with HasSrcNodeIdCol with HasDstNodeIdCol
   with HasOutputNodeIdCol with HasOutputCoreIdCol with HasBalancePartitionPercent
-  with HasIsWeighted with HasPartitionNum with HasPSPartitionNum
-  with HasStorageLevel with HasBatchSize with HasPullBatchSize
-  with HasBufferSize with HasUseBalancePartition {
+  with HasPartitionNum with HasPSPartitionNum
+  with HasStorageLevel with HasUseBalancePartition {
 
   def this() = this(Identifiable.randomUID("WCC"))
 
