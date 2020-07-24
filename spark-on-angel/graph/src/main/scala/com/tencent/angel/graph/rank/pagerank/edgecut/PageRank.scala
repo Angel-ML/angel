@@ -105,15 +105,15 @@ class PageRank(override val uid: String) extends Transformer
 
     //Loop
     var numMsgs = model.numMsgs()
-    var iter = 1
+    var i = 1
     Log.withTimePrintln(s"numMsgs=$numMsgs")
 
     do {
       graph.map(_.process(model, $(resetProb), $(tol), numMsgs)).reduce(_ + _)
       model.computeRanks(initRank, $(resetProb))
       numMsgs = model.numMsgs()
-      Log.withTimePrintln(s"PageRank finished iteration + $iter, and the number of msg is $numMsgs")
-      iter += 1
+      Log.withTimePrintln(s"PageRank finished iteration + $i, and the number of msg is $numMsgs")
+      i += 1
     } while (numMsgs > 0)
 
     model.normalizeRanks(numNodes)

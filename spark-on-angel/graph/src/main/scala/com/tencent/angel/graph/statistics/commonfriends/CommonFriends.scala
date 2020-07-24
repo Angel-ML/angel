@@ -89,7 +89,7 @@ class CommonFriends(override val uid: String) extends Transformer
         sep = $(delimiter))
     } else null
 
-    //2D partition to balance vertices
+    //use 2D partition strategy to balance vertices
     val partitioner = PartitionTools.edge2DPartitioner($(partitionNum))
     val secondEdges: RDD[(Long, Long)] = if (!isOneInput) {
       secondDF.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd.mapPartitions { iter =>
