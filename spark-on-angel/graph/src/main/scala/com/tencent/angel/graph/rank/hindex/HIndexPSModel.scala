@@ -65,8 +65,9 @@ object HIndexPSModel {
     //set rowType T_Int_Sparse_LongKey
     matrix.setRowType(RowType.T_INT_SPARSE_LONGKEY)
     // use balance partition
-    if (useBalancePartition)
+    if (useBalancePartition) {
       LoadBalancePartitioner.partition(data, maxId, psNumPartition, matrix, balancePartitionPercent)
+    }
 
     PSAgentContext.get().getMasterClient.createMatrix(matrix, 10000L)
     val matrixId = PSAgentContext.get().getMasterClient.getMatrix("hindex").getId

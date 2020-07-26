@@ -102,8 +102,9 @@ object ClosenessPSModel {
     matrix.setPartitionerClass(classOf[ColumnRangePartitioner])
     matrix.setValueType(classOf[HyperLogLogPlusElement])
 
-    if (useBalancePartition)
+    if (useBalancePartition) {
       LoadBalancePartitioner.partition(index, maxId, psNumPartition, matrix, balancePartitionPercent)
+    }
 
     PSAgentContext.get().getMasterClient.createMatrix(matrix, 10000L)
     val matrixId = PSAgentContext.get().getMasterClient.getMatrix("closeness").getId

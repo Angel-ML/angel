@@ -30,8 +30,9 @@ class LPAPartition(index: Int,
 
   def initMsgs(model: LPAPSModel): Long = {
     val msgs = VFactory.sparseLongKeyLongVector(model.dim)
-    for (i <- keys.indices)
+    for (i <- keys.indices) {
       msgs.set(keys(i), keys(i))
+    }
     model.initMsgs(msgs)
     msgs.size()
   }

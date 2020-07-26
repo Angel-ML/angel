@@ -87,7 +87,9 @@ class CommonFriends(override val uid: String) extends Transformer
         srcIndex = $(srcNodeIndex),
         dstIndex = $(dstNodeIndex),
         sep = $(delimiter))
-    } else null
+    } else {
+      null
+    }
 
     //use 2D partition strategy to balance vertices
     val partitioner = PartitionTools.edge2DPartitioner($(partitionNum))

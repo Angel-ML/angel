@@ -31,10 +31,11 @@ object GraphOps {
       .filter(row => !row.anyNull)
       .mapPartitions { iter =>
         iter.flatMap { row =>
-          if (row.getLong(0) == row.getLong(1))
+          if (row.getLong(0) == row.getLong(1)) {
             Iterator.empty
-          else
+          } else {
             Iterator.single((row.getLong(0), row.getLong(1)))
+          }
         }
       }
   }
