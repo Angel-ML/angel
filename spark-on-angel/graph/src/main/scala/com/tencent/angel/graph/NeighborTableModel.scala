@@ -57,10 +57,9 @@ class NeighborTableModel(@BeanProperty val param: Param) extends Serializable {
     mc.setPartitionClass(classOf[CSRPartition])
     psMatrix = PSMatrix.matrix(mc)
 
-    data.mapPartitions { iter => {
+    data.mapPartitions { iter =>
       // Init the neighbor table use many mini-batch to avoid big object
       iter.sliding(param.batchSize, param.batchSize).map(pairs => initNeighbors(psMatrix, pairs))
-    }
     }.count()
 
     // Merge the temp data to generate final neighbor table

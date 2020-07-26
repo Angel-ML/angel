@@ -16,7 +16,7 @@
  */
 package com.tencent.angel.graph.community.lpa
 
-import com.tencent.angel.ml.math2.vector.{ LongLongVector, Vector}
+import com.tencent.angel.ml.math2.vector.{LongLongVector, Vector}
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.spark.ml.util.LoadBalancePartitioner
@@ -82,8 +82,9 @@ object LPAPSModel {
     matrix.setValidIndexNum(-1)
     matrix.setRowType(RowType.T_LONG_SPARSE_LONGKEY)
     // use balance partition
-    if (useBalancePartition)
+    if (useBalancePartition) {
       LoadBalancePartitioner.partition(data, maxId, psNumPartition, matrix, balancePartitionPercent)
+    }
 
     PSAgentContext.get().getMasterClient.createMatrix(matrix, 10000L)
     val matrixId = PSAgentContext.get().getMasterClient.getMatrix("lpa").getId
