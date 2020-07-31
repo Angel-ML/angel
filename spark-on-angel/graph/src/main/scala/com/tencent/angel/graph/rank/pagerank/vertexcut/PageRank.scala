@@ -61,8 +61,7 @@ class PageRank(override val uid: String) extends Transformer
       dataset.select($(srcNodeIdCol), $(dstNodeIdCol), $(weightCol)).rdd
         .filter(row => !row.anyNull)
         .map(row => (row.getLong(0), row.getLong(1), row.getFloat(2)))
-        .filter(f => f._1 != f._2)
-        .filter(f => f._3 != 0)
+        .filter(f => f._1 != f._2 && f._3 != 0)
     } else {
       dataset.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd
         .filter(row => !row.anyNull)
