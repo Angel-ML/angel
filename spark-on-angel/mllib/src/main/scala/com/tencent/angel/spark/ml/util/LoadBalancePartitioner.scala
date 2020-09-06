@@ -184,7 +184,6 @@ object LoadBalancePartitioner {
   }
 
   def partition(index: RDD[Long], maxId: Long, psPartitionNum: Int, ctx: MatrixContext, percent: Float): Unit = {
-//    var percent = 0.3
     var p = percent
     var count = 2
     while (count > 0) {
@@ -203,6 +202,35 @@ object LoadBalancePartitioner {
         p -= 0.05f
       }
     }
+  }
+
+  def partition(index: RDD[Long], psPartitionNum: Int, ctx:MatrixContext): Unit = {
+    val sortedIndex = index.map(x => (x, 1)).sortByKey(true, psPartitionNum).map(x => x._1)
+    val ctxPartRDD = sortedIndex.mapPartitions{iter =>
+      var minId = Long.MaxValue
+      var maxId = Long.MinValue
+      var num = 0
+      while(iter.hasNext) {
+        val iterValue = iter.next()
+        if (iterValue < minId) {
+          minId = iterValue
+        } else if (iterValue > maxId) {
+          maxId = iterValue
+        }
+        num += 1
+      }
+      val part = new PartContext(0, ctx.getRowNum, minId, maxId+1, 0)
+      println(s"part=$part startIndex=$minId endIndex=${maxId+1} count=$num")
+      Iterator.single(part)
+    }
+    val  parts = ctxPartRDD.collect()
+    parts.foreach(part => ctx.addPart(part))
+    val partIter = ctx.getParts.iterator()
+    while(partIter.hasNext) {
+      val part = partIter.next()
+      println(s"part=$part range=${part.getEndCol-part.getStartCol}")
+    }
+    println(s"split matrix ${ctx.getName} into ${ctx.getParts.size()} partitions")
   }
 
   def numBits(maxId: Long): Int = {
