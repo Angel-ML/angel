@@ -14,6 +14,7 @@
  * the License.
  *
  */
+
 package com.tencent.angel.spark.ml.util
 
 import com.tencent.angel.ml.math2.storage.LongKeyVectorStorage
@@ -52,21 +53,21 @@ abstract class AutoPartitioner(val bits: Int, numPartitions: Int) extends Serial
     //    println(s"bucket.size=${buckets.size}")
     val sorted = buckets.sortBy(f => f._1)
     val sum = sorted.map(f => f._2).sum
-    val per = (sum / numPartitions)
+    val per = sum / numPartitions
 
     var start = ctx.getIndexStart
     val end = ctx.getIndexEnd
     val rowNum = ctx.getRowNum
 
     var current = 0L
-    val size = sorted.size
+    val size = sorted.length
     val limit = ((end.toDouble - start.toDouble) / numPartitions).toLong * 4
     println(limit)
     for (i <- 0 until size) {
       // keep each partition similar load and limit the range of each partition
       if (current > per || ((sorted(i)._1 << bits - start > limit) && current > per / 2)) {
         val part = new PartContext(0, rowNum, start, sorted(i)._1 << bits, 0)
-        println(s"part=${part} load=${current} range=${part.getEndCol - part.getStartCol}")
+        println(s"part=$part load=$current range=${part.getEndCol - part.getStartCol}")
         ctx.addPart(part)
         start = sorted(i)._1 << bits
         current = 0L
@@ -76,7 +77,7 @@ abstract class AutoPartitioner(val bits: Int, numPartitions: Int) extends Serial
 
     val part = new PartContext(0, rowNum, start, end, 0)
     ctx.addPart(part)
-    println(s"part=${part} load=${current} range=${end - start}")
+    println(s"part=$part load=$current range=${end - start}")
     println(s"split matrix ${ctx.getName} into ${ctx.getParts.size()} partitions")
   }
 }
@@ -92,23 +93,20 @@ class LoadBalancePartitioner(bits: Int = -1, numPartitions: Int)
 
   override def getBuckets(data: RDD[Vector]): Array[(Long, Long)] = {
     val indices = data.flatMap {
-      case vector =>
-        vector match {
-          case dummy: LongDummyVector => dummy.getIndices
-          case longKey: LongKeyVector => longKey.getStorage.asInstanceOf[LongKeyVectorStorage]
-            .getIndices
-        }
+      case dummy: LongDummyVector => dummy.getIndices
+      case longKey: LongKeyVector => longKey.getStorage.asInstanceOf[LongKeyVectorStorage]
+        .getIndices
     }
 
     val buckets = indices.map(f => f / (1L << bits))
       .map(f => (f, 1L)).reduceByKey(_ + _).sortBy(_._1).collect()
-    return buckets
+    buckets
   }
 
   override def getBucketsIndex(data: RDD[Long]): Array[(Long, Long)] = {
     val buckets = data.map(f => f / (1L << bits))
       .map(f => (f, 1L)).reduceByKey(_ + _).sortBy(_._1).collect()
-    return buckets
+    buckets
   }
 }
 
@@ -122,23 +120,20 @@ class StorageBalancePartitioner(bits: Int, numPartitions: Int)
   extends AutoPartitioner(bits, numPartitions) {
   override def getBuckets(data: RDD[Vector]): Array[(Long, Long)] = {
     val indices = data.flatMap {
-      case vector =>
-        vector match {
-          case dummy: LongDummyVector => dummy.getIndices
-          case longKey: LongKeyVector => longKey.getStorage.asInstanceOf[LongKeyVectorStorage]
-            .getIndices
-        }
+      case dummy: LongDummyVector => dummy.getIndices
+      case longKey: LongKeyVector => longKey.getStorage.asInstanceOf[LongKeyVectorStorage]
+        .getIndices
     }
 
     val buckets = indices.distinct().map(f => f / (1L << bits))
       .map(f => (f, 1L)).reduceByKey(_ + _).sortBy(_._1).collect()
-    return buckets
+    buckets
   }
 
   override def getBucketsIndex(data: RDD[Long]): Array[(Long, Long)] = {
     val bucket = data.distinct().map(f => f / (1L << bits))
       .map(f => (f, 1L)).reduceByKey(_ + _).sortBy(_._1).collect()
-    return bucket
+    bucket
   }
 }
 
@@ -148,28 +143,30 @@ object LoadBalancePartitioner {
   def getBuckets(data: RDD[Long], bits: Int): Array[(Long, Long)] = {
     val buckets = data.map(f => f / (1L << bits))
       .map(f => (f, 1L)).reduceByKey(_ + _, 100).sortBy(_._1).collect()
-    return buckets
+    buckets
   }
 
   def partition(buckets: Array[(Long, Long)], ctx: MatrixContext, bits: Int, numPartitions: Int): Unit = {
-    println(s"bucket.size=${buckets.size}")
+    println(s"bucket.size=${buckets.length}")
     val sorted = buckets.sortBy(f => f._1)
     val sum = sorted.map(f => f._2).sum
-    val per = (sum / numPartitions)
+    val per = sum / numPartitions
 
     var start = ctx.getIndexStart
     val end = ctx.getIndexEnd
     val rowNum = ctx.getRowNum
 
     var current = 0L
-    val size = sorted.size
+    val size = sorted.length
     val limit = ((end.toDouble - start.toDouble) / numPartitions).toLong * 4
-    println(limit)
+    println(s"start: $start, end: $end, limit: $limit")
     for (i <- 0 until size) {
       // keep each partition similar load and limit the range of each partition
-      if (current > per || ((sorted(i)._1 << bits - start > limit) && current > per / 2)) {
+      val range = sorted(i)._1 << bits - start
+      if ((current > per)
+        || ((range > limit) && (current > (per / 2)))){
         val part = new PartContext(0, rowNum, start, sorted(i)._1 << bits, 0)
-        println(s"part=${part} load=${current} range=${part.getEndCol - part.getStartCol}")
+        println(s"part=$part load=$current range=$range per=$per limit=$limit")
         ctx.addPart(part)
         start = sorted(i)._1 << bits
         current = 0L
@@ -183,25 +180,25 @@ object LoadBalancePartitioner {
     println(s"split matrix ${ctx.getName} into ${ctx.getParts.size()} partitions")
   }
 
-  def partition(index: RDD[Long], maxId: Long, psPartitionNum: Int, ctx: MatrixContext, percent: Float): Unit = {
+  def partition(index: RDD[Long], maxId: Long, psPartitionNum: Int, ctx: MatrixContext, percent: Float = 0.7f, minId: Long = 0L): Unit = {
+    //    var percent = 0.3
     var p = percent
-    var count = 2
-    while (count > 0) {
-      val bits = (numBits(maxId) * p).toInt
-      println(s"bits used for load balance partition is $bits")
-      val buckets = getBuckets(index, bits)
-      val sum = buckets.map(f => f._2).sum
-      val max = buckets.map(f => f._2).max
-      val size = buckets.size
-      println(s"max=$max sum=$sum size=$size")
-      if (count == 1 || max.toDouble / sum < 0.1) {
-        count = 0
-        partition(buckets, ctx, bits, psPartitionNum)
-      } else {
-        count -= 1
-        p -= 0.05f
-      }
+    val maxIdBits = numBits(maxId - minId)
+    val maxNumForEachBucket = (index.count * 0.1).toInt
+    while (1L << (maxIdBits * p).toInt > maxNumForEachBucket) {
+      println(s"${1L << (maxIdBits * p).toInt} vs $maxNumForEachBucket, num of keys for each bucket exceeds max number, decrease p by 0.05.")
+      p -= 0.05f
     }
+
+    val bits = (numBits(maxId - minId) * p).toInt
+    println(s"bits used for load balance partition is $bits")
+    val buckets = getBuckets(index, bits)
+    val sum = buckets.map(f => f._2).sum
+    val max = buckets.map(f => f._2).max
+    val size = buckets.size
+    println(s"max=$max sum=$sum size=$size")
+    //    assert(max.toDouble / sum < 0.1, s"max num of loads exceeds 10% of sum: $max vs $sum")
+    partition(buckets, ctx, bits, psPartitionNum)
   }
 
   def partition(index: RDD[Long], psPartitionNum: Int, ctx:MatrixContext): Unit = {
@@ -232,6 +229,7 @@ object LoadBalancePartitioner {
     }
     println(s"split matrix ${ctx.getName} into ${ctx.getParts.size()} partitions")
   }
+
 
   def numBits(maxId: Long): Int = {
     var num = 0
