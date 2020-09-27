@@ -120,9 +120,8 @@
 
 * **微信答疑群**：（加微信小助手，备注Angel答疑）
 
-  <img src="docs/img/wx_support.png" align= 'left' style="zoom:50%;" />
+  ![](/docs/img/wx_support.png )
 
-* 
 
 
 
