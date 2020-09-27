@@ -120,9 +120,12 @@
 
 * **微信答疑群**：（加微信小助手，备注Angel答疑）
 
-  <img src="docs/img/wx_support.png" align= 'left' style="zoom:50%;" />
+  <img src="docs/img/WX_Support.png" align= 'left' style="zoom:50%;" />
+
+
 
 ## Papers
+
   1. Lele Yu, Bin Cui, Ce Zhang, Yingxia Shao. [LDA*: A Robust and Large-scale Topic Modeling System](http://www.vldb.org/pvldb/vol10/p1406-yu.pdf). VLDB, 2017
   2. Jiawei Jiang, Bin Cui, Ce Zhang, Lele Yu. [Heterogeneity-aware Distributed Parameter Servers](http://dl.acm.org/citation.cfm?id=3035933). SIGMOD, 2017
   3. Jie Jiang, Lele Yu, Jiawei Jiang, Yuhong Liu and Bin Cui. [Angel: a new large-scale machine learning system](https://academic.oup.com/nsr/article/3052720). National Science Review (NSR), 2017
