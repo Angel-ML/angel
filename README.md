@@ -120,7 +120,7 @@
 
 * **微信答疑群**：（加微信小助手，备注Angel答疑）
 
-  <img src="docs/img/WX_Support.png" align= 'left' style="zoom:50%;" />
+  <img src="docs/img/wx_support.png" align= 'left' style="zoom:50%;" />
 
 
 
