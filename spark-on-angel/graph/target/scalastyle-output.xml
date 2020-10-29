@@ -1,0 +1,1298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="5.0">
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/rank/pagerank/vertexcut/PageRankPartition.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="6" line="43" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="6" line="59" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="8" line="89" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.floats.FloatArrayList should be in group 3rdParty, not angel."/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.ints.IntArrays should be in group 3rdParty, not angel."/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.longs. should be in group 3rdParty, not angel."/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="java.util. should be in group javaScala, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasDstNodeIdCol.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="19" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/community/lpa/LPAPartition.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="40" line="52" source="org.scalastyle.scalariform.NonASCIICharacterChecker" severity="error" message="nonascii.message"/>
+  <error column="41" line="52" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="0" line="21" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.ints.IntArrayList should be in group 3rdParty, not angel."/>
+  <error column="0" line="22" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.longs. should be in group 3rdParty, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasDelimiter.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/NodeIndexer.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="52" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="68" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="71" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="137" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="63" line="66" source="org.scalastyle.scalariform.UppercaseLChecker" severity="error" message="Use an uppercase L for long literals"/>
+  <error column="4" line="70" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="24" line="32" source="org.scalastyle.scalariform.TokenChecker" severity="error" message="Instead of importing implicits in scala.collection.JavaConversions._, import
+    scala.collection.JavaConverters._ and use .asScala / .asJava methods"/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark._ should be in group 3rdParty, not angel."/>
+  <error column="0" line="29" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+  <error column="0" line="30" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.storage.StorageLevel should be in group 3rdParty, not angel."/>
+  <error column="0" line="32" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.JavaConversions._ should be in group javaScala, not angel."/>
+  <error column="0" line="33" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.reflect.ClassTag should be in group javaScala, not angel."/>
+  <error column="42" line="32" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasGamma.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/rank/hindex/HIndexPartition.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="67" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="36" line="69" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="45" line="89" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="33" line="95" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="56" line="207" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.ints.IntArrayList should be in group 3rdParty, not angel."/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.longs.LongArrayList should be in group 3rdParty, not angel."/>
+  <error column="27" line="24" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="21" line="45" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="3" line="56" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="9" line="72" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="29" line="95" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="5" line="109" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="17" line="132" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="10" line="153" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="5" line="166" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/rank/hindex/HIndexPSModel.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="61" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="4" line="65" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="0" line="27" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/statistics/commonfriends/CommonFriendsPSModel.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="64" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+  <error column="0" line="21" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.NeighborTableModel is in wrong order relative to com.tencent.angel.graph.Param."/>
+  <error column="0" line="22" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+  <error column="10" line="24" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="8" line="35" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/line/LINEModel.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="57" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="58" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="60" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="70" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="83" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="126" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="142" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="169" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="173" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="212" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="247" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="295" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="313" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="327" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="342" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="403" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="404" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="425" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="472" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="505" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="619" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="620" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="621" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="622" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="624" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="629" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="648" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="702" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="732" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="748" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="756" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="761" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="765" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="768" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="779" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="806" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="810" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="6" line="383" source="org.scalastyle.scalariform.PublicMethodsHaveTypeChecker" severity="error" message="Public method must have explicit type"/>
+  <error column="4" line="514" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="17" line="20" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="HashMap should come before Random."/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.embedding.FastSigmoid is in wrong order relative to com.tencent.angel.spark.context.."/>
+  <error column="56" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="buildDataBatches should come before LINEDataSet."/>
+  <error column="0" line="27" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.ints. should be in group 3rdParty, not angel."/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.hadoop.fs.Path should be in group 3rdParty, not angel."/>
+  <error column="0" line="29" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.SparkContext should be in group 3rdParty, not angel."/>
+  <error column="0" line="30" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+  <error column="0" line="31" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql.Dataset should be in group 3rdParty, not angel."/>
+  <error column="0" line="32" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql.types.LongType should be in group 3rdParty, not angel."/>
+  <error column="0" line="33" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.storage.StorageLevel should be in group 3rdParty, not angel."/>
+  <error column="0" line="35" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.mutable.ArrayBuffer should be in group javaScala, not angel."/>
+  <error column="11" line="35" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="87" line="60" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="19" line="183" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="17" line="212" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="6" line="233" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="71" line="256" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="24" line="322" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="10" line="373" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="6" line="576" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasOutputNodeIdCol.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="27" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="22" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasOutputTriangleCol.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/NeighborTableModel.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="88" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="91" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="116" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="133" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="151" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="155" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="156" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.psf.triangle._ is in wrong order relative to com.tencent.angel.spark.context.PSContext."/>
+  <error column="0" line="30" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="31" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="32" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.SparkContext should be in group 3rdParty, not angel."/>
+  <error column="0" line="33" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+  <error column="0" line="35" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.beans.BeanProperty should be in group javaScala, not angel."/>
+  <error column="0" line="36" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.mutable.ArrayBuffer should be in group javaScala, not angel."/>
+  <error column="10" line="36" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="26" line="91" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="22" line="116" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasOrder.scala">
+  <error column="28" line="5" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/line/LINE.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="34" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="15" line="73" source="org.scalastyle.scalariform.PublicMethodsHaveTypeChecker" severity="error" message="Public method must have explicit type"/>
+  <error column="52" line="67" source="org.scalastyle.scalariform.NotImplementedErrorUsage" severity="error" message="Usage of ??? operator"/>
+  <error column="65" line="69" source="org.scalastyle.scalariform.NotImplementedErrorUsage" severity="error" message="Usage of ??? operator"/>
+  <error column="0" line="21" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.Transformer should be in group 3rdParty, not angel."/>
+  <error column="0" line="22" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.param.ParamMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.util.Identifiable should be in group 3rdParty, not angel."/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql.types.StructType should be in group 3rdParty, not angel."/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql. should be in group 3rdParty, not angel."/>
+  <error column="26" line="25" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="15" line="39" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/WeightedRandomSampler.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="27" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+  <error column="31" line="37" source="org.scalastyle.scalariform.NotImplementedErrorUsage" severity="error" message="Usage of ??? operator"/>
+  <error column="52" line="47" source="org.scalastyle.scalariform.NotImplementedErrorUsage" severity="error" message="Usage of ??? operator"/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="There should be no empty line separating imports in the same group."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/rank/hindex/HIndex.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="54" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="63" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+  <error column="4" line="72" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.SparkContext should be in group 3rdParty, not angel."/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.Transformer should be in group 3rdParty, not angel."/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.param.ParamMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.util.Identifiable should be in group 3rdParty, not angel."/>
+  <error column="0" line="27" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql.types._ should be in group 3rdParty, not angel."/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql. should be in group 3rdParty, not angel."/>
+  <error column="0" line="29" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.storage.StorageLevel should be in group 3rdParty, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasStorageLevel.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="28" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="36" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="18" line="22" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/FastSigmoid.scala">
+  <error column="102" line="6" source="org.scalastyle.file.WhitespaceEndOfLineChecker" severity="error" message="Whitespace at end of line"/>
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="4" line="39" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="9" line="41" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/deepwalk/DeepWalkPSModel.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="36" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="37" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="44" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="2" line="29" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="2" line="35" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="6" line="57" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="0" line="21" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.psf.neighbors.samplebyaliastable.initaliastable. is in wrong order relative to com.tencent.angel.ml.matrix.."/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/community/lpa/LPAPSModel.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="77" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="80" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+  <error column="8" line="29" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="27" line="36" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="8" line="46" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="12" line="53" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="4" line="62" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasOutputPageRankCol.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+  <error column="25" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/GraphIO.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="152" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql. is in wrong order relative to org.apache.spark.sql.types._."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/line/CheckpointContext.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="27" line="22" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="21" line="27" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="28" line="31" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasPSPartitionNum.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="21" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasTopK.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+  <error column="11" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasOutputCommunityIdCol.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="28" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="28" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/Param.scala">
+  <error column="102" line="6" source="org.scalastyle.file.WhitespaceEndOfLineChecker" severity="error" message="Whitespace at end of line"/>
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="106" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="118" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/line/AlgoPSModel.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="31" line="18" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/line/AliasTableUtils.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="81" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="160" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="197" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="220" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="6" line="20" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="1" line="25" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="27" line="97" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="17" line="177" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="9" line="200" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasMaxIter.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="14" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasModelSaveInterval.scala">
+  <error column="40" line="5" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/line/InitAliasTable.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="55" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="63" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="116" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="24" line="30" source="org.scalastyle.scalariform.TokenChecker" severity="error" message="Instead of importing implicits in scala.collection.JavaConversions._, import
+    scala.collection.JavaConverters._ and use .asScala / .asJava methods"/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="io.netty.buffer.ByteBuf should be in group 3rdParty, not angel."/>
+  <error column="0" line="30" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.JavaConversions._ should be in group javaScala, not angel."/>
+  <error column="14" line="30" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="69" line="37" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="71" line="87" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="0" line="98" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/element/NeighborTablePartition.scala">
+  <error line="19" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="20" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="112" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="148" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="179" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="182" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="201" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="237" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="247" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="273" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="285" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="289" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="295" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="346" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="357" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="369" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="384" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="398" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="6" line="115" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="14" line="296" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="14" line="298" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="14" line="301" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="6" line="333" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="11" line="335" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="8" line="383" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="8" line="406" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="0" line="5" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.utils.BatchIter is in wrong order relative to com.tencent.angel.graph.utils.element.Element._."/>
+  <error column="0" line="8" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="9" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+  <error column="0" line="11" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.mutable should be in group javaScala, not angel."/>
+  <error column="0" line="12" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.mutable.ArrayBuffer should be in group javaScala, not angel."/>
+  <error column="0" line="13" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.reflect.ClassTag should be in group javaScala, not angel."/>
+  <error column="31" line="156" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="44" line="218" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/rank/kcore/KCore.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="58" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="65" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="4" line="44" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="4" line="64" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="4" line="67" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="4" line="76" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="0" line="21" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.utils.params._ is in wrong order relative to com.tencent.angel.spark.context.PSContext."/>
+  <error column="0" line="22" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.SparkContext should be in group 3rdParty, not angel."/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.Transformer should be in group 3rdParty, not angel."/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.param.ParamMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.util.Identifiable should be in group 3rdParty, not angel."/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql.types. should be in group 3rdParty, not angel."/>
+  <error column="0" line="27" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql. should be in group 3rdParty, not angel."/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.storage.StorageLevel should be in group 3rdParty, not angel."/>
+  <error column="0" line="29" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.utils.io.Log is in wrong order relative to com.tencent.angel.graph.utils.params._."/>
+  <error column="17" line="29" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasDstNodeIndex.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/rank/closeness/ClosenessPartition.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="91" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="115" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="6" line="79" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="6" line="101" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasInput.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasStepSize.scala">
+  <error column="31" line="5" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasEmbeddingDim.scala">
+  <error column="35" line="5" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/community/louvain/Louvain.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="93" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="101" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="4" line="68" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="4" line="88" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="4" line="92" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="4" line="125" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="0" line="20" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.utils.params._ is in wrong order relative to com.tencent.angel.ml.math2.vector.LongIntVector."/>
+  <error column="0" line="21" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.utils.NodeIndexer is in wrong order relative to com.tencent.angel.graph.utils.params._."/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.Transformer should be in group 3rdParty, not angel."/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.param._ should be in group 3rdParty, not angel."/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.util.Identifiable should be in group 3rdParty, not angel."/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+  <error column="0" line="27" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql.types. should be in group 3rdParty, not angel."/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql. should be in group 3rdParty, not angel."/>
+  <error column="0" line="29" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.storage.StorageLevel should be in group 3rdParty, not angel."/>
+  <error column="18" line="29" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasWeightIndex.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasBufferSize.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="17" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/io/Log.scala">
+  <error column="9" line="6" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasPValue.scala">
+  <error column="28" line="6" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasExtraInputs.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/word2vec/Word2VecModel.scala">
+  <error column="102" line="6" source="org.scalastyle.file.WhitespaceEndOfLineChecker" severity="error" message="Whitespace at end of line"/>
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="71" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="72" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="76" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="87" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="128" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="140" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="142" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="146" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="151" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="152" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="163" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="167" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="178" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="218" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="219" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="242" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="274" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="365" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="382" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="386" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="0" line="27" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.embedding.FastSigmoid is in wrong order relative to com.tencent.angel.spark.context.PSContext."/>
+  <error column="0" line="31" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.ints. should be in group 3rdParty, not angel."/>
+  <error column="0" line="32" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.hadoop.fs.Path should be in group 3rdParty, not angel."/>
+  <error column="0" line="33" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.SparkContext should be in group 3rdParty, not angel."/>
+  <error column="0" line="34" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+  <error column="0" line="35" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql.SparkSession should be in group 3rdParty, not angel."/>
+  <error column="0" line="37" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.mutable.ArrayBuffer should be in group javaScala, not angel."/>
+  <error column="0" line="38" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.util.Random should be in group javaScala, not angel."/>
+  <error column="60" line="91" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasArrayBoundsPath.scala">
+  <error line="7" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/line/LINEInitFunc.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="40" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="24" line="28" source="org.scalastyle.scalariform.TokenChecker" severity="error" message="Instead of importing implicits in scala.collection.JavaConversions._, import
+    scala.collection.JavaConverters._ and use .asScala / .asJava methods"/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="io.netty.buffer.ByteBuf should be in group 3rdParty, not angel."/>
+  <error column="0" line="27" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.util.Random should be in group javaScala, not angel."/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.JavaConversions._ should be in group javaScala, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/reindex/NodeIndexer.scala">
+  <error line="33" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="40" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="58" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="24" line="16" source="org.scalastyle.scalariform.TokenChecker" severity="error" message="Instead of importing implicits in scala.collection.JavaConversions._, import
+    scala.collection.JavaConverters._ and use .asScala / .asJava methods"/>
+  <error column="0" line="8" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.utils.BatchIter is in wrong order relative to com.tencent.angel.psagent.PSAgentContext."/>
+  <error column="0" line="11" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark._ should be in group 3rdParty, not angel."/>
+  <error column="0" line="12" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+  <error column="0" line="13" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.storage.StorageLevel should be in group 3rdParty, not angel."/>
+  <error column="0" line="15" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.reflect.ClassTag should be in group javaScala, not angel."/>
+  <error column="0" line="16" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.JavaConversions._ should be in group javaScala, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasNegative.scala">
+  <error column="31" line="5" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasUseEdgeBalancePartition.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="23" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="29" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasEpochNum.scala">
+  <error column="31" line="5" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasNumMaxCommunities.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="24" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/rank/closeness/Closeness.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="33" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="89" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="98" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="114" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="124" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="125" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="6" line="81" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="4" line="188" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="4" line="108" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.Transformer should be in group 3rdParty, not angel."/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.param. should be in group 3rdParty, not angel."/>
+  <error column="0" line="27" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.util.Identifiable should be in group 3rdParty, not angel."/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql.types. should be in group 3rdParty, not angel."/>
+  <error column="0" line="29" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql. should be in group 3rdParty, not angel."/>
+  <error column="0" line="30" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.storage.StorageLevel should be in group 3rdParty, not angel."/>
+  <error column="17" line="30" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="62" line="41" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/line/LINEGetEmbedding.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="131" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="135" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="165" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="200" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="260" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="261" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="24" line="32" source="org.scalastyle.scalariform.TokenChecker" severity="error" message="Instead of importing implicits in scala.collection.JavaConversions._, import
+    scala.collection.JavaConverters._ and use .asScala / .asJava methods"/>
+  <error column="0" line="29" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="io.netty.buffer.ByteBuf should be in group 3rdParty, not angel."/>
+  <error column="0" line="30" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="32" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.JavaConversions._ should be in group javaScala, not angel."/>
+  <error column="73" line="34" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="0" line="101" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="32" line="135" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="5" line="260" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="1" line="286" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="19" line="308" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasOutputDistanceCol.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/deepwalk/DeepWalk.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="35" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="78" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="82" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="111" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="124" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="16" line="63" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="127" line="78" source="org.scalastyle.scalariform.NonASCIICharacterChecker" severity="error" message="nonascii.message"/>
+  <error column="4" line="42" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="4" line="54" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="4" line="62" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="4" line="74" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="4" line="80" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="4" line="85" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="4" line="88" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="0" line="21" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.utils.params._ is in wrong order relative to com.tencent.angel.spark.context.PSContext."/>
+  <error column="0" line="22" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.SparkContext should be in group 3rdParty, not angel."/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.Transformer should be in group 3rdParty, not angel."/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.param.ParamMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.util.Identifiable should be in group 3rdParty, not angel."/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql.types._ should be in group 3rdParty, not angel."/>
+  <error column="0" line="27" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql. should be in group 3rdParty, not angel."/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.storage.StorageLevel should be in group 3rdParty, not angel."/>
+  <error column="0" line="30" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.mutable.ArrayBuffer should be in group javaScala, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasIsWeighted.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="17" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasSuperItemThreshold.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="27" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+  <error column="25" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasWeightCol.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="16" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/statistics/commonfriends/CommonFriendsOperator.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="97" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="108" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="118" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="127" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="157" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="167" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="178" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="185" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="192" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="198" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="202" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="214" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="221" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="10" line="39" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="10" line="56" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="15" line="58" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="6" line="121" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="8" line="171" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="0" line="22" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql. should be in group 3rdParty, not angel."/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.mutable should be in group javaScala, not angel."/>
+  <error column="0" line="27" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.mutable.ArrayBuffer should be in group javaScala, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/community/lpa/LPA.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="56" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="62" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="4" line="74" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="0" line="22" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.utils.params._ is in wrong order relative to com.tencent.angel.spark.context.PSContext."/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.SparkContext should be in group 3rdParty, not angel."/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.Transformer should be in group 3rdParty, not angel."/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.param. should be in group 3rdParty, not angel."/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.util.Identifiable should be in group 3rdParty, not angel."/>
+  <error column="0" line="27" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql.types. should be in group 3rdParty, not angel."/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql. should be in group 3rdParty, not angel."/>
+  <error column="0" line="29" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.storage.StorageLevel should be in group 3rdParty, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/rank/pagerank/PageRankOps.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/community/louvain/LouvainPSModel.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="73" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="24" line="26" source="org.scalastyle.scalariform.TokenChecker" severity="error" message="Instead of importing implicits in scala.collection.JavaConversions._, import
+    scala.collection.JavaConverters._ and use .asScala / .asJava methods"/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.JavaConversions._ should be in group javaScala, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasMaxNodeId.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="15" line="22" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/line/HasSaveMeta.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="14" line="22" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasBatchSize.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="16" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasMaxIteration.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="18" line="22" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/line/TextLINEModelOutputFormat.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.hadoop.conf.Configuration should be in group 3rdParty, not angel."/>
+  <error column="22" line="24" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/rank/pagerank/edgecut/PageRank.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="87" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="121" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="4" line="105" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="0" line="21" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.rank.pagerank.PageRankOps is in wrong order relative to com.tencent.angel.spark.context.PSContext."/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.SparkContext should be in group 3rdParty, not angel."/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.Transformer should be in group 3rdParty, not angel."/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.param. should be in group 3rdParty, not angel."/>
+  <error column="0" line="27" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.util.Identifiable should be in group 3rdParty, not angel."/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql.types. should be in group 3rdParty, not angel."/>
+  <error column="0" line="29" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql. should be in group 3rdParty, not angel."/>
+  <error column="0" line="30" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.storage.StorageLevel should be in group 3rdParty, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/SparkPrivateClassProxy.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="There should be no empty line separating imports in the same group."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/rank/pagerank/PageRankModel.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="41" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.psf.pagerank. is in wrong order relative to com.tencent.angel.ml.matrix.psf.update.update.IncrementRowsParam."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasUnDirected.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasPreserveRate.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/collection/BitSet.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="7" line="19" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="12" line="28" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="4" line="34" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="7" line="39" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="39" line="49" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="23" line="62" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="14" line="78" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="12" line="102" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="5" line="124" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="49" line="139" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="52" line="155" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="60" line="168" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="38" line="191" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasPullBatchSize.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="20" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasMinNodeId.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="15" line="22" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasDebugMode.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/rank/kcore/KCorePSModel.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="68" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.ml.math2.vector.Vector is in wrong order relative to com.tencent.angel.spark.models.impl.PSVectorImpl."/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+  <error column="6" line="28" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasSrcNodeIdCol.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="19" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/Delimiter.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/metapath2vec/MetaPath2Vec.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="88" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="89" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="135" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="178" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="181" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="204" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="218" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="259" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="265" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="272" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="273" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="277" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="279" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="283" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="6" line="84" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+  <error column="63" line="85" source="org.scalastyle.scalariform.EnsureSingleSpaceAfterTokenChecker" severity="error" message="No space after token ,"/>
+  <error column="68" line="85" source="org.scalastyle.scalariform.EnsureSingleSpaceAfterTokenChecker" severity="error" message="No space after token ,"/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.utils.params._ is in wrong order relative to com.tencent.angel.spark.context.PSContext."/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.utils.BatchIter is in wrong order relative to com.tencent.angel.graph.utils.partitionstrategy.reindexpartition.IndexPartitioner."/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.psf.neighbors.samplebyaliastable.initaliastable. is in wrong order relative to com.tencent.angel.graph.utils.BatchIter."/>
+  <error column="0" line="30" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="31" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql.types._ should be in group 3rdParty, not angel."/>
+  <error column="0" line="32" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.SparkContext should be in group 3rdParty, not angel."/>
+  <error column="0" line="33" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.Transformer should be in group 3rdParty, not angel."/>
+  <error column="0" line="34" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.param.ParamMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="35" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.util.Identifiable should be in group 3rdParty, not angel."/>
+  <error column="0" line="36" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+  <error column="0" line="37" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql.types. should be in group 3rdParty, not angel."/>
+  <error column="0" line="38" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql. should be in group 3rdParty, not angel."/>
+  <error column="0" line="39" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.storage.StorageLevel should be in group 3rdParty, not angel."/>
+  <error column="0" line="41" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.mutable should be in group javaScala, not angel."/>
+  <error column="0" line="42" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.mutable.ArrayBuffer should be in group javaScala, not angel."/>
+  <error column="0" line="43" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.util.Random should be in group javaScala, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/line/EdgeAliseTablePartition.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="50" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="io.netty.buffer.ByteBuf should be in group 3rdParty, not angel."/>
+  <error column="0" line="29" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="30" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.commons.logging.LogFactory should be in group 3rdParty, not angel."/>
+  <error column="17" line="30" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="1" line="96" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="43" line="153" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="29" line="177" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="34" line="201" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="25" line="204" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="22" line="214" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/line/LINEAdjust.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="81" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="99" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="117" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="135" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="152" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="155" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="221" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="225" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="4" line="51" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="6" line="69" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="6" line="164" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="6" line="179" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="0" line="29" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="io.netty.buffer.ByteBuf should be in group 3rdParty, not angel."/>
+  <error column="0" line="30" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap should be in group 3rdParty, not angel."/>
+  <error column="70" line="32" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="38" line="81" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/line/SampleWithWeight.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="48" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="85" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="111" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="123" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="150" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="24" line="28" source="org.scalastyle.scalariform.TokenChecker" severity="error" message="Instead of importing implicits in scala.collection.JavaConversions._, import
+    scala.collection.JavaConverters._ and use .asScala / .asJava methods"/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="io.netty.buffer.ByteBuf should be in group 3rdParty, not angel."/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.JavaConversions._ should be in group javaScala, not angel."/>
+  <error column="16" line="28" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="72" line="35" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="15" line="50" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="42" line="70" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="1" line="149" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="28" line="159" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="27" line="173" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasBalancePartitionPercent.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="23" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="29" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasCommonFriendsNumCol.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="28" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="25" line="22" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/PartitionwiseWeightedSampledRDD.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="28" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="34" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="48" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="51" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="61" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark. is in wrong order relative to org.apache.spark.rdd.RDD."/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="There should be no empty line separating imports in the same group."/>
+  <error column="13" line="30" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasCompressCol.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="18" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/rank/closeness/ClosenessPSModel.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="76" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="106" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="There should at least one a single empty line separating groups 3rdParty and angel."/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.ml.matrix. is in wrong order relative to com.tencent.angel.ml.matrix.psf.get.getrow.GetRowResult."/>
+  <error column="0" line="34" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.longs. should be in group 3rdParty, not angel."/>
+  <error column="0" line="35" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasUseCache.scala">
+  <error column="31" line="5" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/line/LINEPSModel.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="55" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="83" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="85" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="98" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="99" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="100" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="115" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="153" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="160" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="237" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="253" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="280" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="281" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="289" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="321" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="333" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="334" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.ml.matrix. is in wrong order relative to com.tencent.angel.ml.matrix.psf.update.base.VoidResult."/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.model. is in wrong order relative to com.tencent.angel.model.output.format.."/>
+  <error column="0" line="32" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="33" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.hadoop.fs.Path should be in group 3rdParty, not angel."/>
+  <error column="0" line="34" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.SparkContext should be in group 3rdParty, not angel."/>
+  <error column="0" line="35" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql.SparkSession should be in group 3rdParty, not angel."/>
+  <error column="0" line="37" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.util.Random should be in group javaScala, not angel."/>
+  <error column="34" line="35" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="13" line="45" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="27" line="67" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="40" line="85" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="30" line="100" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="3" line="115" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="25" line="124" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="13" line="135" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="72" line="175" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="37" line="258" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="17" line="278" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="41" line="284" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="9" line="313" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="26" line="332" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/element/GraphStats.scala">
+  <error column="6" line="14" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasDelta.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasUseBalancePartition.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="23" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasReIndexedNodesMapPath.scala">
+  <error line="7" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/collection/OpenHashMap.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="13" line="19" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="19" line="84" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasCheckPointInterval.scala">
+  <error column="41" line="5" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/NEModel.scala">
+  <error column="102" line="6" source="org.scalastyle.file.WhitespaceEndOfLineChecker" severity="error" message="Whitespace at end of line"/>
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="51" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="64" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="66" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="67" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="120" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="175" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="189" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="6" line="100" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="6" line="174" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="There should be no empty line separating imports in the same group."/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="There should at least one a single empty line separating groups javaScala and 3rdParty."/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="There should at least one a single empty line separating groups 3rdParty and angel."/>
+  <error column="0" line="34" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.embedding.NEModel.NEDataSet is in wrong order relative to com.tencent.angel.spark.context.PSContext."/>
+  <error column="0" line="38" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.psf.embedding. is in wrong order relative to com.tencent.angel.graph.psf.embedding.NESlice.SliceResult."/>
+  <error column="69" line="67" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasOutputCentralityCol.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="26" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/connectedcomponent/wcc/WCCPartition.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="0" line="21" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.ints.IntArrayList should be in group 3rdParty, not angel."/>
+  <error column="0" line="22" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.longs.LongArrayList should be in group 3rdParty, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasIsTrunc.scala">
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+  <error column="29" line="6" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/community/louvain/LouvainPartition.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="122" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="132" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="163" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="0" line="20" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.SparkPrivateClassProxy should be in group 3rdParty, not angel."/>
+  <error column="0" line="22" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.mutable.ArrayBuffer should be in group javaScala, not angel."/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.util.Random should be in group javaScala, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/line/InitEdgeWeight.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="73" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="87" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+  <error column="24" line="33" source="org.scalastyle.scalariform.TokenChecker" severity="error" message="Instead of importing implicits in scala.collection.JavaConversions._, import
+    scala.collection.JavaConverters._ and use .asScala / .asJava methods"/>
+  <error column="0" line="31" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="io.netty.buffer.ByteBuf should be in group 3rdParty, not angel."/>
+  <error column="0" line="33" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.JavaConversions._ should be in group javaScala, not angel."/>
+  <error column="11" line="33" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="66" line="40" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="1" line="60" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="54" line="73" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="5" line="146" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="28" line="160" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="13" line="174" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/RangeBounds.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="230" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="There should be no empty line separating imports in the same group."/>
+  <error column="37" line="212" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="1" line="272" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/line/CheckpointUtils.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="0" line="21" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.model. is in wrong order relative to com.tencent.angel.model.output.format.SnapshotFormat."/>
+  <error column="29" line="22" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="5" line="26" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/line/PSPartitionAliasTable.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="39" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="86" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="110" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="6" line="37" source="org.scalastyle.scalariform.PublicMethodsHaveTypeChecker" severity="error" message="Public method must have explicit type"/>
+  <error column="24" line="28" source="org.scalastyle.scalariform.TokenChecker" severity="error" message="Instead of importing implicits in scala.collection.JavaConversions._, import
+    scala.collection.JavaConverters._ and use .asScala / .asJava methods"/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="io.netty.buffer.ByteBuf should be in group 3rdParty, not angel."/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.JavaConversions._ should be in group javaScala, not angel."/>
+  <error column="16" line="28" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="7" line="62" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="19" line="74" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="104" line="86" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="37" line="110" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="5" line="118" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="31" line="128" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/rank/kcore/KCorePartition.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="32" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="64" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="4" line="91" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="4" line="136" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.ints.IntArrayList should be in group 3rdParty, not angel."/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.longs.LongArrayList should be in group 3rdParty, not angel."/>
+  <error column="26" line="25" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="20" line="47" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="6" line="118" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasApproNodeNum.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/NeighborTableOps.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="84" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="87" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="93" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="100" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="103" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="123" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="126" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="153" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="162" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.data._ is in wrong order relative to com.tencent.angel.spark.context.PSContext."/>
+  <error column="0" line="27" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.utils.element. is in wrong order relative to com.tencent.angel.graph.utils.element.Element.VertexId."/>
+  <error column="0" line="29" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="30" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="31" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.SparkContext should be in group 3rdParty, not angel."/>
+  <error column="0" line="32" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+  <error column="0" line="34" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.mutable.ArrayBuffer should be in group javaScala, not angel."/>
+  <error column="0" line="35" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.reflect.ClassTag should be in group javaScala, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/rank/pagerank/edgecut/PageRankPSModel.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="47" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="49" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="4" line="55" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.rank.pagerank.PageRankModel is in wrong order relative to com.tencent.angel.spark.context.PSContext."/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasCompressIndex.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasOutputCoreIdCol.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="28" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="23" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasNodeAttrNum.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="18" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/PartitionTools.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="41" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="44" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="83" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="136" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="24" line="24" source="org.scalastyle.scalariform.TokenChecker" severity="error" message="Instead of importing implicits in scala.collection.JavaConversions._, import
+    scala.collection.JavaConverters._ and use .asScala / .asJava methods"/>
+  <error column="0" line="21" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.graphx.PartitionStrategy should be in group 3rdParty, not angel."/>
+  <error column="0" line="22" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark. should be in group 3rdParty, not angel."/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.JavaConversions._ should be in group javaScala, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasNeedReplicaEdge.scala">
+  <error column="38" line="5" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasPartitionNum.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="19" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/statistics/triangle/TriangleCountingUndirected.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="63" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="66" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="0" line="22" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph. is in wrong order relative to com.tencent.angel.graph.utils.params._."/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.Transformer should be in group 3rdParty, not angel."/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.param.ParamMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.util.Identifiable should be in group 3rdParty, not angel."/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql.types._ should be in group 3rdParty, not angel."/>
+  <error column="0" line="27" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql. should be in group 3rdParty, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasPullSizeInMB.scala">
+  <error column="35" line="5" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/community/louvain/LouvainGraph.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="0" line="20" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.community.louvain.LouvainGraph.edgeTriplet2GraphPartitions is in wrong order relative to com.tencent.angel.ml.math2.vector.IntFloatVector."/>
+  <error column="0" line="21" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+  <error column="0" line="22" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.storage.StorageLevel should be in group 3rdParty, not angel."/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.mutable.ArrayBuffer should be in group javaScala, not angel."/>
+  <error column="23" line="24" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="0" line="30" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasNodeAttrPath.scala">
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/rank/pagerank/edgecut/PageRankPartition.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="8" line="82" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.floats.FloatArrayList should be in group 3rdParty, not angel."/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.ints.IntArrayList should be in group 3rdParty, not angel."/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.longs. should be in group 3rdParty, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/element/NeighborTable.scala">
+  <error column="4" line="47" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="0" line="4" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="There should at most 1 empty lines separating groups javaScala and angel."/>
+  <error column="0" line="6" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.reflect.ClassTag should be in group javaScala, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/connectedcomponent/wcc/WCCPSModel.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="98" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="102" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+  <error column="7" line="30" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="32" line="37" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="10" line="48" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="37" line="56" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="6" line="65" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="9" line="72" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="3" line="83" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasSrcNum.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="14" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/word2vec/Word2VecParam.scala">
+  <error line="89" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="101" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/partitionstrategy/reindexpartition/IndexPartitioner.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/element/EdgePartition.scala">
+  <error line="16" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="0" line="5" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.graphx.Edge should be in group 3rdParty, not angel."/>
+  <error column="0" line="6" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+  <error column="0" line="8" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.mutable.ArrayBuffer should be in group javaScala, not angel."/>
+  <error column="0" line="9" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.reflect.ClassTag should be in group javaScala, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasWalkLength.scala">
+  <error column="33" line="5" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasQValue.scala">
+  <error column="29" line="5" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/rank/pagerank/vertexcut/PageRank.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="86" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="88" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="119" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="4" line="103" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="0" line="21" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.rank.pagerank.PageRankOps is in wrong order relative to com.tencent.angel.spark.context.PSContext."/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.SparkContext should be in group 3rdParty, not angel."/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.Transformer should be in group 3rdParty, not angel."/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.param. should be in group 3rdParty, not angel."/>
+  <error column="0" line="27" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.util.Identifiable should be in group 3rdParty, not angel."/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql.types. should be in group 3rdParty, not angel."/>
+  <error column="0" line="29" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql. should be in group 3rdParty, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/statistics/commonfriends/CommonFriends.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="50" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="57" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="70" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="125" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="6" line="49" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error column="10" line="99" source="org.scalastyle.scalariform.IfBraceChecker" severity="error" message="If block needs braces"/>
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+  <error column="4" line="94" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="0" line="22" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.utils.params._ is in wrong order relative to com.tencent.angel.spark.context.PSContext."/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.utils. is in wrong order relative to com.tencent.angel.graph.utils.params._."/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.SparkContext should be in group 3rdParty, not angel."/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.Transformer should be in group 3rdParty, not angel."/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.param.ParamMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="27" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.util.Identifiable should be in group 3rdParty, not angel."/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+  <error column="0" line="29" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql. should be in group 3rdParty, not angel."/>
+  <error column="0" line="30" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql.types. should be in group 3rdParty, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/BatchIter.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasSrcNodeLccCol.scala">
+  <error column="36" line="5" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/rank/pagerank/vertexcut/PageRankPSModel.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="60" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="62" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="4" line="68" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="0" line="22" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.ml.matrix. is in wrong order relative to com.tencent.angel.ml.matrix.psf.update.update.IncrementRowsParam."/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.rank.pagerank.PageRankModel is in wrong order relative to com.tencent.angel.spark.context.PSContext."/>
+  <error column="0" line="27" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="com.tencent.angel.graph.psf.pagerank._ is in wrong order relative to com.tencent.angel.graph.rank.pagerank.PageRankModel."/>
+  <error column="0" line="31" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasBeta.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/deepwalk/DeepWalkGraphPartition.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="27" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="41" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="42" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="50" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="51" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="66" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="4" line="32" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="6" line="34" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="6" line="39" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="6" line="44" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="62" line="48" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="23" line="78" source="org.scalastyle.scalariform.EnsureSingleSpaceAfterTokenChecker" severity="error" message="No space after token ,"/>
+  <error column="46" line="78" source="org.scalastyle.scalariform.EnsureSingleSpaceAfterTokenChecker" severity="error" message="No space after token ,"/>
+  <error column="0" line="21" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="it.unimi.dsi.fastutil.longs. should be in group 3rdParty, not angel."/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.mutable.ArrayBuffer should be in group javaScala, not angel."/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.util.Random should be in group javaScala, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasIsCompressed.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="19" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasUseEstimatePartition.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="23" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/params/HasSrcNodeIndex.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/GraphOps.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="29" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="43" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="57" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="0" line="22" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.rdd.RDD should be in group 3rdParty, not angel."/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql.Dataset should be in group 3rdParty, not angel."/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.reflect.ClassTag should be in group javaScala, not angel."/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/embedding/line/LINEModelRandomize.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="47" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="24" line="27" source="org.scalastyle.scalariform.TokenChecker" severity="error" message="Instead of importing implicits in scala.collection.JavaConversions._, import
+    scala.collection.JavaConverters._ and use .asScala / .asJava methods"/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="io.netty.buffer.ByteBuf should be in group 3rdParty, not angel."/>
+  <error column="0" line="27" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.collection.JavaConversions._ should be in group javaScala, not angel."/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="scala.util.Random should be in group javaScala, not angel."/>
+  <error column="42" line="27" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="6" line="86" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/utils/collection/OpenHashSet.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="159" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="162" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="222" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="225" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error source="org.scalastyle.file.NewLineAtEofChecker" severity="error" message="File must end with newline character"/>
+  <error column="20" line="21" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="20" line="104" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="52" line="116" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="52" line="148" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="9" line="165" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="19" line="200" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="20" line="208" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="19" line="255" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+  <error column="12" line="276" source="org.scalastyle.file.RegexChecker" severity="error" message="Use Javadoc style indentation for multiline comments"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/Param.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+ </file>
+ <file name="/Users/jiangyasong/Documents/gitWorkSpace/angel_from_jys/spark-on-angel/graph/src/main/scala/com/tencent/angel/graph/connectedcomponent/wcc/WCC.scala">
+  <error line="6" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="54" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error line="60" source="org.scalastyle.file.FileLineLengthChecker" severity="error" message="File line length exceeds 100 characters"/>
+  <error column="4" line="70" source="org.scalastyle.scalariform.SpaceAfterCommentStartChecker" severity="error" message="Insert a space after the start of the comment"/>
+  <error column="0" line="23" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.SparkContext should be in group 3rdParty, not angel."/>
+  <error column="0" line="24" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.Transformer should be in group 3rdParty, not angel."/>
+  <error column="0" line="25" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.param.ParamMap should be in group 3rdParty, not angel."/>
+  <error column="0" line="26" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.ml.util.Identifiable should be in group 3rdParty, not angel."/>
+  <error column="0" line="27" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql.types._ should be in group 3rdParty, not angel."/>
+  <error column="0" line="28" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.sql. should be in group 3rdParty, not angel."/>
+  <error column="0" line="29" source="org.scalastyle.scalariform.ImportOrderChecker" severity="error" message="org.apache.spark.storage.StorageLevel should be in group 3rdParty, not angel."/>
+ </file>
+</checkstyle>

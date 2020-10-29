@@ -1,0 +1,206 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>deepwalk - spark-on-angel-graph 3.1.0 API - com.tencent.angel.graph.embedding.deepwalk</title>
+          <meta name="description" content="deepwalk - spark - on - angel - graph 3.1.0 API - com.tencent.angel.graph.embedding.deepwalk" />
+          <meta name="keywords" content="deepwalk spark on angel graph 3.1.0 API com.tencent.angel.graph.embedding.deepwalk" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../../index.html';
+            var hash = 'com.tencent.angel.graph.embedding.deepwalk.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img alt="Package" src="../../../../../../lib/package_big.png" />
+        <p id="owner"><a href="../../../../../package.html" class="extype" name="com">com</a>.<a href="../../../../package.html" class="extype" name="com.tencent">tencent</a>.<a href="../../../package.html" class="extype" name="com.tencent.angel">angel</a>.<a href="../../package.html" class="extype" name="com.tencent.angel.graph">graph</a>.<a href="../package.html" class="extype" name="com.tencent.angel.graph.embedding">embedding</a></p>
+        <h1>deepwalk</h1><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.deepwalk.package" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">deepwalk</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="com.tencent.angel.graph.embedding.deepwalk.DeepWalk" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DeepWalkextendsTransformerwithHasSrcNodeIdColwithHasDstNodeIdColwithHasOutputNodeIdColwithHasOutputCoreIdColwithHasStorageLevelwithHasPartitionNumwithHasPSPartitionNumwithHasMaxIterationwithHasBatchSizewithHasArrayBoundsPathwithHasIsWeightedwithHasWeightColwithHasUseBalancePartitionwithHasNeedReplicaEdgewithHasUseEdgeBalancePartitionwithHasWalkLength"></a>
+      <a id="DeepWalk:DeepWalk"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="DeepWalk.html"><span class="name">DeepWalk</span></a><span class="result"> extends <span class="extype" name="org.apache.spark.ml.Transformer">Transformer</span> with <a href="../../utils/params/HasSrcNodeIdCol.html" class="extype" name="com.tencent.angel.graph.utils.params.HasSrcNodeIdCol">HasSrcNodeIdCol</a> with <a href="../../utils/params/HasDstNodeIdCol.html" class="extype" name="com.tencent.angel.graph.utils.params.HasDstNodeIdCol">HasDstNodeIdCol</a> with <a href="../../utils/params/HasOutputNodeIdCol.html" class="extype" name="com.tencent.angel.graph.utils.params.HasOutputNodeIdCol">HasOutputNodeIdCol</a> with <a href="../../utils/params/HasOutputCoreIdCol.html" class="extype" name="com.tencent.angel.graph.utils.params.HasOutputCoreIdCol">HasOutputCoreIdCol</a> with <a href="../../utils/params/HasStorageLevel.html" class="extype" name="com.tencent.angel.graph.utils.params.HasStorageLevel">HasStorageLevel</a> with <a href="../../utils/params/HasPartitionNum.html" class="extype" name="com.tencent.angel.graph.utils.params.HasPartitionNum">HasPartitionNum</a> with <a href="../../utils/params/HasPSPartitionNum.html" class="extype" name="com.tencent.angel.graph.utils.params.HasPSPartitionNum">HasPSPartitionNum</a> with <a href="../../utils/params/HasMaxIteration.html" class="extype" name="com.tencent.angel.graph.utils.params.HasMaxIteration">HasMaxIteration</a> with <a href="../../utils/params/HasBatchSize.html" class="extype" name="com.tencent.angel.graph.utils.params.HasBatchSize">HasBatchSize</a> with <a href="../../utils/params/HasArrayBoundsPath.html" class="extype" name="com.tencent.angel.graph.utils.params.HasArrayBoundsPath">HasArrayBoundsPath</a> with <a href="../../utils/params/HasIsWeighted.html" class="extype" name="com.tencent.angel.graph.utils.params.HasIsWeighted">HasIsWeighted</a> with <a href="../../utils/params/HasWeightCol.html" class="extype" name="com.tencent.angel.graph.utils.params.HasWeightCol">HasWeightCol</a> with <a href="../../utils/params/HasUseBalancePartition.html" class="extype" name="com.tencent.angel.graph.utils.params.HasUseBalancePartition">HasUseBalancePartition</a> with <a href="../../utils/params/HasNeedReplicaEdge.html" class="extype" name="com.tencent.angel.graph.utils.params.HasNeedReplicaEdge">HasNeedReplicaEdge</a> with <a href="../../utils/params/HasUseEdgeBalancePartition.html" class="extype" name="com.tencent.angel.graph.utils.params.HasUseEdgeBalancePartition">HasUseEdgeBalancePartition</a> with <a href="../../utils/params/HasWalkLength.html" class="extype" name="com.tencent.angel.graph.utils.params.HasWalkLength">HasWalkLength</a></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.deepwalk.package@DeepWalkextendsTransformerwithHasSrcNodeIdColwithHasDstNodeIdColwithHasOutputNodeIdColwithHasOutputCoreIdColwithHasStorageLevelwithHasPartitionNumwithHasPSPartitionNumwithHasMaxIterationwithHasBatchSizewithHasArrayBoundsPathwithHasIsWeightedwithHasWeightColwithHasUseBalancePartitionwithHasNeedReplicaEdgewithHasUseEdgeBalancePartitionwithHasWalkLength" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.deepwalk.DeepWalkGraphPartition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DeepWalkGraphPartitionextendsAnyRef"></a>
+      <a id="DeepWalkGraphPartition:DeepWalkGraphPartition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="DeepWalkGraphPartition.html"><span class="name">DeepWalkGraphPartition</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.deepwalk.package@DeepWalkGraphPartitionextendsAnyRef" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.deepwalk.DeepWalkPSModel" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DeepWalkPSModelextendsSerializable"></a>
+      <a id="DeepWalkPSModel:DeepWalkPSModel"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="DeepWalkPSModel.html"><span class="name">DeepWalkPSModel</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.deepwalk.package@DeepWalkPSModelextendsSerializable" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="com.tencent.angel.graph.embedding.deepwalk.DeepWalk" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DeepWalk"></a>
+      <a id="DeepWalk:DeepWalk"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="DeepWalk$.html"><span class="name">DeepWalk</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.deepwalk.package@DeepWalk" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.deepwalk.DeepWalkGraphPartition" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DeepWalkGraphPartition"></a>
+      <a id="DeepWalkGraphPartition:DeepWalkGraphPartition"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="DeepWalkGraphPartition$.html"><span class="name">DeepWalkGraphPartition</span></a>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.deepwalk.package@DeepWalkGraphPartition" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.deepwalk.DeepWalkPSModel" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="DeepWalkPSModel"></a>
+      <a id="DeepWalkPSModel:DeepWalkPSModel"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="DeepWalkPSModel$.html"><span class="name">DeepWalkPSModel</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.deepwalk.package@DeepWalkPSModel" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>

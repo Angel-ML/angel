@@ -1,0 +1,188 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>collection - spark-on-angel-graph 3.1.0 API - com.tencent.angel.graph.utils.collection</title>
+          <meta name="description" content="collection - spark - on - angel - graph 3.1.0 API - com.tencent.angel.graph.utils.collection" />
+          <meta name="keywords" content="collection spark on angel graph 3.1.0 API com.tencent.angel.graph.utils.collection" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../../index.html';
+            var hash = 'com.tencent.angel.graph.utils.collection.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img alt="Package" src="../../../../../../lib/package_big.png" />
+        <p id="owner"><a href="../../../../../package.html" class="extype" name="com">com</a>.<a href="../../../../package.html" class="extype" name="com.tencent">tencent</a>.<a href="../../../package.html" class="extype" name="com.tencent.angel">angel</a>.<a href="../../package.html" class="extype" name="com.tencent.angel.graph">graph</a>.<a href="../package.html" class="extype" name="com.tencent.angel.graph.utils">utils</a></p>
+        <h1>collection</h1><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.utils.collection.package" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">collection</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="com.tencent.angel.graph.utils.collection.BitSet" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="BitSetextendsSerializable"></a>
+      <a id="BitSet:BitSet"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="BitSet.html"><span class="name">BitSet</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.utils.collection.package@BitSetextendsSerializable" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A simple, fixed-size bit set implementation.</p><div class="fullcomment"><div class="comment cmt"><p>A simple, fixed-size bit set implementation. This implementation is fast because it avoids
+safety/bound checking.
+</p></div></div>
+    </li><li name="com.tencent.angel.graph.utils.collection.OpenHashMap" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="OpenHashMap[K,V]extendsIterable[(K,V)]withSerializable"></a>
+      <a id="OpenHashMap[K,V]:OpenHashMap[K,V]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="OpenHashMap.html"><span class="name">OpenHashMap</span></a><span class="tparams">[<span name="K">K</span>, <span name="V">V</span>]</span><span class="result"> extends <span class="extype" name="scala.Iterable">Iterable</span>[(<span class="extype" name="com.tencent.angel.graph.utils.collection.OpenHashMap.K">K</span>, <span class="extype" name="com.tencent.angel.graph.utils.collection.OpenHashMap.V">V</span>)] with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.utils.collection.package@OpenHashMap[K,V]extendsIterable[(K,V)]withSerializable" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A fast hash map implementation for nullable keys.</p><div class="fullcomment"><div class="comment cmt"><p>A fast hash map implementation for nullable keys. This hash map supports insertions and updates,
+but not deletions. This map is about 5X faster than java.util.HashMap, while using much less
+space overhead.</p><p>Under the hood, it uses our OpenHashSet implementation.</p><p>NOTE: when using numeric type as the value type, the user of this class should be careful to
+distinguish between the 0/0.0/0L and non-exist value
+</p></div></div>
+    </li><li name="com.tencent.angel.graph.utils.collection.OpenHashSet" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="OpenHashSet[T]extendsSerializable"></a>
+      <a id="OpenHashSet[T]:OpenHashSet[T]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="OpenHashSet.html"><span class="name">OpenHashSet</span></a><span class="tparams">[<span name="T">T</span>]</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.utils.collection.package@OpenHashSet[T]extendsSerializable" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">A simple, fast hash set optimized for non-null insertion-only use case, where keys are never
+removed.</p><div class="fullcomment"><div class="comment cmt"><p>A simple, fast hash set optimized for non-null insertion-only use case, where keys are never
+removed.</p><p>The underlying implementation uses Scala compiler's specialization to generate optimized
+storage for two primitive types (Long and Int). It is much faster than Java's standard HashSet
+while incurring much less memory overhead. This can serve as building blocks for higher level
+data structures such as an optimized HashMap.</p><p>This OpenHashSet is designed to serve as building blocks for higher level data structures
+such as an optimized hash map. Compared with standard hash set implementations, this class
+provides its various callbacks interfaces (e.g. allocateFunc, moveFunc) and interfaces to
+retrieve the position of a key in the underlying array.</p><p>It uses quadratic probing with a power-of-2 hash table size, which is guaranteed
+to explore all spaces for each key (see http://en.wikipedia.org/wiki/Quadratic_probing).
+</p></div></div>
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="com.tencent.angel.graph.utils.collection.OpenHashSet" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="OpenHashSet"></a>
+      <a id="OpenHashSet:OpenHashSet"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="OpenHashSet$.html"><span class="name">OpenHashSet</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.utils.collection.package@OpenHashSet" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>

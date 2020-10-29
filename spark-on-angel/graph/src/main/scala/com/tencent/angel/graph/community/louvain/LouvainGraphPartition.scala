@@ -16,16 +16,16 @@
  */
 package com.tencent.angel.graph.community.louvain
 
-import com.tencent.angel.ml.math2.vector.{IntFloatVector, IntIntVector}
+import com.tencent.angel.ml.math2.vector.{LongFloatVector, LongLongVector}
 import org.apache.spark.SparkPrivateClassProxy
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 
-class LouvainPartition(
-                             var superNodes: Array[Int],
-                             var adj: Array[Array[Int]],
+class LouvainGraphPartition(
+                             var superNodes: Array[Long],
+                             var adj: Array[Array[Long]],
                              var adjWeights: Array[Array[Float]],
                              var partRelatedNodeWeights: Array[Float]) extends Serializable {
 
@@ -34,7 +34,14 @@ class LouvainPartition(
 
   private lazy val partRelatedNodeIds = (adj.flatten ++ superNodes).distinct
 
-  def partFolding(model: LouvainPSModel, batchSize: Int): Iterator[((Int, Int), Float)] = {
+  /**
+   * get the list(community of node,community of neighbor j)
+   *
+   * @param model     louvain ps model
+   * @param batchSize the compute size
+   * @return new edges(conver node-neighbor to community of node-community of neighbor j)
+   */
+  def partFolding(model: LouvainPSModel, batchSize: Int): Iterator[((Long, Long), Float)] = {
     this.makeBatchIterator(batchSize).flatMap { batch =>
       val (start, end) = batch
       val nodes = (this.adj.slice(start, end).flatten ++ this.superNodes.slice(start, end)).distinct
@@ -59,20 +66,42 @@ class LouvainPartition(
     }
   }
 
-  def partCommunityIds(model: LouvainPSModel): Array[Int] = {
+  /**
+   * get the distinct communities in the partition
+   *
+   * @param model louvain ps model
+   * @return
+   */
+  def partCommunityIds(model: LouvainPSModel): Array[Long] = {
     model.getCommunities(superNodes).distinct
   }
 
-  def partComm2nodeParis(model: LouvainPSModel): Array[(Int, Int)] = {
+  /**
+   * get the pair(community,node) in the partition
+   *
+   * @param model louvain ps model
+   * @return
+   */
+  def partComm2nodeParis(model: LouvainPSModel): Array[(Long, Long)] = {
     val pairs = model.getCommunities(superNodes).zip(superNodes)
     pairs
   }
 
+
+  /**
+   * move each node to neighbors' community in order to get the max modularity gain
+   *
+   * @param model       the ps model
+   * @param totalWeight 2m for unweighted graph ; 2*sum(edge weights) for weighted graph
+   * @param batchSize   the compute unit
+   * @param shuffle     whether to shuffle data
+   */
   def modularityOptimize(
                           model: LouvainPSModel,
                           totalWeight: Double,
                           batchSize: Int,
-                          shuffle: Boolean = true): Unit = {
+                          shuffle: Boolean = true,
+                          preserveRate: Double): Unit = {
 
     if (shuffle) {
       this.shuffle()
@@ -82,14 +111,22 @@ class LouvainPartition(
       val (start, end) = batch
       val nodes = (this.adj.slice(start, end).flatten ++ this.superNodes.slice(start, end)).distinct
       val (id2comm, comm2info) = model.getModelPart(nodes)
-      val updatedNodeBuffer = new ArrayBuffer[Int]()
-      val updatedCommBuffer = new ArrayBuffer[Int]()
-      val communityWeightDelta = SparkPrivateClassProxy.createOpenHashMap[Int, Float]()
+      val updatedNodeBuffer = new ArrayBuffer[Long]()
+      val updatedCommBuffer = new ArrayBuffer[Long]()
+      val communityWeightDelta = SparkPrivateClassProxy.createOpenHashMap[Long, Float]()
 
       for (i <- start until end) {
         val node = superNodes(i)
         val curComm = id2comm.get(node)
-        val best = bestCommunityInNeighbors(i, id2comm, comm2info, totalWeight)
+        //val best = bestCommunityInNeighbors(i, id2comm, comm2info, totalWeight)
+
+        val best = if (Random.nextDouble() > preserveRate) {
+          bestCommunityInNeighbors(i, id2comm, comm2info, totalWeight)
+        }
+        else {
+          curComm
+        }
+
         if (best != curComm) {
           updatedNodeBuffer += node
           updatedCommBuffer += best
@@ -105,6 +142,12 @@ class LouvainPartition(
     }
   }
 
+  /**
+   * make the batch iterator list
+   *
+   * @param batchSize
+   * @return
+   */
   private def makeBatchIterator(batchSize: Int): Iterator[(Int, Int)] = new Iterator[(Int, Int)] {
     var index = 0
 
@@ -121,13 +164,21 @@ class LouvainPartition(
 
   // move node to a single node community, with delta = (k_i * \sigma_tol - k_i^2 / 2m - k_{i,in}) / m
   // move node to target community, with delta = (k_{i,in} - k_i * \sigma_tol / 2m) / m
+  /**
+   *
+   * @param i         node index
+   * @param id2comm   map(node id -> community id )
+   * @param comm2info map(community id -> community weight )
+   * @param total     2m for unweighted graph ; 2*sum(edge weights) for weighted graph
+   * @return the best community id of node i
+   */
   private def bestCommunityInNeighbors(
                                         i: Int,
-                                        id2comm: IntIntVector,
-                                        comm2info: IntFloatVector,
-                                        total: Double): Int = {
+                                        id2comm: LongLongVector,
+                                        comm2info: LongFloatVector,
+                                        total: Double): Long = {
 
-    val comm2edgeWeight = SparkPrivateClassProxy.createOpenHashMap[Int, Float]()
+    val comm2edgeWeight = SparkPrivateClassProxy.createOpenHashMap[Long, Float]()
     for (j <- this.adj(i).indices) {
       comm2edgeWeight.changeValue(id2comm.get(this.adj(i)(j)), this.adjWeights(i)(j), _ + this.adjWeights(i)(j))
     }
@@ -147,6 +198,9 @@ class LouvainPartition(
     best
   }
 
+  /**
+   * shuffle the data in partition randomly
+   */
   private def shuffle(): Unit = {
     val newIndices = Random.shuffle(this.superNodes.indices.toList).toArray
     this.superNodes = newIndices.map(this.superNodes.apply)
@@ -160,7 +214,7 @@ class LouvainPartition(
   }
 
   private[louvain] def sumOfWeightsBetweenCommunity(model: LouvainPSModel): Double = {
-    val local2comm = model.node2CommunityPSVector.pull(partRelatedNodeIds).asInstanceOf[IntIntVector]
+    val local2comm = model.node2CommunityPSVector.pull(partRelatedNodeIds).asInstanceOf[LongLongVector]
     var weight = 0.0
     for (i <- superNodes.indices) {
       val comm = local2comm.get(superNodes(i))
@@ -173,13 +227,14 @@ class LouvainPartition(
     weight
   }
 
-  private[louvain] def node2community(model: LouvainPSModel): Array[(Int, Int)] = {
+  private[louvain] def node2community(model: LouvainPSModel): Array[(Long, Long)] = {
     model.getNode2commPairsArr(this.superNodes.clone())
   }
 
   private[louvain] def updateNodeWeightsToPS(model: LouvainPSModel): Unit = {
     model.setNode2commAndComm2weight(superNodes, this.partRelatedNodeWeights)
-    println(s"first 5 is ${this.partRelatedNodeIds.take(5).mkString(",")}")
+    //println(s"first 5 is ${this.partRelatedNodeIds.take(5).mkString(",")}")
   }
+
 }
 

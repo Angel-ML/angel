@@ -1,0 +1,1189 @@
+<!DOCTYPE html >
+<html>
+        <head>
+          <title>Word2VecModel - spark-on-angel-graph 3.1.0 API - com.tencent.angel.graph.embedding.word2vec.Word2VecModel</title>
+          <meta name="description" content="Word2VecModel - spark - on - angel - graph 3.1.0 API - com.tencent.angel.graph.embedding.word2vec.Word2VecModel" />
+          <meta name="keywords" content="Word2VecModel spark on angel graph 3.1.0 API com.tencent.angel.graph.embedding.word2vec.Word2VecModel" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript" src="../../../../../../lib/jquery.js" id="jquery-js"></script>
+      <script type="text/javascript" src="../../../../../../lib/jquery-ui.js"></script>
+      <script type="text/javascript" src="../../../../../../lib/template.js"></script>
+      <script type="text/javascript" src="../../../../../../lib/tools.tooltip.js"></script>
+      
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../../../index.html';
+            var hash = 'com.tencent.angel.graph.embedding.word2vec.Word2VecModel';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="type">
+      <div id="definition">
+        <a href="Word2VecModel$.html" title="See companion object"><img alt="Class/Object" src="../../../../../../lib/class_to_object_big.png" /></a>
+        <p id="owner"><a href="../../../../../package.html" class="extype" name="com">com</a>.<a href="../../../../package.html" class="extype" name="com.tencent">tencent</a>.<a href="../../../package.html" class="extype" name="com.tencent.angel">angel</a>.<a href="../../package.html" class="extype" name="com.tencent.angel.graph">graph</a>.<a href="../package.html" class="extype" name="com.tencent.angel.graph.embedding">embedding</a>.<a href="package.html" class="extype" name="com.tencent.angel.graph.embedding.word2vec">word2vec</a></p>
+        <h1><a href="Word2VecModel$.html" title="See companion object">Word2VecModel</a></h1><h3><span class="morelinks"><div>
+            Related Docs:
+            <a href="Word2VecModel$.html" title="See companion object">object Word2VecModel</a>
+            | <a href="package.html" class="extype" name="com.tencent.angel.graph.embedding.word2vec">package word2vec</a>
+          </div></span></h3><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <span class="name">Word2VecModel</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
+          <span class="toggle">Linear Supertypes</span>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+        </div></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        <div id="order">
+              <span class="filtertype">Ordering</span>
+              <ol>
+                
+                <li class="alpha in"><span>Alphabetic</span></li>
+                <li class="inherit out"><span>By Inheritance</span></li>
+              </ol>
+            </div>
+        <div id="ancestors">
+                <span class="filtertype">Inherited<br />
+                </span>
+                <ol id="linearization">
+                  <li class="in" name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel"><span>Word2VecModel</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                </ol>
+              </div><div id="ancestors">
+            <span class="filtertype"></span>
+            <ol>
+              <li class="hideall out"><span>Hide All</span></li>
+              <li class="showall in"><span>Show All</span></li>
+            </ol>
+          </div>
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        <div id="constructors" class="members">
+              <h3>Instance Constructors</h3>
+              <ol><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;(params:com.tencent.angel.graph.embedding.word2vec.Word2VecParam):com.tencent.angel.graph.embedding.word2vec.Word2VecModel"></a>
+      <a id="&lt;init&gt;:Word2VecModel"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">new</span>
+      </span>
+      <span class="symbol">
+        <span class="name">Word2VecModel</span><span class="params">(<span name="params">params: <a href="Word2VecParam.html" class="extype" name="com.tencent.angel.graph.embedding.word2vec.Word2VecParam">Word2VecParam</a></span>)</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@&lt;init&gt;(params:com.tencent.angel.graph.embedding.word2vec.Word2VecParam):com.tencent.angel.graph.embedding.word2vec.Word2VecModel" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;(numNode:Int,embeddingDim:Int,numPart:Int,maxLength:Int,numNodesPerRow:Int,seed:Int,learningRate:Float,decayRate:Float):com.tencent.angel.graph.embedding.word2vec.Word2VecModel"></a>
+      <a id="&lt;init&gt;:Word2VecModel"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">new</span>
+      </span>
+      <span class="symbol">
+        <span class="name">Word2VecModel</span><span class="params">(<span name="numNode">numNode: <span class="extype" name="scala.Int">Int</span></span>, <span name="embeddingDim">embeddingDim: <span class="extype" name="scala.Int">Int</span></span>, <span name="numPart">numPart: <span class="extype" name="scala.Int">Int</span></span>, <span name="maxLength">maxLength: <span class="extype" name="scala.Int">Int</span></span>, <span name="numNodesPerRow">numNodesPerRow: <span class="extype" name="scala.Int">Int</span></span>, <span name="seed">seed: <span class="extype" name="scala.Int">Int</span> = <span class="symbol">Random.nextInt</span></span>, <span name="learningRate">learningRate: <span class="extype" name="scala.Float">Float</span></span>, <span name="decayRate">decayRate: <span class="extype" name="scala.Float">Float</span></span>)</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@&lt;init&gt;(numNode:Int,embeddingDim:Int,numPart:Int,maxLength:Int,numNodesPerRow:Int,seed:Int,learningRate:Float,decayRate:Float):com.tencent.angel.graph.embedding.word2vec.Word2VecModel" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="scala.AnyRef#!=" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="!=(x$1:Any):Boolean"></a>
+      <a id="!=(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $bang$eq" class="name">!=</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@!=(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef###" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="##():Int"></a>
+      <a id="##():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $hash$hash" class="name">##</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@##():Int" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#==" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="==(x$1:Any):Boolean"></a>
+      <a id="==(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span title="gt4s: $eq$eq" class="name">==</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@==(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#adjust" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="adjust(srcNodes:Array[Int],destNodes:Array[Int],negativeSamples:Array[Array[Int]],srcFeats:it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap[Array[Float]],targetFeats:it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap[Array[Float]],negative:Int,dots:Array[Float]):(it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap[Array[Float]],it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap[Array[Float]])"></a>
+      <a id="adjust(Array[Int],Array[Int],Array[Array[Int]],Int2ObjectOpenHashMap[Array[Float]],Int2ObjectOpenHashMap[Array[Float]],Int,Array[Float]):(Int2ObjectOpenHashMap[Array[Float]],Int2ObjectOpenHashMap[Array[Float]])"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">adjust</span><span class="params">(<span name="srcNodes">srcNodes: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="destNodes">destNodes: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="negativeSamples">negativeSamples: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]]</span>, <span name="srcFeats">srcFeats: <span class="extype" name="it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap">Int2ObjectOpenHashMap</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]]</span>, <span name="targetFeats">targetFeats: <span class="extype" name="it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap">Int2ObjectOpenHashMap</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]]</span>, <span name="negative">negative: <span class="extype" name="scala.Int">Int</span></span>, <span name="dots">dots: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>)</span><span class="result">: (<span class="extype" name="it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap">Int2ObjectOpenHashMap</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]], <span class="extype" name="it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap">Int2ObjectOpenHashMap</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]])</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@adjust(srcNodes:Array[Int],destNodes:Array[Int],negativeSamples:Array[Array[Int]],srcFeats:it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap[Array[Float]],targetFeats:it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap[Array[Float]],negative:Int,dots:Array[Float]):(it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap[Array[Float]],it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap[Array[Float]])" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#arraysDot" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="arraysDot(x:Array[Float],y:Array[Float]):Float"></a>
+      <a id="arraysDot(Array[Float],Array[Float]):Float"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">arraysDot</span><span class="params">(<span name="x">x: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="y">y: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Float">Float</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@arraysDot(x:Array[Float],y:Array[Float]):Float" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="asInstanceOf[T0]:T0"></a>
+      <a id="asInstanceOf[T0]:T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">asInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Any.asInstanceOf.T0">T0</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@asInstanceOf[T0]:T0" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#avgCalTime" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="avgCalTime:Long"></a>
+      <a id="avgCalTime:Long"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">avgCalTime</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@avgCalTime:Long" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#avgCalUpdateTime" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="avgCalUpdateTime:Long"></a>
+      <a id="avgCalUpdateTime:Long"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">avgCalUpdateTime</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@avgCalUpdateTime:Long" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#avgMakeParamTime" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="avgMakeParamTime:Long"></a>
+      <a id="avgMakeParamTime:Long"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">avgMakeParamTime</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@avgMakeParamTime:Long" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#avgPullTime" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="avgPullTime:Long"></a>
+      <a id="avgPullTime:Long"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">avgPullTime</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@avgPullTime:Long" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#avgPushTime" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="avgPushTime:Long"></a>
+      <a id="avgPushTime:Long"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">avgPushTime</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@avgPushTime:Long" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#axpy" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="axpy(y:Array[Float],x:Array[Float],a:Float):Unit"></a>
+      <a id="axpy(Array[Float],Array[Float],Float):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">axpy</span><span class="params">(<span name="y">y: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="x">x: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="a">a: <span class="extype" name="scala.Float">Float</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@axpy(y:Array[Float],x:Array[Float],a:Float):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#checkpointAndSaveIfNeed" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="checkpointAndSaveIfNeed(epoch:Int,params:com.tencent.angel.graph.embedding.word2vec.Word2VecParam,path:String):Unit"></a>
+      <a id="checkpointAndSaveIfNeed(Int,Word2VecParam,String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">checkpointAndSaveIfNeed</span><span class="params">(<span name="epoch">epoch: <span class="extype" name="scala.Int">Int</span></span>, <span name="params">params: <a href="Word2VecParam.html" class="extype" name="com.tencent.angel.graph.embedding.word2vec.Word2VecParam">Word2VecParam</a></span>, <span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@checkpointAndSaveIfNeed(epoch:Int,params:com.tencent.angel.graph.embedding.word2vec.Word2VecParam,path:String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <p class="shortcomment cmt">Write checkpoint or model result if need
+</p>
+    </li><li name="scala.AnyRef#clone" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="clone():Object"></a>
+      <a id="clone():AnyRef"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@clone():Object" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.CloneNotSupportedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#div" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="div(x:Array[Float],f:Float):Unit"></a>
+      <a id="div(Array[Float],Float):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">div</span><span class="params">(<span name="x">x: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="f">f: <span class="extype" name="scala.Float">Float</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@div(x:Array[Float],f:Float):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#doGrad" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="doGrad(dots:Array[Float],negative:Int,alpha:Float):Float"></a>
+      <a id="doGrad(Array[Float],Int,Float):Float"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">doGrad</span><span class="params">(<span name="dots">dots: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="negative">negative: <span class="extype" name="scala.Int">Int</span></span>, <span name="alpha">alpha: <span class="extype" name="scala.Float">Float</span></span>)</span><span class="result">: <span class="extype" name="scala.Float">Float</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@doGrad(dots:Array[Float],negative:Int,alpha:Float):Float" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#dot" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="dot(srcNodes:Array[Int],destNodes:Array[Int],negativeSamples:Array[Array[Int]],srcFeats:it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap[Array[Float]],targetFeats:it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap[Array[Float]],negative:Int):Array[Float]"></a>
+      <a id="dot(Array[Int],Array[Int],Array[Array[Int]],Int2ObjectOpenHashMap[Array[Float]],Int2ObjectOpenHashMap[Array[Float]],Int):Array[Float]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">dot</span><span class="params">(<span name="srcNodes">srcNodes: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="destNodes">destNodes: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="negativeSamples">negativeSamples: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]]</span>, <span name="srcFeats">srcFeats: <span class="extype" name="it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap">Int2ObjectOpenHashMap</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]]</span>, <span name="targetFeats">targetFeats: <span class="extype" name="it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap">Int2ObjectOpenHashMap</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]]</span>, <span name="negative">negative: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@dot(srcNodes:Array[Int],destNodes:Array[Int],negativeSamples:Array[Array[Int]],srcFeats:it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap[Array[Float]],targetFeats:it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap[Array[Float]],negative:Int):Array[Float]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="scala.AnyRef#eq" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="eq(x$1:AnyRef):Boolean"></a>
+      <a id="eq(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">eq</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@eq(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#equals" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="equals(x$1:Any):Boolean"></a>
+      <a id="equals(Any):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">equals</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Any">Any</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@equals(x$1:Any):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="finalize():Unit"></a>
+      <a id="finalize():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@finalize():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="symbol">classOf[java.lang.Throwable]</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#getClass" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="getClass():Class[_]"></a>
+      <a id="getClass():Class[_]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getClass</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.Class">Class</span>[_]</span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@getClass():Class[_]" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="hashCode():Int"></a>
+      <a id="hashCode():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">hashCode</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@hashCode():Int" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#incCalTime" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="incCalTime(startTs:Long):Unit"></a>
+      <a id="incCalTime(Long):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">incCalTime</span><span class="params">(<span name="startTs">startTs: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@incCalTime(startTs:Long):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#incCalUpdateTime" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="incCalUpdateTime(startTs:Long):Unit"></a>
+      <a id="incCalUpdateTime(Long):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">incCalUpdateTime</span><span class="params">(<span name="startTs">startTs: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@incCalUpdateTime(startTs:Long):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#incCallNum" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="incCallNum():Unit"></a>
+      <a id="incCallNum():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">incCallNum</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@incCallNum():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#incMakeParamTime" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="incMakeParamTime(startTs:Long):Unit"></a>
+      <a id="incMakeParamTime(Long):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">incMakeParamTime</span><span class="params">(<span name="startTs">startTs: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@incMakeParamTime(startTs:Long):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#incPullTime" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="incPullTime(startTs:Long):Unit"></a>
+      <a id="incPullTime(Long):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">incPullTime</span><span class="params">(<span name="startTs">startTs: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@incPullTime(startTs:Long):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#incPushTime" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="incPushTime(startTs:Long):Unit"></a>
+      <a id="incPushTime(Long):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">incPushTime</span><span class="params">(<span name="startTs">startTs: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@incPushTime(startTs:Long):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <a id="isInstanceOf[T0]:Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">isInstanceOf</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@isInstanceOf[T0]:Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#load" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="load(modelPath:String):Unit"></a>
+      <a id="load(String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">load</span><span class="params">(<span name="modelPath">modelPath: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@load(modelPath:String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#matrixId" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="matrixId:Int"></a>
+      <a id="matrixId:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">matrixId</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@matrixId:Int" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#matrixName" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="matrixName:String"></a>
+      <a id="matrixName:String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">matrixName</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@matrixName:String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#mc" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="mc:com.tencent.angel.ml.matrix.MatrixContext"></a>
+      <a id="mc:MatrixContext"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">mc</span><span class="result">: <span class="extype" name="com.tencent.angel.ml.matrix.MatrixContext">MatrixContext</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@mc:com.tencent.angel.ml.matrix.MatrixContext" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#merge" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="merge(updateCounter:it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap,updates:it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap[Array[Float]],nodeId:Int,update:Array[Float],learningRate:Float):Int"></a>
+      <a id="merge(Int2IntOpenHashMap,Int2ObjectOpenHashMap[Array[Float]],Int,Array[Float],Float):Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">merge</span><span class="params">(<span name="updateCounter">updateCounter: <span class="extype" name="it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap">Int2IntOpenHashMap</span></span>, <span name="updates">updates: <span class="extype" name="it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap">Int2ObjectOpenHashMap</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]]</span>, <span name="nodeId">nodeId: <span class="extype" name="scala.Int">Int</span></span>, <span name="update">update: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>, <span name="learningRate">learningRate: <span class="extype" name="scala.Float">Float</span></span>)</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@merge(updateCounter:it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap,updates:it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap[Array[Float]],nodeId:Int,update:Array[Float],learningRate:Float):Int" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#merge" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="merge(inputUpdateCounter:it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap,inputUpdates:it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap[Array[Float]],nodeId:Int,g:Float,update:Array[Float]):Int"></a>
+      <a id="merge(Int2IntOpenHashMap,Int2ObjectOpenHashMap[Array[Float]],Int,Float,Array[Float]):Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">merge</span><span class="params">(<span name="inputUpdateCounter">inputUpdateCounter: <span class="extype" name="it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap">Int2IntOpenHashMap</span></span>, <span name="inputUpdates">inputUpdates: <span class="extype" name="it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap">Int2ObjectOpenHashMap</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]]</span>, <span name="nodeId">nodeId: <span class="extype" name="scala.Int">Int</span></span>, <span name="g">g: <span class="extype" name="scala.Float">Float</span></span>, <span name="update">update: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Float">Float</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@merge(inputUpdateCounter:it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap,inputUpdates:it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap[Array[Float]],nodeId:Int,g:Float,update:Array[Float]):Int" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="ne(x$1:AnyRef):Boolean"></a>
+      <a id="ne(AnyRef):Boolean"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ne</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.AnyRef">AnyRef</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@ne(x$1:AnyRef):Boolean" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notify" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notify():Unit"></a>
+      <a id="notify():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notify</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@notify():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#notifyAll" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="notifyAll():Unit"></a>
+      <a id="notifyAll():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">notifyAll</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@notifyAll():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#optimize" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="optimize(batch:Array[Array[Int]],windowSize:Int,numNegSample:Int,maxIndex:Int,learningRate:Float):Double"></a>
+      <a id="optimize(Array[Array[Int]],Int,Int,Int,Float):Double"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">optimize</span><span class="params">(<span name="batch">batch: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]]</span>, <span name="windowSize">windowSize: <span class="extype" name="scala.Int">Int</span></span>, <span name="numNegSample">numNegSample: <span class="extype" name="scala.Int">Int</span></span>, <span name="maxIndex">maxIndex: <span class="extype" name="scala.Int">Int</span></span>, <span name="learningRate">learningRate: <span class="extype" name="scala.Float">Float</span></span>)</span><span class="result">: <span class="extype" name="scala.Double">Double</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@optimize(batch:Array[Array[Int]],windowSize:Int,numNegSample:Int,maxIndex:Int,learningRate:Float):Double" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#optimizeOneBatch" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="optimizeOneBatch(batchSize:Int,srcNodes:Array[Int],dstNodes:Array[Int],negativeSamples:Array[Array[Int]],numNegSample:Int,learningRate:Float):Double"></a>
+      <a id="optimizeOneBatch(Int,Array[Int],Array[Int],Array[Array[Int]],Int,Float):Double"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">optimizeOneBatch</span><span class="params">(<span name="batchSize">batchSize: <span class="extype" name="scala.Int">Int</span></span>, <span name="srcNodes">srcNodes: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="dstNodes">dstNodes: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]</span>, <span name="negativeSamples">negativeSamples: <span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]]</span>, <span name="numNegSample">numNegSample: <span class="extype" name="scala.Int">Int</span></span>, <span name="learningRate">learningRate: <span class="extype" name="scala.Float">Float</span></span>)</span><span class="result">: <span class="extype" name="scala.Double">Double</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@optimizeOneBatch(batchSize:Int,srcNodes:Array[Int],dstNodes:Array[Int],negativeSamples:Array[Array[Int]],numNegSample:Int,learningRate:Float):Double" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#psMatrix" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="psMatrix:com.tencent.angel.spark.models.PSMatrix"></a>
+      <a id="psMatrix:PSMatrix"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">psMatrix</span><span class="result">: <span class="extype" name="com.tencent.angel.spark.models.PSMatrix">PSMatrix</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@psMatrix:com.tencent.angel.spark.models.PSMatrix" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#randomInitialize" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="randomInitialize(seed:Int):Unit"></a>
+      <a id="randomInitialize(Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">randomInitialize</span><span class="params">(<span name="seed">seed: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@randomInitialize(seed:Int):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#save" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="save(modelPath:String):Unit"></a>
+      <a id="save(String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">save</span><span class="params">(<span name="modelPath">modelPath: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@save(modelPath:String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#save" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="save(modelPathRoot:String,epoch:Int):Unit"></a>
+      <a id="save(String,Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">save</span><span class="params">(<span name="modelPathRoot">modelPathRoot: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="epoch">epoch: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@save(modelPathRoot:String,epoch:Int):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#ssScheduler" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ssScheduler:com.tencent.angel.ml.core.optimizer.decayer.StepSizeScheduler"></a>
+      <a id="ssScheduler:StepSizeScheduler"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ssScheduler</span><span class="result">: <span class="extype" name="com.tencent.angel.ml.core.optimizer.decayer.StepSizeScheduler">StepSizeScheduler</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@ssScheduler:com.tencent.angel.ml.core.optimizer.decayer.StepSizeScheduler" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
+      <a id="synchronized[T0](⇒T0):T0"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">synchronized</span><span class="tparams">[<span name="T0">T0</span>]</span><span class="params">(<span name="arg0">arg0: ⇒ <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>)</span><span class="result">: <span class="extype" name="java.lang.AnyRef.synchronized.T0">T0</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@synchronized[T0](x$1:=&gt;T0):T0" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="scala.AnyRef#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="toString():String"></a>
+      <a id="toString():String"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">toString</span><span class="params">()</span><span class="result">: <span class="extype" name="java.lang.String">String</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@toString():String" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#totalCalTime" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="totalCalTime:Long"></a>
+      <a id="totalCalTime:Long"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">var</span>
+      </span>
+      <span class="symbol">
+        <span class="name">totalCalTime</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@totalCalTime:Long" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#totalCallNum" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="totalCallNum:Long"></a>
+      <a id="totalCallNum:Long"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">var</span>
+      </span>
+      <span class="symbol">
+        <span class="name">totalCallNum</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@totalCallNum:Long" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#totalMakeGradTime" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="totalMakeGradTime:Long"></a>
+      <a id="totalMakeGradTime:Long"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">var</span>
+      </span>
+      <span class="symbol">
+        <span class="name">totalMakeGradTime</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@totalMakeGradTime:Long" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#totalMakeParamTime" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="totalMakeParamTime:Long"></a>
+      <a id="totalMakeParamTime:Long"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">var</span>
+      </span>
+      <span class="symbol">
+        <span class="name">totalMakeParamTime</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@totalMakeParamTime:Long" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#totalPullTime" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="totalPullTime:Long"></a>
+      <a id="totalPullTime:Long"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">var</span>
+      </span>
+      <span class="symbol">
+        <span class="name">totalPullTime</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@totalPullTime:Long" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#totalPushTime" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="totalPushTime:Long"></a>
+      <a id="totalPushTime:Long"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">var</span>
+      </span>
+      <span class="symbol">
+        <span class="name">totalPushTime</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@totalPushTime:Long" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#totalWaitPullTime" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="totalWaitPullTime:Long"></a>
+      <a id="totalWaitPullTime:Long"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">var</span>
+      </span>
+      <span class="symbol">
+        <span class="name">totalWaitPullTime</span><span class="result">: <span class="extype" name="scala.Long">Long</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@totalWaitPullTime:Long" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="com.tencent.angel.graph.embedding.word2vec.Word2VecModel#train" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="train(corpus:org.apache.spark.rdd.RDD[Array[Int]],params:com.tencent.angel.graph.embedding.word2vec.Word2VecParam,path:String):Unit"></a>
+      <a id="train(RDD[Array[Int]],Word2VecParam,String):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">train</span><span class="params">(<span name="corpus">corpus: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<span class="extype" name="scala.Array">Array</span>[<span class="extype" name="scala.Int">Int</span>]]</span>, <span name="params">params: <a href="Word2VecParam.html" class="extype" name="com.tencent.angel.graph.embedding.word2vec.Word2VecParam">Word2VecParam</a></span>, <span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@train(corpus:org.apache.spark.rdd.RDD[Array[Int]],params:com.tencent.angel.graph.embedding.word2vec.Word2VecParam,path:String):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait():Unit"></a>
+      <a id="wait():Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@wait():Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long,x$2:Int):Unit"></a>
+      <a id="wait(Long,Int):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>, <span name="arg1">arg1: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@wait(x$1:Long,x$2:Int):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="wait(x$1:Long):Unit"></a>
+      <a id="wait(Long):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">final </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">wait</span><span class="params">(<span name="arg0">arg0: <span class="extype" name="scala.Long">Long</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4><span class="permalink">
+      <a href="../../../../../../index.html#com.tencent.angel.graph.embedding.word2vec.Word2VecModel@wait(x$1:Long):Unit" title="Permalink" target="_top">
+        <img src="../../../../../../lib/permalink.png" alt="Permalink" />
+      </a>
+    </span>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+                <span class="name">@throws</span><span class="args">(<span>
+      
+      <span class="defval" name="classOf[java.lang.InterruptedException]">...</span>
+    </span>)</span>
+              
+        </dd></dl></div>
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        <div class="parent" name="scala.Serializable">
+              <h3>Inherited from <span class="extype" name="scala.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="java.io.Serializable">
+              <h3>Inherited from <span class="extype" name="java.io.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="scala.AnyRef">
+              <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
+            </div><div class="parent" name="scala.Any">
+              <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
+            </div>
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+
+
+    </body>
+      </html>
