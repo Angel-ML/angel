@@ -18,7 +18,7 @@ package com.tencent.angel.spark.examples.local
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.graph.community.louvain.Louvain
+import com.tencent.angel.graph.community.louvain.{Louvain}
 import com.tencent.angel.graph.utils.GraphIO
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
@@ -27,18 +27,20 @@ object LouvainExample {
 
   def main(args: Array[String]): Unit = {
     val mode = "local"
-    val input = "data/bc/edge"
+    val input = "data/bc/karate_club_network.txt"
     val output = "model/louvain"
-    val partitionNum = 4
+    val partitionNum = 1
     val storageLevel = StorageLevel.MEMORY_ONLY
-    val numFold = 2
-    val numOpt = 5
-    val batchSize = 100
-    val enableCheck = true
+    val numFold = 5
+    val numOpt = 10
+    val batchSize = 50
+    val enableCheck = false
     val eps = 0.0
     val bufferSize = 100000
     val isWeighted = false
-    val psPartitionNum = 2
+    val psPartitionNum = 1
+    val preserveRate = 0.0
+    val useMergeStrategy  = true
 
     start(mode)
     val louvain = new Louvain()
@@ -52,6 +54,9 @@ object LouvainExample {
       .setBufferSize(bufferSize)
       .setIsWeighted(isWeighted)
       .setPSPartitionNum(psPartitionNum)
+      .setPreserveRate(preserveRate)
+      .setUseMergeStrategy(useMergeStrategy)
+
     val df = GraphIO.load(input, isWeighted = isWeighted)
     val mapping = louvain.transform(df)
     GraphIO.save(mapping, output)

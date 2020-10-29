@@ -16,10 +16,8 @@
  */
 package com.tencent.angel.graph.community.louvain
 
-import com.tencent.angel.ml.math2.vector.LongIntVector
+import com.tencent.angel.ml.math2.vector.{LongFloatVector, LongLongVector}
 import com.tencent.angel.graph.utils.params._
-import com.tencent.angel.graph.utils.NodeIndexer
-import com.tencent.angel.graph.utils.io.Log
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param._
 import org.apache.spark.ml.util.Identifiable
@@ -28,11 +26,6 @@ import org.apache.spark.sql.types.{LongType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.storage.StorageLevel
 
-/**
-  * Louvain algorithm implementation
-  *
-  * @param uid
-  */
 class Louvain(override val uid: String) extends Transformer
   with HasWeightCol with HasSrcNodeIdCol with HasDstNodeIdCol
   with HasOutputNodeIdCol with HasOutputCommunityIdCol
@@ -43,6 +36,8 @@ class Louvain(override val uid: String) extends Transformer
   final val numOpt = new IntParam(this, "numOpt", "numOpt")
   final val numFold = new IntParam(this, "numFold", "numFold")
   final val eps = new DoubleParam(this, "eps", "eps")
+  final val preserveRate = new DoubleParam(this, "preserveRate", "preserveRate")
+  final val useMergeStrategy = new BooleanParam(this, "useMergeStrategy", "useMergeStrategy")
 
   final def setNumOpt(num: Int): this.type = set(numOpt, num)
 
@@ -50,71 +45,79 @@ class Louvain(override val uid: String) extends Transformer
 
   final def setEps(error: Double): this.type = set(eps, error)
 
+  final def setPreserveRate(rate: Double): this.type = set(preserveRate, rate)
+
+  final def setUseMergeStrategy(use: Boolean): this.type = set(useMergeStrategy, use)
+
   final def getNumOpt: Int = $(numOpt)
 
   final def getNumFold: Int = $(numFold)
 
   final def getEps: Double = $(eps)
 
-  setDefault(numOpt, 10)
-  setDefault(numFold, 3)
-  setDefault(eps, 0.0)
+  final def getPreserveRate: Double = $(preserveRate)
 
-  def this() = this(Identifiable.randomUID("Louvain"))
+  final def getUseMergeStrategy: Boolean = $(useMergeStrategy)
+
+
+  setDefault(numOpt, 5)
+  setDefault(numFold, 2)
+  setDefault(eps, 0.0)
+  setDefault(preserveRate, 0.0)
+  setDefault(useMergeStrategy, true)
+
+  def this() = this(Identifiable.randomUID("louvain"))
 
   override def transform(dataset: Dataset[_]): DataFrame = {
-
     assert(dataset.sparkSession.sparkContext.getCheckpointDir.nonEmpty, "set checkpoint dir first")
-    //edges
+    /**
+     * edges data preprocessing
+     * delete null line;delete self edges;delete 0 weight edges;
+     * sum the weights of multiple edges
+     * repartition the edges rdd in partitionNum;persist the rdd in dist
+     */
     val rawEdges: RDD[((Long, Long), Float)] = {
       if ($(isWeighted)) {
         dataset.select($(srcNodeIdCol), $(dstNodeIdCol), $(weightCol)).rdd
-          .filter(row => !row.anyNull)
-          .map(row => (row.getLong(0), row.getLong(1), row.getFloat(2)))
+          .filter(row => !row.anyNull && row.getLong(0) != row.getLong(1) && row.getFloat(2) != 0.0).map { row =>
+          (row.getLong(0), row.getLong(1), row.getFloat(2))
+        }
       } else {
         dataset.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd
-          .filter(row => !row.anyNull)
-          .map(row => (row.getLong(0), row.getLong(1), 1.0f))
+          .filter(row => !row.anyNull && row.getLong(0) != row.getLong(1)).map { row =>
+          (row.getLong(0), row.getLong(1), 1.0f)
+        }
       }
     }.map { case (src, dst, wgt) =>
       if (src < dst) ((src, dst), wgt) else ((dst, src), wgt)
     }.reduceByKey(_ + _, $(partitionNum))
       .persist(StorageLevel.DISK_ONLY)
 
-    val vertexRDD = rawEdges.flatMap { case ((src, dst), _) =>
+    val nodes = rawEdges.flatMap { case ((src, dst), _) =>
       Iterator(src, dst)
-    }.distinct($(partitionNum))
+    }.distinct($(partitionNum)).persist(StorageLevel.DISK_ONLY)
+    val maxId = nodes.max()
+    println("maxId is: " + maxId)
+    val edges = rawEdges.map(x => (x._1._1, x._1._2, x._2))
 
-    //node reindex, long to int,and int to long
-    val reIndexer = new NodeIndexer()
-    reIndexer.train($(psPartitionNum), vertexRDD, $(batchSize))
+    //build the graph with Louvain graph partition
+    val graph: RDD[LouvainGraphPartition] = LouvainGraph.edgeTripleRDD2GraphPartitions(edges,
+      storageLevel = $(storageLevel))
 
-    //reindex edges from (Long, Long, Float) to (Int, Int, Float)
-    val edgeTriplet: RDD[(Int, Int, Float)] = reIndexer.encode(rawEdges, $(batchSize)) { case (iter, ps) =>
-      val keys = iter.flatMap { case ((src, dst), _) => Iterator(src, dst) }.distinct
-      val map = ps.pull(keys).asInstanceOf[LongIntVector]
-      iter.map { case ((src, dst), wgt) =>
-        (map.get(src), map.get(dst), wgt)
-      }.toIterator
-    }
-
-    val graph: RDD[LouvainPartition] = LouvainGraph.edgeTriplet2GraphPartitions(edgeTriplet, storageLevel = $(storageLevel))
-
-    // destroys the lineage and close encoder of node indexer
+    // destroys the lineage
     graph.checkpoint()
     graph.foreachPartition(_ => Unit)
-    reIndexer.destroyEncoder()
 
     rawEdges.unpersist()
 
-    val model = LouvainPSModel(reIndexer.getNumNodes)
-    var louvain = new LouvainGraph(graph, model)
-    louvain.updateNodeWeightsToPS()
-    louvain.modularityOptimize($(numOpt), $(batchSize), $(eps))
+    val model = LouvainPSModel(maxId + 1) //create the louvain ps model
+
+    var louvain = new LouvainGraph(graph, model) //create the louvain object
+
+    louvain.updateNodeWeightsToPS() //set node community with node self id;set the community weight
 
     // correctIds
-    var totalSum = louvain.checkTotalSum(model)
-    louvain.correctCommunityId(model, $(bufferSize))
+    val totalSum = louvain.checkTotalSum(model)
 
     if ($(debugMode)) {
       assert(louvain.checkCommId(model) == 0)
@@ -122,17 +125,26 @@ class Louvain(override val uid: String) extends Transformer
       assert(total == totalSum, s"$total != $totalSum")
     }
 
-    //Loop
+    //the main iteration precess of louvain
     var foldIter = 0
-    while (foldIter < $(numFold)) {
-      foldIter += 1
-      louvain = louvain.folding($(batchSize), $(storageLevel))
-      louvain.modularityOptimize($(numOpt), $(batchSize), $(eps))
+    var hasNextRun = true
+    var bestModularity = -1.0
 
-      // correctIds
-      totalSum = louvain.checkTotalSum(model)
-      Log.withTimePrintln(s"total = $totalSum")
-      louvain.correctCommunityId(model, $(bufferSize))
+    while (hasNextRun) {
+      foldIter += 1
+      louvain.modularityOptimize($(numOpt), $(batchSize), $(eps), $(preserveRate), $(useMergeStrategy))
+      val ModularityNew = louvain.getModularity()
+      println(s"----------------foldIter $foldIter modularity is: $ModularityNew-------------")
+
+      hasNextRun &&= (ModularityNew - bestModularity > $(eps))
+      if (hasNextRun) {
+        louvain = louvain.folding($(batchSize), $(storageLevel))
+        Louvain.updateNodeCommunityFinal(nodes, $(batchSize), model)
+        bestModularity = ModularityNew
+      }
+
+      hasNextRun &&= (foldIter < $(numFold))
+
       if (foldIter < $(numFold) && $(debugMode)) {
         assert(louvain.checkCommId(model) == 0)
         val total = louvain.checkTotalSum(model)
@@ -141,9 +153,17 @@ class Louvain(override val uid: String) extends Transformer
     }
 
     val outputSchema = transformSchema(dataset.schema)
+    val result = nodes.mapPartitions { iterator =>
+      iterator.sliding($(batchSize), $(batchSize))
+        .map { batch =>
+          val nodes = batch.toArray
+          val comms = model.node2CommunityFianlPSVector.pull(nodes).asInstanceOf[LongLongVector].get(nodes)
+          nodes.zip(comms)
+        }
+    }.flatMap(x => x).sortByKey()
+
     dataset.sparkSession.createDataFrame({
-      reIndexer.decodeInt2IntPSVector(model.node2CommunityPSVector
-      ).sortByKey().map { case (id, c) =>
+      result.map { case (id, c) =>
         Row.fromSeq(Seq(id, c))
       }
     }, outputSchema)
@@ -151,10 +171,22 @@ class Louvain(override val uid: String) extends Transformer
 
   override def transformSchema(schema: StructType): StructType = {
     StructType(Seq(
-      StructField(s"$outputNodeIdCol", LongType, nullable = false),
-      StructField(s"$outputCommunityIdCol", LongType, nullable = false)
+      StructField(s"${$(outputNodeIdCol)}", LongType, nullable = false),
+      StructField(s"${$(outputCommunityIdCol)}", LongType, nullable = false)
     ))
   }
 
   override def copy(extra: ParamMap): Transformer = defaultCopy(extra)
+}
+
+object Louvain {
+
+  def updateNodeCommunityFinal(nodesRDD: RDD[Long], batchSize: Int, model: LouvainPSModel): Unit = {
+    nodesRDD.foreachPartition { iterator =>
+      iterator.toArray.sliding(batchSize, batchSize).foreach { batch =>
+        model.updateNodeCommunityFinalPSFunction(batch)
+      }
+    }
+  }
+
 }

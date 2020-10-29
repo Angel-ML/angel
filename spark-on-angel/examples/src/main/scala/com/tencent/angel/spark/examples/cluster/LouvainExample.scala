@@ -46,12 +46,14 @@ object LouvainExample {
     val enableCheck = params.getOrElse("enableCheck", "false").toBoolean
     val eps = params.getOrElse("eps", "0.0").toDouble
     val bufferSize = params.getOrElse("bufferSize", "1000000").toInt
+    val preserveRate = params.getOrElse("preserveRate", "0.1").toFloat
+    val useMergeStrategy  = params.getOrElse("useMergeStrategy", "true").toBoolean
 
     val sep = Delimiter.parse(params.getOrElse("sep",Delimiter.SPACE))
 
 
     val cpDir = params.get("cpDir").filter(_.nonEmpty).orElse(GraphIO.defaultCheckpointDir)
-    .getOrElse(throw new Exception("checkpoint dir not provided"))
+      .getOrElse(throw new Exception("checkpoint dir not provided"))
     sc.setCheckpointDir(cpDir)
 
     val louvain = new Louvain()
@@ -65,6 +67,8 @@ object LouvainExample {
       .setEps(eps)
       .setBufferSize(bufferSize)
       .setIsWeighted(isWeighted)
+      .setPreserveRate(preserveRate)
+      .setUseMergeStrategy(useMergeStrategy)
 
     val df = GraphIO.load(input, isWeighted = isWeighted,
       srcIndex = srcIndex, dstIndex = dstIndex,
