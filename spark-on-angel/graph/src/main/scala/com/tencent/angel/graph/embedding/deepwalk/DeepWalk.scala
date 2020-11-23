@@ -74,7 +74,10 @@ class DeepWalk(override val uid: String) extends Transformer
     //ps process;create ps nodes adjacency matrix
     println("start to run ps")
     PSContext.getOrCreate(SparkContext.getOrCreate())
-    val data = edges.map(_._2._1) // ps loadBalance by in degree
+    val data = if ($(needReplicaEdge))
+      edges.map(_._2._1) // ps loadBalance by in degree
+    else
+      edges.flatMap { case (src, (dst, w)) => Iterator(src, dst) }
     val model = DeepWalkPSModel.fromMinMax(minId, maxId, data, $(psPartitionNum), useBalancePartition = $(useBalancePartition))
 
     //push node adjacency list into ps matrix;create graph with （node，sample path）
