@@ -17,6 +17,7 @@
 *.class
 angel-ps/core/target/
 angel-ps/psf/target/
+angel-ps/graph/
 angel-ps/examples/target/
 angel-ps/jarvis/target/
 angel-ps/tools/target/
@@ -48,3 +49,5 @@ angel-math/target
 angel-mlcore/target
 angel-format/target
 target/
+angel-ps/graph/target
+log/log
