@@ -35,6 +35,7 @@ dist/target/
 spark-on-angel/core/target/
 spark-on-angel/examples/target/
 spark-on-angel/mllib/target/
+spark-on-angel/graph/target/
 spark-on-angel/automl/target/
 spark-on-angel/target/
 spark-on-angel/core/log/
@@ -46,4 +47,4 @@ angel-ps/core/src/main/java/com/tencent/angel/ml/math2/velocity
 angel-math/target
 angel-mlcore/target
 angel-format/target
-
+target/
