@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ps.storage.vector.storage;
 
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.element.IElement;
 import io.netty.buffer.ByteBuf;

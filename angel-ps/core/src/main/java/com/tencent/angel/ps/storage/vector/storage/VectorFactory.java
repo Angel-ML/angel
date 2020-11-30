@@ -47,7 +47,7 @@ import com.tencent.angel.ml.math2.vector.LongFloatVector;
 import com.tencent.angel.ml.math2.vector.LongIntVector;
 import com.tencent.angel.ml.math2.vector.LongLongVector;
 import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.matrix.RowType;
 
 /**
  * Vector factor

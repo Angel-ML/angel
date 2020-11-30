@@ -62,8 +62,8 @@ public class MatrixTransportClientHandler extends ChannelInboundHandlerAdapter {
   }
 
   @Override public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-    //    LOG.error("channel " + ctx.channel() + " inactive");
     notifyChannelClosed(ctx.channel());
+    super.channelInactive(ctx);
   }
 
   private void notifyChannelClosed(Channel ch) throws InterruptedException {

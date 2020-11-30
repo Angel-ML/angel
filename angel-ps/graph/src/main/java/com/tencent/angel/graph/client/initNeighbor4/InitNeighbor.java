@@ -24,7 +24,6 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.LongArrays;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
-import java.util.Arrays;
 import java.util.Random;
 
 public class InitNeighbor extends UpdateFunc {

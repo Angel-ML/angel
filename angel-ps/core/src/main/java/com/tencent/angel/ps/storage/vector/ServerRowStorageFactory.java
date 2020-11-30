@@ -18,7 +18,7 @@
 package com.tencent.angel.ps.storage.vector;
 
 import com.tencent.angel.ml.math2.VFactory;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.storage.vector.element.IElement;
 import com.tencent.angel.ps.storage.vector.storage.BasicTypeStorage;
 import com.tencent.angel.ps.storage.vector.storage.IStorage;

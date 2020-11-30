@@ -28,6 +28,7 @@ import com.tencent.angel.ml.lda.psf.PartCSRResult;
 import com.tencent.angel.ml.lda.psf.UpdatePartFunc;
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult;
 import com.tencent.angel.psagent.PSAgentContext;
+import it.unimi.dsi.fastutil.floats.FloatArrays;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -44,7 +45,7 @@ public class Sampler {
   public FTree tree;
   public float[] psum;
   public int[] tidx;
-  public int[] nk;
+  public long[] nk;
   public int[] wk;
   public float[] maxDoc;
 
@@ -71,7 +72,7 @@ public class Sampler {
     lgammaAlpha = Gamma.logGamma(alpha);
     lgammaAlphaSum = Gamma.logGamma(alpha * K);
 
-    nk = new int[K];
+    nk = new long[K];
     wk = new int[K];
     tidx = new int[K];
     psum = new float[K];
@@ -154,8 +155,12 @@ public class Sampler {
                 idx = BinarySearch.binarySearch(maxDoc, u, 0, length - 1);
                 tt = data.topics[data.ds[d] + idx];
               } else {
-                idx = BinarySearch.binarySearch(psum, u, 0, data.dks[d].size - 1);
-                tt = tidx[idx];
+                if (data.dks[d].size == 1)
+                  tt = tidx[0];
+                else {
+                  idx = BinarySearch.binarySearch(psum, u, 0, data.dks[d].size - 1);
+                  tt = tidx[idx];
+                }
               }
             } else
               tt = tree.sample(rand.nextFloat() * tree.first());
@@ -319,7 +324,7 @@ public class Sampler {
     return future;
   }
 
-  public Sampler set(int[] nk) {
+  public Sampler set(long[] nk) {
     System.arraycopy(nk, 0, this.nk, 0, K);
     return this;
   }

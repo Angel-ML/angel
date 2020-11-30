@@ -21,7 +21,6 @@ package com.tencent.angel.ml.matrix;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.model.output.format.MatrixFilesMeta;
 import com.tencent.angel.ps.storage.matrix.PSMatrixInit;
@@ -749,6 +748,9 @@ public class MatrixContext implements Serializable {
     Map<String, String> oldAttributes = meta.getOptions();
     if (oldAttributes != null && !oldAttributes.isEmpty()) {
       for (Map.Entry<String, String> kv : oldAttributes.entrySet()) {
+        if(kv.getKey().equals(MatrixConf.MATRIX_LOAD_PATH)) {
+          continue;
+        }
         attributes.put(kv.getKey(), kv.getValue());
       }
     }

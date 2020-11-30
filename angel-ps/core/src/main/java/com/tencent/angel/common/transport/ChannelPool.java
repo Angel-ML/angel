@@ -201,6 +201,8 @@ public class ChannelPool {
       for (int i = 0; i < size; ) {
         if (channels.size() > param.minActive && channels.get(i).isUseable()
           && (ts - channels.get(i).getLastUseTs()) > param.maxIdleTimeMs) {
+          LOG.info("channel " + channels.get(i) + " will be closed, as it not use over "
+              + (ts - channels.get(i).getLastUseTs()) + " ms");
           channels.get(i).close();
           channels.remove(i);
           size = channels.size();

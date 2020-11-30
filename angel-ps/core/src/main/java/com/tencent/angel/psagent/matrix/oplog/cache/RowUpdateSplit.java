@@ -20,7 +20,7 @@ package com.tencent.angel.psagent.matrix.oplog.cache;
 
 import com.tencent.angel.common.Serialize;
 import com.tencent.angel.ml.math2.vector.Vector;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.matrix.RowType;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

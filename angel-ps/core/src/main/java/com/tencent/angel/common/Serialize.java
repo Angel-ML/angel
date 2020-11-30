@@ -25,18 +25,18 @@ import io.netty.buffer.ByteBuf;
  */
 public interface Serialize {
   /**
-   * Serialize object to the Netty ByteBuf.
+   * Serialize object to the Output stream.
    *
-   * @param buf the Netty ByteBuf
+   * @param output the Netty ByteBuf
    */
-  void serialize(ByteBuf buf);
+  void serialize(ByteBuf output);
 
   /**
-   * Deserialize object from the Netty ByteBuf.
+   * Deserialize object from the input stream.
    *
-   * @param buf the Netty ByteBuf
+   * @param input the input stream
    */
-  void deserialize(ByteBuf buf);
+  void deserialize(ByteBuf input);
 
   /**
    * Estimate serialized data size of the object, it used to ByteBuf allocation.

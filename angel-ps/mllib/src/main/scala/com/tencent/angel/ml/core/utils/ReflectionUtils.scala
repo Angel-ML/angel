@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ml.core.utils
 
-import com.tencent.angel.mlcore.conf.MLCoreConf
+import com.tencent.angel.ml.core.conf.MLConf
 
 object ReflectionUtils {
 
@@ -38,7 +38,7 @@ object ReflectionUtils {
     * @param tt   Rutime TypeTag
     * @return The fields value
     */
-  def getCompanionAttr(item: String)(implicit tt: ru.TypeTag[MLCoreConf]): String = {
+  def getCompanionAttr(item: String)(implicit tt: ru.TypeTag[MLConf]): String = {
 
     val classMirror = rootMirror.reflectClass(tt.tpe.typeSymbol.asClass)
     val companionSymbol = classMirror.symbol.companion

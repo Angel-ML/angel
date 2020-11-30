@@ -66,6 +66,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.swing.plaf.FontUIResource;
@@ -137,6 +138,10 @@ public class UserRequestAdapter {
 
   private final int colNumThreshold = 10000000;
 
+  private final int maxWaitLockTimeMs;
+
+  private final int maxTryLockTime;
+
   /**
    * Create a new UserRequestAdapter.
    */
@@ -152,6 +157,11 @@ public class UserRequestAdapter {
     requestIdToResultMap = new ConcurrentHashMap<>();
 
     stopped = new AtomicBoolean(false);
+    maxWaitLockTimeMs = PSAgentContext.get().getConf().getInt(
+        "angel.psagent.requestadapter.max.waitlock.time.ms", 10000);
+
+    maxTryLockTime = PSAgentContext.get().getConf().getInt(
+        "angel.psagent.requestadapter.max.trylock.time", 10);
   }
 
   /**
@@ -644,6 +654,25 @@ public class UserRequestAdapter {
     return result;
   }
 
+  private void tryLock(PartitionResponseCache cache, int requestId) {
+    int index = 0;
+    boolean getLockSuccess = false;
+
+    while(index < maxTryLockTime) {
+      try {
+        getLockSuccess = cache.lock.tryLock(maxWaitLockTimeMs, TimeUnit.MILLISECONDS);
+      } catch (Throwable e) {
+        LOG.error("Can not get result cache lock for request " + requestId + " in " + maxWaitLockTimeMs + " ms ", e);
+      }
+      if(getLockSuccess) {
+        return;
+      }
+      index++;
+    }
+
+    throw new RuntimeException("Get result cache lock for request " + requestId + " failed");
+  }
+
   /**
    * Notify sub-response is received
    *
@@ -657,8 +686,9 @@ public class UserRequestAdapter {
       return;
     }
 
+    tryLock(cache, requestId);
+
     try {
-      cache.lock.lock();
       cache.addSubResponse(subResponse);
       UserRequest request = requests.get(requestId);
 
@@ -733,8 +763,8 @@ public class UserRequestAdapter {
       return;
     }
 
+    tryLock(cache, requestId);
     try {
-      cache.lock.lock();
       clear(requestId);
       result.setExecuteError(
           "Sub-Task " + subTaskId + " execution failed, failed message=" + errorLog);

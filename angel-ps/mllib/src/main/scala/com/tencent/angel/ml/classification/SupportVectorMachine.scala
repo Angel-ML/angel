@@ -18,13 +18,12 @@
 
 package com.tencent.angel.ml.classification
 
-import com.tencent.angel.ml.core.PSOptimizerProvider
-import com.tencent.angel.mlcore.conf.{MLCoreConf, SharedConf}
-import com.tencent.angel.ml.core.graphsubmit.AngelModel
-import com.tencent.angel.mlcore.network.Identity
-import com.tencent.angel.mlcore.network.layers.LossLayer
-import com.tencent.angel.mlcore.network.layers.leaf.SimpleInputLayer
-import com.tencent.angel.mlcore.optimizer.loss.HingeLoss
+import com.tencent.angel.ml.core.conf.MLConf
+import com.tencent.angel.ml.core.graphsubmit.GraphModel
+import com.tencent.angel.ml.core.network.layers.verge.{SimpleInputLayer, SimpleLossLayer}
+import com.tencent.angel.ml.core.network.transfunc.Identity
+import com.tencent.angel.ml.core.optimizer.{OptUtils, Optimizer}
+import com.tencent.angel.ml.core.optimizer.loss.{HingeLoss, LossFunc}
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 
@@ -34,15 +33,14 @@ import org.apache.hadoop.conf.Configuration
   */
 
 
-class SupportVectorMachine(conf: SharedConf, _ctx: TaskContext = null) extends AngelModel(conf, _ctx) {
-  val optProvider = new PSOptimizerProvider(conf)
+class SupportVectorMachine(conf: Configuration, _ctx: TaskContext = null) extends GraphModel(conf, _ctx) {
+  val ipOptName: String = sharedConf.get(MLConf.ML_INPUTLAYER_OPTIMIZER, MLConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
+  val optimizer: Optimizer = OptUtils.getOptimizer(ipOptName)
 
-  override def buildNetwork(): this.type = {
-    val ipOptName: String = conf.get(MLCoreConf.ML_INPUTLAYER_OPTIMIZER, MLCoreConf.DEFAULT_ML_INPUTLAYER_OPTIMIZER)
+  override val lossFunc: LossFunc = new HingeLoss()
 
-    val input = new SimpleInputLayer("input", 1, new Identity(), optProvider.getOptimizer(ipOptName))
-    new LossLayer("simpleLossLayer", input, new HingeLoss())
-
-    this
+  override def buildNetwork(): Unit = {
+    val input = new SimpleInputLayer("input", 1, new Identity(), optimizer)
+    new SimpleLossLayer("simpleLossLayer", input, lossFunc)
   }
 }

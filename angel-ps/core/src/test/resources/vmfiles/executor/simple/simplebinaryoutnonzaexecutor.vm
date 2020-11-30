@@ -464,19 +464,22 @@ public class SimpleBinaryOutNonZAExecutor {
 				  }
 				}
 			  } else {//dense
-				while (v1Pointor < size1 && v2Pointor < size2) {
-				  if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-					newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
-					v1Pointor++;
-					v2Pointor++;
-				  } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
-				  	newStorage.set(v1Indices[v1Pointor], v1Values[v1Pointor]);
-					v1Pointor++;
-				  } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
-				  	newStorage.set(v2Indices[v2Pointor], op.apply(0, v2Values[v2Pointor]));
-					v2Pointor++;
-				  }
-				}
+				while (v1Pointor < size1 || v2Pointor < size2) {
+          if ((v1Pointor < size1 && v2Pointor < size2) && v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+            newStorage
+                .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+            v1Pointor++;
+            v2Pointor++;
+          } else if ((v1Pointor < size1 && v2Pointor < size2) && v1Indices[v1Pointor] < v2Indices[v2Pointor] ||
+              (v1Pointor < size1 && v2Pointor >= size2)) {
+            newStorage.set(v1Indices[v1Pointor], v1Values[v1Pointor]);
+            v1Pointor++;
+          } else if (((v1Pointor < size1 && v2Pointor < size2) && v1Indices[v1Pointor] >= v2Indices[v2Pointor]) ||
+              (v1Pointor >= size1 && v2Pointor < size2)){
+            newStorage.set(v2Indices[v2Pointor], op.apply(0, v2Values[v2Pointor]));
+            v2Pointor++;
+          }
+        }
 			  }
 			} else {
 			  if (op.isKeepStorage()){
@@ -504,19 +507,22 @@ public class SimpleBinaryOutNonZAExecutor {
 				  }
 				}
 			  }else {
-				while (v1Pointor < size1 && v2Pointor < size2) {
-				  if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-					newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
-					v1Pointor++;
-					v2Pointor++;
-				  } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
-					newStorage.set(v1Indices[v1Pointor], v1Values[v1Pointor]);
-					v1Pointor++;
-				  } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
-					newStorage.set( v2Indices[v2Pointor], op.apply(0, v2Values[v2Pointor]));
-					v2Pointor++;
-				  }
-				}
+				while (v1Pointor < size1 || v2Pointor < size2) {
+          if ((v1Pointor < size1 && v2Pointor < size2) && v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+            newStorage
+                .set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], v2Values[v2Pointor]));
+            v1Pointor++;
+            v2Pointor++;
+          } else if ((v1Pointor < size1 && v2Pointor < size2) && v1Indices[v1Pointor] < v2Indices[v2Pointor] ||
+              (v1Pointor < size1 && v2Pointor >= size2)) {
+            newStorage.set(v1Indices[v1Pointor], v1Values[v1Pointor]);
+            v1Pointor++;
+          } else if (((v1Pointor < size1 && v2Pointor < size2) && v1Indices[v1Pointor] >= v2Indices[v2Pointor]) ||
+              (v1Pointor >= size1 && v2Pointor < size2)){
+            newStorage.set(v2Indices[v2Pointor], op.apply(0, v2Values[v2Pointor]));
+            v2Pointor++;
+          }
+        }
 			  }
 			}
         } else {
@@ -606,23 +612,26 @@ public class SimpleBinaryOutNonZAExecutor {
 
             } else {
                 int v1Pointor = 0;
-				int v2Pointor = 0;
-				$itype.toLowerCase() size1 = v1.size();
-				$itype.toLowerCase() size2 = v2.size();
-				$dtype1.toLowerCase() [] v1Values = v1.getStorage().getValues();
-			    while (v1Pointor < size1 && v2Pointor < size2) {
-				  if (v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
-					newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
-					v1Pointor++;
-					v2Pointor++;
-				  } else if (v1Indices[v1Pointor] < v2Indices[v2Pointor]) {
-					newStorage.set(v1Indices[v1Pointor], v1Values[v1Pointor]);
-					v1Pointor++;
-				  } else { // v1Indices[v1Pointor] > v2Indices[v2Pointor]
-					newStorage.set( v2Indices[v2Pointor], op.apply(0, 1));
-					v2Pointor++;
-				  }
-				}
+                int v2Pointor = 0;
+                $itype.toLowerCase() size1 = v1.size();
+                $itype.toLowerCase() size2 = v2.size();
+                $dtype1.toLowerCase() [] v1Values = v1.getStorage().getValues();
+
+                while (v1Pointor < size1 || v2Pointor < size2) {
+                  if ((v1Pointor < size1 && v2Pointor < size2) && v1Indices[v1Pointor] == v2Indices[v2Pointor]) {
+                    newStorage.set(v1Indices[v1Pointor], op.apply(v1Values[v1Pointor], 1));
+                    v1Pointor++;
+                    v2Pointor++;
+                  } else if ((v1Pointor < size1 && v2Pointor < size2) && v1Indices[v1Pointor] < v2Indices[v2Pointor] ||
+                      (v1Pointor < size1 && v2Pointor >= size2)) {
+                    newStorage.set(v1Indices[v1Pointor], v1Values[v1Pointor]);
+                    v1Pointor++;
+                  } else if (((v1Pointor < size1 && v2Pointor < size2) && v1Indices[v1Pointor] >= v2Indices[v2Pointor]) ||
+                      (v1Pointor >= size1 && v2Pointor < size2)){
+                    newStorage.set( v2Indices[v2Pointor], op.apply(0, 1));
+                    v2Pointor++;
+                  }
+                }
             }
         }
 

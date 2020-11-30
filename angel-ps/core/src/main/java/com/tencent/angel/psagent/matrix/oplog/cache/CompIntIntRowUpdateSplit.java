@@ -24,7 +24,7 @@ import com.tencent.angel.ml.math2.storage.IntIntSortedVectorStorage;
 import com.tencent.angel.ml.math2.storage.IntIntSparseVectorStorage;
 import com.tencent.angel.ml.math2.storage.IntIntVectorStorage;
 import com.tencent.angel.ml.math2.vector.IntIntVector;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.matrix.RowType;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;

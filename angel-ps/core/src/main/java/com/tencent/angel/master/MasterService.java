@@ -409,7 +409,8 @@ public class MasterService extends AbstractService implements MasterProtocol {
     return resBuilder.build();
   }
 
-  @Override protected void serviceStart() throws Exception {
+  @Override
+  protected void serviceStart() throws Exception {
     super.serviceStart();
   }
 
@@ -430,8 +431,8 @@ public class MasterService extends AbstractService implements MasterProtocol {
     location = new Location(ip, servicePort);
     //start RPC server
     this.rpcServer = MLRPC
-      .getServer(MasterService.class, this, new Class<?>[] {MasterProtocol.class}, ip, servicePort,
-        conf);
+            .getServer(MasterService.class, this, new Class<?>[] {MasterProtocol.class}, ip, servicePort,
+                    conf);
     rpcServer.openServer();
     super.serviceInit(conf);
   }
@@ -1262,11 +1263,10 @@ public class MasterService extends AbstractService implements MasterProtocol {
    * Start executing.
    *
    * @param controller rpc controller of protobuf
-   * @param request    start request
-   * @throws ServiceException
+   * @param request start request
    */
   @Override public StartResponse start(RpcController controller, StartRequest request)
-    throws ServiceException {
+          throws ServiceException {
     LOG.info("start to calculation");
     context.getApp().startExecute();
     if (context.getDeployMode() == AngelDeployMode.KUBERNETES && context.getRunningMode() == RunningMode.ANGEL_PS_WORKER) {

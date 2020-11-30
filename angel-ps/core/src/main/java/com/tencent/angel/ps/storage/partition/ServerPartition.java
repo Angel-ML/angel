@@ -19,7 +19,7 @@
 package com.tencent.angel.ps.storage.partition;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
@@ -27,8 +27,9 @@ import com.tencent.angel.ps.storage.matrix.PartitionState;
 import com.tencent.angel.ps.storage.partition.storage.IServerPartitionStorage;
 import com.tencent.angel.ps.storage.partition.storage.ServerPartitionStorageFactory;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufOutputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -144,6 +145,35 @@ public abstract class ServerPartition implements IServerPartition {
         .bufferLen();
   }
 
+  @Override
+  public void serialize(DataOutputStream output) throws IOException {
+    // Serialize the head
+    partKey.serialize(output);
+    output.writeInt(rowType.getNumber());
+
+    // Serialize the storage
+    output.writeUTF(storage.getClass().getName());
+    storage.serialize(output);
+  }
+
+  @Override
+  public void deserialize(DataInputStream input) throws IOException {
+    // Deserialize the head
+    partKey = new PartitionKey();
+    partKey.deserialize(input);
+    rowType = RowType.valueOf(input.readInt());
+
+    // Deseralize the storage
+    String storageClassName = input.readUTF();
+    storage = ServerPartitionStorageFactory.getStorage(storageClassName);
+    storage.deserialize(input);
+  }
+
+  @Override
+  public int dataLen() {
+    return bufferLen();
+  }
+
   /**
    * Gets related partition key.
    *
@@ -152,6 +182,16 @@ public abstract class ServerPartition implements IServerPartition {
   public PartitionKey getPartitionKey() {
     return partKey;
   }
+
+  /**
+   * Gets related partition key.
+   *
+   * @return the partition key
+   */
+  public void setPartitionKey(PartitionKey partKey) {
+    this.partKey = partKey;
+  }
+
 
   /**
    * Get partition storage

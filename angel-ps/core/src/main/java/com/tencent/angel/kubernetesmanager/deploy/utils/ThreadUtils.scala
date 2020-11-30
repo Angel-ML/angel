@@ -1,31 +1,14 @@
-/*
- * Tencent is pleased to support the open source community by making Angel available.
- *
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- *
- * https://opensource.org/licenses/Apache-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- *
- */
 package com.tencent.angel.kubernetesmanager.deploy.utils
 
 import java.util.concurrent._
 
 import com.google.common.util.concurrent.{MoreExecutors, ThreadFactoryBuilder}
-
 import scala.collection.TraversableLike
 import scala.collection.generic.CanBuildFrom
-import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.concurrent.forkjoin.{ForkJoinPool => SForkJoinPool, ForkJoinWorkerThread => SForkJoinWorkerThread}
 import scala.concurrent.{Awaitable, ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.control.NonFatal
+import scala.concurrent.forkjoin.{ForkJoinPool => SForkJoinPool, ForkJoinWorkerThread => SForkJoinWorkerThread}
 
 /**
   * Use spark's ThreadUtils for ExecutorService
@@ -128,10 +111,10 @@ private[angel] object ThreadUtils {
     * method for clarity. The exception stack traces will be like the following
     *
     * SomeException: exception-message
-    * at CallerClass.body-method (sourcefile.scala)
-    * at ... run in separate thread using org.apache.spark.util.ThreadUtils ... ()
-    * at CallerClass.caller-method (sourcefile.scala)
-    * ...
+    *   at CallerClass.body-method (sourcefile.scala)
+    *   at ... run in separate thread using org.apache.spark.util.ThreadUtils ... ()
+    *   at CallerClass.caller-method (sourcefile.scala)
+    *   ...
     */
   def runInNewThread[T](
                          threadName: String,
@@ -159,11 +142,11 @@ private[angel] object ThreadUtils {
         // This means drop everything from the top until the stack element
         // ThreadUtils.runInNewThread(), and then drop that as well (hence the `drop(1)`).
         val baseStackTrace = Thread.currentThread().getStackTrace().dropWhile(
-          !_.getClassName.contains(this.getClass.getSimpleName)).drop(1)
+          ! _.getClassName.contains(this.getClass.getSimpleName)).drop(1)
 
         // Remove the part of the new thread stack that shows methods call from this helper method
         val extraStackTrace = realException.getStackTrace.takeWhile(
-          !_.getClassName.contains(this.getClass.getSimpleName))
+          ! _.getClassName.contains(this.getClass.getSimpleName))
 
         // Combine the two stack traces, with a place holder just specifying that there
         // was a helper method used, without any further details of the helper
@@ -226,7 +209,6 @@ private[angel] object ThreadUtils {
         throw new Exception("Exception thrown in awaitResult: ", t)
     }
   }
-
   // scalastyle:on awaitresult
 
   // scalastyle:off awaitready
@@ -248,7 +230,6 @@ private[angel] object ThreadUtils {
         throw new Exception("Exception thrown in awaitResult: ", t)
     }
   }
-
   // scalastyle:on awaitready
 
   def shutdown(
@@ -266,10 +247,10 @@ private[angel] object ThreadUtils {
     * Comparing to the map() method of Scala parallel collections, this method can be interrupted
     * at any time. This is useful on canceling of task execution, for example.
     *
-    * @param in         - the input collection which should be transformed in parallel.
-    * @param prefix     - the prefix assigned to the underlying thread pool.
+    * @param in - the input collection which should be transformed in parallel.
+    * @param prefix - the prefix assigned to the underlying thread pool.
     * @param maxThreads - maximum number of thread can be created during execution.
-    * @param f          - the lambda function will be applied to each element of `in`.
+    * @param f - the lambda function will be applied to each element of `in`.
     * @tparam I - the type of elements in the input collection.
     * @tparam O - the type of elements in resulted collection.
     * @return new collection in which each element was given from the input collection `in` by

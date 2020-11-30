@@ -22,7 +22,7 @@ import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.FloatVector;
 import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.ml.math2.vector.LongFloatVector;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.IndexType;
 import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
@@ -98,6 +98,7 @@ public class LongFloatVectorStorage extends LongFloatStorage {
 
   @Override
   public void update(RowType updateType, ByteBuf buf, UpdateOp op) {
+    long startTs = System.currentTimeMillis();
     switch (updateType) {
       case T_FLOAT_SPARSE_LONGKEY:
       case T_FLOAT_SPARSE_LONGKEY_COMPONENT:

@@ -64,7 +64,7 @@ public class PartGetNodeFeatsResult extends PartitionGetResult {
     feats = new IntFloatVector[len];
     for (int i = 0; i < len; i++) {
       boolean isNull = input.readBoolean();
-      if(!isNull) {
+      if (!isNull) {
         feats[i] = NodeUtils.deserialize(input);
       }
     }

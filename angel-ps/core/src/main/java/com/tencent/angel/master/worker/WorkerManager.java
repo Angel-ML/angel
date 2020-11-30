@@ -451,8 +451,8 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
   }
 
     /**
-     * parameter server attempt id queue
-     * @return LinkedBlockingDeque<PSAttemptId>
+     * worker attempt id queue
+     * @return LinkedBlockingDeque<WorkerAttemptId>
      */
 
     public LinkedBlockingDeque<WorkerAttemptId> getWorkerAttemptIdBlockingQueue() {
@@ -658,11 +658,11 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
    * @param workerAttemptId worker attempt id
    */
   public void register(WorkerAttemptId workerAttemptId) {
-    LOG.info(workerAttemptId + " is registered in monitor!");
-    workerLastHeartbeatTS.put(workerAttemptId, System.currentTimeMillis());
-    if (context.getDeployMode() == AngelDeployMode.KUBERNETES) {
-        workerAttemptIdBlockingQueue.add(workerAttemptId);
-    }
+      LOG.info(workerAttemptId + " is registered in monitor!");
+      workerLastHeartbeatTS.put(workerAttemptId, System.currentTimeMillis());
+      if (context.getDeployMode() == AngelDeployMode.KUBERNETES) {
+          workerAttemptIdBlockingQueue.add(workerAttemptId);
+      }
   }
 
   /**

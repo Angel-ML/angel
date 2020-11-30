@@ -20,7 +20,7 @@ package com.tencent.angel.utils;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.predict.PredictResult;
-import com.tencent.angel.ml.math2.utils.DataBlock;
+import com.tencent.angel.worker.storage.DataBlock;
 import com.tencent.angel.worker.task.TaskContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -383,7 +383,7 @@ public class HdfsUtil {
   public static Path generateTmpDirectory(Configuration conf, String appId, Path outputPath) {
     URI uri = outputPath.toUri();
     String path =
-      (uri.getScheme() != null ? uri.getScheme() : "hdfs") + "://" + (uri.getHost() != null ?
+      (uri.getScheme() != null ? uri.getScheme() : "file") + "://" + (uri.getHost() != null ?
         uri.getHost() :
         "") + (uri.getPort() > 0 ? (":" + uri.getPort()) : "");
     String user = conf.get(AngelConf.USER_NAME, "");

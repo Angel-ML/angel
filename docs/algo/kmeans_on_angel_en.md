@@ -62,19 +62,18 @@ KMeans on Angel algorithm as follows:
   * angel.ps.memory.mb: PS's memory requested in G  
 
 ###  **Submit Command**    
-see [data](http://ufldl.stanford.edu/housenumbers/)
+
 * **Training Job**
     
 	```java
-	$ANGEL_HOME/bin/angel-submit \
+	./bin/angel-submit \
 		--action.type=train \
-		--angel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner  \
-		--ml.model.class.name=com.tencent.angel.ml.clustering.kmeans.Kmeans \
-		--ml.inputlayer.optimizer=KmeansOptimizer \
-		--angel.train.data.path=$input_path \
-		--angel.save.model.path=$model_path \
-		--angel.log.path=$log_path \
+		--angel.app.submit.class=com.tencent.angel.ml.clustering.kmeans.KMeansRunner  \
+		--ml.model.class.name=com.tencent.angel.ml.clustering.kmeans.KMeansModel \
+		--angel.train.data.path=$traindata \
+		--angel.save.model.path=$modelout \
 		--angel.output.path.deleteonexist=true \
+		--angel.log.path=$logpath \
 		--ml.data.type=libsvm \
 		--ml.model.type=T_DOUBLE_DENSE \
 		--ml.kmeans.center.num=$centerNum  \
@@ -87,19 +86,42 @@ see [data](http://ufldl.stanford.edu/housenumbers/)
 		--angel.worker.task.number=1 \
 		--angel.ps.number=4 \
 		--angel.ps.memory.mb=5000 \
-		--angel.job.name=kmeans_train \
-		--angel.worker.env="LD_PRELOAD=./libopenblas.so" \
-		--ml.optimizer.json.provider=com.tencent.angel.ml.core.PSOptimizerProvider
+		--angel.job.name=kmeans_train
+	```
+
+* **IncTraining Job**
+	```java
+	./bin/angel-submit \
+		--action.type=inctrain \
+		--angel.app.submit.class=com.tencent.angel.ml.clustering.kmeans.KMeansRunner  \
+		--ml.model.class.name=com.tencent.angel.ml.clustering.kmeans.KMeansModel \
+		--angel.train.data.path=$traindata \
+		--angel.load.model.path=$modelout \
+		--angel.save.model.path=$modelout \
+		--angel.output.path.deleteonexist=true \
+		--angel.log.path=$logpath \
+		--ml.data.type=libsvm \
+		--ml.model.type=T_DOUBLE_DENSE \
+		--ml.kmeans.center.num=$centerNum \
+		--ml.kmeans.c=0.15 \
+		--ml.epoch.num=10 \
+		--ml.feature.index.range=$featureNum \
+		--ml.feature.num=$featureNum \
+		--angel.workergroup.number=4 \
+		--angel.worker.memory.mb=5000  \
+		--angel.worker.task.number=1 \
+		--angel.ps.number=4 \
+		--angel.ps.memory.mb=5000 \
+		--angel.job.name=kmeans_inctrain
 	```
 
 * **Prediction Job**
 
 	```java
-	$ANGEL_HOME/bin/angel-submit \
+	./bin/angel-submit \
 		--action.type=predict \
-		--angel.app.submit.class=com.tencent.angel.ml.core.graphsubmit.GraphRunner  \
-		--ml.model.class.name=com.tencent.angel.ml.clustering.kmeans.Kmeans \
-		--ml.inputlayer.optimizer=KmeansOptimizer \
+		--angel.app.submit.class=com.tencent.angel.ml.clustering.kmeans.KMeansRunner  \
+		--ml.model.class.name=com.tencent.angel.ml.clustering.kmeans.KMeansModel \
 		--angel.predict.data.path=$predictdata \
 		--angel.load.model.path=$modelout \
 		--angel.predict.out.path=$predictout \
@@ -116,15 +138,15 @@ see [data](http://ufldl.stanford.edu/housenumbers/)
 		--angel.ps.number=4 \
 		--angel.ps.memory.mb=5000 \
 		--angel.psagent.cache.sync.timeinterval.ms=500 \
-		--angel.job.name=kmeans_predict \
-		--angel.worker.env="LD_PRELOAD=./libopenblas.so" \
-		--ml.optimizer.json.provider=com.tencent.angel.ml.core.PSOptimizerProvider
+		--angel.job.name=kmeans_predict
 	```
 
 ### Performance
 * data：SVHN，3×10^3 features，7×10^4 samples
 * resource：
-	* Angel：worker：4，5G memory，1 task； ps：4，5G memory
+	* Angel：executor：4，5G memory，1 task； ps：4，5G memory
+* Time of 100 epochs:
+	* Angel：45min
 	
 ## 4. References
 [1] Sculley D. Web-scale k-means clustering[C]// International Conference on World Wide Web, WWW 2010, Raleigh, North         	Carolina, Usa, April. DBLP, 2010:1177-1178.

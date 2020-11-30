@@ -28,7 +28,6 @@ import com.tencent.angel.master.matrixmeta.AMMatrixMetaManager;
 import com.tencent.angel.master.task.AMTask;
 import com.tencent.angel.master.task.AMTaskManager;
 import com.tencent.angel.ml.math2.storage.IntDoubleDenseVectorStorage;
-import com.tencent.angel.ml.math2.utils.RowType;
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.matrix.*;
 import com.tencent.angel.ps.PSAttemptId;

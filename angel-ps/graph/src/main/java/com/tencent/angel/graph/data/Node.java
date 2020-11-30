@@ -32,14 +32,20 @@ public class Node implements IElement {
   private IntFloatVector feats;
 
   private long[] neighbors;
+  private int[] types;
 
   public Node(IntFloatVector feats, long[] neighbors) {
+    this(feats, neighbors, null);
+  }
+
+  public Node(IntFloatVector feats, long[] neighbors, int[] types) {
     this.feats = feats;
     this.neighbors = neighbors;
+    this.types = types;
   }
 
   public Node() {
-    this(null, null);
+    this(null, null, null);
   }
 
   public IntFloatVector getFeats() {
@@ -58,13 +64,28 @@ public class Node implements IElement {
     this.neighbors = neighbors;
   }
 
+  public int[] getTypes() {
+    return types;
+  }
+
+  public void setTypes(int[] types) {
+    this.types = types;
+  }
+
   @Override
   public Node deepClone() {
     IntFloatVector cloneFeats = feats.clone();
 
     long[] cloneNeighbors = new long[neighbors.length];
     System.arraycopy(neighbors, 0, cloneNeighbors, 0, neighbors.length);
-    return new Node(cloneFeats, cloneNeighbors);
+
+    if (types == null)
+      return new Node(cloneFeats, cloneNeighbors);
+    else {
+      int[] cloneTypes = new int[types.length];
+      System.arraycopy(types, 0, cloneTypes, 0, types.length);
+      return new Node(cloneFeats, cloneNeighbors, cloneTypes);
+    }
   }
 
   @Override
@@ -72,8 +93,13 @@ public class Node implements IElement {
     NodeUtils.serialize(feats, output);
 
     output.writeInt(neighbors.length);
-    for (int i = 0; i < neighbors.length; i++) {
+    for (int i = 0; i < neighbors.length; i++)
       output.writeLong(neighbors[i]);
+
+    if (types != null) {
+      output.writeInt(types.length);
+      for (int i = 0; i < types.length; i++)
+        output.writeInt(types[i]);
     }
   }
 
@@ -83,14 +109,24 @@ public class Node implements IElement {
 
     int len = input.readInt();
     neighbors = new long[len];
-    for (int i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++)
       neighbors[i] = input.readLong();
+
+    if (types != null) {
+      len = input.readInt();
+      types = new int[len];
+      for (int i = 0; i < len; i++)
+        types[i] = input.readInt();
     }
   }
 
   @Override
   public int bufferLen() {
-    return NodeUtils.dataLen(feats) + 4 + 8 * neighbors.length;
+    int len = NodeUtils.dataLen(feats);
+    len += 4 + 8 * neighbors.length;
+    if (types != null)
+      len += 4 + 4 * types.length;
+    return len;
   }
 
   @Override
@@ -98,8 +134,13 @@ public class Node implements IElement {
     NodeUtils.serialize(feats, output);
 
     output.writeInt(neighbors.length);
-    for (int i = 0; i < neighbors.length; i++) {
+    for (int i = 0; i < neighbors.length; i++)
       output.writeLong(neighbors[i]);
+
+    if (types != null) {
+      output.writeInt(types.length);
+      for (int i = 0; i < types.length; i++)
+        output.writeInt(types[i]);
     }
   }
 
@@ -109,8 +150,14 @@ public class Node implements IElement {
 
     int len = input.readInt();
     neighbors = new long[len];
-    for (int i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++)
       neighbors[i] = input.readLong();
+
+    if (types != null) {
+      len = input.readInt();
+      types = new int[len];
+      for (int i = 0; i < len; i++)
+        types[i] = input.readInt();
     }
   }
 

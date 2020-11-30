@@ -19,13 +19,17 @@
 package com.tencent.angel;
 
 import com.tencent.angel.common.Serialize;
+import com.tencent.angel.common.StreamSerialize;
 import io.netty.buffer.ByteBuf;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 
 /**
  * The type Partition key,represent a part of matrix
  */
-public class PartitionKey implements Comparable<PartitionKey>, Serialize {
+public class PartitionKey implements Comparable<PartitionKey>, Serialize, StreamSerialize {
 
   int partitionId = 0;
   int matrixId = 0;
@@ -187,7 +191,34 @@ public class PartitionKey implements Comparable<PartitionKey>, Serialize {
 
   @Override
   public int bufferLen() {
-    return 8;
+    return 5 * 4 + 2 * 8;
+  }
+
+  @Override
+  public void serialize(DataOutputStream output) throws IOException {
+    output.writeInt(matrixId);
+    output.writeInt(partitionId);
+    output.writeInt(startRow);
+    output.writeInt(endRow);
+    output.writeLong(startCol);
+    output.writeLong(endCol);
+    output.writeInt(indexNum);
+  }
+
+  @Override
+  public void deserialize(DataInputStream input) throws IOException {
+    matrixId = input.readInt();
+    partitionId = input.readInt();
+    startRow = input.readInt();
+    endRow = input.readInt();
+    startCol = input.readLong();
+    endCol = input.readLong();
+    indexNum = input.readInt();
+  }
+
+  @Override
+  public int dataLen() {
+    return bufferLen();
   }
 
   @Override

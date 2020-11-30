@@ -22,7 +22,6 @@ import java.util
 
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.utils.MathException
 import com.tencent.angel.ml.math2.vector._
 import org.junit.{BeforeClass, Test}
 
@@ -476,8 +475,9 @@ class CompCompCoverageTest {
         try {
           list.get(i).add(list.get(j)).sum()
         } catch {
-          case e: AngelException => e
-          case e: MathException => e
+          case e: AngelException => {
+            e
+          }
         }
       }
     }
@@ -486,8 +486,9 @@ class CompCompCoverageTest {
         try {
          llist.get(i).add(llist.get(j)).sum()
         } catch {
-          case e: AngelException => e
-          case e: MathException => e
+          case e: AngelException => {
+            e
+          }
         }
       }
     }
@@ -500,8 +501,9 @@ class CompCompCoverageTest {
         try {
          list.get(i).mul(list.get(j)).sum()
         } catch {
-          case e: AngelException => e
-          case e: MathException => e
+          case e: AngelException => {
+            e
+          }
         }
       }
     }
@@ -510,8 +512,9 @@ class CompCompCoverageTest {
         try {
          llist.get(i).mul(llist.get(j)).sum()
         } catch {
-          case e: AngelException => e
-          case e: MathException => e
+          case e: AngelException => {
+            e
+          }
         }
       }
     }
@@ -524,8 +527,9 @@ class CompCompCoverageTest {
         try {
           list.get(i).mul(list.get(j)).sum()
         } catch {
-          case e: AngelException => e
-          case e: MathException => e
+          case e: AngelException => {
+            e
+          }
         }
       }
     }
@@ -534,8 +538,9 @@ class CompCompCoverageTest {
         try {
          llist.get(i).mul(llist.get(j)).sum()
         } catch {
-          case e: AngelException => e
-          case e: MathException => e
+          case e: AngelException => {
+           e
+          }
         }
       }
     }
@@ -548,9 +553,12 @@ class CompCompCoverageTest {
         try {
          list.get(i).div(list.get(j)).sum()
         } catch {
-          case e:ArithmeticException => e
-          case e: MathException => e
-          case e: AngelException => e
+          case e:ArithmeticException =>{
+            e
+          }
+          case e: AngelException => {
+            e
+          }
         }
       }
     }
@@ -559,9 +567,12 @@ class CompCompCoverageTest {
         try {
           llist.get(i).div(llist.get(j)).sum()
         } catch {
-          case e:ArithmeticException => e
-          case e: MathException => e
-          case e: AngelException => e
+          case e:ArithmeticException =>{
+            e
+          }
+          case e: AngelException => {
+            e
+          }
         }
       }
     }
@@ -574,8 +585,9 @@ class CompCompCoverageTest {
         try {
           list.get(i).axpy(list.get(j), 2.0).sum()
         } catch {
-          case e: AngelException => e
-          case e: MathException => e
+          case e: AngelException => {
+           e
+          }
         }
       }
     }
@@ -584,8 +596,9 @@ class CompCompCoverageTest {
         try {
          llist.get(i).axpy(llist.get(j), 2.0).sum()
         } catch {
-          case e: AngelException => e
-          case e: MathException => e
+          case e: AngelException => {
+           e
+          }
         }
       }
     }

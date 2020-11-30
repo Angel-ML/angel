@@ -54,7 +54,7 @@ public class SampleNeighbor extends GetFunc {
     long[][] neighbors = new long[nodeIds.length][];
 
     int count = param.getCount();
-    Random r = new Random();
+    Random r = new Random(System.currentTimeMillis());
 
     for (int i = 0; i < nodeIds.length; i++) {
       long nodeId = nodeIds[i];
@@ -76,8 +76,7 @@ public class SampleNeighbor extends GetFunc {
           if (startPos + count <= nodeNeighbors.length) {
             System.arraycopy(nodeNeighbors, startPos, neighbors[i], 0, count);
           } else {
-            System
-                .arraycopy(nodeNeighbors, startPos, neighbors[i], 0,
+            System.arraycopy(nodeNeighbors, startPos, neighbors[i], 0,
                     nodeNeighbors.length - startPos);
             System.arraycopy(nodeNeighbors, 0, neighbors[i],
                 nodeNeighbors.length - startPos, count - (nodeNeighbors.length - startPos));

@@ -18,7 +18,7 @@
 package com.tencent.angel.ps.storage.partition;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.storage.partition.storage.CSRStorage;
 import com.tencent.angel.ps.storage.partition.storage.DenseServerRowsStorage;
 import com.tencent.angel.ps.storage.partition.storage.IServerPartitionStorage;
@@ -65,7 +65,13 @@ public class ServerPartitionFactory {
           .getCSRStorage(storageClass, partKey, rowType);
       return new CSRPartition(partKey, estSparsity, storage, rowType);
     } else {
-      throw new UnsupportedOperationException("not support partition class " + partClass + " now ");
+      try {
+        ServerPartition part = (ServerPartition) partClass.newInstance();
+        part.setPartitionKey(partKey);
+        return part;
+      } catch (Throwable e) {
+        throw new UnsupportedOperationException("can not load partition class ", e);
+      }
     }
   }
 

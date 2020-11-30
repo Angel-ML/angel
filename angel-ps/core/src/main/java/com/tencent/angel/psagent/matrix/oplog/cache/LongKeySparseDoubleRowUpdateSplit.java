@@ -21,7 +21,7 @@ package com.tencent.angel.psagent.matrix.oplog.cache;
 import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.math2.vector.LongDoubleVector;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.matrix.RowType;
 import io.netty.buffer.ByteBuf;
 
 public class LongKeySparseDoubleRowUpdateSplit extends RowUpdateSplit {

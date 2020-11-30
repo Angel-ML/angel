@@ -18,7 +18,7 @@
 package com.tencent.angel.ps.storage.partition.storage;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.partition.op.IServerRowsStorageOp;
 import com.tencent.angel.ps.storage.vector.ServerRow;
@@ -68,6 +68,11 @@ public abstract class ServerRowsStorage extends ServerPartitionStorage implement
     if (elementNum <= 0) {
       elementNum = (int) ((endCol - startCol) * estSparsity);
     }
+
+    if(elementNum < 0) {
+      elementNum = 1024;
+    }
+
     for (int rowIndex = rowStart; rowIndex < rowEnd; rowIndex++) {
       ServerRow row = ServerRowFactory
           .createServerRow(rowIndex, rowType, startCol, endCol, elementNum, valueClass);

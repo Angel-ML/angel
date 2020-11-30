@@ -17,7 +17,7 @@
 package com.tencent.angel.ps.storage.partition;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.partition.op.ICSRStorageOp;
 import com.tencent.angel.ps.storage.partition.storage.CSRStorage;

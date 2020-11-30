@@ -70,7 +70,7 @@ public class GetNodeFeatsParam extends GetParam {
     int partIndex = 0;
     while (nodeIndex < nodeIds.length || partIndex < partitions.size()) {
       int length = 0;
-      int endOffset = (int) partitions.get(partIndex).getEndCol();
+      long endOffset = partitions.get(partIndex).getEndCol();
       while (nodeIndex < nodeIds.length && nodeIds[nodeIndex] < endOffset) {
         nodeIndex++;
         length++;

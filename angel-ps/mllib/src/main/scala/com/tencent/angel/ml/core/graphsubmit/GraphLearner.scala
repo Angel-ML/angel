@@ -19,37 +19,35 @@
 package com.tencent.angel.ml.core.graphsubmit
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.mlcore.conf.{MLCoreConf, SharedConf}
-import com.tencent.angel.ml.core.conf.AngelMLConf
-import com.tencent.angel.mlcore.network.Graph
-import com.tencent.angel.mlcore.network.layers.unary.KmeansInputLayer
-import com.tencent.angel.mlcore.optimizer.decayer.StepSizeScheduler
-import com.tencent.angel.mlcore.utils.ValidationUtils
-import com.tencent.angel.mlcore.MLModel
-import com.tencent.angel.ml.core.{AngelMasterContext, MLLearner}
-import com.tencent.angel.ml.math2.utils.{DataBlock, LabeledData}
+import com.tencent.angel.exception.AngelException
+import com.tencent.angel.ml.core.MLLearner
+import com.tencent.angel.ml.core.conf.{MLConf, SharedConf}
+import com.tencent.angel.ml.core.network.layers.AngelGraph
+import com.tencent.angel.ml.core.optimizer.decayer.{StepSizeScheduler, WarmRestarts}
+import com.tencent.angel.ml.feature.LabeledData
+import com.tencent.angel.ml.math2.vector.{DoubleVector, IntKeyVector, LongKeyVector, Vector}
 import com.tencent.angel.ml.metric.LossMetric
+import com.tencent.angel.ml.model.MLModel
+import com.tencent.angel.ml.core.utils.ValidationUtils
+import com.tencent.angel.psagent.PSAgentContext
+import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.{Log, LogFactory}
 
-class GraphLearner(conf: SharedConf, ctx: TaskContext) extends MLLearner(ctx) {
+class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(ctx) {
   val LOG: Log = LogFactory.getLog(classOf[GraphLearner])
-  private implicit val sharedConf: SharedConf = conf
 
-  val epochNum: Int = conf.epochNum
-  val indexRange: Long = conf.indexRange
-  val modelSize: Long = conf.modelSize
-  val lr0: Double = conf.learningRate
+  val epochNum: Int = SharedConf.epochNum
+  val indexRange: Long = SharedConf.indexRange
+  val modelSize: Long = SharedConf.modelSize
+  val lr0: Double = SharedConf.learningRate
 
   // Init Graph Model
-  val modelClassName: String = sharedConf.modelClassName
-  val model: AngelModel = AngelModel(modelClassName, conf, ctx)
+  val model: GraphModel = GraphModel(modelClassName, conf, ctx)
   model.buildNetwork()
-  model.createMatrices(AngelMasterContext(null))
-  val graph: Graph = model.graph
-  val ssScheduler: StepSizeScheduler = StepSizeScheduler(conf.stepSizeScheduler, lr0)
-  val decayOnBatch: Boolean = conf.getBoolean(MLCoreConf.ML_OPT_DECAY_ON_BATCH,
-    MLCoreConf.DEFAULT_ML_OPT_DECAY_ON_BATCH)
+  val graph: AngelGraph = model.graph
+  val ssScheduler: StepSizeScheduler = StepSizeScheduler(SharedConf.getStepSizeScheduler, lr0)
+  val decayOnBatch = conf.getBoolean(MLConf.ML_OPT_DECAY_ON_BATCH, MLConf.DEFAULT_ML_OPT_DECAY_ON_BATCH)
 
   def trainOneEpoch(epoch: Int, iter: Iterator[Array[LabeledData]], numBatch: Int): Double = {
     var batchCount: Int = 0
@@ -59,38 +57,32 @@ class GraphLearner(conf: SharedConf, ctx: TaskContext) extends MLLearner(ctx) {
       graph.feedData(iter.next())
 
       // LOG.info("start to pullParams ...")
-      if (model.isSparseFormat) {
-        model.pullParams(epoch, graph.placeHolder.getIndices)
-      } else {
-        model.pullParams(epoch)
-      }
-
+      graph.pullParams(epoch)
 
       // LOG.info("calculate to forward ...")
-      loss = graph.calForward() // forward
+      loss = graph.calLoss() // forward
       // LOG.info(s"The training los of epoch $epoch batch $batchCount is $loss" )
 
       // LOG.info("calculate to backward ...")
       graph.calBackward() // backward
 
       // LOG.info("calculate and push gradient ...")
-      model.pushGradient(graph.getLR) // pushgrad
+      graph.pushGradient() // pushgrad
       // waiting all gradient pushed
 
       // LOG.info("waiting for push barrier ...")
-      barrier()
-
+      PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
       if (decayOnBatch) {
         graph.setLR(ssScheduler.next())
       }
       if (ctx.getTaskId.getIndex == 0) {
         // LOG.info("start to update ...")
-        model.update(epoch * numBatch + batchCount, 1) // update parameters on PS
+        graph.update(epoch * numBatch + batchCount, 1) // update parameters on PS
       }
 
       // waiting all gradient update finished
       // LOG.info("waiting for update barrier ...")
-      barrier()
+      PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
       batchCount += 1
 
       LOG.info(s"epoch $epoch batch $batchCount is finished!")
@@ -109,7 +101,7 @@ class GraphLearner(conf: SharedConf, ctx: TaskContext) extends MLLearner(ctx) {
     train(trainData, null, validationData)
   }
 
-  override def train(posTrainData: DataBlock[LabeledData],
+  def train(posTrainData: DataBlock[LabeledData],
             negTrainData: DataBlock[LabeledData],
             validationData: DataBlock[LabeledData]): MLModel = {
     LOG.info(s"Task[${ctx.getTaskIndex}]: Starting to train ...")
@@ -119,35 +111,26 @@ class GraphLearner(conf: SharedConf, ctx: TaskContext) extends MLLearner(ctx) {
       posTrainData.size() + negTrainData.size()
     }
 
-    globalMetrics.addMetric(AngelMLConf.TRAIN_LOSS, LossMetric(trainDataSize))
-    globalMetrics.addMetric(AngelMLConf.VALID_LOSS, LossMetric(validationData.size))
+    globalMetrics.addMetric(MLConf.TRAIN_LOSS, LossMetric(trainDataSize))
+    globalMetrics.addMetric(MLConf.VALID_LOSS, LossMetric(validationData.size))
+    graph.taskNum = ctx.getTotalTaskNum
 
     val loadModelPath = conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH, "")
     if (loadModelPath.isEmpty) {
-      model.init(AngelMasterContext(null))
+      model.init(ctx.getTaskId.getIndex)
     }
 
-    barrier()
+    PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
 
-    val numBatch = conf.numUpdatePerEpoch
+    val numBatch = SharedConf.numUpdatePerEpoch
     val batchSize: Int = (trainDataSize + numBatch - 1) / numBatch
     val batchData = new Array[LabeledData](batchSize)
 
-    if (conf.useShuffle) {
+    if (SharedConf.useShuffle) {
       posTrainData.shuffle()
       if (negTrainData != null) {
         negTrainData.shuffle()
       }
-    }
-
-    // Init cluster centers randomly
-    graph.getInputLayer("input") match {
-      case layer: KmeansInputLayer if ctx.getTaskId.getIndex == 0 && conf.get(AngelConf.ANGEL_LOAD_MODEL_PATH, "").isEmpty =>
-        model.pullParams(0)
-        val K = conf.numClass
-        layer.initKCentersRandomly(ctx.getTotalTaskNum, posTrainData, K)
-        model.pushGradient(graph.getLR)
-      case _ =>
     }
 
     while (ctx.getEpoch < epochNum) {
@@ -155,9 +138,9 @@ class GraphLearner(conf: SharedConf, ctx: TaskContext) extends MLLearner(ctx) {
       LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch start.")
 
       val iter = if (negTrainData == null) {
-        getBatchDataIterator(posTrainData, batchData, numBatch)
+        getBathDataIterator(posTrainData, batchData, numBatch)
       } else {
-        getBatchDataIterator(posTrainData, negTrainData, batchData, numBatch)
+        getBathDataIterator(posTrainData, negTrainData, batchData, numBatch)
       }
 
       val startTrain = System.currentTimeMillis()
@@ -166,16 +149,13 @@ class GraphLearner(conf: SharedConf, ctx: TaskContext) extends MLLearner(ctx) {
       }
       val loss: Double = trainOneEpoch(epoch, iter, numBatch)
       val trainCost = System.currentTimeMillis() - startTrain
-      globalMetrics.metric(AngelMLConf.TRAIN_LOSS, loss * trainDataSize)
+      globalMetrics.metric(MLConf.TRAIN_LOSS, loss * trainDataSize)
       LOG.info(s"$epoch-th training finished! the trainCost is $trainCost")
 
+      LOG.info(s"Begin to validate in $epoch-th epoch")
       val startValid = System.currentTimeMillis()
-      if (validationData != null && validationData.size() > 0) {
-        LOG.info(s"Begin to validate in $epoch-th epoch")
-        validate(epoch, validationData)
-      }
+      validate(epoch, validationData)
       val validCost = System.currentTimeMillis() - startValid
-
 
       LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch success. " +
         s"epoch cost ${trainCost + validCost} ms." +
@@ -189,7 +169,7 @@ class GraphLearner(conf: SharedConf, ctx: TaskContext) extends MLLearner(ctx) {
     model
   }
 
-  private def getBatchDataIterator(trainData: DataBlock[LabeledData],
+  private def getBathDataIterator(trainData: DataBlock[LabeledData],
                                   batchData: Array[LabeledData], numBatch: Int) = {
     trainData.resetReadIndex()
     assert(batchData.length > 1)
@@ -207,7 +187,7 @@ class GraphLearner(conf: SharedConf, ctx: TaskContext) extends MLLearner(ctx) {
     }
   }
 
-  private def getBatchDataIterator(posData: DataBlock[LabeledData],
+  private def getBathDataIterator(posData: DataBlock[LabeledData],
                                   negData: DataBlock[LabeledData],
                                   batchData: Array[LabeledData], numBatch: Int) = {
     posData.resetReadIndex()
@@ -216,7 +196,7 @@ class GraphLearner(conf: SharedConf, ctx: TaskContext) extends MLLearner(ctx) {
 
     new Iterator[Array[LabeledData]] {
       private var count = 0
-      val posnegRatio: Double = conf.posnegRatio()
+      val posnegRatio: Double = SharedConf.posnegRatio()
       val posPreNum: Int = Math.max((posData.size() + numBatch - 1) / numBatch,
         batchData.length * posnegRatio / (1.0 + posnegRatio)).toInt
 
@@ -291,11 +271,44 @@ class GraphLearner(conf: SharedConf, ctx: TaskContext) extends MLLearner(ctx) {
     * @param valiData : validata data storage
     */
   def validate(epoch: Int, valiData: DataBlock[LabeledData]): Unit = {
-    val predList = model.predict(valiData)
-    ValidationUtils.calMetrics(epoch, predList, graph.getLossFunc)
+    val isClassification = conf.getBoolean(MLConf.ML_MODEL_IS_CLASSIFICATION, MLConf.DEFAULT_ML_MODEL_IS_CLASSIFICATION)
+    val numClass = conf.getInt(MLConf.ML_NUM_CLASS, MLConf.DEFAULT_ML_NUM_CLASS)
+    if (isClassification && valiData.size > 0) {
+      if (numClass == 2) {
+        val validMetric = new ValidationUtils(valiData, model).calMetrics(model.lossFunc)
+        LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch " +
+          s"validationData loss=${validMetric._1 / valiData.size()} " +
+          s"precision=${validMetric._2} " +
+          s"auc=${validMetric._3} " +
+          s"trueRecall=${validMetric._4} " +
+          s"falseRecall=${validMetric._5}")
+        globalMetrics.metric(MLConf.VALID_LOSS, validMetric._1)
+      } else {
+        val validMetric = new ValidationUtils(valiData, model).calMulMetrics(model.lossFunc)
 
-    // Note: the data has feed in `model.predict(valiData)`
-    globalMetrics.metric(AngelMLConf.VALID_LOSS,
-      graph.getLossLayer.calLoss * valiData.size())
+        LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch " +
+          s"validationData loss=${validMetric._1 / valiData.size()} " +
+          s"accuracy=${validMetric._2} ")
+
+        globalMetrics.metric(MLConf.VALID_LOSS, validMetric._1)
+      }
+    } else if (valiData.size > 0) {
+      val validMetric = new ValidationUtils(valiData, model).calMSER2()
+      LOG.info(s"Task[${ctx.getTaskIndex}]: epoch=$epoch " +
+        s"validationData MSE=${validMetric._1} " +
+        s"RMSE=${validMetric._2} " +
+        s"MAE=${validMetric._3} " +
+        s"R2=${validMetric._4} ")
+      globalMetrics.metric(MLConf.VALID_LOSS, validMetric._1 * valiData.size)
+    } else {
+      LOG.info("No Validate !")
+    }
+  }
+
+  def sparsity(weight: DoubleVector, dim: Int): Double = {
+    weight match {
+      case w: IntKeyVector => w.numZeros().toDouble / modelSize
+      case w: LongKeyVector => w.numZeros().toDouble / modelSize
+    }
   }
 }

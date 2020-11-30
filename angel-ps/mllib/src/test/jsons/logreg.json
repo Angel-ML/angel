@@ -6,7 +6,7 @@
     "sampleratio": 1.0
   },
   "train": {
-    "epoch": 10,
+    "epoch": 2,
     "lr": 0.5
   },
   "model": {

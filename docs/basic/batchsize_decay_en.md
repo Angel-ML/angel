@@ -1,68 +1,74 @@
-# Learning Rate Decay in Angel
+# Leraning Rate Decay in Angel
 
-Angel refers to TensorFlow to implement a variety of learning rate Decay schemes. Users can choose Decay schemes according to their needs. Before describing the specific Decay schemes, first learn how Decay in Angel was introduced and when Decay was implemented.
+Referring to TensorFlow, Angel implements a variety of learning rate decay solutions, from which users can select at will. Before depicting the Decay solutions in detail, let's take a first look on how Decay is introduced in Angel and when we should use Decay.
 
-For the first problem, Decay was introduced in the `GraphLearner'class, with the following code for initialization:
+Decay is introduced to Graph in the `GraphLearner` class. Following codes are executed during initialization:
+
 ```scala
 val ssScheduler: StepSizeScheduler = StepSizeScheduler(SharedConf.getStepSizeScheduler, lr0)
 ```
-Where `StepSize Scheduler'is the base class of all Decays, object with the same name is the workshop of all Decays, and `SharedConf. getStepSize Scheduler' can obtain the specified decay type by reading the value of `ml. opt. decay. class. name'(default is StandardDecay).
-For the second question, Angel offers two options:
-- A mini-batch once Decay
-- A epoch once Decay
+The `StepSizeScheduler` is the base class of all Decay, and the object of the same name is the factory of all Decay instances. `SharedConf.getStepSizeScheduler` can obtain the specified decay type by reading the value of **ml.opt.decay.class.name** (StandardDecay by default).
 
-Through the parameter of "ml.opt.decay.on.batch", when it is true, a mini-batch once Decay, and an epoch once Decay when it is flase (default way). Specific code in the `GraphLearner'class of train method and trainOneEpoch method.
+For the second question, Angel provides two solutions controlled by the **ml.opt.decay.on.batch** parameter:
+
+- One Decay per mini-batch (true)
+- One Decay per epoch (false; default)
+
+Detailed codes are included in the `train` and `trainOneEpoch` methods of the  `GraphLearner` class.
+
 
 ## 1. ConstantLearningRate
-This is the simplest way to Decay, that is, without Decay, the learning rate remains unchanged throughout the training process.
+ConstantLearningRate is the simplest Decay, that is, the learning rate keeps unchanged throughout the training process without any decay.
 
-Configuration sample:
+Configuration example:
 ```
 ml.opt.decay.class.name=ConstantLearningRate
 ```
 
 ## 2. StandardDecay
-The standard Decay scheme, the formula is as follows:
+The standard Decay solution. The formula is:
 
 ![](http://latex.codecogs.com/png.latex?lr_{t}=\frac{lr_0}{\sqrt{1+\alpha\cdot%20t}})
 
-Configuration sample:
+Configuration example:
 ```
 ml.opt.decay.class.name=StandardDecay
 ml.opt.decay.alpha=0.001
 ```
 ## 3. CorrectionDecay
-Modified Decay, this scheme is suitable for Momentum, it is designed for Momentum, please do not use it for other optimizers such as Adam. The calculation formula is:
+The Correction Decay is explicitly designed for Momentum. Please do not use it for other optimizers such as Adam. The formula is:
 
 ![](http://latex.codecogs.com/png.latex?lr_{t}=\frac{lr_0}{\sqrt{1+\alpha\cdot%20t}}\cdot\frac{1-\beta}{1-\beta^t})
 
-The first part is StandardDecay, which is the normal Decay, and the second part is the correction item, designed for Momentum, which is the reciprocal of the sum of the motion coefficients. Where $\beta$ must be equal to the momentum in the optimizer. Generally set to 0.9 .
+The first part of the multiplication is exactly the StandardDecay; The second part is the correction designed for Momentum, which is the reciprocal of the sum of the motion coefficients. The $\beta$ must be equal to the momentum in optimizer, and can be generally set to 0.9.
 
-There are two points to note about the use of this Decay:
-- The momentum calculation formula should be: velocity = momentum * velocity + gradient, the implementation of Momentum in Angel is also this way.
-- Requires a mini-batch once Decay, because it is synchronized with the update of the parameter.
+There are two things to note about using CorrectionDecay:
+- The formula of calculating the momentum should be $velocity = momentum * velocity + gradient$. It is already included in the implementation of Momentum in Angel.
+- As it requires one Decay per mini-batch, the Decay should be synchronous with parameter update.
 
-Configuration sample:
+Configuration example:
 ```
 ml.opt.decay.class.name=CorrectionDecay
 ml.opt.decay.alpha=0.001
 ml.opt.decay.beta=0.9
 ```
 ## 4. WarmRestarts
-This is a more advanced Decay scheme, which is representative of Decay in the cycle. The standard calculation formula is as follows:
+WarmRestarts is a more advanced Decay solution, which is representative of Decay in cycle. The standard calculation formula is as follows:
+
 ![](http://latex.codecogs.com/png.latex?lr_t=lr_{min}+\frac{1}{2}\cdot\frac{lr_{max}-lr_{min}}{1+\cos{(\frac{t}{interval}\pi)}})
 
-For the standard calculation formula, we made the following improvements.
-- Attenuate ![](http://latex.codecogs.com/png.latex?lr_{max})
-- Step by step to increase ![](http://latex.codecogs.com/png.latex?interval)
+We make following improvements for the standard calculation formula:
 
-Configuration sample:
+- Attenuate the ![](http://latex.codecogs.com/png.latex?lr_{max})
+- Successively increase the ![](http://latex.codecogs.com/png.latex?interval)
+
+Configuration example:
 ```
 ml.opt.decay.class.name=WarmRestarts
 ml.opt.decay.alpha=0.001
 ```
 
-Where![](http://latex.codecogs.com/png.latex?interval) is set by `ml.opt.decay.intervals`, as follows:
+The ![](http://latex.codecogs.com/png.latex?interval) is configured via `ml.opt.decay.intervals`:
 ```scala
 class WarmRestarts(var etaMax: Double, etaMin: Double, alpha: Double) extends StepSizeScheduler {
 

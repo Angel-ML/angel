@@ -95,8 +95,14 @@ public class ParameterServerJVM {
 
   private static String getChildJavaOpts(Configuration jobConf, ApplicationId appid,
     PSAttemptId psAttemptId) {
-    String userOpts = null;
+    String userOpts;
     userOpts = jobConf.get(AngelConf.ANGEL_PS_JAVA_OPTS);
+
+    // Old parameter name
+    if(userOpts == null) {
+      userOpts = jobConf.get("angel.ps.child.opts");
+    }
+
     if (userOpts == null) {
       userOpts = generateDefaultJVMParameters(jobConf, appid, psAttemptId);
     }
@@ -126,6 +132,19 @@ public class ParameterServerJVM {
 
     float youngFator = conf
       .getFloat(AngelConf.ANGEL_PS_JVM_YOUNG_FACTOR, AngelConf.DEFAULT_ANGEL_PS_JVM_YOUNG_FACTOR);
+
+    // Parallel GC parameters
+    boolean isUseParallel = conf.getBoolean(AngelConf.ANGEL_PS_JVM_USE_PARALLEL_GC,
+        AngelConf.DEFAULT_ANGEL_PS_JVM_USE_PARALLEL_GC);
+
+    int parallelGCThread = conf.getInt(AngelConf.ANGEL_PS_JVM_PARALLEL_GC_THREADS,
+        AngelConf.DEFAULT_ANGEL_PS_JVM_PARALLEL_GC_THREADS);
+
+    int parallelGCMaxPauseMillis = conf.getInt(AngelConf.ANGEL_PS_JVM_PARALLEL_GC_MAX_PAUSE_TIME_MS,
+        AngelConf.DEFAULT_ANGEL_PS_JVM_PARALLEL_GC_MAX_PAUSE_TIME_MS);
+
+    boolean useAdaptiveSize = conf.getBoolean(AngelConf.ANGEL_PS_JVM_PARALLEL_GC_USE_ADAPTIVE_SIZE,
+        AngelConf.DEFAULT_ANGEL_PS_JVM_PARALLEL_GC_USE_ADAPTIVE_SIZE);
 
     // G1 params
     boolean useG1 = conf
@@ -173,7 +192,33 @@ public class ParameterServerJVM {
     int survivorRatio = 4;
 
     String ret;
-    if(useG1) {
+
+    if(isUseParallel) {
+      // Parallel Scavenge + Parallel Old
+      StringBuilder sb = new StringBuilder();
+      sb.append(" -Xmx").append(heapMax).append("M");
+      if(useAdaptiveSize) {
+        sb.append(" -XX:+UseAdaptiveSizePolicy");
+        sb.append(" -XX:MaxGCPauseMillis=").append(parallelGCMaxPauseMillis);
+      } else {
+        sb.append(" -Xms").append(heapMax).append("M");
+        sb.append(" -XX:-UseAdaptiveSizePolicy");
+        sb.append(" -Xmn").append(youngRegionSize).append("M");
+        sb.append(" -XX:SurvivorRatio=").append(survivorRatio);
+      }
+
+      ret = sb.append(" -XX:MaxDirectMemorySize=").append(directRegionSize).append("M")
+          .append(" -XX:PermSize=100M -XX:MaxPermSize=200M")
+          .append(" -XX:+AggressiveOpts")
+          .append(" -XX:+UseLargePages")
+          .append(" -XX:+UseParallelOldGC")
+          .append(" -XX:ParallelGCThreads=").append(parallelGCThread)
+          .append(" -verbose:gc")
+          .append(" -XX:+PrintGCDateStamps")
+          .append(" -XX:+PrintGCDetails")
+          .append(" -Xloggc:<LOG_DIR>/gc.log").toString();
+    } else if(useG1) {
+      // G1
       ret = new StringBuilder().append(" -Xmx").append(heapMax).append("M")
           .append(" -XX:MaxDirectMemorySize=")
           .append(directRegionSize).append("M")
@@ -195,6 +240,7 @@ public class ParameterServerJVM {
           .append(" -XX:+PrintGCDateStamps").append(" -XX:+PrintGCDetails")
           .append(" -Xloggc:<LOG_DIR>/gc.log").toString();
     } else {
+      // CMS
       ret = new StringBuilder().append(" -Xmx").append(heapMax).append("M").append(" -Xmn")
           .append(youngRegionSize).append("M").append(" -XX:MaxDirectMemorySize=")
           .append(directRegionSize).append("M").append(" -XX:SurvivorRatio=").append(survivorRatio)
@@ -207,6 +253,7 @@ public class ParameterServerJVM {
           .append(" -Xloggc:<LOG_DIR>/gc.log").toString();
     }
 
+    LOG.info("PS GC parameters: " + ret);
     return ret;
   }
 

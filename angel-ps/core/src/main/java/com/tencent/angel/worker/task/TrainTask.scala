@@ -18,7 +18,7 @@
 
 package com.tencent.angel.worker.task
 
-import com.tencent.angel.ml.math2.utils.LabeledData
+import com.tencent.angel.ml.feature.LabeledData
 
 /**
   * The type labeled base task.

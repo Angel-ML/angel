@@ -1,30 +1,13 @@
-/*
- * Tencent is pleased to support the open source community by making Angel available.
- *
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- *
- * https://opensource.org/licenses/Apache-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- *
- */
 package com.tencent.angel.kubernetesmanager.deploy.features
-
-import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.kubernetesmanager.deploy.config.{AngelPod, Constants, KubernetesConf, KubernetesMasterSpecificConf}
-import io.fabric8.kubernetes.api.model._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import com.tencent.angel.kubernetesmanager.deploy.config.{AngelPod, Constants, KubernetesConf, KubernetesMasterSpecificConf}
+import com.tencent.angel.conf.AngelConf
+import io.fabric8.kubernetes.api.model._
 
 private[angel] class BasicAngelMasterFeatureStep(
-                                                  conf: KubernetesConf[KubernetesMasterSpecificConf])
+    conf: KubernetesConf[KubernetesMasterSpecificConf])
   extends KubernetesFeatureConfigStep {
 
   private val masterPodName = s"${conf.appResourceNamePrefix}-master"
@@ -76,54 +59,54 @@ private[angel] class BasicAngelMasterFeatureStep(
       .withImage(masterContainerImage)
       .withImagePullPolicy(conf.imagePullPolicy())
       .addNewPort()
-      .withName(Constants.MASTER_PORT_NAME)
-      .withContainerPort(masterPort)
-      .withProtocol("TCP")
-      .endPort()
+        .withName(Constants.MASTER_PORT_NAME)
+        .withContainerPort(masterPort)
+        .withProtocol("TCP")
+        .endPort()
       .addAllToEnv((masterCustomEnvs ++ masterExtraClasspathEnv.toSeq).asJava)
       .addNewEnv()
-      .withName(Constants.ENV_MASTER_BIND_ADDRESS)
-      .withValueFrom(new EnvVarSourceBuilder()
-        .withNewFieldRef("v1", "status.podIP")
-        .build())
-      .endEnv()
+        .withName(Constants.ENV_MASTER_BIND_ADDRESS)
+        .withValueFrom(new EnvVarSourceBuilder()
+          .withNewFieldRef("v1", "status.podIP")
+          .build())
+        .endEnv()
       .addNewEnv()
-      .withName(Constants.ENV_MASTER_MEMORY)
-      .withValue(s"${masterMemoryMiB}M")
-      .endEnv()
+        .withName(Constants.ENV_MASTER_MEMORY)
+        .withValue(s"${masterMemoryMiB}M")
+        .endEnv()
       .addNewEnv()
-      .withName(Constants.ENV_MASTER_POD_NAME)
-      .withValue(masterPodName)
-      .endEnv()
+        .withName(Constants.ENV_MASTER_POD_NAME)
+        .withValue(masterPodName)
+        .endEnv()
       .addNewEnv()
-      .withName(Constants.ENV_APPLICATION_ID)
-      .withValue(conf.appId)
-      .endEnv()
+        .withName(Constants.ENV_APPLICATION_ID)
+        .withValue(conf.appId)
+        .endEnv()
       .addNewEnv()
-      .withName(Constants.ENV_EXECUTOR_POD_NAME_PREFIX)
-      .withValue(conf.appResourceNamePrefix)
-      .endEnv()
+        .withName(Constants.ENV_EXECUTOR_POD_NAME_PREFIX)
+        .withValue(conf.appResourceNamePrefix)
+        .endEnv()
       .withNewResources()
-      .addToRequests("cpu", masterCpuQuantity)
-      .addToLimits(maybeCpuLimitQuantity.toMap.asJava)
-      .addToRequests("memory", masterMemoryQuantity)
-      .addToLimits("memory", masterMemoryQuantity)
-      .endResources()
+        .addToRequests("cpu", masterCpuQuantity)
+        .addToLimits(maybeCpuLimitQuantity.toMap.asJava)
+        .addToRequests("memory", masterMemoryQuantity)
+        .addToLimits("memory", masterMemoryQuantity)
+        .endResources()
       .build()
 
     val masterPod = new PodBuilder(pod.pod)
       .editOrNewMetadata()
-      .withName(masterPodName)
-      .addToLabels(conf.roleLabels.asJava)
-      .addToAnnotations(conf.roleAnnotations.asJava)
-      .endMetadata()
+        .withName(masterPodName)
+        .addToLabels(conf.roleLabels.asJava)
+        .addToAnnotations(conf.roleAnnotations.asJava)
+        .endMetadata()
       .withNewSpec()
-      .withRestartPolicy("Never")
-      .endSpec()
+        .withRestartPolicy("Never")
+        .endSpec()
       .editOrNewSpec()
-      .withServiceAccount(conf.serviceAccount())
-      .withServiceAccountName(conf.serviceAccount())
-      .endSpec()
+        .withServiceAccount(conf.serviceAccount())
+        .withServiceAccountName(conf.serviceAccount())
+        .endSpec()
       .build()
 
     AngelPod(masterPod, masterContainer)

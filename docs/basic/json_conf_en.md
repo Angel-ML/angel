@@ -1,32 +1,26 @@
-# Json Configuration File Description
+# Json Configuration Files
 
-Due to the large number of deep learning parameters, it is cumbersome to specify parameters directly by script. From Angel 2.0, it is supported to specify model parameters with Json files (System parameters are still configured by script). Currently, Json files have two purposes:
+Since deep learning often comes with a large number of parameters, it is not convenient to directly specify parameters using scripts. Beginning from the 2.0 veresion, Angel now supports specifying model parameters in Json files (Note: system parameters are still configured by scripts). Json files have currently two major purposes:
+
 - Provide parameters for existing algorithms, including:
     + DeepFM
     + PNN
     + NFM
     + Deep and Wide
-- Similar to Caffe, you can customize your new network with Json
+- Customize a new network using Json, similar to Caffe
 
-
-The parameters that can be configured with Json files are as follows:
+Parameters that can be configured in Json file include:
 
 - Data-related parameters
-
-- Model parameters
-
-- Training related parameters
-
+- Model-related parameters
+- Training-related parameters
 - Default optimizer, transfer function, loss function
+- Layers in network
 
-- Layers in the Network
+The following will introduce these parameters one by one.
 
-Here's an introduction.
-
-
-## 1. Data-related Parameters
-
-A complete data configuration is as follows:
+## 1. Data-Related Parameters
+A whole data configuration will be like:
 
 ```json
 "data": {
@@ -40,23 +34,23 @@ A complete data configuration is as follows:
     "posnegratio": 0.01
 }
 ```
+The Json keys are demonstrated in the table below:
 
-Json key | configuration item | description
+Json key | Corresponding configuration item | Description 
 ---|---|---
-format | ml.data.type | Input data format,including dense, dummy and libsvm, the default one is dummy
-indexrange | ml.feature.index.range | Feature dimension
-numfield | ml.fm.field.num | Number of fields in the input data. Although feature intersections can generate very high dimensional data, for some data sets, the number of each sample field is constant.
-validateratio | ml.data.validate.ratio | Angel will divide the input data into a training set and a validation set. This parameter is used to specify the scale of the validation set. Note: All validation sets are evenly stored in memory. OOM may occurs when the amount of data is particularly large.
-sampleratio | ml.batch.sample.ratio | The sampling rate for spark to sample mini-batches.
-useshuffle | ml.data.use.shuffle | Whether to shuffle data before training each epoch, the default set is false. Note: large dataset with shuffle training may cause poor performance.
-translabel | ml.data.label.trans.class | For two classes classification task, Angel requires the label format as (-1, 1),set it to true if your label format is (0, 1). The default set is false.
-posnegratio | ml.data.posneg.ratio | Angel supports sampling mini-batches, but in a different way from Spark. Angel firstly separates the positive and negative examples of the data set, and then separately generates mini-batch from positive and negative samples in proportion. Parameter posnegratio is the ratio of positive and negative samples in a mini-batch. This parameter is helpful for the training of unbalanced data sets. posnegratio defaults to -1, indicating no sampling.
+format | ml.data.type | Type of input data, can be dense, dummy (default) or libsvm 
+indexrange | ml.feature.index.range | Feature dimension 
+numfield | ml.fm.field.num | Number of fields in the input data. Although feature crosses can generate extremely high-dimensional data, the number of fields of each sample is fixed for some data sets 
+validateratio | ml.data.validate.ratio | Angel will partition input data into training set and validation set. This parameter specifies the ratio of validation set. Note: all validation sets are stored in memory, so there could be OOM when the data size is very large 
+sampleratio | ml.batch.sample.ratio | This parameter is dedicated to Spark on Angel. Spark generates mini-batches by sampling, and this parameter specifies the sampling ratio 
+useshuffle | ml.data.use.shuffle | This parameter specifies whether or not to shuffle data before each epoch. Note: shuffling has a great impact on performance when the data size is large, so please use it carefully. The default setting is false (do not shuffle) 
+translabel | ml.data.label.trans.class | For binary classification tasks, Angel requires each label to be (+1, -1). This parameter can transform input labels into required form if the input data was labeled in (0, 1). Default setting is false (closed) 
+posnegratio | ml.data.posneg.ratio | Angel also supports generating mini-batch by sampling, but in a different way than Spark. Angel firstly separates the positive and negative examples of the data set, and then generates mini-batches by separately sampling from the two sets basing on the designated pos-neg ratio in each mini-batch. This parameter is used to control the pos-neg ratio. It can help dealing with unbalanced data set. The default setting is -1 (do not sample) 
 
-Note: In addition to indexrange, all other parameters have default values, which means they are optional.
+Note: all parameters except `indexrange` have default values and are optional.
 
-## 2. Model Parameters
-
-A complete model configuration is as follows:
+## 2. Model-Related Parameters
+A whole model configuration will be like:
 ```json
 "model": {
     "loadPath": "path_to_your_model_for_loading",
@@ -65,15 +59,17 @@ A complete model configuration is as follows:
     "modelsize": 148
 }
 ```
+The Json keys are demonstrated in the table below:
 
-Json key | configuration item | description
+Json key | Corresponding configuration item | Description 
 ---|---|---
-loadpath | angel.load.model.path | Model loading path
-savepath | angel.save.model.path | Model save path
-modeltype | ml.model.type | Model type, refers to the type of input layer parameters on the PS (data and storage), and it also determines the data type of the non-input layer (the storage type of the non-input layer is dense)
-modelsize | ml.model.size | The effective data dimension. For the entire dataset, there may be no data in some dimensions, and the feature dimension is inconsistent with the model dimension
+loadpath | angel.load.model.path | Model loading path 
+savepath | angel.save.model.path | Model save path 
+modeltype | ml.model.type | Model type, i.e. the type of the input layer's parameters on PS (data type and storage type). This parameter also determines the data type of non-input layers (storage type of non-input layers is dense) 
+modelsize | ml.model.size | For the whole data set, there may be some null data in some dimensions, resulting in inconsistency between feature dimension and model dimension. This parameter specifies the **valid** data dimension. 
 
-Commonly used modeltypes are:
+Common modeltype includes:
+
 - T_DOUBLE_DENSE
 - T_FLOAT_DENSE
 - T_DOUBLE_SPARSE
@@ -81,8 +77,8 @@ Commonly used modeltypes are:
 - T_DOUBLE_SPARSE_LONGKEY
 - T_FLOAT_SPARSE_LONGKEY
 
-## 3. Training Parameters
-A complete training configuration is as follows:
+## 3. Training-Related Parameters
+A whole training configuration will be like:
 ```json
 "train": {
     "epoch": 10,
@@ -94,26 +90,29 @@ A complete training configuration is as follows:
     "decaybeta": 0.9
 }
 ```
+The Json keys are demonstrated in the table below:
 
-Json key | configuration item | description
+Json key | Corresponding configuration item | Description 
 ---|---|---
-epoch| ml.epoch.num | Num of epochs
-numupdateperepoch | ml.num.update.per.epoch | Number of times the parameter data is updated in each iteration. Only useful for Angel
-batchsize |ml.minibatch.size | Number of samples in each mini-batch
-lr |ml.learn.rate | Learning rate
-decayclass |ml.opt.decay.class.name| Learning rate decay method
-decayalpha |ml.opt.decay.alpha| Learning rate decay parameter alpha
-decayalpha |ml.opt.decay.beta| Learning rate decay parameterbeta
+epoch| ml.epoch.num | Number of epochs 
+numupdateperepoch | ml.num.update.per.epoch | This parameter is only useful for Angel, indicating the number of times the parameters are updated in each iteration 
+batchsize |ml.minibatch.size | This parameter is only useful for Angel, indicating the size of mini-batch 
+lr |ml.learn.rate | Learning rate 
+decayclass |ml.opt.decay.class.name| Learning rate decay class 
+decayalpha |ml.opt.decay.alpha| Alpha in the learning rate decay class 
+decaybeta |ml.opt.decay.beta| Beta in the learning rate decay class 
+In which:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}lr_{epoch}=\max(\frac{lr}{\sqrt{1.0+decay*epoch}},\frac{lr}{5}))
 
-## 4. Default optimizer, transfer function, loss function
-- Angel allows different trainable layers to use different optimizers. For example, in the deep and wide model, the wide part uses FTRL and the deep part uses Adam.
-- Similarly, different layers are allowed to use different transfer functions (activation functions). Usually, the intermediate layers use Relu or Sigmoid function, and the layer connected to the LossLayer uses Identity function.
-- Angel can set the default loss function, which is designed for multitasking training. Multitask training is not supported yet, please ignore it.
+## 4. Default Optimizer, Transfer Function, Loss Function
+- Angel allows different trainable layers to use different optimizers. For instance, in a deep and wide model, the wide part will use FTRL while the deep part will use Adam.
+- Similarly, Angel also allows different layers to use different transfer functions (activation functions). For example, the middle layers use ReLu/Sigmoid, and the layer connecting with LossLayer uses Identity.
+- Angel supports configuring default loss function, which is designed for multi-task training. However, Angel doesn't currently support multi-task learning.
 
-### 4.1 Default optimizer
-Since each optimizer has default parameters, there are two ways to set the default optimizer. Take Momentum as an example:
+### 4.1 Default Optimizer
+Since each optimizer has its default parameters, there are two ways to set the default optimizer. Take Momentum as an example:
+
 ```json
 "default_optimizer": "Momentum"
 
@@ -124,14 +123,14 @@ Since each optimizer has default parameters, there are two ways to set the defau
     "reg2": 0.0
 }
 ```
+- The first way: only specifying the optimizer's name while leaving the parameters as default
+- The second way: specifying the opzimizer type (name) as well as related parameters by key-value. Note that the parameters are not mandatory except the optimizer type. You can ignore some parameters if you want to use the default setting
 
-- Specify only the optimizer name and use the default optimizer parameters 
-- Use the key-value method to specify the type (name) and related parameters of the optimizer. It is worth noting that the parameters of the optimizer are not mandatory except for the name. If you want to use the default value, just ignore it.
+For specific parameters of the optimizers, please refer to [Optimizers on Angel](./optimizer_on_angel.md)
 
-For specific parameters of the optimizer, please refer to [Optimizer in Angel] (./optimizer_on_angel.md)
+### 4.2 Default Transfer Function
+Most of the transfer functions have no parameter, except for a few tranfer functions such as dropout. Therefore, there are also two ways to set the default transfer function:
 
-### 4.2 Default transfer function
-Most transfer functions have no parameters, only a few transfer functions do, such as dropout. So there are two ways to specify the default transfer function:
 ```json
 "default_transfunc": "Relu"
 
@@ -141,24 +140,23 @@ Most transfer functions have no parameters, only a few transfer functions do, su
     "proba": 0.5
 }
 ```
+- The first way: only specifying the name of the transfer function, automatically using default parameters if the designated function has parameters
+- The second way: specifying the funtion type (name) as well as related parameters by key-value. Similar to the specification of optimizer, the parameters are not mandatory. You can ignore some parameters if you want to use the default setting
 
-- Only specify the name of the transfer function, if the transfer function has parameters, use the default parameters
-- Similar to the parameter specification of the optimizer, use the key-value method to specify the type (name) of the transfer function and related parameters. The parameters of the transfer function are not required, if you want to use the default value, just ignore it  directly.
+Note: since the dropout transfer function is calculated differently in training and testing (prediction), users must specify in which scenario the function is used: train, inctrain or predict.
 
-Note: Since the dropout transfer function is not calculated the same way in training and testing (predictive), use actiontype to indicate the task type: train | inctrain | predict.
+For more details about transfer functions, please refer to [Transfer Functions in Angel](./transfunc_on_angel.md)
 
-For more details on the transfer function, please refer to [Transfer Function in Angel] (./transfunc_on_angel.md)
+## 5. Layers in a Network
+in Angel, each deep learning algorithm is represented by an AngelGraph, in which a node represents a Layer. Nodes can be separated into three classes basing on their topological structure:
 
-## 5. Layers in the network
+- verge: edge node, only exists in input or output layer, such as inputLayer and lossLayer
+- linear: layer with only one input and one output
+- join: layer with two or more input and one output
 
-Each deep learning algorithm in Angel can be represented as an AngelGraph, and the nodes in AngelGraph are Layers. Layers can be divided into three categories:
-- verge: edge node, only in the input or output layer, such as input layer and loss layer
-- linear: layer with one input and one output
-- join: layer with two or more inputs, one output
+Note: although a layer can have multiple input in Angel, there is only one output at most. Output of a layer can be used as input of multiple layers, i.e., the output can be "repetitively consumed".
 
-Note: Layers in Angel can have multiple inputs, but only one output is allowed. A layer's output can be used as input for multiple layers, which means the output can be "repeatedly consumed".
-
-In the Json configuration file, all layer-related parameters are placed in a list, as follows:
+In Json, all layer-related parameters are stored in one list:
 
 ```json
 "layers" : [
@@ -169,20 +167,21 @@ In the Json configuration file, all layer-related parameters are placed in a lis
 ]
 ```
 
-Although different layers have different parameters, they have some commonalities:
-- Each layer has a name (name) and a type (type):
-    + name: is the unique identifier of the layer, so it cannot be repeated
-    + type: is the type of the layer, which is actually the `class name of the Layer'.
-- In addition to the input layer (DenseInputLayer, SparseInputLayer, Embedding), the other layers have the "inputlayer" parameter. For the join layer, it has multiple inputs, so its input is specified with "inputlayers":
-    + inputlayer: For the linear or loss layer to be specified, the inputlayer value is the name of the input layer
-    + inputlayers: For the join layer to be specified, represented by a list whose value is the name of the input layer
-- All layers have output except the Loss layer, but explicitly pointing out the outputs is not needed. The dimensions of the output should be specified:
-    + outputdim: the dimensions of the output
-- For trainable layer, "optimizer" can be specified, otherwise the default optimizers are used
-- For some layers, such as DenseInputLayer, SparseInputLayer, FCLayer, "transfunc" can be specified
-- For the loss layer, "lossfunc" can be specified
+Although different layers have different parameters, they share some generality:
 
-Here is an example of DeepFM:
+- Each layer has a name and a type:
+    + name: the unique identifier of the layer, so it cannot be repeated
+    + type: the type of the layer, which is actually the **class name** corresponding to the layer
+- All layers except inputLayer (DenseInputLayer, SparseInputLayer, Embedding) have a "inputlayer" parameter. A join layer has multiple input, thus its input should be specified as "inputlayers":
+    + inputlayer: should be specified for linear or loss layer. The value is the name of the input layer
+    + inputlayers: should be specified for join layer. The value is a list of the names of input layers
+- All layers except loss layer have output, but there's no need to explicitly indicate the output in Angel, as the output relationship is already specified when specifying the input relationship. However, we still have to explicitly point out the dimensions of output:
+    + outputdim: the dimensions of output
+- For a trainable layer, we can specify its optimizer since it has parameters. The key is "optimizer", and its optional values are consitent with those of the "default_optimizer" parameter introduced in 4.1
+- Some layers, such as DenseInputLayer, SparseInputLayer and FCLayer, can have transfer functions, specified using "transfunc" key, and optional values consitent with those of the "default_transfunc" introduced in 4.2
+- LossLayer has "lossfunc" item to specify the loss funcion
+
+Following is an example of DeepFM:
 
 ```json
 "layers": [
@@ -243,4 +242,4 @@ Here is an example of DeepFM:
   ]
 ```
 
-Note: Angel supports "folding" method when specifying sequential FC layers. For more examples, please refer to the specific algorithm and [layer in Angel] (./layers_on_angel.md)
+Note: In Angel, FCLayer adopts the "folding" method when specifying parameters. For more examples, please refer to the specific algorithms and [Layers in Angel](./layers_on_angel.md)

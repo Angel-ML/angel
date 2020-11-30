@@ -1,6 +1,6 @@
 FROM openjdk:8-alpine
 
-ARG angel_dist_path=./angel-3.0.1
+ARG angel_dist_path=./angel-3.1.0
 ARG entrypoint_path=./entrypoint.sh
 
 RUN set -ex && \

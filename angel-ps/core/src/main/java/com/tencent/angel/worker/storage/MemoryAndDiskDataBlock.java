@@ -18,7 +18,6 @@
 
 package com.tencent.angel.worker.storage;
 
-import com.tencent.angel.ml.math2.utils.DataBlock;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -72,7 +71,7 @@ public class MemoryAndDiskDataBlock<VALUE> extends DataBlock<VALUE> {
   }
 
   @Override protected boolean hasNext() throws IOException {
-    if (readIndex < memoryStorage.getWriteIndex()) {
+    if (readIndex < memoryStorage.writeIndex) {
       return true;
     } else {
       if (diskStorage != null) {
@@ -85,7 +84,7 @@ public class MemoryAndDiskDataBlock<VALUE> extends DataBlock<VALUE> {
   }
 
   @Override public VALUE get(int index) throws IOException {
-    if (index < memoryStorage.getWriteIndex()) {
+    if (index < memoryStorage.writeIndex) {
       return memoryStorage.get(index);
     } else {
       throw new IOException("dose not support this get random operation for DiskDataBlock");
@@ -147,7 +146,7 @@ public class MemoryAndDiskDataBlock<VALUE> extends DataBlock<VALUE> {
   }
 
   @Override public DataBlock<VALUE> slice(int startIndex, int length) throws IOException {
-    if (startIndex + length <= memoryStorage.getWriteIndex()) {
+    if (startIndex + length <= memoryStorage.writeIndex) {
       return memoryStorage.slice(startIndex, length);
     } else {
       throw new IOException("does not support this slice operation for DiskDataBlock");

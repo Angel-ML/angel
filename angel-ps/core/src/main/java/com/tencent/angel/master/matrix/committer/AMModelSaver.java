@@ -909,12 +909,15 @@ public class AMModelSaver extends AbstractService {
           new Path(saveContext.getSavePath(), matrixContext.getMatrixName()).toString(),
           System.currentTimeMillis()));
 
-      LOG.info("result size=" + results.size());
+      LOG.info("Matrix " + matrixContext.getMatrixName() + " new save path = "
+          + new Path(saveContext.getSavePath(), matrixContext.getMatrixName()).toString());
+      LOG.info("After this save, total save result number=" + results.size());
 
       int maxSaveNum = saveContext.isCheckpoint() ? maxCheckpointItem : maxSaveItem;
       while (results.size() > maxSaveNum) {
-        LOG.info("need remove old save results/checkpoint for matrix " + matrixContext.getMatrixName());
         SaveResult oldResult = results.remove(0);
+        LOG.info("need remove old save results/checkpoint for matrix " + matrixContext.getMatrixName() +
+            " remove path = " + oldResult.getMatrixPath());
         try {
           HdfsUtil.remove(context.getConf(), oldResult.getMatrixPath());
           HdfsUtil.removeIfEmpty(context.getConf(), oldResult.getModelPath());
@@ -966,5 +969,6 @@ public class AMModelSaver extends AbstractService {
 
   private void finalCommit(Path tmpCombinePath, Path outputPath, FileSystem fs) throws IOException {
     HdfsUtil.rename(tmpCombinePath, outputPath, fs);
+    LOG.info("final commit from " + tmpCombinePath + " to " + outputPath);
   }
 }

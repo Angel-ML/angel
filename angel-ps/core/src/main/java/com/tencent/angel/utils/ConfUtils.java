@@ -20,15 +20,15 @@ package com.tencent.angel.utils;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.InvalidParameterException;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;

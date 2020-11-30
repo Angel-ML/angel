@@ -21,7 +21,7 @@ package com.tencent.angel.ps.storage.vector;
 import com.tencent.angel.common.Serialize;
 import com.tencent.angel.common.StreamSerialize;
 import com.tencent.angel.exception.WaitLockTimeOutException;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.op.GeneralOp;
 import com.tencent.angel.ps.storage.vector.storage.IStorage;

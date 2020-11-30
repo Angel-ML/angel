@@ -1,26 +1,28 @@
-# Optimizer in Angel
+# Optimizers in Angel
 
-There are many optimization methods for machine learning, but in the big data scenario, the most used method is a series of methods based on SGD. In Angel, only a small number of optimization methods are implemented, as follows:
-- Methods based on stochastic gradient descent
-    - SDG: here is mini-batch SGD (mini-batch Stochastic gradient descent)
+There are various optimization methods in machine learning, but in the big data use cases, the most commonly used method is a series of optimizations based on SGD. Currently, only a small number of optimization methods are implemented in Angel:
+
+- Stochastic gradient descent-based methods:
+    - SDG: here referring to mini-batch SGD 
     - Momentum: SGD with momentum
-    - AdaGrad: SGD with Hessian diagonal approximation
-    - AdaDelta: 
+    - AdaGrad: SGD with diagonal Hessian approximation
+    - AdaDelta: an extension of AdaGrad adapting learning rates based on a moving window of gradient updates
     - Adam: SGD with momentum and diagonal Hessian approximation
-- Online learning method
-    - FTRL: Follow The Regularized Leader, an online learining method
+- Online learning methods:
+    - FTRL: Follow The Regularized Leader
 
 
 
 
 ## 1. SGD
-The update equation for SGD is as follows:
+The update rule of SGD is:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}\bold{x}_{t+1}=\bold{x}_t-\eta\Delta\bold{x}_t)
 
-where, ![](http://latex.codecogs.com/png.latex?\eta)is learning rate. Using SGD can add ![](http://latex.codecogs.com/png.latex?L_1,L_2) Regularization, the actual optimization is based on PGD(proximal gradient descent). 
+in which ![](http://latex.codecogs.com/png.latex?\eta) represents the learning rate. SGD supports including ![](http://latex.codecogs.com/png.latex?L_1,L_2) regularization, and the exact optimization used in this case is PGD (proximal gradient descent). 
 
-There are two kinds of json expressions, as follows:
+There are two ways to represent SGD optimization in Json:
+
 ```json
 "optimizer": "sgd",
 
@@ -32,13 +34,13 @@ There are two kinds of json expressions, as follows:
 ```
 
 ## 2. Momentum
-Momentum's update formula is as follows:
+The update rule of Momentum is:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}\bold{v}_t=\gamma\bold{v}_{t-1}+\Delta\bold{x}_t,\bold{x}_{t+1}=\bold{x}_t-\eta\bold{v}_t)
 
-where, ![](http://latex.codecogs.com/png.latex?\gamma)is momentum factor, ![](http://latex.codecogs.com/png.latex?\eta)is learning rate. Besides, Momentum can be added ![](http://latex.codecogs.com/png.latex?L_2) regularization. The default optimization method in Angel is Momentum.
+in which ![](http://latex.codecogs.com/png.latex?\gamma) represents the momentum factor, ![](http://latex.codecogs.com/png.latex?\eta) represents the learning rate. Momentum supports![](http://latex.codecogs.com/png.latex?L_2) regularization. Momentum is the default optimization method in Angel.
 
-There are two types of json expressions, as follows:
+There are two ways to represent Momentum in Json:
 ```json
 "optimizer": "momentum",
 
@@ -50,15 +52,15 @@ There are two types of json expressions, as follows:
 ```
 
 ## 3. AdaGrad
-The update formula for AdaGrad (here is the exponential smoothing version, ie RMSprop) is as follows:
+The update rule of AdaGrad (referring to the exponential smoothing version, i.e., RMSprop) is:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}n_t=\beta%20n_{t-1}+(1-\beta)g_{t}^2)
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}\Delta%20\theta=-\frac{\eta}{\sqrt{n_t+\epsilon}}\cdot%20g_t)
 
-where, ![](http://latex.codecogs.com/png.latex?\beta)is smoothing factor, ![](http://latex.codecogs.com/png.latex?\eta)is learning rate. Besides, AdaGrad can be added ![](http://latex.codecogs.com/png.latex?L_1,L2)regularization.
+in which ![](http://latex.codecogs.com/png.latex?\beta) is the smoothing factor and ![](http://latex.codecogs.com/png.latex?\eta) is the learning rate. AdaGrad also supports![](http://latex.codecogs.com/png.latex?L_1,L2) regularization.
 
-There are two types of json expressions, as follows:
+There are two ways to represent AdaGrad in Json:
 ```json
 "optimizer": "adagrad",
 
@@ -71,7 +73,7 @@ There are two types of json expressions, as follows:
 ```
 
 ## 4. AdaDelta
-The update formula for AdaDelta (here is the exponential smoothing version, ie RMSprop) is as follows:
+The update rule of AdaDelta is:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}n_t=\alpha%20n_{t-1}+(1-\alpha)g_{t}^2)
 
@@ -80,9 +82,9 @@ The update formula for AdaDelta (here is the exponential smoothing version, ie R
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}v_t=\beta%20v_{t-1}+(1-\beta)\Delta%20\theta_{t}^2)
 
 
-where, ![](http://latex.codecogs.com/png.latex?\alpha,%20\beta)is smoothing factor. AdaDelta can be added ![](http://latex.codecogs.com/png.latex?L_1,L2) regularization.
+in which ![](http://latex.codecogs.com/png.latex?\alpha,%20\beta) are smoothing factors. AdaDelta also supports![](http://latex.codecogs.com/png.latex?L_1,L2) regularization.
 
-There are two types of json expressions, as follows:
+There are two ways to represent AdaDelta in Json:
 ```json
 "optimizer": "adadelta",
 
@@ -96,20 +98,22 @@ There are two types of json expressions, as follows:
 ```
 
 ## 5. Adam
-Adam is a good optimization method, update fomula is:
+Adam is a better way to optimize. The formula is:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}\begin{array}{ll}\bold{m}_t&=\beta\bold{m}_{t-1}+(1-\beta)\Delta\bold{x}_t\\\\\\bold{v}_t&=\gamma\bold{v}_{t-1}+(1-\gamma)\Delta\bold{x}^2_t\\\\\bold{x}_t&=\gamma\bold{x}_{t-1}-\eta\frac{\sqrt{1-\gamma^t}}{1-\beta^t}\frac{\bold{m}_t}{\sqrt{\bold{v}_t}+\epsilon}\\%20\end{array})
 
-where, ![](http://latex.codecogs.com/png.latex?\bold{m}_t)is the exponential smoothing of gradient![](http://latex.codecogs.com/png.latex?\bold{x}_t), which is momentum,  ![](http://latex.codecogs.com/png.latex?\bold{v}_t)is the exponential smoothing of gradient![](http://latex.codecogs.com/png.latex?\bold{x}^2_t), Can be seen as a diagonal approximation of Hessian. In default cases ![](http://latex.codecogs.com/png.latex?\beta=0.9,\gamma=0.99), note
+in which ![](http://latex.codecogs.com/png.latex?\bold{m}_t) represents the exponential smoothing factor, i.e. the momentum, and  ![](http://latex.codecogs.com/png.latex?\bold{v}_t) represents the exponential smoothing of gradient ![](http://latex.codecogs.com/png.latex?\bold{x}^2_t), which can be regarded as diagonal approximation of Hessian. ![](http://latex.codecogs.com/png.latex?\beta=0.9,\gamma=0.99) by default. 
+
+Let
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}f(t)=\frac{\sqrt{1-\gamma^t}}{1-\beta^t})
 
-![](http://latex.codecogs.com/png.latex?f(t))Is a function with an initial value of 1, and a limit of 1, the intermediate process is first reduced and then increased, as shown below:
-![adam_coeff](../img/adam_coeff.png)
+then ![](http://latex.codecogs.com/png.latex?f(t)) is a function with initial value of 1 and a limit of 1, which decreases first and then increases:
+![adam系数](../img/adam_coeff.png)
 
-That is, in the initial stage of optimization, the gradient is larger, the learning rate is appropriately reduced, and the gradient is reduced and smoothed. In the final stage of optimization, the gradient is small, and appropriately increasing the learning rate helps to jump out of the local optimum.
+Which means the learning rate is decreased during the initial state of optimization where the gradient is relatively large, so as to smooth the gradient descent; and during the final state where the gradient is very small, the learning rate will be approximately increased in order to help jumping out of local minimum.
 
-There are two types of json expressions, as follows:
+There are two ways to represent Adam in Json:
 ```json
 "optimizer": "adam",
 
@@ -121,16 +125,14 @@ There are two types of json expressions, as follows:
 }
 ```
 
-## 6. FTRL
-FTRL is an online learning algorithm whose goal is to optimize the regret bound. It can be proved to be effective under some conditions of learning rate attenuation.
+## 4. FTRL
+FTRL is an online learning algorithm which goal is to optimize the regret bound. It is proved to be effective under specific learning rate decay condition.
 
-Another feature of FTRL is that it can get very sparse solutions, which is better than PGD (proximal gradient descent) and better than other online learning algorithms, such as FOBOS, RDA, etc.
-
-The algorithm flow of FTRL is as follows:
+Another characteristic of FTRL that distinguishes it from PGD (proximal gradient descent) and other online learning methods such as FOBOS and RDA is that it can get very sparse solutions. FTRL's algorithm is demonstrated as follows:
 
 ![FTRL](../img/ftrl_lr_project.png)
 
-There are two types of json expressions, as follows:
+There are two ways to represent FTRL in Json:
 ```json
 "optimizer": "ftrl",
 
@@ -142,26 +144,25 @@ There are two types of json expressions, as follows:
     "reg2": 0.01
 }
 ```
-ps: ![](http://latex.codecogs.com/png.latex?\lambda_1,\lambda_2)are a regularization parameters, corresponding to "reg1, reg2" in json
+Note: ![](http://latex.codecogs.com/png.latex?\lambda_1,\lambda_2) are regularization coefficient corresponding to "reg1, reg2" in Json.
 
-**some tips:** 
+**Some reference experiences:** 
 
-For the deep and wide algorithm, in principle, it is necessary to ensure that the convergence speed of the two sides is not too different.
-- The wide part optimizer uses FTRL because FTRL converges relatively slowly, so that it is trained by the depth side.. 
-- The deep part optimizer uses Adam because Adam converges relatively quickly. Although the deep side uses the fast convergence optimizer, his parameters are too many.
+For wide & deep learning, in principle, it is necessary to ensure that the convergence speed of the two sides is not too different.
+- Use FTRL as optimizer of the wide part as it converges relatively slowly
+- Use Adam as optimizer of the deep part as it converges relatively quickly. Though the deep side uses a fast convergence optimizer, there are more parameters on deep side
 
-For the FTRL optimizer, it is designed for online learning. In order to ensure the stability of the model, the amplitude of each update is very small. In the online learning environment, the data is one by one or a small batch and a small batch, in theory, should not Let the small amount of data modify the model too mush. So in the FTRL algorithm, the batch size can not be too large, preferably less than 10000 data..
+FTRL optimizer is designed for online learning. Its amplitude of each update is very small in order to ensure the robustness of the model. In online learning cases, the data is fed row by row or minibatch by minibatch, so it's neither theoretically feasible to let a small size of data to modify the model too much. Therefore, the batch size shouldn't be too large when using FTRL, and had best be less than 10,000.
 
-Different optimizer convergence speed comparison: FTRL < SGD < Momentum < AdaGrad ~ AdaDelta < Adam
+The convergence rate of different optimizers: FTRL < SGD < Momentum < AdaGrad ~ AdaDelta < Adam
 
-Since AdaGrad, AdaDelta, and Adam introduce Hessian diagonal approximations, they can have larger batches to ensure the accuracy of gradients and Hessian diagonal matrices. For simpler first-order optimizers such as FTRL, SGD, and Momentum, they need more iterations, so the batch size can't be too big. So there is: 
+Optimizers with diagonal approximation of Hessian, i.e. AdaGrad, AdaDelta, Adam, etc., allow larger batch sizes to gaurantee the gradient and accuracy of Hessian diagonal matrix. However, for simpler first-order optimizers such as FTRL, SGD and Momentum, more iterations are required, so the batch size shouldn't be too large. Therefore:
 BatchSize(FTRL) < BatchSize(SGD) < BatchSize(Momentum) < BatchSize(AdaGrad) ~ BatchSize(AdaDelta) < BatchSize(Adam)
 
-Regarding the learning rate, you can start from 1.0 and increase or decrease in an exponential manner (base 2 or 0.5). You can use the learning curve for early stop. But there are the following principles: SGD, Momentum can use a relatively large learning rate, AdaGrad , AdaDelta, Adam is more sensitive to learning rate, generally speaking less than SGD, Momentum, can start from half of SGD, Momentum learning rate
+Regarding the learning rate, you can start from 1.0, and then increase or decrease it exponentially (with 2 or 0.5 as base). You can also use learning curve for early stop, but only when following these principles: SGD and Momentum can use relatively large learning rate, while AdaGrad, AdaDelta and Adam should generally use a less one since they are more sensitive to learning rage. (You can start from half of the learning rate of SGD and Momentum) 
 
-About Decay, if epoch is less, decay should not be too large. Generally use standard decay, AdaGrad, AdaDelta, Adam use WarnRestarts
+Regarding to learning rate decay, it shouldn't be too large if there are less epochs. Use standard decay in general cases and WarnRestarts for AdaGrad, AdaDelta and Adam.
 
-About regularization. Currently FTRL, SGD, AdaGrad, AdaDelta support L1/L2 regularity, Momentum, Adam only supports L2 regularity. It is recommended to start from no regularization, then add regularization.
+Regarding to regularization, FTRL, SGD, AdaGrad, AdaDelta currently supports L1/L2 regularization, while Momentum, Adam only supports L2 regularization. We recommend not using regularization at first but afterwards instead.
 
-
-**For the derivation of adding L1 regularization, please refer to**[optimizer](./optimizer.pdf)
+**Please refer to [optimizer](./optimizer.pdf) for derivation with L1 regularization.**

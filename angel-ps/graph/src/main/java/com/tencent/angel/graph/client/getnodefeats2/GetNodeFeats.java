@@ -28,6 +28,8 @@ import com.tencent.angel.ps.storage.partition.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+
+import java.util.Collections;
 import java.util.List;
 
 public class GetNodeFeats extends GetFunc {
@@ -66,10 +68,11 @@ public class GetNodeFeats extends GetFunc {
   @Override
   public GetResult merge(List<PartitionGetResult> partResults) {
     Int2ObjectArrayMap<PartitionGetResult> partIdToResultMap = new Int2ObjectArrayMap<>(
-        partResults.size());
+      partResults.size());
     for (PartitionGetResult result : partResults) {
       partIdToResultMap.put(((PartGetNodeFeatsResult) result).getPartId(), result);
     }
+
 
     GetNodeFeatsParam param = (GetNodeFeatsParam) getParam();
     long[] nodeIds = param.getNodeIds();
@@ -77,17 +80,18 @@ public class GetNodeFeats extends GetFunc {
 
     Long2ObjectOpenHashMap<IntFloatVector> results = new Long2ObjectOpenHashMap<>(nodeIds.length);
 
+
     int size = partResults.size();
     for (int i = 0; i < size; i++) {
       PartGetNodeFeatsParam partParam = (PartGetNodeFeatsParam) partParams.get(i);
       PartGetNodeFeatsResult partResult = (PartGetNodeFeatsResult) partIdToResultMap
-          .get(partParam.getPartKey().getPartitionId());
+        .get(partParam.getPartKey().getPartitionId());
 
       int start = partParam.getStartIndex();
       int end = partParam.getEndIndex();
       IntFloatVector[] feats = partResult.getFeats();
       for (int j = start; j < end; j++) {
-        if(feats[j - start] != null) {
+        if (feats[j - start] != null) {
           results.put(nodeIds[j], feats[j - start]);
         }
       }

@@ -33,7 +33,7 @@ import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.localcluster.LocalClusterContext;
 import com.tencent.angel.master.MasterProtocol;
 import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSErrorRequest;
 import com.tencent.angel.ps.PSAttemptId;
@@ -226,7 +226,7 @@ public class InitNeighborTest {
           "node id = " + entry.getIntKey() + ", neighbors = " + Arrays.toString(entry.getValue()));
     }
 
-    client.checkpoint(0).get();
+    client.checkpoint(0);
 
     ps.stop(-1);
     PSErrorRequest request = PSErrorRequest.newBuilder()

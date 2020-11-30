@@ -29,7 +29,7 @@ import com.tencent.angel.ml.math2.storage.*;
 import com.tencent.angel.ml.math2.vector.*;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ml.matrix.psf.get.indexed.IndexGet;
 import com.tencent.angel.ml.matrix.psf.get.indexed.IndexGetParam;
 import com.tencent.angel.ml.matrix.psf.get.indexed.LongIndexGet;

@@ -28,9 +28,14 @@ import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.master.MasterProtocol;
 import com.tencent.angel.ml.matrix.MatrixContext;
-import com.tencent.angel.ml.model.OldMLModel;
+import com.tencent.angel.ml.model.MLModel;
 import com.tencent.angel.ml.model.PSModel;
-import com.tencent.angel.model.*;
+import com.tencent.angel.model.LoadState;
+import com.tencent.angel.model.MatrixLoadContext;
+import com.tencent.angel.model.MatrixSaveContext;
+import com.tencent.angel.model.ModelLoadContext;
+import com.tencent.angel.model.ModelSaveContext;
+import com.tencent.angel.model.SaveState;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos;
@@ -219,6 +224,7 @@ public abstract class AngelClient implements AngelClientInterface {
     });
 
     hbThread.setName("client-heartbeat");
+    hbThread.setDaemon(true);
     hbThread.start();
   }
 
@@ -259,7 +265,7 @@ public abstract class AngelClient implements AngelClientInterface {
 
   @SuppressWarnings("rawtypes")
   @Override
-  public void loadModel(OldMLModel model)
+  public void loadModel(MLModel model)
       throws AngelException {
     if (master == null) {
       throw new AngelException(
@@ -277,7 +283,7 @@ public abstract class AngelClient implements AngelClientInterface {
 
   @SuppressWarnings("rawtypes")
   @Override
-  public void saveModel(OldMLModel model)
+  public void saveModel(MLModel model)
       throws AngelException {
     if (master == null) {
       throw new AngelException(
@@ -313,7 +319,8 @@ public abstract class AngelClient implements AngelClientInterface {
     save(saveContext);
   }
 
-  public void save(ModelSaveContext saveContext, Boolean deleteExistsFile) throws AngelException {
+  @Override
+  public void save(ModelSaveContext saveContext) throws AngelException {
     if (saveContext.getMatricesContext().size() == 0) {
       throw new AngelException("Need save matrix name is empty, you should check it");
     }
@@ -324,10 +331,28 @@ public abstract class AngelClient implements AngelClientInterface {
     }
 
     try {
+      /*UserGroupInformation ugi = UGITools.getCurrentUser(conf);
+      ugi.doAs(new PrivilegedExceptionAction<String>() {
+        @Override public String run() throws Exception {
+          Path savePath = new Path(saveContext.getSavePath());
+          FileSystem fs = savePath.getFileSystem(conf);
+          if(fs.exists(savePath)) {
+            if(conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
+                    AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST)) {
+              fs.delete(savePath, true);
+            } else {
+              throw new AngelException("Save path " + savePath + " already exist, you can set another save path or set angel.job.output.path.deleteonexist be true");
+            }
+          }
+          return "OK";
+        }
+      });
+      */
       Path savePath = new Path(saveContext.getSavePath());
       FileSystem fs = savePath.getFileSystem(conf);
       if (fs.exists(savePath)) {
-        if (deleteExistsFile) {
+        if (conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
+            AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST)) {
           fs.delete(savePath, true);
           if (fs.exists(savePath)) {
             throw new AngelException(
@@ -364,13 +389,6 @@ public abstract class AngelClient implements AngelClientInterface {
     if (appFailedMessage != null) {
       throw new AngelException("app run failed, " + appFailedMessage);
     }
-  }
-
-  @Override
-  public void save(ModelSaveContext saveContext) throws AngelException {
-    Boolean deleteExistsFile = conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
-        AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST);
-    save(saveContext, deleteExistsFile);
   }
 
   @Override
@@ -920,7 +938,7 @@ public abstract class AngelClient implements AngelClientInterface {
     boolean deleteOnExist = conf.getBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST,
         AngelConf.DEFAULT_ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST);
 
-    String path = null;
+    String path;
     if (actionType.matches("train") || actionType.matches("inctrain")) {
       path = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH);
     } else if (actionType.matches("predict")) {

@@ -16,9 +16,10 @@
  */
 package com.tencent.angel.model.output.format;
 
+import com.tencent.angel.ml.math2.matrix.Matrix;
+import com.tencent.angel.model.MatrixLoadContext;
 import com.tencent.angel.model.PSMatrixLoadContext;
 import com.tencent.angel.model.PSMatrixSaveContext;
-import com.tencent.angel.model.io.PSMatrixLoaderSaverImpl;
 import com.tencent.angel.ps.storage.partition.CSRPartition;
 import com.tencent.angel.ps.storage.partition.ServerPartition;
 import com.tencent.angel.ps.storage.partition.storage.CSRStorage;
@@ -27,8 +28,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
 
-public class BinaryCSRFormat extends PSMatrixLoaderSaverImpl {
+public class BinaryCSRFormat extends MatrixFormatImpl {
 
   public BinaryCSRFormat(Configuration conf) {
     super(conf);
@@ -94,5 +96,11 @@ public class BinaryCSRFormat extends PSMatrixLoaderSaverImpl {
     for(int i = 0; i < values.length; i++) {
       values[i] = input.readInt();
     }
+  }
+
+  @Override
+  public void load(Matrix matrix, MatrixPartitionMeta partMeta, MatrixLoadContext loadContext,
+      FSDataInputStream in) throws IOException {
+    throw new UnsupportedOperationException("Does not support load CSR format local now");
   }
 }

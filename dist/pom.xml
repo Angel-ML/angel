@@ -24,7 +24,7 @@
   <parent>
     <groupId>com.tencent.angel</groupId>
     <artifactId>angel</artifactId>
-    <version>3.0.1</version>
+    <version>3.1.0</version>
   </parent>
 
   <artifactId>angel-dist</artifactId>
@@ -51,17 +51,6 @@
       <artifactId>angel-ps-mllib</artifactId>
       <version>${project.version}</version>
     </dependency>
-
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>angel-ps-graph</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <!--<dependency>-->
-      <!--<groupId>${project.groupId}</groupId>-->
-      <!--<artifactId>angel-ps-testmath</artifactId>-->
-      <!--<version>${project.version}</version>-->
-    <!--</dependency>-->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>angel-ps-psf</artifactId>
@@ -72,31 +61,26 @@
       <artifactId>angel-ps-examples</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <!--dependency>
+    <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>angel-ps-serving</artifactId>
+      <artifactId>angel-ps-graph</artifactId>
       <version>${project.version}</version>
-<<<<<<< HEAD
     </dependency>
     <dependency>
-=======
-    </dependency-->
-    <!--dependency>
->>>>>>> 46a940c4970656f51004c9b4254bbcda77254ccc
       <groupId>${project.groupId}</groupId>
       <artifactId>spark-on-angel-core</artifactId>
       <version>${project.version}</version>
-    </dependency-->
-    <!--dependency>
+    </dependency>
+    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>spark-on-angel-mllib</artifactId>
       <version>${project.version}</version>
-    </dependency-->
-    <!--dependency>
+    </dependency>
+    <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>spark-on-angel-examples</artifactId>
+      <artifactId>spark-on-angel-graph</artifactId>
       <version>${project.version}</version>
-    </dependency-->
+    </dependency>
   </dependencies>
 
   <build>
@@ -110,9 +94,6 @@
           <descriptors>
             <descriptor>${main.basedir}/assembly/dist-assembly.xml</descriptor>
           </descriptors>
-          <!--<descriptorRefs>-->
-          <!--<descriptorRef>jar-with-dependencies</descriptorRef>-->
-          <!--</descriptorRefs>-->
           <attach>false</attach>
         </configuration>
         <executions>

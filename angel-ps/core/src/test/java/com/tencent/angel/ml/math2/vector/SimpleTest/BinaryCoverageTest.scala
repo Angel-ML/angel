@@ -22,7 +22,6 @@ import java.util
 
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.utils.MathException
 import com.tencent.angel.ml.math2.vector.{IntDummyVector, LongDummyVector, Vector}
 import org.junit.{BeforeClass, Test}
 import org.scalatest.FunSuite
@@ -402,8 +401,9 @@ class BinaryCoverageTest {
         try {
           (ilist.get(i).add(ilist.get(j))).sum()
         } catch {
-          case e: AngelException => e
-          case e: MathException => e
+          case e: AngelException => {
+            e
+          }
         }
       }
     }
@@ -412,8 +412,9 @@ class BinaryCoverageTest {
         try {
           (llist.get(i).add(llist.get(j))).sum()
         } catch {
-          case e: AngelException => e
-          case e: MathException => e
+          case e: AngelException => {
+            e
+          }
         }
       }
     }
@@ -426,8 +427,9 @@ class BinaryCoverageTest {
         try {
          (ilist.get(i).sub(ilist.get(j))).sum()
         } catch {
-          case e: AngelException => e
-          case e: MathException => e
+          case e: AngelException => {
+            e
+          }
         }
       }
     }
@@ -436,8 +438,9 @@ class BinaryCoverageTest {
         try {
          llist.get(i).sub(llist.get(j)).sum()
         } catch {
-          case e: AngelException => e
-          case e: MathException => e
+          case e: AngelException => {
+            e
+          }
         }
       }
     }
@@ -450,8 +453,9 @@ class BinaryCoverageTest {
         try {
          ilist.get(i).mul(ilist.get(j)).sum()
         } catch {
-          case e: AngelException => e
-          case e: MathException => e
+          case e: AngelException => {
+            e
+          }
         }
       }
     }
@@ -460,8 +464,9 @@ class BinaryCoverageTest {
         try {
           llist.get(i).mul(llist.get(j)).sum()
         } catch {
-          case e: AngelException => e
-          case e: MathException => e
+          case e: AngelException => {
+            e
+          }
         }
       }
     }
@@ -474,9 +479,12 @@ class BinaryCoverageTest {
         try {
           ilist.get(i).div(ilist.get(j)).sum()
         } catch {
-          case e: ArithmeticException => e
-          case e: MathException => e
-          case e: AngelException => e
+          case e: ArithmeticException =>{
+            e
+          }
+          case e: AngelException => {
+           e
+          }
         }
       }
     }
@@ -485,9 +493,12 @@ class BinaryCoverageTest {
         try {
           llist.get(i).div(llist.get(j)).sum()
         } catch {
-          case e: ArithmeticException => e
-          case e: MathException => e
-          case e: AngelException => e
+          case e: ArithmeticException =>{
+            e
+          }
+          case e: AngelException => {
+            e
+          }
         }
       }
     }
@@ -500,8 +511,9 @@ class BinaryCoverageTest {
         try {
           ilist.get(i).axpy(ilist.get(j), 2.0).sum()
         } catch {
-          case e: AngelException => e
-          case e: MathException => e
+          case e: AngelException => {
+            e
+          }
         }
       }
     }
@@ -510,8 +522,9 @@ class BinaryCoverageTest {
         try {
          llist.get(i).axpy(llist.get(j), 2.0).sum()
         } catch {
-          case e: AngelException => e
-          case e: MathException => e
+          case e: AngelException => {
+            e
+          }
         }
       }
     }
@@ -530,8 +543,9 @@ class BinaryCoverageTest {
         try {
           ilist.get(i).dot(ilist.get(j))
         } catch {
-          case e: AngelException => e
-          case e: MathException => e
+          case e: AngelException => {
+            e
+          }
         }
       }
     }
@@ -540,8 +554,9 @@ class BinaryCoverageTest {
         try {
           llist.get(i).dot(llist.get(j))
         } catch {
-          case e: AngelException => e
-          case e: MathException => e
+          case e: AngelException => {
+            e
+          }
         }
       }
     }

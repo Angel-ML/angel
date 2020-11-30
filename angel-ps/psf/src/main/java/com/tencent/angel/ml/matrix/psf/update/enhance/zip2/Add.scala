@@ -18,10 +18,8 @@
 
 package com.tencent.angel.ml.matrix.psf.update.enhance.zip2
 
-;
-
 import com.tencent.angel.ml.matrix.psf.update.enhance.MFUpdateParam
-import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.func.AddFunc;
+import com.tencent.angel.ml.matrix.psf.update.enhance.zip2.func.AddFunc
 
 /**
   * `Add` function will add `fromId1` and `fromId2` and save to `toId`.

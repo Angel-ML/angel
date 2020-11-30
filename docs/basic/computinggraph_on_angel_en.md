@@ -1,17 +1,19 @@
-# Computational graph in Angel
+# Computational Graphs in Angel
 
-## 1. What is a computational graph?
-Computational graph are commonly used in mainstream deep learning frameworks, such as Tensorflow, Caffe and Maxnet. In fact, large data processing tools such as Spark also use computational graph to schedule tasks. In order to better support deep learning algorithms, Angel also supports computational graph. Angel's computational graph are lighter than Tensorflow's. The main manifestations are as follows:
-- **Coarse Granularity**: The 'node' in Angel's calculation graph is layer, not `operator. Tensorflow and so on use `operation` as the node in the graph, which is very flexible and suitable for secondary development (package), but also It gives the machine learning and development developers a steeper learning curve and a larger workload, so the old version of Tensorflow has also been criticized as "API too low-level, low development efficiency", and later Tensorflow version provides layer-based (layer High-level API. Given this, Angel only provides coarse-grained computational graphs.
-- **Feature Intersection**: For recommended system-related algorithms, the characteristics of Embedding often have to pass some crossovers (**Note**: the feature intersection here is different from the artificial intersection in the feature engineering, where the feature intersection is performed by the output of Embedding). Then enter DNN. These feature intersections are more cumbersome on Tensorflow, Caffe, Torch, etc., and this feature cross layer is directly provided on Angel.
-- **Automatic Generation Network**: Angel can read the Json file to generate a deep network. This is a reference to Caffe, users can generate their own network without writing code, greatly reducing the workload.
+## 1. What are Computational Graphs?
+Computational graphs are commonly used in mainstream deep learning frameworks such as TensorFlow, Caffe and MXNet. In addition, many big data frameworks like Spark  also adopt computational graphs to implement task scheduling. Computational graph framework is also available on Angel, but rather more lightweight than on TensorFlow etc., mainly in terms of:
 
-It should be pointed out that Angel does not currently support CNN, RNN, etc., and only focuses on commonly used algorithms in the recommended field.
+- **Coarse Granularity**: a node in Angel's computational graphs represents a `layer` instead of an `operator`. TensorFlow's design strategy that uses `operator` as a node allows highly flexible development, and is very suitable for second development (encapsulation). Yet it also brought a steeper learning curve and larger workload to algorithm developers, hence resulted in criticism on the old-version TensorFlow about "excessively low-level APIs and low development efficiency" until the later version provided layer-based high-level APIs. Given this, Angel only provides coarse-grained computational graphs that are based on layers.
+- **Feature Intersection**: for recommendation system-related machine learning algorithms, features after Embedding will often undergo some intersection before being input to DNN. (**Note**: different from the artificial intersection in general feature engineering, feature intersection here refers to the specific operations on Embedding's output.) Implementations of feature intersection on TensorFlow, Caffe and Torch are relatively cumbersome , but Angel has directly offered this feature intersection layer.
+- **Auto-Generated Network**: Drawing from Caffe's idea, Angel also supports generating deep neural networks from JSON files, which grately reduces users' workload as they can generate their own neural networks without writing any code.
 
-## 2. Construction of Computational Graph            
+Note that Angel does not currently support CNN, RNN, etc., but only focuses on deep learning algorithms commonly used in recommendations.
 
-### 2.1 Basic Structure of Layer
-To understand how a computational graph is constructed, you first need to understand the structure of its constituent element, Layer (for more detailed information on layers, refer to [Layer in Angel](./layers_on_angel.md).) as follows:
+## 2. Construction of Computational Graphs
+
+### 2.1 Basic Structure of a Layer
+It will be helpful understanding the structure of its composing unit, the layers, before learning how a computational graph is built. (For more detailed information about layers, please refer to [Layers on Angel](./layers_on_angel.md).)
+
 ```scala
 abstract class Layer(val name: String, val outputDim: Int)(implicit val graph: AngelGraph)
   extends Serializable {
@@ -32,13 +34,14 @@ abstract class Layer(val name: String, val outputDim: Int)(implicit val graph: A
   def gatherGrad(): Matrix = ???
 }
 ```
-This abstract class has a clear description of most of the layers, as follows:
-- status: The nodes in the Angel calculation graph are stateful and are processed by a state machine, as described in the next section.
-- input: Used to record the input of this node/layer, represented by a ListBuffer, a layer can have multiple input layers, you can call addInput(layer: Layer) multiple times.
-- outputDim: There can only be one output in Angel, and outputDim is used to specify the dimension of the output
-- consumer: Layer has only one output, but the output node can be consumed many times, so it is represented by ListBuffer. When building a graph, call the addConsumer (layer: Layer) of the input layer to tell which layers of the output layer consume it.
+The abstract class above has well demonstrated the major functions of a layer:
+- **status**: nodes in Angel's computational graphs are stateful. A node's status is handled by a state machine, as described in the next section
+- **input**: a `ListBuffer` object that is used to record this node/layer has some input. One layer can hold multiple input layers, which can be sequentially added via `addInput(layer: Layer)`.
+- **outputDim**: there can be at most one output in Angel. `outputDim` is used to specify the dimension of the output
+- **consumer**: though there's only one output from each layer, the output node can be consumed by multiple consumers, represented by a `ListBuffer`. When building the graph, users may call the input layer's `addConsumer(layer: Layer)` method to specify by which layers the output layer will be consumed. 
 
-In fact, the specific operation of building a graph has been completed in the base class of inputlayer/linearlayer/joinlayer. User-defined layers need not be concerned, as follows:
+In fact, users do not need to care about the specific operations of building a graph, as they have already been completed in base classes such as `InputLayer`, `LinearLayer` and `JoinLayer`:
+
 ```scala
 abstract class InputLayer(name: String, outputDim: Int)(implicit graph: AngelGraph)
   extends Layer(name, outputDim)(graph) {
@@ -65,10 +68,11 @@ abstract class LinearLayer(name: String, outputDim: Int, val inputLayer: Layer)(
   def calGradOutput(): Matrix
 }
 ```
-Note: LossLayer is a special Linear Layer, so it is not given here.
+Note: LossLayer is a special LinearLayer, hence it's not shown here.
 
-### 2.2 The Basic Structure of AngelGraph
-A complex graph is constructed by input/consumer. Although the graph can be traversed from any node in the graph, verge nodes are stored in AngelGraph for convenience. It is easy to operate the graph as follows:
+### 2.2 Basic Structure of AngelGraph
+Now we have constructed a complicated graph using input/consumer. Though the graph can be traversed from any node in it, AngelGraph still stores the verge node, so as to facilitate the operations on graph:
+
 ```scala
 class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Serializable {
 
@@ -99,18 +103,22 @@ class AngelGraph(val placeHolder: PlaceHolder, val conf: SharedConf) extends Ser
     trainableLayer
  }
 ```
-Verge has two major categories:
-- inputLayer: The input of this type of node is data. The storage of such nodes in AngelGraph is convenient for reverse calculation. Just call the input layer's `calBackward`. In order to add inputLayer, Angel requires all inputLayer to call AngelGraph's addInput method to add itself to AngelGraph. In fact, this has been done in the base class of InputLayer, the user added inputLayer does not have to care about this.
-- lossLayer: Angel does not support multitasking at present, so there is only one lossLayer. This kind of node is mainly convenient for forward calculation. Just call its `predict` or `calOutput`. Since losslayer is a subclass of linearlayer, user-defined lossLayer can be used. Manually call `setOutput(layer: LossLayer)`, but there are not many opportunities for users to add a losslayer. More is to add lossfunc.
+There are two major types of verges:
+- inputLayer: data is the input of this type of nodes. Storing inputLayers in AngelGraph facilitates back-propagation, which now can be done by calling the  `calBackward` method in each inputLayer sequentially. In order to get inputLayers fully included, Angel requires each inputLayer add itself explicitly to the AngelGraph by calling the `addInput` method of AngelGraph. In fact, users don't neet to care about implementing these operations since they have already been included in the  `InputLayer` base class.
+- lossLayer: Angel doesn't currently support multi-task learning, thus each computational graph can have only one lossLayer. The lossLayer node is designed for the convenience of forward propagation, which can here be easily done by calling the `predict` or `calOutput` method of the lossLayer node. As `LossLayer` is a subclass of `LinearLayer`, user-defined lossLayer can be added by manually calling `setOutput(layer: LossLayer)`. However, it is more common to add a lossFunc instead of lossLayer.
 
-With inputLayers, lossLayer, it is very convenient to traverse the graph from AngelGraph. The forward calculation only needs to call the losslayer's `predict` method, and the reverse calculation just calls the input layer's `calBackward`. However, the gradient calculation, the parameter update is inconvenient, in order to facilitate the parameters, AngelGraph added a trainableLayer variable to hold the layer with parameters.
+With inputLayers and lossLayer included, it is very easy to traverse the AngelGraph by forward propagation using the `predict` method in lossLayer, and by back propagation using `calBakcward` method in inputLayer. The last problem is to update the parameters in gradient computation. Fortunately, AngelGraph makes the parameter update convenient by holding a `trainableLayer` variable, which collects all layers that have parameters to be updated.
 
-## 2.3 Data entry: PlaceHolder
-The layer's input/consumer is used to construct the edge of the graph (the relationship of nodes). The special node (inputlayer/losslayer/trainablelayer) is saved in AngelGraph for forward and backward calculation and parameter update. How is the final data input? -- by PlaceHolder
 
-The PlaceHolder in Angel is passed to the Graph in the construction of AngelGraph, and the Graph is passed to the Layer as an implicit parameter, so the placeholder (data) can be accessed in all Layers.
 
-Currently, only one PlaceHolder is allowed in Angel. This restriction will be removed in the future, allowing multiple data inputs. PlaceHolder only stores one mini-batch data. The main methods are as follows:
+
+## 2.3 Entrance of Data: PlaceHolder
+Now we have constructed the edges (relations among nodes) by clarifying the input/consumer of layers, and stored special nodes (inputLayer/lossLayer/trainableLayer) for forward/back propagation and parameter update. So how does the data get input? The answer is to use a `PlaceHolder`.
+
+When construcing AngelGraph, the PlaceHolder is passed down to Graph, which will be then passed down to all layers as an implicit parameter. In this way, every layer has an access to the PlaceHolder, namely, the input data.
+
+Angel currenly allows only one PlaceHolder in each graph, but this limitation will be removed in future version to support multiple data input. PlaceHolder only holds a mini-batch of data, as demonstrated below:
+
 ```scala
 class PlaceHolder(val conf: SharedConf) extends Serializable {
     def feedData(data: Array[LabeledData]): Unit
@@ -121,31 +129,32 @@ class PlaceHolder(val conf: SharedConf) extends Serializable {
     def getIndices: Vector
 }
 ```
-After the data of the Array[LabeledData] type is given to the placeholder by `feedData`, it can be obtained from it:
-- feature
-- feature dimension
-- label
-- batchSize
-- feature index
+After inputting data in  `Array[LabeledData]` format to PlaceHolder via `feedData`, we can get following metrics from the PlaceHolder:
 
+- Feature
+- Feature dimension
+- Label
+- BatchSize
+- Feature index
 
+## 3. Operating Principle of Computational Graph in Angel
+We have constructed the topological structure of a computational graph in the prvious section. In this section, we are going to learn how the graph works in Angel.
 
-## 3. The operation principle of the calculation graph in Angel
-The topology of the calculation graph was built in the previous section. This section describes how it works.
+### 3.1 State Machine
+A state machine in Angel has the following states:
 
-### 3.1 Running state machine
-Angel's state machine has the following states:
-- Null: Initial state, the Graph will be placed in this state after each feedData.
-- Forward: This state indicates that the forward calculation is complete.
-- Backward: This state indicates that the backward calculation has been completed, but the gradient of the parameter has not yet been calculated.
-- Gradient: This state indicates that the gradient has been calculated and the gradient has been pushed onto the PS.
-- Update: This state indicates that the model update is complete.
+- Null: The initial state. The Graph will be set to this state after each `feedData` process
+- Forward: This state indicates the completion of forward propagation
+- Backward: This state indicates that the back propagation has been finished, but the gradients of parameters has not been calculated yet
+- Gradient: This state indicates that the gradients have been calculated and pushed to the PS
+- Update: This state indicates that the model update is complete
 
-These states are in turn, as shown in the following figure:
+These states are in turn, as shown in the figure below.
 
-![state machine](../img/status.png)
+![状态机](../img/status.png)
 
-The introduction of state machine mainly guarantees the sequential operation and reduces repetitive calculation. For example, multiple layers consume the output of the same layer. When calculating, the state can be judged based on the state, as long as it is calculated once. The state machine is embodied in the code as follows:
+The state machine is basically designed for ensuring the order of operations, thus reducing the re-calculations. For instance, let's say there are multiple layers going to consume the output of the same layer. In calculation, the program will check the current status of the layer before truly executing the operation, so the calculation only needs to be calculated once. The representation of state machine in code is demonstrated as follows.
+
 ```scala
 def feedData(data: Array[LabeledData]): Unit = {
     deepFirstDown(lossLayer.asInstanceOf[Layer])(
@@ -199,8 +208,8 @@ override def update(epoch: Int = 0): Unit = {
 }
 ```
 
-### 3.2 The Training Process of Graph in Angel
-The specific code is `GraphLearner', which gives the framework.
+### 3.2 Training Process of Graph in Angel
+Here we just construct a overall frame of the training process. The detailed codes are provided in`GraphLearner`.
 ```scala
 def trainOneEpoch(epoch: Int, iter: Iterator[Array[LabeledData]], numBatch: Int): Double = {
     var batchCount: Int = 0
@@ -224,10 +233,10 @@ def trainOneEpoch(epoch: Int, iter: Iterator[Array[LabeledData]], numBatch: Int)
     loss
   }
 ```
-Proceed as follows:
-- feedData: This process will set the state of the Graph to Null
-- Pull parameter: According to the data, only the parameters needed for the current mini-batch calculation are pulled, so Angel can train very high-dimensional models.
-- Forward calculation: Starting with Losslayer, the `calOutput'method of its inputlayer is invoked cascadely, and output is calculated in turn. After calculation, its state is set to `forward'. For the case where the state is `forward', the result of the last calculation is returned directly, so as to avoid repeated calculation.
-- Backward Computation: Inputlayer of Graph is called sequentially, so that the `CalGradOutput'method of the first layer is cascaded to complete backward calculation. After calculation, the state of Graph is set to `backward'. If the state is `backward', the result of the last calculation is returned directly, thus avoiding repeated calculation.
-- Gradient calculation and updating: In this step, the gradient of parameters can be calculated by calling `pushGradient'of `trainable'. This method calculates the gradient first, then pushes the gradient onto PS, and finally sets the state to `gradient'.`
-- Gradient Updating: Gradient updates are performed on the PS, as long as a gradient-updated PSF is sent, so only one Workor is required to send it (in Spark on Angel via the Driver). Different optimizers are updated differently, in Angel. The core essence of the optimizer is a PSF. Before the parameter update, a synchronization is required to ensure that all gradients are pushed and completed. The parameter update is also done once, ensuring that all the parameters pulled by the worker are up-to-date and will be set to `update`.
+The process works as follows:
+- feedData: This process will set the Graph's state to `null`
+- Pull parameters: Only pulls those parameters required in calculation of the current mini-batch, basing on the input data. In this way, Angel is capable of training very high-dimensional models.
+- Forward calculation: Beginning from the LossLayer, this process will call the `calOutput` method of each layer's inputLayer in cascade, calculate the output in sequence, then set the layer's state to `forward`. For those layers already at `forward` state, Angel will directly return the result from the previous calculation, avoiding re-calculation.
+- Backward calculation: This process sequentially invokes the inputLayer of the Graph, thus calls the `calGradOutput` method of the first layer in cascade to finish the back propagation. When the calculation is completed, the layer's state will be set to `backward`. Similarly, for those layers already at `backward` state, Angel will directly return the result from the previous calculation, avoiding re-calculation.
+- Calculation and update of gradients: the previous step only calculates the gradients of nodes, while the gradients of parameters are calculated in this step simply via the `pushGradient` method of `trainable`. This method will firstly compute the gradients, then push them to PS, and finally set the state to `gradient`.
+- Gradient update: since gradients are updated on PS, it is enough sending only one PSF of gradient update by one Worker (by Driver in Spark on Angel). The update methods differ in different optimizers, while the optimizer in Angel is basically a PSF. A sync is needed before updating the parameters to ensure that all gradients are already pushed; And there should be another sync after updating the parameters to ensure that all parameters pulled by Worker are up-to-date. The state will be set to `update` after the update is finished.

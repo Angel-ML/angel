@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ps.storage.vector;
 
-import com.tencent.angel.ml.math2.utils.RowType;
+import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.storage.vector.element.IElement;
 
 public class ServerRowFactory {
@@ -134,7 +134,7 @@ public class ServerRowFactory {
             estEleNum);
 
       case T_ANY_LONGKEY_SPARSE:
-        return new ServerLongAnyRow(valueClass, rowIndex, rowType, (int) startCol, (int) endCol,
+        return new ServerLongAnyRow(valueClass, rowIndex, rowType, startCol, endCol,
             estEleNum);
 
       default:

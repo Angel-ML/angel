@@ -48,7 +48,9 @@ public class ResetFunc extends UpdateFunc {
         if (row == null) {
           continue;
         }
-        reset(row);
+
+        row.reset();
+//        reset(row);
       }
     }
   }

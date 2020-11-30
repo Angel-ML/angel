@@ -22,7 +22,7 @@
     <parent>
         <groupId>com.tencent.angel</groupId>
         <artifactId>angel-ps</artifactId>
-        <version>3.0.1</version>
+        <version>3.1.0</version>
     </parent>
     <artifactId>angel-ps-core</artifactId>
     <name>angel-ps-core</name>
@@ -37,16 +37,6 @@
             <artifactId>velocity</artifactId>
             <version>1.7</version>
         </dependency>
-        <!--dependency>
-            <groupId>net.sourceforge.f2j</groupId>
-            <artifactId>arpack_combined_all</artifactId>
-            <version>0.1</version>
-        </dependency-->
-        <!--dependency>
-            <groupId>org.netlib</groupId>
-            <artifactId>blas</artifactId>
-            <version>0.8</version>
-        </dependency-->
         <dependency>
             <groupId>com.github.fommil.netlib</groupId>
             <artifactId>all</artifactId>
@@ -62,7 +52,7 @@
         <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-client</artifactId>
-            <version>3.0.1</version>
+            <version>3.0.0</version>
         </dependency>
     </dependencies>
 

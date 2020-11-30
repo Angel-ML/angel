@@ -208,6 +208,7 @@ public class SimpleBinaryOutZAExecutor {
                 	resIndices[i] = v1Indices[i];
                     resValues[i] = op.apply(v1Values[i], v2Values[v1Indices[i]]);
                 }
+                newStorage.setSize(resIndices.length);
             } else {
                 $dtype1.toLowerCase() [] newValues = newStorage.getValues();
                 $itype.toLowerCase() [] v1Indices = v1.getStorage().getIndices();
@@ -328,6 +329,7 @@ public class SimpleBinaryOutZAExecutor {
 					newStorage.set(idx, op.apply(v1storage.get(idx), entry.get${dtype2}Value()));
 				  }
 				}
+				newStorage.setSize((int)v2.getSize());
 			  } else {//sparse preferred
 				ObjectIterator<${itype}2${dtype2}Map.Entry> iter = v2.getStorage().entryIterator();
 				${itype}${dtype1}VectorStorage v1storage = v1.getStorage();
@@ -355,6 +357,7 @@ public class SimpleBinaryOutZAExecutor {
 					resValues[i] = op.apply(v1Values[i], storage.get(idx));
 				  }
 				}
+				newStorage.setSize((int)v1.getSize());
 			  } else {
 			  	$itype.toLowerCase() [] v1Indices = v1.getStorage().getIndices();
 				$dtype1.toLowerCase() [] v1Values = v1.getStorage().getValues();
@@ -393,6 +396,7 @@ public class SimpleBinaryOutZAExecutor {
 					resValues[i] = op.apply(v1Values[i], storage.get(idx));
 				  }
 				}
+				newStorage.setSize((int)v1.getSize());
 			  } else {//dense preferred
 				$itype.toLowerCase() [] v1Indices = v1.getStorage().getIndices();
 				$dtype1.toLowerCase() [] v1Values = v1.getStorage().getValues();

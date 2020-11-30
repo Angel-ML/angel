@@ -26,7 +26,6 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.ipc.TConnectionManager;
 import com.tencent.angel.plugin.AngelServiceLoader;
-import com.tencent.angel.worker.storage.DataBlockManager;
 import com.tencent.angel.worker.task.Task;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos.WorkerAttemptIdProto;
@@ -38,6 +37,7 @@ import com.tencent.angel.psagent.CounterUpdater;
 import com.tencent.angel.psagent.PSAgent;
 import com.tencent.angel.psagent.client.MasterClient;
 import com.tencent.angel.psagent.executor.Executor;
+import com.tencent.angel.worker.storage.DataBlockManager;
 import com.tencent.angel.worker.task.TaskManager;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -484,7 +484,7 @@ public class Worker implements Executor {
 
   private void exit(int exitValue) {
     AngelDeployMode deployMode = WorkerContext.get().getDeployMode();
-    if (deployMode == AngelDeployMode.YARN) {
+    if (deployMode == AngelDeployMode.YARN || deployMode == AngelDeployMode.KUBERNETES) {
       System.exit(exitValue);
     }
   }

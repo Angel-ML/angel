@@ -1,22 +1,22 @@
+# Layers on Angel
 
-# Layers in Angel    
+Most of the algorithms in Angel are based on [computational graphs](./computinggraph_on_angel.md), in which a node represents a layer. These layers can be separated into three classes basing on their topological structure:
 
-Most of the algorithms in Angel are based on [computational graph](./computational_graph_on_angel.md). The nodes in Angel are layers. According to the topological structure of layers, they can be divided into three categories:
-- verge: Edge nodes, with only input or output layers, such as input and loss layers
-    - input layer: Mainly has SimpleInputLayer, Embedding
-    - Loss layer: Mainly using SimpleLossLayer, SoftmaxLossLayer
-- linear: Layer with one input and one output
-    - Fully connected layer: that is FCLayer
-    - Feature intersection layer: There are many such layers, different algorithms use different feature crossing methods, and can also be used in combination. The main ones are::
-        - BiInnerCross: Feature crossing method used in PNN(inner)
-        - BiOutterCross: Feature crossing method used in PNN(outter)(Currently not implemented)
-        - BiInnerSumCross: Second-order feature implicit crossover method used in FM
-        - BiIntecationCross: Feature crossing method used in NFM
-- join: There are two or more inputs, one output layer, and there are many such layers, mainly:
-    - ConcatLayer: Put together multiple input layers and enter a Dense matrix
-    - SumPooling: Add the input elements correspondingly and output them
-    - MulPooling: Multiply input elements to output
-    - DotPooling: Multiply the corresponding elements first, then add them by row, and enter a matrix of n rows and one column.
+- verge: edge node, only exists in input or output layer, such as inputLayer and lossLayer
+    - InputLayer: mainly SimpleInputLayer and Embedding
+    - LossLayer: mainly SimpleLossLayer and SoftmaxLossLayer
+- linear: layer with only one input and one output
+    - Fully connected layer: i.e. FCLayer
+    - Feature crossn: there are many such layers. Different algorithms use different feature cross method or combinations of several crosses:
+        - BiInnerCross: the feature cross used in PNN(inner)
+        - BiOutterCross: the feature cross used in PNN(outter) (not implemented yet)
+        - BiInnerSumCross: implicit cross of second-order features used in FM
+        - BiIntecationCross: the feature cross used in NFM
+- join: layer with two or more input and one output. There are also many types of such layers:
+    - ConcatLayer: concat multiple input layers to output a Dense matrix
+    - SumPooling: sum up the input elements and output the result
+    - MulPooling: multiply the input elements and output the result
+    - DotPooling: multiply the corresponding elements then sum up by row, and output a matrix with n rows and one column
 
 
 ## 1. Input Layer
@@ -24,22 +24,23 @@ There are two types of input layers in Angel:
 - SimpleInputLayer
 - Embedding
 
-### 1.1 SimpleInpuyLayer
-As the name implies, it accepts input. Class constructors are as follows:
+### 1.1 SimpleInputLayer
+As its name implies, `SimpleInputLayer` receives input data. The constructor of this class is as follows:
 ```scala
 class SimpleInputLayer(name: String, outputDim: Int, transFunc: TransFunc, override val optimizer: Optimizer)(implicit graph: AngelGraph)
   extends InputLayer(name, outputDim)(graph) with Trainable
 ```
-Its main features are:
-- Receiving Dense/Sparse Input
-- When the input is dense, the internal parameters are dense, the parameters are stored in an array continuously, and the BLAS library is called to complete the calculation; when the input is sparse, the internal parameters are stored in RowBasedMatrix, each row is a sparse vector, and Angel internal mathematical library is used for calculation.
-- You need to specify outputDim to specify the transfer function and optimizer
+`SimpleInputLayer` has following characteristics:
 
-The completed calculation is expressed as follows:
+- Receive dense/sparse input
+- When the input is dense, the internal parameters will be dense, stored in an array in succession, and calculated using the BLAS library; When the input is sparse, the internal parameters will be stored in a `RowBasedMatrix`, in which each line is a sparse vector, and the parameters are calculated using Angel's internal math library
+- Its outputDim should be specified. Users can also specify its transfer function and optimizer
+
+The calculation formula is:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}f(x)=tranfunc(x\bold{w}+bias))
 
-A typical JSON expression is:
+A typical Json expression is:
 ```json
 {
     "name": "wide",
@@ -51,26 +52,29 @@ A typical JSON expression is:
 ```
 
 ### 1.2 Embedding
-Embedding is common to many deep learning algorithms. The constructors of the class are as follows:
+Embedding is common to many deep learning algorithms. The constructor of `Embedding` class is as follows:
+
 ```scala
 class Embedding(name: String, outputDim: Int, val numFactors: Int, override val optimizer: Optimizer)(implicit graph: AngelGraph)
   extends InputLayer(name, outputDim)(graph) with Trainable
 ```
-In addition to name and optimizer, the other two parameters of Embedding are as follows:
-- outputDim: It refers to the output of lookup. Angel's Embedding currently assumes that each sample has the same number of fields, and each field is One-hot. The first condition is true in most cases, but the second condition is more Strict, in some cases not established, will be relaxed in the future
-- numFactors: It refers to the dimension of the Embedding vector. The size of the Embedding matrix is obtained as follows: The dimension of the input data is stored in the system. This dimension is obtained as the number of columns of the Embedding matrix, and numFactors is the number of rows of the Embedding matrix ( Note: Although the internal implementation is a bit different, this understanding is ok)
+The two parameters except `name` and `optimizer` are:
 
-Embedding is a table in the abstract sense, and provides a lookup table (lookup/calOutput). Angel's Embedding is special in that it allows some operations after checking the table, so it consists of two steps:
-- Look up table: According to the index, find the corresponding column in the table
-- Calculation assembly: Sometimes the data is not one-hot, multiply the found vector by a value.
+- outputDim: the dimension of the output of lookup. Angel's Embedding currently supposes all samples have the same number of fields and each field is in one hot encoding. The first condition is true in most cases, but the second is more stringent and is not true in some cases. This restriction will be relaxed in future version
+- numFactors: the dimension of the Embedding vector. The size of an Embedding matrix is obtained as follows: the system stores the dimension of input data, which will be exactly the column number of Embedding matrix; The numFactors is the row number of the matrix (Note: the internal implementation is a bit different, but it can basically be understood like this)
 
-The results of sparse vector embedding with values of 1 (one-hot encoding, expressed in dummy format) and floating point (expressed in libsvm format) are shown below:
+Embedding can be abstractly regarded as a table that provides lookup methods (lookup/calOutput). Angel's Emgedding is special in that it allows some operations after looking up the table. Thus there are two steps in total:
+
+- lookup: find the corresponding column according to index
+- calculation and assembly: in some cases, the data might not be one hot, so the resulting vector should be multiplied by a specific value
+
+Following is the embedding results of a sparse vector when value is 1 (result of one hot encoding, represented by dummy format) and when value is float (represented by libsvm format):
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{120}(1,5,40,\cdots,10000)\rightarrow(\bold{v}_1,\bold{v}_5,\bold{v}_{40},\cdots,\bold{v}_{10000}))
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{120}(1:0.3,5:0.7,40:1.9,\cdots,10000:3.2)\rightarrow(0.3\bold{v}_1,0.7\bold{v}_5,1.9\bold{v}_{40},\cdots,3.2\bold{v}_{10000}))
 
-A typical JSON expression is:
+A typical expression in Json is:
 ```json
 {
     "name": "embedding",
@@ -85,24 +89,25 @@ A typical JSON expression is:
 },
 ```
 
-## 2. Linear Layer
-A linear layer is a layer that has one input and one output. It mainly includes a fully coupled layer (FCLayer) and a series of feature crossing layers.
+## 2. Linear Layers
+Linear layers are layers with only one input and one output, mainly consisting of fully connected layer (FCLayer) and a series of feature crossing layers.
 
 ### 2.1 FCLayer
-FCLayer layer is the most common layer in DNN. Its calculation can be expressed by the following formula:
+FCLayer is the most common layer in DNN. Its calculation can be expressed by:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}f(x)=tranfunc(x\bold{w}+bias))
 
-The constructor in Angel is as follows:
+The constructor of `FCLayer` in Angel is:
 ```scala
 class FCLayer(name: String, outputDim: Int, inputLayer: Layer, transFunc: TransFunc, override val optimizer: Optimizer
              )(implicit graph: AngelGraph) extends LinearLayer(name, outputDim, inputLayer)(graph) with Trainable 
 ```
-From the constructor and calculation formula, it is very similar to DenseInputLayer/SparseInputLayer. The difference is that the input of the former is a Layer, and the latter directly inputs data (do not specify the input Layer in the constructor).
+As we can see from the constructor and formula, FCLayer is quite similar to DenseInputLayer/SparseInputLayer, except that the input of a FCLayer is a layer, while the input of the latter is data (not specifying the input layer in the constructor).
 
-In parameter data storage, FCLayer, like DenseInput Layer, also uses dense method to calculate with BLAS.
+For the parameter storage, FCLayer, like DenseInputLayer, also uses a dense method and is calculated using BLAS.
 
-Since FCLayer is usually used in multiple stacks, there are some simplifications in the configuration of the data, that is, the parameter reduction of multiple stacked FCLayer. Here is an example:
+Since FCLayers are usually used when being stacked together, Angel makes some simplifications in data configuration, that is, reduces the parameters of multiple stacked layers. Following is an example:
+
 ```json
 {
     "name": "fclayer",
@@ -120,12 +125,13 @@ Since FCLayer is usually used in multiple stacks, there are some simplifications
     "inputlayer": "embedding"
 },
 ```
+There are three FCLayers stacking together. The input layer is the input of the first layer, and the output should be that of the last layer. Each layer's outputDim and transfunc are represented by a column, that is:
 
-There are three FCLayer stacked together, the input is the input of the first layer, the output is the output of the last layer, the outputdim of each layer, and the transfunc is represented by the column, namely:
-- outputdims: The output Dim of each FCLayer is given in the form of a list.
-- transfuncs: Give each FCLayer's transfunc as a list
+- outputdims: specifies each FCLayer's outputDim in list format
+- transfuncs: specifies each FCLayer's transfunc in list format
 
-Note: You can also specify an optimizer for the superimposed FCLayer. At this point, all layers have the same optimizer. If you write separately, it is:
+Note: user can specify optimizer for stacked FCLayers. In this way, all layers share the same type of optimizer. The Json configuration will be as follows if FCLayers are specified separately:
+
 ```json
 {
     "name": "fclayer_0",
@@ -151,19 +157,19 @@ Note: You can also specify an optimizer for the superimposed FCLayer. At this po
 ```
 
 ### 2.2 BiInnerSumCross
-The formula for calculating the feature crossing layer is as follows:
+Feature cross layer. The calculation formula is:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}f(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k)=\sum_i^k\sum_{j=i+1}^k\bold{u}_i^T\bold{u}_j)
 
-Where ![](http://latex.codecogs.com/png.latex?(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k)) is the output of Embedding. Specifically, the Embedding result is a two-in-one inner product, and then summed. Therefore, BiInnerSumCross has no parameters, is untrainable, and has an output dimension of 1.
+in which the ![](http://latex.codecogs.com/png.latex?(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k)) is the output of Embedding layer. Specifically, this formula sums up the inner products of all possible pair combinations of elements in Embedding output. Therefore, `BilnnerSumCross` has no parameter and is untrainable. The output dimension is 1.
 
-The constructor is as follows:
+The constructor of `BilnnerSumCross` is:
 ```scala
 class BiInnerSumCross(name: String, inputLayer: Layer)(
   implicit graph: AngelGraph) extends LinearLayer(name, 1, inputLayer)(graph)
 ```
 
-An example of the json parameter is as follows:
+An Json example:
 ```json
 {
     "name": "biinnersumcross",
@@ -175,19 +181,19 @@ An example of the json parameter is as follows:
 
 
 ### 2.3 BiInnerCross
-The formula for calculating the feature crossing layer is as follows:
+Feature cross layer. The calculation formula is:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}f(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k)=(\bold{u}_1^T\bold{u}_2,\bold{u}_1^T\bold{u}_3,\bold{u}_1^T\bold{u}_4,\cdots,\bold{u}_{k-1}^T\bold{u}_k))
 
-Note：![](http://latex.codecogs.com/png.latex?(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k))is the output of Embedding. Specifically, Embedding results do two or two inner products, so the dimension of output is![](http://latex.codecogs.com/png.latex?\dpi{60}C_k^2=\frac{k(k-1)}{2}). It can be seen that BiInnerCross has no parameters, is untrainable, and has an output dimension of ![](http://latex.codecogs.com/png.latex?\dpi{80}C_k^2).
+in which the ![](http://latex.codecogs.com/png.latex?(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k)) is the output of Embedding layer. Specifically, the Bilnner Cross computes the inner products of all possible pair combination of elements in the Embedding output, thus the output dimension is ![](http://latex.codecogs.com/png.latex?\dpi{60}C_k^2=\frac{k(k-1)}{2}). Therefore, BiInnerCross also has no parameter and is untrainable, and the output dimension is ![](http://latex.codecogs.com/png.latex?\dpi{80}C_k^2).
 
-The constructor is as follows:
+The constructor of `BilnnerCross` class is:
 ```scala
 class BiInnerCross(name: String, outputDim: Int, inputLayer: Layer)(
   implicit graph: AngelGraph) extends LinearLayer(name, outputDim, inputLayer)(graph) 
 ```
 
-An example of the json parameter is as follows:
+A Json example:
 ```json
 {
     "name": "biInnerCross",
@@ -198,19 +204,19 @@ An example of the json parameter is as follows:
 ```
 
 ### 2.4 BiInteactionCross
-The formula for calculating the feature crossing layer is as follows:
+Feature cross layer. The calculation formula is:
 
 ![model](http://latex.codecogs.com/png.latex?\dpi{150}f(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k)=\sum_i^k\sum_{j=i+1}^k\bold{u}_i\otimes\bold{u}_j)
 
-Notes: ![](http://latex.codecogs.com/png.latex?(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k))is the output result of Embedding. Specifically, the result of Embedding is the product of two corresponding elements![](http://latex.codecogs.com/png.latex?\bold{u}_i\otimes\bold{u}_j), and then the sum, so the dimension of output is the same as ![](http://latex.codecogs.com/png.latex?\bold{u}_k), and has nothing to do with the dimension of input data. Thus, BiInteaction Cross has no parameters and is untrainable.
+in which the ![](http://latex.codecogs.com/png.latex?(\bold{u}_1,\bold{u}_2,\cdots,\bold{u}_k)) is the output of Embedding layer. Bi-interaction cross computes the element-wise products ![](http://latex.codecogs.com/png.latex?\bold{u}_i\otimes\bold{u}_j) of all combinations of elements in Embedding vector, and then sum them up. Hence the output dimension is identical to the dimension of ![](http://latex.codecogs.com/png.latex?\bold{u}_k), and is independent of dimension of input data. Hence, BiInteactionCross also has no parameter and is untrainable.
 
-The constructor is as follows:
+The constructor of `BiInteractionCross` is:
 ```scala
 class BiInteractionCross(name: String, outputDim: Int, inputLayer: Layer)(
   implicit graph: AngelGraph) extends LinearLayer(name, outputDim, inputLayer)(graph)
 ```
 
-An example of the json parameter is as follows:
+A json example:
 ```json
 {
     "name": "biinteractioncross",
@@ -219,21 +225,22 @@ An example of the json parameter is as follows:
     "inputlayer": "embedding"
 },
 ```
-## 3. Join Layer
-The join layer refers to a layer with multiple inputs and one output, mainly including:
-- ConcatLayer: Combine multiple input layers and enter a Dense matrix
-- SumPooling: Add the input elements correspondingly and output them
-- MulPooling: Multiply input elements to output
-- DotPooling: Multiply the corresponding elements first, then add them by row, and output a matrix of n rows and one column
+## 3. Join Layers
+Join layers are those layers with multiple input and one output, mainly including:
+
+- ConcatLayer: concat multiple input layers to output a Dense matrix
+- SumPooling: sum up the input elements and output the result
+- MulPooling: multiply the input elements and output the result
+- DotPooling: multiply the corresponding elements then sum up by row, and output a matrix with n rows and one column
 
 ### 3.1 ConcatLayer
-Combine multiple input layers and enter a Dense matrix. The constructor is as follows:
+Concat multiple input layers to output a Dense matrix. The constructor is:
 ```scala
 class ConcatLayer(name: String, outputDim: Int, inputLayers: Array[Layer])(implicit graph: AngelGraph)
   extends JoinLayer(name, outputDim, inputLayers)(graph)
 ```
 
-An example of the json parameter is as follows:
+An example of Json parameters:
 ```json
 {
     "name": "concatlayer",
@@ -245,16 +252,16 @@ An example of the json parameter is as follows:
     ]
 },
 ```
-There are multiple input layers, specified by inputlayers, in the form of a list.
+Since there exist multiple input layers, they should be indicated by "inputlayers" in list format.
 
 ### 3.2 SumPoolingLayer
-The input elements are added together to output a Dense matrix. The constructor is as follows:
+Sum up the input elements and output the result. The constructor is:
 ```scala
 class SumPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implicit graph: AngelGraph)
   extends JoinLayer(name, outputDim, inputLayers)(graph)
 ```
 
-An example of the json parameter is as follows:
+An example of Json parameters:
 ```json
 {
     "name": "sumPooling",
@@ -266,16 +273,16 @@ An example of the json parameter is as follows:
     ]
 },
 ```
-There are multiple input layers, which are specified in the form of lists, using inputlayers.
+Since there exist multiple input layers, they should be indicated by "inputlayers" in list format.
 
 ### 3.3 MulPoolingLayer
-After multiplying the input elements, a Dense matrix is output. The constructor is as follows:
+Multiply the input elements and output the result. The constructor is:
 ```scala
 class MulPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implicit graph: AngelGraph)
   extends JoinLayer(name, outputDim, inputLayers)(graph)
 ```
 
-An example of the json parameter is as follows:
+An example of Json parameters:
 ```json
 {
     "name": "mulPooling",
@@ -287,16 +294,16 @@ An example of the json parameter is as follows:
     ]
 },
 ```
-There are multiple input layers, which are specified in the form of lists, using inputlayers.
+Since there exist multiple input layers, they should be indicated by "inputlayers" in list format.
 
 ### 3.4 DotPoolingLayer
-First multiply the corresponding elements, then add them by row, and output a matrix of n rows and columns. The constructor is as follows:
+Multiply the corresponding elements then sum up by row, and output a matrix with n rows and one column. The constructor is:
 ```scala
 class DotPooling(name: String, outputDim: Int, inputLayers: Array[Layer])(implicit graph: AngelGraph)
   extends JoinLayer(name, outputDim, inputLayers)(graph)
 ```
 
-An example of the json parameter is as follows:
+An example of Json parameters:
 ```json
 {
     "name": "dotPooling",
@@ -308,19 +315,19 @@ An example of the json parameter is as follows:
     ]
 },
 ```
-There are multiple input layers, which are specified in the form of lists, using inputlayers.
+Since there exist multiple input layers, they should be indicated by "inputlayers" in list format.
 
-## 4. Loss layer
-At the top of the network, there is only the input layer, there is no output layer, used to calculate the loss. For the loss function, please refer to [Angel中的损失函数](./lossfunc_on_angel.md)
+## 4. Loss Layers
+A loss layer should be the top layer of a network with only input layer and no output layer. LossLayer is used to compute the loss. Please refer to [Loss functions in Angel](./lossfunc_on_angel.md) for loss functions.
 
 ### 4.1 SimpleLossLayer
-The constructor of SimpleLossLayer is as follows:
+The constructor of SimpleLossLayer is:
 ```scala
 class SimpleLossLayer(name: String, inputLayer: Layer, lossFunc: LossFunc)(
   implicit graph: AngelGraph) extends LinearLayer(name, 1, inputLayer)(graph) with LossLayer
 ```
 
-An example of the json parameter is as follows:
+An example of Json parameters:
 ```json
 {
     "name": "simplelosslayer",

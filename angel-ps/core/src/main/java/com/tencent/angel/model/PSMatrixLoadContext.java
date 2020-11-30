@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -19,13 +19,13 @@
 package com.tencent.angel.model;
 
 import com.tencent.angel.model.io.IOExecutors;
+
 import java.util.List;
 
 /**
  * PS matrix load context
  */
 public class PSMatrixLoadContext {
-
   /**
    * Matrix id
    */
@@ -56,10 +56,9 @@ public class PSMatrixLoadContext {
    *
    * @param matrixId matrix id
    * @param loadPath matrix save directory
-   * @param partIds need load directory
+   * @param partIds  need load directory
    */
-  public PSMatrixLoadContext(int matrixId, String loadPath, List<Integer> partIds,
-      String formatClassName) {
+  public PSMatrixLoadContext(int matrixId, String loadPath, List<Integer> partIds, String formatClassName) {
     this.matrixId = matrixId;
     this.loadPath = loadPath;
     this.partIds = partIds;
@@ -71,7 +70,7 @@ public class PSMatrixLoadContext {
    *
    * @param matrixId matrix id
    * @param loadPath matrix save directory
-   * @param partIds need load directory
+   * @param partIds  need load directory
    */
   public PSMatrixLoadContext(int matrixId, String loadPath, List<Integer> partIds) {
     this(matrixId, loadPath, partIds, null);
@@ -106,7 +105,6 @@ public class PSMatrixLoadContext {
 
   /**
    * Get output format class name
-   *
    * @return output format class name
    */
   public String getFormatClassName() {
@@ -115,7 +113,6 @@ public class PSMatrixLoadContext {
 
   /**
    * Set output format class name
-   *
    * @param formatClassName output format class name
    */
   public void setFormatClassName(String formatClassName) {
@@ -124,7 +121,6 @@ public class PSMatrixLoadContext {
 
   /**
    * Get load workers
-   *
    * @return load workers
    */
   public IOExecutors getWorkers() {
@@ -133,7 +129,6 @@ public class PSMatrixLoadContext {
 
   /**
    * Set load workers
-   *
    * @param workers load workers
    */
   public void setWorkers(IOExecutors workers) {

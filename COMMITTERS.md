@@ -4,7 +4,7 @@ Any existing Committer can nominate an individual making significant and valuabl
 
 One may become a Committer by a majority approval of the existing Committers. A Committer may be removed by a majority approval of the other existing Committers.
 
-Committers should be familiar with the guidelines for new contributors in [CONTRIBUTING.md](https://github.com/Tencent/angel/blob/master/CONTRIBUTING.md).
+Committers should be familiar with the guidelines for new contributors in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Committer Members
 ### Current Committer
@@ -16,13 +16,16 @@ Committers should be familiar with the guidelines for new contributors in [CONT
 - [Hsword](https://github.com/Hsword) - **Hsword (PKU)** <[swordonline@foxmail.com](swordonline@foxmail.com)>
 - [lbluesjjw](https://github.com/bluesjjw)- **Jeremy Jiang (ETH)** <[blue.jwjiang@gmail.com](blue.jwjiang@gmail.com)>
 - [leleyu](https://github.com/leleyu) - **Lele Yu (Tencent)** <[yulele214@gmail.com](yulele214@gmail.com)>
-- [ouyangwen](https://github.com/ouyangwen-it) - **Ouyang Wen (Tencent)** <[ouyangwen21@163.com](ouyangwen21@163.com)>
+- [ouyangwen-it](https://github.com/ouyangwen-it) - **Ouyang Wen (Tencent)** <[ouyangwen21@163.com](ouyangwen21@163.com)>
 - [paynie](https://github.com/paynie) - **Paynie Xiao (Tencent)** <[cswjsxs2005@gmail.com](cswjsxs2005@gmail.com)>
 - [rachelsunrh](https://github.com/rachelsunrh) - **Rachel Sun (Tencent)** <[rachelsunrh@gmail.com](rachelsunrh@gmail.com)>
 - [sunnygao1980](https://github.com/sunnygao1980) - **sunnygao (OPPO)** <[sunnygao1980@163.com](sunnygao1980@163.com)>
 - [weiwee](https://github.com/weiwee) - **Wenbin Wei (WeBank)** <[wbwmat@gmail.com](wbwmat@gmail.com)>
 - [yundai424](https://github.com/yundai424) - **yundai424 (UCI)** <[yundai424@gmail.com](yundai424@gmail.com)>
 - [zxsimple](https://github.com/zxsimple) - **zxsimple (Huawei)** <[xisheng.zhao@gmail.com](xisheng.zhao@gmail.com)>
+- [xs-li](https://github.com/xs-li) - **Hansen Li(Tencent)** <[pkuhansen@163.com](pkuhansen@163.com)>
+- [xujie32](https://github.com/xujie32) - **Joyj Xu(Tencent)** <[joyjxu@tencent.com](joyjxu@tencent.com)>
+- [Gscim](https://github.com/Gscim) - **Shicheng Gao(PKU)** <[gscim.d@pku.edu.cn](gscim.d@pku.edu.cn)>
 
 ### Emeritus committers 
 - [TAAAN](https://github.com/TAAAN) - **yunkuntan (Tencent)** <[419106431@qq.com](419106431@qq.com)>
@@ -62,20 +65,23 @@ We would like to sincerely thank the following community members for their contr
 - [ljch2018](https://github.com/ljch2018)
 - [luxin0123](https://github.com/luxin0123) - **Ally Yu**
 - [mtunique](https://github.com/mtunique) - **Tao Meng**
-- [ouyangwen-it](https://github.com/ouyangwen-it) - **Gdp Ouyang**
+- [ouyangwen-it](https://github.com/ouyangwen-it) - **Ouyang Wen**
 - [patrikwang](https://github.com/patrikwang)
 - [paynie](https://github.com/paynie) - **Paynie Xiao**
 - [quhailong](https://github.com/quhailong) - **Hailong Qu**
 - [rachelsunrh](https://github.com/rachelsunrh) - **Rachel Sun**
 - [shunanzhang](https://github.com/shunanzhang) - **Shunan Zhang**
 - [sunchenglong](https://github.com/sunchenglong) - **Chenglong Sun**
-- [sunnygao1980](https://github.com/sunnygao1980) - ** sunnygao**
+- [sunnygao1980](https://github.com/sunnygao1980) - **sunnygao**
 - [sustcsonglin](https://github.com/sustcsonglin)
 - [weiwee](https://github.com/weiwee) - **Wenbin Wei**
 - [witgo](https://github.com/witgo) - **Guoqiang Li**
 - [wqh17101](https://github.com/wqh17101)
-- [xujie32](https://github.com/xujie32) - **Joy Xu**
+- [xujie32](https://github.com/xujie32) - **Joyj Xu**
 - [yd19tc](https://github.com/yd19tc)
 - [yundai424](https://github.com/yundai424) - **Ariel Dai**
 - [zxsimple](https://github.com/zxsimple) - **Zxsimple**
 - [20100507](https://github.com/20100507)
+- [xs-li](https://github.com/xs-li) - **Hansen Li**
+- [Gscim](https://github.com/Gscim) - **Shicheng Gao**
+- [CreekLou](https://github.com/CreekLou) - **Xuezheng Lou**

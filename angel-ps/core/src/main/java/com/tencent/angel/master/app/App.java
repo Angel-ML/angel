@@ -151,7 +151,7 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
               APP_FAILED_TRANSITION)
 
           .addTransition(AppState.RUNNING, AppState.EXECUTE_SUCCESSED, AppEventType.EXECUTE_SUCESS,
-          APP_EXECUTE_SUCCESS_TRANSITION)
+              APP_EXECUTE_SUCCESS_TRANSITION)
           .addTransition(AppState.RUNNING, AppState.EXECUTE_SUCCESSED, AppEventType.EXECUTE_SUCESS)
           .addTransition(AppState.RUNNING, AppState.KILLED, AppEventType.KILL,
               APP_KILLED_TRANSITION)
@@ -343,7 +343,7 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
           stateToTsMap.put(newState, context.getClock().getTime());
         }
         LOG.info(
-          context.getApplicationId() + " Job Transitioned from " + oldState + " to " + newState);
+            context.getApplicationId() + "Job Transitioned from " + oldState + " to " + newState);
       }
     } finally {
       writeLock.unlock();
@@ -496,6 +496,7 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
     }
   }
 
+
   public static class AppLaunchWorkersTransition implements SingleArcTransition<App, AppEvent> {
 
     @SuppressWarnings("unchecked")
@@ -518,7 +519,6 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
       }
     }
   }
-
 
   public static class AppKilledTransition implements SingleArcTransition<App, AppEvent> {
 

@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -22,7 +22,6 @@ package com.tencent.angel.model;
  * The result of PS load request
  */
 public class PSMatricesLoadResult {
-
   /**
    * Load request id
    */
@@ -46,9 +45,9 @@ public class PSMatricesLoadResult {
   /**
    * Create a new PSMatricesLoadResult
    *
-   * @param requestId request id
+   * @param requestId    request id
    * @param subRequestId sub-request id
-   * @param state load state
+   * @param state        load state
    */
   public PSMatricesLoadResult(int requestId, int subRequestId, LoadState state) {
     this.requestId = requestId;
@@ -85,6 +84,8 @@ public class PSMatricesLoadResult {
 
   /**
    * Set request id
+   *
+   * @param requestId
    */
   public void setRequestId(int requestId) {
     this.requestId = requestId;
@@ -92,6 +93,8 @@ public class PSMatricesLoadResult {
 
   /**
    * Set sub-request id
+   *
+   * @param subRequestId
    */
   public void setSubRequestId(int subRequestId) {
     this.subRequestId = subRequestId;
@@ -117,6 +120,8 @@ public class PSMatricesLoadResult {
 
   /**
    * Set detail failed message
+   *
+   * @param errorMsg
    */
   public void setErrorMsg(String errorMsg) {
     this.errorMsg = errorMsg;

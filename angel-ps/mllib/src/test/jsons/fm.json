@@ -7,7 +7,7 @@
     "sampleratio": 0.2
   },
   "train": {
-    "epoch": 5,
+    "epoch": 2,
     "lr": 0.8,
     "decayclass": "WarmRestarts",
     "decayalpha": 0.05

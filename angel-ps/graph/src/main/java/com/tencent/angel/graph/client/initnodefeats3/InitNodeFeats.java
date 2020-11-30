@@ -40,16 +40,27 @@ public class InitNodeFeats extends UpdateFunc {
     long[] nodeIds = param.getNodeIds();
     IntFloatVector[] feats = param.getFeats();
 
-    row.startWrite();
-    for (int i = 0; i < nodeIds.length; i++) {
-      Node node = (Node) row.get(nodeIds[i]);
-      if (node == null) {
-        node = new Node();
-        row.set(nodeIds[i], node);
+    try {
+      row.startWrite();
+      for (int i = 0; i < nodeIds.length; i++) {
+        Node node = (Node) row.get(nodeIds[i]);
+        if (node == null) {
+          node = new Node();
+          row.set(nodeIds[i], node);
+        }
+        node.setFeats(feats[i]);
+        if (nodeIds[i] == 0) {
+          IntFloatVector f = feats[i];
+          float[] values = f.getStorage().getValues();
+          for (int j = 0; j < values.length; j++) {
+            System.out.println(values[j] + " ");
+          }
+          System.out.println();
+        }
       }
-      node.setFeats(feats[i]);
+    } finally {
+      row.endWrite();
     }
-    row.endWrite();
   }
 
 }

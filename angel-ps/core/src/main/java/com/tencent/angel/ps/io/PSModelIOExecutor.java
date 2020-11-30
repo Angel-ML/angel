@@ -22,10 +22,8 @@ import com.tencent.angel.model.PSMatricesSaveContext;
 import com.tencent.angel.model.PSMatrixLoadContext;
 import com.tencent.angel.model.PSMatrixSaveContext;
 import com.tencent.angel.model.io.IOExecutors;
-import com.tencent.angel.model.io.PSMatrixLoaderSaver;
-import com.tencent.angel.model.output.format.Format;
+import com.tencent.angel.model.output.format.MatrixFormat;
 import com.tencent.angel.model.output.format.ModelFilesUtils;
-import com.tencent.angel.model.output.format.PSMatrixFilesUtils;
 import com.tencent.angel.ps.PSContext;
 import com.tencent.angel.ps.storage.matrix.ServerMatrix;
 import com.tencent.angel.utils.StringUtils;
@@ -225,18 +223,18 @@ public class PSModelIOExecutor {
   private void loadMatrix(PSMatrixLoadContext loadContext) throws IOException {
     ServerMatrix matrix = context.getMatrixStorageManager().getMatrix(loadContext.getMatrixId());
     if (matrix != null) {
-      Format format = ModelFilesUtils.initFormat(loadContext.getFormatClassName(), context.getConf());
-      PSMatrixLoaderSaver loaderSaver = PSMatrixFilesUtils.initLoaderSaver(format, context.getConf());
-      loaderSaver.load(matrix, loadContext, context.getConf());
+      MatrixFormat format = ModelFilesUtils
+          .initFormat(loadContext.getFormatClassName(), context.getConf());
+      format.load(matrix, loadContext, context.getConf());
     }
   }
 
   private void saveMatrix(PSMatrixSaveContext saveContext) throws IOException {
     ServerMatrix matrix = context.getMatrixStorageManager().getMatrix(saveContext.getMatrixId());
     if (matrix != null) {
-      Format format = ModelFilesUtils.initFormat(saveContext.getFormatClassName(), context.getConf());
-      PSMatrixLoaderSaver loaderSaver = PSMatrixFilesUtils.initLoaderSaver(format, context.getConf());
-      loaderSaver.save(matrix, saveContext, context.getConf());
+      MatrixFormat format = ModelFilesUtils
+          .initFormat(saveContext.getFormatClassName(), context.getConf());
+      format.save(matrix, saveContext, context.getConf());
     }
   }
 }

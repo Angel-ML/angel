@@ -212,6 +212,7 @@ public class AMMatrixMetaManager {
     }
 
     String loadPath = matrixContext.getAttributes().get(MatrixConf.MATRIX_LOAD_PATH);
+    //matrixContext.set(MatrixConf.MATRIX_LOAD_PATH, "");
     Partitioner partitioner = initPartitioner(matrixContext, context.getConf());
 
     List<PartitionMeta> partitions;
