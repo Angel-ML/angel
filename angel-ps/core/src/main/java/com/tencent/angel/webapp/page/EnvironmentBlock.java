@@ -55,8 +55,8 @@ public class EnvironmentBlock extends HtmlBlock {
     String OsNmae = System.getProperty("os.name");
     String JavaVersion = System.getProperty("java.version");
     run_info_table.tr().th(_TH, "NAME").th(_TH, "VALUE")._();
-    run_info_table.tr().td("UsrHome").td(UsrHome)._().tr().td("UsrDir").td(UsrDir)._().tr()
-      .td("UsrName").td(UsrName)._().tr().td("JavaHome").td(JavaHome)._().tr().td("OsNmae")
+    run_info_table.tr().td("UserHome").td(UsrHome)._().tr().td("UserDir").td(UsrDir)._().tr()
+      .td("UserName").td(UsrName)._().tr().td("JavaHome").td(JavaHome)._().tr().td("OsName")
       .td(OsNmae)._().tr().td("JavaVersion").td(JavaVersion)._();
     run_info_table._();
     html.h1("    ");
