@@ -24,7 +24,7 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 
 /**
- * Reference from https://issues.apache.org/jira/browse/SPARK-18535
+ * Refer to https://issues.apache.org/jira/browse/SPARK-18535
  * Redact the sensitive values in the given properties. If a map key matches the redaction pattern then
  * its value is replaced with a dummy text.
  */
