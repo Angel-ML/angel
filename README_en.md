@@ -45,15 +45,15 @@ We welcome everyone interested in machine learning or graph computing to contrib
 - [**Algorithm Parameter Description**](./docs/algo/model_config_details.md)
 - **Angel**
   - **Traditional Machine Learning Methods**
-    - [Logistic Regression(LR)](./docs/algo/lr_on_angel.md)
-    - [Support Vector Machine(SVM)](./docs/algo/svm_on_angel.md)
+    - [Logistic Regression(LR)](./docs/algo/lr_on_angel_en.md)
+    - [Support Vector Machine(SVM)](./docs/algo/svm_on_angel_en.md)
     - [Factorization Machine(FM)](./docs/algo/fm_on_angel.md)
-    - [Linear Regression](./docs/algo/linear_on_angel.md)
-    - [Robust Regression](./docs/algo/robust_on_angel.md)
-    - [Softmax Regression](./docs/algo/softmax_on_angel.md)
-    - [KMeans](./docs/algo/kmeans_on_angel.md)
-    - [GBDT](./docs/algo/gbdt_on_angel.md)
-    - [LDA\*](./docs/algo/lda_on_angel.md) ([WrapLDA](./docs/algo/wrap_lda_on_angel.md))
+    - [Linear Regression](./docs/algo/linear_on_angel_en.md)
+    - [Robust Regression](./docs/algo/robust_on_angel_en.md)
+    - [Softmax Regression](./docs/algo/softmax_on_angel_en.md)
+    - [KMeans](./docs/algo/kmeans_on_angel_en.md)
+    - [GBDT](./docs/algo/gbdt_on_angel_en.md)
+    - [LDA\*](./docs/algo/lda_on_angel_en.md) ([WarpLDA](./docs/algo/warp_lda_on_angel.md))
 - **Spark on Angel**
   - **Angel-Mllib**
     - [FM](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/recommendation.md)
