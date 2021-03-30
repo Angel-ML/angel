@@ -63,7 +63,7 @@
 		* [Softmax Regression](./docs/algo/softmax_on_angel.md)
 		* [KMeans](./docs/algo/kmeans_on_angel.md)
 		* [GBDT](./docs/algo/gbdt_on_angel.md)
-		* [LDA\*](./docs/algo/lda_on_angel.md) ([WrapLDA](./docs/algo/wrap_lda_on_angel.md))
+		* [LDA\*](./docs/algo/lda_on_angel.md) ([WarpLDA](./docs/algo/warp_lda_on_angel.md))
 * **Spark on Angel**
 	* **Angel-Mllib**
 		* [FM](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/recommendation.md)
