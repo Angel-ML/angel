@@ -29,11 +29,6 @@ import com.tencent.angel.ml.math2.vector.*;
 
 public class RB${comp}${itype}${dtype}Matrix extends RowBasedMatrix<${comp}${itype}${dtype}Vector> {
 #if ( ${comp} == "" )
-
-	public RB${comp}${itype}${dtype}Matrix() {
-        super();
-    }
-
     public RB${comp}${itype}${dtype}Matrix(int matrixId, int clock, ${comp}${itype}${dtype}Vector [ ] rows) {
         super(matrixId, clock, rows[0].getDim(), rows);
     }
@@ -54,17 +49,12 @@ public class RB${comp}${itype}${dtype}Matrix extends RowBasedMatrix<${comp}${ity
         this(0, 0, numRows, numCols);
     }
 #else
-
     private $itype.toLowerCase() subDim;
-
-    public RB${comp}${itype}${dtype}Matrix() {
-		super();
-	}
 
     public RB${comp}${itype}${dtype}Matrix(int matrixId, int clock, ${comp}${itype}${dtype}Vector [ ] rows) {
         super(matrixId, clock, rows[0].getDim(), rows);
         assert null != rows[0];
-        subDim = rows[0].getSubDim();
+        subDim = rows[0].getDim();
     }
 
     public RB${comp}${itype}${dtype}Matrix(${comp}${itype}${dtype}Vector [ ] rows) {
@@ -99,9 +89,7 @@ public class RB${comp}${itype}${dtype}Matrix extends RowBasedMatrix<${comp}${ity
     }
 
     public void set(int i, $itype.toLowerCase() j, $dtype.toLowerCase() value) {
-        if (null == rows[i]) {
-		  initEmpty(i);
-		}
+        if (null == rows[i]) initEmpty(i);
         rows[i].set(j, value);
     }
 
@@ -120,16 +108,6 @@ public class RB${comp}${itype}${dtype}Matrix extends RowBasedMatrix<${comp}${ity
         return new Int${dtype}Vector(getMatrixId(), 0, getClock(), resArr.length, storage);
     }
 
-	@Override
-	public Vector dot(Vector other) {
-	  $dtype.toLowerCase() [] resArr = new $dtype.toLowerCase() [rows.length];
-	  for (int i = 0; i < rows.length; i++) {
-		resArr[i] = ($dtype.toLowerCase()) rows[i].dot(other);
-	  }
-	  Int${dtype}DenseVectorStorage storage = new Int${dtype}DenseVectorStorage(resArr);
-	  return new Int${dtype}Vector(matrixId, 0, clock, rows.length, storage);
-	}
-
     @Override
     public RowBasedMatrix calulate(int rowId, Vector other, Binary op) {
         assert other != null;
@@ -144,9 +122,7 @@ public class RB${comp}${itype}${dtype}Matrix extends RowBasedMatrix<${comp}${ity
 #end
         }
 
-        if (null == rows[rowId]) {
-		  initEmpty(rowId);
-		}
+        if (null == rows[rowId]) initEmpty(rowId);
 
         if (op.isInplace()) {
             BinaryExecutor.apply(rows[rowId], other, op);
@@ -178,16 +154,12 @@ public class RB${comp}${itype}${dtype}Matrix extends RowBasedMatrix<${comp}${ity
         }
         if (op.isInplace()) {
             for (int rowId=0; rowId < rows.length; rowId++) {
-                if (null == rows[rowId]) {
-				  initEmpty(rowId);
-				}
+                if (null == rows[rowId]) initEmpty(rowId);
                 BinaryExecutor.apply(rows[rowId], other, op);
             }
         } else {
             for (int rowId=0; rowId < rows.length; rowId++) {
-                if (null == rows[rowId]) {
-				  initEmpty(rowId);
-				}
+                if (null == rows[rowId]) initEmpty(rowId);
                 res.setRow(rowId, (${comp}${itype}${dtype}Vector) BinaryExecutor.apply(rows[rowId], other, op));
             }
         }
@@ -200,27 +172,17 @@ public class RB${comp}${itype}${dtype}Matrix extends RowBasedMatrix<${comp}${ity
 
         if (op.isInplace()) {
             for (int i=0; i< rows.length; i++) {
-                if (null == rows[i]) {
-				  initEmpty(i);
-				}
-                if (null == ((RowBasedMatrix) other).rows[i]) {
-				  ((RowBasedMatrix) other).initEmpty(i);
-				}
+                if (null == rows[i]) initEmpty(i);
+                if (null == ((RowBasedMatrix) other).rows[i]) ((RowBasedMatrix) other).initEmpty(i);
                 BinaryExecutor.apply(rows[i], ((RowBasedMatrix) other).rows[i], op);
             }
             return this;
         } else {
             ${comp}${itype}${dtype}Vector [ ] outRows = new ${comp}${itype}${dtype}Vector[rows.length];
             for (int i = 0; i < rows.length; i++) {
-                 if (null == rows[i]) {
-					initEmpty(i);
-				 }
-				 if (null == ((RowBasedMatrix) other).rows[i]) {
-					((RowBasedMatrix) other).initEmpty(i);
-				 }
-                outRows[i] =
-                	(${comp}${itype}${dtype}Vector) BinaryExecutor
-                		.apply(rows[i], ((RowBasedMatrix) other).rows[i], op);
+                if (null == rows[i]) initEmpty(i);
+                if (null == ((RowBasedMatrix) other).rows[i]) ((RowBasedMatrix) other).initEmpty(i);
+                outRows[i] = (${comp}${itype}${dtype}Vector) BinaryExecutor.apply(rows[i], ((RowBasedMatrix) other).rows[i], op);
             }
             return new RB${comp}${itype}${dtype}Matrix(matrixId, clock, outRows);
         }
@@ -236,9 +198,7 @@ public class RB${comp}${itype}${dtype}Matrix extends RowBasedMatrix<${comp}${ity
         } else {
             ${comp}${itype}${dtype}Vector [ ] outRows = new ${comp}${itype}${dtype}Vector[rows.length];
             for (int i = 0; i < rows.length; i++) {
-                if (null == rows[i]) {
-				  initEmpty(i);
-				}
+                if (null == rows[i]) initEmpty(i);
                 outRows[i] = (${comp}${itype}${dtype}Vector) UnaryExecutor.apply(rows[i], op);
             }
             return new RB${comp}${itype}${dtype}Matrix(matrixId, clock, outRows);
@@ -278,8 +238,7 @@ public class RB${comp}${itype}${dtype}Matrix extends RowBasedMatrix<${comp}${ity
                 ${itype}${dtype}SparseVectorStorage storage = new ${itype}${dtype}SparseVectorStorage(subDim);
                 tmpParts[i] = new ${itype}${dtype}Vector(matrixId, idx, clock, ($itype.toLowerCase())getDim(), storage);
             }
-            ${comp}${itype}${dtype}Vector tmpVect =
-            	new ${comp}${itype}${dtype}Vector(matrixId, idx, clock, ($itype.toLowerCase())getDim(), tmpParts, subDim);
+            ${comp}${itype}${dtype}Vector tmpVect = new ${comp}${itype}${dtype}Vector(matrixId, idx, clock, ($itype.toLowerCase())getDim(), tmpParts, subDim);
             rows[idx] = tmpVect;
         }
     }
@@ -307,59 +266,31 @@ public class RB${comp}${itype}${dtype}Matrix extends RowBasedMatrix<${comp}${ity
     @Override
     public Vector min(int axis) {
         assert axis==1;
-#if ( $dtype == "Float" )
-        $dtype.toLowerCase() [] minArr = new $dtype.toLowerCase() [rows.length];
-#else
-		double[] minArr = new double[rows.length];
-#end
+        double[] minArr = new double[rows.length];
         for (int i=0; i< rows.length; i++) {
             if (rows[i] != null) {
-#if ( $dtype == "Float" )
-				minArr[i] = (float)rows[i].min();
+                minArr[i] = rows[i].min();
             } else {
-                minArr[i] = ${dtype}.NaN;
-#else
-				minArr[i] = rows[i].min();
-            } else {
-				minArr[i] = Double.NaN;
-#end
+                minArr[i] = Double.NaN;
             }
 
         }
-#if ( $dtype == "Float" )
-        return VFactory.dense${dtype}Vector(matrixId, 0, clock, minArr);
-#else
-		return VFactory.denseDoubleVector(matrixId, 0, clock, minArr);
-#end
+        return VFactory.denseDoubleVector(matrixId, 0, clock, minArr);
     }
 
     @Override
     public Vector max(int axis) {
         assert axis==1;
-#if ( $dtype == "Float" )
-        $dtype.toLowerCase() [] maxArr = new $dtype.toLowerCase() [rows.length];
-#else
-		double[] maxArr = new double[rows.length];
-#end
+        double[] maxArr = new double[rows.length];
         for (int i=0; i< rows.length; i++) {
             if (rows[i] != null) {
-#if ( $dtype == "Float" )
-				maxArr[i] = (float)rows[i].max();
+                maxArr[i] = rows[i].max();
             } else {
-                maxArr[i] = ${dtype}.NaN;
-#else
-				maxArr[i] = rows[i].max();
-            } else {
-				maxArr[i] = Double.NaN;
-#end
+                maxArr[i] = Double.NaN;
             }
 
         }
-#if ( $dtype == "Float" )
-        return VFactory.dense${dtype}Vector(matrixId, 0, clock, maxArr);
-#else
-		return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
-#end
+        return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
     }
 
     @Override
@@ -384,113 +315,57 @@ public class RB${comp}${itype}${dtype}Matrix extends RowBasedMatrix<${comp}${ity
     @Override
     public Vector sum(int axis) {
         assert axis==1;
-#if ( $dtype == "Float" )
-        $dtype.toLowerCase() [] maxArr = new $dtype.toLowerCase() [rows.length];
-#else
-		double[] maxArr = new double[rows.length];
-#end
+        double[] maxArr = new double[rows.length];
         for (int i=0; i< rows.length; i++) {
             if (rows[i] != null) {
-#if ( $dtype == "Float" )
-				maxArr[i] = (float)rows[i].sum();
+                maxArr[i] = rows[i].sum();
             } else {
-                maxArr[i] = ${dtype}.NaN;
-#else
-				maxArr[i] = rows[i].sum();
-            } else {
-				maxArr[i] = Double.NaN;
-#end
+                maxArr[i] = Double.NaN;
             }
         }
-#if ( $dtype == "Float" )
-        return VFactory.dense${dtype}Vector(matrixId, 0, clock, maxArr);
-#else
-		return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
-#end
+        return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
     }
 
     @Override
     public Vector average(int axis) {
         assert axis==1;
-#if ( $dtype == "Float" )
-        $dtype.toLowerCase() [] maxArr = new $dtype.toLowerCase() [rows.length];
-#else
-		double [] maxArr = new double [rows.length];
-#end
+        double[] maxArr = new double[rows.length];
         for (int i=0; i< rows.length; i++) {
             if (rows[i] != null) {
-#if ( $dtype == "Float" )
- 				maxArr[i] = (float)rows[i].average();
+                maxArr[i] = rows[i].average();
             } else {
-                maxArr[i] = ${dtype}.NaN;
-#else
-				 maxArr[i] = rows[i].average();
-			} else {
-				maxArr[i] = Double.NaN;
-#end
+                maxArr[i] = Double.NaN;
             }
         }
-#if ( $dtype == "Float" )
-        return VFactory.dense${dtype}Vector(matrixId, 0, clock, maxArr);
-#else
-		return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
-#end
+        return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
     }
 
     @Override
     public Vector std(int axis) {
         assert axis==1;
-#if ( $dtype == "Float" )
-        $dtype.toLowerCase() [] maxArr = new $dtype.toLowerCase() [rows.length];
-#else
-		double[] maxArr = new double[rows.length];
-#end
+        double[] maxArr = new double[rows.length];
         for (int i=0; i< rows.length; i++) {
             if (rows[i] != null) {
-#if ( $dtype == "Float" )
- 				maxArr[i] = (float)rows[i].std();
+                maxArr[i] = rows[i].std();
             } else {
-                maxArr[i] = ${dtype}.NaN;
-#else
- 				maxArr[i] = rows[i].std();
-            } else {
-				maxArr[i] = Double.NaN;
-#end
+                maxArr[i] = Double.NaN;
             }
         }
-#if ( $dtype == "Float" )
-        return VFactory.dense${dtype}Vector(matrixId, 0, clock, maxArr);
-#else
-		return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
-#end
+        return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
     }
 
     @Override
     public Vector norm(int axis) {
         assert axis==1;
-#if ( $dtype == "Float" )
-        $dtype.toLowerCase() [] maxArr = new $dtype.toLowerCase() [rows.length];
-#else
-		double[] maxArr = new double[rows.length];
-#end
+        double[] maxArr = new double[rows.length];
         for (int i=0; i< rows.length; i++) {
             if (rows[i] != null) {
-#if ( $dtype == "Float" )
-				maxArr[i] = (float)rows[i].norm();
+                maxArr[i] = rows[i].norm();
             } else {
-                maxArr[i] = ${dtype}.NaN;
-#else
-				maxArr[i] = rows[i].norm();
-            } else {
-				maxArr[i] = Double.NaN;
-#end
+                maxArr[i] = Double.NaN;
             }
         }
-#if ( $dtype == "Float" )
-        return VFactory.dense${dtype}Vector(matrixId, 0, clock, maxArr);
-#else
-		return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
-#end
+        return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
     }
 
 @Override

@@ -30,7 +30,7 @@ public class FtrlDeltaIntersect extends Binary {
 
   @Override
   public OpType getOpType() {
-    return OpType.UNION;
+    return OpType.INTERSECTION;
   }
 
   @Override
