@@ -18,61 +18,33 @@
 
 package com.tencent.angel.ps.server.data.response;
 
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.ps.storage.vector.ServerRow;
-import com.tencent.angel.ps.storage.vector.ServerRowFactory;
 import io.netty.buffer.ByteBuf;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * The result of get batch row splits rpc request.
  */
-public class GetRowsSplitResponse extends Response {
+public class GetRowsSplitResponse extends ResponseData {
   /**
    * row splits
    */
-  private List<ServerRow> rowsSplit;
+  private ServerRow[] rowsSplit;
 
   /**
    * Create a new GetRowsSplitResponse.
    *
-   * @param responseType response type
-   * @param detail       detail error message if the response type is error
    * @param rowsSplit    row splits
    */
-  public GetRowsSplitResponse(ResponseType responseType, String detail, List<ServerRow> rowsSplit) {
-    super(responseType, detail);
+  public GetRowsSplitResponse(ServerRow[] rowsSplit) {
     this.setRowsSplit(rowsSplit);
-  }
-
-  /**
-   * Create a new GetRowsSplitResponse.
-   *
-   * @param responseType response type
-   * @param rowsSplit    row splits
-   */
-  public GetRowsSplitResponse(ResponseType responseType, List<ServerRow> rowsSplit) {
-    this(responseType, null, rowsSplit);
-  }
-
-
-  /**
-   * Create a new GetRowsSplitResponse.
-   *
-   * @param responseType response type
-   * @param detail       detail error message if the response type is error
-   */
-  public GetRowsSplitResponse(ResponseType responseType, String detail) {
-    this(responseType, detail, null);
   }
 
   /**
    * Create a new GetRowsSplitResponse.
    */
   public GetRowsSplitResponse() {
-    this(ResponseType.SUCCESS, null, null);
+    this(null);
   }
 
   /**
@@ -80,7 +52,7 @@ public class GetRowsSplitResponse extends Response {
    *
    * @return List<ServerRow> row splits
    */
-  public List<ServerRow> getRowsSplit() {
+  public ServerRow[] getRowsSplit() {
     return rowsSplit;
   }
 
@@ -89,50 +61,29 @@ public class GetRowsSplitResponse extends Response {
    *
    * @param rowsSplit row splits
    */
-  public void setRowsSplit(List<ServerRow> rowsSplit) {
+  public void setRowsSplit(ServerRow[] rowsSplit) {
     this.rowsSplit = rowsSplit;
   }
 
   @Override public void serialize(ByteBuf buf) {
-    super.serialize(buf);
-    if (rowsSplit != null) {
-      int size = rowsSplit.size();
-      buf.writeInt(size);
-      for (int i = 0; i < size; i++) {
-        buf.writeInt(rowsSplit.get(i).getRowType().getNumber());
-        rowsSplit.get(i).serialize(buf);
-      }
+    ByteBufSerdeUtils.serializeInt(buf, rowsSplit.length);
+    for(int i = 0; i < rowsSplit.length; i++) {
+      ByteBufSerdeUtils.serializeServerRow(buf, rowsSplit[i]);
     }
   }
 
   @Override public void deserialize(ByteBuf buf) {
-    super.deserialize(buf);
-    if (buf.readableBytes() == 0) {
-      rowsSplit = null;
-      return;
-    }
-
-    int size = buf.readInt();
-    rowsSplit = new ArrayList<>();
-    for (int i = 0; i < size; i++) {
-      ServerRow rowSplit = ServerRowFactory.createEmptyServerRow(RowType.valueOf(buf.readInt()));
-      rowSplit.deserialize(buf);
-      rowsSplit.add(rowSplit);
+    rowsSplit = new ServerRow[ByteBufSerdeUtils.deserializeInt(buf)];
+    for(int i = 0; i < rowsSplit.length; i++) {
+      rowsSplit[i] = ByteBufSerdeUtils.deserializeServerRow(buf);
     }
   }
 
   @Override public int bufferLen() {
-    int len = super.bufferLen();
-    if (rowsSplit != null) {
-      int size = rowsSplit.size();
-      for (int i = 0; i < size; i++) {
-        len += rowsSplit.get(i).bufferLen();
-      }
+    int len = ByteBufSerdeUtils.INT_LENGTH;
+    for(int i = 0; i < rowsSplit.length; i++) {
+      len += ByteBufSerdeUtils.serializedServerRowLen(rowsSplit[i]);
     }
     return len;
-  }
-
-  @Override public void clear() {
-    setRowsSplit(null);
   }
 }

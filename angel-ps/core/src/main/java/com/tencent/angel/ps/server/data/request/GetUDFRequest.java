@@ -18,9 +18,8 @@
 
 package com.tencent.angel.ps.server.data.request;
 
-import com.tencent.angel.PartitionKey;
+import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
-import com.tencent.angel.ps.server.data.TransportMethod;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -28,7 +27,7 @@ import org.apache.commons.logging.LogFactory;
 /**
  * Get udf rpc request.
  */
-public class GetUDFRequest extends PartitionRequest {
+public class GetUDFRequest extends RequestData {
   private static final Log LOG = LogFactory.getLog(GetUDFRequest.class);
 
   /**
@@ -44,14 +43,10 @@ public class GetUDFRequest extends PartitionRequest {
   /**
    * Create a new GetUDFRequest.
    *
-   * @param userRequestId user request id
-   * @param partKey       matrix partition key
    * @param getFuncClass  udf class name
    * @param partParam     partition parameter of the udf
    */
-  public GetUDFRequest(int userRequestId, PartitionKey partKey, String getFuncClass,
-    PartitionGetParam partParam) {
-    super(userRequestId, 0, partKey);
+  public GetUDFRequest(String getFuncClass, PartitionGetParam partParam) {
     this.getFuncClass = getFuncClass;
     this.partParam = partParam;
   }
@@ -60,70 +55,25 @@ public class GetUDFRequest extends PartitionRequest {
    * Create a new GetUDFRequest.
    */
   public GetUDFRequest() {
-    this(-1, null, null, null);
-  }
-
-  @Override public TransportMethod getType() {
-    return TransportMethod.GET_PSF;
+    this(null, null);
   }
 
   @Override public void serialize(ByteBuf buf) {
-    super.serialize(buf);
-    if (getFuncClass != null) {
-      byte[] data = getFuncClass.getBytes();
-      buf.writeInt(data.length);
-      buf.writeBytes(data);
-    }
-
-    if (partParam != null) {
-      String partParamClassName = partParam.getClass().getName();
-      byte[] data = partParamClassName.getBytes();
-      buf.writeInt(data.length);
-      buf.writeBytes(data);
-      partParam.serialize(buf);
-    }
+    ByteBufSerdeUtils.serializeUTF8(buf, getFuncClass);
+    ByteBufSerdeUtils.serializeObject(buf, partParam);
   }
 
   @Override public void deserialize(ByteBuf buf) {
-    super.deserialize(buf);
-    if (buf.isReadable()) {
-      int size = buf.readInt();
-      byte[] data = new byte[size];
-      buf.readBytes(data);
-      getFuncClass = new String(data);
-    }
-
-    if (buf.isReadable()) {
-      int size = buf.readInt();
-      byte[] data = new byte[size];
-      buf.readBytes(data);
-      String partParamClassName = new String(data);
-      try {
-        partParam = (PartitionGetParam) Class.forName(partParamClassName).newInstance();
-        partParam.deserialize(buf);
-      } catch (Exception e) {
-        LOG.fatal("deserialize PartitionAggrParam falied, ", e);
-      }
-    }
+    int readerIndex = buf.readerIndex();
+    getFuncClass = ByteBufSerdeUtils.deserializeUTF8(buf);
+    partParam = (PartitionGetParam) ByteBufSerdeUtils.deserializeObject(buf);
+    requestSize = buf.readerIndex() - readerIndex;
   }
 
   @Override public int bufferLen() {
-    int size = super.bufferLen();
-    if (getFuncClass != null) {
-      size += 4;
-      size += getFuncClass.toCharArray().length;
-    }
-
-    if (partParam != null) {
-      size += 4;
-      size += partParam.bufferLen();
-    }
-
-    return size;
-  }
-
-  @Override public int getEstimizeDataSize() {
-    return 1;
+    int len = ByteBufSerdeUtils.serializedUTF8Len(getFuncClass);
+    len += ByteBufSerdeUtils.serializedObjectLen(partParam);
+    return len;
   }
 
   /**
@@ -144,9 +94,11 @@ public class GetUDFRequest extends PartitionRequest {
     return partParam;
   }
 
-
-  @Override public String toString() {
-    return "GetUDFRequest{" + "getFuncClass='" + getFuncClass + '\'' + ", partParam=" + partParam
-      + "} " + super.toString();
+  @Override
+  public String toString() {
+    return "GetUDFRequest{" +
+        "getFuncClass='" + getFuncClass + '\'' +
+        ", partParam=" + partParam +
+        '}';
   }
 }

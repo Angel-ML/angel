@@ -18,7 +18,7 @@
 
 package com.tencent.angel.psagent.matrix.transport.adapter;
 
-import com.tencent.angel.ps.server.data.request.IndexType;
+import com.tencent.angel.ps.server.data.request.KeyType;
 import com.tencent.angel.ps.server.data.request.InitFunc;
 
 public abstract class IndexGetRowsRequest extends UserRequest {
@@ -45,5 +45,7 @@ public abstract class IndexGetRowsRequest extends UserRequest {
     return func;
   }
 
-  public abstract IndexType getIndexType();
+  public abstract KeyType getIndexType();
+
+  public abstract int size();
 }

@@ -25,7 +25,6 @@ import com.tencent.angel.master.slowcheck.TaskCalPerfChecker;
 import com.tencent.angel.ps.ParameterServer;
 import com.tencent.angel.ps.storage.matrix.PartitionSourceMap;
 import com.tencent.angel.psagent.PSAgent;
-import com.tencent.angel.psagent.matrix.cache.DefaultPolicy;
 import com.tencent.angel.utils.DefaultAppSubmitter;
 import com.tencent.angel.worker.Worker;
 import com.tencent.angel.worker.task.BaseTask;
@@ -190,10 +189,10 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_LOAD_MODEL_PATH = "angel.load.model.path";
 
   /**
-   * Application deploy mode, now support YARN, LOCAL and KUBERNETES mode
+   * Application deploy mode, now support YARN and LOCAL mode
    */
   public static final String ANGEL_DEPLOY_MODE = "angel.deploy.mode";
-  public static final String DEFAULT_ANGEL_DEPLOY_MODE = "YARN"; // YARN, LOCAL, KUBERNETES
+  public static final String DEFAULT_ANGEL_DEPLOY_MODE = "YARN"; // YARN, LOCAL
 
   /**
    * Application running mode, now support ANGEL_PS_WORKER and ANGEL_PS.
@@ -509,7 +508,10 @@ public class AngelConf extends Configuration {
 
   public static final String ANGEL_MODEL_PARTITIONER_PARTITION_NUM_PERSERVER =
       "angel.model.partitioner.partition.number.perserver";
-  public static final int DEFAULT_ANGEL_MODEL_PARTITIONER_PARTITION_NUM_PERSERVER = 1;
+  public static final int DEFAULT_ANGEL_MODEL_PARTITIONER_PARTITION_NUM_PERSERVER = 5;
+
+  public static final String ANGEL_AM_HOST = ANGEL_AM_PREFIX + "host";
+  public static final String ANGEL_AM_PORT = ANGEL_AM_PREFIX + "port";
 
   // //////////////////////////////
   // Worker Configs
@@ -979,7 +981,7 @@ public class AngelConf extends Configuration {
 
   public static final String ANGEL_PS_USE_ADAPTIVE_STORAGE_ENABLE =
       ANGEL_PS_PREFIX + "use.adaptive.storage.enable";
-  public static final boolean DEFAULT_ANGEL_PS_USE_ADAPTIVE_STORAGE_ENABLE = true;
+  public static final boolean DEFAULT_ANGEL_PS_USE_ADAPTIVE_STORAGE_ENABLE = false;
 
   public static final String ANGEL_PS_SPARSE_TO_DENSE_FACTOR =
       ANGEL_PS_PREFIX + "sparse.to.dense.factor";
@@ -1225,6 +1227,18 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_REQUEST_SLEEP_TIME_MS = "angel.request.sleep.time.ms";
   public static final int DEFAULT_ANGEL_REQUEST_SLEEP_TIME_MS = 1000;
 
+  /**
+   * Key router type: hash or range
+   */
+  public static final String ANGEL_PS_ROUTER_TYPE = ANGEL_PS_PREFIX + "router.type";
+  public static final String DEFAULT_ANGEL_PS_ROUTER_TYPE = "hash";
+
+  /**
+   * Key router type: hash or range
+   */
+  public static final String ANGEL_PS_LOADBALANCE_PARTITION_ENABLE = ANGEL_PS_PREFIX + "router.type";
+  public static final boolean DEFAULT_ANGEL_PS_LOADBALANCE_PARTITION_ENABLE = true;
+
   // //////////////////////////////
   // Matrix transfer Configs.
   // //////////////////////////////
@@ -1285,7 +1299,7 @@ public class AngelConf extends Configuration {
    */
   public static final String ANGEL_NETTY_MATRIXTRANSFER_CLIENT_MAX_CONN_IDLETIME_MS =
       "angel.netty.matrixtransfer.client.max.connect.idletime.ms";
-  public static final int DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_MAX_CONN_IDLETIME_MS = 300000;
+  public static final int DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_MAX_CONN_IDLETIME_MS = 3000000;
 
   /**
    * Netty channel io ratio
@@ -1357,7 +1371,7 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_MATRIXTRANSFER_CLIENT_REQUESTER_POOL_SIZE =
       ANGEL_PREFIX + "matrixtransfer.client.requester.pool.size";
   public static final int DEFAULT_ANGEL_MATRIXTRANSFER_CLIENT_REQUESTER_POOL_SIZE =
-      Math.max(8, (int) (Runtime.getRuntime().availableProcessors() * 0.25));
+      Math.max(16, (int) (Runtime.getRuntime().availableProcessors() * 0.25));
 
   public static final String ANGEL_MATRIXTRANSFER_CLIENT_RESPONSER_POOL_SIZE =
       ANGEL_PREFIX + "matrixtransfer.client.responser.pool.size";
@@ -1368,7 +1382,7 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_MATRIXTRANSFER_SERVER_WORKER_POOL_SIZE =
       ANGEL_PREFIX + "matrixtransfer.server.worker.pool.size";
   public static final int DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_WORKER_POOL_SIZE =
-      Math.max(8, (int) (Runtime.getRuntime().availableProcessors() * 0.25));
+      Math.max(16, (int) (Runtime.getRuntime().availableProcessors() * 0.25));
 
   public static final String ANGEL_MATRIXTRANSFER_SERVER_TOKEN_TIMEOUT_MS =
       ANGEL_PREFIX + "matrixtransfer.server.token.timeout.ms";
@@ -1381,12 +1395,7 @@ public class AngelConf extends Configuration {
 
   public static final String ANGEL_MATRIXTRANSFER_SERVER_RPC_LIMIT_GENERAL_FACTOR =
       ANGEL_PREFIX + "matrixtransfer.server.rpc.limit.general.factor";
-  public static float DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_RPC_LIMIT_GENERAL_FACTOR = 0.0f;
-
-  public static final String ANGEL_MATRIXTRANSFER_SERVER_SENDER_POOL_SIZE =
-      ANGEL_PREFIX + "matrixtransfer.server.sender.pool.size";
-  public static final int DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_SENDER_POOL_SIZE =
-      Math.max(8, (int) (Runtime.getRuntime().availableProcessors() * 0.25));
+  public static float DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_RPC_LIMIT_GENERAL_FACTOR = 0.6f;
 
   public static final String ANGEL_MATRIXTRANSFER_SERVER_USE_ASYNC_HANDLER =
       ANGEL_PREFIX + "matrixtransfer.server.use.async.handler";
@@ -1399,9 +1408,6 @@ public class AngelConf extends Configuration {
 
   public static final String ANGEL_PS_USE_INDEPENDENT_WORKER_POOL = "angel.ps.use.independent.worker.pool";
   public static final boolean DEFAULT_ANGEL_PS_USE_INDEPENDENT_WORKER_POOL = true;
-
-  public static final String ANGEL_PS_USE_INDEPENDENT_SENDER_POOL = "angel.ps.use.independent.sender.pool";
-  public static final boolean DEFAULT_ANGEL_PS_USE_INDEPENDENT_SENDER_POOL = true;
 
 
   public static final String ANGEL_MATRIX_OPLOG_MERGER_POOL_SIZE =
@@ -1492,6 +1498,10 @@ public class AngelConf extends Configuration {
       ANGEL_PREFIX + "matrixtransfer.check.interval.ms";
   public static final int DEFAULT_ANGEL_MATRIXTRANSFER_CHECK_INTERVAL_MS = 100;
 
+  public static final String ANGEL_NETTY_MATRIXTRANSFER_SERVER_USE_STREAM_HANDLER =
+      "angel.netty.matrixtransfer.server.use.stream.handler";
+  public static final boolean DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_USE_STREAM_HANDLER = false;
+
   // //////////////////////////////
   // Matrix transfer Configs.
   // //////////////////////////////
@@ -1504,14 +1514,6 @@ public class AngelConf extends Configuration {
   public static final String ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS =
       ANGEL_PSAGENT_PREFIX + "cache.sync.timeinterval.ms";
   public static final int DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS = 200;
-
-  /**
-   * The matrix caches synchronization policy
-   */
-  public static final String ANGEL_PSAGENT_CACHE_SYNC_POLICY_CLASS =
-      ANGEL_PSAGENT_PREFIX + "sync.policy.class";
-  public static final String DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_POLICY_CLASS =
-      DefaultPolicy.class.getName();
 
   public static final String ANGEL_PSAGENT_TO_PS_HEARTBEAT_INTERVAL_MS =
       ANGEL_PSAGENT_PREFIX + "to.ps.heartbeat.interval.ms";

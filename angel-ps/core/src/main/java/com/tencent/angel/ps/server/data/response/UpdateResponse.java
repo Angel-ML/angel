@@ -18,35 +18,25 @@
 
 package com.tencent.angel.ps.server.data.response;
 
+import io.netty.buffer.ByteBuf;
+
 /**
  * The result of update matrix partition rpc request.
  */
-public class UpdateResponse extends Response {
+public class UpdateResponse extends ResponseData {
 
-  /**
-   * Create a new PutPartitionUpdateResponse.
-   */
-  public UpdateResponse() {
-    super();
+  @Override
+  public void serialize(ByteBuf output) {
+
   }
 
-  /**
-   * Create a new PutPartitionUpdateResponse.
-   *
-   * @param type response type
-   */
-  public UpdateResponse(ResponseType type) {
-    super(type);
+  @Override
+  public void deserialize(ByteBuf input) {
+
   }
 
-  /**
-   * Create a new PutPartitionUpdateResponse.
-   *
-   * @param type    response type
-   * @param message detail error information if the rpc response is error
-   */
-  public UpdateResponse(ResponseType type, String message) {
-    super(type, message);
+  @Override
+  public int bufferLen() {
+    return 0;
   }
-
 }

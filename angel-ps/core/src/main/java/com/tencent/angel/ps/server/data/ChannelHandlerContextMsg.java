@@ -17,10 +17,16 @@
 
 package com.tencent.angel.ps.server.data;
 
+import com.tencent.angel.ps.server.data.request.RequestHeader;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
 public class ChannelHandlerContextMsg {
+  /**
+   * Request header
+   */
+  private final RequestHeader header;
+
   /**
    * Request
    */
@@ -31,7 +37,8 @@ public class ChannelHandlerContextMsg {
    */
   private final ChannelHandlerContext ctx;
 
-  public ChannelHandlerContextMsg(ByteBuf message, ChannelHandlerContext ctx) {
+  public ChannelHandlerContextMsg(RequestHeader header, ByteBuf message, ChannelHandlerContext ctx) {
+    this.header = header;
     this.message = message;
     this.ctx = ctx;
   }
@@ -43,10 +50,8 @@ public class ChannelHandlerContextMsg {
   public ChannelHandlerContext getCtx() {
     return ctx;
   }
-}
 
-class StopMsg extends ChannelHandlerContextMsg {
-  public StopMsg() {
-    super(null, null);
+  public RequestHeader getHeader() {
+    return header;
   }
 }

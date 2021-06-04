@@ -18,13 +18,13 @@
 
 package com.tencent.angel.ps.server.data.response;
 
+import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.common.Serialize;
 import com.tencent.angel.ps.server.data.ServerState;
+import com.tencent.angel.ps.server.data.TransportMethod;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import java.io.UnsupportedEncodingException;
 
 /**
  * The result of the rpc from PSAgent to PS.
@@ -33,83 +33,57 @@ public class Response implements Serialize {
   private static final Log LOG = LogFactory.getLog(Response.class);
 
   /**
-   * Server state:IDLE, GENERAL, BUSY
+   * Response header
    */
-  private volatile ServerState state;
+  private ResponseHeader header;
 
   /**
-   * response type
+   * Response data
    */
-  private ResponseType responseType;
-
-  /**
-   * detail error message
-   */
-  private String detail;
-
-  //public String uuid;
+  private ResponseData data;
 
   /**
    * Create a new Response.
    *
-   * @param responseType response type
-   * @param detail       detail error message
+   * @param header response header(meta data)
    */
-  public Response(ResponseType responseType, String detail) {
-    this.responseType = responseType;
-    this.detail = detail;
-  }
-
-  /**
-   * Create a new Response.
-   *
-   * @param responseType response type
-   */
-  public Response(ResponseType responseType) {
-    this(responseType, null);
+  public Response(ResponseHeader header, ResponseData data) {
+    this.header = header;
+    this.data = data;
   }
 
   /**
    * Create a new Response.
    */
   public Response() {
-    this(ResponseType.SUCCESS, null);
+    this(null, null);
   }
 
   @Override public void serialize(ByteBuf buf) {
-    buf.writeInt(responseType.getTypeId());
-    buf.writeInt(state.getTypeId());
-    try {
-      if (detail != null && !detail.isEmpty()) {
-        byte[] serializedErrMsg = detail.getBytes("utf-8");
-        buf.writeInt(serializedErrMsg.length);
-        buf.writeBytes(detail.getBytes("utf-8"));
-      } else {
-        buf.writeInt(0);
-      }
-    } catch (UnsupportedEncodingException e) {
-      LOG.error("serialize error message failed, ", e);
+    header.serialize(buf);
+    if(data != null) {
+      ByteBufSerdeUtils.serializeBoolean(buf, true);
+      data.serialize(buf);
+    } else {
+      ByteBufSerdeUtils.serializeBoolean(buf, false);
     }
   }
 
   @Override public void deserialize(ByteBuf buf) {
-    responseType = ResponseType.valueOf(buf.readInt());
-    state = ServerState.valueOf(buf.readInt());
-    int len = buf.readInt();
-    if (len != 0) {
-      byte[] detailData = new byte[len];
-      buf.readBytes(detailData);
-      try {
-        detail = new String(detailData, "utf-8");
-      } catch (UnsupportedEncodingException e) {
-        LOG.error("deserialize error message failed, ", e);
-        ;
-      }
+    header = new ResponseHeader();
+    header.deserialize(buf);
+    if(ByteBufSerdeUtils.deserializeBoolean(buf)) {
+      data = ResponseFactory.createEmptyResponseData(TransportMethod.valueOf(header.methodId));
+      data.deserialize(buf);
     }
   }
 
   @Override public int bufferLen() {
-    return 4;
+    int len = header.bufferLen();
+    if(data != null) {
+      len = data.bufferLen();
+    }
+    return len;
   }
 
   /**
@@ -118,7 +92,7 @@ public class Response implements Serialize {
    * @param responseType response type
    */
   public void setResponseType(ResponseType responseType) {
-    this.responseType = responseType;
+    header.responseType = responseType;
   }
 
   /**
@@ -127,7 +101,7 @@ public class Response implements Serialize {
    * @return responseType response type
    */
   public ResponseType getResponseType() {
-    return responseType;
+    return header.responseType;
   }
 
   /**
@@ -136,7 +110,7 @@ public class Response implements Serialize {
    * @return detail error message
    */
   public String getDetail() {
-    return detail;
+    return header.detail;
   }
 
   /**
@@ -145,13 +119,7 @@ public class Response implements Serialize {
    * @param detail detail error message
    */
   public void setDetail(String detail) {
-    this.detail = detail;
-  }
-
-  /**
-   * Clear RPC Get result
-   */
-  public void clear() {
+    header.detail = detail;
   }
 
   /**
@@ -160,7 +128,7 @@ public class Response implements Serialize {
    * @return server state
    */
   public ServerState getState() {
-    return state;
+    return header.state;
   }
 
   /**
@@ -169,11 +137,29 @@ public class Response implements Serialize {
    * @param state server state
    */
   public void setState(ServerState state) {
-    this.state = state;
+    header.state = state;
   }
 
-  @Override public String toString() {
-    return "Response{" + "state=" + state + ", responseType=" + responseType + ", detail='" + detail
-      + '\'' + '}';
+  @Override
+  public String toString() {
+    return "Response{" +
+        "header=" + header +
+        '}';
+  }
+
+  public ResponseHeader getHeader() {
+    return header;
+  }
+
+  public void setHeader(ResponseHeader header) {
+    this.header = header;
+  }
+
+  public ResponseData getData() {
+    return data;
+  }
+
+  public void setData(ResponseData data) {
+    this.data = data;
   }
 }

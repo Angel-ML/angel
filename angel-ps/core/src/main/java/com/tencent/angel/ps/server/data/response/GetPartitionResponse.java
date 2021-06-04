@@ -25,7 +25,7 @@ import io.netty.buffer.ByteBuf;
 /**
  * The result of get matrix partition rpc.
  */
-public class GetPartitionResponse extends Response {
+public class GetPartitionResponse extends ResponseData {
   /**
    * matrix partition
    */
@@ -34,44 +34,20 @@ public class GetPartitionResponse extends Response {
   /**
    * Create a new GetPartitionResponse.
    *
-   * @param responseType response type
-   * @param detail       the detail information of response
    * @param partition    matrix partition
    */
-  public GetPartitionResponse(ResponseType responseType, String detail, ServerPartition partition) {
-    super(responseType, detail);
+  public GetPartitionResponse(ServerPartition partition) {
     this.partition = partition;
-  }
-
-  /**
-   * Create a new GetPartitionResponse.
-   *
-   * @param responseType response type
-   * @param detail       the detail information of response
-   */
-  public GetPartitionResponse(ResponseType responseType, String detail) {
-    this(responseType, detail, null);
-  }
-
-  /**
-   * Create a new GetPartitionResponse.
-   *
-   * @param responseType response type
-   * @param partition    matrix partition
-   */
-  public GetPartitionResponse(ResponseType responseType, ServerPartition partition) {
-    this(responseType, null, partition);
   }
 
   /**
    * Create a new GetPartitionResponse.
    */
   public GetPartitionResponse() {
-    this(ResponseType.SUCCESS, null, null);
+    this(null);
   }
 
   @Override public void serialize(ByteBuf buf) {
-    super.serialize(buf);
     if (partition != null) {
       byte []  partClass = partition.getClass().getName().getBytes();
       buf.writeInt(partClass.length);
@@ -81,7 +57,6 @@ public class GetPartitionResponse extends Response {
   }
 
   @Override public void deserialize(ByteBuf buf) {
-    super.deserialize(buf);
     if (buf.readableBytes() == 0) {
       partition = null;
       return;
@@ -96,7 +71,7 @@ public class GetPartitionResponse extends Response {
   }
 
   @Override public int bufferLen() {
-    return super.bufferLen() + (partition != null ? partition.bufferLen() : 0);
+    return (partition != null ? (4 + partition.getClass().getName().getBytes().length + partition.bufferLen()) : 0);
   }
 
   /**
