@@ -17,7 +17,9 @@
 
 package com.tencent.angel.ml.matrix;
 
-public class PartContext {
+import java.io.Serializable;
+
+public class PartContext implements Serializable {
   private int startRow;
   private int endRow;
   private long startCol;

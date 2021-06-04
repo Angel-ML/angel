@@ -57,7 +57,9 @@ public enum RowType {
 
   T_ANY_INTKEY_DENSE(28, RowType.T_ANY_INTKEY_DENSE_VALUE),
   T_ANY_INTKEY_SPARSE(29, RowType.T_ANY_INTKEY_SPARSE_VALUE),
-  T_ANY_LONGKEY_SPARSE(30, RowType.T_ANY_LONGKEY_SPARSE_VALUE);
+  T_ANY_LONGKEY_SPARSE(30, RowType.T_ANY_LONGKEY_SPARSE_VALUE),
+  T_ANY_STRINGKEY_SPARSE(31, RowType.T_ANY_STRINGKEY_SPARSE_VALUE),
+  T_ANY_ANYKEY_SPARSE(32, RowType.T_ANY_ANYKEY_SPARSE_VALUE);
 
 
   public static final int T_DOUBLE_DENSE_VALUE = 0;
@@ -91,6 +93,8 @@ public enum RowType {
   public static final int T_ANY_INTKEY_DENSE_VALUE = 28;
   public static final int T_ANY_INTKEY_SPARSE_VALUE = 29;
   public static final int T_ANY_LONGKEY_SPARSE_VALUE = 30;
+  public static final int T_ANY_STRINGKEY_SPARSE_VALUE = 31;
+  public static final int T_ANY_ANYKEY_SPARSE_VALUE = 32;
   //public static final int T_INT_ARBITRARY_VALUE = 28;
   //public static final int T_INVALID_VALUE = 29;
 
@@ -152,8 +156,16 @@ public enum RowType {
   }
 
 
-  public boolean isCompleType() {
-    return value == 28 || value == 29 || value == 30;
+  public boolean isComplexValue() {
+    return value >= 28;
+  }
+
+  public boolean isStringKey() {
+    return value == 31;
+  }
+
+  public boolean isComplexKey() {
+    return value == 32;
   }
 
   public final boolean narrowerThen(RowType other){
@@ -234,6 +246,10 @@ public enum RowType {
         return T_ANY_INTKEY_SPARSE;
       case T_ANY_LONGKEY_SPARSE_VALUE:
         return T_ANY_LONGKEY_SPARSE;
+      case T_ANY_STRINGKEY_SPARSE_VALUE:
+        return T_ANY_STRINGKEY_SPARSE;
+      case T_ANY_ANYKEY_SPARSE_VALUE:
+        return T_ANY_ANYKEY_SPARSE;
       default:
         return null;
     }

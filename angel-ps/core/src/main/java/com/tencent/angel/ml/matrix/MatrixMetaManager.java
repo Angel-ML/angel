@@ -290,17 +290,17 @@ public class MatrixMetaManager {
   }
 
   /**
-   * Get estimate sparsity
+   * Get valid index number
    *
    * @param matrixId matrix id
-   * @return estimate sparsity
+   * @return
    */
-  public double getEstSparsity(int matrixId) {
+  public long getValidIndexNum(int matrixId) {
     MatrixMeta meta = matrixIdToMetaMap.get(matrixId);
     if (meta == null) {
-      return 1.0;
+      return -1;
     } else {
-      return meta.getEstSparsity();
+      return meta.getValidIndexNum();
     }
   }
 }

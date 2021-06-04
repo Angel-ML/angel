@@ -18,23 +18,31 @@
 
 package com.tencent.angel.ml.matrix;
 
+import com.tencent.angel.PartitionKey;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.storage.matrix.PSMatrixInit;
 import com.tencent.angel.ps.storage.partition.IServerPartition;
 import com.tencent.angel.ps.storage.partition.storage.IServerPartitionStorage;
+import com.tencent.angel.ps.storage.partitioner.HashPartitioner;
 import com.tencent.angel.ps.storage.vector.element.IElement;
+import com.tencent.angel.psagent.matrix.transport.router.KeyHash;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * The meta of matrix.
  */
 public class MatrixMeta {
+  private final static Log LOG = LogFactory.getLog(MatrixMeta.class);
+  private final int totalPartNum;
 
   /**
    * Matrix basic parameters
@@ -47,12 +55,17 @@ public class MatrixMeta {
   private final Map<Integer, PartitionMeta> partitionMetas;
 
   /**
+   * Partition keys sorted by partition id
+   */
+  private final PartitionKey[] partitionKeys;
+
+  /**
    * Create a MatrixMeta
    *
    * @param mContext matrix context
    */
-  public MatrixMeta(MatrixContext mContext) {
-    this(mContext, new HashMap<>());
+  public MatrixMeta(int totalPartNum, MatrixContext mContext) {
+    this(totalPartNum, mContext, new HashMap<>());
   }
 
   /**
@@ -61,9 +74,16 @@ public class MatrixMeta {
    * @param matrixContext matrix context
    * @param partitionMetas matrix partitions meta
    */
-  public MatrixMeta(MatrixContext matrixContext, Map<Integer, PartitionMeta> partitionMetas) {
+  public MatrixMeta(int totalPartNum, MatrixContext matrixContext,
+      Map<Integer, PartitionMeta> partitionMetas) {
+    this.totalPartNum = totalPartNum;
     this.matrixContext = matrixContext;
     this.partitionMetas = partitionMetas;
+    this.partitionKeys = new PartitionKey[partitionMetas.size()];
+    int index = 0;
+    for (Entry<Integer, PartitionMeta> partitionMeta : partitionMetas.entrySet()) {
+      partitionKeys[index++] = partitionMeta.getValue().getPartitionKey();
+    }
   }
 
   /**
@@ -100,6 +120,16 @@ public class MatrixMeta {
    */
   public long getValidIndexNum() {
     return matrixContext.getValidIndexNum();
+  }
+
+  /**
+   * Get number of non-zero elements
+   *
+   * @return number of non-zero elements
+   */
+  public long getValidIndexNumInOnePart() {
+    LOG.info("====valid index number = " + matrixContext.getValidIndexNum() + ", total part num = " + getTotalPartNum());
+    return (long) ((double) matrixContext.getValidIndexNum() / getTotalPartNum());
   }
 
   /**
@@ -352,15 +382,6 @@ public class MatrixMeta {
   }
 
   /**
-   * Get estimate sparsity
-   *
-   * @return estimate sparsity
-   */
-  public double getEstSparsity() {
-    return matrixContext.getEstSparsity();
-  }
-
-  /**
    * Get matrix value type class
    *
    * @return null if this parameter is not set
@@ -393,9 +414,42 @@ public class MatrixMeta {
 
   /**
    * Get PS Matrix initialization function
+   *
    * @return PS Matrix initialization function
    */
   public PSMatrixInit getInitFunc() {
     return matrixContext.getInitFunc();
   }
+
+  /**
+   * Get total partition number
+   *
+   * @return total partition number
+   */
+  public int getPartitionNum() {
+    return partitionMetas.size();
+  }
+
+  /**
+   * Get all partitions that sorted by partition id
+   *
+   * @return all partitions that sorted by partition id
+   */
+  public PartitionKey[] getPartitionKeys() {
+    return partitionKeys;
+  }
+
+  public Class<? extends KeyHash> getRouterHash() {
+    return matrixContext.getKeyHasherClass();
+  }
+
+  public boolean isHash() {
+    return matrixContext.getPartitionerClass() == HashPartitioner.class;
+  }
+
+  public int getTotalPartNum() {
+    return totalPartNum;
+  }
+
+  public int getMatrixId() { return matrixContext.getMatrixId(); }
 }
