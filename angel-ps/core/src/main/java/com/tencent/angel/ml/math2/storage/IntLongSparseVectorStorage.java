@@ -14,8 +14,6 @@
  * the License.
  *
  */
-
-
 package com.tencent.angel.ml.math2.storage;
 
 import com.tencent.angel.ml.matrix.RowType;
@@ -24,7 +22,6 @@ import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
@@ -50,7 +47,7 @@ public class IntLongSparseVectorStorage implements IntLongVectorStorage {
   }
 
   public IntLongSparseVectorStorage(int dim) {
-    this(dim, (int) Math.min(64, Math.max(dim, 0)));
+    this(dim, Math.min(64, Math.max(dim, 0)));
   }
 
   public IntLongSparseVectorStorage(int dim, int[] indices, long[] values) {
@@ -262,9 +259,6 @@ public class IntLongSparseVectorStorage implements IntLongVectorStorage {
   @Override
   public int size() {
     return map.size();
-  }
-
-  public void setSize(int size) {
   }
 
   @Override

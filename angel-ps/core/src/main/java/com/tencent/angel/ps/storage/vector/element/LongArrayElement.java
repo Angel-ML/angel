@@ -19,9 +19,12 @@
 package com.tencent.angel.ps.storage.vector.element;
 
 import io.netty.buffer.ByteBuf;
+import org.apache.commons.lang.ArrayUtils;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * The complex object that contains a integer array,, it can be stored in PS
@@ -44,6 +47,11 @@ public class LongArrayElement implements IElement {
 
   public void setData(long[] data) {
     this.data = data;
+  }
+
+  public void add(long[] incs) {
+    this.data = ArrayUtils.addAll(data, incs);
+    Arrays.sort(this.data);
   }
 
   @Override

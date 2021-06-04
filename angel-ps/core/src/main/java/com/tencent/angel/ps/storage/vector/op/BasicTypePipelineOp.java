@@ -18,8 +18,8 @@
 
 package com.tencent.angel.ps.storage.vector.op;
 
-import com.tencent.angel.ps.server.data.request.IndexType;
 import com.tencent.angel.ps.server.data.request.InitFunc;
+import com.tencent.angel.ps.server.data.request.KeyType;
 import io.netty.buffer.ByteBuf;
 
 /**
@@ -30,11 +30,11 @@ public interface BasicTypePipelineOp {
   /**
    * Get data use indices from storage
    *
-   * @param indexType index type: int or long
+   * @param keyType index type: int or long
    * @param indexSize index number
    * @param in input buffer that stored un-deserialized indices
    * @param out output buffer
    * @param func element init function, if not null, the element will be initialized by func
    */
-  void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func);
+  void indexGet(KeyType keyType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func);
 }

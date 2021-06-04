@@ -18,14 +18,14 @@
 
 package com.tencent.angel.ps.storage.vector;
 
-import com.tencent.angel.ml.math2.vector.IntIntVector;
 import com.tencent.angel.ml.math2.vector.LongIntVector;
 import com.tencent.angel.ml.matrix.RowType;
-import com.tencent.angel.ps.server.data.request.IndexType;
+import com.tencent.angel.ps.server.data.request.KeyType;
 import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.storage.vector.func.IntElemUpdateFunc;
 import com.tencent.angel.ps.storage.vector.op.ILongIntOp;
 import com.tencent.angel.ps.storage.vector.storage.LongIntStorage;
+import com.tencent.angel.psagent.matrix.transport.router.RouterType;
 import io.netty.buffer.ByteBuf;
 
 /**
@@ -44,8 +44,8 @@ public class ServerLongIntRow extends ServerBasicTypeRow implements ILongIntOp {
    * @param storage the inner storage
    */
   public ServerLongIntRow(int rowId, RowType rowType, long startCol, long endCol, int estElemNum,
-      LongIntStorage storage) {
-    super(rowId, rowType, startCol, endCol, estElemNum, storage);
+      LongIntStorage storage, RouterType routerType) {
+    super(rowId, rowType, startCol, endCol, estElemNum, storage, routerType);
   }
 
   /**
@@ -57,15 +57,15 @@ public class ServerLongIntRow extends ServerBasicTypeRow implements ILongIntOp {
    * @param endCol end position
    * @param estElemNum the estimate element number
    */
-  public ServerLongIntRow(int rowId, RowType rowType, long startCol, long endCol, int estElemNum) {
-    this(rowId, rowType, startCol, endCol, estElemNum, null);
+  public ServerLongIntRow(int rowId, RowType rowType, long startCol, long endCol, int estElemNum, RouterType routerType) {
+    this(rowId, rowType, startCol, endCol, estElemNum, null, routerType);
   }
 
   /**
    * Create a new ServerLongIntRow
    */
   public ServerLongIntRow(RowType rowType) {
-    this(0, rowType, 0, 0, 0);
+    this(0, rowType, 0, 0, 0, RouterType.RANGE);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -130,7 +130,7 @@ public class ServerLongIntRow extends ServerBasicTypeRow implements ILongIntOp {
     startRead();
     try {
       return new ServerLongIntRow(rowId, rowType, startCol, endCol, (int) estElemNum,
-          (LongIntStorage) getStorage().deepClone());
+          (LongIntStorage) getStorage().deepClone(), routerType);
     } finally {
       endRead();
     }
@@ -141,7 +141,7 @@ public class ServerLongIntRow extends ServerBasicTypeRow implements ILongIntOp {
     startRead();
     try {
       return new ServerLongIntRow(rowId, rowType, startCol, endCol, (int) estElemNum,
-          (LongIntStorage) getStorage().adaptiveClone());
+          (LongIntStorage) getStorage().adaptiveClone(), routerType);
     } finally {
       endRead();
     }
@@ -163,8 +163,8 @@ public class ServerLongIntRow extends ServerBasicTypeRow implements ILongIntOp {
   }
 
   @Override
-  public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func) {
-    getStorage().indexGet(indexType, indexSize, in, out, func);
+  public void indexGet(KeyType keyType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func) {
+    getStorage().indexGet(keyType, indexSize, in, out, func);
   }
 
   @Override

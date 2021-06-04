@@ -14,13 +14,10 @@
  * the License.
  *
  */
-
-
 package com.tencent.angel.ml.math2.storage;
 
 import com.tencent.angel.ml.math2.utils.ArrayCopy;
 import com.tencent.angel.ml.matrix.RowType;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
@@ -262,10 +259,6 @@ public class IntDoubleDenseVectorStorage implements IntDoubleVectorStorage {
   @Override
   public int size() {
     return values.length;
-  }
-
-  public void setSize(int size) {
-    throw new UnsupportedOperationException("this operation is not support!");
   }
 
   @Override

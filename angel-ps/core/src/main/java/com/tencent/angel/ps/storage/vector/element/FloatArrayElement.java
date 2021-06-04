@@ -14,6 +14,10 @@ public class FloatArrayElement implements IElement {
         this.data = data;
     }
 
+    public FloatArrayElement() {
+        this(null);
+    }
+
     public float[] getData() {
         return data;
     }
@@ -31,7 +35,7 @@ public class FloatArrayElement implements IElement {
 
     @Override
     public void serialize(ByteBuf output) {
-        output.writeFloat(data.length);
+        output.writeInt(data.length);
         for (int i = 0; i < data.length; i++) {
             output.writeFloat(data[i]);
         }
@@ -52,7 +56,7 @@ public class FloatArrayElement implements IElement {
 
     @Override
     public void serialize(DataOutputStream output) throws IOException {
-        output.writeFloat(data.length);
+        output.writeInt(data.length);
         for (int i = 0; i < data.length; i++) {
             output.writeFloat(data[i]);
         }

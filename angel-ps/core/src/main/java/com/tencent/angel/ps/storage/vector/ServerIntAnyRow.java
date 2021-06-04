@@ -21,6 +21,7 @@ import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.storage.vector.element.IElement;
 import com.tencent.angel.ps.storage.vector.op.IIntElementOp;
 import com.tencent.angel.ps.storage.vector.storage.IntElementStorage;
+import com.tencent.angel.psagent.matrix.transport.router.RouterType;
 
 public class ServerIntAnyRow extends ServerComplexTypeRow implements IIntElementOp {
 
@@ -37,8 +38,8 @@ public class ServerIntAnyRow extends ServerComplexTypeRow implements IIntElement
    */
   public ServerIntAnyRow(Class<? extends IElement> valueType, int rowId, RowType rowType,
       int startCol, int endCol, int estElemNum,
-      IntElementStorage storage) {
-    super(valueType, rowId, rowType, startCol, endCol, estElemNum, storage);
+      IntElementStorage storage, RouterType routerType) {
+    super(valueType, rowId, rowType, startCol, endCol, estElemNum, storage, routerType);
   }
 
   /**
@@ -52,8 +53,8 @@ public class ServerIntAnyRow extends ServerComplexTypeRow implements IIntElement
    * @param estElemNum the estimate element number
    */
   public ServerIntAnyRow(Class<? extends IElement> valueType, int rowId, RowType rowType,
-      int startCol, int endCol, int estElemNum) {
-    this(valueType, rowId, rowType, startCol, endCol, estElemNum, null);
+      int startCol, int endCol, int estElemNum, RouterType routerType) {
+    this(valueType, rowId, rowType, startCol, endCol, estElemNum, null, routerType);
   }
 
   /**
@@ -77,14 +78,14 @@ public class ServerIntAnyRow extends ServerComplexTypeRow implements IIntElement
   public ServerIntAnyRow adaptiveClone() {
     return new ServerIntAnyRow(valueType, rowId, rowType, (int) startCol, (int) endCol,
         (int) estElemNum,
-        (IntElementStorage) getStorage().adaptiveClone());
+        (IntElementStorage) getStorage().adaptiveClone(), routerType);
   }
 
   @Override
   public ServerIntAnyRow deepClone() {
     return new ServerIntAnyRow(valueType, rowId, rowType, (int) startCol, (int) endCol,
         (int) estElemNum,
-        (IntElementStorage) getStorage().deepClone());
+        (IntElementStorage) getStorage().deepClone(), routerType);
   }
 
   @Override

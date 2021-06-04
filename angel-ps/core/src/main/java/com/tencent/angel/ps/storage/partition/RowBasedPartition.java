@@ -25,6 +25,7 @@ import com.tencent.angel.ps.storage.partition.op.IServerRowsStorageOp;
 import com.tencent.angel.ps.storage.partition.storage.ServerRowsStorage;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.ps.storage.vector.element.IElement;
+import com.tencent.angel.psagent.matrix.transport.router.RouterType;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -43,31 +44,34 @@ public class RowBasedPartition extends ServerPartition implements IServerRowsSto
    */
   private transient Class<? extends IElement> valueClass;
 
+  private transient RouterType routerType;
+
   /**
    * Create new RowBasedPartition
    *
    * @param partKey partition key
-   * @param estSparsity estimate sparsity
+   * @param estElemNum estimate element number in row split
    * @param storage row-based matrix partition storage
    * @param rowType row type
    * @param valueClass row element value type
    */
-  public RowBasedPartition(PartitionKey partKey, double estSparsity, ServerRowsStorage storage,
-      RowType rowType, Class<? extends IElement> valueClass) {
-    super(partKey, rowType, estSparsity, storage);
+  public RowBasedPartition(PartitionKey partKey, long estElemNum, ServerRowsStorage storage,
+      RowType rowType, Class<? extends IElement> valueClass, RouterType routerType) {
+    super(partKey, rowType, estElemNum, storage);
     this.valueClass = valueClass;
+    this.routerType = routerType;
   }
 
   /**
    * Create a new Server partition.
    */
   public RowBasedPartition() {
-    this(null, 1.0, null, RowType.T_DOUBLE_DENSE, null);
+    this(null, -1, null, RowType.T_DOUBLE_DENSE, null, RouterType.HASH);
   }
 
   @Override
   public void init() {
-    getRowsStorage().init(partKey, rowType, estSparsity, valueClass);
+    getRowsStorage().init(partKey, rowType, estElemNum, valueClass, routerType);
   }
 
   /**

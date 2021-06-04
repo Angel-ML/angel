@@ -36,6 +36,7 @@ public class IntElementMapStorage extends IntElementStorage {
    * Complex object id to object map
    */
   private Int2ObjectOpenHashMap<IElement> data;
+  private volatile int[] keys;
 
   public IntElementMapStorage(
       Class<? extends IElement> objectClass, int len, long indexOffset) {
@@ -64,6 +65,21 @@ public class IntElementMapStorage extends IntElementStorage {
   @Override
   public IElement get(int index) {
     return data.get(index - (int) indexOffset);
+  }
+
+  public int getKey(int index) {
+    if (keys == null) {
+      synchronized (IntElementMapStorage.class) {
+        if (keys == null) {
+          keys = data.keySet().toIntArray();
+        }
+      }
+    }
+    return keys[index];
+  }
+
+  public ObjectIterator<Int2ObjectMap.Entry<IElement>> iterator() {
+    return data.int2ObjectEntrySet().fastIterator();
   }
 
   @Override

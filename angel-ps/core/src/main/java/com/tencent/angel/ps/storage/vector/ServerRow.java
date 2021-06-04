@@ -18,13 +18,12 @@
 
 package com.tencent.angel.ps.storage.vector;
 
-import com.tencent.angel.common.Serialize;
-import com.tencent.angel.common.StreamSerialize;
 import com.tencent.angel.exception.WaitLockTimeOutException;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.op.GeneralOp;
 import com.tencent.angel.ps.storage.vector.storage.IStorage;
+import com.tencent.angel.psagent.matrix.transport.router.RouterType;
 import com.tencent.angel.utils.StringUtils;
 import io.netty.buffer.ByteBuf;
 import java.io.DataInputStream;
@@ -51,12 +50,13 @@ public abstract class ServerRow implements GeneralOp {
   protected long estElemNum;
   protected int size;
   protected int rowVersion;
+  protected RouterType routerType;
 
   protected final ReentrantReadWriteLock lock;
   public static volatile transient int maxLockWaitTimeMs = 10000;
   public static volatile transient float sparseToDenseFactor = 0.2f;
-  public static volatile transient boolean useAdaptiveKey = true;
-  public static volatile transient boolean useAdaptiveStorage = true;
+  public static volatile transient boolean useAdaptiveKey = false;
+  public static volatile transient boolean useAdaptiveStorage = false;
 
   /**
    * Row element storage
@@ -72,8 +72,9 @@ public abstract class ServerRow implements GeneralOp {
    * @param endCol the end col
    * @param estElemNum the estimated element number, use for sparse vector
    */
-  public ServerRow(int rowId, RowType rowType, long startCol, long endCol, long estElemNum) {
-    this(rowId, rowType, startCol, endCol, estElemNum, null);
+  public ServerRow(int rowId, RowType rowType, long startCol, long endCol,
+      long estElemNum, RouterType routerType) {
+    this(rowId, rowType, startCol, endCol, estElemNum, null, routerType);
   }
 
   /**
@@ -86,7 +87,7 @@ public abstract class ServerRow implements GeneralOp {
    * @param estElemNum the estimated element number, use for sparse vector
    */
   public ServerRow(int rowId, RowType rowType, long startCol, long endCol, long estElemNum,
-      IStorage storage) {
+      IStorage storage, RouterType routerType) {
     this.rowId = rowId;
     this.rowType = rowType;
     this.startCol = startCol;
@@ -95,6 +96,7 @@ public abstract class ServerRow implements GeneralOp {
     this.estElemNum = estElemNum;
     this.lock = new ReentrantReadWriteLock();
     this.storage = storage;
+    this.routerType = routerType;
   }
 
   public void init() {
@@ -109,7 +111,7 @@ public abstract class ServerRow implements GeneralOp {
    * Create a empty server row
    */
   public ServerRow() {
-    this(0, RowType.T_DOUBLE_DENSE, 0, 0, 0);
+    this(0, RowType.T_DOUBLE_DENSE, 0, 0, 0, RouterType.RANGE);
   }
 
   /**

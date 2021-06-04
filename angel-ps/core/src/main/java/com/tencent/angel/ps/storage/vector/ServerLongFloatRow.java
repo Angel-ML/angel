@@ -18,14 +18,14 @@
 
 package com.tencent.angel.ps.storage.vector;
 
-import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.ml.math2.vector.LongFloatVector;
 import com.tencent.angel.ml.matrix.RowType;
-import com.tencent.angel.ps.server.data.request.IndexType;
+import com.tencent.angel.ps.server.data.request.KeyType;
 import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.storage.vector.func.FloatElemUpdateFunc;
 import com.tencent.angel.ps.storage.vector.op.ILongFloatOp;
 import com.tencent.angel.ps.storage.vector.storage.LongFloatStorage;
+import com.tencent.angel.psagent.matrix.transport.router.RouterType;
 import io.netty.buffer.ByteBuf;
 
 /**
@@ -43,8 +43,8 @@ public class ServerLongFloatRow extends ServerBasicTypeRow implements ILongFloat
    * @param estElemNum the estimate element number
    */
   public ServerLongFloatRow(int rowId, RowType rowType, long startCol, long endCol, int estElemNum,
-      LongFloatStorage storage) {
-    super(rowId, rowType, startCol, endCol, estElemNum, storage);
+      LongFloatStorage storage, RouterType routerType) {
+    super(rowId, rowType, startCol, endCol, estElemNum, storage, routerType);
   }
 
   /**
@@ -57,8 +57,8 @@ public class ServerLongFloatRow extends ServerBasicTypeRow implements ILongFloat
    * @param estElemNum the estimate element number
    */
   public ServerLongFloatRow(int rowId, RowType rowType, long startCol, long endCol,
-      int estElemNum) {
-    this(rowId, rowType, startCol, endCol, estElemNum, null);
+      int estElemNum, RouterType routerType) {
+    this(rowId, rowType, startCol, endCol, estElemNum, null, routerType);
   }
 
   /**
@@ -67,7 +67,7 @@ public class ServerLongFloatRow extends ServerBasicTypeRow implements ILongFloat
    * @param rowType row type
    */
   public ServerLongFloatRow(RowType rowType) {
-    this(0, rowType, 0, 0, 0);
+    this(0, rowType, 0, 0, 0, RouterType.RANGE);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -133,7 +133,7 @@ public class ServerLongFloatRow extends ServerBasicTypeRow implements ILongFloat
     startRead();
     try {
       return new ServerLongFloatRow(rowId, rowType, startCol, endCol, (int) estElemNum,
-          (LongFloatStorage) storage.deepClone());
+          (LongFloatStorage) storage.deepClone(), routerType);
     } finally {
       endRead();
     }
@@ -144,7 +144,7 @@ public class ServerLongFloatRow extends ServerBasicTypeRow implements ILongFloat
     startRead();
     try {
       return new ServerLongFloatRow(rowId, rowType, startCol, endCol, (int) estElemNum,
-          (LongFloatStorage) storage.adaptiveClone());
+          (LongFloatStorage) storage.adaptiveClone(), routerType);
     } finally {
       endRead();
     }
@@ -166,8 +166,8 @@ public class ServerLongFloatRow extends ServerBasicTypeRow implements ILongFloat
   }
 
   @Override
-  public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func) {
-    getStorage().indexGet(indexType, indexSize, in, out, func);
+  public void indexGet(KeyType keyType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func) {
+    getStorage().indexGet(keyType, indexSize, in, out, func);
   }
 
   @Override

@@ -20,7 +20,6 @@ package com.tencent.angel.ps.storage.vector.storage;
 
 import com.tencent.angel.ps.storage.vector.element.IElement;
 import io.netty.buffer.ByteBuf;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
@@ -32,6 +31,7 @@ import java.util.Map.Entry;
 public class LongElementMapStorage extends LongElementStorage {
 
   private Long2ObjectOpenHashMap<IElement> data;
+  private volatile long[] keys;
 
   public LongElementMapStorage(
       Class<? extends IElement> objectClass, int len, long indexOffset) {
@@ -70,6 +70,17 @@ public class LongElementMapStorage extends LongElementStorage {
       result[i] = get(indices[i]);
     }
     return result;
+  }
+
+  public long getKey(int index) {
+    if (keys == null) {
+      synchronized (LongElementMapStorage.class) {
+        if (keys == null) {
+          keys = data.keySet().toLongArray();
+        }
+      }
+    }
+    return keys[index];
   }
 
   @Override

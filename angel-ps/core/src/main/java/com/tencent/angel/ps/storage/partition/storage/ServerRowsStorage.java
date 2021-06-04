@@ -18,12 +18,14 @@
 package com.tencent.angel.ps.storage.partition.storage;
 
 import com.tencent.angel.PartitionKey;
+import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.partition.op.IServerRowsStorageOp;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.ps.storage.vector.ServerRowFactory;
 import com.tencent.angel.ps.storage.vector.element.IElement;
+import com.tencent.angel.psagent.matrix.transport.router.RouterType;
 import io.netty.buffer.ByteBuf;
 
 /**
@@ -53,29 +55,24 @@ public abstract class ServerRowsStorage extends ServerPartitionStorage implement
    *
    * @param partKey partition key
    * @param rowType row type
-   * @param estSparsity estimate sparsity
+   * @param estElemNum estimate element number
    * @param valueClass row element type
    */
   public void init(
-      PartitionKey partKey, RowType rowType, double estSparsity,
-      Class<? extends IElement> valueClass) {
+      PartitionKey partKey, RowType rowType, long estElemNum,
+      Class<? extends IElement> valueClass, RouterType routerType) {
     int rowStart = partKey.getStartRow();
     int rowEnd = partKey.getEndRow();
     long startCol = partKey.getStartCol();
     long endCol = partKey.getEndCol();
 
-    int elementNum = partKey.getIndexNum();
-    if (elementNum <= 0) {
-      elementNum = (int) ((endCol - startCol) * estSparsity);
-    }
-
-    if(elementNum < 0) {
-      elementNum = 1024;
+    if(estElemNum < 0) {
+      estElemNum = 0;
     }
 
     for (int rowIndex = rowStart; rowIndex < rowEnd; rowIndex++) {
       ServerRow row = ServerRowFactory
-          .createServerRow(rowIndex, rowType, startCol, endCol, elementNum, valueClass);
+          .createServerRow(rowIndex, rowType, startCol, endCol, (int)estElemNum, valueClass, routerType);
       row.init();
       putRow(rowIndex, row);
     }
@@ -83,13 +80,18 @@ public abstract class ServerRowsStorage extends ServerPartitionStorage implement
 
   @Override
   public void update(ByteBuf buf, UpdateOp op) {
-    int rowNum = buf.readInt();
+    int rowNum = ByteBufSerdeUtils.deserializeInt(buf);
     int rowId;
     RowType rowType;
 
     for (int i = 0; i < rowNum; i++) {
-      rowId = buf.readInt();
-      rowType = RowType.valueOf(buf.readInt());
+      // Filter head
+      ByteBufSerdeUtils.deserializeBoolean(buf);
+      ByteBufSerdeUtils.deserializeInt(buf);
+
+      rowType = RowType.valueOf(ByteBufSerdeUtils.deserializeInt(buf));
+      rowId = ByteBufSerdeUtils.deserializeInt(buf);
+
       ServerRow row = getRow(rowId);
       row.update(rowType, buf, op);
     }

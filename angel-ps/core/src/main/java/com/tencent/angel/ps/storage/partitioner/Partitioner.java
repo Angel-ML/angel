@@ -14,14 +14,11 @@
  * the License.
  *
  */
-
-
 package com.tencent.angel.ps.storage.partitioner;
 
+import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.PartitionMeta;
-import org.apache.hadoop.conf.Configuration;
-
 import java.util.List;
 
 /**
@@ -32,9 +29,9 @@ public interface Partitioner {
    * Init matrix partitioner
    *
    * @param mContext matrix context
-   * @param conf
+   * @param context AMcontext
    */
-  void init(MatrixContext mContext, Configuration conf);
+  void init(MatrixContext mContext, AMContext context);
 
   /**
    * Generate the partitions for the matrix
@@ -50,4 +47,11 @@ public interface Partitioner {
    * @return parameter server index
    */
   int assignPartToServer(int partId);
+
+  /**
+   * Get partition type
+   *
+   * @return partition type
+   */
+  PartitionType getPartitionType();
 }

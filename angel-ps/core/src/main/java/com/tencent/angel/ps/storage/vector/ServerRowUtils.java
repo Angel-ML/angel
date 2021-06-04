@@ -24,6 +24,10 @@ import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.ml.math2.vector.IntIntVector;
 import com.tencent.angel.ml.math2.vector.IntLongVector;
 import com.tencent.angel.ml.math2.vector.IntVector;
+import com.tencent.angel.ml.math2.vector.LongDoubleVector;
+import com.tencent.angel.ml.math2.vector.LongFloatVector;
+import com.tencent.angel.ml.math2.vector.LongIntVector;
+import com.tencent.angel.ml.math2.vector.LongLongVector;
 import com.tencent.angel.ml.math2.vector.LongVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ps.storage.vector.storage.IntDoubleVectorStorage;
@@ -34,6 +38,14 @@ import com.tencent.angel.ps.storage.vector.storage.LongDoubleVectorStorage;
 import com.tencent.angel.ps.storage.vector.storage.LongFloatVectorStorage;
 import com.tencent.angel.ps.storage.vector.storage.LongIntVectorStorage;
 import com.tencent.angel.ps.storage.vector.storage.LongLongVectorStorage;
+import com.tencent.angel.psagent.matrix.transport.router.KeyPart;
+import com.tencent.angel.psagent.matrix.transport.router.ValuePart;
+import com.tencent.angel.psagent.matrix.transport.router.operator.IIntKeyPartOp;
+import com.tencent.angel.psagent.matrix.transport.router.operator.ILongKeyPartOp;
+import com.tencent.angel.psagent.matrix.transport.router.value.DoubleValuesPart;
+import com.tencent.angel.psagent.matrix.transport.router.value.FloatValuesPart;
+import com.tencent.angel.psagent.matrix.transport.router.value.IntValuesPart;
+import com.tencent.angel.psagent.matrix.transport.router.value.LongValuesPart;
 
 /**
  * Server row utilization
@@ -88,13 +100,13 @@ public class ServerRowUtils {
     } else if (row instanceof ServerIntLongRow) {
       setVector((ServerIntLongRow) row, (IntLongVector) vector);
     } else if (row instanceof ServerLongFloatRow) {
-      setVector((ServerLongFloatRow) row, (FloatVector) vector);
+      setVector((ServerLongFloatRow) row, (LongFloatVector) vector);
     } else if (row instanceof ServerLongDoubleRow) {
-      setVector((ServerLongDoubleRow) row, (DoubleVector) vector);
+      setVector((ServerLongDoubleRow) row, (LongDoubleVector) vector);
     } else if (row instanceof ServerLongIntRow) {
-      setVector((ServerLongIntRow) row, (IntVector) vector);
+      setVector((ServerLongIntRow) row, (LongIntVector) vector);
     } else if (row instanceof ServerLongLongRow) {
-      setVector((ServerLongLongRow) row, (LongVector) vector);
+      setVector((ServerLongLongRow) row, (LongLongVector) vector);
     } else {
       throw new UnsupportedOperationException("Only basic value type row use vector as storage");
     }
@@ -150,19 +162,73 @@ public class ServerRowUtils {
     ((IntLongVectorStorage) (row.getStorage())).setVector(vector);
   }
 
-  public static void setVector(ServerLongDoubleRow row, DoubleVector vector) {
+  public static void setVector(ServerLongDoubleRow row, LongDoubleVector vector) {
     ((LongDoubleVectorStorage) (row.getStorage())).setVector(vector);
   }
 
-  public static void setVector(ServerLongFloatRow row, FloatVector vector) {
+  public static void setVector(ServerLongFloatRow row, LongFloatVector vector) {
     ((LongFloatVectorStorage) (row.getStorage())).setVector(vector);
   }
 
-  public static void setVector(ServerLongIntRow row, IntVector vector) {
+  public static void setVector(ServerLongIntRow row, LongIntVector vector) {
     ((LongIntVectorStorage) (row.getStorage())).setVector(vector);
   }
 
-  public static void setVector(ServerLongLongRow row, LongVector vector) {
+  public static void setVector(ServerLongLongRow row, LongLongVector vector) {
     ((LongLongVectorStorage) (row.getStorage())).setVector(vector);
+  }
+
+  public static ValuePart getByKeys(ServerRow row, KeyPart keyPart) {
+
+    ValuePart result;
+    if(keyPart instanceof IIntKeyPartOp) {
+      // Index is int
+      IIntKeyPartOp intKeyPart = (IIntKeyPartOp) keyPart;
+      if(row instanceof ServerIntFloatRow) {
+        float [] values = ((ServerIntFloatRow) row).get(intKeyPart.getKeys());
+        result = new FloatValuesPart(values);
+      } else if(row instanceof ServerIntDoubleRow) {
+        double [] values = ((ServerIntDoubleRow) row).get(intKeyPart.getKeys());
+        result = new DoubleValuesPart(values);
+      } else if(row instanceof ServerIntIntRow) {
+        int [] values = ((ServerIntIntRow) row).get(intKeyPart.getKeys());
+        result = new IntValuesPart(values);
+      } else if(row instanceof ServerIntLongRow) {
+        long [] values = ((ServerIntLongRow) row).get(intKeyPart.getKeys());
+        result = new LongValuesPart(values);
+      } else {
+        throw new UnsupportedOperationException("Unsupport row type " + row.getClass().getName());
+      }
+    } else if(keyPart instanceof ILongKeyPartOp) {
+      // Index is long
+      ILongKeyPartOp longKeyPart = (ILongKeyPartOp) keyPart;
+      if(row instanceof ServerLongFloatRow) {
+        float [] values = ((ServerLongFloatRow) row).get(longKeyPart.getKeys());
+        result = new FloatValuesPart(values);
+      } else if(row instanceof ServerLongDoubleRow) {
+        double [] values = ((ServerLongDoubleRow) row).get(longKeyPart.getKeys());
+        result = new DoubleValuesPart(values);
+      } else if(row instanceof ServerLongIntRow) {
+        int [] values = ((ServerLongIntRow) row).get(longKeyPart.getKeys());
+        result = new IntValuesPart(values);
+      } else if(row instanceof ServerLongLongRow) {
+        long [] values = ((ServerLongLongRow) row).get(longKeyPart.getKeys());
+        result = new LongValuesPart(values);
+      } else {
+        throw new UnsupportedOperationException("Unsupport row type " + row.getClass().getName());
+      }
+    } else {
+      throw new UnsupportedOperationException("Unsupport index type " + keyPart.getClass().getName());
+    }
+
+    return result;
+  }
+
+  public static ValuePart[] getByKeys(ServerRow[] rows, KeyPart keyPart) {
+    ValuePart[] result = new ValuePart[rows.length];
+    for(int i = 0; i < rows.length; i++) {
+      result[i] = getByKeys(rows[i], keyPart);
+    }
+    return result;
   }
 }

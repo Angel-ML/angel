@@ -20,11 +20,12 @@ package com.tencent.angel.ps.storage.vector;
 
 import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.ml.matrix.RowType;
-import com.tencent.angel.ps.server.data.request.IndexType;
+import com.tencent.angel.ps.server.data.request.KeyType;
 import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.storage.vector.func.FloatElemUpdateFunc;
 import com.tencent.angel.ps.storage.vector.op.IIntFloatOp;
 import com.tencent.angel.ps.storage.vector.storage.IntFloatStorage;
+import com.tencent.angel.psagent.matrix.transport.router.RouterType;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -47,8 +48,8 @@ public class ServerIntFloatRow extends ServerBasicTypeRow implements IIntFloatOp
    * @param storage inner storage
    */
   public ServerIntFloatRow(int rowId, RowType rowType, int startCol, int endCol, int estElemNum,
-      IntFloatStorage storage) {
-    super(rowId, rowType, startCol, endCol, estElemNum, storage);
+      IntFloatStorage storage, RouterType routerType) {
+    super(rowId, rowType, startCol, endCol, estElemNum, storage, routerType);
   }
 
   /**
@@ -60,8 +61,9 @@ public class ServerIntFloatRow extends ServerBasicTypeRow implements IIntFloatOp
    * @param endCol end position
    * @param estElemNum the estimate element number
    */
-  public ServerIntFloatRow(int rowId, RowType rowType, int startCol, int endCol, int estElemNum) {
-    this(rowId, rowType, startCol, endCol, estElemNum, null);
+  public ServerIntFloatRow(int rowId, RowType rowType, int startCol, int endCol,
+      int estElemNum, RouterType routerType) {
+    this(rowId, rowType, startCol, endCol, estElemNum, null, routerType);
   }
 
   /**
@@ -70,7 +72,7 @@ public class ServerIntFloatRow extends ServerBasicTypeRow implements IIntFloatOp
    * @param rowType row type
    */
   public ServerIntFloatRow(RowType rowType) {
-    this(0, rowType, 0, 0, 0);
+    this(0, rowType, 0, 0, 0, RouterType.RANGE);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -135,7 +137,7 @@ public class ServerIntFloatRow extends ServerBasicTypeRow implements IIntFloatOp
     startRead();
     try {
       return new ServerIntFloatRow(rowId, rowType, (int) startCol, (int) endCol, (int) estElemNum,
-          (IntFloatStorage) getStorage().deepClone());
+          (IntFloatStorage) getStorage().deepClone(), routerType);
     } finally {
       endRead();
     }
@@ -146,7 +148,7 @@ public class ServerIntFloatRow extends ServerBasicTypeRow implements IIntFloatOp
     startRead();
     try {
       return new ServerIntFloatRow(rowId, rowType, (int) startCol, (int) endCol, (int) estElemNum,
-          (IntFloatStorage) getStorage().adaptiveClone());
+          (IntFloatStorage) getStorage().adaptiveClone(), routerType);
     } finally {
       endRead();
     }
@@ -168,8 +170,8 @@ public class ServerIntFloatRow extends ServerBasicTypeRow implements IIntFloatOp
   }
 
   @Override
-  public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func) {
-    getStorage().indexGet(indexType, indexSize, in, out, func);
+  public void indexGet(KeyType keyType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func) {
+    getStorage().indexGet(keyType, indexSize, in, out, func);
   }
 
   @Override

@@ -29,6 +29,7 @@ import com.tencent.angel.ps.storage.partition.storage.IServerPartitionStorage;
 import com.tencent.angel.ps.storage.partition.ServerPartition;
 import com.tencent.angel.ps.storage.partition.ServerPartitionFactory;
 import com.tencent.angel.ps.storage.vector.element.IElement;
+import com.tencent.angel.psagent.matrix.transport.router.RouterType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -108,7 +109,7 @@ public class ServerMatrix {
 
     // Get value class
     Class<? extends IElement> valueClass = null;
-    if (rowType.isCompleType()) {
+    if (rowType.isComplexValue()) {
       try {
         valueClass = matrixMeta.getValueClass();
       } catch (Throwable e) {
@@ -125,7 +126,7 @@ public class ServerMatrix {
       ServerPartition part = ServerPartitionFactory
           .getPartition(partMeta.getPartitionKey(), partClass, storageClass,
               matrixMeta.getRowType(), valueClass,
-              matrixMeta.getEstSparsity());
+              matrixMeta.getValidIndexNumInOnePart(), matrixMeta.isHash() ? RouterType.HASH : RouterType.RANGE);
       partitionMaps.put(partMeta.getPartId(), part);
       part.init();
       part.setState(PartitionState.READ_AND_WRITE);
