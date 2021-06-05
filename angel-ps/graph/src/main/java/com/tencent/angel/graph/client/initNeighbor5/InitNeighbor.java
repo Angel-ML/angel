@@ -39,7 +39,8 @@ public class InitNeighbor extends UpdateFunc {
 
     long[] keys = param.getKeys();
     long[][] neighborArrays = param.getNeighborArrays();
-    int[][] neighborTypes = param.getTypeArrays();
+    int[][] edgeTypes = param.getEdgeTypeArrays();
+    int[][] neighborTypes = param.getDstTypeArrays();
 
     row.startWrite();
     try {
@@ -51,6 +52,8 @@ public class InitNeighbor extends UpdateFunc {
         }
 
         node.setNeighbors(neighborArrays[i]);
+        if (edgeTypes != null)
+          node.setEdgeTypes(edgeTypes[i]);
         if (neighborTypes != null)
           node.setTypes(neighborTypes[i]);
       }

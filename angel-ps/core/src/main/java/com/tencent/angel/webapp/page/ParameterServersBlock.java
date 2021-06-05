@@ -83,7 +83,8 @@ public class ParameterServersBlock extends HtmlBlock {
     TR<THEAD<TABLE<Hamlet>>> headTr = table.thead().tr();
 
     headTr.th(_TH, "id").th(_TH, "state").th(_TH, "node address").th(_TH, "start time")
-      .th(_TH, "end time").th(_TH, "elapsed time").th(_TH, "log").th(_TH, "threadstack");
+      .th(_TH, "end time").th(_TH, "elapsed time").th(_TH, "log").th(_TH, "threadstack")
+      .th(_TH, "total rpc").th(_TH, "request size(MB)").th(_TH, "data size(MB)");
     headTr._()._();
 
     Set<PSAttemptStateInternal> stateSet = transformToInternalState($(PARAMETERSERVER_STATE));
@@ -96,6 +97,10 @@ public class ParameterServersBlock extends HtmlBlock {
       Map<PSAttemptId, PSAttempt> psAttempts = ps.getPSAttempts();
       for (PSAttempt psAttempt : psAttempts.values()) {
         if (stateSet.contains(psAttempt.getInternalState())) {
+          String totalRPC = psAttempt.getMetrices().get("totalRPC");
+          String requestSize = psAttempt.getMetrices().get("requestSize");
+          String dataSize = psAttempt.getMetrices().get("dataSize");
+
           TR<TBODY<TABLE<Hamlet>>> tr = tbody.tr();
           long elaspedTs = 0;
           if (psAttempt.getLaunchTime() != 0 && psAttempt.getFinishTime() != 0) {
@@ -111,7 +116,8 @@ public class ParameterServersBlock extends HtmlBlock {
                 new Date(psAttempt.getLaunchTime()).toString()).td(psAttempt.getFinishTime() == 0 ?
               "N/A" :
               new Date(psAttempt.getFinishTime()).toString())
-              .td(elaspedTs == 0 ? "N/A" : new Date(elaspedTs).toString()).td("N/A").td("N/A");
+              .td(elaspedTs == 0 ? "N/A" : new Date(elaspedTs).toString()).td("N/A").td("N/A")
+              .td("N/A").td("N/A").td("N/A");
             tr._();
           } else {
             tr.td(psAttempt.getId().toString()).td($(PARAMETERSERVER_STATE)).td()
@@ -126,7 +132,7 @@ public class ParameterServersBlock extends HtmlBlock {
                 "containerlogs", psAttempt.getContainerIdStr(), amContext.getUser().toString()),
               "log")._().td()
               .a(url("/angel/parameterServerThreadStackPage/", psAttempt.getId().toString()),
-                "psthreadstack")._();
+                "psthreadstack")._().td(totalRPC).td(requestSize).td(dataSize);
 
 
             tr._();

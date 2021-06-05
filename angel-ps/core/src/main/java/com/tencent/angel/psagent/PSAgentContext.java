@@ -28,15 +28,11 @@ import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.ipc.TConnection;
 import com.tencent.angel.psagent.client.MasterClient;
 import com.tencent.angel.psagent.client.PSControlClientManager;
-import com.tencent.angel.psagent.clock.ClockCache;
-import com.tencent.angel.psagent.consistency.ConsistencyController;
 import com.tencent.angel.psagent.executor.Executor;
 import com.tencent.angel.psagent.matrix.MatrixClient;
 import com.tencent.angel.psagent.matrix.MatrixClientFactory;
 import com.tencent.angel.psagent.matrix.PSAgentLocationManager;
 import com.tencent.angel.psagent.matrix.PSAgentMatrixMetaManager;
-import com.tencent.angel.psagent.matrix.cache.MatricesCache;
-import com.tencent.angel.psagent.matrix.oplog.cache.MatrixOpLogCache;
 import com.tencent.angel.psagent.matrix.storage.MatrixStorageManager;
 import com.tencent.angel.psagent.matrix.transport.MatrixTransportClient;
 import com.tencent.angel.psagent.matrix.transport.adapter.UserRequestAdapter;
@@ -122,16 +118,6 @@ public class PSAgentContext {
    */
   public MasterClient getMasterClient() {
     return psAgent.getMasterClient();
-  }
-
-
-  /**
-   * Get matrix update cache
-   *
-   * @return MatrixOpLogCache matrix update cache
-   */
-  public MatrixOpLogCache getOpLogCache() {
-    return psAgent.getOpLogCache();
   }
 
   /**
@@ -243,42 +229,6 @@ public class PSAgentContext {
   }
 
   /**
-   * Get SSP consistency controller
-   *
-   * @return ConsistencyController SSP consistency controller
-   */
-  public ConsistencyController getConsistencyController() {
-    return psAgent.getConsistencyController();
-  }
-
-  /**
-   * Get matrix update cache
-   *
-   * @return MatrixOpLogCache matrix update cache
-   */
-  public MatrixOpLogCache getMatrixOpLogCache() {
-    return psAgent.getOpLogCache();
-  }
-
-  /**
-   * Get matrix clock cache
-   *
-   * @return ClockCache matrix clock cache
-   */
-  public ClockCache getClockCache() {
-    return psAgent.getClockCache();
-  }
-
-  /**
-   * Get matrix cache
-   *
-   * @return ClockCache matrix cache
-   */
-  public MatricesCache getMatricesCache() {
-    return psAgent.getMatricesCache();
-  }
-
-  /**
    * Get matrix storage manager
    *
    * @return MatrixStorageManager matrix storage manager
@@ -362,16 +312,13 @@ public class PSAgentContext {
   /**
    * Global barrier synchronization method
    */
+  @Deprecated
   public void barrier(int taskId) throws InvalidParameterException, InterruptedException {
     int matrixId = 0;
     // clock first
     MatrixClient client = MatrixClientFactory.get(matrixId, taskId);
     client.clock(false);
 
-    int clock = client.getTaskContext().getMatrixClock(matrixId);
-
-    // wait
-    ClockCache cache = PSAgentContext.get().getClockCache();
     List<PartitionKey> pkeys = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
 
     int syncTimeIntervalMS = PSAgentContext.get().getConf()
@@ -383,9 +330,9 @@ public class PSAgentContext {
 
     while (true) {
       boolean sync = true;
-      if (cache.getClock(matrixId, pkeys.get(0)) < clock) {
+      //if (cache.getClock(matrixId, pkeys.get(0)) < clock) {
         sync = false;
-      }
+      //}
 
       if (!sync) {
         Thread.sleep(syncTimeIntervalMS);

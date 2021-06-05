@@ -23,7 +23,6 @@ import com.tencent.angel.RunningMode;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ps.client.MasterClient;
 import com.tencent.angel.ps.client.PSLocationManager;
-import com.tencent.angel.ps.clock.ClockVectorManager;
 import com.tencent.angel.ps.io.PSModelIOExecutor;
 import com.tencent.angel.ps.io.save.SnapshotDumper;
 import com.tencent.angel.ps.meta.PSMatrixMetaManager;
@@ -86,12 +85,10 @@ public class PSContext {
    */
   public AngelDeployMode getDeployMode() {
     String mode =
-            ps.getConf().get(AngelConf.ANGEL_DEPLOY_MODE, AngelConf.DEFAULT_ANGEL_DEPLOY_MODE);
+      ps.getConf().get(AngelConf.ANGEL_DEPLOY_MODE, AngelConf.DEFAULT_ANGEL_DEPLOY_MODE);
 
     if (mode.equals(AngelDeployMode.LOCAL.toString())) {
       return AngelDeployMode.LOCAL;
-    } else if (mode.equals(AngelDeployMode.KUBERNETES.toString())) {
-      return AngelDeployMode.KUBERNETES;
     } else {
       return AngelDeployMode.YARN;
     }
@@ -113,15 +110,6 @@ public class PSContext {
    */
   public PSMatrixMetaManager getMatrixMetaManager() {
     return ps.getMatrixMetaManager();
-  }
-
-  /**
-   * Get clock vector manager
-   *
-   * @return clock vector manager
-   */
-  public ClockVectorManager getClockVectorManager() {
-    return ps.getClockVectorManager();
   }
 
   /**
@@ -214,5 +202,10 @@ public class PSContext {
 
   public RunningContext getRunningContext() {
     return ps.getRunningContext();
+  }
+
+  public boolean isUseDirectBuffer() {
+    return getConf().getBoolean(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER,
+        AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER);
   }
 }

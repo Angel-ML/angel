@@ -18,7 +18,11 @@ package com.tencent.angel.graph.client.getnodes;
 
 import com.tencent.angel.graph.data.Node;
 import com.tencent.angel.ml.math2.VFactory;
-import com.tencent.angel.ml.matrix.psf.get.base.*;
+import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
+import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
+import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ml.matrix.psf.get.getrow.GetRowResult;
 import com.tencent.angel.ml.matrix.psf.get.indexed.IndexPartGetLongResult;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
@@ -27,7 +31,6 @@ import com.tencent.angel.psagent.matrix.ResponseType;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-
 import java.util.List;
 
 public class GetNodes extends GetFunc {
@@ -46,7 +49,8 @@ public class GetNodes extends GetFunc {
 
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam param) {
-    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager().getRow(param.getPartKey(), 0);
+    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager()
+        .getRow(param.getPartKey(), 0);
 
     ObjectIterator<Long2ObjectMap.Entry<IElement>> it = row.iterator();
     LongArrayList nodes = new LongArrayList();
@@ -54,8 +58,9 @@ public class GetNodes extends GetFunc {
     while (it.hasNext()) {
       Long2ObjectMap.Entry entry = it.next();
       Node node = (Node) entry.getValue();
-      if (node.getFeats() != null && node.getNeighbors() == null)
+      if (node.getFeats() != null && node.getNeighbors() == null) {
         nodes.add(entry.getLongKey() + start);
+      }
     }
 
     return new IndexPartGetLongResult(param.getPartKey(), nodes.toLongArray());
@@ -64,7 +69,7 @@ public class GetNodes extends GetFunc {
   @Override
   public GetResult merge(List<PartitionGetResult> partResults) {
     int size = 0;
-    for (PartitionGetResult result: partResults) {
+    for (PartitionGetResult result : partResults) {
       if (result instanceof IndexPartGetLongResult) {
         size += ((IndexPartGetLongResult) result).getValues().length;
       }
@@ -72,7 +77,7 @@ public class GetNodes extends GetFunc {
 
     long[] values = new long[size];
     int start = 0;
-    for (PartitionGetResult result: partResults) {
+    for (PartitionGetResult result : partResults) {
       if (result instanceof IndexPartGetLongResult) {
         long[] vals = ((IndexPartGetLongResult) result).getValues();
         System.arraycopy(vals, 0, values, start, vals.length);
@@ -81,6 +86,6 @@ public class GetNodes extends GetFunc {
     }
 
     return new GetRowResult(ResponseType.SUCCESS,
-      VFactory.denseLongVector(values));
+        VFactory.denseLongVector(values));
   }
 }

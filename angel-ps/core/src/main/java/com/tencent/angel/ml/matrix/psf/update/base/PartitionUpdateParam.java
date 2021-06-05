@@ -108,6 +108,6 @@ public abstract class PartitionUpdateParam implements Serialize {
   }
 
   @Override public int bufferLen() {
-    return 8 + ((partKey != null) ? partKey.bufferLen() : 0);
+    return 4 + 1 + ((partKey != null) ? partKey.bufferLen() : 0);
   }
 }

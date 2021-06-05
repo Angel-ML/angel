@@ -20,31 +20,38 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.psagent.PSAgentContext;
-
 import java.util.ArrayList;
 import java.util.List;
 
 public class InitWalkPathParam extends UpdateParam {
+
   private int neighborMatrixId;
   private int walkLength;
-  private int mod;
+  private int numParts;
+  private int threshold;
+  private double keepProba;
+  private boolean isTrunc;
 
-  public InitWalkPathParam(int matrixId, boolean updateClock, int neighborMatrixId, int walkLength, int mod) {
+
+  public InitWalkPathParam(int matrixId, boolean updateClock, int neighborMatrixId, int walkLength,
+      int numParts,
+      int threshold, double keepProba, boolean isTrunc) {
     super(matrixId, updateClock);
     this.neighborMatrixId = neighborMatrixId;
     this.walkLength = walkLength;
-    this.mod = mod;
+    this.numParts = numParts;
+    this.threshold = threshold;
+    this.keepProba = keepProba;
+    this.isTrunc = isTrunc;
   }
 
-  public InitWalkPathParam(int matrixId, int neighborMatrixId, int walkLength, int mod) {
-    super(matrixId);
-    this.neighborMatrixId = neighborMatrixId;
-    this.walkLength = walkLength;
-    this.mod = mod;
+  public InitWalkPathParam(int matrixId, int neighborMatrixId, int walkLength, int numParts,
+      int threshold, double keepProba, boolean isTrunc) {
+    this(matrixId, false, neighborMatrixId, walkLength, numParts, threshold, keepProba, isTrunc);
   }
 
-  public InitWalkPathParam(int matrixId) {
-    super(matrixId, false);
+  public InitWalkPathParam(int matrixId, int neighborMatrixId, int walkLength, int numParts) {
+    this(matrixId, false, neighborMatrixId, walkLength, numParts, -1, 1.0, false);
   }
 
   public int getNeighborMatrixId() {
@@ -63,12 +70,36 @@ public class InitWalkPathParam extends UpdateParam {
     this.walkLength = walkLength;
   }
 
-  public int getMod() {
-    return mod;
+  public int getThreshold() {
+    return threshold;
   }
 
-  public void setMod(int mod) {
-    this.mod = mod;
+  public void setThreshold(int threshold) {
+    this.threshold = threshold;
+  }
+
+  public double getKeepProba() {
+    return keepProba;
+  }
+
+  public void setKeepProba(double keepProba) {
+    this.keepProba = keepProba;
+  }
+
+  public int getNumParts() {
+    return numParts;
+  }
+
+  public void setNumParts(int numParts) {
+    this.numParts = numParts;
+  }
+
+  public boolean isTrunc() {
+    return isTrunc;
+  }
+
+  public void setTrunc(boolean trunc) {
+    isTrunc = trunc;
   }
 
   @Override
@@ -78,7 +109,10 @@ public class InitWalkPathParam extends UpdateParam {
 
     List<PartitionUpdateParam> partParams = new ArrayList<>(size);
     for (PartitionKey part : parts) {
-      partParams.add(new InitWalkPathPartitionParam(matrixId, part, neighborMatrixId, walkLength, mod));
+      partParams.add(
+          new InitWalkPathPartitionParam(matrixId, part, neighborMatrixId, walkLength, numParts,
+              threshold, keepProba, isTrunc)
+      );
     }
 
     return partParams;

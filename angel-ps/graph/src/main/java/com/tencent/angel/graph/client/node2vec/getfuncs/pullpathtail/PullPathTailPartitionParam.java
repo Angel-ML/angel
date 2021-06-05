@@ -21,10 +21,12 @@ import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import io.netty.buffer.ByteBuf;
 
 public class PullPathTailPartitionParam extends PartitionGetParam {
+
   private int partitionId;
   private int batchSize;
 
-  public PullPathTailPartitionParam(int matrixId, PartitionKey partKey, int partitionId, int batchSize) {
+  public PullPathTailPartitionParam(int matrixId, PartitionKey partKey, int partitionId,
+      int batchSize) {
     super(matrixId, partKey);
     this.partitionId = partitionId;
     this.batchSize = batchSize;

@@ -21,18 +21,21 @@ import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import io.netty.buffer.ByteBuf;
 
 public class PartitionUpdateParamWithIds extends PartitionUpdateParam {
+
   protected long[] keyIds;
   protected int startIdx;
   protected int endIdx;
 
-  public PartitionUpdateParamWithIds(int matrixId, boolean updateClock, PartitionKey partKey, long[] keyIds, int startIdx, int endIdx) {
+  public PartitionUpdateParamWithIds(int matrixId, boolean updateClock, PartitionKey partKey,
+      long[] keyIds, int startIdx, int endIdx) {
     super(matrixId, partKey, updateClock);
     this.keyIds = keyIds;
     this.startIdx = startIdx;
     this.endIdx = endIdx;
   }
 
-  public PartitionUpdateParamWithIds(int matrixId, PartitionKey partKey, long[] keyIds, int startIdx, int endIdx) {
+  public PartitionUpdateParamWithIds(int matrixId, PartitionKey partKey, long[] keyIds,
+      int startIdx, int endIdx) {
     super(matrixId, partKey);
     this.keyIds = keyIds;
     this.startIdx = startIdx;

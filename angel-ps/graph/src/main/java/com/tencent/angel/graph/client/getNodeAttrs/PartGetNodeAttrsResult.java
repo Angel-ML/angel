@@ -25,75 +25,75 @@ import io.netty.buffer.ByteBuf;
  */
 public class PartGetNodeAttrsResult extends PartitionGetResult {
 
-    private int partId;
-    /**
-     * Node id to neighbors map
-     */
-    private float[][] nodeIdToAttrs;
+  private int partId;
+  /**
+   * Node id to neighbors map
+   */
+  private float[][] nodeIdToAttrs;
 
-    public PartGetNodeAttrsResult(int partId, float[][] nodeIdToAttrs) {
-        this.partId = partId;
-        this.nodeIdToAttrs = nodeIdToAttrs;
-    }
+  public PartGetNodeAttrsResult(int partId, float[][] nodeIdToAttrs) {
+    this.partId = partId;
+    this.nodeIdToAttrs = nodeIdToAttrs;
+  }
 
-    public PartGetNodeAttrsResult() {
-        this(-1, null);
-    }
+  public PartGetNodeAttrsResult() {
+    this(-1, null);
+  }
 
-    public float[][] getNodeIdToAttrs() {
-        return nodeIdToAttrs;
-    }
+  public float[][] getNodeIdToAttrs() {
+    return nodeIdToAttrs;
+  }
 
-    public void setNodeIdToAttrs(
-            float[][] nodeIdToAttrs) {
-        this.nodeIdToAttrs = nodeIdToAttrs;
-    }
+  public void setNodeIdToAttrs(
+      float[][] nodeIdToAttrs) {
+    this.nodeIdToAttrs = nodeIdToAttrs;
+  }
 
-    public int getPartId() {
-        return partId;
-    }
+  public int getPartId() {
+    return partId;
+  }
 
-    @Override
-    public void serialize(ByteBuf output) {
-        output.writeInt(partId);
-        output.writeInt(nodeIdToAttrs.length);
-        for (int i = 0; i < nodeIdToAttrs.length; i++) {
-            if (nodeIdToAttrs[i] == null) {
-                output.writeInt(0);
-            } else {
-                output.writeInt(nodeIdToAttrs[i].length);
-                for (float value : nodeIdToAttrs[i]) {
-                    output.writeFloat(value);
-                }
-            }
+  @Override
+  public void serialize(ByteBuf output) {
+    output.writeInt(partId);
+    output.writeInt(nodeIdToAttrs.length);
+    for (int i = 0; i < nodeIdToAttrs.length; i++) {
+      if (nodeIdToAttrs[i] == null) {
+        output.writeInt(0);
+      } else {
+        output.writeInt(nodeIdToAttrs[i].length);
+        for (float value : nodeIdToAttrs[i]) {
+          output.writeFloat(value);
         }
+      }
     }
+  }
 
-    @Override
-    public void deserialize(ByteBuf input) {
-        partId = input.readInt();
-        int size = input.readInt();
-        nodeIdToAttrs = new float[size][];
-        for (int i = 0; i < size; i++) {
-            float[] attrs = new float[input.readInt()];
-            for (int j = 0; j < attrs.length; j++) {
-                attrs[j] = input.readFloat();
-            }
-            nodeIdToAttrs[i] = attrs;
-        }
+  @Override
+  public void deserialize(ByteBuf input) {
+    partId = input.readInt();
+    int size = input.readInt();
+    nodeIdToAttrs = new float[size][];
+    for (int i = 0; i < size; i++) {
+      float[] attrs = new float[input.readInt()];
+      for (int j = 0; j < attrs.length; j++) {
+        attrs[j] = input.readFloat();
+      }
+      nodeIdToAttrs[i] = attrs;
     }
+  }
 
-    @Override
-    public int bufferLen() {
-        int len = 8;
-        for (int i = 0; i < nodeIdToAttrs.length; i++) {
-            if (nodeIdToAttrs[i] == null) {
-                len += 4;
-            } else {
-                len += 4;
-                len += 8 * nodeIdToAttrs[i].length;
-            }
-        }
-        return len;
+  @Override
+  public int bufferLen() {
+    int len = 8;
+    for (int i = 0; i < nodeIdToAttrs.length; i++) {
+      if (nodeIdToAttrs[i] == null) {
+        len += 4;
+      } else {
+        len += 4;
+        len += 4 * nodeIdToAttrs[i].length;
+      }
     }
+    return len;
+  }
 }

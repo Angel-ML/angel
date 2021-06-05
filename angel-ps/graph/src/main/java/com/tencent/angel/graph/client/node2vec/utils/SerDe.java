@@ -26,6 +26,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 public class SerDe {
+
   public static void serArray(int[] arr, ByteBuf buf) {
     assert buf != null;
 
@@ -259,7 +260,8 @@ public class SerDe {
     }
   }
 
-  public static <ARR> void serLong2ArrayHashMap(long[] arr, int start, int end, Long2ObjectOpenHashMap<ARR> obj, ByteBuf buf) {
+  public static <ARR> void serLong2ArrayHashMap(long[] arr, int start, int end,
+      Long2ObjectOpenHashMap<ARR> obj, ByteBuf buf) {
     buf.writeInt(end - start);
 
     for (int i = start; i < end; i++) {
@@ -312,7 +314,8 @@ public class SerDe {
     }
   }
 
-  public static <ARR> int getLong2ArrayHashMapSerSize(long[] arr, int start, int end, Long2ObjectOpenHashMap<ARR> obj) {
+  public static <ARR> int getLong2ArrayHashMapSerSize(long[] arr, int start, int end,
+      Long2ObjectOpenHashMap<ARR> obj) {
     if (obj == null) {
       return 4;
     } else {
@@ -335,7 +338,6 @@ public class SerDe {
             break;
         }
       }
-
 
       return len;
     }
@@ -430,7 +432,8 @@ public class SerDe {
     }
   }
 
-  public static <ARR> void serInt2ArrayHashMap(int[] arr, int start, int end, Int2ObjectOpenHashMap<ARR> obj, ByteBuf buf) {
+  public static <ARR> void serInt2ArrayHashMap(int[] arr, int start, int end,
+      Int2ObjectOpenHashMap<ARR> obj, ByteBuf buf) {
     buf.writeInt(end - start);
 
     for (int i = start; i < end; i++) {
@@ -483,7 +486,8 @@ public class SerDe {
     }
   }
 
-  public static <ARR> int getInt2ArrayHashMapSerSize(int[] arr, int start, int end, Int2ObjectOpenHashMap<ARR> obj) {
+  public static <ARR> int getInt2ArrayHashMapSerSize(int[] arr, int start, int end,
+      Int2ObjectOpenHashMap<ARR> obj) {
     if (obj == null) {
       return 4;
     } else {
@@ -506,7 +510,6 @@ public class SerDe {
             break;
         }
       }
-
 
       return len;
     }

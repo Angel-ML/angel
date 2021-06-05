@@ -47,7 +47,6 @@ import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.*;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.ParameterServer;
-import com.tencent.angel.ps.clock.ClockVectorManager;
 import com.tencent.angel.ps.meta.PSMatrixMetaManager;
 import com.tencent.angel.ps.storage.matrix.ServerMatrix;
 import com.tencent.angel.psagent.matrix.MatrixClient;
@@ -262,10 +261,7 @@ public class PSManagerTest {
         worker.getTaskManager().getRunningTask().get(task0Id).getTaskContext().getContext();
       TaskContext task1Context =
         worker.getTaskManager().getRunningTask().get(task1Id).getTaskContext().getContext();
-      task0Context.setMatrixClock(w1Id, w1Clock);
-      task1Context.setMatrixClock(w1Id, w1Clock);
-      task0Context.setMatrixClock(w2Id, w2Clock);
-      task1Context.setMatrixClock(w2Id, w2Clock);
+
       master.taskIteration(null, TaskIterationRequest.newBuilder().setIteration(task0Iteration)
         .setTaskId(ProtobufUtil.convertToIdProto(task0Id)).build());
       master.taskIteration(null, TaskIterationRequest.newBuilder().setIteration(task1Iteration)
@@ -315,7 +311,7 @@ public class PSManagerTest {
       assertEquals(diagnostics.get(0), psAttempt0Id + " failed due to: out of memory");
 
       ps = LocalClusterContext.get().getPS(psAttempt1Id).getPS();
-      ClockVectorManager clockVectorManager = ps.getClockVectorManager();
+
       checkMatrixInfo(ps, w1Id, w2Id, w1Clock, w2Clock);
 
       MatrixClient w1Task0Client = worker.getPSAgent().getMatrixClient("w1", 0);
@@ -432,7 +428,6 @@ public class PSManagerTest {
 
   private void checkMatrixInfo(ParameterServer ps, int w1Id, int w2Id, int w1Clock, int w2Clock) {
     PSMatrixMetaManager matrixPartManager = ps.getMatrixMetaManager();
-    ClockVectorManager clockVectorManager = ps.getClockVectorManager();
 
     Map<Integer, MatrixMeta> matrixIdMap = matrixPartManager.getMatrixMetas();
     MatrixMeta sw1 = matrixIdMap.get(w1Id);
@@ -445,7 +440,6 @@ public class PSManagerTest {
     assertEquals(sw1.getPartitionMeta(0).getPartitionKey().getEndCol(), 50000);
     assertEquals(sw1.getPartitionMeta(0).getPartitionKey().getMatrixId(), w1Id);
     assertEquals(sw1.getPartitionMeta(0).getPartitionKey().getPartitionId(), 0);
-    assertEquals(clockVectorManager.getPartClock(sw1.getId(), 0), w1Clock);
 
     assertEquals(sw1.getPartitionMeta(1).getPartitionKey().getStartRow(), 0);
     assertEquals(sw1.getPartitionMeta(1).getPartitionKey().getEndRow(), 1);
@@ -453,7 +447,6 @@ public class PSManagerTest {
     assertEquals(sw1.getPartitionMeta(1).getPartitionKey().getEndCol(), 100000);
     assertEquals(sw1.getPartitionMeta(1).getPartitionKey().getMatrixId(), w1Id);
     assertEquals(sw1.getPartitionMeta(1).getPartitionKey().getPartitionId(), 1);
-    assertEquals(clockVectorManager.getPartClock(sw1.getId(), 1), w1Clock);
 
     assertEquals(sw2.getPartitionMeta(0).getPartitionKey().getStartRow(), 0);
     assertEquals(sw2.getPartitionMeta(0).getPartitionKey().getEndRow(), 1);
@@ -461,7 +454,6 @@ public class PSManagerTest {
     assertEquals(sw2.getPartitionMeta(0).getPartitionKey().getEndCol(), 50000);
     assertEquals(sw2.getPartitionMeta(0).getPartitionKey().getMatrixId(), w2Id);
     assertEquals(sw2.getPartitionMeta(0).getPartitionKey().getPartitionId(), 0);
-    assertEquals(clockVectorManager.getPartClock(sw2.getId(), 0), w2Clock);
 
     assertEquals(sw2.getPartitionMeta(1).getPartitionKey().getStartRow(), 0);
     assertEquals(sw2.getPartitionMeta(1).getPartitionKey().getEndRow(), 1);
@@ -469,7 +461,6 @@ public class PSManagerTest {
     assertEquals(sw2.getPartitionMeta(1).getPartitionKey().getEndCol(), 100000);
     assertEquals(sw2.getPartitionMeta(1).getPartitionKey().getMatrixId(), w2Id);
     assertEquals(sw2.getPartitionMeta(1).getPartitionKey().getPartitionId(), 1);
-    assertEquals(clockVectorManager.getPartClock(sw2.getId(), 1), w2Clock);
   }
 
   private int sum(IntIntVector vec) {

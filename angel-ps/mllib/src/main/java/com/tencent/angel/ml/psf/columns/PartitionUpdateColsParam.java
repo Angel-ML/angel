@@ -71,4 +71,10 @@ public class PartitionUpdateColsParam extends PartitionUpdateParam {
     cols = new long[nCols];
     vector = PartitionGetColsResult.deserialize(buf, rows, cols);
   }
+
+  @Override public int bufferLen() {
+    int len = super.bufferLen();
+    len += 4 + PartitionGetColsResult.bufferLen(rows, cols, vector);
+    return len;
+  }
 }

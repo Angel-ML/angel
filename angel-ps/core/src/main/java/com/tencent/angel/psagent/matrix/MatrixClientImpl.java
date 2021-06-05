@@ -65,7 +65,7 @@ public class MatrixClientImpl extends MatrixClient {
 
   @Override
   public void increment(Vector row) throws AngelException {
-    increment(row, false);
+    increment(row, true);
   }
 
   @Override
@@ -75,7 +75,7 @@ public class MatrixClientImpl extends MatrixClient {
 
   @Override
   public void increment(int rowId, Vector row) throws AngelException {
-    increment(rowId, row, false);
+    increment(rowId, row, true);
   }
 
   @Override
@@ -89,14 +89,15 @@ public class MatrixClientImpl extends MatrixClient {
     return PSAgentContext.get().getUserRequestAdapter().update(matrixId, rowId, row, UpdateOp.PLUS);
   }
 
+  @Deprecated
   @Override
   public void increment(Vector row, boolean disableCache) throws AngelException {
     checkNotNull(row, "row");
-
     increment(row.getRowId(), row, disableCache);
   }
 
 
+  @Deprecated
   @Override
   public void increment(int rowId, Vector row, boolean disableCache)
     throws AngelException {
@@ -106,12 +107,8 @@ public class MatrixClientImpl extends MatrixClient {
     row.setMatrixId(matrixId);
     row.setRowId(rowId);
     try {
-      if (disableCache) {
-        PSAgentContext.get().getUserRequestAdapter().update(matrixId, rowId, row, UpdateOp.PLUS)
+      PSAgentContext.get().getUserRequestAdapter().update(matrixId, rowId, row, UpdateOp.PLUS)
           .get();
-      } else {
-        PSAgentContext.get().getOpLogCache().increment(taskContext, row);
-      }
     } catch (Throwable e) {
       throw new AngelException("increment failed ", e);
     }
@@ -119,7 +116,7 @@ public class MatrixClientImpl extends MatrixClient {
 
   @Override
   public void increment(Matrix matrix) throws AngelException {
-    increment(matrix, false);
+    increment(matrix, true);
   }
 
   @Override
@@ -129,17 +126,14 @@ public class MatrixClientImpl extends MatrixClient {
     return PSAgentContext.get().getUserRequestAdapter().update(matrixId, matrix, UpdateOp.PLUS);
   }
 
+  @Deprecated
   @Override
   public void increment(Matrix matrix, boolean disableCache) throws AngelException {
     checkNotNull(matrix, "matrix");
 
     matrix.setMatrixId(matrixId);
     try {
-      if (disableCache) {
-        PSAgentContext.get().getUserRequestAdapter().update(matrixId, matrix, UpdateOp.PLUS).get();
-      } else {
-        PSAgentContext.get().getOpLogCache().increment(taskContext, matrix);
-      }
+      PSAgentContext.get().getUserRequestAdapter().update(matrixId, matrix, UpdateOp.PLUS).get();
     } catch (Throwable e) {
       throw new AngelException("increment failed ", e);
     }
@@ -148,7 +142,7 @@ public class MatrixClientImpl extends MatrixClient {
 
   @Override
   public void increment(int[] rowIds, Vector[] rows) throws AngelException {
-    increment(rowIds, rows, false);
+    increment(rowIds, rows, true);
   }
 
   @Override
@@ -169,6 +163,7 @@ public class MatrixClientImpl extends MatrixClient {
     return PSAgentContext.get().getUserRequestAdapter().update(matrixId, rowIds, rows, UpdateOp.PLUS);
   }
 
+  @Deprecated
   @Override
   public void increment(int[] rowIds, Vector[] rows, boolean disableCache)
     throws AngelException {
@@ -184,12 +179,8 @@ public class MatrixClientImpl extends MatrixClient {
     }
 
     try {
-      if (disableCache) {
-        PSAgentContext.get().getUserRequestAdapter().update(matrixId, rowIds, rows, UpdateOp.PLUS)
+      PSAgentContext.get().getUserRequestAdapter().update(matrixId, rowIds, rows, UpdateOp.PLUS)
           .get();
-      } else {
-        PSAgentContext.get().getOpLogCache().increment(taskContext, rows);
-      }
     } catch (Throwable e) {
       throw new AngelException("increment failed ", e);
     }
@@ -764,21 +755,19 @@ public class MatrixClientImpl extends MatrixClient {
     return PSAgentContext.get().getUserRequestAdapter().getRow(matrixId, rowId);
   }
 
+  @Deprecated
   @Override
   public Vector getRow(int rowId, boolean disableCache) throws AngelException {
     checkRowId(rowId);
 
     try {
-      if (disableCache) {
-        return PSAgentContext.get().getUserRequestAdapter().getRow(matrixId, rowId).get();
-      } else {
-        return PSAgentContext.get().getConsistencyController().getRow(taskContext, matrixId, rowId);
-      }
+      return PSAgentContext.get().getUserRequestAdapter().getRow(matrixId, rowId).get();
     } catch (Throwable x) {
       throw new AngelException(x);
     }
   }
 
+  @Deprecated
   @Override
   public GetRowsResult getRowsFlow(RowIndex index, int batchSize) throws AngelException {
     return getRowsFlow(index, batchSize, false);
@@ -786,10 +775,11 @@ public class MatrixClientImpl extends MatrixClient {
 
   @Override
   public Vector[] getRows(int[] rowIds) throws AngelException {
-    return getRows(rowIds, false);
+    return getRows(rowIds, true);
   }
 
 
+  @Deprecated
   @Override
   public Vector[] getRows(int[] rowIds, boolean disableCache) throws AngelException {
     checkNotNull(rowIds, "rowIds");
@@ -801,6 +791,7 @@ public class MatrixClientImpl extends MatrixClient {
     return getRows(rowIds, batchSize, false);
   }
 
+  @Deprecated
   @Override
   public Vector[] getRows(int[] rowIds, int batchSize, boolean disableCache) throws AngelException {
     checkNotNull(rowIds, "rowIds");
@@ -809,72 +800,48 @@ public class MatrixClientImpl extends MatrixClient {
       return new Vector[0];
     }
 
-    RowIndex rowIndex = new RowIndex(rowIds);
-    GetRowsResult result = getRowsFlow(rowIndex, batchSize, disableCache);
-    Map<Integer, Vector> rowIdToRowMap = new HashMap<>(rowIds.length);
     try {
-      Vector row;
-      while (true) {
-        row = result.take();
-        if (row == null) {
-          break;
-        } else {
-          rowIdToRowMap.put(row.getRowId(), row);
-        }
-      }
+      return PSAgentContext.get().getUserRequestAdapter().getRows(matrixId, rowIds).get();
     } catch (Throwable x) {
       throw new AngelException(x);
     }
-    Vector[] rows = new Vector[rowIds.length];
-    int i = 0;
-    for (int rowId : rowIds) {
-      rows[i++] = rowIdToRowMap.get(rowId);
-    }
-    return rows;
   }
 
 
+  @Deprecated
   @Override
   public GetRowsResult getRowsFlow(RowIndex index, int batchSize, boolean disableCache)
     throws AngelException {
-    checkNotNull(index, "index");
-
-    index.setMatrixId(matrixId);
-    try {
-      if (disableCache) {
-        GetRowsResult result = new GetRowsResult();
-        return PSAgentContext.get().getUserRequestAdapter().getRowsFlow(result, index, batchSize);
-      } else {
-        return PSAgentContext.get().getConsistencyController()
-          .getRowsFlow(taskContext, index, batchSize);
-      }
-    } catch (Throwable x) {
-      throw new AngelException(x);
-    }
+    throw new UnsupportedOperationException("Not support now");
   }
 
+  @Deprecated
   @Override
   public Future<VoidResult> flush() throws AngelException {
-    return PSAgentContext.get().getMatrixOpLogCache().flush(taskContext, matrixId);
+    FutureResult<VoidResult> result = new FutureResult<>();
+    result.set(new VoidResult(ResponseType.SUCCESS));
+    return result;
+    //return PSAgentContext.get().getMatrixOpLogCache().flush(taskContext, matrixId);
   }
 
+  @Deprecated
   @Override
   public Future<VoidResult> clock() throws AngelException {
     return clock(true);
   }
 
+  @Deprecated
   @Override
   public FutureResult<VoidResult> checkpoint(int id) throws AngelException {
-    try {
-      LOG.info("checkpoint matrixId=" + matrixId);
-      return PSAgentContext.get().getUserRequestAdapter().checkpoint(matrixId, id);
-    } catch (Throwable x) {
-      throw new AngelException(x);
-    }
+    throw new UnsupportedOperationException("Not support now");
   }
 
+  @Deprecated
   @Override
   public Future<VoidResult> clock(boolean flushFirst) throws AngelException {
-    return PSAgentContext.get().getConsistencyController().clock(taskContext, matrixId, flushFirst);
+    FutureResult<VoidResult> result = new FutureResult<>();
+    result.set(new VoidResult(ResponseType.SUCCESS));
+    return result;
+    //return PSAgentContext.get().getConsistencyController().clock(taskContext, matrixId, flushFirst);
   }
 }

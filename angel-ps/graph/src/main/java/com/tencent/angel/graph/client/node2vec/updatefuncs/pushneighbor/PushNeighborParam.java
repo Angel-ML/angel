@@ -17,17 +17,22 @@
 package com.tencent.angel.graph.client.node2vec.updatefuncs.pushneighbor;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.graph.client.node2vec.params.UpdateParamWithKeyIds;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
+import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
+import com.tencent.angel.psagent.PSAgentContext;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 
-public class PushNeighborParam extends UpdateParamWithKeyIds {
+public class PushNeighborParam extends UpdateParam {
+
+  private long[] keyIds;
   private Long2ObjectOpenHashMap<long[]> nodeIdToNeighborIndices;
 
-  public PushNeighborParam(int matrixId, boolean updateClock, Long2ObjectOpenHashMap<long[]> adjTable) {
+  public PushNeighborParam(int matrixId, boolean updateClock,
+      Long2ObjectOpenHashMap<long[]> adjTable) {
     super(matrixId, updateClock);
     this.nodeIdToNeighborIndices = adjTable;
     this.keyIds = adjTable.keySet().toLongArray();
@@ -38,8 +43,31 @@ public class PushNeighborParam extends UpdateParamWithKeyIds {
     this(matrixId, false, adjTable);
   }
 
+
   @Override
-  protected PartitionUpdateParam getPartitionParam(PartitionKey part, int startIdx, int endIdx) {
-    return new PushNeighborPartitionParam(matrixId, part, nodeIdToNeighborIndices, keyIds, startIdx, endIdx);
+  public List<PartitionUpdateParam> split() {
+    List<PartitionKey> parts = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
+
+    List<PartitionUpdateParam> partParams = new ArrayList<>(parts.size());
+
+    int count = 0;
+    int nodeIndex = 0;
+    for (PartitionKey part : parts) {
+      int start = nodeIndex;  // include start
+      while (nodeIndex < keyIds.length && keyIds[nodeIndex] < part.getEndCol()) {
+        nodeIndex++;
+      }
+      int end = nodeIndex;  // exclude end
+      int sizePart = end - start;
+      count += sizePart;
+      if (sizePart > 0) {
+        partParams.add(
+            new PushNeighborPartitionParam(matrixId, part, nodeIdToNeighborIndices, keyIds, start,
+                end));
+      }
+    }
+
+    assert (count == nodeIdToNeighborIndices.size());
+    return partParams;
   }
 }

@@ -137,6 +137,28 @@ public class PartitionGetColsResult extends PartitionGetResult {
   }
 
   @Override public int bufferLen() {
-    return rows.length * 4 + cols.length * 8 + rows.length * cols.length * 8 + 8;
+    int len = 8 + rows.length * 4;
+    if (vector instanceof CompIntDoubleVector) {
+      len += 1 + cols.length * 8 + rows.length * cols.length * 8;
+    } else if (vector instanceof CompIntFloatVector) {
+      len += 1 + cols.length * 8 + rows.length * cols.length * 4;
+    } else {
+      return len;
+    }
+
+    return len;
+  }
+
+  public static int bufferLen(int[] rows, long[] cols, Vector vector) {
+    int len = 8 + rows.length * 4;
+    if (vector instanceof CompIntDoubleVector) {
+      len += 1 + cols.length * 8 + rows.length * cols.length * 8;
+    } else if (vector instanceof CompIntFloatVector) {
+      len += 1 + cols.length * 8 + rows.length * cols.length * 4;
+    } else {
+      return len;
+    }
+
+    return len;
   }
 }

@@ -34,6 +34,7 @@ import com.tencent.angel.ps.storage.partition.RowBasedPartition;
 import com.tencent.angel.ps.storage.partition.ServerPartition;
 import com.tencent.angel.ps.storage.partition.UserDefinePartition;
 import com.tencent.angel.ps.storage.partition.storage.ServerRowsStorage;
+import com.tencent.angel.ps.storage.vector.ServerAnyAnyRow;
 import com.tencent.angel.ps.storage.vector.ServerIntAnyRow;
 import com.tencent.angel.ps.storage.vector.ServerIntDoubleRow;
 import com.tencent.angel.ps.storage.vector.ServerIntFloatRow;
@@ -46,6 +47,7 @@ import com.tencent.angel.ps.storage.vector.ServerLongIntRow;
 import com.tencent.angel.ps.storage.vector.ServerLongLongRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.ps.storage.vector.ServerRowUtils;
+import com.tencent.angel.ps.storage.vector.ServerStringAnyRow;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
@@ -221,6 +223,10 @@ public class SnapshotFormat extends MatrixFormatImpl {
         save((ServerIntAnyRow) row, saveContext, meta, out);
       } else if (row instanceof ServerLongAnyRow) {
         save((ServerLongAnyRow) row, saveContext, meta, out);
+      } else if (row instanceof ServerStringAnyRow) {
+        save((ServerStringAnyRow) row, saveContext, meta, out);
+      } else if (row instanceof ServerAnyAnyRow) {
+        save((ServerAnyAnyRow) row, saveContext, meta, out);
       } else {
         throw new IOException("Unknown vector type " + row.getRowType());
       }
@@ -289,6 +295,10 @@ public class SnapshotFormat extends MatrixFormatImpl {
         load((ServerIntAnyRow) row, loadContext, meta, in);
       } else if (row instanceof ServerLongAnyRow) {
         load((ServerLongAnyRow) row, loadContext, meta, in);
+      } else if (row instanceof ServerStringAnyRow) {
+        load((ServerStringAnyRow) row, loadContext, meta, in);
+      } else if (row instanceof ServerAnyAnyRow) {
+        load((ServerAnyAnyRow) row, loadContext, meta, in);
       } else {
         throw new IOException("Unknown vector type " + row.getRowType());
       }
@@ -604,6 +614,16 @@ public class SnapshotFormat extends MatrixFormatImpl {
     row.getStorage().serialize(output);
   }
 
+  private void save(ServerStringAnyRow row, PSMatrixSaveContext saveContext,
+                    MatrixPartitionMeta meta, DataOutputStream output) throws IOException {
+    row.getStorage().serialize(output);
+  }
+
+  private void save(ServerAnyAnyRow row, PSMatrixSaveContext saveContext,
+                    MatrixPartitionMeta meta, DataOutputStream output) throws IOException {
+    row.getStorage().serialize(output);
+  }
+
   private void load(ServerIntAnyRow row, PSMatrixLoadContext loadContext,
       MatrixPartitionMeta meta, DataInputStream in) throws IOException {
     row.getStorage().deserialize(in);
@@ -611,6 +631,16 @@ public class SnapshotFormat extends MatrixFormatImpl {
 
   private void load(ServerLongAnyRow row, PSMatrixLoadContext loadContext,
       MatrixPartitionMeta meta, DataInputStream in) throws IOException {
+    row.getStorage().deserialize(in);
+  }
+
+  private void load(ServerStringAnyRow row, PSMatrixLoadContext loadContext,
+                    MatrixPartitionMeta meta, DataInputStream in) throws IOException {
+    row.getStorage().deserialize(in);
+  }
+
+  private void load(ServerAnyAnyRow row, PSMatrixLoadContext loadContext,
+                    MatrixPartitionMeta meta, DataInputStream in) throws IOException {
     row.getStorage().deserialize(in);
   }
 

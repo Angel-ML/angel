@@ -20,5 +20,7 @@ import com.tencent.angel.ps.storage.vector.element.IElement;
 
 public class IndexAndElement {
   public long index;
+  public String strIndex;
+  public IElement elementKey;
   public IElement element;
 }

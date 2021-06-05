@@ -16,6 +16,7 @@
  */
 package com.tencent.angel.graph.client.getnodefeats;
 
+import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.graph.data.NodeUtils;
 import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
@@ -64,7 +65,7 @@ public class PartGetNodeFeatsResult extends PartitionGetResult {
     feats = new IntFloatVector[len];
     for (int i = 0; i < len; i++) {
       boolean isNull = input.readBoolean();
-      if(!isNull) {
+      if (!isNull) {
         feats[i] = NodeUtils.deserialize(input);
       }
     }
@@ -75,9 +76,9 @@ public class PartGetNodeFeatsResult extends PartitionGetResult {
     int len = 8;
     for (int i = 0; i < feats.length; i++) {
       if (feats[i] == null) {
-        len += 4;
+        len += ByteBufSerdeUtils.serializedBooleanLen(true);
       } else {
-        len += 4;
+        len += ByteBufSerdeUtils.serializedBooleanLen(false);
         len += NodeUtils.dataLen(feats[i]);
       }
     }

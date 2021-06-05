@@ -42,7 +42,6 @@ import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PartReportProt
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.RecoverPartKeyProto;
 import com.tencent.angel.ps.client.MasterClient;
 import com.tencent.angel.ps.client.PSLocationManager;
-import com.tencent.angel.ps.clock.ClockVectorManager;
 import com.tencent.angel.ps.io.PSModelIOExecutor;
 import com.tencent.angel.ps.io.load.PSModelLoader;
 import com.tencent.angel.ps.io.load.SnapshotRecover;
@@ -55,12 +54,15 @@ import com.tencent.angel.ps.server.data.PSFailedReport;
 import com.tencent.angel.ps.server.data.RunningContext;
 import com.tencent.angel.ps.server.data.WorkerPool;
 import com.tencent.angel.ps.storage.MatrixStorageManager;
+import com.tencent.angel.ps.storage.matrix.ServerMatrix;
+import com.tencent.angel.ps.storage.partition.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.logging.Log;
@@ -142,10 +144,6 @@ public class ParameterServer {
    */
   private volatile PSMatrixMetaManager matrixMetaManager;
 
-  /**
-   * Matrix clock vector manager
-   */
-  private volatile ClockVectorManager clockVectorManager;
 
   private volatile PSModelIOExecutor ioExecutor;
 
@@ -155,7 +153,7 @@ public class ParameterServer {
   private volatile PSModelSaver saver;
 
   /**
-   * Matrix saver
+   * Matrix loader
    */
   private volatile PSModelLoader loader;
 
@@ -249,13 +247,6 @@ public class ParameterServer {
   }
 
   /**
-   * Get matrix clock vector manager
-   */
-  public ClockVectorManager getClockVectorManager() {
-    return clockVectorManager;
-  }
-
-  /**
    * Stop parameter server.
    *
    * @param exitCode the exit code
@@ -308,11 +299,6 @@ public class ParameterServer {
       if (workerPool != null) {
         workerPool.stop();
         workerPool = null;
-      }
-
-      if (clockVectorManager != null) {
-        clockVectorManager.stop();
-        clockVectorManager = null;
       }
 
       if (ioExecutor != null) {
@@ -468,9 +454,6 @@ public class ParameterServer {
     ioExecutor.init();
 
     matrixStorageManager = new MatrixStorageManager(context);
-    int taskNum = conf.getInt(AngelConf.ANGEL_TASK_ACTUAL_NUM, 1);
-    clockVectorManager = new ClockVectorManager(taskNum, context);
-    clockVectorManager.init();
     matrixMetaManager = new PSMatrixMetaManager(context);
 
     master = new MasterClient(context);
@@ -483,28 +466,7 @@ public class ParameterServer {
     saver = new PSModelSaver(context);
     loader = new PSModelLoader(context);
 
-    int replicNum = conf.getInt(AngelConf.ANGEL_PS_HA_REPLICATION_NUMBER,
-        AngelConf.DEFAULT_ANGEL_PS_HA_REPLICATION_NUMBER);
-
-    // TODO
-    if (replicNum > 1) {
-      /*
-      boolean useEventPush = false;//conf.getBoolean(AngelConf.ANGEL_PS_HA_USE_EVENT_PUSH, AngelConf.DEFAULT_ANGEL_PS_HA_USE_EVENT_PUSH);
-      if(useEventPush) {
-        boolean sync = conf.getBoolean(AngelConf.ANGEL_PS_HA_PUSH_SYNC, AngelConf.DEFAULT_ANGEL_PS_HA_PUSH_SYNC);
-        if(sync) {
-          ps2PSPusher = new SyncEventPusher(context);
-        } else {
-          ps2PSPusher = new AsyncEventPusher(context);
-        }
-      } else {
-        ps2PSPusher = new PeriodPusher(context);
-      }
-      ps2PSPusher.init();
-      */
-    } else {
-      snapshotDumper = new SnapshotDumper(context);
-    }
+    snapshotDumper = new SnapshotDumper(context);
   }
 
   private void startHeartbeat() {
@@ -573,9 +535,36 @@ public class ParameterServer {
   private void heartbeat() {
     PSReportRequest.Builder builder = PSReportRequest.newBuilder();
     builder.setPsAttemptId(attemptIdProto);
+
+    //calculate data size of all partitions of ps
+    Map<Integer,ServerMatrix> serverMatrixMap = matrixStorageManager.getMatrices();
+    long dataSize = 0;
+    for(ServerMatrix serverMatrix : serverMatrixMap.values()) {
+      Map<Integer, ServerPartition> partitions = serverMatrix.getPartitions();
+      for (ServerPartition partitoin: partitions.values()) {
+        dataSize += partitoin.bufferLen();
+      }
+    }
+
     Pair.Builder pairBuilder = Pair.newBuilder();
     pairBuilder.setKey("key");
     pairBuilder.setValue("value");
+    builder.addMetrics(pairBuilder.build());
+
+    // totalRPC
+    pairBuilder.setKey("totalRPC");
+    pairBuilder.setValue(WorkerPool.total.toString());
+    builder.addMetrics(pairBuilder.build());
+
+    // request size
+    pairBuilder.setKey("requestSize");
+    pairBuilder.setValue(
+        String.format("%.2f", WorkerPool.requestSize.longValue() * 1.0 / 1024/ 1024));
+    builder.addMetrics(pairBuilder.build());
+
+    // data size
+    pairBuilder.setKey("dataSize");
+    pairBuilder.setValue(String.format("%.2f", dataSize * 1.0 / 1024/ 1024));
     builder.addMetrics(pairBuilder.build());
     builder.addAllMatrixReports(buildMatrixReports());
 
@@ -629,28 +618,10 @@ public class ParameterServer {
     if (!needReleaseMatrices.isEmpty()) {
       releaseMatrices(needReleaseMatrices);
     }
-
-    // TODO
-    /*
-    if(needCreateMatrices.isEmpty() && needReleaseMatrices.isEmpty()
-      && !needRecoverParts.isEmpty() && (ps2PSPusher != null)) {
-      LOG.info("need recover parts:" + needRecoverParts);
-      int size = needRecoverParts.size();
-      for(int i = 0; i < size; i++) {
-        // TODO
-        //ps2PSPusher.recover(ProtobufUtil.convert(needRecoverParts.get(i)));
-      }
-    }
-    //context.getSnapshotManager().processRecovery();
-    */
   }
 
   private void createMatrices(List<MatrixMeta> matrixMetas) throws Exception {
     matrixMetaManager.addMatrices(matrixMetas);
-    clockVectorManager.addMatrices(matrixMetas);
-    if (context.getPartReplication() == 1) {
-      clockVectorManager.adjustClocks(master.getTaskMatrixClocks());
-    }
     matrixStorageManager.addMatrices(matrixMetas);
     initMatricesData(matrixMetas);
   }
@@ -744,7 +715,6 @@ public class ParameterServer {
   private void releaseMatrices(List<Integer> matrixIds) {
     if (!matrixIds.isEmpty()) {
       matrixMetaManager.removeMatrices(matrixIds);
-      clockVectorManager.removeMatrices(matrixIds);
       clearMatricesData(matrixIds);
     }
   }
@@ -772,7 +742,6 @@ public class ParameterServer {
     workerPool.start();
     ioExecutor.start();
     matrixTransportServer.start();
-    clockVectorManager.start();
     runningContext.start();
 
     if (getAttemptIndex() > 0) {

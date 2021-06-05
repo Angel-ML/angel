@@ -31,7 +31,8 @@ public class NnzNeighbor extends UnaryAggrFunc {
     super(matrixId, rowId);
   }
 
-  public NnzNeighbor() {}
+  public NnzNeighbor() {
+  }
 
   @Override
   public double mergeInit() {
@@ -50,8 +51,9 @@ public class NnzNeighbor extends UnaryAggrFunc {
     int size = 0;
     while (it.hasNext()) {
       Node node = (Node) (it.next().getValue());
-      if (node.getNeighbors() != null)
+      if (node.getNeighbors() != null) {
         size++;
+      }
     }
     return size;
   }

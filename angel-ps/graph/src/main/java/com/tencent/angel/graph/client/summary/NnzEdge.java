@@ -51,8 +51,9 @@ public class NnzEdge extends UnaryAggrFunc {
     long size = 0;
     while (it.hasNext()) {
       Node node = (Node) (it.next().getValue());
-      if (node.getNeighbors() != null)
+      if (node.getNeighbors() != null) {
         size += node.getNeighbors().length;
+      }
     }
     return size;
   }

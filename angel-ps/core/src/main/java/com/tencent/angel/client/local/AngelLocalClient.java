@@ -63,7 +63,7 @@ public class AngelLocalClient extends AngelClient {
   private void initLocalClusterContext() {
     LocalClusterContext localClusterContext = LocalClusterContext.get();
     localClusterContext.setConf(conf);
-    localClusterContext.setLocalHost("127.0.0.1");
+    localClusterContext.setLocalHost("localhost");
     localClusterContext.setPort(9999);
     localClusterContext.setHttpPort(8888);
     localClusterContext.setAppId(appId);

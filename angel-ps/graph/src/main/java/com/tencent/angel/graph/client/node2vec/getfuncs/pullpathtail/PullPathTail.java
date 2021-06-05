@@ -16,21 +16,19 @@
  */
 package com.tencent.angel.graph.client.node2vec.getfuncs.pullpathtail;
 
-import com.tencent.angel.graph.client.node2vec.data.WalkPath;
 import com.tencent.angel.graph.client.node2vec.utils.Merge;
 import com.tencent.angel.graph.client.node2vec.utils.PathQueue;
-import com.tencent.angel.ml.matrix.psf.get.base.*;
-import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
-import com.tencent.angel.ps.storage.vector.element.IElement;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
+import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
+import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectIterator;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedDeque;
 
 public class PullPathTail extends GetFunc {
+
   /**
    * Create a new DefaultGetFunc.
    *
@@ -48,22 +46,9 @@ public class PullPathTail extends GetFunc {
   public PartitionGetResult partitionGet(PartitionGetParam partParam) {
     PullPathTailPartitionParam pparam = (PullPathTailPartitionParam) partParam;
     int psPartitionId = pparam.getPartKey().getPartitionId();
-    int workerPartitionId = pparam.getPartitionId();
 
     Long2ObjectOpenHashMap<long[]> result = new Long2ObjectOpenHashMap<>();
-    PathQueue.popBatch(psPartitionId, workerPartitionId, pparam.getBatchSize(), result);
-//     ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager().getRow(pparam.getPartKey(), 0);
-//     ObjectIterator<Long2ObjectMap.Entry<IElement>> iter = row.iterator();
-
-//    while (iter.hasNext()) {
-//      Long2ObjectMap.Entry<IElement> entry = iter.next();
-//      long key = entry.getLongKey() + pparam.getPartKey().getStartCol();
-//      WalkPath value = (WalkPath) entry.getValue();
-//
-//      if (workerPartitionId == value.getNextPartitionIdx()) {
-//        result.put(key, value.getTail2());
-//      }
-//    }
+    PathQueue.popBatchTail(psPartitionId, pparam.getBatchSize(), result);
 
     return new PullPathTailPartitionResult(result);
   }

@@ -20,11 +20,11 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.psagent.PSAgentContext;
-
 import java.util.ArrayList;
 import java.util.List;
 
 public class PullPathTailParam extends GetParam {
+
   private int partitionId;
   private int batchSize = -1;
 
@@ -65,7 +65,7 @@ public class PullPathTailParam extends GetParam {
 
     List<PartitionGetParam> partParams = new ArrayList<PartitionGetParam>(parts.size());
 
-    for (PartitionKey part: parts) {
+    for (PartitionKey part : parts) {
       partParams.add(new PullPathTailPartitionParam(matrixId, part, partitionId, batchSize));
     }
 

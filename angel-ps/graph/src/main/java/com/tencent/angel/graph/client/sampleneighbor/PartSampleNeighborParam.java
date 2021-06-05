@@ -91,6 +91,6 @@ public class PartSampleNeighborParam extends PartitionGetParam {
 
   @Override
   public int bufferLen() {
-    return super.bufferLen() + 4 + 4 * nodeIds.length;
+    return super.bufferLen() + 8 + 4 * (endIndex - startIndex);
   }
 }

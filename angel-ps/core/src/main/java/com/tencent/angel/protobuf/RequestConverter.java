@@ -18,7 +18,6 @@
 
 package com.tencent.angel.protobuf;
 
-import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
 import com.tencent.angel.protobuf.generated.MLProtos.Pair;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.TaskStateProto;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.WorkerReportRequest;
@@ -31,7 +30,6 @@ import org.apache.commons.logging.LogFactory;
 
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -82,17 +80,6 @@ public final class RequestConverter {
 
   private static TaskStateProto buildTaskReport(TaskId taskId, Task task) {
     TaskStateProto.Builder builder = TaskStateProto.newBuilder();
-    if (!PSAgentContext.get().syncClockEnable()) {
-      builder.setIteration(task.getTaskContext().getEpoch());
-      Map<Integer, AtomicInteger> matrixClocks = task.getTaskContext().getMatrixClocks();
-      MatrixClock.Builder clockBuilder = MatrixClock.newBuilder();
-      for (Entry<Integer, AtomicInteger> clockEntry : matrixClocks.entrySet()) {
-        builder.addMatrixClocks(
-          clockBuilder.setMatrixId(clockEntry.getKey()).setClock(clockEntry.getValue().get())
-            .build());
-      }
-    }
-
     builder.setProgress(task.getProgress());
     builder.setState(task.getTaskState().toString());
     builder.setTaskId(ProtobufUtil.convertToIdProto(taskId));

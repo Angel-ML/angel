@@ -48,4 +48,11 @@ public class SampleNodeFeatsPartParam extends PartitionGetParam {
     super.deserialize(buf);
     size = buf.readInt();
   }
+
+  @Override
+  public int bufferLen() {
+    int len = super.bufferLen();
+    len += 4;
+    return len;
+  }
 }

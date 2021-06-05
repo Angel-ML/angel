@@ -48,7 +48,6 @@ import com.tencent.angel.worker.WorkerId;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-import java.text.DecimalFormat;
 import java.util.Arrays;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -235,7 +234,6 @@ public class InitNeighborTest {
     master.psError(null, request);
 
     Thread.sleep(10000);
-
 
     result = ((SampleNeighborResult) (client
         .get(new SampleNeighbor(param)))).getNodeIdToNeighbors();

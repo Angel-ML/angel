@@ -37,11 +37,11 @@ import org.apache.commons.logging.LogFactory
   * @param estSparsity estimate sparsity
   * @param storage     partition storage
   */
-class EdgeAliasTablePartition(partKey: PartitionKey, rowType: RowType, estSparsity: Double,
+class EdgeAliasTablePartition(partKey: PartitionKey, rowType: RowType, nodeNum: Long,
                               storage: EdgeAliasTableStorage)
-  extends UserDefinePartition(partKey, rowType, estSparsity, storage) with IEdgeAliasTableOp {
+  extends UserDefinePartition(partKey, rowType, nodeNum, storage) with IEdgeAliasTableOp {
 
-  def this() = this(null, RowType.T_ANY_LONGKEY_SPARSE, 0.0, null)
+  def this() = this(null, RowType.T_ANY_LONGKEY_SPARSE, -1, null)
 
   override def init(): Unit = {}
 

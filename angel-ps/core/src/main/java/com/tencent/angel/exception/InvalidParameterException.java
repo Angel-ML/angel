@@ -18,7 +18,7 @@
 
 package com.tencent.angel.exception;
 
-public class InvalidParameterException extends Exception {
+public class InvalidParameterException extends RuntimeException {
   /**
    *
    */

@@ -167,7 +167,7 @@ import static org.junit.Assert.*;
       WorkerRegisterRequest registeRequest =
         WorkerRegisterRequest.newBuilder().setPsAgentId(psAgentId)
           .setWorkerAttemptId(ProtobufUtil.convertToIdProto(worker1Attempt0Id))
-          .setLocation(LocationProto.newBuilder().setIp("10.10.10.10").setPort(10000).build())
+          .setLocation(LocationProto.newBuilder().setIp("0.0.0.0").setPort(10000).build())
           .build();
       WorkerRegisterResponse registerResponse = master.workerRegister(null, registeRequest);
       assertTrue(registerResponse.getCommand() == WorkerCommandProto.W_SHUTDOWN);

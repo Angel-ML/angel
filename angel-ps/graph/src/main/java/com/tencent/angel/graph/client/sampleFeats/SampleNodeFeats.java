@@ -23,14 +23,10 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
-import com.tencent.angel.ps.storage.matrix.ServerMatrix;
-import com.tencent.angel.ps.storage.partition.RowBasedPartition;
-import com.tencent.angel.ps.storage.partition.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
 import com.tencent.angel.ps.storage.vector.element.IElement;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,7 +45,8 @@ public class SampleNodeFeats extends GetFunc {
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam partParam) {
     SampleNodeFeatsPartParam param = (SampleNodeFeatsPartParam) partParam;
-    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager().getRow(param.getPartKey(), 0);
+    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager()
+        .getRow(param.getPartKey(), 0);
 
     int size = Math.min(row.size(), param.getSize());
     IntFloatVector[] feats = new IntFloatVector[size];
@@ -59,8 +56,9 @@ public class SampleNodeFeats extends GetFunc {
     int skip = bound > 0 ? rand.nextInt(bound) : 0;
     ObjectIterator<Long2ObjectMap.Entry<IElement>> it = row.getStorage().iterator();
     it.skip(skip);
-    for (int i = 0; i < size; i++)
+    for (int i = 0; i < size; i++) {
       feats[i] = ((Node) it.next().getValue()).getFeats();
+    }
 
     return new PartGetNodeFeatsResult(param.getPartKey().getPartitionId(), feats);
   }

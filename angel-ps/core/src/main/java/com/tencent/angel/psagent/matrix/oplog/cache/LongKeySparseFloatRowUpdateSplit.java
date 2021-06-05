@@ -171,15 +171,15 @@ public class LongKeySparseFloatRowUpdateSplit extends RowUpdateSplit {
   public int bufferLen() {
     if (isUseIntKey()) {
       if (splitContext.isEnableFilter()) {
-        return 12 + super.bufferLen() + getNeedUpdateItemNum() * 8;
+        return 4 + super.bufferLen() + getNeedUpdateItemNum() * 8;
       } else {
-        return 12 + super.bufferLen() + (end - start) * 8;
+        return 4 + super.bufferLen() + (end - start) * 8;
       }
     } else {
       if (splitContext.isEnableFilter()) {
-        return 12 + super.bufferLen() + getNeedUpdateItemNum() * 12;
+        return 4 + super.bufferLen() + getNeedUpdateItemNum() * 12;
       } else {
-        return 12 + super.bufferLen() + (end - start) * 12;
+        return 4 + super.bufferLen() + (end - start) * 12;
       }
     }
   }

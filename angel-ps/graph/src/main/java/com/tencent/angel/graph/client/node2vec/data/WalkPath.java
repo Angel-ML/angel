@@ -16,17 +16,17 @@
  */
 package com.tencent.angel.graph.client.node2vec.data;
 
-import com.tencent.angel.graph.client.node2vec.PartitionHasher;
 import com.tencent.angel.graph.client.node2vec.utils.SerDe;
 import com.tencent.angel.ps.storage.vector.element.IElement;
 import io.netty.buffer.ByteBuf;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class WalkPath implements IElement {
+
   private long[] path;
+  private int currPathIdx = 0;
 
   public int getCurrPathIdx() {
     return currPathIdx;
@@ -36,28 +36,20 @@ public class WalkPath implements IElement {
     this.currPathIdx = currPathIdx;
   }
 
-  private int currPathIdx = 0;
-  private int mod;
-  private int nextPartitionIdx = -1;
-
   public WalkPath() {
   }
 
-  public WalkPath(long[] path, int mod) {
+  public WalkPath(long[] path) {
     this.path = path;
     this.currPathIdx = path.length;
-    this.mod = mod;
-    updatePartitionIdx();
   }
 
-  public WalkPath(long[] path, int mod, int currPathIdx) {
+  public WalkPath(long[] path, int currPathIdx) {
     this.path = path;
     this.currPathIdx = currPathIdx;
-    this.mod = mod;
-    updatePartitionIdx();
   }
 
-  public WalkPath(int pathLength, int mod, long... eles) {
+  public WalkPath(int pathLength, long... eles) {
     path = new long[pathLength];
     if (eles != null) {
       for (long e : eles) {
@@ -65,12 +57,6 @@ public class WalkPath implements IElement {
         currPathIdx++;
       }
     }
-    this.mod = mod;
-    updatePartitionIdx();
-  }
-
-  public int getNextPartitionIdx() {
-    return nextPartitionIdx;
   }
 
   public long[] getPath() {
@@ -81,20 +67,11 @@ public class WalkPath implements IElement {
     this.path = path;
   }
 
-  public int getMod() {
-    return mod;
-  }
-
-  public void setMod(int mod) {
-    this.mod = mod;
-  }
-
   public WalkPath add2Path(long ele) {
     assert currPathIdx < path.length;
 
     path[currPathIdx] = ele;
     currPathIdx++;
-    updatePartitionIdx();
     return this;
   }
 
@@ -102,10 +79,8 @@ public class WalkPath implements IElement {
     return new long[]{path[currPathIdx - 2], path[currPathIdx - 1]};
   }
 
-  public long getHead() { return path[0]; }
-
-  private void updatePartitionIdx() {
-    nextPartitionIdx = PartitionHasher.getHash(path[currPathIdx - 2], path[currPathIdx - 1], mod);
+  public long getHead() {
+    return path[0];
   }
 
   public boolean isComplete() {
@@ -115,26 +90,19 @@ public class WalkPath implements IElement {
   @Override
   public Object deepClone() {
     long[] clonedPath = path.clone();
-    return new WalkPath(clonedPath, this.mod, this.currPathIdx);
+    return new WalkPath(clonedPath, this.currPathIdx);
   }
 
   @Override
   public void serialize(ByteBuf output) {
-    output.writeInt(mod);
     output.writeInt(currPathIdx);
-    if (path == null) {
-      output.writeInt(0);
-    } else {
-      SerDe.serArray(path, output);
-    }
+    SerDe.serArray(path, output);
   }
 
   @Override
   public void deserialize(ByteBuf input) {
-    mod = input.readInt();
     currPathIdx = input.readInt();
     path = SerDe.deserLongArray(input);
-    updatePartitionIdx();
   }
 
   @Override
@@ -148,7 +116,6 @@ public class WalkPath implements IElement {
 
   @Override
   public void serialize(DataOutputStream output) throws IOException {
-    output.writeInt(mod);
     output.writeInt(currPathIdx);
     if (path == null) {
       output.writeInt(0);
@@ -163,7 +130,6 @@ public class WalkPath implements IElement {
 
   @Override
   public void deserialize(DataInputStream input) throws IOException {
-    mod = input.readInt();
     currPathIdx = input.readInt();
 
     int len = input.readInt();
@@ -173,8 +139,6 @@ public class WalkPath implements IElement {
         path[i] = input.readLong();
       }
     }
-
-    updatePartitionIdx();
   }
 
   @Override

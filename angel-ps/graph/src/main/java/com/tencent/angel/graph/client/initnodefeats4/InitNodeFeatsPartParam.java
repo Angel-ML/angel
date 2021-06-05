@@ -23,6 +23,7 @@ import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import io.netty.buffer.ByteBuf;
 
 public class InitNodeFeatsPartParam extends PartitionUpdateParam {
+
   private long[] keys;
   private IntFloatVector[] feats;
   private int[] index;
@@ -30,8 +31,8 @@ public class InitNodeFeatsPartParam extends PartitionUpdateParam {
   private int endIndex;
 
   public InitNodeFeatsPartParam(int matrixId, PartitionKey partKey,
-                                long[] keys, IntFloatVector[] feats,
-                                int[] index, int startIndex, int endIndex) {
+      long[] keys, IntFloatVector[] feats,
+      int[] index, int startIndex, int endIndex) {
     super(matrixId, partKey);
     this.keys = keys;
     this.feats = feats;
@@ -59,8 +60,9 @@ public class InitNodeFeatsPartParam extends PartitionUpdateParam {
     int writeNum = 0;
     buf.writeInt(0);
     for (int i = startIndex; i < endIndex; i++) {
-      if (feats[index[i]] == null || feats[index[i]].getSize() == 0)
+      if (feats[index[i]] == null || feats[index[i]].getSize() == 0) {
         continue;
+      }
       buf.writeLong(keys[index[i]]);
       NodeUtils.serialize(feats[index[i]], buf);
       writeNum++;
@@ -88,7 +90,7 @@ public class InitNodeFeatsPartParam extends PartitionUpdateParam {
     for (int i = startIndex; i < endIndex; i++) {
       if (feats[index[i]] != null && feats[index[i]].getSize() != 0) {
         len += 8;
-        len += NodeUtils.dataLen(feats[i]);
+        len += NodeUtils.dataLen(feats[index[i]]);
       }
     }
     return len;

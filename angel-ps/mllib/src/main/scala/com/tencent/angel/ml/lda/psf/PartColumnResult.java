@@ -60,7 +60,15 @@ public class PartColumnResult extends PartitionGetResult {
   }
 
   @Override public int bufferLen() {
-    return 16;
+    int len = 4;
+    Iterator<Integer> keyIterator = cks.keySet().iterator();
+    while (keyIterator.hasNext()) {
+      int column = keyIterator.next();
+      Int2IntOpenHashMap ck = cks.get(column);
+      len += 8;
+      len += ck.keySet().size() * 8;
+    }
+    return len;
   }
 
   @Override public void deserialize(ByteBuf buf) {

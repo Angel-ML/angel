@@ -16,13 +16,14 @@
  */
 package com.tencent.angel.graph.client.node2vec.utils;
 
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-
 import java.util.List;
 
 public class Merge {
 
-  public static <E> Long2ObjectOpenHashMap<E> mergeHadhMap(Long2ObjectOpenHashMap<E> m1, Long2ObjectOpenHashMap<E> m2) {
+  public static <E> Long2ObjectOpenHashMap<E> mergeHadhMap(Long2ObjectOpenHashMap<E> m1,
+      Long2ObjectOpenHashMap<E> m2) {
     int size = m1.size() + m2.size();
 
     Long2ObjectOpenHashMap<E> result = new Long2ObjectOpenHashMap<>(size);
@@ -43,6 +44,25 @@ public class Merge {
 
     Long2ObjectOpenHashMap<E> result = new Long2ObjectOpenHashMap<>(size);
     for (Long2ObjectOpenHashMap<E> m : ms) {
+      if (m != null) {
+        result.putAll(m);
+      }
+    }
+
+    return result;
+  }
+
+  public static <E> Long2IntOpenHashMap mergeHashMap(List<Long2IntOpenHashMap> ms) {
+    int size = 0;
+
+    for (Long2IntOpenHashMap m : ms) {
+      if (m != null) {
+        size += m.size();
+      }
+    }
+
+    Long2IntOpenHashMap result = new Long2IntOpenHashMap(size);
+    for (Long2IntOpenHashMap m : ms) {
       if (m != null) {
         result.putAll(m);
       }

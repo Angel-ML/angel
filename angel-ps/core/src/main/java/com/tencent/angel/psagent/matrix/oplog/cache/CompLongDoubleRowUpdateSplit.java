@@ -115,6 +115,6 @@ public class CompLongDoubleRowUpdateSplit extends RowUpdateSplit {
 
   @Override
   public int bufferLen() {
-    return 8 + 4 + super.bufferLen() + split.getStorage().size() * 16;
+    return 4 + super.bufferLen() + split.getStorage().size() * 16;
   }
 }

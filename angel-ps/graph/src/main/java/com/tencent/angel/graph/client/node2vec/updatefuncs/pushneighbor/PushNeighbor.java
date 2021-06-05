@@ -26,10 +26,9 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 public class PushNeighbor extends UpdateFunc {
+
   /**
    * Create a new UpdateParam
-   *
-   * @param param
    */
   public PushNeighbor(UpdateParam param) {
     super(param);
@@ -42,10 +41,12 @@ public class PushNeighbor extends UpdateFunc {
   @Override
   public void partitionUpdate(PartitionUpdateParam partParam) {
     PushNeighborPartitionParam pparam = (PushNeighborPartitionParam) partParam;
-    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager().getRow(pparam.getPartKey(), 0);
+    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager()
+        .getRow(pparam.getPartKey(), 0);
     Long2ObjectOpenHashMap<long[]> nodeIdToNeighborIndices = pparam.getNodeIdToNeighborIndices();
 
-    ObjectIterator<Long2ObjectMap.Entry<long[]>> iter = nodeIdToNeighborIndices.long2ObjectEntrySet().iterator();
+    ObjectIterator<Long2ObjectMap.Entry<long[]>> iter = nodeIdToNeighborIndices
+        .long2ObjectEntrySet().iterator();
     row.startWrite();
     try {
       while (iter.hasNext()) {

@@ -128,6 +128,15 @@ public class MatrixMetaManagerTest {
       mMatrix2.set(MatrixConf.MATRIX_OPLOG_TYPE, RowType.T_DOUBLE_DENSE.name());
       angelClient.addMatrix(mMatrix2);
 
+      MatrixContext mMatrix3= new MatrixContext();
+      mMatrix3.setName("w3");
+      mMatrix3.setRowNum(1);
+      mMatrix3.setColNum(100000);
+      mMatrix3.setMaxRowNumInBlock(1);
+      mMatrix3.setMaxColNumInBlock(50000);
+      mMatrix3.setRowType(RowType.T_FLOAT_SPARSE);
+      angelClient.addMatrix(mMatrix2);
+
       angelClient.startPSServer();
       angelClient.run();
       Thread.sleep(5000);

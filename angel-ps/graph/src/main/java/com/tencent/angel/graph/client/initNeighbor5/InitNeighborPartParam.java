@@ -17,6 +17,7 @@
 package com.tencent.angel.graph.client.initNeighbor5;
 
 import com.tencent.angel.PartitionKey;
+import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import io.netty.buffer.ByteBuf;
 
@@ -26,28 +27,31 @@ public class InitNeighborPartParam extends PartitionUpdateParam {
   private int[] index;
   private int[] indptr;
   private long[] neighbors;
-  private int[] types;
+  private int[] edgeTypes;
+  private int[] dstTypes;
   private int startIndex;
   private int endIndex;
   private long[][] neighborArrays;
-  private int[][] typeArrays;
+  private int[][] edgeTypeArrays;
+  private int[][] dstTypeArrays;
 
   public InitNeighborPartParam(int matrixId, PartitionKey pkey,
                                long[] keys, int[] index, int[] indptr,
-                               long[] neighbors, int[] types,
+                               long[] neighbors, int[] edgeTypes, int[] dstTypes,
                                int startIndex, int endIndex) {
     super(matrixId, pkey);
     this.keys = keys;
     this.index = index;
     this.indptr = indptr;
     this.neighbors = neighbors;
-    this.types = types;
+    this.edgeTypes = edgeTypes;
+    this.dstTypes = dstTypes;
     this.startIndex = startIndex;
     this.endIndex = endIndex;
   }
 
   public InitNeighborPartParam() {
-    this(0, null, null, null, null, null, null, 0, 0);
+    this(0, null, null, null, null, null, null, null, 0, 0);
   }
 
   public long[] getKeys() {
@@ -58,14 +62,23 @@ public class InitNeighborPartParam extends PartitionUpdateParam {
     return neighborArrays;
   }
 
-  public int[][] getTypeArrays() {
-    return typeArrays;
+  public int[][] getEdgeTypeArrays() {
+    return edgeTypeArrays;
+  }
+
+  public int[][] getDstTypeArrays() {
+    return dstTypeArrays;
   }
 
   @Override
   public void serialize(ByteBuf buf) {
     super.serialize(buf);
-    if (types != null)
+    if (edgeTypes != null)
+      buf.writeBoolean(true);
+    else
+      buf.writeBoolean(false);
+
+    if (dstTypes != null)
       buf.writeBoolean(true);
     else
       buf.writeBoolean(false);
@@ -78,9 +91,13 @@ public class InitNeighborPartParam extends PartitionUpdateParam {
       buf.writeInt(len);
       for (int j = indptr[index[i]]; j < indptr[index[i] + 1]; j++)
         buf.writeLong(neighbors[j]);
-      if (types != null) {
+      if (edgeTypes != null) {
         for (int j = indptr[index[i]]; j < indptr[index[i] + 1]; j++)
-          buf.writeInt(types[j]);
+          buf.writeInt(edgeTypes[j]);
+      }
+      if (dstTypes != null) {
+        for (int j = indptr[index[i]]; j < indptr[index[i] + 1]; j++)
+          buf.writeInt(dstTypes[j]);
       }
     }
   }
@@ -88,14 +105,18 @@ public class InitNeighborPartParam extends PartitionUpdateParam {
   @Override
   public void deserialize(ByteBuf buf) {
     super.deserialize(buf);
-    boolean hasType = buf.readBoolean();
+    boolean hasEdgeType = buf.readBoolean();
+    boolean hasDstType = buf.readBoolean();
 
     int size = buf.readInt();
     keys = new long[size];
     neighborArrays = new long[size][];
 
-    if (hasType)
-      typeArrays = new int[size][];
+    if (hasEdgeType)
+      edgeTypeArrays = new int[size][];
+
+    if (hasDstType)
+      dstTypeArrays = new int[size][];
 
     for (int i = 0; i < size; i++) {
       long node = buf.readLong();
@@ -106,11 +127,18 @@ public class InitNeighborPartParam extends PartitionUpdateParam {
         neighbors[j] = buf.readLong();
       neighborArrays[i] = neighbors;
 
-      if (hasType) {
+      if (hasEdgeType) {
         int[] types = new int[len];
         for (int j = 0; j < len; j++)
           types[j] = buf.readInt();
-        typeArrays[i] = types;
+        edgeTypeArrays[i] = types;
+      }
+
+      if (hasDstType) {
+        int[] types = new int[len];
+        for (int j = 0; j < len; j++)
+          types[j] = buf.readInt();
+        dstTypeArrays[i] = types;
       }
     }
   }
@@ -118,11 +146,13 @@ public class InitNeighborPartParam extends PartitionUpdateParam {
   @Override
   public int bufferLen() {
     int len = super.bufferLen();
-    len += 4;
+    len += 4 + ByteBufSerdeUtils.serializedBooleanLen(true) + ByteBufSerdeUtils.serializedBooleanLen(true);
     for (int i = startIndex; i < endIndex; i++) {
       len += 12;
       len += 8 * (indptr[index[i] + 1] - indptr[index[i]]);
-      if (types != null)
+      if (edgeTypes != null)
+        len += 4 * (indptr[index[i] + 1] - indptr[index[i]]);
+      if (dstTypes != null)
         len += 4 * (indptr[index[i] + 1] - indptr[index[i]]);
     }
     return len;

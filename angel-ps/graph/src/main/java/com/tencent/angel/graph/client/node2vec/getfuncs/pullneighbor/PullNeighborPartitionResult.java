@@ -22,6 +22,7 @@ import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 public class PullNeighborPartitionResult extends PartitionGetResult {
+
   private Long2ObjectOpenHashMap<long[]> partResult;
 
   public PullNeighborPartitionResult(Long2ObjectOpenHashMap<long[]> part) {

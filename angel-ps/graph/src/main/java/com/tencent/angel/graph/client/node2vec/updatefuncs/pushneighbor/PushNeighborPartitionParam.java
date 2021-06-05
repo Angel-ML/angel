@@ -17,18 +17,25 @@
 package com.tencent.angel.graph.client.node2vec.updatefuncs.pushneighbor;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.graph.client.node2vec.params.PartitionUpdateParamWithIds;
 import com.tencent.angel.graph.client.node2vec.utils.SerDe;
+import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
-public class PushNeighborPartitionParam extends PartitionUpdateParamWithIds {
+public class PushNeighborPartitionParam extends PartitionUpdateParam {
+
+  private long[] keyIds;
+  private int startIdx;
+  private int endIdx;
   private Long2ObjectOpenHashMap<long[]> nodeIdToNeighborIndices;
 
   public PushNeighborPartitionParam(int matrixId, PartitionKey partKey,
-                                    Long2ObjectOpenHashMap<long[]> nodeIdToNeighborIndices,
-                                    long[] nodeIds, int startIndex, int endIndex) {
-    super(matrixId, partKey, nodeIds, startIndex, endIndex);
+      Long2ObjectOpenHashMap<long[]> nodeIdToNeighborIndices,
+      long[] nodeIds, int startIndex, int endIndex) {
+    super(matrixId, partKey, false);
+    this.keyIds = nodeIds;
+    this.startIdx = startIndex;
+    this.endIdx = endIndex;
     this.nodeIdToNeighborIndices = nodeIdToNeighborIndices;
   }
 
@@ -40,9 +47,10 @@ public class PushNeighborPartitionParam extends PartitionUpdateParamWithIds {
     return nodeIdToNeighborIndices;
   }
 
-  @Override
   protected void clear() {
-    super.clear();
+    keyIds = null;
+    startIdx = -1;
+    endIdx = -1;
     nodeIdToNeighborIndices = null;
   }
 
@@ -50,7 +58,7 @@ public class PushNeighborPartitionParam extends PartitionUpdateParamWithIds {
   public void serialize(ByteBuf buf) {
     super.serialize(buf);
     SerDe.serLong2ArrayHashMap(keyIds, startIdx, endIdx, nodeIdToNeighborIndices, buf);
-    clear();
+    //clear();
   }
 
   @Override

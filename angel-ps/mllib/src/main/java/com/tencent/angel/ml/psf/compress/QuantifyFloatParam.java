@@ -100,7 +100,7 @@ public class QuantifyFloatParam extends UpdateParam {
     @Override
     public int bufferLen() {
 
-      return super.bufferLen() + 20 + (int) Math.ceil((end - start) * numBits / 8);
+      return super.bufferLen() + 12 + (int) Math.ceil((end - start) * numBits / 8);
     }
 
     public int getRowId() {

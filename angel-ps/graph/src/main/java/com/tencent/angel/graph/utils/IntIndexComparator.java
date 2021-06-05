@@ -19,7 +19,9 @@ package com.tencent.angel.graph.utils;
 import it.unimi.dsi.fastutil.ints.IntComparator;
 
 public class IntIndexComparator implements IntComparator {
+
   private int[] array;
+
   public IntIndexComparator(int[] array) {
     this.array = array;
   }

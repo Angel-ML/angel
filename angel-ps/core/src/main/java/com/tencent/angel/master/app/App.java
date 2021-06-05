@@ -218,8 +218,16 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
             readLock.lock();
             if (stateToTsMap.containsKey(state)
                 && context.getClock().getTime() - stateToTsMap.get(state) >= stateTimeOutMs) {
-              context.getEventHandler().handle(new InternalErrorEvent(context.getApplicationId(),
-                  "app in state " + state + " over " + stateTimeOutMs + " milliseconds!"));
+              if (state.equals(AppState.NEW)) {
+                context.getEventHandler().handle(new InternalErrorEvent(context.getApplicationId(),
+                        "lack of resources: memory or vCores are not enough for the request by ps"));
+              } else if (state.equals(AppState.PREPARE_WORKERS)) {
+                context.getEventHandler().handle(new InternalErrorEvent(context.getApplicationId(),
+                        "lack of resources: memory or vCores are not enough for the request by worker"));
+              } else {
+                context.getEventHandler().handle(new InternalErrorEvent(context.getApplicationId(),
+                        "app in state " + state + " over " + stateTimeOutMs + " milliseconds!"));
+              }
             }
           } finally {
             readLock.unlock();

@@ -38,6 +38,8 @@ import com.tencent.angel.model.MatrixSaveContext;
 import com.tencent.angel.model.ModelSaveContext;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner;
+import com.tencent.angel.ps.storage.partitioner.HashPartitioner;
 import com.tencent.angel.psagent.matrix.MatrixClient;
 import com.tencent.angel.psagent.matrix.oplog.cache.MatrixOpLog;
 import com.tencent.angel.worker.Worker;
@@ -61,40 +63,22 @@ import static org.junit.Assert.assertEquals;
 
 public class IndexGetRowTest {
   public static String DENSE_DOUBLE_MAT = "dense_double_mat";
-  public static String DENSE_DOUBLE_MAT_COMP = "dense_double_mat_comp";
   public static String SPARSE_DOUBLE_MAT = "sparse_double_mat";
-  public static String SPARSE_DOUBLE_MAT_COMP = "sparse_double_mat_comp";
 
   public static String DENSE_FLOAT_MAT = "dense_float_mat";
-  public static String DENSE_FLOAT_MAT_COMP = "dense_float_mat_comp";
   public static String SPARSE_FLOAT_MAT = "sparse_float_mat";
-  public static String SPARSE_FLOAT_MAT_COMP = "sparse_float_mat_comp";
 
   public static String DENSE_INT_MAT = "dense_int_mat";
-  public static String DENSE_INT_MAT_COMP = "dense_int_mat_comp";
   public static String SPARSE_INT_MAT = "sparse_int_mat";
-  public static String SPARSE_INT_MAT_COMP = "sparse_int_mat_comp";
 
   public static String DENSE_LONG_MAT = "dense_long_mat";
-  public static String DENSE_LONG_MAT_COMP = "dense_long_mat_comp";
   public static String SPARSE_LONG_MAT = "sparse_long_mat";
-  public static String SPARSE_LONG_MAT_COMP = "sparse_long_mat_comp";
 
-  public static String DENSE_DOUBLE_LONG_MAT_COMP = "dense_double_long_mat_comp";
   public static String SPARSE_DOUBLE_LONG_MAT = "sparse_double_long_mat";
-  public static String SPARSE_DOUBLE_LONG_MAT_COMP = "sparse_double_long_mat_comp";
 
-  public static String DENSE_FLOAT_LONG_MAT_COMP = "dense_float_long_mat_comp";
   public static String SPARSE_FLOAT_LONG_MAT = "sparse_float_long_mat";
-  public static String SPARSE_FLOAT_LONG_MAT_COMP = "sparse_float_long_mat_comp";
-
-  public static String DENSE_INT_LONG_MAT_COMP = "dense_int_long_mat_comp";
   public static String SPARSE_INT_LONG_MAT = "sparse_int_long_mat";
-  public static String SPARSE_INT_LONG_MAT_COMP = "sparse_int_long_mat_comp";
-
-  public static String DENSE_LONG_LONG_MAT_COMP = "dense_long_long_mat_comp";
   public static String SPARSE_LONG_LONG_MAT = "sparse_long_long_mat";
-  public static String SPARSE_LONG_LONG_MAT_COMP = "sparse_long_long_mat_comp";
 
   private static final Log LOG = LogFactory.getLog(IndexGetRowTest.class);
   private static final String LOCAL_FS = LocalFileSystem.DEFAULT_FS;
@@ -105,9 +89,10 @@ public class IndexGetRowTest {
   private WorkerId workerId;
   private WorkerAttemptId workerAttempt0Id;
 
-  int feaNum = 90000;
-  int nnz = 9000;
-  int modelSize = 90000;
+  int feaNum = 1000;
+  int nnz = 100;
+  int modelSize = 100;
+  int partNum = 5;
 
   static {
     PropertyConfigurator.configure("../conf/log4j.properties");
@@ -150,6 +135,7 @@ public class IndexGetRowTest {
     dMat.setMaxColNumInBlock(feaNum / 3);
     dMat.setRowType(RowType.T_DOUBLE_DENSE);
     dMat.setValidIndexNum(modelSize);
+    dMat.setPartitionerClass(ColumnRangePartitioner.class);
     angelClient.addMatrix(dMat);
 
     // add sparse double matrix
@@ -160,27 +146,10 @@ public class IndexGetRowTest {
     sMat.setMaxColNumInBlock(feaNum / 3);
     sMat.setRowType(RowType.T_DOUBLE_SPARSE);
     sMat.setValidIndexNum(modelSize);
+    sMat.setPartitionNum(partNum);
+    sMat.setPartitionerClass(HashPartitioner.class);
     angelClient.addMatrix(sMat);
 
-    // add comp dense double matrix
-    MatrixContext dcMat = new MatrixContext();
-    dcMat.setName(DENSE_DOUBLE_MAT_COMP);
-    dcMat.setRowNum(1);
-    dcMat.setColNum(feaNum);
-    dcMat.setMaxColNumInBlock(feaNum / 3);
-    dcMat.setRowType(RowType.T_DOUBLE_DENSE_COMPONENT);
-    dcMat.setValidIndexNum(modelSize);
-    angelClient.addMatrix(dcMat);
-
-    // add component sparse double matrix
-    MatrixContext sCompMat = new MatrixContext();
-    sCompMat.setName(SPARSE_DOUBLE_MAT_COMP);
-    sCompMat.setRowNum(1);
-    sCompMat.setColNum(feaNum);
-    sCompMat.setMaxColNumInBlock(feaNum / 3);
-    sCompMat.setRowType(RowType.T_DOUBLE_SPARSE_COMPONENT);
-    sCompMat.setValidIndexNum(modelSize);
-    angelClient.addMatrix(sCompMat);
 
     // add dense float matrix
     MatrixContext dfMat = new MatrixContext();
@@ -190,17 +159,9 @@ public class IndexGetRowTest {
     dfMat.setMaxColNumInBlock(feaNum / 3);
     dfMat.setRowType(RowType.T_FLOAT_DENSE);
     dfMat.setValidIndexNum(modelSize);
+    dfMat.setPartitionerClass(ColumnRangePartitioner.class);
     angelClient.addMatrix(dfMat);
 
-    // add comp dense float matrix
-    MatrixContext dcfMat = new MatrixContext();
-    dcfMat.setName(DENSE_FLOAT_MAT_COMP);
-    dcfMat.setRowNum(1);
-    dcfMat.setColNum(feaNum);
-    dcfMat.setMaxColNumInBlock(feaNum / 3);
-    dcfMat.setRowType(RowType.T_FLOAT_DENSE_COMPONENT);
-    dcfMat.setValidIndexNum(modelSize);
-    angelClient.addMatrix(dcfMat);
 
     // add sparse float matrix
     MatrixContext sfMat = new MatrixContext();
@@ -210,17 +171,9 @@ public class IndexGetRowTest {
     sfMat.setMaxColNumInBlock(feaNum / 3);
     sfMat.setRowType(RowType.T_FLOAT_SPARSE);
     sfMat.setValidIndexNum(modelSize);
+    sfMat.setPartitionNum(partNum);
+    sfMat.setPartitionerClass(HashPartitioner.class);
     angelClient.addMatrix(sfMat);
-
-    // add component sparse float matrix
-    MatrixContext sfCompMat = new MatrixContext();
-    sfCompMat.setName(SPARSE_FLOAT_MAT_COMP);
-    sfCompMat.setRowNum(1);
-    sfCompMat.setColNum(feaNum);
-    sfCompMat.setMaxColNumInBlock(feaNum / 3);
-    sfCompMat.setRowType(RowType.T_FLOAT_SPARSE_COMPONENT);
-    sfCompMat.setValidIndexNum(modelSize);
-    angelClient.addMatrix(sfCompMat);
 
     // add dense float matrix
     MatrixContext diMat = new MatrixContext();
@@ -230,17 +183,9 @@ public class IndexGetRowTest {
     diMat.setMaxColNumInBlock(feaNum / 3);
     diMat.setRowType(RowType.T_INT_DENSE);
     diMat.setValidIndexNum(modelSize);
+    diMat.setPartitionerClass(ColumnRangePartitioner.class);
     angelClient.addMatrix(diMat);
 
-    // add comp dense float matrix
-    MatrixContext dciMat = new MatrixContext();
-    dciMat.setName(DENSE_INT_MAT_COMP);
-    dciMat.setRowNum(1);
-    dciMat.setColNum(feaNum);
-    dciMat.setMaxColNumInBlock(feaNum / 3);
-    dciMat.setRowType(RowType.T_INT_DENSE_COMPONENT);
-    dciMat.setValidIndexNum(modelSize);
-    angelClient.addMatrix(dciMat);
 
     // add sparse float matrix
     MatrixContext siMat = new MatrixContext();
@@ -250,17 +195,10 @@ public class IndexGetRowTest {
     siMat.setMaxColNumInBlock(feaNum / 3);
     siMat.setRowType(RowType.T_INT_SPARSE);
     siMat.setValidIndexNum(modelSize);
+    siMat.setPartitionNum(partNum);
+    siMat.setPartitionerClass(HashPartitioner.class);
     angelClient.addMatrix(siMat);
 
-    // add component sparse float matrix
-    MatrixContext siCompMat = new MatrixContext();
-    siCompMat.setName(SPARSE_INT_MAT_COMP);
-    siCompMat.setRowNum(1);
-    siCompMat.setColNum(feaNum);
-    siCompMat.setMaxColNumInBlock(feaNum / 3);
-    siCompMat.setRowType(RowType.T_INT_SPARSE_COMPONENT);
-    siCompMat.setValidIndexNum(modelSize);
-    angelClient.addMatrix(siCompMat);
 
     // add dense long matrix
     MatrixContext dlMat = new MatrixContext();
@@ -270,17 +208,8 @@ public class IndexGetRowTest {
     dlMat.setMaxColNumInBlock(feaNum / 3);
     dlMat.setRowType(RowType.T_LONG_DENSE);
     dlMat.setValidIndexNum(modelSize);
+    dlMat.setPartitionerClass(ColumnRangePartitioner.class);
     angelClient.addMatrix(dlMat);
-
-    // add comp dense long matrix
-    MatrixContext dclMat = new MatrixContext();
-    dclMat.setName(DENSE_LONG_MAT_COMP);
-    dclMat.setRowNum(1);
-    dclMat.setColNum(feaNum);
-    dclMat.setMaxColNumInBlock(feaNum / 3);
-    dclMat.setRowType(RowType.T_LONG_DENSE_COMPONENT);
-    dclMat.setValidIndexNum(modelSize);
-    angelClient.addMatrix(dclMat);
 
     // add sparse long matrix
     MatrixContext slMat = new MatrixContext();
@@ -290,57 +219,21 @@ public class IndexGetRowTest {
     slMat.setMaxColNumInBlock(feaNum / 3);
     slMat.setRowType(RowType.T_LONG_SPARSE);
     slMat.setValidIndexNum(modelSize);
+    slMat.setPartitionNum(partNum);
+    slMat.setPartitionerClass(HashPartitioner.class);
     angelClient.addMatrix(slMat);
 
-    // add component sparse long matrix
-    MatrixContext slcMat = new MatrixContext();
-    slcMat.setName(SPARSE_LONG_MAT_COMP);
-    slcMat.setRowNum(1);
-    slcMat.setColNum(feaNum);
-    slcMat.setMaxColNumInBlock(feaNum / 3);
-    slcMat.setRowType(RowType.T_LONG_SPARSE_COMPONENT);
-    slcMat.setValidIndexNum(modelSize);
-    angelClient.addMatrix(slcMat);
-
-    // add comp dense long double matrix
-    MatrixContext dldcMatrix = new MatrixContext();
-    dldcMatrix.setName(DENSE_DOUBLE_LONG_MAT_COMP);
-    dldcMatrix.setRowNum(1);
-    dldcMatrix.setColNum(feaNum);
-    dldcMatrix.setMaxColNumInBlock(feaNum / 3);
-    dldcMatrix.setRowType(RowType.T_DOUBLE_DENSE_LONGKEY_COMPONENT);
-    dldcMatrix.setValidIndexNum(modelSize);
-    angelClient.addMatrix(dldcMatrix);
-
-    // add sparse long-key double matrix
-    MatrixContext dLongKeysMatrix = new MatrixContext();
-    dLongKeysMatrix.setName(SPARSE_DOUBLE_LONG_MAT);
-    dLongKeysMatrix.setRowNum(1);
-    dLongKeysMatrix.setColNum(feaNum);
-    dLongKeysMatrix.setMaxColNumInBlock(feaNum / 3);
-    dLongKeysMatrix.setRowType(RowType.T_DOUBLE_SPARSE_LONGKEY);
-    dLongKeysMatrix.setValidIndexNum(modelSize);
-    angelClient.addMatrix(dLongKeysMatrix);
-
-    // add component long-key sparse double matrix
-    MatrixContext dLongKeysCompMatrix = new MatrixContext();
-    dLongKeysCompMatrix.setName(SPARSE_DOUBLE_LONG_MAT_COMP);
-    dLongKeysCompMatrix.setRowNum(1);
-    dLongKeysCompMatrix.setColNum(feaNum);
-    dLongKeysCompMatrix.setMaxColNumInBlock(feaNum / 3);
-    dLongKeysCompMatrix.setRowType(RowType.T_DOUBLE_SPARSE_LONGKEY_COMPONENT);
-    dLongKeysCompMatrix.setValidIndexNum(modelSize);
-    angelClient.addMatrix(dLongKeysCompMatrix);
-
-    // add component long-key sparse float matrix
-    MatrixContext dlfcMatrix = new MatrixContext();
-    dlfcMatrix.setName(DENSE_FLOAT_LONG_MAT_COMP);
-    dlfcMatrix.setRowNum(1);
-    dlfcMatrix.setColNum(feaNum);
-    dlfcMatrix.setMaxColNumInBlock(feaNum / 3);
-    dlfcMatrix.setRowType(RowType.T_FLOAT_DENSE_LONGKEY_COMPONENT);
-    dlfcMatrix.setValidIndexNum(modelSize);
-    angelClient.addMatrix(dlfcMatrix);
+    // add sparse long-key float matrix
+    MatrixContext sldMatrix = new MatrixContext();
+    sldMatrix.setName(SPARSE_DOUBLE_LONG_MAT);
+    sldMatrix.setRowNum(1);
+    sldMatrix.setColNum(feaNum);
+    sldMatrix.setMaxColNumInBlock(feaNum / 3);
+    sldMatrix.setRowType(RowType.T_DOUBLE_SPARSE_LONGKEY);
+    sldMatrix.setValidIndexNum(modelSize);
+    sldMatrix.setPartitionNum(partNum);
+    sldMatrix.setPartitionerClass(HashPartitioner.class);
+    angelClient.addMatrix(sldMatrix);
 
     // add sparse long-key float matrix
     MatrixContext slfMatrix = new MatrixContext();
@@ -350,27 +243,9 @@ public class IndexGetRowTest {
     slfMatrix.setMaxColNumInBlock(feaNum / 3);
     slfMatrix.setRowType(RowType.T_FLOAT_SPARSE_LONGKEY);
     slfMatrix.setValidIndexNum(modelSize);
+    slfMatrix.setPartitionNum(partNum);
+    slfMatrix.setPartitionerClass(HashPartitioner.class);
     angelClient.addMatrix(slfMatrix);
-
-    // add component long-key sparse float matrix
-    MatrixContext slfcMatrix = new MatrixContext();
-    slfcMatrix.setName(SPARSE_FLOAT_LONG_MAT_COMP);
-    slfcMatrix.setRowNum(1);
-    slfcMatrix.setColNum(feaNum);
-    slfcMatrix.setMaxColNumInBlock(feaNum / 3);
-    slfcMatrix.setRowType(RowType.T_FLOAT_SPARSE_LONGKEY_COMPONENT);
-    slfcMatrix.setValidIndexNum(modelSize);
-    angelClient.addMatrix(slfcMatrix);
-
-    // add component long-key sparse int matrix
-    MatrixContext dlicMatrix = new MatrixContext();
-    dlicMatrix.setName(DENSE_INT_LONG_MAT_COMP);
-    dlicMatrix.setRowNum(1);
-    dlicMatrix.setColNum(feaNum);
-    dlicMatrix.setMaxColNumInBlock(feaNum / 3);
-    dlicMatrix.setRowType(RowType.T_INT_DENSE_LONGKEY_COMPONENT);
-    dlicMatrix.setValidIndexNum(modelSize);
-    angelClient.addMatrix(dlicMatrix);
 
     // add sparse long-key int matrix
     MatrixContext sliMatrix = new MatrixContext();
@@ -380,27 +255,9 @@ public class IndexGetRowTest {
     sliMatrix.setMaxColNumInBlock(feaNum / 3);
     sliMatrix.setRowType(RowType.T_INT_SPARSE_LONGKEY);
     sliMatrix.setValidIndexNum(modelSize);
+    sliMatrix.setPartitionNum(partNum);
+    sliMatrix.setPartitionerClass(HashPartitioner.class);
     angelClient.addMatrix(sliMatrix);
-
-    // add component long-key sparse int matrix
-    MatrixContext slicMatrix = new MatrixContext();
-    slicMatrix.setName(SPARSE_INT_LONG_MAT_COMP);
-    slicMatrix.setRowNum(1);
-    slicMatrix.setColNum(feaNum);
-    slicMatrix.setMaxColNumInBlock(feaNum / 3);
-    slicMatrix.setRowType(RowType.T_INT_SPARSE_LONGKEY_COMPONENT);
-    slicMatrix.setValidIndexNum(modelSize);
-    angelClient.addMatrix(slicMatrix);
-
-    // add component long-key sparse long matrix
-    MatrixContext dllcMatrix = new MatrixContext();
-    dllcMatrix.setName(DENSE_LONG_LONG_MAT_COMP);
-    dllcMatrix.setRowNum(1);
-    dllcMatrix.setColNum(feaNum);
-    dllcMatrix.setMaxColNumInBlock(feaNum / 3);
-    dllcMatrix.setRowType(RowType.T_LONG_DENSE_LONGKEY_COMPONENT);
-    dllcMatrix.setValidIndexNum(modelSize);
-    angelClient.addMatrix(dllcMatrix);
 
     // add sparse long-key long matrix
     MatrixContext sllMatrix = new MatrixContext();
@@ -410,17 +267,10 @@ public class IndexGetRowTest {
     sllMatrix.setMaxColNumInBlock(feaNum / 3);
     sllMatrix.setRowType(RowType.T_LONG_SPARSE_LONGKEY);
     sllMatrix.setValidIndexNum(modelSize);
+    sllMatrix.setPartitionNum(partNum);
+    sllMatrix.setPartitionerClass(HashPartitioner.class);
     angelClient.addMatrix(sllMatrix);
 
-    // add component long-key sparse long matrix
-    MatrixContext sllcMatrix = new MatrixContext();
-    sllcMatrix.setName(SPARSE_LONG_LONG_MAT_COMP);
-    sllcMatrix.setRowNum(1);
-    sllcMatrix.setColNum(feaNum);
-    sllcMatrix.setMaxColNumInBlock(feaNum / 3);
-    sllcMatrix.setRowType(RowType.T_LONG_SPARSE_LONGKEY_COMPONENT);
-    sllcMatrix.setValidIndexNum(modelSize);
-    angelClient.addMatrix(sllcMatrix);
 
     // Start PS
     angelClient.startPSServer();
@@ -438,41 +288,25 @@ public class IndexGetRowTest {
   }
 
   @Test public void test() throws Exception {
-    //testDenseDoubleUDF();
+    testDenseDoubleUDF();
     testSparseDoubleUDF();
-
-    /*testDenseDoubleCompUDF();
-    testSparseDoubleCompUDF();
 
     testDenseFloatUDF();
     testSparseFloatUDF();
 
-    testDenseFloatCompUDF();
-    testSparseFloatCompUDF();
-
     testDenseIntUDF();
     testSparseIntUDF();
-
-    testDenseIntCompUDF();
-    testSparseIntCompUDF();
 
     testDenseLongUDF();
     testSparseLongUDF();
 
-    testDenseLongCompUDF();
-    testSparseLongCompUDF();
-
     testSparseDoubleLongKeyUDF();
-    testSparseDoubleLongKeyCompUDF();
 
     testSparseFloatLongKeyUDF();
-    testSparseFloatLongKeyCompUDF();
 
     testSparseIntLongKeyUDF();
-    testSparseIntLongKeyCompUDF();
 
     testSparseLongLongKeyUDF();
-    testSparseLongLongKeyCompUDF();*/
   }
 
 
@@ -491,7 +325,6 @@ public class IndexGetRowTest {
     deltaVec.setRowId(0);
 
     client1.increment(deltaVec);
-    client1.clock().get();
 
     LongIndexGet func = new LongIndexGet(new LongIndexGetParam(matrixW1Id, 0, index));
 
@@ -499,51 +332,6 @@ public class IndexGetRowTest {
     for (long id : index) {
       //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertTrue(row.get(id) == deltaVec.get(id));
-    }
-
-    //Assert.assertTrue(index.length == row.size());
-  }
-
-
-  public void testSparseDoubleLongKeyCompUDF() throws Exception {
-    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
-    MatrixClient client1 = worker.getPSAgent().getMatrixClient(SPARSE_DOUBLE_LONG_MAT_COMP, 0);
-    int matrixW1Id = client1.getMatrixId();
-    long blockColNum =
-      worker.getPSAgent().getMatrixMetaManager().getMatrixMeta(matrixW1Id).getBlockColNum();
-
-    long[] index = genLongIndexs(feaNum, nnz);
-
-    int num = (int) ((feaNum + blockColNum - 1) / blockColNum);
-    LongDoubleVector[] vectors = new LongDoubleVector[num];
-    for (int i = 0; i < num; i++) {
-      vectors[i] = new LongDoubleVector(blockColNum,
-        new LongDoubleSparseVectorStorage(blockColNum, nnz / num));
-    }
-    CompLongDoubleVector deltaVec = new CompLongDoubleVector(feaNum, vectors, blockColNum);
-    for (long i = 0; i < feaNum; i++)
-      deltaVec.set(i, i);
-    deltaVec.setRowId(0);
-
-    client1.increment(deltaVec);
-    Thread.sleep(1000);
-    MatrixOpLog opLog = worker.getPSAgent().getOpLogCache().getLog(matrixW1Id);
-    RowBasedMatrix<CompLongDoubleVector> matrix =
-      (RowBasedMatrix<CompLongDoubleVector>) opLog.getMatrix();
-    CompLongDoubleVector mergedRow = matrix.getRow(0);
-    for (long id : index) {
-      //System.out.println("id=" + id + ", value=" + mergedRow.get(id));
-      Assert.assertEquals(mergedRow.get(id), deltaVec.get(id), 0.0000000001);
-    }
-
-    client1.clock().get();
-
-    LongIndexGet func = new LongIndexGet(new LongIndexGetParam(matrixW1Id, 0, index));
-
-    CompLongDoubleVector row = (CompLongDoubleVector) client1.get(0, index);
-    for (long id : index) {
-      //System.out.println("id=" + id + ", value=" + row.get(id));
-      Assert.assertEquals(row.get(id), deltaVec.get(id), 0.0000000001);
     }
 
     //Assert.assertTrue(index.length == row.size());
@@ -577,50 +365,6 @@ public class IndexGetRowTest {
     //Assert.assertTrue(index.length == row.size());
   }
 
-  public void testSparseFloatLongKeyCompUDF() throws Exception {
-    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
-    MatrixClient client1 = worker.getPSAgent().getMatrixClient(SPARSE_FLOAT_LONG_MAT_COMP, 0);
-    int matrixW1Id = client1.getMatrixId();
-    long blockColNum =
-      worker.getPSAgent().getMatrixMetaManager().getMatrixMeta(matrixW1Id).getBlockColNum();
-
-    long[] index = genLongIndexs(feaNum, nnz);
-
-    int num = (int) ((feaNum + blockColNum - 1) / blockColNum);
-    LongFloatVector[] vectors = new LongFloatVector[num];
-    for (int i = 0; i < num; i++) {
-      vectors[i] =
-        new LongFloatVector(blockColNum, new LongFloatSparseVectorStorage(blockColNum, nnz / num));
-    }
-    CompLongFloatVector deltaVec = new CompLongFloatVector(feaNum, vectors, blockColNum);
-    for (int i = 0; i < nnz; i++)
-      deltaVec.set(index[i], index[i]);
-    deltaVec.setRowId(0);
-
-    client1.increment(deltaVec);
-    Thread.sleep(1000);
-    MatrixOpLog opLog = worker.getPSAgent().getOpLogCache().getLog(matrixW1Id);
-    RowBasedMatrix<CompLongFloatVector> matrix =
-      (RowBasedMatrix<CompLongFloatVector>) opLog.getMatrix();
-    CompLongFloatVector mergedRow = matrix.getRow(0);
-    for (long id : index) {
-      //System.out.println("id=" + id + ", value=" + mergedRow.get(id));
-      Assert.assertEquals(mergedRow.get(id), deltaVec.get(id), 0.0000000001);
-    }
-
-    client1.clock().get();
-
-    LongIndexGet func = new LongIndexGet(new LongIndexGetParam(matrixW1Id, 0, index));
-
-    CompLongFloatVector row = (CompLongFloatVector) client1.get(0, index);
-    for (long id : index) {
-      //System.out.println("id=" + id + ", value=" + row.get(id));
-      Assert.assertEquals(row.get(id), deltaVec.get(id), 0.0000000001);
-    }
-
-    //Assert.assertTrue(index.length == row.size());
-  }
-
   public void testSparseLongLongKeyUDF() throws Exception {
 
     Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
@@ -644,50 +388,6 @@ public class IndexGetRowTest {
     for (long id : index) {
       //System.out.println("id=" + id + ", value=" + row.get(id));
       Assert.assertTrue(row.get(id) == deltaVec.get(id));
-    }
-
-    //Assert.assertTrue(index.length == row.size());
-  }
-
-  public void testSparseLongLongKeyCompUDF() throws Exception {
-    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
-    MatrixClient client1 = worker.getPSAgent().getMatrixClient(SPARSE_LONG_LONG_MAT_COMP, 0);
-    int matrixW1Id = client1.getMatrixId();
-    long blockColNum =
-      worker.getPSAgent().getMatrixMetaManager().getMatrixMeta(matrixW1Id).getBlockColNum();
-
-    long[] index = genLongIndexs(feaNum, nnz);
-
-    int num = (int) ((feaNum + blockColNum - 1) / blockColNum);
-    LongLongVector[] vectors = new LongLongVector[num];
-    for (int i = 0; i < num; i++) {
-      vectors[i] =
-        new LongLongVector(blockColNum, new LongLongSparseVectorStorage(blockColNum, nnz / num));
-    }
-    CompLongLongVector deltaVec = new CompLongLongVector(feaNum, vectors, blockColNum);
-    for (int i = 0; i < nnz; i++)
-      deltaVec.set(index[i], index[i]);
-    deltaVec.setRowId(0);
-
-    client1.increment(deltaVec);
-    Thread.sleep(1000);
-    MatrixOpLog opLog = worker.getPSAgent().getOpLogCache().getLog(matrixW1Id);
-    RowBasedMatrix<CompLongLongVector> matrix =
-      (RowBasedMatrix<CompLongLongVector>) opLog.getMatrix();
-    CompLongLongVector mergedRow = matrix.getRow(0);
-    for (long id : index) {
-      //System.out.println("id=" + id + ", value=" + mergedRow.get(id));
-      Assert.assertEquals(mergedRow.get(id), deltaVec.get(id), 0.0000000001);
-    }
-
-    client1.clock().get();
-
-    LongIndexGet func = new LongIndexGet(new LongIndexGetParam(matrixW1Id, 0, index));
-
-    CompLongLongVector row = (CompLongLongVector) client1.get(0, index);
-    for (long id : index) {
-      //System.out.println("id=" + id + ", value=" + row.get(id));
-      Assert.assertEquals(row.get(id), deltaVec.get(id), 0.0000000001);
     }
 
     //Assert.assertTrue(index.length == row.size());
@@ -720,50 +420,6 @@ public class IndexGetRowTest {
     //Assert.assertTrue(index.length == row.size());
   }
 
-  public void testSparseIntLongKeyCompUDF() throws Exception {
-    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
-    MatrixClient client1 = worker.getPSAgent().getMatrixClient(SPARSE_INT_LONG_MAT_COMP, 0);
-    int matrixW1Id = client1.getMatrixId();
-    long blockColNum =
-      worker.getPSAgent().getMatrixMetaManager().getMatrixMeta(matrixW1Id).getBlockColNum();
-
-    long[] index = genLongIndexs(feaNum, nnz);
-
-    int num = (int) ((feaNum + blockColNum - 1) / blockColNum);
-    LongIntVector[] vectors = new LongIntVector[num];
-    for (int i = 0; i < num; i++) {
-      vectors[i] =
-        new LongIntVector(blockColNum, new LongIntSparseVectorStorage(blockColNum, nnz / num));
-    }
-    CompLongIntVector deltaVec = new CompLongIntVector(feaNum, vectors, blockColNum);
-    for (int i = 0; i < nnz; i++)
-      deltaVec.set(index[i], (int) index[i]);
-    deltaVec.setRowId(0);
-
-    client1.increment(deltaVec);
-    Thread.sleep(1000);
-    MatrixOpLog opLog = worker.getPSAgent().getOpLogCache().getLog(matrixW1Id);
-    RowBasedMatrix<CompLongIntVector> matrix =
-      (RowBasedMatrix<CompLongIntVector>) opLog.getMatrix();
-    CompLongIntVector mergedRow = matrix.getRow(0);
-    for (long id : index) {
-      //System.out.println("id=" + id + ", value=" + mergedRow.get(id));
-      Assert.assertEquals(mergedRow.get(id), deltaVec.get(id), 0.0000000001);
-    }
-
-    client1.clock().get();
-
-    LongIndexGet func = new LongIndexGet(new LongIndexGetParam(matrixW1Id, 0, index));
-
-    CompLongIntVector row = (CompLongIntVector) client1.get(0, index);
-    for (long id : index) {
-      //System.out.println("id=" + id + ", value=" + row.get(id));
-      Assert.assertEquals(row.get(id), deltaVec.get(id), 0.0000000001);
-    }
-
-    //Assert.assertTrue(index.length == row.size());
-  }
-
 
   public void testDenseDoubleUDF() throws Exception {
     Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
@@ -791,117 +447,6 @@ public class IndexGetRowTest {
 
   }
 
-  public void testSparseDoubleUDF() throws Exception {
-
-    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
-    MatrixClient client1 = worker.getPSAgent().getMatrixClient(SPARSE_DOUBLE_MAT, 0);
-    int matrixW1Id = client1.getMatrixId();
-
-    int[] index = genIndexs(feaNum, nnz);
-
-    IntDoubleVector deltaVec =
-      new IntDoubleVector(feaNum, new IntDoubleSparseVectorStorage(feaNum, nnz));
-    for (int i = 0; i < index.length; i++) {
-      deltaVec.set(index[i], index[i]);
-    }
-    //for (int i = 0; i < feaNum; i++) {
-    //  deltaVec.set(i, i);
-    //}
-
-    deltaVec.setRowId(0);
-
-    client1.increment(deltaVec);
-    client1.clock().get();
-
-    //IndexGet func = new IndexGet(new IndexGetParam(matrixW1Id, 0, index));
-
-    //IntDoubleVector row = (IntDoubleVector) ((GetRowResult) client1.get(func)).getRow();
-    IntDoubleVector row = (IntDoubleVector) client1.get(0, index);
-    for (int id : index) {
-      //System.out.println("id=" + id + ", value=" + row.get(id));
-      Assert.assertTrue(row.get(id) == deltaVec.get(id));
-    }
-
-    Assert.assertTrue(index.length == row.size());
-
-    ModelSaveContext saveContext = new ModelSaveContext();
-    String savePath = LOCAL_FS + TMP_PATH + "/model";
-    saveContext.setSavePath(savePath);
-    MatrixSaveContext matrixContext = new MatrixSaveContext(SPARSE_DOUBLE_MAT);
-    saveContext.addMatrix(matrixContext);
-    angelClient.save(saveContext);
-  }
-
-  public void testDenseDoubleCompUDF() throws Exception {
-    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
-    MatrixClient client1 = worker.getPSAgent().getMatrixClient(DENSE_DOUBLE_MAT_COMP, 0);
-    int matrixW1Id = client1.getMatrixId();
-
-    int[] index = genIndexs(feaNum, nnz);
-
-    long blockColNum =
-      worker.getPSAgent().getMatrixMetaManager().getMatrixMeta(matrixW1Id).getBlockColNum();
-    int partNum = (feaNum + (int) blockColNum - 1) / (int) blockColNum;
-    IntDoubleVector[] subVecs = new IntDoubleVector[partNum];
-    for (int i = 0; i < partNum; i++) {
-      subVecs[i] = VFactory.denseDoubleVector((int) blockColNum);
-    }
-
-    CompIntDoubleVector deltaVec = new CompIntDoubleVector(feaNum, subVecs, (int) blockColNum);
-    for (int i = 0; i < feaNum; i++)
-      deltaVec.set(i, i);
-    deltaVec.setRowId(0);
-
-    client1.increment(deltaVec, false);
-    client1.clock().get();
-
-    IndexGet func = new IndexGet(new IndexGetParam(matrixW1Id, 0, index));
-    CompIntDoubleVector row = (CompIntDoubleVector) client1.get(0, index);
-    for (int id : index) {
-      //LOG.info("id=" + id + ", value=" + row.get(id));
-      Assert.assertEquals(row.get(id), deltaVec.get(id), 0.0000000001);
-    }
-    Assert.assertTrue(index.length == row.size());
-
-  }
-
-  public void testSparseDoubleCompUDF() throws Exception {
-
-    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
-    MatrixClient client1 = worker.getPSAgent().getMatrixClient(SPARSE_DOUBLE_MAT_COMP, 0);
-    int matrixW1Id = client1.getMatrixId();
-
-    int[] index = genIndexs(feaNum, nnz);
-
-    long blockColNum =
-      worker.getPSAgent().getMatrixMetaManager().getMatrixMeta(matrixW1Id).getBlockColNum();
-    int partNum = (feaNum + (int) blockColNum - 1) / (int) blockColNum;
-    IntDoubleVector[] subVecs = new IntDoubleVector[partNum];
-    for (int i = 0; i < partNum; i++) {
-      subVecs[i] = VFactory.sparseDoubleVector((int) blockColNum, nnz / partNum);
-    }
-
-    CompIntDoubleVector deltaVec = new CompIntDoubleVector(feaNum, subVecs, (int) blockColNum);
-
-    //CompSparseDoubleVector deltaVec = new CompSparseDoubleVector(matrixW1Id, 0, feaNum, feaNum);
-    for (int i = 0; i < nnz; i++)
-      deltaVec.set(index[i], index[i]);
-    deltaVec.setRowId(0);
-
-    client1.increment(deltaVec);
-    client1.clock().get();
-
-    IndexGet func = new IndexGet(new IndexGetParam(matrixW1Id, 0, index));
-
-    CompIntDoubleVector row = (CompIntDoubleVector) client1.get(0, index);
-    for (int id : index) {
-      //System.out.println("id=" + id + ", value=" + row.get(id));
-      Assert.assertTrue(row.get(id) == deltaVec.get(id));
-    }
-
-    Assert.assertTrue(index.length == row.size());
-  }
-
   public void testDenseFloatUDF() throws Exception {
     Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
     MatrixClient client1 = worker.getPSAgent().getMatrixClient(DENSE_FLOAT_MAT, 0);
@@ -924,6 +469,35 @@ public class IndexGetRowTest {
     }
     Assert.assertTrue(index.length == row.size());
 
+  }
+
+  public void testSparseDoubleUDF() throws Exception {
+
+    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
+    MatrixClient client1 = worker.getPSAgent().getMatrixClient(SPARSE_DOUBLE_MAT, 0);
+    int matrixW1Id = client1.getMatrixId();
+
+    int[] index = genIndexs(feaNum, nnz);
+
+    IntDoubleVector deltaVec =
+        new IntDoubleVector(feaNum, new IntDoubleSparseVectorStorage(feaNum, nnz));
+    for (int i = 0; i < index.length; i++) {
+      deltaVec.set(index[i], index[i]);
+    }
+    deltaVec.setRowId(0);
+
+    client1.increment(deltaVec);
+
+    //IndexGet func = new IndexGet(new IndexGetParam(matrixW1Id, 0, index));
+
+    //IntFloatVector row = (IntFloatVector) ((GetRowResult) client1.get(func)).getRow();
+    IntDoubleVector row = (IntDoubleVector) client1.get(0, index);
+    for (int id : index) {
+      //System.out.println("id=" + id + ", value=" + row.get(id));
+      assertEquals(row.get(id), deltaVec.get(id), 0.000001);
+    }
+
+    Assert.assertTrue(index.length == row.size());
   }
 
   public void testSparseFloatUDF() throws Exception {
@@ -958,77 +532,6 @@ public class IndexGetRowTest {
 
     Assert.assertTrue(index.length == row.size());
   }
-
-  public void testDenseFloatCompUDF() throws Exception {
-    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
-    MatrixClient client1 = worker.getPSAgent().getMatrixClient(DENSE_FLOAT_MAT_COMP, 0);
-    int matrixW1Id = client1.getMatrixId();
-
-    int[] index = genIndexs(feaNum, nnz);
-
-    long blockColNum =
-      worker.getPSAgent().getMatrixMetaManager().getMatrixMeta(matrixW1Id).getBlockColNum();
-    int partNum = (feaNum + (int) blockColNum - 1) / (int) blockColNum;
-    IntFloatVector[] subVecs = new IntFloatVector[partNum];
-    for (int i = 0; i < partNum; i++) {
-      subVecs[i] = VFactory.denseFloatVector((int) blockColNum);
-    }
-
-    CompIntFloatVector deltaVec = new CompIntFloatVector(feaNum, subVecs, (int) blockColNum);
-    for (int i = 0; i < feaNum; i++)
-      deltaVec.set(i, i);
-    deltaVec.setRowId(0);
-
-    client1.increment(deltaVec);
-    client1.clock().get();
-
-    IndexGet func = new IndexGet(new IndexGetParam(matrixW1Id, 0, index));
-    CompIntFloatVector row = (CompIntFloatVector) client1.get(0, index);
-    for (int id : index) {
-      Assert.assertTrue(row.get(id) == deltaVec.get(id));
-    }
-    Assert.assertTrue(index.length == row.size());
-
-  }
-
-  public void testSparseFloatCompUDF() throws Exception {
-
-    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
-    MatrixClient client1 = worker.getPSAgent().getMatrixClient(SPARSE_FLOAT_MAT_COMP, 0);
-    int matrixW1Id = client1.getMatrixId();
-
-    int[] index = genIndexs(feaNum, nnz);
-    MatrixMeta meta = worker.getPSAgent().getMatrix(SPARSE_FLOAT_MAT_COMP);
-
-    long blockColNum = meta.getBlockColNum();
-    int partNum = (feaNum + (int) blockColNum - 1) / (int) blockColNum;
-    IntFloatVector[] subVecs = new IntFloatVector[partNum];
-    for (int i = 0; i < partNum; i++) {
-      subVecs[i] = VFactory.sparseFloatVector((int) blockColNum, nnz / partNum);
-    }
-
-    CompIntFloatVector deltaVec = new CompIntFloatVector(feaNum, subVecs, (int) blockColNum);
-
-    for (int i = 0; i < index.length; i++) {
-      deltaVec.set(index[i], index[i]);
-    }
-
-    deltaVec.setRowId(0);
-
-    client1.increment(deltaVec);
-    client1.clock().get();
-
-    IndexGet func = new IndexGet(new IndexGetParam(matrixW1Id, 0, index));
-
-    CompIntFloatVector row = (CompIntFloatVector) client1.get(0, index);
-    for (int id : index) {
-      //System.out.println("id=" + id + ", value=" + row.get(id));
-      Assert.assertEquals(row.get(id), deltaVec.get(id), 0.000000001);
-    }
-
-    Assert.assertTrue(index.length == row.size());
-  }
-
 
   public void testDenseIntUDF() throws Exception {
     Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
@@ -1083,108 +586,6 @@ public class IndexGetRowTest {
     }
 
     Assert.assertTrue(index.length == row.size());
-  }
-
-  public void testDenseIntCompUDF() throws Exception {
-    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
-    MatrixClient client1 = worker.getPSAgent().getMatrixClient(DENSE_INT_MAT_COMP, 0);
-    int matrixW1Id = client1.getMatrixId();
-
-    int[] index = genIndexs(feaNum, nnz);
-
-    MatrixMeta meta = worker.getPSAgent().getMatrix(DENSE_INT_MAT_COMP);
-
-    long blockColNum = meta.getBlockColNum();
-    int partNum = (feaNum + (int) blockColNum - 1) / (int) blockColNum;
-    IntIntVector[] subVecs = new IntIntVector[partNum];
-    for (int i = 0; i < partNum; i++) {
-      subVecs[i] = VFactory.denseIntVector((int) blockColNum);
-    }
-
-    CompIntIntVector deltaVec = new CompIntIntVector(feaNum, subVecs, (int) blockColNum);
-
-    for (int i = 0; i < feaNum; i++)
-      deltaVec.set(i, i);
-    deltaVec.setRowId(0);
-
-    client1.increment(deltaVec);
-    client1.clock().get();
-
-    IndexGet func = new IndexGet(new IndexGetParam(matrixW1Id, 0, index));
-    CompIntIntVector row = (CompIntIntVector) client1.get(0, index);
-    for (int id : index) {
-      Assert.assertTrue(row.get(id) == deltaVec.get(id));
-    }
-    Assert.assertTrue(index.length == row.size());
-
-  }
-
-  public void testDenseLongCompUDF() throws Exception {
-    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
-    MatrixClient client1 = worker.getPSAgent().getMatrixClient(DENSE_LONG_MAT_COMP, 0);
-    int matrixW1Id = client1.getMatrixId();
-
-    int[] index = genIndexs(feaNum, nnz);
-
-    MatrixMeta meta = worker.getPSAgent().getMatrix(DENSE_LONG_MAT_COMP);
-
-    long blockColNum = meta.getBlockColNum();
-    int partNum = (feaNum + (int) blockColNum - 1) / (int) blockColNum;
-    IntLongVector[] subVecs = new IntLongVector[partNum];
-    for (int i = 0; i < partNum; i++) {
-      subVecs[i] = VFactory.denseLongVector((int) blockColNum);
-    }
-
-    CompIntLongVector deltaVec = new CompIntLongVector(feaNum, subVecs, (int) blockColNum);
-
-    for (int i = 0; i < feaNum; i++)
-      deltaVec.set(i, i);
-    deltaVec.setRowId(0);
-
-    client1.increment(deltaVec);
-    client1.clock().get();
-
-    IndexGet func = new IndexGet(new IndexGetParam(matrixW1Id, 0, index));
-    CompIntLongVector row = (CompIntLongVector) client1.get(0, index);
-    for (int id : index) {
-      Assert.assertTrue(row.get(id) == deltaVec.get(id));
-    }
-    Assert.assertTrue(index.length == row.size());
-
-  }
-
-  public void testSparseLongCompUDF() throws Exception {
-    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
-    MatrixClient client1 = worker.getPSAgent().getMatrixClient(SPARSE_LONG_MAT_COMP, 0);
-    int matrixW1Id = client1.getMatrixId();
-
-    int[] index = genIndexs(feaNum, nnz);
-
-    MatrixMeta meta = worker.getPSAgent().getMatrix(SPARSE_LONG_MAT_COMP);
-
-    long blockColNum = meta.getBlockColNum();
-    int partNum = (feaNum + (int) blockColNum - 1) / (int) blockColNum;
-    IntLongVector[] subVecs = new IntLongVector[partNum];
-    for (int i = 0; i < partNum; i++) {
-      subVecs[i] = VFactory.denseLongVector((int) blockColNum);
-    }
-
-    CompIntLongVector deltaVec = new CompIntLongVector(feaNum, subVecs, (int) blockColNum);
-
-    for (int i = 0; i < nnz; i++)
-      deltaVec.set(index[i], index[i]);
-    deltaVec.setRowId(0);
-
-    client1.increment(deltaVec);
-    client1.clock().get();
-
-    IndexGet func = new IndexGet(new IndexGetParam(matrixW1Id, 0, index));
-    CompIntLongVector row = (CompIntLongVector) client1.get(0, index);
-    for (int id : index) {
-      Assert.assertTrue(row.get(id) == deltaVec.get(id));
-    }
-    Assert.assertTrue(index.length == row.size());
-
   }
 
   public void testDenseLongUDF() throws Exception {
@@ -1243,42 +644,6 @@ public class IndexGetRowTest {
 
     Assert.assertTrue(index.length == row.size());
   }
-
-  public void testSparseIntCompUDF() throws Exception {
-
-    Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
-    MatrixClient client1 = worker.getPSAgent().getMatrixClient(SPARSE_INT_MAT_COMP, 0);
-    int matrixW1Id = client1.getMatrixId();
-    MatrixMeta meta = worker.getPSAgent().getMatrix(SPARSE_INT_MAT_COMP);
-
-    int[] index = genIndexs(feaNum, nnz);
-
-    long blockColNum = meta.getBlockColNum();
-    int partNum = (feaNum + (int) blockColNum - 1) / (int) blockColNum;
-    IntIntVector[] subVecs = new IntIntVector[partNum];
-    for (int i = 0; i < partNum; i++) {
-      subVecs[i] = VFactory.sparseIntVector((int) blockColNum, nnz / partNum);
-    }
-
-    CompIntIntVector deltaVec = new CompIntIntVector(feaNum, subVecs, (int) blockColNum);
-    for (int i = 0; i < nnz; i++)
-      deltaVec.set(index[i], index[i]);
-    deltaVec.setRowId(0);
-
-    client1.increment(deltaVec);
-    client1.clock().get();
-
-    IndexGet func = new IndexGet(new IndexGetParam(matrixW1Id, 0, index));
-
-    CompIntIntVector row = (CompIntIntVector) client1.get(0, index);
-    for (int id : index) {
-      //System.out.println("id=" + id + ", value=" + row.get(id));
-      Assert.assertTrue(row.get(id) == deltaVec.get(id));
-    }
-
-    Assert.assertTrue(index.length == row.size());
-  }
-
 
   public static int[] genIndexs(int feaNum, int nnz) {
 

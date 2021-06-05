@@ -25,11 +25,11 @@ import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplitUtils;
 import it.unimi.dsi.fastutil.ints.IntArrays;
-
 import java.util.ArrayList;
 import java.util.List;
 
 public class InitNodeFeatsParam extends UpdateParam {
+
   private final long[] keys;
   private final IntFloatVector[] feats;
   private final int startIndex;
@@ -57,8 +57,9 @@ public class InitNodeFeatsParam extends UpdateParam {
     LongIndexComparator comparator = new LongIndexComparator(keys);
     int size = endIndex - startIndex;
     int[] index = new int[size];
-    for (int i = 0; i < size; i++)
+    for (int i = 0; i < size; i++) {
       index[i] = i + startIndex;
+    }
     IntArrays.quickSort(index, comparator);
 
     List<PartitionUpdateParam> params = new ArrayList<>();
@@ -66,8 +67,8 @@ public class InitNodeFeatsParam extends UpdateParam {
 
     if (!RowUpdateSplitUtils.isInRange(keys, index, parts)) {
       throw new AngelException(
-        "node id is not in range [" + parts.get(0).getStartCol() + ", " + parts
-          .get(parts.size() - 1).getEndCol());
+          "node id is not in range [" + parts.get(0).getStartCol() + ", " + parts
+              .get(parts.size() - 1).getEndCol());
     }
 
     int nodeIndex = startIndex;
@@ -80,11 +81,12 @@ public class InitNodeFeatsParam extends UpdateParam {
         length++;
       }
 
-      if (length > 0)
+      if (length > 0) {
         params.add(new InitNodeFeatsPartParam(matrixId,
-          parts.get(partIndex), keys, feats, index,
-          nodeIndex - length - startIndex,
-          nodeIndex - startIndex));
+            parts.get(partIndex), keys, feats, index,
+            nodeIndex - length - startIndex,
+            nodeIndex - startIndex));
+      }
 
       partIndex++;
     }

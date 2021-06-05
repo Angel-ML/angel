@@ -77,7 +77,7 @@ public class SampleNeighbor extends GetFunc {
             System.arraycopy(nodeNeighbors, startPos, neighbors[i], 0, count);
           } else {
             System.arraycopy(nodeNeighbors, startPos, neighbors[i], 0,
-                    nodeNeighbors.length - startPos);
+                nodeNeighbors.length - startPos);
             System.arraycopy(nodeNeighbors, 0, neighbors[i],
                 nodeNeighbors.length - startPos, count - (nodeNeighbors.length - startPos));
           }

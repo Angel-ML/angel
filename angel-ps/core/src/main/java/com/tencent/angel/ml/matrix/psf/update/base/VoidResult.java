@@ -25,12 +25,18 @@ import com.tencent.angel.psagent.matrix.Result;
  * The void result.
  */
 public class VoidResult extends Result {
-  /**
-   * Creates a new void result.
-   *
-   * @param responseType the response type
-   */
+  private final String detail;
+
   public VoidResult(ResponseType responseType) {
+    this(responseType, "");
+  }
+
+  public VoidResult(ResponseType responseType, String detail) {
     super(responseType);
+    this.detail = detail;
+  }
+
+  public String getDetail() {
+    return detail;
   }
 }

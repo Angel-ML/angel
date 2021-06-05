@@ -379,7 +379,8 @@ public final class ProtobufUtil {
         .setRowType(mContext.getRowType().getNumber())
         .setPartitionerClassName(mContext.getPartitionerClass().getName())
         .addAllParts(convertToPartContextsProto(mContext.getParts()))
-        .addAllAttribute(convertToPairs(mContext.getAttributes()));
+        .addAllAttribute(convertToPairs(mContext.getAttributes()))
+        .setPartitionNum(mContext.getPartitionNum());
     if(mContext.getInitFunc() != null) {
       builder.setInitFunc(ByteString.copyFrom(SerdeUtils.serializeInitFunc(mContext.getInitFunc())));
     }
@@ -461,6 +462,7 @@ public final class ProtobufUtil {
             convertToPartContexts(matrixContextProto.getPartsList()),
             RowType.valueOf(matrixContextProto.getRowType()));
 
+    matrixContext.setPartitionNum(matrixContextProto.getPartitionNum());
     matrixContext.setMatrixId(matrixContextProto.getId());
     matrixContext.setPartitionerClass(
         (Class<? extends Partitioner>) Class.forName(matrixContextProto.getPartitionerClassName()));
@@ -475,6 +477,7 @@ public final class ProtobufUtil {
 
   public static MatrixMetaProto convertToMatrixMetaProto(MatrixMeta matrixMeta) {
     MatrixMetaProto.Builder builder = MatrixMetaProto.newBuilder();
+    builder.setTotalPartNum(matrixMeta.getTotalPartNum());
     builder.setMatrixContext(convertToMatrixContextProto(matrixMeta.getMatrixContext()));
     Map<Integer, PartitionMeta> matrixMetas = matrixMeta.getPartitionMetas();
 
@@ -530,14 +533,15 @@ public final class ProtobufUtil {
   public static MatrixMeta convertToMatrixMeta(MatrixMetaProto matrixMetaProto)
       throws ClassNotFoundException {
     MatrixContext matrixContext = convertToMatrixContext(matrixMetaProto.getMatrixContext());
-    MatrixMeta matrixMeta = new MatrixMeta(matrixContext);
+
     List<PartitionMetaProto> partMetaProtos = matrixMetaProto.getPartMetasList();
     int size = partMetaProtos.size();
+    Map<Integer, PartitionMeta> partitionMetas = new HashMap<>(size);
     for (int i = 0; i < size; i++) {
-      matrixMeta.addPartitionMeta(partMetaProtos.get(i).getPartitionId(),
+      partitionMetas.put(partMetaProtos.get(i).getPartitionId(),
           convertToParitionMeta(matrixContext.getMatrixId(), partMetaProtos.get(i)));
     }
-    return matrixMeta;
+    return new MatrixMeta(matrixMetaProto.getTotalPartNum(), matrixContext, partitionMetas);
   }
 
   public static List<MatrixMeta> convertToMatricesMeta(List<MatrixMetaProto> matricesMetaProto)

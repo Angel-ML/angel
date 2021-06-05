@@ -20,12 +20,11 @@ package com.tencent.angel.common.transport;
 
 import com.tencent.angel.common.location.Location;
 import io.netty.bootstrap.Bootstrap;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * A simple netty channel manager
@@ -45,7 +44,7 @@ public class ChannelManager2 {
   /**
    * Location to netty channel pool map
    */
-  private final ConcurrentHashMap<Location, ChannelPool> locToChannelPoolMap;
+  private final ConcurrentHashMap<Location, ChannelPool2> locToChannelPoolMap;
 
   /**
    * Check thread
@@ -53,6 +52,7 @@ public class ChannelManager2 {
   private volatile Thread checker;
 
   private final AtomicBoolean stopped = new AtomicBoolean(false);
+
 
   /**
    * Create a new ChannelManager2
@@ -105,7 +105,7 @@ public class ChannelManager2 {
         while (!stopped.get() && !Thread.interrupted()) {
           try {
             Thread.sleep(30000);
-            for (ChannelPool pool : locToChannelPoolMap.values()) {
+            for (ChannelPool2 pool : locToChannelPoolMap.values()) {
               pool.check();
             }
           } catch (InterruptedException e) {
@@ -118,7 +118,7 @@ public class ChannelManager2 {
     });
 
     checker.setName("pools-checker");
-    checker.start();
+    //checker.start();
   }
 
   /**
@@ -157,11 +157,10 @@ public class ChannelManager2 {
    * @throws TimeoutException
    * @throws InterruptedException
    */
-  public NettyChannel getChannel(Location loc, long timeoutMs)
-    throws TimeoutException, InterruptedException {
-    ChannelPool pool = locToChannelPoolMap.get(loc);
+  public NettyChannel getChannel(Location loc, long timeoutMs) {
+    ChannelPool2 pool = locToChannelPoolMap.get(loc);
     if (pool == null) {
-      pool = locToChannelPoolMap.putIfAbsent(loc, new ChannelPool(bootstrap, loc, poolParam));
+      pool = locToChannelPoolMap.putIfAbsent(loc, new ChannelPool2(bootstrap, loc, poolParam));
       if (pool == null) {
         pool = locToChannelPoolMap.get(loc);
       }
@@ -177,7 +176,7 @@ public class ChannelManager2 {
    * @param channel the channel need released
    */
   public void releaseChannel(NettyChannel channel) {
-    ChannelPool pool = locToChannelPoolMap.get(channel.getLoc());
+    ChannelPool2 pool = locToChannelPoolMap.get(channel.getLoc());
     if (pool != null) {
       pool.releaseChannel(channel);
     }
@@ -189,7 +188,7 @@ public class ChannelManager2 {
    * @param loc server address
    */
   public void removeChannels(Location loc) {
-    ChannelPool pool = locToChannelPoolMap.remove(loc);
+    ChannelPool2 pool = locToChannelPoolMap.remove(loc);
     if (pool != null) {
       pool.removeChannels();
     }
@@ -199,7 +198,7 @@ public class ChannelManager2 {
    * Close all channel pools
    */
   public void clear() {
-    for (ChannelPool pool : locToChannelPoolMap.values()) {
+    for (ChannelPool2 pool : locToChannelPoolMap.values()) {
       pool.removeChannels();
     }
     locToChannelPoolMap.clear();

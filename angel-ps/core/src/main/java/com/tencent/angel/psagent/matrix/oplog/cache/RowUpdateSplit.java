@@ -14,8 +14,6 @@
  * the License.
  *
  */
-
-
 package com.tencent.angel.psagent.matrix.oplog.cache;
 
 import com.tencent.angel.common.Serialize;

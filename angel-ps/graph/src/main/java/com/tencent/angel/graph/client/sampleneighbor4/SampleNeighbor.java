@@ -25,7 +25,6 @@ import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
-
 import java.util.List;
 
 public class SampleNeighbor extends GetFunc {
@@ -36,8 +35,8 @@ public class SampleNeighbor extends GetFunc {
   private LongArrayList types;
 
   public SampleNeighbor(SampleNeighborParam param, Long2IntOpenHashMap index,
-                        LongArrayList srcs, LongArrayList dsts,
-                        LongArrayList types) {
+      LongArrayList srcs, LongArrayList dsts,
+      LongArrayList types) {
     super(param);
     this.index = index;
     this.srcs = srcs;
@@ -56,9 +55,10 @@ public class SampleNeighbor extends GetFunc {
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam partParam) {
     SampleNeighborPartParam param = (SampleNeighborPartParam) partParam;
-    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager().getRow(param.getPartKey(), 0);
+    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager()
+        .getRow(param.getPartKey(), 0);
     return new SampleNeighborPartResult(param.getPartKey().getPartitionId(),
-      row, param.getKeys(), param.getNumSample(), param.getSampleTypes());
+        row, param.getKeys(), param.getNumSample(), param.getSampleTypes());
   }
 
   @Override
@@ -67,14 +67,16 @@ public class SampleNeighbor extends GetFunc {
     long[] keys = param.getKeys();
 
     Int2ObjectArrayMap<PartitionGetResult> partIdToResult = new Int2ObjectArrayMap<>();
-    for (PartitionGetResult result: partResults)
+    for (PartitionGetResult result : partResults) {
       partIdToResult.put(((SampleNeighborPartResult) result).getPartId(), result);
+    }
 
-    for (PartitionGetParam partParam: param.getParams()) {
+    for (PartitionGetParam partParam : param.getParams()) {
       SampleNeighborPartParam param0 = (SampleNeighborPartParam) partParam;
       int start = param0.getStartIndex();
       int end = param0.getEndIndex();
-      SampleNeighborPartResult result = (SampleNeighborPartResult) partIdToResult.get(param0.getPartKey().getPartitionId());
+      SampleNeighborPartResult result = (SampleNeighborPartResult) partIdToResult
+          .get(param0.getPartKey().getPartitionId());
       int[] indptr = result.getIndptr();
       long[] neighbors = result.getNeighbors();
       int[] sampleTypes = result.getTypes();
@@ -84,15 +86,17 @@ public class SampleNeighbor extends GetFunc {
         int keyIndex = index.get(keys[i]);
         for (int j = indptr[i - start]; j < indptr[i - start + 1]; j++) {
           long n = neighbors[j];
-          if (!index.containsKey(n))
+          if (!index.containsKey(n)) {
             index.put(n, index.size());
+          }
           srcs.add(keyIndex);
           dsts.add(index.get(n));
         }
 
         if (param.getSampleTypes()) {
-          for (int j = indptr[i - start]; j < indptr[i - start + 1]; j++)
+          for (int j = indptr[i - start]; j < indptr[i - start + 1]; j++) {
             types.add(sampleTypes[j]);
+          }
         }
       }
     }

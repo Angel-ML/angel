@@ -64,7 +64,7 @@ public class Location {
   }
 
   @Override public String toString() {
-    return "(" + ip + ":" + port + ")";
+    return ip + ":" + port;
   }
 
   @Override public int hashCode() {
