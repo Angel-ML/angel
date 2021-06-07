@@ -363,6 +363,9 @@ object AngelPSContext {
     hadoopConf.set(ANGEL_QUEUE, queue)
     hadoopConf.set(ANGEL_DEPLOY_MODE, deployMode)
 
+    // setting REDACTION_REGEX
+    hadoopConf.set(ANGEL_REDACTION_REGEX, conf.get(ANGEL_REDACTION_REGEX, DEFAULT_ANGEL_REDACTION_REGEX))
+
     // For local mode, we set heartbeat a small value for fast debugging
     if (deployMode == "LOCAL")
       hadoopConf.set(ANGEL_PS_HEARTBEAT_INTERVAL_MS, "200")

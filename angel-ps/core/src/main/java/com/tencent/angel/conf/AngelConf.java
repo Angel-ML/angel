@@ -876,6 +876,15 @@ public class AngelConf extends Configuration {
    * Ps JVM parameters.
    */
   public static final String ANGEL_PS_JAVA_OPTS = ANGEL_PS_PREFIX + "java.opts";
+  
+  
+  /**
+   * Regex to decide which spark/hadoop configuration and environment variables contain sensitive information.
+   * When this regex matches a property key or value,the value is redacted from the Ps UI.
+   */
+  public static final String ANGEL_REDACTION_REGEX = "spark.redaction.regex";
+  public static final String DEFAULT_ANGEL_REDACTION_REGEX = "(?i)secret|password|token";
+  
 
   /**
    * Ps main class.

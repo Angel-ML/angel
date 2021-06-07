@@ -21,6 +21,7 @@ package com.tencent.angel.webapp.page;
 import com.google.inject.Inject;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.AMContext;
+import com.tencent.angel.utils.RedactUtils;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TABLE;
 import org.apache.hadoop.yarn.webapp.hamlet.Hamlet.TBODY;
@@ -65,15 +66,14 @@ public class EnvironmentBlock extends HtmlBlock {
     TABLE<Hamlet> angel_properties_table = html.table();
     angel_properties_table.tr().th(_TH, "NAME").th(_TH, "VALUE")._();
     AngelConf angelConfiguration = new AngelConf(this.amContext.getConf());
-    Properties propertiesConfiguration = angelConfiguration.getAngelProps();
-    SortedMap sortedMap = new TreeMap(propertiesConfiguration);
+    SortedMap sortedMap = new TreeMap(RedactUtils.redactProperties(this.amContext.getConf(), angelConfiguration.getAngelProps()));
     Set<Object> set = sortedMap.keySet();
     Iterator<Object> propertiesSortedKeys = set.iterator();
     Object key;
     while (propertiesSortedKeys.hasNext()) {
       key = propertiesSortedKeys.next();
       angel_properties_table.tr().td(String.valueOf(key))
-        .td((String) propertiesConfiguration.get(key))._();
+        .td((String) sortedMap.get(key))._();
     }
     angel_properties_table._();
     html.h1("    ");
@@ -82,7 +82,7 @@ public class EnvironmentBlock extends HtmlBlock {
     TBODY<TABLE<Hamlet>> tbody =
       html.h1("System Properties").table("#jobs").thead().tr().th(_TH, "NAME").th(_TH, "VALUE")._()
         ._().tbody();
-    Properties properties = System.getProperties();
+    Properties properties = RedactUtils.redactProperties(this.amContext.getConf(), System.getProperties());
     String propertiesName;
     String propertiesValue;
     for (Iterator<?> names = (Iterator<?>) properties.propertyNames(); names.hasNext(); ) {
