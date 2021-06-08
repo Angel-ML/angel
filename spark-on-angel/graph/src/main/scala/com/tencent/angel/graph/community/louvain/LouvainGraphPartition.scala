@@ -59,7 +59,7 @@ class LouvainGraphPartition(
           } else if (v < u) {
             Iterator.single(((v, u), edgeWeights(j)))
           } else {
-            Iterator.empty
+            Iterator.single(((v, u), 0f))
           }
         }
       }
