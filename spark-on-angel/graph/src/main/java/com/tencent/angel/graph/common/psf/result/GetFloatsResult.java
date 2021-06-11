@@ -14,27 +14,20 @@
  * the License.
  *
  */
-package com.tencent.angel.graph.utils
+package com.tencent.angel.graph.common.psf.result;
 
-import scala.collection.mutable.ArrayBuffer
-import scala.reflect.ClassTag
+import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
-object BatchIter {
-  def apply[T: ClassTag](iterator: Iterator[T], batchSize: Int): Iterator[Array[T]] = {
-    new Iterator[Array[T]] {
-      val buffer = new ArrayBuffer[T](batchSize)
+public class GetFloatsResult extends GetResult {
 
-      override def hasNext: Boolean = iterator.hasNext
+  private final Long2ObjectOpenHashMap<float[]> data;
 
-      override def next(): Array[T] = {
-        buffer.clear()
-        var num = 0
-        while (num < batchSize && iterator.hasNext) {
-          num += 1
-          buffer += iterator.next()
-        }
-        buffer.toArray
-      }
-    }
+  public GetFloatsResult(Long2ObjectOpenHashMap<float[]> data) {
+    this.data = data;
+  }
+
+  public Long2ObjectOpenHashMap<float[]> getData() {
+    return data;
   }
 }
