@@ -16,7 +16,6 @@
  */
 package com.tencent.angel.graph.data;
 
-import com.tencent.angel.graph.utils.HalfPrecisionConversion;
 import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.ps.storage.vector.storage.StorageMethod;
@@ -204,17 +203,6 @@ public class NodeUtils {
     }
   }
 
-  public static void serializeShortFromFloat(float[] feats, ByteBuf output) {
-    if (feats != null) {
-      output.writeInt(feats.length);
-      for (int i = 0; i < feats.length; i++) {
-        output.writeShort(HalfPrecisionConversion.toHalfPrecision(feats[i]));
-      }
-    } else {
-      output.writeInt(0);
-    }
-  }
-
   public static void serialize(double[] feats, ByteBuf output) throws IOException {
     if (feats != null) {
       output.writeInt(feats.length);
@@ -269,19 +257,6 @@ public class NodeUtils {
       float[] res = new float[len];
       for (int i = 0; i < len; i++) {
         res[i] = input.readFloat();
-      }
-      return res;
-    } else {
-      return null;
-    }
-  }
-
-  public static float[] deserializeFloatFromShort(ByteBuf input) {
-    int len = input.readInt();
-    if (len > 0) {
-      float[] res = new float[len];
-      for (int i = 0; i < len; i++) {
-        res[i] = HalfPrecisionConversion.fromHalfPrecision(input.readShort());
       }
       return res;
     } else {
