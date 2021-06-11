@@ -3,6 +3,7 @@ package com.tencent.angel.graph.community.hanp
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.graph.utils.params._
 import com.tencent.angel.graph.community.OverlapNMI
+import com.tencent.angel.graph.data.neighbor.NeighborDataOps
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.ParamMap

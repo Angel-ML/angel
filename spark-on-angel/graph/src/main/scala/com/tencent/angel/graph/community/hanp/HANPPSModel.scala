@@ -7,6 +7,7 @@ import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.spark.models.PSVector
 import com.tencent.angel.spark.models.impl.PSVectorImpl
 import com.tencent.angel.spark.util.VectorUtils
+import com.tencent.angel.graph.common.param.ModelContext
 import org.apache.spark.SparkContext
 
 class HANPPSModel(var scoreInMsgs: PSVector,
