@@ -14,22 +14,30 @@
  * the License.
  *
  */
-
 package com.tencent.angel.graph.rank.hindex
 
+import com.tencent.angel.graph.common.param.ModelContext
+import com.tencent.angel.graph.utils.ModelContextUtils
 import com.tencent.angel.ml.math2.vector.{LongIntVector, Vector}
-import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
-import com.tencent.angel.psagent.PSAgentContext
-import com.tencent.angel.spark.ml.util.LoadBalancePartitioner
-import com.tencent.angel.spark.models.PSVector
+import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.spark.models.{PSMatrix, PSVector}
 import com.tencent.angel.spark.models.impl.PSVectorImpl
 import com.tencent.angel.spark.util.VectorUtils
-import org.apache.spark.rdd.RDD
 
 
-class HIndexPSModel(var inMsgs: PSVector,
-                    var outMsgs: PSVector) extends Serializable {
-  val dim: Long = inMsgs.dimension
+class HIndexPSModel(modelContext: ModelContext) extends Serializable {
+
+  var inMsgs: PSVector = _
+  var psMatrix: PSMatrix = _
+  var dim: Long = _
+
+  def init(): Unit = {
+    val mc = ModelContextUtils.createMatrixContext(modelContext, RowType.T_INT_SPARSE_LONGKEY)
+    psMatrix = PSMatrix.matrix(mc)
+    val matrixId = psMatrix.id
+    inMsgs = new PSVectorImpl(matrixId, 0, modelContext.getMaxNodeId, mc.getRowType)
+    dim = inMsgs.dimension
+  }
 
   def initMsgs(msgs: Vector): Unit =
     inMsgs.update(msgs)
@@ -37,41 +45,8 @@ class HIndexPSModel(var inMsgs: PSVector,
   def readMsgs(nodes: Array[Long]): LongIntVector =
     inMsgs.pull(nodes).asInstanceOf[LongIntVector]
 
-  def readAllMsgs(): LongIntVector =
-    inMsgs.pull().asInstanceOf[LongIntVector]
-
-  def writeMsgs(msgs: Vector): Unit =
-    outMsgs.update(msgs)
-
   def numMsgs(): Long =
     VectorUtils.nnz(inMsgs)
 
-  def resetMsgs(): Unit = {
-    val temp = inMsgs
-    inMsgs = outMsgs
-    outMsgs = temp
-    outMsgs.reset
-  }
-
-}
-
-object HIndexPSModel {
-
-
-  def fromMinMax(minId: Long, maxId: Long, data: RDD[Long], psNumPartition: Int, useBalancePartition: Boolean, balancePartitionPercent: Float = 0.7f): HIndexPSModel = {
-    val matrix = new MatrixContext("hindex", 2, minId, maxId)
-    matrix.setValidIndexNum(-1)
-
-    //set rowType T_Int_Sparse_LongKey
-    matrix.setRowType(RowType.T_INT_SPARSE_LONGKEY)
-    // use balance partition
-    if (useBalancePartition) {
-      LoadBalancePartitioner.partition(data, maxId, psNumPartition, matrix, balancePartitionPercent)
-    }
-
-    PSAgentContext.get().getMasterClient.createMatrix(matrix, 10000L)
-    val matrixId = PSAgentContext.get().getMasterClient.getMatrix("hindex").getId
-    new HIndexPSModel(new PSVectorImpl(matrixId, 0, maxId, matrix.getRowType),
-      new PSVectorImpl(matrixId, 1, maxId, matrix.getRowType))
-  }
+  def checkpoint(): Unit = { psMatrix.checkpoint() }
 }
