@@ -21,6 +21,7 @@ import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.storage.vector.element.IElement;
 import com.tencent.angel.ps.storage.vector.op.ILongElementOp;
 import com.tencent.angel.ps.storage.vector.storage.LongElementStorage;
+import com.tencent.angel.psagent.matrix.transport.router.RouterType;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
@@ -39,8 +40,8 @@ public class ServerLongAnyRow extends ServerComplexTypeRow implements ILongEleme
    */
   public ServerLongAnyRow(Class<? extends IElement> valueType, int rowId, RowType rowType,
       long startCol, long endCol, long estElemNum,
-      LongElementStorage storage) {
-    super(valueType, rowId, rowType, startCol, endCol, estElemNum, storage);
+      LongElementStorage storage, RouterType routerType) {
+    super(valueType, rowId, rowType, startCol, endCol, estElemNum, storage, routerType);
   }
 
   /**
@@ -54,8 +55,8 @@ public class ServerLongAnyRow extends ServerComplexTypeRow implements ILongEleme
    * @param estElemNum the estimate element number
    */
   public ServerLongAnyRow(Class<? extends IElement> valueType, int rowId, RowType rowType,
-      long startCol, long endCol, long estElemNum) {
-    this(valueType, rowId, rowType, startCol, endCol, estElemNum, null);
+      long startCol, long endCol, long estElemNum, RouterType routerType) {
+    this(valueType, rowId, rowType, startCol, endCol, estElemNum, null, routerType);
   }
 
   /**
@@ -82,13 +83,13 @@ public class ServerLongAnyRow extends ServerComplexTypeRow implements ILongEleme
   @Override
   public ServerRow adaptiveClone() {
     return new ServerLongAnyRow(valueType, rowId, rowType, startCol, endCol, estElemNum,
-        (LongElementStorage) getStorage().adaptiveClone());
+        (LongElementStorage) getStorage().adaptiveClone(), routerType);
   }
 
   @Override
   public ServerRow deepClone() {
     return new ServerLongAnyRow(valueType, rowId, rowType, startCol, endCol, estElemNum,
-        (LongElementStorage) getStorage().deepClone());
+        (LongElementStorage) getStorage().deepClone(), routerType);
   }
 
   @Override

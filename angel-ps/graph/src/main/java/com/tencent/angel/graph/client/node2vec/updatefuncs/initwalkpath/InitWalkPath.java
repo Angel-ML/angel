@@ -27,16 +27,13 @@ import com.tencent.angel.ps.storage.vector.element.IElement;
 import com.tencent.angel.ps.storage.vector.element.LongArrayElement;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-
-import java.util.List;
+import java.util.ArrayList;
 import java.util.Random;
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class InitWalkPath extends UpdateFunc {
+
   /**
    * Create a new UpdateParam
-   *
-   * @param param
    */
   public InitWalkPath(UpdateParam param) {
     super(param);
@@ -50,18 +47,24 @@ public class InitWalkPath extends UpdateFunc {
   public void partitionUpdate(PartitionUpdateParam partParam) {
     InitWalkPathPartitionParam pparam = (InitWalkPathPartitionParam) partParam;
     PartitionKey partKey = pparam.getPartKey();
-    ServerLongAnyRow walkPath = (ServerLongAnyRow) psContext.getMatrixStorageManager().getRow(partKey, 0);
-    // getRow(partKey.getMatrixId(), rowId, partKey.getPartitionId())
+    ServerLongAnyRow walkPath = (ServerLongAnyRow) psContext.getMatrixStorageManager()
+        .getRow(partKey, 0);
     ServerLongAnyRow rowNeighbor = (ServerLongAnyRow) psContext.getMatrixStorageManager().getRow(
-            pparam.getNeighborMatrixId(), 0, partKey.getPartitionId());
+        pparam.getNeighborMatrixId(), 0, partKey.getPartitionId());
     Random rand = new Random();
 
     ObjectIterator<Long2ObjectMap.Entry<IElement>> iter = rowNeighbor.iterator();
     walkPath.startWrite();
     walkPath.clear();
-    PathQueue.init(partKey.getPartitionId(), pparam.getMod());
-    List<LinkedBlockingQueue<WalkPath>> queueList = PathQueue.getQueueList(partKey.getPartitionId());
+    PathQueue.init(partKey.getPartitionId());
+    PathQueue.setThreshold(pparam.getThreshold());
+    PathQueue.setKeepProba(pparam.getKeepProba());
+    PathQueue.setNumParts(pparam.getNumParts());
+    PathQueue.setIsTrunc(pparam.isTrunc());
     try {
+      int count = 0;
+      int batchSize = 1024;
+      ArrayList<WalkPath> batchPath = new ArrayList<>();
       while (iter.hasNext()) {
         Long2ObjectMap.Entry<IElement> entry = iter.next();
         long key = entry.getLongKey() + partKey.getStartCol();
@@ -70,22 +73,23 @@ public class InitWalkPath extends UpdateFunc {
         long[] neighbor = value.getData();
         long neigh = neighbor[rand.nextInt(neighbor.length)];
 
-        WalkPath wPath = new WalkPath(pparam.getWalkLength(), pparam.getMod(), key, neigh);
+        WalkPath wPath = new WalkPath(pparam.getWalkLength(), key, neigh);
         walkPath.set(key, wPath);
-        PathQueue.pushPath(queueList, wPath);
 
-//        StringBuilder sb = new StringBuilder();
-//        sb.append(key).append(" -> {");
-//        for (long n: neighbor) {
-//          sb.append(n).append(", ");
-//        }
-//        sb.append("} : ").append(neigh);
-//        System.out.println(sb.toString());
+        batchPath.add(wPath);
+        count++;
+        if (count % batchSize == 0) {
+          PathQueue.initPushBatch(partKey.getPartitionId(), batchPath);
+          batchPath.clear();
+        }
+      }
+
+      if (!batchPath.isEmpty()) {
+        PathQueue.initPushBatch(partKey.getPartitionId(), batchPath);
+        batchPath.clear();
       }
     } finally {
       walkPath.endWrite();
     }
-
-    System.out.println("finished init PathQueue");
   }
 }

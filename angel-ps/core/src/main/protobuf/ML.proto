@@ -80,6 +80,7 @@ message MatrixContextProto {
   repeated PartContextProto parts = 12;
   repeated Pair attribute = 13;
   optional bytes initFunc = 14;
+  required int32 partitionNum = 15;
 }
 
 message PartContextProto {
@@ -101,8 +102,9 @@ message PartitionMetaProto{
 }
 
 message MatrixMetaProto {
-  required MatrixContextProto matrixContext = 1;
-  repeated PartitionMetaProto partMetas = 2;
+  required int32 totalPartNum = 1;
+  required MatrixContextProto matrixContext = 2;
+  repeated PartitionMetaProto partMetas = 3;
 }
 
 message MatrixClock{

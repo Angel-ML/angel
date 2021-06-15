@@ -20,6 +20,7 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.psagent.matrix.ResponseType;
 
 public class PullMaxDegreeResult extends GetResult {
+
   private int result;
 
   public PullMaxDegreeResult(int result) {

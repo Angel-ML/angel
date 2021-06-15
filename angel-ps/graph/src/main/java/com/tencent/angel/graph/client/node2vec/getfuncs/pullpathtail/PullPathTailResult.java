@@ -21,6 +21,7 @@ import com.tencent.angel.psagent.matrix.ResponseType;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 public class PullPathTailResult extends GetResult {
+
   private Long2ObjectOpenHashMap<long[]> result;
 
   public PullPathTailResult(Long2ObjectOpenHashMap<long[]> result) {

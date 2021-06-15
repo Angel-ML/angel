@@ -26,79 +26,79 @@ import io.netty.buffer.ByteBuf;
  */
 public class PartGetNodeAttrsParam extends PartitionGetParam {
 
-    /**
-     * Node ids
-     */
-    private long[] nodeIds;
+  /**
+   * Node ids
+   */
+  private long[] nodeIds;
 
-    /**
-     * Sample number, if count <= 0, means return all neighbors
-     */
-    private int count;
+  /**
+   * Sample number, if count <= 0, means return all neighbors
+   */
+  private int count;
 
-    private int startIndex;
+  private int startIndex;
 
-    private int endIndex;
+  private int endIndex;
 
-    public PartGetNodeAttrsParam(int matrixId, PartitionKey part, int count, long[] nodeIds
-            , int startIndex, int endIndex) {
-        super(matrixId, part);
-        this.nodeIds = nodeIds;
-        this.count = count;
-        this.startIndex = startIndex;
-        this.endIndex = endIndex;
+  public PartGetNodeAttrsParam(int matrixId, PartitionKey part, int count, long[] nodeIds
+      , int startIndex, int endIndex) {
+    super(matrixId, part);
+    this.nodeIds = nodeIds;
+    this.count = count;
+    this.startIndex = startIndex;
+    this.endIndex = endIndex;
+  }
+
+  public PartGetNodeAttrsParam() {
+    this(0, null, 0, null, 0, 0);
+  }
+
+  public long[] getNodeIds() {
+    return nodeIds;
+  }
+
+  public void setNodeIds(long[] nodeIds) {
+    this.nodeIds = nodeIds;
+  }
+
+  public int getCount() {
+    return count;
+  }
+
+  public void setCount(int count) {
+    this.count = count;
+  }
+
+  public int getStartIndex() {
+    return startIndex;
+  }
+
+  public int getEndIndex() {
+    return endIndex;
+  }
+
+  @Override
+  public void serialize(ByteBuf buf) {
+    super.serialize(buf);
+    buf.writeInt(count);
+    buf.writeInt(endIndex - startIndex);
+    for (int i = startIndex; i < endIndex; i++) {
+      buf.writeLong(nodeIds[i]);
     }
+  }
 
-    public PartGetNodeAttrsParam() {
-        this(0, null, 0, null, 0, 0);
+  @Override
+  public void deserialize(ByteBuf buf) {
+    super.deserialize(buf);
+    count = buf.readInt();
+    nodeIds = new long[buf.readInt()];
+    for (int i = 0; i < nodeIds.length; i++) {
+      nodeIds[i] = buf.readLong();
     }
+  }
 
-    public long[] getNodeIds() {
-        return nodeIds;
-    }
-
-    public void setNodeIds(long[] nodeIds) {
-        this.nodeIds = nodeIds;
-    }
-
-    public int getCount() {
-        return count;
-    }
-
-    public void setCount(int count) {
-        this.count = count;
-    }
-
-    public int getStartIndex() {
-        return startIndex;
-    }
-
-    public int getEndIndex() {
-        return endIndex;
-    }
-
-    @Override
-    public void serialize(ByteBuf buf) {
-        super.serialize(buf);
-        buf.writeInt(count);
-        buf.writeInt(endIndex - startIndex);
-        for (int i = startIndex; i < endIndex; i++) {
-            buf.writeLong(nodeIds[i]);
-        }
-    }
-
-    @Override
-    public void deserialize(ByteBuf buf) {
-        super.deserialize(buf);
-        count = buf.readInt();
-        nodeIds = new long[buf.readInt()];
-        for (int i = 0; i < nodeIds.length; i++) {
-            nodeIds[i] = buf.readLong();
-        }
-    }
-
-    @Override
-    public int bufferLen() {
-        return super.bufferLen() + 4 + 8 * nodeIds.length;
-    }
+  @Override
+  public int bufferLen() {
+    return super.bufferLen() + 4 + 4 + 8 * (endIndex - startIndex);
+  }
 }

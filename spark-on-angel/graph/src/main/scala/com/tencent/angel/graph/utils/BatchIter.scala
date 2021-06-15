@@ -14,7 +14,6 @@
  * the License.
  *
  */
-
 package com.tencent.angel.graph.utils
 
 import scala.collection.mutable.ArrayBuffer

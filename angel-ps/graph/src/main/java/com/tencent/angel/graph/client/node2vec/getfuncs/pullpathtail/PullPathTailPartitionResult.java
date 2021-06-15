@@ -22,13 +22,16 @@ import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 public class PullPathTailPartitionResult extends PartitionGetResult {
+
   private Long2ObjectOpenHashMap<long[]> partResult;
 
   public PullPathTailPartitionResult(Long2ObjectOpenHashMap<long[]> partResult) {
     this.partResult = partResult;
   }
 
-  public PullPathTailPartitionResult() { super(); }
+  public PullPathTailPartitionResult() {
+    super();
+  }
 
   public Long2ObjectOpenHashMap<long[]> getPartRestlt() {
     return partResult;

@@ -21,8 +21,12 @@ import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class InitNodeFeats extends UpdateFunc {
+
+  private static final Log LOG = LogFactory.getLog(InitNodeFeats.class);
 
   public InitNodeFeats(InitNodeFeatsParam param) {
     super(param);
@@ -35,7 +39,8 @@ public class InitNodeFeats extends UpdateFunc {
   @Override
   public void partitionUpdate(PartitionUpdateParam partParam) {
     InitNodeFeatsPartParam param = (InitNodeFeatsPartParam) partParam;
-    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager().getRow(param.getPartKey(), 0);
+    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager()
+        .getRow(param.getPartKey(), 0);
 
     long[] nodeIds = param.getNodeIds();
     IntFloatVector[] feats = param.getFeats();

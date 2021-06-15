@@ -14,23 +14,23 @@
  * the License.
  *
  */
-
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.graph.embedding.metapath2vec.MetaPath2Vec
+import com.tencent.angel.graph.embedding.metapath2vec._
 import com.tencent.angel.graph.utils.GraphIO
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
-import scala.collection.mutable
+// a deep walker for heterogenous and unweighted graph
+// clear the output dir before running
 
 object MetaPath2VecExample {
   def main(args: Array[String]): Unit = {
 
     val params = ArgsUtil.parse(args)
-    val mode = params.getOrElse("mode", "local")
+    val mode = params.getOrElse("mode", "yarn-cluster")
     val sc = start(mode)
 
     val input = params.getOrElse("input", null)
@@ -41,21 +41,31 @@ object MetaPath2VecExample {
     val output = params.getOrElse("output", null)
     val srcIndex = params.getOrElse("src", "0").toInt
     val dstIndex = params.getOrElse("dst", "1").toInt
-    val isWeighted = params.getOrElse("isWeighted", "true").toBoolean
-    val weightIndex = params.getOrElse("weightIndex", "2").toInt
     val psPartitionNum = params.getOrElse("psPartitionNum",
-      sc.getConf.get("spark.ps.instances", "1")).toInt
-    val useBalancePartition = params.getOrElse("useBalancePartition", "false").toBoolean
+      sc.getConf.get("spark.ps.instances", "2")).toInt
 
     val cpDir = params.get("cpDir").filter(_.nonEmpty).orElse(GraphIO.defaultCheckpointDir)
       .getOrElse(throw new Exception("checkpoint dir not provided"))
     sc.setCheckpointDir(cpDir)
 
-    val metaPath = params.getOrElse("metaPath", "0-1-2-1-0") // should be symmetrical, eg: 0-0, 0-1-0, 0-1-2-1-0
+    var metaPath = params.getOrElse("metaPath", "0-1-2-1-0") // should be symmetrical, eg: 0-0, 0-1-0, 0-1-2-1-0
     val nodeTypePath = params.getOrElse("nodeTypePath", null)
-    val walkLength = params.getOrElse("walkLength", "5").toInt
-    val needReplicateEdge = params.getOrElse("needReplicateEdge", "true").toBoolean
+    val walkLength = params.getOrElse("walkLength", "20").toInt
     val numWalks = params.getOrElse("numWalks", "1").toInt
+
+    // read and set metaPath
+    if (nodeTypePath == null) {
+      println(s"nodeTypePath is null, a random walk without metaPath is used.")
+      println(s"set metaPath to 0-0.")
+      metaPath = "0-0"
+    } else {
+      assert(metaPath != null, s"input metaPath is null.")
+      val meta = metaPath.trim.split("-").map(_.toInt)
+      assert(meta.length > 1, s"metaPath should be symmetrical, eg.0-1-2-1-0")
+      if (meta.length < 5) {
+        println(s"for homogeneous or bipartite graph, it is recommended to use DeepWalk.")
+      }
+    }
 
     val sep = params.getOrElse("sep",  "tab") match {
       case "space" => " "
@@ -67,37 +77,27 @@ object MetaPath2VecExample {
       .setPartitionNum(partitionNum)
       .setStorageLevel(storageLevel)
       .setPSPartitionNum(psPartitionNum)
-      .setUseBalancePartition(useBalancePartition)
       .setBatchSize(batchSize)
-      .setIsWeighted(isWeighted)
       .setWalkLength(walkLength)
       .setPullBatchSize(pullBatchSize)
-      .setNeedReplicaEdge(needReplicateEdge)
       .setEpochNum(numWalks)
 
-    // read and set metaPath
-    val meta = metaPath.trim.split("-").map(_.toInt)
-    assert(meta.length > 1, s"metaPath should be symmetrical, eg. 0-0 or 0-1-2-1-0")
-    //    val metaMap = new mutable.HashMap[Int, Int]()
-    val metaMap = mutable.Set[(Int, Int)]()
-    for (index <- meta.indices) {
-      if (index < meta.length - 1)
-        metaMap += ((meta(index), meta(index + 1)))
-    }
-    metaPath2Vec.setMetaPath(metaMap)
+    metaPath2Vec.setOutputDir(output)
+    metaPath2Vec.setMetaPath(metaPath)
 
     // read and set nodeType
     if (nodeTypePath != null) {
       val nodeAttrs = GraphIO.load(nodeTypePath, isWeighted = false, sep = sep)
         .select("src", "dst").rdd
-        .map(row => (row.getLong(0), row.getLong(1).toInt))
+        .map(row => (row.getLong(0), row.getLong(1).toInt+1))
         .distinct(partitionNum)
       metaPath2Vec.setNodeAttr(nodeAttrs)
     }
 
-    val df = GraphIO.load(input, isWeighted = isWeighted, srcIndex, dstIndex, weightIndex, sep = sep)
+    val df = GraphIO.load(input, isWeighted = false, srcIndex, dstIndex, sep = sep)
+
     val mapping = metaPath2Vec.transform(df)
-    GraphIO.save(mapping, output)
+    //    GraphIO.save(mapping, output)
     stop()
   }
 

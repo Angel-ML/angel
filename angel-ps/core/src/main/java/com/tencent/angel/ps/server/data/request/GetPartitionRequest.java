@@ -18,62 +18,31 @@
 
 package com.tencent.angel.ps.server.data.request;
 
-import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.RowType;
-import com.tencent.angel.ps.server.data.TransportMethod;
-import com.tencent.angel.psagent.PSAgentContext;
+import io.netty.buffer.ByteBuf;
 
 /**
  * Get matrix partition rpc request.
  */
-public class GetPartitionRequest extends PartitionRequest {
-
-  /**
-   * Create a new GetPartitionRequest.
-   *
-   * @param partKey matrix partition key
-   * @param clock   clock value
-   */
-  public GetPartitionRequest(PartitionKey partKey, int clock) {
-    super(clock, partKey);
-  }
-
+public class GetPartitionRequest extends RequestData {
   /**
    * Create a new GetPartitionRequest.
    */
   public GetPartitionRequest() {
-    super();
+
   }
 
-  @Override public TransportMethod getType() {
-    return TransportMethod.GET_PART;
+  @Override
+  public void serialize(ByteBuf output) {
+
   }
 
-  @Override public int getEstimizeDataSize() {
-    MatrixMeta meta =
-      PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(partKey.getMatrixId());
-    if (meta == null) {
-      return 0;
-    } else {
-      RowType rowType = meta.getRowType();
-      switch (rowType) {
-        case T_DOUBLE_DENSE:
-          return 8 * ((int) partKey.getEndCol() - (int) partKey.getStartCol() * (partKey.getEndRow()
-            - partKey.getStartRow()));
+  @Override
+  public void deserialize(ByteBuf input) {
 
-        case T_INT_DENSE:
-          return 4 * ((int) partKey.getEndCol() - (int) partKey.getStartCol() * (partKey.getEndRow()
-            - partKey.getStartRow()));
+  }
 
-        case T_FLOAT_DENSE:
-          return 4 * ((int) partKey.getEndCol() - (int) partKey.getStartCol() * (partKey.getEndRow()
-            - partKey.getStartRow()));
-
-        default: {
-          return 0;
-        }
-      }
-    }
+  @Override
+  public int bufferLen() {
+    return 0;
   }
 }

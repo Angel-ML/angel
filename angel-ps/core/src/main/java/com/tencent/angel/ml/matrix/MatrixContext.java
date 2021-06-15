@@ -27,10 +27,13 @@ import com.tencent.angel.ps.storage.matrix.PSMatrixInit;
 import com.tencent.angel.ps.storage.partition.IServerPartition;
 import com.tencent.angel.ps.storage.partition.storage.IServerPartitionStorage;
 import com.tencent.angel.ps.storage.partition.ServerPartition;
+import com.tencent.angel.ps.storage.partitioner.HashPartitioner;
 import com.tencent.angel.ps.storage.partitioner.Partitioner;
 import com.tencent.angel.ps.storage.partitioner.RangePartitioner;
 
 import com.tencent.angel.ps.storage.vector.element.IElement;
+import com.tencent.angel.psagent.matrix.transport.router.KeyHash;
+import com.tencent.angel.psagent.matrix.transport.router.hash.DefaultKeyHasher;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -69,12 +72,12 @@ public class MatrixContext implements Serializable {
   private long colNum;
 
   /**
-   * Index range start
+   * Index range start, only used by range partition
    */
   private long indexStart;
 
   /**
-   * Index range end
+   * Index range end, only used by range partition
    */
   private long indexEnd;
 
@@ -84,19 +87,24 @@ public class MatrixContext implements Serializable {
   private long validIndexNum;
 
   /**
-   * Number of rows for one block
+   * Number of rows for one block, only used by range partition
    */
   private int maxRowNumInBlock;
 
   /**
-   * Number of cols for one block
+   * Number of cols for one block, only used by range partition
    */
   private long maxColNumInBlock;
 
   /**
+   * Number of ps partition
+   */
+  private int partitionNum;
+
+  /**
    * Partitioner for this matrix
    */
-  private Class<? extends Partitioner> partitionerClass;
+  private Class<? extends Partitioner> partitionerClass = HashPartitioner.class;
 
   /**
    * Matrix partitions
@@ -123,6 +131,10 @@ public class MatrixContext implements Serializable {
    */
   private PSMatrixInit initFunc;
 
+  /**
+   * Key hash function, only used by hash partition
+   */
+  private Class<? extends KeyHash> keyHasherClass = DefaultKeyHasher.class;
 
   /**
    * Creates a new MatrixContext by default.
@@ -143,7 +155,7 @@ public class MatrixContext implements Serializable {
   }
 
   /**
-   * reate a new MatrixContext use column range
+   * Create a new MatrixContext use column range
    *
    * @param name matrix name
    * @param rowNum matrix row number
@@ -279,6 +291,7 @@ public class MatrixContext implements Serializable {
     this.rowType = rowType;
     this.attributes = new HashMap<>();
     this.matrixId = -1;
+    this.partitionNum = -1;
   }
 
 
@@ -343,6 +356,15 @@ public class MatrixContext implements Serializable {
    */
   public long getMaxColNumInBlock() {
     return maxColNumInBlock;
+  }
+
+  /**
+   * Gets ps partition.
+   *
+   * @return the ps partition num
+   */
+  public int getPartitionNum() {
+    return partitionNum;
   }
 
   /**
@@ -422,6 +444,15 @@ public class MatrixContext implements Serializable {
    */
   public void setMaxColNumInBlock(long maxColNumInBlock) {
     this.maxColNumInBlock = maxColNumInBlock;
+  }
+
+  /**
+   * Sets ps partition.
+   *
+   * @param partitionNum partition num
+   */
+  public void setPartitionNum(int partitionNum) {
+    this.partitionNum = partitionNum;
   }
 
   /**
@@ -690,6 +721,16 @@ public class MatrixContext implements Serializable {
   }
 
   private void check() {
+    if(partitionerClass == HashPartitioner.class) {
+      // Hash partition does not support dense type row
+      if(rowType == RowType.T_DOUBLE_DENSE
+          || rowType == RowType.T_FLOAT_DENSE
+          || rowType == RowType.T_INT_DENSE
+          || rowType == RowType.T_LONG_DENSE) {
+        throw new AngelException("Dense matrix type can not use hash partitioner");
+      }
+    }
+
     // Row number must > 0
     if (rowNum <= 0) {
       throw new AngelException(
@@ -765,25 +806,12 @@ public class MatrixContext implements Serializable {
         + ", rowType=" + rowType + ", attributes=" + attributes + ", matrixId=" + matrixId + '}';
   }
 
-  /**
-   * Get estimate sparsity
-   *
-   * @return estimate sparsity
-   */
-  public double getEstSparsity() {
-    if (validIndexNum <= 0) {
-      return 0.0;
-    } else {
-      if (colNum <= 0) {
-        if (rowType == RowType.T_DOUBLE_SPARSE || rowType == RowType.T_FLOAT_SPARSE
-            || rowType == RowType.T_LONG_SPARSE || rowType == RowType.T_INT_SPARSE) {
-          return (double) validIndexNum / 2 / Integer.MAX_VALUE;
-        } else {
-          return (double) validIndexNum / 2 / Long.MAX_VALUE;
-        }
-      } else {
-        return (double) validIndexNum / colNum;
-      }
-    }
+  public Class<? extends KeyHash> getKeyHasherClass() {
+    return keyHasherClass;
+  }
+
+  public void setKeyHasherClass(
+      Class<? extends KeyHash> keyHasherClass) {
+    this.keyHasherClass = keyHasherClass;
   }
 }

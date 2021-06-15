@@ -20,11 +20,11 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.psagent.PSAgentContext;
-
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class UpdateParamWithKeyIds extends UpdateParam {
+
   protected long[] keyIds;  // pls. make sure keyIds is sorted
 
   public UpdateParamWithKeyIds(int matrixId, boolean updateClock) {
@@ -57,5 +57,6 @@ public abstract class UpdateParamWithKeyIds extends UpdateParam {
     return partParams;
   }
 
-  protected abstract PartitionUpdateParam getPartitionParam(PartitionKey part, int startIdx, int endIdx);
+  protected abstract PartitionUpdateParam getPartitionParam(PartitionKey part, int startIdx,
+      int endIdx);
 }

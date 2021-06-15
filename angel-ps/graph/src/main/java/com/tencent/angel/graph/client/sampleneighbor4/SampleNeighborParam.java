@@ -22,7 +22,6 @@ import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplitUtils;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -62,12 +61,12 @@ public class SampleNeighborParam extends GetParam {
   public List<PartitionGetParam> split() {
     Arrays.sort(keys);
     List<PartitionKey> partitions =
-      PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
+        PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
 
     if (!RowUpdateSplitUtils.isInRange(keys, partitions)) {
       throw new AngelException(
-        "node id is not in range [" + partitions.get(0).getStartCol() + ", " + partitions
-          .get(partitions.size() - 1).getEndCol());
+          "node id is not in range [" + partitions.get(0).getStartCol() + ", " + partitions
+              .get(partitions.size() - 1).getEndCol());
     }
 
     int nodeIndex = 0;
@@ -80,10 +79,11 @@ public class SampleNeighborParam extends GetParam {
         length++;
       }
 
-      if (length > 0)
+      if (length > 0) {
         params.add(new SampleNeighborPartParam(matrixId,
-          partitions.get(partIndex), numSample, keys, sampleTypes,
-          nodeIndex - length, nodeIndex));
+            partitions.get(partIndex), numSample, keys, sampleTypes,
+            nodeIndex - length, nodeIndex));
+      }
 
       partIndex++;
     }

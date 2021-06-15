@@ -20,6 +20,8 @@ package com.tencent.angel.ps.server.data;
 
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ps.PSContext;
+import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -27,6 +29,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.hadoop.ipc.metrics.RpcMetrics;
 
 /**
  * PS running context
@@ -48,6 +51,36 @@ public class RunningContext {
   private volatile long lastOOMTs = System.currentTimeMillis();
   private final float genFactor;
 
+  /*
+  private final ConcurrentHashMap<Integer, PSRPCMetrics> methodIdToMetricsMap = new ConcurrentHashMap<>();
+
+  class PSRPCMetrics {
+    private final AtomicInteger rpcCallTime  = new AtomicInteger(0);
+    private final AtomicLong totalUseTime = new AtomicLong(0);
+
+    public void add(long useTime) {
+      rpcCallTime.incrementAndGet();
+      totalUseTime.addAndGet(useTime);
+    }
+
+    @Override
+    public String toString() {
+      if(rpcCallTime.get() == 0) {
+        return "PSRPCMetrics{" +
+            "rpcCallTime=" + rpcCallTime.get() +
+            ", totalUseTime=" + totalUseTime.get() +
+            '}';
+      } else {
+        return "PSRPCMetrics{" +
+            "rpcCallTime=" + rpcCallTime.get() +
+            ", totalUseTime=" + totalUseTime.get() +
+            ", avg use time=" + totalUseTime.get() / rpcCallTime.get() +
+            '}';
+      }
+    }
+  }
+  */
+
   public RunningContext(PSContext context) {
     LOG.info("Runtime.getRuntime().availableProcessors() = " + Runtime.getRuntime().availableProcessors());
     int workerNum = context.getConf().getInt(AngelConf.ANGEL_MATRIXTRANSFER_SERVER_WORKER_POOL_SIZE,
@@ -66,7 +99,7 @@ public class RunningContext {
     int estSize = (int) ((serverMem - 512) * 0.45 / 8);
     //int maxRPCCounter = Math.max(estSize, (int) (workerNum * factor));
 
-    int maxRPCCounter = context.getConf().getInt("angel.ps.max.rpc.counter", 3000);
+    int maxRPCCounter = context.getConf().getInt("angel.ps.max.rpc.counter", 10000);
 
     maxRunningRPCCounter.set(maxRPCCounter);
     generalRunningRPCCounter.set((int) (maxRPCCounter * genFactor));
@@ -146,6 +179,13 @@ public class RunningContext {
     LOG.info("channelInUseCounter=" + WorkerPool.channelInUseCounter);
     LOG.info("oom=" + WorkerPool.oom);
     LOG.info("unknown=" + WorkerPool.unknown);
+
+    /*
+    for(Entry<Integer, PSRPCMetrics> metricEntry : methodIdToMetricsMap.entrySet()) {
+      LOG.info("Method " + TransportMethod.valueOf(metricEntry.getKey()) + " use time " + metricEntry.getValue());
+    }
+    */
+
     LOG.info("=====================Server running context end  =======================");
   }
 
@@ -302,4 +342,17 @@ public class RunningContext {
     }
     return clientContext;
   }
+
+  /*
+  public void methodUseTime(int methodId, long useTime) {
+    PSRPCMetrics metrics = methodIdToMetricsMap.get(methodId);
+    if(metrics == null) {
+      metrics = methodIdToMetricsMap.putIfAbsent(methodId, new PSRPCMetrics());
+      if(metrics == null) {
+        metrics = methodIdToMetricsMap.get(methodId);
+      }
+    }
+    metrics.add(useTime);
+  }
+  */
 }

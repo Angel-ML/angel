@@ -533,8 +533,10 @@ public class AngelYarnClient extends AngelClient {
         Thread.sleep(1000);
         tryTime++;
       } else {
-        LOG.info("appMaster getTrackingUrl = " + appMaster.getTrackingUrl()
-          .replace("proxy", "cluster/app"));
+        String appMasterurl = "appMaster getTrackingUrl = " + appMaster.getTrackingUrl()
+                .replace("proxy", "cluster/app");
+        LOG.info(appMasterurl);
+        System.out.println(appMasterurl);
         LOG.info("master host=" + host + ", port=" + port);
         try {
           masterLocation = new Location(host, port);

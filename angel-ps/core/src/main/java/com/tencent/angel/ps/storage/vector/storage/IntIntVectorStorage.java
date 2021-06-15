@@ -18,10 +18,11 @@
 
 package com.tencent.angel.ps.storage.vector.storage;
 
+import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.IntIntVector;
 import com.tencent.angel.ml.matrix.RowType;
-import com.tencent.angel.ps.server.data.request.IndexType;
+import com.tencent.angel.ps.server.data.request.KeyType;
 import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.vector.func.IntElemUpdateFunc;
@@ -57,8 +58,8 @@ public class IntIntVectorStorage extends IntIntStorage {
   }
 
   @Override
-  public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func) {
-    if (indexType != IndexType.INT) {
+  public void indexGet(KeyType keyType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func) {
+    if (keyType != KeyType.INT) {
       throw new UnsupportedOperationException(
           this.getClass().getName() + " only support int type index now");
     }
@@ -95,29 +96,31 @@ public class IntIntVectorStorage extends IntIntStorage {
   }
 
   private void updateUseDense(ByteBuf buf, UpdateOp op) {
-    int size = buf.readInt();
+    int size = ByteBufSerdeUtils.deserializeInt(buf);
     if (op == UpdateOp.PLUS) {
       for (int i = 0; i < size; i++) {
-        getVector().set(i, getVector().get(i) + buf.readInt());
+        int actualIndex = i + (int) indexOffset;
+        int oldValue = get(actualIndex);
+        set(actualIndex, oldValue + ByteBufSerdeUtils.deserializeInt(buf));
       }
     } else {
       for (int i = 0; i < size; i++) {
-        getVector().set(i, buf.readInt());
+        set(i + (int) indexOffset, ByteBufSerdeUtils.deserializeInt(buf));
       }
     }
   }
 
   private void updateUseSparse(ByteBuf buf, UpdateOp op) {
-    int size = buf.readInt();
-    int index;
+    int size = ByteBufSerdeUtils.deserializeInt(buf);
     if (op == UpdateOp.PLUS) {
       for (int i = 0; i < size; i++) {
-        index = buf.readInt();
-        getVector().set(index, getVector().get(index) + buf.readInt());
+        int index = ByteBufSerdeUtils.deserializeInt(buf);
+        int oldValue = get(index);
+        set(index, oldValue + ByteBufSerdeUtils.deserializeInt(buf));
       }
     } else {
       for (int i = 0; i < size; i++) {
-        getVector().set(buf.readInt(), buf.readInt());
+        set(ByteBufSerdeUtils.deserializeInt(buf), ByteBufSerdeUtils.deserializeInt(buf));
       }
     }
   }
@@ -197,12 +200,12 @@ public class IntIntVectorStorage extends IntIntStorage {
 
   @Override
   public int get(int index) {
-    return getVector().get(index - (int) indexOffset);
+    return vector.get(index - (int) indexOffset);
   }
 
   @Override
   public void set(int index, int value) {
-    getVector().set(index - (int) indexOffset, value);
+    vector.set(index - (int) indexOffset, value);
   }
 
   @Override

@@ -14,23 +14,23 @@
  * the License.
  *
  */
-
-
 package com.tencent.angel.ml.math2.storage;
 
 import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ps.storage.vector.ServerRowStorageFactory;
 import it.unimi.dsi.fastutil.floats.FloatIterator;
 import it.unimi.dsi.fastutil.longs.Long2FloatMap;
 import it.unimi.dsi.fastutil.longs.Long2FloatOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class LongFloatSparseVectorStorage implements LongFloatVectorStorage {
-
+  private static final Log LOG = LogFactory.getLog(ServerRowStorageFactory.class);
   private Long2FloatOpenHashMap map;
   private byte flag; // 001: dense; 010: sparse; 100: sorted
   private long dim;
@@ -238,9 +238,6 @@ public class LongFloatSparseVectorStorage implements LongFloatVectorStorage {
   @Override
   public int size() {
     return map.size();
-  }
-
-  public void setSize(int size) {
   }
 
   @Override

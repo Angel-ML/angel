@@ -20,10 +20,11 @@ package com.tencent.angel.ps.storage.vector.element;
 import com.tencent.angel.common.DeepClone;
 import com.tencent.angel.common.Serialize;
 import com.tencent.angel.common.StreamSerialize;
+import java.io.Serializable;
 
 /**
  * Complex data type interface, the object stored in PS must implement this interface
  */
-public interface IElement extends Serialize, DeepClone, StreamSerialize {
+public interface IElement extends Serialize, DeepClone, StreamSerialize, Serializable {
 
 }

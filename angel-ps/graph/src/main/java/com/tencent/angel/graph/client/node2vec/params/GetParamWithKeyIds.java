@@ -20,11 +20,11 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.psagent.PSAgentContext;
-
 import java.util.ArrayList;
 import java.util.List;
 
 abstract public class GetParamWithKeyIds extends GetParam {
+
   protected long[] keyIds;  // pls. make sure keyIds is sorted
 
   public GetParamWithKeyIds(int matrixId, long[] keyIds) {
@@ -60,5 +60,6 @@ abstract public class GetParamWithKeyIds extends GetParam {
     return partParams;
   }
 
-  protected abstract PartitionGetParam getPartitionParam(PartitionKey part, int startIdx, int endIdx);
+  protected abstract PartitionGetParam getPartitionParam(PartitionKey part, int startIdx,
+      int endIdx);
 }

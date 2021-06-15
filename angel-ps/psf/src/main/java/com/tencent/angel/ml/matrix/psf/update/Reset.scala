@@ -82,6 +82,10 @@ object Reset {
       super.deserialize(buf)
       this.rowIds = Array.tabulate(buf.readInt)(_ => buf.readInt)
     }
+
+     override def bufferLen(): Int = {
+      super.bufferLen() + 4 + rowIds.length * 4
+    }
   }
 
 }

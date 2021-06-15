@@ -31,6 +31,7 @@ import com.tencent.angel.ml.GBDT.param.GBDTParam;
 import com.tencent.angel.ps.storage.vector.ServerIntDoubleRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.psagent.matrix.ResponseType;
+import com.tencent.angel.psagent.matrix.transport.router.RouterType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -96,7 +97,7 @@ public class GBDTGradHistGetRowFunc extends GetFunc {
     int sendEndCol = sendStartCol + 7;
     ServerIntDoubleRow sendRow =
       new ServerIntDoubleRow(param.getRowId(), RowType.T_DOUBLE_DENSE, sendStartCol, sendEndCol,
-        sendEndCol - sendStartCol);
+        sendEndCol - sendStartCol, RouterType.RANGE);
     LOG.info(String
       .format("Create server row of split result: row id[%d], start col[%d], end col[%d]",
         param.getRowId(), sendStartCol, sendEndCol));

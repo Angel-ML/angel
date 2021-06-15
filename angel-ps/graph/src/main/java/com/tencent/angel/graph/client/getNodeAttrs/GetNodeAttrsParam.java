@@ -32,72 +32,72 @@ import java.util.List;
  */
 public class GetNodeAttrsParam extends GetParam {
 
-    /**
-     * Node ids
-     */
-    private final long[] nodeIds;
+  /**
+   * Node ids
+   */
+  private final long[] nodeIds;
 
-    /**
-     * Sample neighbor number, if count <= 0, means get all neighbors
-     */
-    private final int count;
+  /**
+   * Sample neighbor number, if count <= 0, means get all neighbors
+   */
+  private final int count;
 
-    private final List<PartitionGetParam> partParams;
+  private final List<PartitionGetParam> partParams;
 
 
-    public GetNodeAttrsParam(int matrixId, long[] nodeIds, int count) {
-        super(matrixId);
-        this.nodeIds = nodeIds;
-        this.count = count;
-        this.partParams = new ArrayList<>();
+  public GetNodeAttrsParam(int matrixId, long[] nodeIds, int count) {
+    super(matrixId);
+    this.nodeIds = nodeIds;
+    this.count = count;
+    this.partParams = new ArrayList<>();
+  }
+
+  public GetNodeAttrsParam() {
+    this(-1, null, -1);
+  }
+
+  public long[] getNodeIds() {
+    return nodeIds;
+  }
+
+  public int getCount() {
+    return count;
+  }
+
+  public List<PartitionGetParam> getPartParams() {
+    return partParams;
+  }
+
+  @Override
+  public List<PartitionGetParam> split() {
+    Arrays.sort(nodeIds);
+
+    List<PartitionKey> partitions =
+        PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
+
+    if (!RowUpdateSplitUtils.isInRange(nodeIds, partitions)) {
+      throw new AngelException(
+          "node id is not in range [" + partitions.get(0).getStartCol() + ", " + partitions
+              .get(partitions.size() - 1).getEndCol());
     }
 
-    public GetNodeAttrsParam() {
-        this(-1, null, -1);
+    int nodeIndex = 0;
+    int partIndex = 0;
+    while (nodeIndex < nodeIds.length || partIndex < partitions.size()) {
+      int length = 0;
+      long endOffset = partitions.get(partIndex).getEndCol();
+      while (nodeIndex < nodeIds.length && nodeIds[nodeIndex] < endOffset) {
+        nodeIndex++;
+        length++;
+      }
+
+      if (length > 0) {
+        partParams.add(new PartGetNodeAttrsParam(matrixId,
+            partitions.get(partIndex), count, nodeIds, nodeIndex - length, nodeIndex));
+      }
+      partIndex++;
     }
 
-    public long[] getNodeIds() {
-        return nodeIds;
-    }
-
-    public int getCount() {
-        return count;
-    }
-
-    public List<PartitionGetParam> getPartParams() {
-        return partParams;
-    }
-
-    @Override
-    public List<PartitionGetParam> split() {
-        Arrays.sort(nodeIds);
-
-        List<PartitionKey> partitions =
-                PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
-
-        if (!RowUpdateSplitUtils.isInRange(nodeIds, partitions)) {
-            throw new AngelException(
-                    "node id is not in range [" + partitions.get(0).getStartCol() + ", " + partitions
-                            .get(partitions.size() - 1).getEndCol());
-        }
-
-        int nodeIndex = 0;
-        int partIndex = 0;
-        while (nodeIndex < nodeIds.length || partIndex < partitions.size()) {
-            int length = 0;
-            long endOffset = partitions.get(partIndex).getEndCol();
-            while (nodeIndex < nodeIds.length && nodeIds[nodeIndex] < endOffset) {
-                nodeIndex++;
-                length++;
-            }
-
-            if (length > 0) {
-                partParams.add(new PartGetNodeAttrsParam(matrixId,
-                        partitions.get(partIndex), count, nodeIds, nodeIndex - length, nodeIndex));
-            }
-            partIndex++;
-        }
-
-        return partParams;
-    }
+    return partParams;
+  }
 }

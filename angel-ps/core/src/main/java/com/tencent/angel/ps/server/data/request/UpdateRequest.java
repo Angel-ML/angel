@@ -18,25 +18,15 @@
 
 package com.tencent.angel.ps.server.data.request;
 
-import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ps.server.data.TransportMethod;
+import com.tencent.angel.common.ByteBufSerdeUtils;
+import com.tencent.angel.psagent.matrix.transport.router.KeyValuePart;
 import io.netty.buffer.ByteBuf;
 
-public class UpdateRequest extends PartitionRequest {
-  /**
-   * task index, used for consistency control
-   */
-  private int taskIndex;
-
+public class UpdateRequest extends RequestData implements IStreamRequest {
   /**
    * the update row splits
    */
-  private UpdateItem rowsSplit;
-
-  /**
-   * weather we need update the clock of the matrix partition
-   */
-  private boolean updateClock;
+  private KeyValuePart updatePart;
 
   /**
    * Update method
@@ -44,70 +34,22 @@ public class UpdateRequest extends PartitionRequest {
   private UpdateOp op;
 
   /**
+   * Input buffer, just used by stream mode
+   */
+  private ByteBuf in;
+
+  /**
    * Create PutPartitionUpdateRequest.
    *
-   * @param userRequestId user request id
-   * @param taskIndex     task index
-   * @param clock         clock value
-   * @param partKey       matrix partition key
-   * @param rowsSplit     update row splits
-   * @param updateClock   true means update the clock value of the matrix partition
+   * @param updatePart     update part
    */
-  public UpdateRequest(int userRequestId, int taskIndex, int clock, PartitionKey partKey,
-    UpdateItem rowsSplit, boolean updateClock, UpdateOp op) {
-    super(userRequestId, clock, partKey);
-    this.setTaskIndex(taskIndex);
-    this.setRowsSplit(rowsSplit);
-    this.setUpdateClock(updateClock);
-    this.setOp(op);
+  public UpdateRequest(KeyValuePart updatePart, UpdateOp op) {
+    this.updatePart = updatePart;
+    this.op = op;
   }
 
   public UpdateRequest() {
-    this(-1, 0, 0, null, null, false, UpdateOp.PLUS);
-  }
-
-  @Override public int getEstimizeDataSize() {
-    return bufferLen();
-  }
-
-  @Override public TransportMethod getType() {
-    return TransportMethod.UPDATE;
-  }
-
-  /**
-   * Is we need update the clock of the matrix partition.
-   *
-   * @return boolean true means update the clock
-   */
-  public boolean isUpdateClock() {
-    return updateClock;
-  }
-
-  /**
-   * Set is we need update the clock of the matrix partition.
-   *
-   * @param updateClock true means update the clock
-   */
-  public void setUpdateClock(boolean updateClock) {
-    this.updateClock = updateClock;
-  }
-
-  /**
-   * Get update row splits.
-   *
-   * @return List<RowUpdateSplit> update row splits.
-   */
-  public UpdateItem getRowsSplit() {
-    return rowsSplit;
-  }
-
-  /**
-   * Set update row splits.
-   *
-   * @param rowsSplit update row splits.
-   */
-  public void setRowsSplit(UpdateItem rowsSplit) {
-    this.rowsSplit = rowsSplit;
+    this(null, UpdateOp.PLUS);
   }
 
   public UpdateOp getOp() {
@@ -119,49 +61,44 @@ public class UpdateRequest extends PartitionRequest {
   }
 
   @Override public void serialize(ByteBuf buf) {
-    super.serialize(buf);
-    buf.writeInt(taskIndex);
-    buf.writeBoolean(updateClock);
     buf.writeInt(op.getOpId());
-    if (rowsSplit != null) {
-      rowsSplit.serialize(buf);
-    }
+    ByteBufSerdeUtils.serializeKeyValuePart(buf, updatePart);
   }
 
   @Override public void deserialize(ByteBuf buf) {
-    super.deserialize(buf);
-    taskIndex = buf.readInt();
-    updateClock = buf.readBoolean();
+    int readerIndex = buf.readerIndex();
     op = UpdateOp.valueOf(buf.readInt());
-    rowsSplit = null;
+    updatePart = ByteBufSerdeUtils.deserializeKeyValuePart(buf);
+    requestSize = buf.readerIndex() - readerIndex;
   }
 
   @Override public int bufferLen() {
-    int len = super.bufferLen() + 12;
-    if (rowsSplit != null) {
-      len += rowsSplit.bufferLen();
-    }
-    return len;
-  }
-
-  public int getTaskIndex() {
-    return taskIndex;
-  }
-
-  public void setTaskIndex(int taskIndex) {
-    this.taskIndex = taskIndex;
-  }
-
-  @Override public int getHandleElemNum() {
-    if (rowsSplit != null) {
-      handleElemSize = rowsSplit.size();
-    }
-    return handleElemSize;
+    return ByteBufSerdeUtils.INT_LENGTH + ByteBufSerdeUtils.serializedKeyValuePartLen(updatePart);
   }
 
   @Override public String toString() {
-    return "PutPartitionUpdateRequest [taskIndex=" + taskIndex + ", rowsSplit size=" + ((rowsSplit
-      != null) ? rowsSplit.size() : 0) + ", updateClock=" + updateClock + ", toString()=" + super
+    return "PutPartitionUpdateRequest rowsSplit size=" + ((updatePart
+      != null) ? updatePart.size() : 0) + ", toString()=" + super
       .toString() + "]";
+  }
+
+  @Override
+  public void deserializeHeader(ByteBuf buf) {
+    op = UpdateOp.valueOf(ByteBufSerdeUtils.deserializeInt(buf));
+    updatePart = null;
+    in = buf;
+  }
+
+  @Override
+  public ByteBuf getInputBuffer() {
+    return in;
+  }
+
+  public KeyValuePart getUpdatePart() {
+    return updatePart;
+  }
+
+  public void setUpdatePart(KeyValuePart updatePart) {
+    this.updatePart = updatePart;
   }
 }

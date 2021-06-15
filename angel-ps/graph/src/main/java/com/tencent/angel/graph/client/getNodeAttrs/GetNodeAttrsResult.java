@@ -22,21 +22,21 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 public class GetNodeAttrsResult extends GetResult {
 
-    /**
-     * Node id to neighbors map
-     */
-    private Long2ObjectOpenHashMap<float[]> nodeIdToAttrs;
+  /**
+   * Node id to neighbors map
+   */
+  private Long2ObjectOpenHashMap<float[]> nodeIdToAttrs;
 
-    GetNodeAttrsResult(Long2ObjectOpenHashMap<float[]> nodeIdToAttrs) {
-        this.nodeIdToAttrs = nodeIdToAttrs;
-    }
+  GetNodeAttrsResult(Long2ObjectOpenHashMap<float[]> nodeIdToAttrs) {
+    this.nodeIdToAttrs = nodeIdToAttrs;
+  }
 
-    public Long2ObjectOpenHashMap<float[]> getNodeIdToAttrs() {
-        return nodeIdToAttrs;
-    }
+  public Long2ObjectOpenHashMap<float[]> getNodeIdToAttrs() {
+    return nodeIdToAttrs;
+  }
 
-    public void setNodeIdToAttrs(
-            Long2ObjectOpenHashMap<float[]> nodeIdToAttrs) {
-        this.nodeIdToAttrs = nodeIdToAttrs;
-    }
+  public void setNodeIdToAttrs(
+      Long2ObjectOpenHashMap<float[]> nodeIdToAttrs) {
+    this.nodeIdToAttrs = nodeIdToAttrs;
+  }
 }

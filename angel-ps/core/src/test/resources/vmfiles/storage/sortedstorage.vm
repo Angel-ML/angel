@@ -29,16 +29,11 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 #end
 
 public class ${itype}${dtype}SortedVectorStorage implements ${itype}${dtype}VectorStorage {
-
     private $itype.toLowerCase() [ ] indices;
     private $dtype.toLowerCase() [ ] values;
     private byte flag; // 001: dense; 010: sparse; 100: sorted
     private int size;
     private $itype.toLowerCase() dim;
-
-    public ${itype}${dtype}SortedVectorStorage() {
-		super();
-	}
 
     public ${itype}${dtype}SortedVectorStorage($itype.toLowerCase()  dim, int size, $itype.toLowerCase() [ ] indices, $dtype.toLowerCase() [ ] values) {
         this.flag = 4;
@@ -316,10 +311,6 @@ public class ${itype}${dtype}SortedVectorStorage implements ${itype}${dtype}Vect
     public int size() {
         return size;
     }
-
-	public void setSize(int size) {
-	  this.size = size;
-	}
 
     @Override
     public boolean hasKey($itype.toLowerCase()  key) {

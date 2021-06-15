@@ -15,128 +15,100 @@
  *
  */
 
-
 package com.tencent.angel.ps.server.data.request;
 
-import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ps.server.data.TransportMethod;
-import com.tencent.angel.psagent.matrix.transport.adapter.IndicesView;
-import com.tencent.angel.psagent.matrix.transport.adapter.IntIndicesView;
+import com.tencent.angel.common.ByteBufSerdeUtils;
+import com.tencent.angel.psagent.matrix.transport.router.KeyPart;
 import io.netty.buffer.ByteBuf;
 
-import java.util.Random;
-
-public class IndexPartGetRowRequest extends PartitionRequest {
-  private int matrixId;
+public class IndexPartGetRowRequest extends RequestData implements IStreamRequest {
   private int rowId;
-  private final IndicesView colIds;
-  private final ValueType valueType;
+  private KeyPart keyPart;
   private InitFunc func;
+  private ByteBuf in;
 
-  public IndexPartGetRowRequest(int userRequestId, int matrixId, int rowId, PartitionKey partKey,
-    IndicesView colIds, ValueType valueType, InitFunc func) {
-    super(userRequestId, -1, partKey);
-    this.matrixId = matrixId;
+  public IndexPartGetRowRequest(int rowId, KeyPart indexPart, InitFunc func) {
     this.rowId = rowId;
-    this.colIds = colIds;
-    this.valueType = valueType;
+    this.keyPart = indexPart;
     this.func = func;
   }
 
   public IndexPartGetRowRequest() {
-    this(-1, -1, -1, null, null, ValueType.DOUBLE, null);
-  }
-
-  public int getMatrixId() {
-    return matrixId;
+    this(-1, null, null);
   }
 
   public int getRowId() {
     return rowId;
   }
 
-  @Override public int getEstimizeDataSize() {
-    if (valueType == ValueType.INT || valueType == ValueType.FLOAT) {
-      return 4 * (colIds.endPos - colIds.startPos);
-    } else {
-      return 8 * (colIds.endPos - colIds.startPos);
-    }
-  }
-
-  @Override public TransportMethod getType() {
-    return TransportMethod.INDEX_GET_ROW;
-  }
-
-  public IndicesView getColIds() {
-    return colIds;
-  }
-
-  public ValueType getValueType() {
-    return valueType;
+  public KeyPart getKeyPart() {
+    return keyPart;
   }
 
   public InitFunc getFunc() {
     return func;
   }
 
-  @Override public void serialize(ByteBuf buf) {
-    super.serialize(buf);
-    buf.writeInt(matrixId);
-    buf.writeInt(rowId);
+  @Override public void serialize(ByteBuf out) {
+    ByteBufSerdeUtils.serializeInt(out, rowId);
 
-    buf.writeBoolean(func != null);
+    ByteBufSerdeUtils.serializeBoolean(out, func != null);
     if(func != null) {
-      byte[] data = func.getClass().getName().getBytes();
-      buf.writeInt(data.length);
-      buf.writeBytes(data);
-      func.serialize(buf);
+      ByteBufSerdeUtils.serializeObject(out, func);
     }
 
-    if (colIds instanceof IntIndicesView) {
-      buf.writeInt(IndexType.INT.getTypeId());
-    } else {
-      buf.writeInt(IndexType.LONG.getTypeId());
-    }
-    colIds.serialize(buf);
+    ByteBufSerdeUtils.serializeKeyPart(out, keyPart);
   }
 
-  @Override public void deserialize(ByteBuf buf) {
-    super.deserialize(buf);
-    matrixId = buf.readInt();
-    rowId = buf.readInt();
-    boolean useInitFunc = buf.readBoolean();
+  @Override public void deserialize(ByteBuf in) {
+    int readerIndex = in.readerIndex();
+    rowId = ByteBufSerdeUtils.deserializeInt(in);
+
+    boolean useInitFunc = ByteBufSerdeUtils.deserializeBoolean(in);
     if(useInitFunc) {
-      int size = buf.readInt();
-      byte[] data = new byte[size];
-      buf.readBytes(data);
-      String initFuncClass = new String(data);
-      try {
-        func = (InitFunc) Class.forName(initFuncClass).newInstance();
-      } catch (Throwable e) {
-        throw new UnsupportedOperationException(e);
-      }
-      func.deserialize(buf);
+      func = (InitFunc) ByteBufSerdeUtils.deserializeObject(in);
     }
+
+    keyPart = ByteBufSerdeUtils.deserializeKeyPart(in);
+    requestSize = in.readerIndex() - readerIndex;
   }
 
   @Override public int bufferLen() {
-    int len = 0;
-    if (colIds != null) {
-      len += (super.bufferLen() + 12 + colIds.bufferLen());
-    } else {
-      len += (super.bufferLen() + 8);
+    int len = ByteBufSerdeUtils.serializedIntLen(rowId);
+
+    len += ByteBufSerdeUtils.serializedBooleanLen(func != null);
+    if(func != null) {
+      len += ByteBufSerdeUtils.serializedObjectLen(func);
     }
 
-    if(func != null) {
-      len += (func.bufferLen() + 8 + func.getClass().getName().getBytes().length);
-    }
+    len += ByteBufSerdeUtils.serializedKeyPartLen(keyPart);
     return len;
   }
 
-  @Override public int getHandleElemNum() {
-    if (colIds != null) {
-      handleElemSize = colIds.endPos - colIds.startPos;
+  @Override
+  public void deserializeHeader(ByteBuf in) {
+    rowId = ByteBufSerdeUtils.deserializeInt(in);
+
+    boolean useInitFunc = ByteBufSerdeUtils.deserializeBoolean(in);
+    if(useInitFunc) {
+      func = (InitFunc) ByteBufSerdeUtils.deserializeObject(in);
     }
-    return handleElemSize;
+
+    // Data is not de-serialized first
+    keyPart = null;
+    this.in = in;
+  }
+
+  @Override
+  public ByteBuf getInputBuffer() {
+    return in;
+  }
+
+  public ByteBuf getIn() {
+    return in;
+  }
+
+  public void setIn(ByteBuf in) {
+    this.in = in;
   }
 }

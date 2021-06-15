@@ -18,104 +18,60 @@
 
 package com.tencent.angel.ps.server.data.request;
 
-import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.matrix.MatrixMeta;
-import com.tencent.angel.ml.matrix.RowType;
-import com.tencent.angel.ps.server.data.TransportMethod;
-import com.tencent.angel.psagent.PSAgentContext;
+import com.tencent.angel.common.ByteBufSerdeUtils;
 import io.netty.buffer.ByteBuf;
 
 /**
  * Get a row split rpc request.
  */
-public class GetRowSplitRequest extends PartitionRequest {
+public class GetRowSplitRequest extends RequestData {
 
   /**
-   * row index
+   * Row id
    */
-  private int rowIndex;
+  private int rowId;
 
   /**
    * Create a new GetRowSplitRequest.
-   *
-   * @param userRequestId user request id
-   * @param clock         clock value
-   * @param partKey       matrix partition key
-   * @param rowIndex      row index
+   * @param rowId  row id
    */
-  public GetRowSplitRequest(int userRequestId, int clock, PartitionKey partKey, int rowIndex) {
-    super(userRequestId, clock, partKey);
-    this.rowIndex = rowIndex;
+  public GetRowSplitRequest(int rowId) {
+    this.rowId = rowId;
   }
 
   /**
    * Create a new GetRowSplitRequest.
    */
   public GetRowSplitRequest() {
-    this(-1, 0, null, 0);
-  }
-
-  /**
-   * Get row index.
-   *
-   * @return int row index
-   */
-  public int getRowIndex() {
-    return rowIndex;
-  }
-
-  /**
-   * Set row index.
-   *
-   * @param rowIndex row index
-   */
-  public void setRowIndex(int rowIndex) {
-    this.rowIndex = rowIndex;
+    this(-1);
   }
 
   @Override public void serialize(ByteBuf buf) {
-    super.serialize(buf);
-    buf.writeInt(rowIndex);
+    ByteBufSerdeUtils.serializeInt(buf, rowId);
   }
 
   @Override public void deserialize(ByteBuf buf) {
-    super.deserialize(buf);
-    rowIndex = buf.readInt();
+    int readerIndex = buf.readerIndex();
+    rowId = ByteBufSerdeUtils.deserializeInt(buf);
+    requestSize = buf.readerIndex() - readerIndex;
   }
 
   @Override public int bufferLen() {
-    return super.bufferLen() + 4;
+    return ByteBufSerdeUtils.INT_LENGTH;
   }
 
-  @Override public TransportMethod getType() {
-    return TransportMethod.GET_ROWSPLIT;
+  @Override
+  public String toString() {
+    return "GetRowSplitRequest{" +
+        "rowId=" + rowId +
+        '}';
   }
 
-  @Override public int getEstimizeDataSize() {
-    MatrixMeta meta =
-      PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(partKey.getMatrixId());
-    if (meta == null) {
-      return 0;
-    } else {
-      RowType rowType = meta.getRowType();
-      switch (rowType) {
-        case T_DOUBLE_DENSE:
-          return 8 * ((int) partKey.getEndCol() - (int) partKey.getStartCol());
-
-        case T_INT_DENSE:
-          return 4 * ((int) partKey.getEndCol() - (int) partKey.getStartCol());
-
-        case T_FLOAT_DENSE:
-          return 4 * ((int) partKey.getEndCol() - (int) partKey.getStartCol());
-
-        default: {
-          return 0;
-        }
-      }
-    }
+  public int getRowId() {
+    return rowId;
   }
 
-  @Override public String toString() {
-    return "GetRowSplitRequest [rowIndex=" + rowIndex + ", toString()=" + super.toString() + "]";
+  public void setRowId(int rowId) {
+    this.rowId = rowId;
   }
 }

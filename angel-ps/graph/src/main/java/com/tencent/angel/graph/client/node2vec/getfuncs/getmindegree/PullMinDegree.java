@@ -16,26 +16,20 @@
  */
 package com.tencent.angel.graph.client.node2vec.getfuncs.getmindegree;
 
-import com.tencent.angel.graph.client.node2vec.data.WalkPath;
-import com.tencent.angel.graph.client.node2vec.getfuncs.getmaxdegree.PullMaxDegreePartitionResult;
-import com.tencent.angel.graph.client.node2vec.getfuncs.pullpathtail.PullPathTailPartitionParam;
-import com.tencent.angel.graph.client.node2vec.getfuncs.pullpathtail.PullPathTailPartitionResult;
-import com.tencent.angel.graph.client.node2vec.getfuncs.pullpathtail.PullPathTailResult;
-import com.tencent.angel.graph.client.node2vec.utils.Merge;
-import com.tencent.angel.ml.matrix.psf.get.base.*;
+import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
+import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
+import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
-import com.tencent.angel.ps.storage.vector.ServerLongIntRow;
 import com.tencent.angel.ps.storage.vector.element.IElement;
 import com.tencent.angel.ps.storage.vector.element.LongArrayElement;
-import com.tencent.angel.ps.storage.vector.storage.LongIntVectorStorage;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-
-import java.util.ArrayList;
 import java.util.List;
 
 public class PullMinDegree extends GetFunc {
+
   /**
    * Create a new DefaultGetFunc.
    *
@@ -51,7 +45,8 @@ public class PullMinDegree extends GetFunc {
 
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam partParam) {
-    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager().getRow(partParam.getPartKey(), 0);
+    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager()
+        .getRow(partParam.getPartKey(), 0);
 
     int partResult = Integer.MAX_VALUE;
     ObjectIterator<Long2ObjectMap.Entry<IElement>> iter = row.iterator();

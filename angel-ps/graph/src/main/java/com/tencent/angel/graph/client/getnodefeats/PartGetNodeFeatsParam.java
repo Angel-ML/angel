@@ -79,6 +79,6 @@ public class PartGetNodeFeatsParam extends PartitionGetParam {
 
   @Override
   public int bufferLen() {
-    return super.bufferLen() + 4 + 4 * nodeIds.length;
+    return super.bufferLen() + 4 + 4 * (endIndex - startIndex);
   }
 }

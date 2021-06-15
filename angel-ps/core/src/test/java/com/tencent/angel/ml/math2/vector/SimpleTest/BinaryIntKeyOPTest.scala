@@ -25,6 +25,7 @@ import breeze.linalg.{DenseVector, HashVector, SparseVector, sum}
 import breeze.numerics._
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math2.VFactory
+import com.tencent.angel.ml.math2.storage._
 import com.tencent.angel.ml.math2.vector.SimpleTest.BinaryIntKeyOPTest._
 import com.tencent.angel.ml.math2.vector.{IntDummyVector, LongDummyVector, Vector}
 import org.junit.{BeforeClass, Test}
@@ -242,6 +243,38 @@ class BinaryIntKeyOPTest {
         }
       }
     }
+
+  }
+  @Test
+  def addtest(): Unit ={
+    val v1 = VFactory.sortedDoubleVector(10, Array(1, 3, 4, 5, 7), Array(7, 9, 2, 9, 2))
+    val v2 = VFactory.sortedDoubleVector(10, Array(2, 8), Array(8, 1))
+    val v3 = v1.add(v2)
+//    val v4 = v2.sub(v1)
+    println(v1.sum(), v2.sum(), v3.sum())
+
+//    v1.getStorage.getIndices.zip(v1.getStorage.getValues).foreach(x => print(s"(${x._1}, ${x._2}), "))
+//    println()
+//    v2.getStorage.getIndices.zip(v2.getStorage.getValues).foreach(x => print(s"(${x._1}, ${x._2}), "))
+//    println()
+//    v3.getStorage match {
+//      case sorted: IntDoubleSortedVectorStorage =>
+//        val indices = sorted.getIndices
+//        val values = sorted.getValues.map(_.toDouble)
+//        indices.zip(values).foreach(x => print(s"(${x._1}, ${x._2}), "))
+//      case sparse: IntDoubleSparseVectorStorage =>
+//        val indices = sparse.getIndices
+//        val values = sparse.getValues.map(_.toDouble)
+//        indices.zip(values).sortBy(_._1).zipWithIndex.foreach{ case (vec, idx) =>
+//          indices(idx) = vec._1
+//          values(idx) = vec._2
+//        }
+//        indices.zip(values).foreach(x => print(s"(${x._1}, ${x._2}), "))
+//      case dense: IntDoubleDenseVectorStorage =>
+//        val values = dense.getValues.map(_.toDouble)
+//        values.foreach(x => print(s"(${x}), "))
+//    }
+    println()
 
   }
 

@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -22,13 +22,14 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ml.clustering.kmeans.KMeansRunner;
 import com.tencent.angel.ml.core.conf.MLConf;
 import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.model.output.format.RowIdColIdValueTextRowFormat;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat;
 import org.apache.log4j.PropertyConfigurator;
-
+import com.tencent.angel.model.output.format.TextColumnFormat;
 import java.io.File;
 import java.util.Scanner;
 
@@ -98,16 +99,28 @@ public class KMeansLocalExample {
       conf.set(AngelConf.ANGEL_ACTION_TYPE, "train");
       conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, trainInput);
       conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/kmeans");
+      conf.set("OUT_FORMAT_CLASS","com.tencent.angel.model.output.format.TextColumnFormat");
+      System.out.println("-------------");
+      System.out.println(RowIdColIdValueTextRowFormat.class.getName());
+      System.out.println(TextColumnFormat.class.getName());
+      System.out.println(LOCAL_FS + TMP_PATH + "/model/kmeans");
+      //conf.set(MLConf.ML_EMBEDDING_MATRIX_OUTPUT_FORMAT(),"TextColumnFormat");
     } else if (mode == 2) {  // predict mode
       conf.set(AngelConf.ANGEL_ACTION_TYPE, "inctrain");
       conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, trainInput);
       conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/kmeans");
       conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/kmeans-inc");
+
     } else if (mode == 3) {  // predict mode
       conf.set(AngelConf.ANGEL_ACTION_TYPE, "predict");
       conf.set(AngelConf.ANGEL_PREDICT_DATA_PATH, predictInput);
       conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, LOCAL_FS + TMP_PATH + "/model/kmeans");
       conf.set(AngelConf.ANGEL_PREDICT_PATH, LOCAL_FS + TMP_PATH + "/predict/kmeans");
+
+      //System.out.println("-------------");
+      //System.out.println(predictInput);
+      //System.out.println(LOCAL_FS + TMP_PATH + "/predict/kmeans");
+      //System.out.println("-------------");
     }
     conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 
@@ -116,12 +129,14 @@ public class KMeansLocalExample {
     conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1);
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
 
+
     //set Kmeans algorithm parameters #cluster #feature #epoch
     conf.set(MLConf.ML_MODEL_TYPE(), modelType);
     conf.set(MLConf.KMEANS_CENTER_NUM(), String.valueOf(centerNum));
     conf.set(MLConf.ML_FEATURE_INDEX_RANGE(), String.valueOf(featureNum));
     conf.set(MLConf.ML_EPOCH_NUM(), String.valueOf(epochNum));
     conf.set(MLConf.KMEANS_C(), String.valueOf(c));
+    //conf.setBoolean(MLConf.KMEANS_SILHOUETTE_FLAG(),true);
 
   }
 
@@ -157,7 +172,6 @@ public class KMeansLocalExample {
 
     try {
       setConf(3);
-
       KMeansRunner runner = new KMeansRunner();
       runner.predict(conf);
     } catch (Exception e) {

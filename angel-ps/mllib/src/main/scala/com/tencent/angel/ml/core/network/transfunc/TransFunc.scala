@@ -132,6 +132,6 @@ class Softmax() extends TransFunc {
   }
 
   override def calGrad(output: Matrix, grad: Matrix): Matrix = {
-    Ufuncs.sub(grad, output.mul(grad).sum(1), true).mul(output)
+    Ufuncs.sub(grad, output.mul(grad).sum(1), true).imul(output)
   }
 }

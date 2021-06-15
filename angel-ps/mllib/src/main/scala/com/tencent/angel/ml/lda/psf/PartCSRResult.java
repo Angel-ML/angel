@@ -136,7 +136,35 @@ public class PartCSRResult extends PartitionGetResult {
   }
 
   @Override public int bufferLen() {
-    return 16;
+    int len = 4;
+    for (ServerRow row : splits) {
+      if (row.isDense()) {
+        int[] values = ServerRowUtils.getVector((ServerIntIntRow)row).getStorage().getValues();
+        int size = (int) (row.getEndCol() - row.getStartCol());
+        int cnt = 0;
+        for (int i = 0; i < size; i++)
+          if (values[i] > 0)
+            cnt++;
+        len += 1 + 4;
+        if (cnt > size * 0.5) {
+          // dense
+          len += 4 * size;
+        } else {
+          // sparse
+          len += 8 * cnt;
+        }
+      } else if (row.isSparse()) {
+        int[] values = ServerRowUtils.getVector((ServerIntIntRow)row).getStorage().getValues();
+        int size = values.length;
+        int cnt = 0;
+        for (int i = 0; i < size; i++)
+          if (values[i] > 0)
+            cnt++;
+        len += 1 + 4 + 8 * cnt;
+      } else
+        return len;
+    }
+    return len;
   }
 
   public boolean read(int[] row) {

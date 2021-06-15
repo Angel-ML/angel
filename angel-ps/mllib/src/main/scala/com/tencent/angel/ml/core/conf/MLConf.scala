@@ -169,6 +169,9 @@ object MLConf {
   val DEFAULT_KMEANS_CENTER_NUM = 5
   val KMEANS_C = "ml.kmeans.c"
   val DEFAULT_KMEANS_C = 0.1
+  val KMEANS_SILHOUETTE_FLAG= "ml.kmeans.silhouette.flag"
+  val DEFAULT_KMEANS_SILHOUETTE_FLAG= false
+
 
   // GBDT Params
   val ML_GBDT_TASK_TYPE = "ml.gbdt.task.type"

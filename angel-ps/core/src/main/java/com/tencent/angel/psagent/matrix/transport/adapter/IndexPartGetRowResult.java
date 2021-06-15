@@ -21,18 +21,23 @@ package com.tencent.angel.psagent.matrix.transport.adapter;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.common.Serialize;
 import com.tencent.angel.ps.server.data.request.ValueType;
+import com.tencent.angel.psagent.matrix.transport.router.KeyPart;
 import io.netty.buffer.ByteBuf;
 
 /**
  * Base class for partition index get row result
  */
 public abstract class IndexPartGetRowResult implements Serialize {
-  private volatile PartitionKey partKey;
-  private volatile IndicesView indices;
+  private transient volatile PartitionKey partKey;
+  private transient volatile KeyPart keyPart;
 
-  public IndexPartGetRowResult(PartitionKey partKey, IndicesView indices) {
+  public IndexPartGetRowResult(PartitionKey partKey, KeyPart keyPart) {
     this.partKey = partKey;
-    this.indices = indices;
+    this.keyPart = keyPart;
+  }
+
+  public IndexPartGetRowResult() {
+    this(null, null);
   }
 
   public PartitionKey getPartKey() {
@@ -41,14 +46,6 @@ public abstract class IndexPartGetRowResult implements Serialize {
 
   public void setPartKey(PartitionKey partKey) {
     this.partKey = partKey;
-  }
-
-  public IndicesView getIndices() {
-    return indices;
-  }
-
-  public void setIndices(IndicesView indices) {
-    this.indices = indices;
   }
 
   @Override public void serialize(ByteBuf buf) {
@@ -70,4 +67,12 @@ public abstract class IndexPartGetRowResult implements Serialize {
   public abstract int getDataSize();
 
   public abstract ValueType getValueType();
+
+  public KeyPart getKeyPart() {
+    return keyPart;
+  }
+
+  public void setKeyPart(KeyPart keyPart) {
+    this.keyPart = keyPart;
+  }
 }

@@ -59,7 +59,7 @@ public class FMTest {
       // Data format, libsvm or dummy
       String dataFmt = "libsvm";
       // Train batch number per epoch.
-      String modelType = String.valueOf(RowType.T_FLOAT_SPARSE_LONGKEY);
+      String modelType = String.valueOf(RowType.T_FLOAT_SPARSE);
 
       // Learning rate
       double learnRate = 1.0;

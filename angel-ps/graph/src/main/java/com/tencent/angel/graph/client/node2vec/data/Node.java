@@ -20,12 +20,12 @@ import com.tencent.angel.graph.data.NodeUtils;
 import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.ps.storage.vector.element.IElement;
 import io.netty.buffer.ByteBuf;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class Node implements IElement {
+
   private IntFloatVector feats;
   private long[] neighbors;
   private int[] types;
@@ -100,9 +100,9 @@ public class Node implements IElement {
     long[] cloneNeighbors = new long[neighbors.length];
     System.arraycopy(neighbors, 0, cloneNeighbors, 0, neighbors.length);
 
-    if (types == null)
+    if (types == null) {
       return new com.tencent.angel.graph.data.Node(cloneFeats, cloneNeighbors);
-    else {
+    } else {
       int[] cloneTypes = new int[types.length];
       System.arraycopy(types, 0, cloneTypes, 0, types.length);
       return new com.tencent.angel.graph.data.Node(cloneFeats, cloneNeighbors, cloneTypes);
@@ -114,13 +114,15 @@ public class Node implements IElement {
     NodeUtils.serialize(feats, output);
 
     output.writeInt(neighbors.length);
-    for (int i = 0; i < neighbors.length; i++)
+    for (int i = 0; i < neighbors.length; i++) {
       output.writeLong(neighbors[i]);
+    }
 
     if (types != null) {
       output.writeInt(types.length);
-      for (int i = 0; i < types.length; i++)
+      for (int i = 0; i < types.length; i++) {
         output.writeInt(types[i]);
+      }
     }
   }
 
@@ -130,14 +132,16 @@ public class Node implements IElement {
 
     int len = input.readInt();
     neighbors = new long[len];
-    for (int i = 0; i < len; i++)
+    for (int i = 0; i < len; i++) {
       neighbors[i] = input.readLong();
+    }
 
     if (types != null) {
       len = input.readInt();
       types = new int[len];
-      for (int i = 0; i < len; i++)
+      for (int i = 0; i < len; i++) {
         types[i] = input.readInt();
+      }
     }
   }
 
@@ -145,8 +149,9 @@ public class Node implements IElement {
   public int bufferLen() {
     int len = NodeUtils.dataLen(feats);
     len += 4 + 8 * neighbors.length;
-    if (types != null)
+    if (types != null) {
       len += 4 + 4 * types.length;
+    }
     return len;
   }
 
@@ -155,13 +160,15 @@ public class Node implements IElement {
     NodeUtils.serialize(feats, output);
 
     output.writeInt(neighbors.length);
-    for (int i = 0; i < neighbors.length; i++)
+    for (int i = 0; i < neighbors.length; i++) {
       output.writeLong(neighbors[i]);
+    }
 
     if (types != null) {
       output.writeInt(types.length);
-      for (int i = 0; i < types.length; i++)
+      for (int i = 0; i < types.length; i++) {
         output.writeInt(types[i]);
+      }
     }
   }
 
@@ -171,14 +178,16 @@ public class Node implements IElement {
 
     int len = input.readInt();
     neighbors = new long[len];
-    for (int i = 0; i < len; i++)
+    for (int i = 0; i < len; i++) {
       neighbors[i] = input.readLong();
+    }
 
     if (types != null) {
       len = input.readInt();
       types = new int[len];
-      for (int i = 0; i < len; i++)
+      for (int i = 0; i < len; i++) {
         types[i] = input.readInt();
+      }
     }
   }
 

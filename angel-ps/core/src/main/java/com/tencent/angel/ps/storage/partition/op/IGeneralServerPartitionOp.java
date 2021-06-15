@@ -22,6 +22,7 @@ import com.tencent.angel.common.StreamSerialize;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
+import com.tencent.angel.psagent.matrix.transport.router.KeyValuePart;
 import io.netty.buffer.ByteBuf;
 
 /**

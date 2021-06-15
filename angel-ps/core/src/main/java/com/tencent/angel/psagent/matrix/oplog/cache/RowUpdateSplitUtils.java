@@ -22,13 +22,22 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.psagent.matrix.oplog.cache.splitter.ISplitter;
 import com.tencent.angel.utils.Sort;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+
+import com.tencent.angel.utils.StringUtils;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import com.tencent.angel.utils.HashUtils;
 
 /**
  * Row update split utils
@@ -285,11 +294,71 @@ public class RowUpdateSplitUtils {
     }
   }
 
+  public static class LongIndicesView {
+    private final long [] indices;
+    private final int start;
+    private final int end;
+
+    public LongIndicesView(long [] indices, int start, int end) {
+      this.indices = indices;
+      this.start = start;
+      this.end = end;
+    }
+
+    public long[] getIndices() {
+      return indices;
+    }
+
+    public int getStart() {
+      return start;
+    }
+
+    public int getEnd() {
+      return end;
+    }
+  }
+
+  public static class HashIndicesView {
+    private final int [] intIndices;
+    private final long [] longIndices;
+    private final String [] strIndices;
+
+    public HashIndicesView(int [] intIndices, long [] longIndices, String [] strIndices) {
+      this.intIndices = intIndices;
+      this.longIndices = longIndices;
+      this.strIndices = strIndices;
+    }
+
+    public HashIndicesView(int [] intIndices) {
+      this(intIndices, null, null);
+    }
+
+    public HashIndicesView(long [] longIndices) {
+      this(null, longIndices, null);
+    }
+
+    public HashIndicesView(String [] strIndices) {
+      this(null, null, strIndices);
+    }
+
+    public int[] getIntIndices() {
+      return intIndices;
+    }
+
+    public long[] getLongIndices() {
+      return longIndices;
+    }
+
+    public String[] getStrIndices() {
+      return strIndices;
+    }
+
+  }
+
   public static Map<PartitionKey, IntIndicesView> split(int[] indices, List<PartitionKey> parts, boolean sorted) {
     if (!sorted) {
       Arrays.sort(indices);
     }
-
     Map<PartitionKey, IntIndicesView> ret = new HashMap<>();
 
     int featureIndex = 0;
@@ -300,6 +369,7 @@ public class RowUpdateSplitUtils {
     // we still need to generate a update split to update the clock info on ps.
     while (featureIndex < indices.length || partIndex < parts.size()) {
       int length = 0;
+
       int endOffset = (int) parts.get(partIndex).getEndCol();
       while (featureIndex < indices.length && indices[featureIndex] < endOffset) {
         featureIndex++;
@@ -312,6 +382,123 @@ public class RowUpdateSplitUtils {
       }
 
       partIndex++;
+    }
+
+    return ret;
+  }
+
+  public static Map<PartitionKey, LongIndicesView> split(long[] indices,
+                                                         List<PartitionKey> parts, boolean sorted) {
+    if (!sorted) {
+      Arrays.sort(indices);
+    }
+    Map<PartitionKey, LongIndicesView> ret = new HashMap<>();
+
+    int featureIndex = 0;
+    int partIndex = 0;
+
+    // For each partition, we generate a update split.
+    // Although the split is empty for partitions those without any update data,
+    // we still need to generate a update split to update the clock info on ps.
+    while (featureIndex < indices.length || partIndex < parts.size()) {
+      int length = 0;
+
+      int endOffset = (int) parts.get(partIndex).getEndCol();
+      while (featureIndex < indices.length && indices[featureIndex] < endOffset) {
+        featureIndex++;
+        length++;
+      }
+
+      if(length > 0) {
+        LongIndicesView split = new LongIndicesView(indices, featureIndex - length, featureIndex);
+        ret.put(parts.get(partIndex), split);
+      }
+
+      partIndex++;
+    }
+
+    return ret;
+  }
+
+  public static Map<PartitionKey, HashIndicesView> split(String[] indices, List<PartitionKey> parts) {
+    Map<PartitionKey, HashIndicesView> ret = new HashMap<>();
+    Map<Integer, ArrayList<String>> partIndex2Indices = new HashMap<>();
+    SortedMap<Integer, Integer> key2partIndex = new TreeMap<>();
+    for (int i=0; i<parts.size(); i++) {
+      key2partIndex.put((int)parts.get(i).getEndCol(), parts.get(i).getPartitionId());
+    }
+    for (int j=0; j<indices.length; j++) {
+      int hash = HashUtils.getFNV1_32_HashCode(indices[j]);
+      SortedMap<Integer, Integer> subMap = key2partIndex.tailMap(hash);
+      int key = subMap.firstKey();
+      int partIndex = subMap.get(key);
+      if (partIndex2Indices.containsKey(partIndex)) {
+        partIndex2Indices.get(partIndex).add(indices[j]);
+      } else {
+        ArrayList<String> splitIndices = new ArrayList<>();
+        splitIndices.add(indices[j]);
+        partIndex2Indices.put(partIndex, splitIndices);
+      }
+    }
+
+    for (Map.Entry<Integer, ArrayList<String>> entry : partIndex2Indices.entrySet()) {
+      ret.put(parts.get(entry.getKey()), new HashIndicesView(entry.getValue().toArray(new String[0])));
+    }
+
+    return ret;
+  }
+
+  public static Map<PartitionKey, HashIndicesView> split(int[] indices, List<PartitionKey> parts) {
+    Map<PartitionKey, HashIndicesView> ret = new HashMap<>();
+    Map<Integer, IntArrayList> partIndex2Indices = new HashMap<>();
+    SortedMap<Integer, Integer> key2partIndex = new TreeMap<>();
+    for (int i=0; i<parts.size(); i++) {
+      key2partIndex.put((int)parts.get(i).getEndCol(), parts.get(i).getPartitionId());
+    }
+    for (int j=0; j<indices.length; j++) {
+      int hash = HashUtils.getFNV1_32_HashCode(indices[j]);
+      SortedMap<Integer, Integer> subMap = key2partIndex.tailMap(hash);
+      int key = subMap.firstKey();
+      int partIndex = subMap.get(key);
+      if (partIndex2Indices.containsKey(partIndex)) {
+        partIndex2Indices.get(partIndex).add(indices[j]);
+      } else {
+        IntArrayList splitIndices = new IntArrayList();
+        splitIndices.add(indices[j]);
+        partIndex2Indices.put(partIndex, splitIndices);
+      }
+    }
+
+    for (Map.Entry<Integer, IntArrayList> entry : partIndex2Indices.entrySet()) {
+      ret.put(parts.get(entry.getKey()), new HashIndicesView(entry.getValue().toIntArray()));
+    }
+
+    return ret;
+  }
+
+  public static Map<PartitionKey, HashIndicesView> split(long[] indices, List<PartitionKey> parts) {
+    Map<PartitionKey, HashIndicesView> ret = new HashMap<>();
+    Map<Integer, LongArrayList> partIndex2Indices = new HashMap<>();
+    SortedMap<Integer, Integer> key2partIndex = new TreeMap<>();
+    for (int i=0; i<parts.size(); i++) {
+      key2partIndex.put((int)parts.get(i).getEndCol(), parts.get(i).getPartitionId());
+    }
+    for (int j=0; j<indices.length; j++) {
+      int hash = HashUtils.getFNV1_32_HashCode(indices[j]);
+      SortedMap<Integer, Integer> subMap = key2partIndex.tailMap(hash);
+      int key = subMap.firstKey();
+      int partIndex = subMap.get(key);
+      if (partIndex2Indices.containsKey(partIndex)) {
+        partIndex2Indices.get(partIndex).add(indices[j]);
+      } else {
+        LongArrayList splitIndices = new LongArrayList();
+        splitIndices.add(indices[j]);
+        partIndex2Indices.put(partIndex, splitIndices);
+      }
+    }
+
+    for (Map.Entry<Integer, LongArrayList> entry : partIndex2Indices.entrySet()) {
+      ret.put(parts.get(entry.getKey()), new HashIndicesView(entry.getValue().toLongArray()));
     }
 
     return ret;

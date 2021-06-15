@@ -134,7 +134,7 @@ public class ChannelPool {
           lock.unlock();
         }
       } else if (wait) {
-        Thread.sleep(10);
+        Thread.sleep(2);
       }
     }
 

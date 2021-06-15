@@ -16,14 +16,15 @@
  */
 package com.tencent.angel.graph.client.sampleneighbor4;
 
+import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.graph.data.Node;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
 import io.netty.buffer.ByteBuf;
-
 import java.util.Random;
 
 public class SampleNeighborPartResult extends PartitionGetResult {
+
   private int partId;
   private int[] indptr;
   private int[] types;
@@ -35,8 +36,8 @@ public class SampleNeighborPartResult extends PartitionGetResult {
   boolean sampleTypes;
 
   public SampleNeighborPartResult(int partId, ServerLongAnyRow row,
-                                  long[] keys, int numSample,
-                                  boolean sampleTypes) {
+      long[] keys, int numSample,
+      boolean sampleTypes) {
     this.partId = partId;
     this.keys = keys;
     this.numSample = numSample;
@@ -91,8 +92,9 @@ public class SampleNeighborPartResult extends PartitionGetResult {
       }
 
       int size = numSample;
-      if (numSample <= 0 || numSample >= neighbor.length)
+      if (numSample <= 0 || numSample >= neighbor.length) {
         size = neighbor.length;
+      }
 
       length += size; // # neighbors/types
       buf.writeInt(size);
@@ -124,16 +126,18 @@ public class SampleNeighborPartResult extends PartitionGetResult {
 
     indptr = new int[keysLen + 1];
     neighbors = new long[neighborLen];
-    if (sampleTypes)
+    if (sampleTypes) {
       types = new int[neighborLen];
+    }
 
     int idx1 = 0, idx2 = 0;
     indptr[idx1++] = 0;
     if (!sampleTypes) {
       for (int i = 0; i < keysLen; i++) {
         int size = buf.readInt();
-        for (int j = 0; j < size; j++)
+        for (int j = 0; j < size; j++) {
           neighbors[idx2++] = buf.readLong();
+        }
         indptr[idx1++] = idx2;
       }
     } else {
@@ -150,10 +154,38 @@ public class SampleNeighborPartResult extends PartitionGetResult {
 
   @Override
   public int bufferLen() {
-    int len = 4 + 1 + 4 + 4;
-    len += keys.length * 4 + keys.length * numSample * 8;
-    if (sampleTypes)
-      len += keys.length * numSample * 4;
+    int len = 4 + 4 + 4 + ByteBufSerdeUtils.serializedBooleanLen(sampleTypes);
+
+    for (int i = 0; i < keys.length; i++) {
+      Node node = (Node) row.get(keys[i]);
+      if (node == null) {
+        len += 4;
+        continue;
+      }
+
+      long[] neighbor = node.getNeighbors();
+      if (neighbor == null || neighbor.length == 0) {
+        len += 4;
+        continue;
+      }
+
+      int size = numSample;
+      if (numSample <= 0 || numSample >= neighbor.length) {
+        size = neighbor.length;
+      }
+
+      len += 4;
+
+      if (sampleTypes) {
+        for (int j = 0; j < size; j++) {
+          len += 8 + 4;
+        }
+      } else {
+        for (int j = 0; j < size; j++) {
+          len += 8;
+        }
+      }
+    }
     return len;
   }
 

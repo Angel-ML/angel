@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum ValueType {
-  INT(1), LONG(2), FLOAT(3), DOUBLE(4);
+  INT(1), LONG(2), FLOAT(3), DOUBLE(4), STRING(5), ANY(6);
 
   public static Map<Integer, ValueType> typeIdToTypeMap;
 
@@ -32,6 +32,8 @@ public enum ValueType {
     typeIdToTypeMap.put(LONG.typeId, LONG);
     typeIdToTypeMap.put(FLOAT.typeId, FLOAT);
     typeIdToTypeMap.put(DOUBLE.typeId, DOUBLE);
+    typeIdToTypeMap.put(STRING.typeId, STRING);
+    typeIdToTypeMap.put(ANY.typeId, ANY);
   }
 
   public static ValueType valueOf(int id) {

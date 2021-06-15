@@ -52,8 +52,9 @@ public class NnzFeature extends UnaryAggrFunc {
     long size = 0;
     while (it.hasNext()) {
       Node node = (Node) (it.next().getValue());
-      if (node.getFeats() != null)
-        size ++;
+      if (node.getFeats() != null) {
+        size++;
+      }
     }
     return size;
   }

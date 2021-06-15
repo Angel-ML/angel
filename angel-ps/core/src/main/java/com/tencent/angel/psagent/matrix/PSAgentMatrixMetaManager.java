@@ -22,12 +22,11 @@ import com.google.protobuf.ServiceException;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.MatrixMetaManager;
+import com.tencent.angel.ml.matrix.MatrixMetaUtils;
 import com.tencent.angel.ml.matrix.PartitionLocation;
-import com.tencent.angel.ml.matrix.PartitionMeta;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.server.data.PSLocation;
 import com.tencent.angel.psagent.PSAgentContext;
-import com.tencent.angel.psagent.clock.ClockCache;
 import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import org.apache.commons.logging.Log;
@@ -56,18 +55,8 @@ public class PSAgentMatrixMetaManager {
    */
   private final Map<Integer, Map<Integer, List<PartitionKey>>> rowIndexToPartsMap;
 
-  /**
-   * Local clock cache
-   */
-  private final ClockCache partClockCache;
-
-  /**
-   * Create PSAgentMatrixMetaManager
-   *
-   * @param partClockCache clock cache
-   */
-  public PSAgentMatrixMetaManager(ClockCache partClockCache) {
-    this.partClockCache = partClockCache;
+  public PSAgentMatrixMetaManager() {
+    //this.partClockCache = partClockCache;
     this.matrixMetaManager = new MatrixMetaManager();
     this.matrixIdToPartsMap = new ConcurrentHashMap<>();
     this.rowIndexToPartsMap = new ConcurrentHashMap<>();
@@ -92,8 +81,6 @@ public class PSAgentMatrixMetaManager {
    */
   public void addMatrix(MatrixMeta matrixMeta) {
     matrixMetaManager.addMatrix(matrixMeta);
-    List<PartitionKey> partitions = getPartitions(matrixMeta.getId());
-    partClockCache.addMatrix(matrixMeta.getId(), partitions);
   }
 
   /**
@@ -103,7 +90,6 @@ public class PSAgentMatrixMetaManager {
    */
   public void removeMatrix(int matrixId) {
     matrixMetaManager.removeMatrix(matrixId);
-    partClockCache.removeMatrix(matrixId);
   }
 
   /**
@@ -146,6 +132,25 @@ public class PSAgentMatrixMetaManager {
   /**
    * Get partition location: includes stored pss and the location of the pss
    *
+   * @param matrixId matrix id
+   * @param partId partition id
+   * @param sync         true means get from master; false means get from cache
+   * @return partition location
+   * @throws ServiceException
+   */
+  public PartitionLocation getPartLocation(int matrixId, int partId, boolean sync)
+      throws ServiceException {
+    if (!sync) {
+      return getPartLocation(matrixId, partId);
+    } else {
+      return PSAgentContext.get().getMasterClient()
+          .getPartLocation(matrixId, partId);
+    }
+  }
+
+  /**
+   * Get partition location: includes stored pss and the location of the pss
+   *
    * @param partitionKey partition information
    * @return partition location
    * @throws ServiceException
@@ -176,6 +181,34 @@ public class PSAgentMatrixMetaManager {
   }
 
   /**
+   * Get partition location: includes stored pss and the location of the pss
+   * TODO: cache
+   *
+   * @param matrixId partition information
+   * @param partId partition id
+   * @return partition location
+   * @throws ServiceException
+   */
+  public PartitionLocation getPartLocation(int matrixId, int partId) {
+    List<ParameterServerId> psIds = getPss(matrixId, partId);
+    if (psIds == null) {
+      return new PartitionLocation(new ArrayList<>());
+    }
+
+    int size = psIds.size();
+    List<PSLocation> psLocs = new ArrayList<>(size);
+    for (int i = 0; i < size; i++) {
+      psLocs.add(new PSLocation(psIds.get(i),
+          PSAgentContext.get().getLocationManager().getPsLocation(psIds.get(i))));
+    }
+    return new PartitionLocation(psLocs);
+  }
+
+  public List<ParameterServerId> getPss(int matrixId, int partId) {
+    return matrixMetaManager.getPss(matrixId, partId);
+  }
+
+  /**
    * Get the server that hold the partition.
    *
    * @return ParameterServerId server id
@@ -199,7 +232,7 @@ public class PSAgentMatrixMetaManager {
     }
     List<PartitionKey> rowParts = rowPartKeysCache.get(rowIndex);
     if (rowParts == null) {
-      rowParts = getPartitionsFromMeta(matrixId, rowIndex);
+      rowParts = MatrixMetaUtils.getPartitions(getMatrixMeta(matrixId), rowIndex);
 
       rowPartKeysCache.put(rowIndex, rowParts);
     }
@@ -207,31 +240,6 @@ public class PSAgentMatrixMetaManager {
     return rowParts;
   }
 
-  private List<PartitionKey> getPartitionsFromMeta(int matrixId, int rowIndex) {
-    List<PartitionKey> partitionKeys = new ArrayList<>();
-    Iterator<PartitionMeta> iter =
-      matrixMetaManager.getMatrixMeta(matrixId).getPartitionMetas().values().iterator();
-    while (iter.hasNext()) {
-      PartitionKey partitionKey = iter.next().getPartitionKey();
-      if (partitionKey.getMatrixId() == matrixId && partitionKey.getStartRow() <= rowIndex
-        && partitionKey.getEndRow() > rowIndex)
-        partitionKeys.add(partitionKey);
-    }
-
-    // Sort the partitions by start column index
-    partitionKeys.sort(new Comparator<PartitionKey>() {
-      @Override public int compare(PartitionKey p1, PartitionKey p2) {
-        if (p1.getStartCol() < p2.getStartCol()) {
-          return -1;
-        } else if (p1.getStartCol() > p2.getStartCol()) {
-          return 1;
-        } else {
-          return 0;
-        }
-      }
-    });
-    return partitionKeys;
-  }
 
   /**
    * Get list of partitionkeys belong to matrixId.
@@ -242,31 +250,13 @@ public class PSAgentMatrixMetaManager {
   public List<PartitionKey> getPartitions(int matrixId) {
     List<PartitionKey> partitions = matrixIdToPartsMap.get(matrixId);
     if (partitions == null) {
-      partitions = getPartitionsFromMeta(matrixId);
+      partitions = MatrixMetaUtils.getPartitions(getMatrixMeta(matrixId));
       matrixIdToPartsMap.put(matrixId, partitions);
     }
 
     return partitions;
   }
 
-  private List<PartitionKey> getPartitionsFromMeta(int matrixId) {
-    List<PartitionKey> partitionKeys = new ArrayList<>();
-    Iterator<PartitionMeta> iter =
-      matrixMetaManager.getMatrixMeta(matrixId).getPartitionMetas().values().iterator();
-    while (iter.hasNext()) {
-      partitionKeys.add(iter.next().getPartitionKey());
-    }
-    partitionKeys.sort((PartitionKey p1, PartitionKey p2) -> {
-      if (p1.getStartCol() < p2.getStartCol()) {
-        return -1;
-      } else if (p1.getStartCol() > p2.getStartCol()) {
-        return 1;
-      } else {
-        return 0;
-      }
-    });
-    return partitionKeys;
-  }
 
   /**
    * Get the partitions the rows in.
@@ -480,5 +470,9 @@ public class PSAgentMatrixMetaManager {
       }
     }
     return matrixMetaManager.exists(matrixId);
+  }
+
+  public ParameterServerId getMasterPS(int matrixId, int partId) {
+    return matrixMetaManager.getMasterPs(matrixId, partId);
   }
 }

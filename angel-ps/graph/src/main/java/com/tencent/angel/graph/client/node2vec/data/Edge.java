@@ -19,12 +19,12 @@ package com.tencent.angel.graph.client.node2vec.data;
 import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.ps.storage.vector.element.IElement;
 import io.netty.buffer.ByteBuf;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class Edge implements IElement {
+
   private long[] srcdst;
   private IntFloatVector feats;
   private int[] types;

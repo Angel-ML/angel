@@ -25,6 +25,7 @@ import com.tencent.angel.ps.storage.partition.storage.IServerPartitionStorage;
 import com.tencent.angel.ps.storage.partition.storage.ServerPartitionStorageFactory;
 import com.tencent.angel.ps.storage.partition.storage.ServerRowsStorage;
 import com.tencent.angel.ps.storage.vector.element.IElement;
+import com.tencent.angel.psagent.matrix.transport.router.RouterType;
 
 /**
  * Server Partition factory
@@ -39,13 +40,13 @@ public class ServerPartitionFactory {
    * @param storageClass storage class
    * @param rowType row type
    * @param valueClass value class
-   * @param estSparsity estimate sparsity
+   * @param estElemNum estimate partition element number
    * @return server partition
    */
   public static ServerPartition getPartition(PartitionKey partKey,
       Class<? extends IServerPartition> partClass,
       Class<? extends IServerPartitionStorage> storageClass,
-      RowType rowType, Class<? extends IElement> valueClass, double estSparsity) {
+      RowType rowType, Class<? extends IElement> valueClass, long estElemNum, RouterType routerType) {
     // Row base partition
     if (partClass == RowBasedPartition.class) {
       // If storage class is not set, use default DenseServerRowsStorage
@@ -56,14 +57,14 @@ public class ServerPartitionFactory {
       try {
         ServerRowsStorage storage = ServerPartitionStorageFactory
             .getRowBasedStorage(storageClass, partKey, rowType);
-        return new RowBasedPartition(partKey, estSparsity, storage, rowType, valueClass);
+        return new RowBasedPartition(partKey, estElemNum, storage, rowType, valueClass, routerType);
       } catch (Throwable e) {
         throw new RuntimeException(e);
       }
     } else if (partClass == CSRPartition.class) {
       CSRStorage storage = ServerPartitionStorageFactory
           .getCSRStorage(storageClass, partKey, rowType);
-      return new CSRPartition(partKey, estSparsity, storage, rowType);
+      return new CSRPartition(partKey, estElemNum, storage, rowType);
     } else {
       try {
         ServerPartition part = (ServerPartition) partClass.newInstance();

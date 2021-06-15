@@ -37,7 +37,7 @@ public class PartitionerTest {
     Configuration conf = new Configuration();
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
     ColumnRangePartitioner partitioner = new ColumnRangePartitioner();
-    partitioner.init(mMatrix, conf);
+    //partitioner.init(mMatrix, conf);
     partitioner.getPartitions();
   }
 }

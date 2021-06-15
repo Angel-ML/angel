@@ -18,20 +18,13 @@
 
 package com.tencent.angel.psagent.task;
 
-import com.google.protobuf.ServiceException;
-import com.tencent.angel.PartitionKey;
-import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.task.TaskCounter;
 import com.tencent.angel.ml.metric.Metric;
-import com.tencent.angel.psagent.PSAgentContext;
-import com.tencent.angel.psagent.clock.ClockCache;
 import com.tencent.angel.psagent.matrix.storage.MatrixStorageManager;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -41,8 +34,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class TaskContext {
   private static final Log LOG = LogFactory.getLog(TaskContext.class);
-  // matrix id to clock map
-  private final ConcurrentHashMap<Integer, AtomicInteger> matrixIdToClockMap;
 
   // task index, it must be unique for whole application
   private final int index;
@@ -56,11 +47,6 @@ public class TaskContext {
    * Current epoch number
    */
   private final AtomicInteger epoch;
-
-  /**
-   * Update the matrix clock to Master synchronously
-   */
-  private final boolean syncClockEnable;
 
   /**
    * Task current epoch running progress
@@ -84,15 +70,10 @@ public class TaskContext {
    */
   public TaskContext(int index) {
     this.index = index;
-    this.matrixIdToClockMap = new ConcurrentHashMap<Integer, AtomicInteger>();
     this.matrixStorage = new MatrixStorageManager();
     this.epoch = new AtomicInteger(0);
     this.metrics = new ConcurrentHashMap<>();
     this.algoMetrics = new ConcurrentHashMap<>();
-
-    syncClockEnable = PSAgentContext.get().getConf()
-      .getBoolean(AngelConf.ANGEL_PSAGENT_SYNC_CLOCK_ENABLE,
-        AngelConf.DEFAULT_ANGEL_PSAGENT_SYNC_CLOCK_ENABLE);
   }
 
   /**
@@ -102,114 +83,6 @@ public class TaskContext {
    */
   public int getIndex() {
     return index;
-  }
-
-  /**
-   * Get the clock value of a matrix
-   *
-   * @param matrixId matrix id
-   * @return clock value
-   */
-  public int getMatrixClock(int matrixId) {
-    if (!matrixIdToClockMap.containsKey(matrixId)) {
-      matrixIdToClockMap.putIfAbsent(matrixId, new AtomicInteger(0));
-    }
-    return matrixIdToClockMap.get(matrixId).get();
-  }
-
-  /**
-   * Get the clock value of a matrix
-   *
-   * @param matrixId matrix id
-   * @return clock value
-   */
-  public int getPSMatrixClock(int matrixId) {
-    ClockCache clockCache = PSAgentContext.get().getClockCache();
-    List<PartitionKey> pkeys = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
-    int size = pkeys.size();
-    int clock = Integer.MAX_VALUE;
-    int partClock = 0;
-    for (int i = 0; i < size; i++) {
-      partClock = clockCache.getClock(matrixId, pkeys.get(i));
-      if (partClock < clock) {
-        clock = partClock;
-      }
-    }
-
-    return clock;
-  }
-
-  /**
-   * Global sync with special matrix,still wait until all matrixes's clock is synchronized.
-   *
-   * @param matrixId the matrix id
-   * @throws InterruptedException
-   */
-  public void globalSync(int matrixId) throws InterruptedException {
-    ClockCache clockCache = PSAgentContext.get().getClockCache();
-    List<PartitionKey> pkeys = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
-
-    int syncTimeIntervalMS = PSAgentContext.get().getConf()
-      .getInt(AngelConf.ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS,
-        AngelConf.DEFAULT_ANGEL_PSAGENT_CACHE_SYNC_TIMEINTERVAL_MS);
-
-    while (true) {
-      boolean sync = true;
-      for (PartitionKey pkey : pkeys) {
-        if (clockCache.getClock(matrixId, pkey) < getMatrixClock(matrixId)) {
-          sync = false;
-          break;
-        }
-      }
-
-      if (!sync) {
-        Thread.sleep(syncTimeIntervalMS);
-      } else {
-        break;
-      }
-    }
-  }
-
-  /**
-   * Global sync with all matrix.
-   *
-   * @throws InterruptedException
-   */
-  public void globalSync() throws InterruptedException {
-    for (Integer matId : getMatrixClocks().keySet())
-      globalSync(matId);
-  }
-
-  @Override public String toString() {
-    return super.toString() + "TaskContext [index=" + index + ", matrix clocks="
-      + printMatrixClocks() + "]";
-  }
-
-  private String printMatrixClocks() {
-    StringBuilder sb = new StringBuilder();
-
-    for (Entry<Integer, AtomicInteger> entry : matrixIdToClockMap.entrySet()) {
-      sb.append("(matrixId=");
-      sb.append(entry.getKey());
-      sb.append(",");
-      sb.append("clock=");
-      sb.append(entry.getValue().get());
-      sb.append(")");
-    }
-
-    return sb.toString();
-  }
-
-  /**
-   * Increase the clock value of the matrix
-   *
-   * @param matrixId matrix id
-   */
-  public void increaseMatrixClock(int matrixId) {
-    if (!matrixIdToClockMap.containsKey(matrixId)) {
-      matrixIdToClockMap.putIfAbsent(matrixId, new AtomicInteger(0));
-    }
-    matrixIdToClockMap.get(matrixId).incrementAndGet();
   }
 
   /**
@@ -231,52 +104,12 @@ public class TaskContext {
   }
 
   /**
-   * Increase epoch number
-   *
-   * @throws ServiceException
-   */
-  public void increaseEpoch() throws ServiceException {
-    int iterationValue = epoch.incrementAndGet();
-    if (syncClockEnable) {
-      PSAgentContext.get().getMasterClient().setAlgoMetrics(index, algoMetrics);
-      PSAgentContext.get().getMasterClient().taskIteration(index, iterationValue);
-    }
-  }
-
-  /**
    * Set the epoch number
    *
    * @param iterationValue epoch number
    */
   public void setEpoch(int iterationValue) {
     epoch.set(iterationValue);
-  }
-
-  /**
-   * Set matrix clock value
-   *
-   * @param matrixId   matrix id
-   * @param clockValue clock value
-   */
-  public void setMatrixClock(int matrixId, int clockValue) {
-    AtomicInteger clock = matrixIdToClockMap.get(matrixId);
-    if (clock == null) {
-      clock = matrixIdToClockMap.putIfAbsent(matrixId, new AtomicInteger(clockValue));
-      if (clock == null) {
-        clock = matrixIdToClockMap.get(matrixId);
-      }
-    }
-
-    clock.set(clockValue);
-  }
-
-  /**
-   * Get matrix clocks
-   *
-   * @return matrix clocks
-   */
-  public Map<Integer, AtomicInteger> getMatrixClocks() {
-    return matrixIdToClockMap;
   }
 
   /**
@@ -354,5 +187,9 @@ public class TaskContext {
    */
   public void addAlgoMetric(String name, Metric metric) {
     algoMetrics.put(name, metric);
+  }
+
+  public void increaseEpoch() {
+    epoch.incrementAndGet();
   }
 }

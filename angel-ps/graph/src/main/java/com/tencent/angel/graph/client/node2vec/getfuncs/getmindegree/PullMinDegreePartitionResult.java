@@ -21,6 +21,7 @@ import io.netty.buffer.ByteBuf;
 
 
 public class PullMinDegreePartitionResult extends PartitionGetResult {
+
   private int partResult;
 
   public PullMinDegreePartitionResult(int partResult) {

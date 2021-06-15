@@ -44,7 +44,7 @@ abstract class DataParser(val splitter: String) {
         (label, "", splits.tail)
       } else if (hasLabel && !isTraining) {
         val attached = splits(0).trim
-        (Double.NaN, attached, splits.tail)
+        (attached.toDouble, attached, splits.tail)
       } else {
         (Double.NaN, "", splits)
       }

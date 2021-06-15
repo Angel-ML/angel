@@ -25,6 +25,7 @@ import com.tencent.angel.ml.matrix.RowType;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import com.tencent.angel.master.app.AMContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,9 +49,9 @@ public class RangePartitioner implements Partitioner {
   protected int maxPartNum;
 
   @Override
-  public void init(MatrixContext mContext, Configuration conf) {
+  public void init(MatrixContext mContext, AMContext context) {
     this.mContext = mContext;
-    this.conf = conf;
+    this.conf = context.getConf();
 
     long defaultPartSize = conf.getLong(AngelConf.ANGEL_MODEL_PARTITIONER_PARTITION_SIZE,
             AngelConf.DEFAULT_ANGEL_MODEL_PARTITIONER_PARTITION_SIZE);
@@ -144,6 +145,11 @@ public class RangePartitioner implements Partitioner {
     return partId % serverNum;
   }
 
+  @Override
+  public PartitionType getPartitionType() {
+    return PartitionType.RANGE_PARTITION;
+  }
+
   public static void main(String [] args) {
     MatrixContext matrix1 = new MatrixContext();
     matrix1.setRowNum(1);
@@ -159,7 +165,7 @@ public class RangePartitioner implements Partitioner {
     Configuration conf = new Configuration();
     RangePartitioner partitioner = new RangePartitioner();
 
-    partitioner.init(matrix1, conf);
+    //partitioner.init(matrix1, conf);
     partitioner.getPartitions();
   }
 }

@@ -18,6 +18,7 @@
 
 package com.tencent.angel.ps.server.data.response;
 
+import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
@@ -26,7 +27,7 @@ import org.apache.commons.logging.LogFactory;
 /**
  * The result of get udf request.
  */
-public class GetUDFResponse extends Response {
+public class GetUDFResponse extends ResponseData {
   private static final Log LOG = LogFactory.getLog(GetUDFResponse.class);
   /**
    * the get result of the matrix partition
@@ -36,40 +37,17 @@ public class GetUDFResponse extends Response {
   /**
    * Create a new GetUDFResponse
    *
-   * @param responseType response type
-   * @param detail       detail failed message if the response is not success
    * @param partResult   result
    */
-  public GetUDFResponse(ResponseType responseType, String detail, PartitionGetResult partResult) {
-    super(responseType, detail);
+  public GetUDFResponse(PartitionGetResult partResult) {
     this.partResult = partResult;
-  }
-
-  /**
-   * Create a new GetUDFResponse
-   *
-   * @param responseType response type
-   * @param partResult   result
-   */
-  public GetUDFResponse(ResponseType responseType, PartitionGetResult partResult) {
-    this(responseType, null, partResult);
-  }
-
-  /**
-   * Create a new GetUDFResponse
-   *
-   * @param responseType response type
-   * @param detail       detail failed message if the response is not success
-   */
-  public GetUDFResponse(ResponseType responseType, String detail) {
-    this(responseType, detail, null);
   }
 
   /**
    * Create a new GetUDFResponse.
    */
   public GetUDFResponse() {
-    this(ResponseType.SUCCESS, null, null);
+    this(null);
   }
 
   /**
@@ -91,48 +69,18 @@ public class GetUDFResponse extends Response {
   }
 
   @Override public void serialize(ByteBuf buf) {
-    super.serialize(buf);
-    if (partResult != null) {
-      byte[] data = partResult.getClass().getName().getBytes();
-      buf.writeInt(data.length);
-      buf.writeBytes(data);
-
-      partResult.serialize(buf);
-    }
+    ByteBufSerdeUtils.serializeObject(buf, partResult);
   }
 
   @Override public void deserialize(ByteBuf buf) {
-    super.deserialize(buf);
-    if (buf.isReadable()) {
-      int size = buf.readInt();
-      byte[] data = new byte[size];
-      buf.readBytes(data);
-      String partResultClassName = new String(data);
-      try {
-        partResult = (PartitionGetResult) Class.forName(partResultClassName).newInstance();
-        partResult.deserialize(buf);
-      } catch (Exception e) {
-        LOG.fatal("deserialize PartitionAggrResult falied, ", e);
-      }
-    }
+    partResult = (PartitionGetResult) ByteBufSerdeUtils.deserializeObject(buf);
   }
 
   @Override public int bufferLen() {
-    int size = super.bufferLen();
-    if (partResult != null) {
-      size += 4;
-      size += partResult.getClass().getName().getBytes().length;
-      size += partResult.bufferLen();
-    }
-
-    return size;
+    return partResult.bufferLen();
   }
 
   @Override public String toString() {
     return "GetUDFResponse [partResult=" + partResult + ", toString()=" + super.toString() + "]";
-  }
-
-  @Override public void clear() {
-    setPartResult(null);
   }
 }

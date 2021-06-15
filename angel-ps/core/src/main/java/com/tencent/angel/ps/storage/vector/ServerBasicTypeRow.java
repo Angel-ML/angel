@@ -20,6 +20,7 @@ package com.tencent.angel.ps.storage.vector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.storage.vector.op.BasicTypePipelineOp;
 import com.tencent.angel.ps.storage.vector.storage.BasicTypeStorage;
+import com.tencent.angel.psagent.matrix.transport.router.RouterType;
 
 /**
  * Base class for basic type row
@@ -27,14 +28,13 @@ import com.tencent.angel.ps.storage.vector.storage.BasicTypeStorage;
 public abstract class ServerBasicTypeRow extends ServerRow implements BasicTypePipelineOp {
 
   public ServerBasicTypeRow(int rowId, RowType rowType,
-      long startCol, long endCol, long estElemNum,
-      BasicTypeStorage storage) {
-    super(rowId, rowType, startCol, endCol, estElemNum, storage);
+      long startCol, long endCol, long estElemNum, BasicTypeStorage storage, RouterType routerType) {
+    super(rowId, rowType, startCol, endCol, estElemNum, storage, routerType);
   }
 
   protected void initStorage() {
     storage = ServerRowStorageFactory
         .getBasicTypeStorage(rowType, startCol, endCol, estElemNum, useAdaptiveKey, useAdaptiveStorage,
-            sparseToDenseFactor);
+            sparseToDenseFactor, routerType);
   }
 }

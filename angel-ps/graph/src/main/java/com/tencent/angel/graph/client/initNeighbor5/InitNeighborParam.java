@@ -33,7 +33,8 @@ public class InitNeighborParam extends UpdateParam {
   private long[] keys;
   private int[] indptr;
   private long[] neighbors;
-  private int[] types;
+  private int[] edgeTypes;
+  private int[] dstTypes;
   private int start;
   private int end;
 
@@ -45,21 +46,22 @@ public class InitNeighborParam extends UpdateParam {
   public InitNeighborParam(int matrixId, long[] keys,
                            int[] indptr, long[] neighbors,
                            int start, int end) {
-    this(matrixId, keys, indptr, neighbors, null, start, end);
+    this(matrixId, keys, indptr, neighbors, null, null, start, end);
   }
 
   public InitNeighborParam(int matrixId, long[] keys,
                            int[] indptr, long[] neighbors,
-                           int[] types,
+                           int[] edgeTypes, int[] dstTypes,
                            int start, int end) {
     super(matrixId);
     this.keys = keys;
     this.indptr = indptr;
     this.neighbors = neighbors;
-    this.types = types;
+    this.edgeTypes = edgeTypes;
+    this.dstTypes = dstTypes;
     this.start = start;
     this.end = end;
-    assert start > 0 && start < end && end < keys.length;
+    assert start >= 0 && start < end && end <= keys.length;
   }
 
   @Override
@@ -92,7 +94,7 @@ public class InitNeighborParam extends UpdateParam {
 
       if (length > 0)
         params.add(new InitNeighborPartParam(matrixId,
-          parts.get(partIndex), keys, index, indptr, neighbors, types,
+          parts.get(partIndex), keys, index, indptr, neighbors, edgeTypes, dstTypes,
           nodeIndex - length - start, nodeIndex - start));
 
       partIndex++;

@@ -31,13 +31,13 @@ public class CSRPartition extends ServerPartition implements ICSRStorageOp {
    * @param storage row-based matrix partition storage
    * @param rowType row type
    */
-  public CSRPartition(PartitionKey partKey, double estSparsity, CSRStorage storage,
+  public CSRPartition(PartitionKey partKey, long estElemNum, CSRStorage storage,
       RowType rowType) {
-    super(partKey, rowType, estSparsity, storage);
+    super(partKey, rowType, estElemNum, storage);
   }
 
   public CSRPartition() {
-    this(null, 0.0, null, RowType.T_DOUBLE_DENSE);
+    this(null, -1, null, RowType.T_DOUBLE_DENSE);
   }
 
   @Override

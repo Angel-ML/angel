@@ -20,7 +20,6 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.graph.client.node2vec.params.GetParamWithKeyIds;
 import com.tencent.angel.graph.client.node2vec.params.PartitionGetParamWithIds;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
-
 import java.util.Arrays;
 
 public class PullNeighborParam extends GetParamWithKeyIds {

@@ -37,6 +37,7 @@ import com.tencent.angel.model.ModelLoadContext;
 import com.tencent.angel.model.ModelSaveContext;
 import com.tencent.angel.model.SaveState;
 import com.tencent.angel.model.output.format.ModelFilesConstent;
+import com.tencent.angel.model.output.format.RowIdColIdValueTextRowFormat;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.CheckModelLoadedRequest;
@@ -45,7 +46,8 @@ import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.CheckModel
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.CheckModelSavedResponse;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.ClientRegisterRequest;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetClientIdRequest;
-import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetJobReportRequest;
+import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetJobReportRequest
+        ;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetJobReportResponse;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.JobReportProto;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.JobStateProto;
@@ -297,7 +299,7 @@ public abstract class AngelClient implements AngelClientInterface {
       MatrixContext context = entry.getValue().getContext();
       String savePath = context.getAttributes().get(MatrixConf.MATRIX_SAVE_PATH);
       if (savePath != null) {
-        saveContext.addMatrix(new MatrixSaveContext(context.getName()));
+        saveContext.addMatrix(new MatrixSaveContext(context.getName(),conf.get("OUT_FORMAT_CLASS", RowIdColIdValueTextRowFormat.class.getName())));
       }
     }
     saveContext.setSavePath(conf.get(AngelConf.ANGEL_JOB_OUTPUT_PATH));
@@ -396,6 +398,7 @@ public abstract class AngelClient implements AngelClientInterface {
     String tmpPath = conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH);
     String snapshotDir = new Path(tmpPath, ModelFilesConstent.snapshotDirName).toString();
     String checkpointItemPath = new Path(snapshotDir, "" + checkpointId).toString();
+    LOG.info("===Checkpoint path = " + checkpointItemPath);
     saveContext.setSavePath(checkpointItemPath);
     saveContext.setCheckpoint(true);
     save(saveContext);

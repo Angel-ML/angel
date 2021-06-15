@@ -18,7 +18,6 @@
 
 package com.tencent.angel.ml.math2.ufuncs;
 
-import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.math2.matrix.Matrix;
 import com.tencent.angel.ml.math2.ufuncs.executor.BinaryExecutor;
 import com.tencent.angel.ml.math2.ufuncs.executor.DotExecutor;
@@ -77,7 +76,7 @@ public class Ufuncs {
   Computes v1 = v1 * v2
   */
   public static Vector imul(Vector v1, Vector v2) {
-    throw new AngelException("The operation is not supported!");
+    return BinaryExecutor.apply(v1, v2, new Mul(true));
   }
 
   /*

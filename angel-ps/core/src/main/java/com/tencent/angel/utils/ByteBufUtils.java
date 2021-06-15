@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -15,15 +15,25 @@
  *
  */
 
-
 package com.tencent.angel.utils;
 
-import io.netty.buffer.*;
+import com.tencent.angel.ps.server.data.response.IStreamResponse;
+import com.tencent.angel.ps.server.data.response.Response;
+import com.tencent.angel.ps.server.data.response.ResponseData;
+import com.tencent.angel.ps.server.data.response.ResponseType;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Netty ByteBuf allocation utils.
  */
 public class ByteBufUtils {
+
+  private static final Log LOG = LogFactory.getLog(ByteBufUtils.class);
   private static volatile ByteBufAllocator allocator = null;
   public static volatile boolean useDirect = true;
   public static volatile boolean usePool = true;
@@ -62,4 +72,62 @@ public class ByteBufUtils {
       return newHeapByteBuf(estimizeSerilizeSize);
     }
   }
+
+  public static void releaseBuf(ByteBuf in) {
+    // Release the input buffer
+    if (in.refCnt() > 0) {
+      in.release();
+    }
+  }
+
+  public static ByteBuf allocResultBuf(int size, boolean useDirectorBuffer) {
+    ByteBuf buf;
+    if (size > 16 * 1024 * 1024) {
+      LOG.warn(
+          "========================================Warning, allocate big buffer with size " + size);
+    }
+    buf = ByteBufUtils.newByteBuf(size, useDirectorBuffer);
+    return buf;
+  }
+
+  public static ByteBuf allocResultBuf(Response response, boolean useDirect) {
+    return allocResultBuf(response.bufferLen(), useDirect);
+  }
+
+  public static ByteBuf serializeResponse(Response response, boolean useDirectorBuffer) {
+    ResponseData data = response.getData();
+
+    // If is stream response, just return bytebuf
+    if (data != null
+        && (data instanceof IStreamResponse)
+        && (((IStreamResponse) data).getOutputBuffer() != null)) {
+      return ((IStreamResponse) data).getOutputBuffer();
+    }
+
+    ByteBuf buf = null;
+    try {
+      buf = allocResultBuf(response, useDirectorBuffer);
+      response.serialize(buf);
+    } catch (Throwable x) {
+      LOG.error("serialize response failed ", x);
+      if (buf != null) {
+        buf.release();
+      }
+
+      if (response.getResponseType() == ResponseType.SUCCESS) {
+        // Reset the response and allocate buffer again
+        response.setResponseType(ResponseType.SERVER_IS_BUSY);
+        response.setDetail("can not serialize the response");
+        // Release response data
+        response.setData(null);
+
+        buf = allocResultBuf(response, useDirectorBuffer);
+        response.serialize(buf);
+      } else {
+        throw x;
+      }
+    }
+    return buf;
+  }
+
 }

@@ -265,31 +265,31 @@ public class RBCompLongFloatMatrix extends RowBasedMatrix<CompLongFloatVector> {
   @Override
   public Vector min(int axis) {
     assert axis == 1;
-    float[] minArr = new float[rows.length];
+    double[] minArr = new double[rows.length];
     for (int i = 0; i < rows.length; i++) {
       if (rows[i] != null) {
-        minArr[i] = (float) rows[i].min();
+        minArr[i] = rows[i].min();
       } else {
-        minArr[i] = Float.NaN;
+        minArr[i] = Double.NaN;
       }
 
     }
-    return VFactory.denseFloatVector(matrixId, 0, clock, minArr);
+    return VFactory.denseDoubleVector(matrixId, 0, clock, minArr);
   }
 
   @Override
   public Vector max(int axis) {
     assert axis == 1;
-    float[] maxArr = new float[rows.length];
+    double[] maxArr = new double[rows.length];
     for (int i = 0; i < rows.length; i++) {
       if (rows[i] != null) {
-        maxArr[i] = (float) rows[i].max();
+        maxArr[i] = rows[i].max();
       } else {
-        maxArr[i] = Float.NaN;
+        maxArr[i] = Double.NaN;
       }
 
     }
-    return VFactory.denseFloatVector(matrixId, 0, clock, maxArr);
+    return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
   }
 
   @Override
@@ -314,57 +314,57 @@ public class RBCompLongFloatMatrix extends RowBasedMatrix<CompLongFloatVector> {
   @Override
   public Vector sum(int axis) {
     assert axis == 1;
-    float[] maxArr = new float[rows.length];
+    double[] maxArr = new double[rows.length];
     for (int i = 0; i < rows.length; i++) {
       if (rows[i] != null) {
-        maxArr[i] = (float) rows[i].sum();
+        maxArr[i] = rows[i].sum();
       } else {
-        maxArr[i] = Float.NaN;
+        maxArr[i] = Double.NaN;
       }
     }
-    return VFactory.denseFloatVector(matrixId, 0, clock, maxArr);
+    return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
   }
 
   @Override
   public Vector average(int axis) {
     assert axis == 1;
-    float[] maxArr = new float[rows.length];
+    double[] maxArr = new double[rows.length];
     for (int i = 0; i < rows.length; i++) {
       if (rows[i] != null) {
-        maxArr[i] = (float) rows[i].average();
+        maxArr[i] = rows[i].average();
       } else {
-        maxArr[i] = Float.NaN;
+        maxArr[i] = Double.NaN;
       }
     }
-    return VFactory.denseFloatVector(matrixId, 0, clock, maxArr);
+    return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
   }
 
   @Override
   public Vector std(int axis) {
     assert axis == 1;
-    float[] maxArr = new float[rows.length];
+    double[] maxArr = new double[rows.length];
     for (int i = 0; i < rows.length; i++) {
       if (rows[i] != null) {
-        maxArr[i] = (float) rows[i].std();
+        maxArr[i] = rows[i].std();
       } else {
-        maxArr[i] = Float.NaN;
+        maxArr[i] = Double.NaN;
       }
     }
-    return VFactory.denseFloatVector(matrixId, 0, clock, maxArr);
+    return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
   }
 
   @Override
   public Vector norm(int axis) {
     assert axis == 1;
-    float[] maxArr = new float[rows.length];
+    double[] maxArr = new double[rows.length];
     for (int i = 0; i < rows.length; i++) {
       if (rows[i] != null) {
-        maxArr[i] = (float) rows[i].norm();
+        maxArr[i] = rows[i].norm();
       } else {
-        maxArr[i] = Float.NaN;
+        maxArr[i] = Double.NaN;
       }
     }
-    return VFactory.denseFloatVector(matrixId, 0, clock, maxArr);
+    return VFactory.denseDoubleVector(matrixId, 0, clock, maxArr);
   }
 
   @Override
@@ -375,4 +375,5 @@ public class RBCompLongFloatMatrix extends RowBasedMatrix<CompLongFloatVector> {
     }
     return new RBCompLongFloatMatrix(matrixId, clock, newRows);
   }
+
 }

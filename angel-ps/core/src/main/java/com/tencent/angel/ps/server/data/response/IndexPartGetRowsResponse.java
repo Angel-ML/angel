@@ -18,90 +18,53 @@
 
 package com.tencent.angel.ps.server.data.response;
 
-import com.tencent.angel.ps.server.data.request.ValueType;
-import com.tencent.angel.psagent.matrix.transport.adapter.*;
+import com.tencent.angel.common.ByteBufSerdeUtils;
+import com.tencent.angel.psagent.matrix.transport.router.ValuePart;
 import io.netty.buffer.ByteBuf;
 
-public class IndexPartGetRowsResponse extends Response {
-  private volatile IndexPartGetRowsResult partResult;
+public class IndexPartGetRowsResponse extends ResponseData {
+  private ValuePart[] valueParts;
 
   /**
    * Create a new GetUDFResponse
    *
-   * @param responseType response type
-   * @param detail       detail failed message if the response is not success
-   * @param partResult   result
+   * @param valueParts   result
    */
-  public IndexPartGetRowsResponse(ResponseType responseType, String detail,
-    IndexPartGetRowsResult partResult) {
-    super(responseType, detail);
-    this.partResult = partResult;
-  }
-
-  public IndexPartGetRowsResponse(ResponseType responseType, String detail) {
-    this(responseType, detail, null);
-  }
-
-  public IndexPartGetRowsResponse(ResponseType responseType) {
-    this(responseType, "", null);
+  public IndexPartGetRowsResponse(ValuePart[] valueParts) {
+    this.valueParts = valueParts;
   }
 
   public IndexPartGetRowsResponse() {
-    this(ResponseType.SUCCESS);
-  }
-
-  public IndexPartGetRowsResult getPartResult() {
-    return partResult;
-  }
-
-  public void setPartResult(IndexPartGetRowsResult partResult) {
-    this.partResult = partResult;
+    this(null);
   }
 
   @Override public void serialize(ByteBuf buf) {
-    super.serialize(buf);
-    if (partResult != null) {
-      buf.writeInt(partResult.getValueType().getTypeId());
-      partResult.serialize(buf);
+    ByteBufSerdeUtils.serializeInt(buf, valueParts.length);
+    for(int i = 0; i < valueParts.length; i++) {
+      ByteBufSerdeUtils.serializeValuePart(buf, valueParts[i]);
     }
   }
 
   @Override public void deserialize(ByteBuf buf) {
-    super.deserialize(buf);
-    if (buf.isReadable()) {
-      ValueType valueType = ValueType.valueOf(buf.readInt());
-      switch (valueType) {
-        case DOUBLE:
-          partResult = new IndexPartGetRowsDoubleResult();
-          break;
-        case FLOAT:
-          partResult = new IndexPartGetRowsFloatResult();
-          break;
-        case INT:
-          partResult = new IndexPartGetRowsIntResult();
-          break;
-        case LONG:
-          partResult = new IndexPartGetRowsLongResult();
-          break;
-        default:
-          throw new UnsupportedOperationException("unsupport value type " + valueType);
-      }
-      partResult.deserialize(buf);
+    valueParts = new ValuePart[ByteBufSerdeUtils.deserializeInt(buf)];
+    for(int i = 0; i < valueParts.length; i++) {
+      valueParts[i] = ByteBufSerdeUtils.deserializeValuePart(buf);
     }
   }
 
   @Override public int bufferLen() {
-    if (partResult == null) {
-      return super.bufferLen();
-    } else {
-      return super.bufferLen() + 4 + partResult.bufferLen();
+    int len = ByteBufSerdeUtils.INT_LENGTH;
+    for(int i = 0; i < valueParts.length; i++) {
+      len += ByteBufSerdeUtils.serializedValuePartLen(valueParts[i]);
     }
+    return len;
   }
 
-  /**
-   * Clear RPC Get result
-   */
-  @Override public void clear() {
-    partResult = null;
+  public ValuePart[] getValueParts() {
+    return valueParts;
+  }
+
+  public void setValueParts(ValuePart[] valueParts) {
+    this.valueParts = valueParts;
   }
 }

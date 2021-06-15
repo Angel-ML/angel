@@ -30,25 +30,19 @@ public class GetRowRequest extends UserRequest {
   /**
    * row index
    */
-  private final int rowIndex;
+  private final int rowId;
 
-  /**
-   * Matrix local clock
-   */
-  private final int clock;
 
   /**
    * Create a new GetRowRequest.
    *
    * @param matrixId matrix id
-   * @param rowIndex row index
-   * @param clock    clock value
+   * @param rowId row index
    */
-  public GetRowRequest(int matrixId, int rowIndex, int clock) {
+  public GetRowRequest(int matrixId, int rowId) {
     super(UserRequestType.GET_ROW);
     this.matrixId = matrixId;
-    this.rowIndex = rowIndex;
-    this.clock = clock;
+    this.rowId = rowId;
   }
 
   /**
@@ -65,13 +59,12 @@ public class GetRowRequest extends UserRequest {
    *
    * @return int row index
    */
-  public int getRowIndex() {
-    return rowIndex;
+  public int getRowId() {
+    return rowId;
   }
 
   @Override public String toString() {
-    return "GetRowRequest{" + "matrixId=" + matrixId + ", rowIndex=" + rowIndex + ", clock=" + clock
-      + "} " + super.toString();
+    return "GetRowRequest{" + "matrixId=" + matrixId + ", rowId=" + rowId + super.toString();
   }
 
   @Override public boolean equals(Object o) {
@@ -84,15 +77,15 @@ public class GetRowRequest extends UserRequest {
 
     if (matrixId != that.matrixId)
       return false;
-    if (rowIndex != that.rowIndex)
+    if (rowId != that.rowId)
       return false;
-    return clock == that.clock;
+
+    return true;
   }
 
   @Override public int hashCode() {
     int result = matrixId;
-    result = 31 * result + rowIndex;
-    result = 31 * result + clock;
+    result = 31 * result + rowId;
     return result;
   }
 }

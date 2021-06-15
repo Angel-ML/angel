@@ -33,7 +33,5 @@ public interface IntKeyVectorStorage {
 
   int size();
 
-  void setSize(int size);
-
   boolean hasKey(int key);
 }

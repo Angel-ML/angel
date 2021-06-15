@@ -16,10 +16,12 @@
  */
 package com.tencent.angel.graph.client.node2vec.getfuncs.getprogress;
 
+import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import io.netty.buffer.ByteBuf;
 
 public class GetProgressPartitionResult extends PartitionGetResult {
+
   private boolean finished;
   private double percent;
 
@@ -62,6 +64,6 @@ public class GetProgressPartitionResult extends PartitionGetResult {
 
   @Override
   public int bufferLen() {
-    return 12;
+    return ByteBufSerdeUtils.serializedBooleanLen(finished) + 8;
   }
 }

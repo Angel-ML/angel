@@ -49,6 +49,7 @@ import org.apache.commons.logging.LogFactory;
 /**
  * Matrix oplog(updates) cache.
  */
+@Deprecated
 public class MatrixOpLogCache {
 
   private static final Log LOG = LogFactory.getLog(MatrixOpLogCache.class);
@@ -527,11 +528,11 @@ public class MatrixOpLogCache {
           matrixOpLog.flushToLocalStorage();
         }
 
-        Future<VoidResult> flushFuture = adapter
-            .flush(message.getMatrixId(), message.getContext(), matrixOpLog,
-                message.getType() == OpLogMessageType.CLOCK);
-        VoidResult result = flushFuture.get();
-        ((FutureResult<VoidResult>) messageToFutureMap.remove(message)).set(result);
+        //Future<VoidResult> flushFuture = adapter
+        //    .flush(message.getMatrixId(), message.getContext(), matrixOpLog,
+        //        message.getType() == OpLogMessageType.CLOCK);
+        //VoidResult result = flushFuture.get();
+        //((FutureResult<VoidResult>) messageToFutureMap.remove(message)).set(result);
       } catch (Throwable e) {
         LOG.fatal("flush op " + message + " failed, ", e);
         PSAgentContext.get().getPsAgent()

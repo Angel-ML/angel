@@ -77,6 +77,10 @@ public class RPCContext {
     if (maxReqNumInFlight > serverNum * maxInflightRPCNumPerServer.get()) {
       maxReqNumInFlight = serverNum * maxInflightRPCNumPerServer.get();
     }
+
+    LOG.info("maxInflightRPCNum = " + maxInflightRPCNum.get());
+    LOG.info("maxInflightRPCNumPerServer = " + maxInflightRPCNumPerServer.get());
+
     this.maxInflightRPCNum.set(maxReqNumInFlight);
   }
 

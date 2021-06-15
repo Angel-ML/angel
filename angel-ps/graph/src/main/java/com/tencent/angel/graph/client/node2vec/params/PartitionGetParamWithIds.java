@@ -21,11 +21,13 @@ import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import io.netty.buffer.ByteBuf;
 
 public class PartitionGetParamWithIds extends PartitionGetParam {
+
   protected long[] keyIds;
   protected int startIdx;
   protected int endIdx;
 
-  public PartitionGetParamWithIds(int matrixId, PartitionKey partKey, long[] keyIds, int startIdx, int endIdx) {
+  public PartitionGetParamWithIds(int matrixId, PartitionKey partKey, long[] keyIds, int startIdx,
+      int endIdx) {
     super(matrixId, partKey);
     this.keyIds = keyIds;
     this.startIdx = startIdx;

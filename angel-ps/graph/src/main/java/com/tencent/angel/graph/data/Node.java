@@ -32,7 +32,10 @@ public class Node implements IElement {
   private IntFloatVector feats;
 
   private long[] neighbors;
+  private IntFloatVector[] edgeFeatures;
   private int[] types;
+  private int[] edgeTypes;
+  private float[] labels;
 
   public Node(IntFloatVector feats, long[] neighbors) {
     this(feats, neighbors, null);
@@ -42,6 +45,16 @@ public class Node implements IElement {
     this.feats = feats;
     this.neighbors = neighbors;
     this.types = types;
+  }
+
+  public Node(IntFloatVector feats, long[] neighbors, int[] types, float[] labels) {
+    this(feats, neighbors, types);
+    this.labels = labels;
+  }
+
+  public Node(IntFloatVector feats, long[] neighbors, IntFloatVector[] edgeFeatures, int[] types) {
+    this(feats, neighbors, types);
+    this.edgeFeatures = edgeFeatures;
   }
 
   public Node() {
@@ -64,6 +77,14 @@ public class Node implements IElement {
     this.neighbors = neighbors;
   }
 
+  public IntFloatVector[] getEdgeFeatures() {
+    return edgeFeatures;
+  }
+
+  public void setEdgeFeatures(IntFloatVector[] edgeFeats) {
+    this.edgeFeatures = edgeFeats;
+  }
+
   public int[] getTypes() {
     return types;
   }
@@ -72,92 +93,134 @@ public class Node implements IElement {
     this.types = types;
   }
 
+  public int[] getEdgeTypes() {
+    return edgeTypes;
+  }
+
+  public void setEdgeTypes(int[] edgeTypes) {
+    this.edgeTypes = edgeTypes;
+  }
+
+  public float[] getLabels() { return labels; }
+
+  public void setLabels(float[] labels) { this.labels = labels; }
+
   @Override
   public Node deepClone() {
-    IntFloatVector cloneFeats = feats.clone();
+    if (feats != null && neighbors != null) {
+      IntFloatVector cloneFeats = feats.clone();
 
-    long[] cloneNeighbors = new long[neighbors.length];
-    System.arraycopy(neighbors, 0, cloneNeighbors, 0, neighbors.length);
+      long[] cloneNeighbors = new long[neighbors.length];
+      System.arraycopy(neighbors, 0, cloneNeighbors, 0, neighbors.length);
 
-    if (types == null)
-      return new Node(cloneFeats, cloneNeighbors);
-    else {
-      int[] cloneTypes = new int[types.length];
-      System.arraycopy(types, 0, cloneTypes, 0, types.length);
-      return new Node(cloneFeats, cloneNeighbors, cloneTypes);
+      if (types == null)
+        return new Node(cloneFeats, cloneNeighbors);
+      else {
+        int[] cloneTypes = new int[types.length];
+        System.arraycopy(types, 0, cloneTypes, 0, types.length);
+        return new Node(cloneFeats, cloneNeighbors, cloneTypes);
+      }
+    } else {
+      return new Node();
     }
   }
 
   @Override
   public void serialize(ByteBuf output) {
-    NodeUtils.serialize(feats, output);
+    if (feats !=null && neighbors != null ) {
+      output.writeInt(1);
+      NodeUtils.serialize(feats, output);
 
-    output.writeInt(neighbors.length);
-    for (int i = 0; i < neighbors.length; i++)
-      output.writeLong(neighbors[i]);
+      output.writeInt(neighbors.length);
+      for (int i = 0; i < neighbors.length; i++)
+        output.writeLong(neighbors[i]);
 
-    if (types != null) {
-      output.writeInt(types.length);
-      for (int i = 0; i < types.length; i++)
-        output.writeInt(types[i]);
+      if (types != null) {
+        output.writeInt(types.length);
+        for (int i = 0; i < types.length; i++)
+          output.writeInt(types[i]);
+      } else {
+        output.writeInt(0);
+      }
+    } else {
+      output.writeInt(0);
     }
   }
 
   @Override
   public void deserialize(ByteBuf input) {
-    feats = NodeUtils.deserialize(input);
+    int derFlag = input.readInt();
+    if (0 != derFlag) {
+      feats = NodeUtils.deserialize(input);
 
-    int len = input.readInt();
-    neighbors = new long[len];
-    for (int i = 0; i < len; i++)
-      neighbors[i] = input.readLong();
-
-    if (types != null) {
-      len = input.readInt();
-      types = new int[len];
+      int len = input.readInt();
+      neighbors = new long[len];
       for (int i = 0; i < len; i++)
-        types[i] = input.readInt();
+        neighbors[i] = input.readLong();
+
+      len = input.readInt();
+      if (0 != len) {
+        types = new int[len];
+        for (int i = 0; i < len; i++)
+          types[i] = input.readInt();
+      }
     }
   }
 
   @Override
   public int bufferLen() {
-    int len = NodeUtils.dataLen(feats);
-    len += 4 + 8 * neighbors.length;
-    if (types != null)
-      len += 4 + 4 * types.length;
+    int len = 4;
+    if (feats != null && neighbors != null) {
+      len = NodeUtils.dataLen(feats);
+      len += 4 + 8 * neighbors.length;
+      if (types != null) {
+        len += 4 + 4 * types.length;
+      } else {
+        len += 4;
+      }
+    }
     return len;
   }
 
   @Override
   public void serialize(DataOutputStream output) throws IOException {
-    NodeUtils.serialize(feats, output);
+    if (feats !=null && neighbors != null ) {
+      output.writeInt(1);
+      NodeUtils.serialize(feats, output);
 
-    output.writeInt(neighbors.length);
-    for (int i = 0; i < neighbors.length; i++)
-      output.writeLong(neighbors[i]);
+      output.writeInt(neighbors.length);
+      for (int i = 0; i < neighbors.length; i++)
+        output.writeLong(neighbors[i]);
 
-    if (types != null) {
-      output.writeInt(types.length);
-      for (int i = 0; i < types.length; i++)
-        output.writeInt(types[i]);
+      if (types != null) {
+        output.writeInt(types.length);
+        for (int i = 0; i < types.length; i++)
+          output.writeInt(types[i]);
+      } else {
+        output.writeInt(0);
+      }
+    } else {
+      output.writeInt(0);
     }
   }
 
   @Override
   public void deserialize(DataInputStream input) throws IOException {
-    feats = NodeUtils.deserialize(input);
+    int derFlag = input.readInt();
+    if (0 != derFlag) {
+      feats = NodeUtils.deserialize(input);
 
-    int len = input.readInt();
-    neighbors = new long[len];
-    for (int i = 0; i < len; i++)
-      neighbors[i] = input.readLong();
-
-    if (types != null) {
-      len = input.readInt();
-      types = new int[len];
+      int len = input.readInt();
+      neighbors = new long[len];
       for (int i = 0; i < len; i++)
-        types[i] = input.readInt();
+        neighbors[i] = input.readLong();
+
+      len = input.readInt();
+      if (0 != len) {
+        types = new int[len];
+        for (int i = 0; i < len; i++)
+          types[i] = input.readInt();
+      }
     }
   }
 

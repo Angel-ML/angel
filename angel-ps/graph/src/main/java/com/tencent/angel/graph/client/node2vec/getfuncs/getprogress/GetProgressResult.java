@@ -19,6 +19,7 @@ package com.tencent.angel.graph.client.node2vec.getfuncs.getprogress;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 
 public class GetProgressResult extends GetResult {
+
   private boolean finished;
   private double percent;
 

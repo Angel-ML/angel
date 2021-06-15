@@ -26,7 +26,6 @@ import com.tencent.angel.ps.storage.partition.RowBasedPartition;
 import com.tencent.angel.ps.storage.partition.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
 import com.tencent.angel.ps.storage.vector.element.FloatArrayElement;
-import com.tencent.angel.ps.storage.vector.element.LongArrayElement;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import java.util.List;
@@ -37,84 +36,84 @@ import java.util.Random;
  */
 public class GetNodeAttrs extends GetFunc {
 
-    public GetNodeAttrs(GetNodeAttrsParam param) {
-        super(param);
-    }
+  public GetNodeAttrs(GetNodeAttrsParam param) {
+    super(param);
+  }
 
-    public GetNodeAttrs() {
-        this(null);
-    }
+  public GetNodeAttrs() {
+    this(null);
+  }
 
-    @Override
-    public PartitionGetResult partitionGet(PartitionGetParam partParam) {
-        PartGetNodeAttrsParam param = (PartGetNodeAttrsParam) partParam;
-        ServerMatrix matrix = psContext.getMatrixStorageManager().getMatrix(partParam.getMatrixId());
-        ServerPartition part = matrix.getPartition(partParam.getPartKey().getPartitionId());
-        ServerLongAnyRow row = (ServerLongAnyRow) (((RowBasedPartition) part).getRow(0));
-        long[] nodeIds = param.getNodeIds();
-        float[][] attrs = new float[nodeIds.length][];
+  @Override
+  public PartitionGetResult partitionGet(PartitionGetParam partParam) {
+    PartGetNodeAttrsParam param = (PartGetNodeAttrsParam) partParam;
+    ServerMatrix matrix = psContext.getMatrixStorageManager().getMatrix(partParam.getMatrixId());
+    ServerPartition part = matrix.getPartition(partParam.getPartKey().getPartitionId());
+    ServerLongAnyRow row = (ServerLongAnyRow) (((RowBasedPartition) part).getRow(0));
+    long[] nodeIds = param.getNodeIds();
+    float[][] attrs = new float[nodeIds.length][];
 
-        int count = param.getCount();
-        Random r = new Random();
+    int count = param.getCount();
+    Random r = new Random();
 
-        for (int i = 0; i < nodeIds.length; i++) {
-            long nodeId = nodeIds[i];
+    for (int i = 0; i < nodeIds.length; i++) {
+      long nodeId = nodeIds[i];
 
-            // Get node neighbor number
-            FloatArrayElement element = (FloatArrayElement) (row.get(nodeId));
-            if (element == null) {
-                attrs[i] = null;
-            } else {
-                float[] nodeAttrs = element.getData();
-                if (nodeAttrs == null || nodeAttrs.length == 0) {
-                    attrs[i] = null;
-                } else if (count <= 0 || nodeAttrs.length <= count) {
-                    attrs[i] = nodeAttrs;
-                } else {
-                    attrs[i] = new float[count];
-                    // If the neighbor number > count, just copy a range of neighbors to the result array, the copy position is random
-                    int startPos = Math.abs(r.nextInt()) % nodeAttrs.length;
-                    if (startPos + count <= nodeAttrs.length) {
-                        System.arraycopy(nodeAttrs, startPos, attrs[i], 0, count);
-                    } else {
-                        System
-                                .arraycopy(nodeAttrs, startPos, attrs[i], 0,
-                                        nodeAttrs.length - startPos);
-                        System.arraycopy(nodeAttrs, 0, attrs[i],
-                                nodeAttrs.length - startPos, count - (nodeAttrs.length - startPos));
-                    }
-                }
-            }
+      // Get node neighbor number
+      FloatArrayElement element = (FloatArrayElement) (row.get(nodeId));
+      if (element == null) {
+        attrs[i] = null;
+      } else {
+        float[] nodeAttrs = element.getData();
+        if (nodeAttrs == null || nodeAttrs.length == 0) {
+          attrs[i] = null;
+        } else if (count <= 0 || nodeAttrs.length <= count) {
+          attrs[i] = nodeAttrs;
+        } else {
+          attrs[i] = new float[count];
+          // If the neighbor number > count, just copy a range of neighbors to the result array, the copy position is random
+          int startPos = Math.abs(r.nextInt()) % nodeAttrs.length;
+          if (startPos + count <= nodeAttrs.length) {
+            System.arraycopy(nodeAttrs, startPos, attrs[i], 0, count);
+          } else {
+            System
+                .arraycopy(nodeAttrs, startPos, attrs[i], 0,
+                    nodeAttrs.length - startPos);
+            System.arraycopy(nodeAttrs, 0, attrs[i],
+                nodeAttrs.length - startPos, count - (nodeAttrs.length - startPos));
+          }
         }
-
-        return new PartGetNodeAttrsResult(part.getPartitionKey().getPartitionId(), attrs);
+      }
     }
 
-    @Override
-    public GetResult merge(List<PartitionGetResult> partResults) {
-        Int2ObjectArrayMap<PartitionGetResult> partIdToResultMap = new Int2ObjectArrayMap<>(
-                partResults.size());
-        for (PartitionGetResult result : partResults) {
-            partIdToResultMap.put(((PartGetNodeAttrsResult) result).getPartId(), result);
-        }
+    return new PartGetNodeAttrsResult(part.getPartitionKey().getPartitionId(), attrs);
+  }
 
-        GetNodeAttrsParam param = (GetNodeAttrsParam) getParam();
-        long[] nodeIds = param.getNodeIds();
-        List<PartitionGetParam> partParams = param.getPartParams();
-
-        Long2ObjectOpenHashMap<float[]> nodeIdToAttrs = new Long2ObjectOpenHashMap<>(nodeIds.length);
-
-        for (PartitionGetParam partParam : partParams) {
-            int start = ((PartGetNodeAttrsParam) partParam).getStartIndex();
-            int end = ((PartGetNodeAttrsParam) partParam).getEndIndex();
-            PartGetNodeAttrsResult partResult = (PartGetNodeAttrsResult) (partIdToResultMap
-                    .get(partParam.getPartKey().getPartitionId()));
-            float[][] results = partResult.getNodeIdToAttrs();
-            for (int i = start; i < end; i++) {
-                nodeIdToAttrs.put(nodeIds[i], results[i - start]);
-            }
-        }
-
-        return new GetNodeAttrsResult(nodeIdToAttrs);
+  @Override
+  public GetResult merge(List<PartitionGetResult> partResults) {
+    Int2ObjectArrayMap<PartitionGetResult> partIdToResultMap = new Int2ObjectArrayMap<>(
+        partResults.size());
+    for (PartitionGetResult result : partResults) {
+      partIdToResultMap.put(((PartGetNodeAttrsResult) result).getPartId(), result);
     }
+
+    GetNodeAttrsParam param = (GetNodeAttrsParam) getParam();
+    long[] nodeIds = param.getNodeIds();
+    List<PartitionGetParam> partParams = param.getPartParams();
+
+    Long2ObjectOpenHashMap<float[]> nodeIdToAttrs = new Long2ObjectOpenHashMap<>(nodeIds.length);
+
+    for (PartitionGetParam partParam : partParams) {
+      int start = ((PartGetNodeAttrsParam) partParam).getStartIndex();
+      int end = ((PartGetNodeAttrsParam) partParam).getEndIndex();
+      PartGetNodeAttrsResult partResult = (PartGetNodeAttrsResult) (partIdToResultMap
+          .get(partParam.getPartKey().getPartitionId()));
+      float[][] results = partResult.getNodeIdToAttrs();
+      for (int i = start; i < end; i++) {
+        nodeIdToAttrs.put(nodeIds[i], results[i - start]);
+      }
+    }
+
+    return new GetNodeAttrsResult(nodeIdToAttrs);
+  }
 }

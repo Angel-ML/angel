@@ -16,17 +16,22 @@
  */
 package com.tencent.angel.ps.server.data.response;
 
-public class GetStateResponse extends Response {
+import io.netty.buffer.ByteBuf;
 
-  public GetStateResponse(ResponseType responseType, String detail) {
-    super(responseType, detail);
+public class GetStateResponse extends ResponseData {
+
+  @Override
+  public void serialize(ByteBuf output) {
+
   }
 
-  public GetStateResponse(ResponseType responseType) {
-    this(responseType, "");
+  @Override
+  public void deserialize(ByteBuf input) {
+
   }
 
-  public GetStateResponse() {
-    this(ResponseType.SUCCESS, "");
+  @Override
+  public int bufferLen() {
+    return 0;
   }
 }

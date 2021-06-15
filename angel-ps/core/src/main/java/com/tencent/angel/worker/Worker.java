@@ -484,7 +484,7 @@ public class Worker implements Executor {
 
   private void exit(int exitValue) {
     AngelDeployMode deployMode = WorkerContext.get().getDeployMode();
-    if (deployMode == AngelDeployMode.YARN || deployMode == AngelDeployMode.KUBERNETES) {
+    if (deployMode == AngelDeployMode.YARN) {
       System.exit(exitValue);
     }
   }

@@ -73,7 +73,7 @@ public class CSRPartUpdateParam extends PartitionUpdateParam {
     int len = 0;
     for (int i = 0; i < updates.length; i++) {
       if (updates[i] != null)
-        len += updates[i].size() * 8;
+        len += 8 + updates[i].size() * 8;
     }
     return super.bufferLen() + len;
   }

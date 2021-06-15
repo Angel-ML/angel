@@ -96,16 +96,6 @@ public class RBCompIntIntMatrix extends RowBasedMatrix<CompIntIntVector> {
   }
 
   @Override
-  public Vector dot(Vector other) {
-    int[] resArr = new int[rows.length];
-    for (int i = 0; i < rows.length; i++) {
-      resArr[i] = (int) rows[i].dot(other);
-    }
-    IntIntDenseVectorStorage storage = new IntIntDenseVectorStorage(resArr);
-    return new IntIntVector(matrixId, 0, clock, rows.length, storage);
-  }
-
-  @Override
   public RowBasedMatrix calulate(int rowId, Vector other, Binary op) {
     assert other != null;
     RBCompIntIntMatrix res;
@@ -373,4 +363,5 @@ public class RBCompIntIntMatrix extends RowBasedMatrix<CompIntIntVector> {
     }
     return new RBCompIntIntMatrix(matrixId, clock, newRows);
   }
+
 }

@@ -20,6 +20,7 @@ package com.tencent.angel.ps.storage.vector;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.storage.vector.element.IElement;
 import com.tencent.angel.ps.storage.vector.storage.ObjectTypeStorage;
+import com.tencent.angel.psagent.matrix.transport.router.RouterType;
 
 /**
  * Base class for basic type row
@@ -32,15 +33,14 @@ public abstract class ServerComplexTypeRow extends ServerRow {
   protected Class<? extends IElement> valueType;
 
   public ServerComplexTypeRow(Class<? extends IElement> valueType, int rowId, RowType rowType,
-      long startCol, long endCol, long estElemNum,
-      ObjectTypeStorage storage) {
-    super(rowId, rowType, startCol, endCol, estElemNum, storage);
+      long startCol, long endCol, long estElemNum, ObjectTypeStorage storage, RouterType routerType) {
+    super(rowId, rowType, startCol, endCol, estElemNum, storage, routerType);
     this.valueType = valueType;
   }
 
   protected void initStorage() {
     storage = ServerRowStorageFactory
         .getComplexTypeStorage(valueType, rowType, startCol, endCol, estElemNum, useAdaptiveStorage,
-            sparseToDenseFactor);
+            sparseToDenseFactor, routerType);
   }
 }

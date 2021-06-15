@@ -14,13 +14,10 @@
  * the License.
  *
  */
-
-
 package com.tencent.angel.ml.math2.storage;
 
 import com.tencent.angel.ml.math2.utils.ArrayCopy;
 import com.tencent.angel.ml.matrix.RowType;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
@@ -126,12 +123,14 @@ public class LongDoubleSortedVectorStorage implements LongDoubleVectorStorage {
 
   @Override
   public LongDoubleVectorStorage clone() {
-    return new LongDoubleSortedVectorStorage(dim, size, ArrayCopy.copy(indices), ArrayCopy.copy(values));
+    return new LongDoubleSortedVectorStorage(dim, size, ArrayCopy.copy(indices),
+        ArrayCopy.copy(values));
   }
 
   @Override
   public LongDoubleVectorStorage copy() {
-    return new LongDoubleSortedVectorStorage(dim, size, ArrayCopy.copy(indices), ArrayCopy.copy(values));
+    return new LongDoubleSortedVectorStorage(dim, size, ArrayCopy.copy(indices),
+        ArrayCopy.copy(values));
   }
 
 
@@ -282,14 +281,10 @@ public class LongDoubleSortedVectorStorage implements LongDoubleVectorStorage {
     return size;
   }
 
-  public void setSize(int size) {
-    this.size = size;
-  }
-
   @Override
   public boolean hasKey(long key) {
-    return (size != 0 && key <= indices[size - 1] && key >= indices[0] &&
-        Arrays.binarySearch(indices, key) > 0);
+    return (size != 0 && key <= indices[size - 1] && key >= indices[0]
+        && Arrays.binarySearch(indices, key) > 0);
   }
 
   @Override

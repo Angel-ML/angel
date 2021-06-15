@@ -18,15 +18,14 @@
 
 package com.tencent.angel.ps.server.data.response;
 
-import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.ps.storage.vector.ServerRow;
-import com.tencent.angel.ps.storage.vector.ServerRowFactory;
 import io.netty.buffer.ByteBuf;
 
 /**
  * The result of get row split rpc request.
  */
-public class GetRowSplitResponse extends Response {
+public class GetRowSplitResponse extends ResponseData {
   /**
    * row split
    */
@@ -35,12 +34,9 @@ public class GetRowSplitResponse extends Response {
   /**
    * Create a new GetRowSplitResponse.
    *
-   * @param responseType response type
-   * @param detail       detail failed message if the response type is failed
    * @param rowSplit     row split
    */
-  public GetRowSplitResponse(ResponseType responseType, String detail, ServerRow rowSplit) {
-    super(responseType, detail);
+  public GetRowSplitResponse(ServerRow rowSplit) {
     this.rowSplit = rowSplit;
   }
 
@@ -48,51 +44,19 @@ public class GetRowSplitResponse extends Response {
    * Create a new GetRowSplitResponse.
    */
   public GetRowSplitResponse() {
-    this(ResponseType.SUCCESS, null, null);
+    this(null);
   }
-
-  /**
-   * Create a new GetRowSplitResponse.
-   *
-   * @param responseType response type
-   * @param rowSplit     row split
-   */
-  public GetRowSplitResponse(ResponseType responseType, ServerRow rowSplit) {
-    this(responseType, null, rowSplit);
-  }
-
-  /**
-   * Create a new GetRowSplitResponse.
-   *
-   * @param responseType response type
-   * @param detail       detail failed message if the response type is failed
-   */
-  public GetRowSplitResponse(ResponseType responseType, String detail) {
-    this(responseType, detail, null);
-  }
-
 
   @Override public void serialize(ByteBuf buf) {
-    super.serialize(buf);
-    if (rowSplit != null) {
-      buf.writeInt(rowSplit.getRowType().getNumber());
-      rowSplit.serialize(buf);
-    }
+    ByteBufSerdeUtils.serializeServerRow(buf, rowSplit);
   }
 
   @Override public void deserialize(ByteBuf buf) {
-    super.deserialize(buf);
-    if (buf.readableBytes() == 0) {
-      rowSplit = null;
-      return;
-    }
-
-    rowSplit = ServerRowFactory.createEmptyServerRow(RowType.valueOf(buf.readInt()));
-    rowSplit.deserialize(buf);
+    rowSplit = ByteBufSerdeUtils.deserializeServerRow(buf);
   }
 
   @Override public int bufferLen() {
-    return super.bufferLen() + (rowSplit != null ? rowSplit.bufferLen() : 0);
+    return ByteBufSerdeUtils.serializedServerRowLen(rowSplit);
   }
 
   /**
@@ -111,9 +75,5 @@ public class GetRowSplitResponse extends Response {
    */
   public void setRowSplit(ServerRow rowSplit) {
     this.rowSplit = rowSplit;
-  }
-
-  @Override public void clear() {
-    setRowSplit(null);
   }
 }

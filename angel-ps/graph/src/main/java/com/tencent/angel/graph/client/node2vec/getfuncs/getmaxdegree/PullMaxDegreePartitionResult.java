@@ -21,6 +21,7 @@ import io.netty.buffer.ByteBuf;
 
 
 public class PullMaxDegreePartitionResult extends PartitionGetResult {
+
   private int partResult;
 
   public PullMaxDegreePartitionResult(int partResult) {

@@ -20,14 +20,12 @@
 package com.tencent.angel.ml.math2.ufuncs.executor.simple;
 
 import com.tencent.angel.exception.AngelException;
-import com.tencent.angel.ml.math2.utils.Constant;
 import com.tencent.angel.ml.math2.vector.*;
 import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.fastutil.longs.*;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 public class SimpleDotExecutor {
-
     public static double apply(Vector v1, Vector v2) {
         if (v1 instanceof IntDoubleVector && v2 instanceof IntDoubleVector) {
             return apply((IntDoubleVector) v1, (IntDoubleVector) v2);
@@ -120,53 +118,11 @@ public class SimpleDotExecutor {
 #foreach ($idx1 in [0..$len])
 #set ($dtype1 = $dtypes.get($idx1))
     private static double apply(${itype}${dtype1}Vector v1, ${itype}DummyVector v2) {
-       assert v1.getDim() == v2.getDim();
-       double dot = 0.0;
-       $itype.toLowerCase() [] idxs = v2.getIndices();
-#if (${itype} == "Int")
-       if (v1.isDense()) {
-		 $dtype1.toLowerCase() [] v1Values = v1.getStorage().getValues();
-		 int size = v2.size();
-		 for (int i = 0; i < size; i++) {
-		   dot += v1Values[idxs[i]];
-		 }
-	   } else if (v1.isSparse()) {
-#else
-	   if (v1.isSparse()) {
-#end
-		 if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
-			 && v2.size() > Constant.sortedThreshold * v1.dim()) {
-		   ObjectIterator<${itype}2${dtype1}Map.Entry> iter = v1.getStorage().entryIterator();
-		   while (iter.hasNext()) {
-			 ${itype}2${dtype1}Map.Entry entry = iter.next();
-			 dot += entry.get${dtype1}Value() * v2.get(entry.get${itype}Key());
-		   }
-		 } else {
-		   $itype.toLowerCase() size = v2.size();
-		   for (int i = 0; i < size; i++) {
-			 dot += v1.get(idxs[i]);
-		   }
-		 }
-	   } else {
-		 $itype.toLowerCase() [] keys1 = v1.getStorage().getIndices();
-		 $dtype1.toLowerCase() [] v1Values = v1.getStorage().getValues();
-
-		 int v1Pointor = 0;
-		 int v2Pointor = 0;
-		 $itype.toLowerCase() size1 = v1.size();
-		 $itype.toLowerCase() size2 = v2.size();
-
-		 while (v1Pointor < size1 && v2Pointor < size2) {
-		   if (keys1[v1Pointor] == idxs[v2Pointor]) {
-			 dot += v1Values[v1Pointor];
-			 v2Pointor++;
-			 v1Pointor++;
-		   } else if (keys1[v1Pointor] > idxs[v2Pointor]) {
-			 v2Pointor++;
-		   } else {
-			 v1Pointor++;
-		   }
-		 }
+        assert v1.getDim() == v2.getDim();
+        double dot = 0.0;
+        $itype.toLowerCase() [ ] idxs = v2.getIndices();
+        for ($itype.toLowerCase() idx : idxs) {
+            dot += v1.get(idx);
         }
         return dot;
     }
@@ -231,8 +187,7 @@ public class SimpleDotExecutor {
                 }
             }
         } else if (v1.isSparse() && v2.isSorted()) {
-            if (v1.size() < v2.size() * Constant.sparseSortedStorageThreshold
-            	&& v2.size() > Constant.sortedThreshold * v1.dim()) {
+            if (v1.size() < v2.size()) {
                 ObjectIterator<${itype}2${dtype1}Map.Entry> iter = v1.getStorage().entryIterator();
                 while (iter.hasNext()){
                     ${itype}2${dtype1}Map.Entry entry = iter.next();
@@ -247,20 +202,19 @@ public class SimpleDotExecutor {
                 }
             }
         } else if (v1.isSorted() && v2.isSparse()) {
-            if (v1.size() * Constant.sparseSortedStorageThreshold > v2.size()
-            	&& v1.size() > Constant.sortedThreshold * v1.dim()) {
-            	ObjectIterator<${itype}2${dtype2}Map.Entry> iter = v2.getStorage().entryIterator();
-				while (iter.hasNext()){
-					${itype}2${dtype2}Map.Entry entry = iter.next();
-					dot += entry.get${dtype2}Value() * v1.get(entry.get${itype}Key());
-				}
+            if (v1.size() < v2.size()) {
+                $itype.toLowerCase() [ ] keys = v1.getStorage().getIndices();
+                $dtype1.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
+                $itype.toLowerCase() size = v1.size();
+                for (int i=0; i< size; i++) {
+                    dot += v1Values[i] * v2.get(keys[i]);
+                }
             } else {
-               $itype.toLowerCase() [ ] keys = v1.getStorage().getIndices();
-			   $dtype1.toLowerCase() [ ] v1Values = v1.getStorage().getValues();
-			   $itype.toLowerCase() size = v1.size();
-			   for (int i=0; i< size; i++) {
-				   dot += v1Values[i] * v2.get(keys[i]);
-			   }
+                ObjectIterator<${itype}2${dtype2}Map.Entry> iter = v2.getStorage().entryIterator();
+                while (iter.hasNext()){
+                    ${itype}2${dtype2}Map.Entry entry = iter.next();
+                    dot += entry.get${dtype2}Value() * v1.get(entry.get${itype}Key());
+                }
             }
         } else if (v1.isSorted() && v2.isSorted()) {
             $itype.toLowerCase() [ ] keys1 = v1.getStorage().getIndices();

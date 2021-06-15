@@ -97,16 +97,6 @@ public class RBCompLongDoubleMatrix extends RowBasedMatrix<CompLongDoubleVector>
   }
 
   @Override
-  public Vector dot(Vector other) {
-    double[] resArr = new double[rows.length];
-    for (int i = 0; i < rows.length; i++) {
-      resArr[i] = (double) rows[i].dot(other);
-    }
-    IntDoubleDenseVectorStorage storage = new IntDoubleDenseVectorStorage(resArr);
-    return new IntDoubleVector(matrixId, 0, clock, rows.length, storage);
-  }
-
-  @Override
   public RowBasedMatrix calulate(int rowId, Vector other, Binary op) {
     assert other != null;
     RBCompLongDoubleMatrix res;
@@ -374,4 +364,5 @@ public class RBCompLongDoubleMatrix extends RowBasedMatrix<CompLongDoubleVector>
     }
     return new RBCompLongDoubleMatrix(matrixId, clock, newRows);
   }
+
 }

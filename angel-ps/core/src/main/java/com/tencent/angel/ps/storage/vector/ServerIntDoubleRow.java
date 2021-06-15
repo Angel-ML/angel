@@ -20,11 +20,12 @@ package com.tencent.angel.ps.storage.vector;
 
 import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.matrix.RowType;
-import com.tencent.angel.ps.server.data.request.IndexType;
+import com.tencent.angel.ps.server.data.request.KeyType;
 import com.tencent.angel.ps.server.data.request.InitFunc;
 import com.tencent.angel.ps.storage.vector.func.DoubleElemUpdateFunc;
 import com.tencent.angel.ps.storage.vector.op.IIntDoubleOp;
 import com.tencent.angel.ps.storage.vector.storage.IntDoubleStorage;
+import com.tencent.angel.psagent.matrix.transport.router.RouterType;
 import io.netty.buffer.ByteBuf;
 
 /**
@@ -43,8 +44,8 @@ public class ServerIntDoubleRow extends ServerBasicTypeRow implements IIntDouble
    * @param storage data storage
    */
   private ServerIntDoubleRow(int rowId, RowType rowType, int startCol, int endCol, int estElemNum,
-      IntDoubleStorage storage) {
-    super(rowId, rowType, startCol, endCol, estElemNum, storage);
+      IntDoubleStorage storage, RouterType routerType) {
+    super(rowId, rowType, startCol, endCol, estElemNum, storage, routerType);
   }
 
   /**
@@ -56,8 +57,9 @@ public class ServerIntDoubleRow extends ServerBasicTypeRow implements IIntDouble
    * @param endCol end position
    * @param estElemNum the estimate element number
    */
-  public ServerIntDoubleRow(int rowId, RowType rowType, int startCol, int endCol, int estElemNum) {
-    this(rowId, rowType, startCol, endCol, estElemNum, null);
+  public ServerIntDoubleRow(int rowId, RowType rowType, int startCol, int endCol,
+      int estElemNum, RouterType routerType) {
+    this(rowId, rowType, startCol, endCol, estElemNum, null, routerType);
   }
 
   /**
@@ -66,7 +68,7 @@ public class ServerIntDoubleRow extends ServerBasicTypeRow implements IIntDouble
    * @param rowType row type
    */
   public ServerIntDoubleRow(RowType rowType) {
-    this(0, rowType, 0, 0, 0);
+    this(0, rowType, 0, 0, 0, RouterType.RANGE);
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -131,7 +133,7 @@ public class ServerIntDoubleRow extends ServerBasicTypeRow implements IIntDouble
     startRead();
     try {
       return new ServerIntDoubleRow(rowId, rowType, (int) startCol, (int) endCol, (int) estElemNum,
-          (IntDoubleStorage) storage.deepClone());
+          (IntDoubleStorage) storage.deepClone(), routerType);
     } finally {
       endRead();
     }
@@ -142,7 +144,7 @@ public class ServerIntDoubleRow extends ServerBasicTypeRow implements IIntDouble
     startRead();
     try {
       return new ServerIntDoubleRow(rowId, rowType, (int) startCol, (int) endCol, (int) estElemNum,
-          (IntDoubleStorage) storage.adaptiveClone());
+          (IntDoubleStorage) storage.adaptiveClone(), routerType);
     } finally {
       endRead();
     }
@@ -164,8 +166,8 @@ public class ServerIntDoubleRow extends ServerBasicTypeRow implements IIntDouble
   }
 
   @Override
-  public void indexGet(IndexType indexType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func) {
-    getStorage().indexGet(indexType, indexSize, in, out, func);
+  public void indexGet(KeyType keyType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func) {
+    getStorage().indexGet(keyType, indexSize, in, out, func);
   }
 
   @Override

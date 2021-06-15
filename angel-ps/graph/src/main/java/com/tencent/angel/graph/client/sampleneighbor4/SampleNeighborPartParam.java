@@ -17,6 +17,7 @@
 package com.tencent.angel.graph.client.sampleneighbor4;
 
 import com.tencent.angel.PartitionKey;
+import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import io.netty.buffer.ByteBuf;
 
@@ -29,9 +30,9 @@ public class SampleNeighborPartParam extends PartitionGetParam {
   private boolean sampleTypes;
 
   public SampleNeighborPartParam(int matrixId, PartitionKey pkey,
-                                 int numSample, long[] keys,
-                                 boolean sampleTypes,
-                                 int startIndex, int endIndex) {
+      int numSample, long[] keys,
+      boolean sampleTypes,
+      int startIndex, int endIndex) {
     super(matrixId, pkey);
     this.keys = keys;
     this.numSample = numSample;
@@ -71,8 +72,9 @@ public class SampleNeighborPartParam extends PartitionGetParam {
     buf.writeInt(numSample);
     buf.writeBoolean(sampleTypes);
     buf.writeInt(endIndex - startIndex);
-    for (int i = startIndex; i < endIndex; i++)
+    for (int i = startIndex; i < endIndex; i++) {
       buf.writeLong(keys[i]);
+    }
   }
 
   @Override
@@ -81,14 +83,15 @@ public class SampleNeighborPartParam extends PartitionGetParam {
     numSample = buf.readInt();
     sampleTypes = buf.readBoolean();
     keys = new long[buf.readInt()];
-    for (int i = 0; i < keys.length; i++)
+    for (int i = 0; i < keys.length; i++) {
       keys[i] = buf.readLong();
+    }
   }
 
   @Override
   public int bufferLen() {
     int len = super.bufferLen();
-    len += 4 + 1 + 8 * (endIndex - startIndex);
+    len += 8 + ByteBufSerdeUtils.serializedBooleanLen(sampleTypes) + 8 * (endIndex - startIndex);
     return len;
   }
 }

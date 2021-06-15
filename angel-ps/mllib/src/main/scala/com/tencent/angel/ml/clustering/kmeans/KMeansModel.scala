@@ -62,8 +62,8 @@ class KMeansModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
   setLoadPath(conf)
 
   /**
-    * Pull centers from PS to local worker
-    */
+   * Pull centers from PS to local worker
+   */
   def pullCentersFromPS(): Unit = {
     lcCenters = centers.getRows((0 until K).toArray)
 
@@ -74,58 +74,84 @@ class KMeansModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
   }
 
   /**
-    * Pull mini-batch samples from PS to local worker
-    */
+   * Pull mini-batch samples from PS to local worker
+   */
   def pullVFromPS(): Unit = {
     lcV = v.getRow(0).asInstanceOf[IntFloatVector]
   }
 
   /**
-    * @return : Number of clusters
-    */
+   * @return : Number of clusters
+   */
   def getK: Int = K
 
   /**
-    * Predict use the PSModels and predict data
-    *
-    * @param storage predict data
-    * @return predict result
-    */
+   * Predict use the PSModels and predict data
+   *
+   * @param storage predict data
+   * @return predict result
+   */
   override def predict(storage: DataBlock[LabeledData]): DataBlock[PredictResult] = {
     pullCentersFromPS()
-
+    pullVFromPS()
     val predictResult = new MemoryDataBlock[PredictResult](-1)
-
+    val silhouetteFlag = conf.getBoolean(MLConf.KMEANS_SILHOUETTE_FLAG, false)
     storage.resetReadIndex()
     var data: LabeledData = null
     for (_ <- 0 until storage.size) {
       data = storage.read()
-      val cid = findClosestCenter(data.getX)._1
-      predictResult.put(KMeansResult(data.getAttach, data.getY, cid))
+      val predictResultTmp = findClosestCenter(data.getX)
+      val cid = predictResultTmp._1
+      val dist = predictResultTmp._2
+      val silhouette = predictResultTmp._3
+      predictResult.put(KMeansResult(data.getAttach, cid, dist = dist, silhouette = silhouette, silhouetteFlag = silhouetteFlag))
     }
 
     predictResult
   }
 
   /**
-    * Calculate the distance between instance and centers, and find the closest center
-    *
-    * @param x : a instance
-    * @return : the closest center id
-    */
-  def findClosestCenter(x: Vector): (Int, Double) = {
+   * Calculate the distance between instance and centers, and find the closest center
+   *
+   * @param x : a instance
+   * @return : the closest center id
+   */
+  def findClosestCenter(x: Vector): (Int, Double, Double) = {
     var minDis = Double.MaxValue
     var clstCent: Int = -1
+    val silhouetteFlag = conf.getBoolean(MLConf.KMEANS_SILHOUETTE_FLAG, false)
+    var silhouetteACount = 0.0 //the samples count of the cluster that x Vector belongs to
+    var silhouetteBSum = 0.0 //all sum distance
+    var silhouetteBCount = 0.0 // all samples number
+    var silhouette = 0.0
 
     val len2 = x.dot(x)
     for (i <- 0 until K) {
       val dist = centerDist(i) - 2 * lcCenters.get(i).dot(x) + len2
+      var samplesNumber = 0.0f
+
+      if (silhouetteFlag) {
+        samplesNumber = lcV.get(i)
+        silhouetteBSum += Math.sqrt(dist) * samplesNumber
+        silhouetteBCount += samplesNumber
+      }
+
       if (dist < minDis) {
         minDis = dist
         clstCent = i
+        silhouetteACount = samplesNumber
       }
     }
-    (clstCent, Math.sqrt(minDis))
+
+    val silhouetteMinDisSqrt = Math.sqrt(minDis)
+
+    if (silhouetteFlag) {
+      val bFinal = (silhouetteBSum - silhouetteACount * silhouetteMinDisSqrt) / (silhouetteBCount - silhouetteACount)
+      silhouette = (bFinal - silhouetteMinDisSqrt) / {
+        if (bFinal > silhouetteMinDisSqrt) bFinal else silhouetteMinDisSqrt
+      }
+    }
+    (clstCent, silhouetteMinDisSqrt, silhouette)
   }
 
   def updateCenterDist(idx: Int): Unit = {
@@ -134,10 +160,16 @@ class KMeansModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel
   }
 }
 
-case class KMeansResult(sid: String, pred: Double, label: Double = Double.NaN) extends PredictResult {
+case class KMeansResult(sid: String, pred: Double, label: Double = Double.NaN, dist: Double, silhouette: Double, silhouetteFlag: Boolean) extends PredictResult {
   val df = new DecimalFormat("0")
 
   override def getText: String = {
-    sid + separator + format.format(pred)
+    if (silhouetteFlag) {
+      sid + separator + format.format(pred) + separator + format.format(dist) + separator + format.format(silhouette)
+    }
+    else {
+      sid + separator + format.format(pred) + separator + format.format(dist)
+    }
+
   }
 }

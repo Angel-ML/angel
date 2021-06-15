@@ -53,7 +53,7 @@ class BiInteractionCross(name: String, outputDim: Int, inputLayer: Layer)(
                 sum2Vector.iadd(vectorOuter.mul(vectorOuter))
               }
 
-              blasMat.setRow(row, sum1Vector.mul(sum1Vector).isub(sum2Vector).imul(0.5))
+              blasMat.setRow(row, sum1Vector.imul(sum1Vector).isub(sum2Vector).imul(0.5))
               sum1Vector.clear()
               sum2Vector.clear()
             }
@@ -68,7 +68,7 @@ class BiInteractionCross(name: String, outputDim: Int, inputLayer: Layer)(
                 sum2Vector.iadd(vectorOuter.mul(vectorOuter))
               }
 
-              blasMat.setRow(row, sum1Vector.mul(sum1Vector).isub(sum2Vector).imul(0.5))
+              blasMat.setRow(row, sum1Vector.imul(sum1Vector).isub(sum2Vector).imul(0.5))
               sum1Vector.clear()
               sum2Vector.clear()
             }
@@ -96,7 +96,7 @@ class BiInteractionCross(name: String, outputDim: Int, inputLayer: Layer)(
               val grad = gradTemp.getRow(idx)
 
               VFactory.compIntDoubleVector(compVector.getDim, compVector.getPartitions.map { comp =>
-                sumVector.sub(comp).mul(grad).asInstanceOf[IntDoubleVector]
+                sumVector.sub(comp).imul(grad).asInstanceOf[IntDoubleVector]
               })
             }
 
@@ -111,7 +111,7 @@ class BiInteractionCross(name: String, outputDim: Int, inputLayer: Layer)(
               val grad = gradTemp.getRow(idx)
 
               VFactory.compIntFloatVector(compVector.getDim, compVector.getPartitions.map { comp =>
-                sumVector.sub(comp).mul(grad).asInstanceOf[IntFloatVector]
+                sumVector.sub(comp).imul(grad).asInstanceOf[IntFloatVector]
               })
             }
 

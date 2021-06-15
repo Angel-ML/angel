@@ -20,7 +20,6 @@ package com.tencent.angel.worker.task;
 
 import com.google.protobuf.ServiceException;
 import com.tencent.angel.exception.InvalidParameterException;
-import com.tencent.angel.exception.TimeOutException;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.metric.Metric;
@@ -40,7 +39,6 @@ import org.apache.hadoop.conf.Configuration;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -75,11 +73,6 @@ public class TaskContext {
     taskId = ProtobufUtil.convertToId(taskIdProto);
     context = PSAgentContext.get().getTaskContext(taskId.getIndex());
     context.setEpoch(taskMeta.getIteration());
-    List<MatrixClock> matrixClocks = taskMeta.getMatrixClockList();
-    int size = matrixClocks.size();
-    for (int i = 0; i < size; i++) {
-      context.setMatrixClock(matrixClocks.get(i).getMatrixId(), matrixClocks.get(i).getClock());
-    }
   }
 
   /**
@@ -217,25 +210,6 @@ public class TaskContext {
   }
 
   /**
-   * Global sync with special matrix,still wait until all matrixes's clock is synchronized.
-   *
-   * @param matrixId the matrix id
-   * @throws InterruptedException
-   */
-  public void globalSync(int matrixId) throws InterruptedException {
-    context.globalSync(matrixId);
-  }
-
-  /**
-   * Global sync with all matrix.
-   *
-   * @throws InterruptedException
-   */
-  public void globalSync() throws InterruptedException {
-    context.globalSync();
-  }
-
-  /**
    * Gets iteration num.
    *
    * @return the iteration
@@ -251,25 +225,6 @@ public class TaskContext {
    */
   public void incEpoch() throws ServiceException {
     context.increaseEpoch();
-  }
-
-  /**
-   * Gets all matrix clocks.
-   *
-   * @return the clocks
-   */
-  public Map<Integer, AtomicInteger> getMatrixClocks() {
-    return context.getMatrixClocks();
-  }
-
-  /**
-   * Get matrix clock by matrix id
-   *
-   * @param matrixId the matrix id
-   * @return the clock
-   */
-  public int getMatrixClock(int matrixId) {
-    return context.getMatrixClock(matrixId);
   }
 
   @Override public String toString() {

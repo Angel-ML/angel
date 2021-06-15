@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -25,15 +25,14 @@ import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.ps.storage.partition.RowBasedPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.psagent.PSAgentContext;
-
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * TODO
- * Updates elements as zero.
+ * TODO Updates elements as zero.
  */
 public class Zero extends UpdateFunc {
+
   /**
    * Creates a new updater.
    *
@@ -54,19 +53,21 @@ public class Zero extends UpdateFunc {
    * The parameter of zero updater.
    */
   public static class ZeroParam extends UpdateParam {
+
     /**
      * Instantiates a new Zero updater param.
      *
-     * @param matrixId    the matrix id
+     * @param matrixId the matrix id
      * @param updateClock the update clock
      */
     public ZeroParam(int matrixId, boolean updateClock) {
       super(matrixId, updateClock);
     }
 
-    @Override public List<PartitionUpdateParam> split() {
+    @Override
+    public List<PartitionUpdateParam> split() {
       List<PartitionKey> partList =
-        PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
+          PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
       int size = partList.size();
       List<PartitionUpdateParam> partParamList = new ArrayList<PartitionUpdateParam>(size);
       for (int i = 0; i < size; i++) {
@@ -82,11 +83,12 @@ public class Zero extends UpdateFunc {
    * The partition updater parameter.
    */
   public static class ZeroPartitionParam extends PartitionUpdateParam {
+
     /**
      * Creates new partition updater parameter.
      *
-     * @param matrixId    the matrix id
-     * @param partKey     the part key
+     * @param matrixId the matrix id
+     * @param partKey the part key
      * @param updateClock the update clock
      */
     public ZeroPartitionParam(int matrixId, PartitionKey partKey, boolean updateClock) {
@@ -101,9 +103,10 @@ public class Zero extends UpdateFunc {
     }
   }
 
-  @Override public void partitionUpdate(PartitionUpdateParam partParam) {
-    RowBasedPartition part = (RowBasedPartition)psContext.getMatrixStorageManager()
-      .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
+  @Override
+  public void partitionUpdate(PartitionUpdateParam partParam) {
+    RowBasedPartition part = (RowBasedPartition) psContext.getMatrixStorageManager()
+        .getPart(partParam.getMatrixId(), partParam.getPartKey().getPartitionId());
 
     if (part != null) {
       int startRow = part.getPartitionKey().getStartRow();
@@ -121,7 +124,10 @@ public class Zero extends UpdateFunc {
 
   private void zero(ServerRow row) {
     row.startWrite();
-    row.clear();
-    row.endWrite();
+    try {
+      row.clear();
+    } finally {
+      row.endWrite();
+    }
   }
 }

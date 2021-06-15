@@ -33,12 +33,10 @@ import com.tencent.angel.master.ps.ParameterServerManager;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.ParameterServer;
-import com.tencent.angel.ps.clock.ClockVectorManager;
 import com.tencent.angel.ps.storage.MatrixStorageManager;
 import com.tencent.angel.ps.storage.matrix.ServerMatrix;
 import com.tencent.angel.worker.task.TaskContext;
 import com.tencent.angel.protobuf.ProtobufUtil;
-import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskClockRequest;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskIterationRequest;
@@ -60,7 +58,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.Assert.assertEquals;
@@ -240,10 +237,7 @@ public class MasterRecoverTest {
         worker.getTaskManager().getRunningTask().get(task1Id).getTaskContext();
       assertEquals(task0Context.getEpoch(), task0Iteration);
       assertEquals(task1Context.getEpoch(), task1Iteration);
-      assertEquals(task0Context.getMatrixClock(w1Id), task0w1Clock);
-      assertEquals(task0Context.getMatrixClock(w2Id), task0w2Clock);
-      assertEquals(task1Context.getMatrixClock(w1Id), task1w1Clock);
-      assertEquals(task1Context.getMatrixClock(w2Id), task1w2Clock);
+
 
       LOG.info("===============worker.getPSAgent().getMatrixMetaManager().getMatrixMetas().size()="
         + worker.getPSAgent().getMatrixMetaManager().getMatrixMetas().size());
@@ -272,7 +266,6 @@ public class MasterRecoverTest {
 
   private void checkMatrixInfo(ParameterServer ps, int w1Id, int w2Id, int w1Clock, int w2Clock) {
     MatrixStorageManager matrixPartManager = ps.getMatrixStorageManager();
-    ClockVectorManager clockVectorManager = ps.getClockVectorManager();
     ConcurrentHashMap<Integer, ServerMatrix> matrixIdMap = matrixPartManager.getMatrices();
     ServerMatrix sw1 = matrixIdMap.get(w1Id);
     ServerMatrix sw2 = matrixIdMap.get(w2Id);
@@ -286,7 +279,6 @@ public class MasterRecoverTest {
     assertEquals(sw1.getPartition(0).getPartitionKey().getEndCol(), 50000);
     assertEquals(sw1.getPartition(0).getPartitionKey().getMatrixId(), w1Id);
     assertEquals(sw1.getPartition(0).getPartitionKey().getPartitionId(), 0);
-    assertEquals(clockVectorManager.getPartClock(sw1.getId(), 0), w1Clock);
 
     assertEquals(sw1.getPartition(1).getPartitionKey().getStartRow(), 0);
     assertEquals(sw1.getPartition(1).getPartitionKey().getEndRow(), 1);
@@ -294,7 +286,6 @@ public class MasterRecoverTest {
     assertEquals(sw1.getPartition(1).getPartitionKey().getEndCol(), 100000);
     assertEquals(sw1.getPartition(1).getPartitionKey().getMatrixId(), w1Id);
     assertEquals(sw1.getPartition(1).getPartitionKey().getPartitionId(), 1);
-    assertEquals(clockVectorManager.getPartClock(sw1.getId(), 1), w1Clock);
 
     assertEquals(sw2.getPartition(0).getPartitionKey().getStartRow(), 0);
     assertEquals(sw2.getPartition(0).getPartitionKey().getEndRow(), 1);
@@ -302,7 +293,6 @@ public class MasterRecoverTest {
     assertEquals(sw2.getPartition(0).getPartitionKey().getEndCol(), 50000);
     assertEquals(sw2.getPartition(0).getPartitionKey().getMatrixId(), w2Id);
     assertEquals(sw2.getPartition(0).getPartitionKey().getPartitionId(), 0);
-    assertEquals(clockVectorManager.getPartClock(sw2.getId(), 0), w2Clock);
 
     assertEquals(sw2.getPartition(1).getPartitionKey().getStartRow(), 0);
     assertEquals(sw2.getPartition(1).getPartitionKey().getEndRow(), 1);
@@ -310,7 +300,6 @@ public class MasterRecoverTest {
     assertEquals(sw2.getPartition(1).getPartitionKey().getEndCol(), 100000);
     assertEquals(sw2.getPartition(1).getPartitionKey().getMatrixId(), w2Id);
     assertEquals(sw2.getPartition(1).getPartitionKey().getPartitionId(), 1);
-    assertEquals(clockVectorManager.getPartClock(sw2.getId(), 1), w2Clock);
   }
 
   @After public void stop() throws Exception {

@@ -82,7 +82,7 @@ public class PartInitNeighborParam extends PartitionUpdateParam {
     }
     buf.setInt(writeIndex, writeNum);
 
-    clear();
+//    clear();
   }
 
   @Override
@@ -106,11 +106,17 @@ public class PartInitNeighborParam extends PartitionUpdateParam {
   public int bufferLen() {
     int len = super.bufferLen();
     len += 4;
+    long nodeId;
+    long[] neighbors;
     for (int i = startIndex; i < endIndex; i++) {
-      if (nodeIdToNeighborIndices.get(nodeIds[i]) != null) {
-        len += 8 * nodeIdToNeighborIndices.get(nodeIds[i]).length;
+      nodeId = nodeIds[i];
+      neighbors = nodeIdToNeighborIndices.get(nodeId);
+      if (neighbors == null || neighbors.length == 0) {
+        continue;
       }
       len += 12;
+      len += 8 * nodeIdToNeighborIndices.get(nodeIds[i]).length;
+
     }
     return len;
   }

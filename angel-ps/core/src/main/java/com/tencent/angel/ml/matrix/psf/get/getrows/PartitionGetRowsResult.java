@@ -77,11 +77,11 @@ public class PartitionGetRowsResult extends PartitionGetResult {
   }
 
   @Override public int bufferLen() {
-    int len = 0;
+    int len = 4;
     if (rowSplits != null) {
       int size = rowSplits.size();
       for (int i = 0; i < size; i++) {
-        len += rowSplits.get(i).bufferLen();
+        len += 4 + rowSplits.get(i).bufferLen();
       }
     }
 

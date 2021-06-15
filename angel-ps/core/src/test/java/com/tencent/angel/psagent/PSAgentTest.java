@@ -29,15 +29,13 @@ import com.tencent.angel.localcluster.LocalClusterContext;
 import com.tencent.angel.master.AngelApplicationMaster;
 import com.tencent.angel.master.task.AMTaskManager;
 import com.tencent.angel.master.worker.WorkerManager;
-import com.tencent.angel.ml.math2.vector.IntDoubleVector;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner;
 import com.tencent.angel.psagent.client.MasterClient;
-import com.tencent.angel.psagent.clock.ClockCache;
-import com.tencent.angel.psagent.consistency.ConsistencyController;
 import com.tencent.angel.psagent.matrix.PSAgentLocationManager;
 import com.tencent.angel.psagent.matrix.PSAgentMatrixMetaManager;
 import com.tencent.angel.psagent.task.TaskContext;
@@ -59,16 +57,12 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-
-//import com.tencent.angel.psagent.consistency.SSPConsistencyController;
-
 
 // @RunWith(MockitoJUnitRunner.class)
 public class PSAgentTest {
@@ -97,6 +91,7 @@ public class PSAgentTest {
       conf.setBoolean("mapred.mapper.new-api", true);
       conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true);
       conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS, DummyTask.class.getName());
+      conf.set(AngelConf.ANGEL_PS_ROUTER_TYPE, "range");
 
       // use local deploy mode and dummy dataspliter
       conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
@@ -133,6 +128,7 @@ public class PSAgentTest {
       mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
       mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
       mMatrix.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
+      mMatrix.setPartitionerClass(ColumnRangePartitioner.class);
       angelClient.addMatrix(mMatrix);
 
       MatrixContext mMatrix2 = new MatrixContext();
@@ -146,6 +142,7 @@ public class PSAgentTest {
       mMatrix2.set(MatrixConf.MATRIX_HOGWILD, "true");
       mMatrix2.set(MatrixConf.MATRIX_AVERAGE, "false");
       mMatrix2.set(MatrixConf.MATRIX_OPLOG_TYPE, "DENSE_DOUBLE");
+      mMatrix2.setPartitionerClass(ColumnRangePartitioner.class);
       angelClient.addMatrix(mMatrix2);
 
       angelClient.startPSServer();
@@ -455,7 +452,7 @@ public class PSAgentTest {
       assertTrue(psAgentContext.getConf() != null);
       assertTrue(psAgentContext.getMetrics() != null);
       assertTrue(psAgentContext.getMasterClient() != null);
-      assertTrue(psAgentContext.getOpLogCache() != null);
+      //assertTrue(psAgentContext.getOpLogCache() != null);
       assertTrue(psAgentContext.getMatrixTransportClient() != null);
       assertTrue(psAgentContext.getMatrixMetaManager() != null);
       assertTrue(psAgentContext.getMatrixMetaManager() != null);
@@ -465,10 +462,7 @@ public class PSAgentTest {
       assertEquals(psAgentContext.getIp(), psAgent.getIp());
       assertEquals(psAgentContext.getStaleness(),
         psAgent.getConf().getInt(AngelConf.ANGEL_STALENESS, AngelConf.DEFAULT_ANGEL_STALENESS));
-      assertEquals(psAgentContext.getConsistencyController(), psAgent.getConsistencyController());
-      assertEquals(psAgentContext.getMatrixOpLogCache(), psAgent.getOpLogCache());
-      assertEquals(psAgentContext.getClockCache(), psAgent.getClockCache());
-      assertEquals(psAgentContext.getMatricesCache(), psAgent.getMatricesCache());
+
       assertEquals(psAgentContext.getMatrixStorageManager(), psAgent.getMatrixStorageManager());
       assertEquals(psAgentContext.getUserRequestAdapter(), psAgent.getUserRequestAdapter());
       assertEquals(psAgentContext.getExecutor(), psAgent.getExecutor());
@@ -519,12 +513,6 @@ public class PSAgentTest {
       assertEquals(taskContext1.getEpoch(), 0);
       assertEquals(taskContext2.getEpoch(), 0);
 
-      assertEquals(taskContext1.getMatrixClock(1), 0);
-      assertEquals(taskContext2.getMatrixClock(2), 0);
-
-      assertEquals(taskContext1.getMatrixClocks().size(), 1);
-      assertEquals(taskContext2.getMatrixClocks().size(), 1);
-
       assertEquals(taskContext1.getProgress(), 0.0, 1e-5);
       assertEquals(taskContext2.getProgress(), 0.0, 1e-5);
     } catch (Exception x) {
@@ -550,8 +538,8 @@ public class PSAgentTest {
       PSAgent psAgent = worker.getPSAgent();
       assertTrue(psAgent != null);
 
-      ConsistencyController consistControl = psAgent.getConsistencyController();
-      assertTrue(consistControl != null);
+      //ConsistencyController consistControl = psAgent.getConsistencyController();
+      //assertTrue(consistControl != null);
 
       PSAgentContext psAgentContext = PSAgentContext.get();
       assertTrue(psAgentContext.getPsAgent() != null);
@@ -561,26 +549,6 @@ public class PSAgentTest {
       assertTrue(taskContext1 != null);
       assertTrue(taskContext2 != null);
 
-      int matrix1Id =
-        LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager()
-          .getMatrix("w1").getId();
-      int matrix2Id =
-        LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager()
-          .getMatrix("w2").getId();
-
-      IntDoubleVector row1 = (IntDoubleVector) consistControl.getRow(taskContext1, matrix1Id, 0);
-      assertTrue(row1 != null);
-      assertEquals(row1.size(), 100000);
-
-      IntDoubleVector row2 = (IntDoubleVector) consistControl.getRow(taskContext1, matrix2Id, 0);
-      assertTrue(row2 != null);
-      assertEquals(row2.size(), 100000);
-
-      consistControl.clock(taskContext1, matrix1Id, true);
-      assertEquals(taskContext1.getMatrixClock(matrix1Id), 1);
-
-      int staleness =
-        psAgent.getConf().getInt(AngelConf.ANGEL_STALENESS, AngelConf.DEFAULT_ANGEL_STALENESS);
     } catch (Exception x) {
       LOG.error("run testConsistencyController failed ", x);
       throw x;
@@ -603,12 +571,6 @@ public class PSAgentTest {
 
       PSAgent psAgent = worker.getPSAgent();
       assertTrue(psAgent != null);
-
-      ClockCache clockCache = psAgent.getClockCache();
-      assertTrue(clockCache != null);
-
-      int rowClock = clockCache.getClock(1, 0);
-      assertEquals(rowClock, 0);
     } catch (Exception x) {
       LOG.error("run testClockCache failed ", x);
       throw x;

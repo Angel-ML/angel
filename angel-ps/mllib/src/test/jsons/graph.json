@@ -15,7 +15,7 @@
     "blockSize": 1000000
   },
   "train": {
-    "epoch": 2,
+    "epoch": 5,
     "numupdateperepoch": 10,
     "batchsize": 128,
     "lr": 0.5,

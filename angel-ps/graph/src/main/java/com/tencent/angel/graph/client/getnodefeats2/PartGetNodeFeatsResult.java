@@ -16,13 +16,18 @@
  */
 package com.tencent.angel.graph.client.getnodefeats2;
 
+import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.graph.data.NodeUtils;
 import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
+import com.tencent.angel.ps.server.data.WorkerPool;
 import io.netty.buffer.ByteBuf;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class PartGetNodeFeatsResult extends PartitionGetResult {
 
+  private static final Log LOG = LogFactory.getLog(WorkerPool.class);
   private int partId;
   private IntFloatVector[] feats;
 
@@ -75,10 +80,10 @@ public class PartGetNodeFeatsResult extends PartitionGetResult {
     int len = 8;
     for (int i = 0; i < feats.length; i++) {
       if (feats[i] == null) {
-        len += 4;
+        len += ByteBufSerdeUtils.serializedBooleanLen(true);
       } else {
-        len += 4;
-        len += NodeUtils.dataLen(feats[i]) * 4;
+        len += ByteBufSerdeUtils.serializedBooleanLen(false);
+        len += NodeUtils.dataLen(feats[i]);
       }
     }
     return len;

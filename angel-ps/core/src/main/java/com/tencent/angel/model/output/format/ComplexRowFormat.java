@@ -22,18 +22,23 @@ import com.tencent.angel.model.PSMatrixLoadContext;
 import com.tencent.angel.model.PSMatrixSaveContext;
 import com.tencent.angel.ps.storage.matrix.PartitionState;
 import com.tencent.angel.ps.storage.partition.RowBasedPartition;
+import com.tencent.angel.ps.storage.vector.ServerAnyAnyRow;
 import com.tencent.angel.ps.storage.vector.ServerIntAnyRow;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;
+import com.tencent.angel.ps.storage.vector.ServerStringAnyRow;
 import com.tencent.angel.ps.storage.vector.element.IElement;
+import com.tencent.angel.ps.storage.vector.storage.ElementElementStorage;
 import com.tencent.angel.ps.storage.vector.storage.IntArrayElementStorage;
 import com.tencent.angel.ps.storage.vector.storage.IntElementMapStorage;
 import com.tencent.angel.ps.storage.vector.storage.IntElementStorage;
 import com.tencent.angel.ps.storage.vector.storage.LongElementStorage;
 
+import com.tencent.angel.ps.storage.vector.storage.StringElementStorage;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 import java.io.DataInputStream;
@@ -77,6 +82,10 @@ public abstract class ComplexRowFormat extends RowBasedFormat {
         load((ServerIntAnyRow) row, partMeta, loadContext, input);
       } else if(row instanceof ServerLongAnyRow) {
         load((ServerLongAnyRow) row, partMeta, loadContext, input);
+      } else if (row instanceof ServerStringAnyRow) {
+        load((ServerStringAnyRow) row, partMeta, loadContext, input);
+      } else if (row instanceof ServerAnyAnyRow) {
+        load((ServerAnyAnyRow) row, partMeta, loadContext, input);
       } else {
         throw new UnsupportedOperationException("Unsupport row type" + row.getClass());
       }
@@ -104,6 +113,28 @@ public abstract class ComplexRowFormat extends RowBasedFormat {
     for(int i = 0; i < elemNum; i++) {
       IndexAndElement indexAndElement = load(input);
       row.set(indexAndElement.index, indexAndElement.element);
+    }
+  }
+
+  private void load(ServerStringAnyRow row, MatrixPartitionMeta partMeta,
+                    PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+    RowPartitionMeta rowMeta = partMeta.getRowMeta(row.getRowId());
+    int elemNum = rowMeta.getElementNum();
+
+    for(int i = 0; i < elemNum; i++) {
+      IndexAndElement stringIndexAndElement = load(input);
+      row.set(stringIndexAndElement.strIndex, stringIndexAndElement.element);
+    }
+  }
+
+  private void load(ServerAnyAnyRow row, MatrixPartitionMeta partMeta,
+                    PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
+    RowPartitionMeta rowMeta = partMeta.getRowMeta(row.getRowId());
+    int elemNum = rowMeta.getElementNum();
+
+    for(int i = 0; i < elemNum; i++) {
+      IndexAndElement elementAndElement = load(input);
+      row.set(elementAndElement.elementKey, elementAndElement.element);
     }
   }
 
@@ -153,12 +184,26 @@ public abstract class ComplexRowFormat extends RowBasedFormat {
       save((ServerIntAnyRow) row, saveContext, partMeta, output);
     } else if(row instanceof ServerLongAnyRow) {
       save((ServerLongAnyRow) row, saveContext, partMeta, output);
+    } else if (row instanceof ServerStringAnyRow) {
+      save((ServerStringAnyRow) row, saveContext, partMeta, output);
+    } else if (row instanceof ServerAnyAnyRow) {
+      save((ServerAnyAnyRow) row, saveContext, partMeta, output);
     } else {
       throw new UnsupportedOperationException("Unsupport row type" + row.getClass());
     }
   }
 
-  public abstract void save(long key, IElement value, DataOutputStream output) throws IOException;
+  public void save(long key, IElement value, DataOutputStream output) throws IOException {
+
+  }
+
+  public void save(String key, IElement value, DataOutputStream output) throws IOException {
+
+  }
+
+  public void save(IElement key, IElement value, DataOutputStream output) throws IOException {
+
+  }
 
   private void save(ServerLongAnyRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta partMeta, DataOutputStream output)
       throws IOException {
@@ -169,6 +214,28 @@ public abstract class ComplexRowFormat extends RowBasedFormat {
     while(iter.hasNext()) {
       Long2ObjectMap.Entry<IElement> entry = iter.next();
       save(entry.getLongKey() + startPos, entry.getValue(), output);
+    }
+  }
+
+  private void save(ServerStringAnyRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta partMeta, DataOutputStream output)
+          throws IOException {
+    StringElementStorage storage = row.getStorage();
+    ObjectIterator<Object2ObjectMap.Entry<String, IElement>> iter = storage
+            .iterator();
+    while(iter.hasNext()) {
+      Object2ObjectMap.Entry<String, IElement> entry = iter.next();
+      save(entry.getKey(), entry.getValue(), output);
+    }
+  }
+
+  private void save(ServerAnyAnyRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta partMeta, DataOutputStream output)
+          throws IOException {
+    ElementElementStorage storage = row.getStorage();
+    ObjectIterator<Object2ObjectMap.Entry<IElement, IElement>> iter = storage
+            .iterator();
+    while(iter.hasNext()) {
+      Object2ObjectMap.Entry<IElement, IElement> entry = iter.next();
+      save(entry.getKey(), entry.getValue(), output);
     }
   }
 
