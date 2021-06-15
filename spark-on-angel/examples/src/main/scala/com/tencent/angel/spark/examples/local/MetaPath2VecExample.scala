@@ -14,7 +14,7 @@
  * the License.
  *
  */
-package com.tencent.angel.spark.examples.cluster
+package com.tencent.angel.spark.examples.local
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
@@ -29,29 +29,18 @@ import org.apache.spark.{SparkConf, SparkContext}
 object MetaPath2VecExample {
   def main(args: Array[String]): Unit = {
 
-    val params = ArgsUtil.parse(args)
-    val mode = params.getOrElse("mode", "yarn-cluster")
-    val sc = start(mode)
-
-    val input = params.getOrElse("input", null)
-    val partitionNum = params.getOrElse("partitionNum", "1").toInt
-    val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
-    val batchSize = params.getOrElse("batchSize", "10000").toInt
-    val pullBatchSize = params.getOrElse("pullBatchSize", "1000").toInt
-    val output = params.getOrElse("output", null)
-    val srcIndex = params.getOrElse("src", "0").toInt
-    val dstIndex = params.getOrElse("dst", "1").toInt
-    val psPartitionNum = params.getOrElse("psPartitionNum",
-      sc.getConf.get("spark.ps.instances", "2")).toInt
-
-    val cpDir = params.get("cpDir").filter(_.nonEmpty).orElse(GraphIO.defaultCheckpointDir)
-      .getOrElse(throw new Exception("checkpoint dir not provided"))
-    sc.setCheckpointDir(cpDir)
-
-    var metaPath = params.getOrElse("metaPath", "0-1-2-1-0") // should be symmetrical, eg: 0-0, 0-1-0, 0-1-2-1-0
-    val nodeTypePath = params.getOrElse("nodeTypePath", null)
-    val walkLength = params.getOrElse("walkLength", "20").toInt
-    val numWalks = params.getOrElse("numWalks", "1").toInt
+    val mode = "local"
+    val input = "data/bc/edge"
+    val output = "model/metapath"
+    val partitionNum = 1
+    val storageLevel = StorageLevel.MEMORY_ONLY
+    val psPartitionNum = 1
+    val batchSize = 1000
+    val pullBatchSize = 1000
+    var metaPath = "0-1-2-1-0" // should be symmetrical, eg: 0-0, 0-1-0, 0-1-2-1-0
+    val nodeTypePath = null
+    val walkLength = 5
+    val numWalks = 1
 
     // read and set metaPath
     if (nodeTypePath == null) {
@@ -67,12 +56,7 @@ object MetaPath2VecExample {
       }
     }
 
-    val sep = params.getOrElse("sep",  "tab") match {
-      case "space" => " "
-      case "comma" => ","
-      case "tab" => "\t"
-    }
-
+    start(mode)
     val metaPath2Vec = new MetaPath2Vec()
       .setPartitionNum(partitionNum)
       .setStorageLevel(storageLevel)
@@ -87,17 +71,15 @@ object MetaPath2VecExample {
 
     // read and set nodeType
     if (nodeTypePath != null) {
-      val nodeAttrs = GraphIO.load(nodeTypePath, isWeighted = false, sep = sep)
+      val nodeAttrs = GraphIO.load(nodeTypePath, isWeighted = false, sep = " ")
         .select("src", "dst").rdd
         .map(row => (row.getLong(0), row.getLong(1).toInt+1))
         .distinct(partitionNum)
       metaPath2Vec.setNodeAttr(nodeAttrs)
     }
 
-    val df = GraphIO.load(input, isWeighted = false, srcIndex, dstIndex, sep = sep)
-
+    val df = GraphIO.load(input, isWeighted = false, sep = " ")
     val mapping = metaPath2Vec.transform(df)
-    //    GraphIO.save(mapping, output)
     stop()
   }
 
