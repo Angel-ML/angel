@@ -22,7 +22,9 @@ import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.graph.statistics.commonfriends._
+import com.tencent.angel.graph.statistics.commonfriends.incComFriends.IncComFriends
 import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
+import com.tencent.angel.spark.ml.util.SparkUtils
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -30,21 +32,20 @@ object CommonFriendsExample {
 
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "local")
     val sc = start(mode)
 
     val input = params.getOrElse("input", null)
     val extraInput = params.getOrElse("extraInput", null)
-    val sep = Delimiter.parse(params.getOrElse("sep", Delimiter.SPACE))
+    val sep = Delimiter.parse(params.getOrElse("sep", Delimiter.TAB))
     val output = params.getOrElse("output", null)
 
-    val partitionNum = params.getOrElse("partitionNum", "100").toInt
+    var partitionNum = params.getOrElse("partitionNum", "100").toInt
     val psPartitionNum = params.getOrElse("psPartitionNum",
       sc.getConf.get("spark.ps.instances", "10")).toInt
 
     val batchSize = params.getOrElse("batchSize", "10000").toInt
     val pullBatchSize = params.getOrElse("pullBatchSize", "1000").toInt
-
     val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
     val enableCheck = params.getOrElse("enableCheck", "false").toBoolean
     val bufferSize = params.getOrElse("bufferSize", "1000000").toInt
@@ -54,32 +55,71 @@ object CommonFriendsExample {
     val dstIndex = params.getOrElse("dstIndex", "1").toInt
     val compressIndex = params.getOrElse("compressIndex", "2").toInt
 
+    // whether use incremental computing
+    val isIncremented = params.getOrElse("isIncremented", "false").toBoolean
+    val incEdgesPath = params.getOrElse("incEdgesPath", null)
+    if (isIncremented) assert(incEdgesPath != null, s"must set incEdgesPath when isIncremented is true.")
+
+    val maxNodeId = params.getOrElse("maxNodeId", "10000").toLong
+    val minNodeId = params.getOrElse("minNodeId", "0").toLong
+    assert(maxNodeId > minNodeId, s"maxNodeId must be greater than minNodeId.")
+
+    // only output edges with commonFriends <= maxComFriendsNum, else output as -1
+    val maxComFriendsNum = params.getOrElse("maxComFriendsNum", "2147483647").toInt
+    val numPartitionsFactor = params.getOrElse("numPartitionsFactor", "3").toInt
+    val cores = SparkUtils.getNumCores(sc.getConf)
+    partitionNum =  if (partitionNum > cores * numPartitionsFactor) partitionNum else cores * numPartitionsFactor
+
     val cpDir = params.get("cpDir").filter(_.nonEmpty).orElse(GraphIO.defaultCheckpointDir)
       .getOrElse(throw new Exception("checkpoint dir not provided"))
     sc.setCheckpointDir(cpDir)
 
     start(mode)
     val startTime = System.currentTimeMillis()
-    val commonFriends = new CommonFriends()
-      .setPartitionNum(partitionNum)
-      .setStorageLevel(storageLevel)
-      .setBatchSize(batchSize)
-      .setPullBatchSize(pullBatchSize)
-      .setDebugMode(enableCheck)
-      .setBufferSize(bufferSize)
-      .setIsCompressed(isCompressed)
-      .setPSPartitionNum(psPartitionNum)
-      .setInput(input)
-      .setExtraInputs(Array(extraInput))
-      .setSrcNodeIndex(srcIndex)
-      .setDstNodeIndex(dstIndex)
-      .setCompressIndex(compressIndex)
-      .setDelimiter(sep)
 
-    val df = GraphIO.load(input, isWeighted = isCompressed,
+    // if isIncremented, input data should has an extra line representing common friends num results
+    val df = GraphIO.load(input, isWeighted = isIncremented,
       srcIndex = srcIndex, dstIndex = dstIndex, weightIndex = compressIndex, sep = sep)
-    val mapping = commonFriends.transform(df)
-    GraphIO.save(mapping, output)
+
+    if (isIncremented) {
+      val commonFriends = new IncComFriends()
+        .setPartitionNum(partitionNum)
+        .setStorageLevel(storageLevel)
+        .setBatchSize(batchSize)
+        .setPullBatchSize(pullBatchSize)
+        .setPSPartitionNum(psPartitionNum)
+        .setMinNodeId(minNodeId)
+        .setMaxNodeId(maxNodeId)
+
+      val incEdges = GraphIO.load(incEdgesPath, false, srcIndex, dstIndex, sep = sep)
+        .select("src", "dst").rdd
+        .filter(row => !row.anyNull)
+        .map(x => (x.getLong(0), x.getLong(1)))
+        .filter(x => x._1 != x._2)
+      commonFriends.setMaxComFriendsNum(maxComFriendsNum)
+      commonFriends.setIncEdges(incEdges)
+      commonFriends.setOutputPath(output)
+      commonFriends.transform(df)
+    } else {
+      val commonFriends = new CommonFriends()
+        .setPartitionNum(partitionNum)
+        .setStorageLevel(storageLevel)
+        .setBatchSize(batchSize)
+        .setPullBatchSize(pullBatchSize)
+        .setDebugMode(enableCheck)
+        .setBufferSize(bufferSize)
+        .setIsCompressed(isCompressed)
+        .setPSPartitionNum(psPartitionNum)
+        .setInput(input)
+        .setExtraInputs(Array(extraInput))
+        .setSrcNodeIndex(srcIndex)
+        .setDstNodeIndex(dstIndex)
+        .setCompressIndex(compressIndex)
+        .setDelimiter(sep)
+      commonFriends.setMaxComFriendsNum(maxComFriendsNum)
+      val mapping = commonFriends.transform(df)
+      GraphIO.save(mapping, output)
+    }
 
     println(s"cost ${System.currentTimeMillis() - startTime} ms")
     stop()
