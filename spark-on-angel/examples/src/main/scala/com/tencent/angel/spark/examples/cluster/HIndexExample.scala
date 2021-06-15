@@ -37,7 +37,6 @@ object HIndexExample {
     val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
     val psPartitionNum = params.getOrElse("psPartitionNum",
       sc.getConf.get("spark.ps.instances", "10")).toInt
-    val useBalancePartition = params.getOrElse("useBalancePartition", "false").toBoolean
     val sep = Delimiter.parse(params.getOrElse("sep",Delimiter.SPACE))
 
 
@@ -45,7 +44,6 @@ object HIndexExample {
       .setPartitionNum(partitionNum)
       .setStorageLevel(storageLevel)
       .setPSPartitionNum(psPartitionNum)
-      .setUseBalancePartition(useBalancePartition)
 
     val df = GraphIO.load(input, isWeighted = false, sep = sep)
     val mapping = hindex.transform(df)

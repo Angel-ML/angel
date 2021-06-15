@@ -14,12 +14,11 @@
  * the License.
  *
  */
-
 package com.tencent.angel.graph.rank.hindex
 
-import com.tencent.angel.graph.utils.io.Log
-import com.tencent.angel.graph.utils.params._
+import com.tencent.angel.graph.common.param.ModelContext
 import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.graph.utils.params._
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.ParamMap
@@ -27,70 +26,79 @@ import org.apache.spark.ml.util.Identifiable
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.storage.StorageLevel
+import com.tencent.angel.graph.utils.Stats
 
 class HIndex(override val uid: String) extends Transformer
   with HasWeightCol with HasSrcNodeIdCol with HasDstNodeIdCol
   with HasOutputNodeIdCol with HasOutputCoreIdCol
   with HasIsWeighted with HasPartitionNum with HasPSPartitionNum
   with HasStorageLevel with HasBatchSize with HasPullBatchSize
-  with HasBufferSize with HasUseBalancePartition {
+  with HasBufferSize {
 
-  def this() = this(Identifiable.randomUID("HIndex"))
+  def this() = this(Identifiable.randomUID("H-Index"))
 
   override def transform(dataset: Dataset[_]): DataFrame = {
-    // read edges
+    val sc = dataset.sparkSession.sparkContext
+    //read edges
     val edges = dataset.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd
       .filter(row => !row.anyNull)
       .map(row => (row.getLong(0), row.getLong(1)))
       .filter(e => e._1 != e._2)
-    // persist edges using Disk_Only
+    //edges's storageLevel choose  Disk_Only
     edges.persist(StorageLevel.DISK_ONLY)
 
-    val nodes = edges.flatMap(e => Iterator(e._1, e._2))
-    val maxId = nodes.max() + 1
-    val minId = nodes.min()
-    val numEdges = edges.count()
+    val (minId, maxId, numEdges) = edges.mapPartitions(Stats.summarizeApplyOp)
+      .reduce(Stats.summarizeReduceOp)
 
-    Log.withTimePrintln(s"minId=$minId maxId=$maxId numEdges=$numEdges storageLevel=${$(storageLevel)}")
+    println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
 
-    // start PS
-    Log.withTimePrintln("start to run ps")
-    val beforeStartPS = System.currentTimeMillis()
+    // Start PS and init the model
+    println("start to run ps")
     PSContext.getOrCreate(SparkContext.getOrCreate())
-    Log.withTimePrintln(s"Starting ps cost ${System.currentTimeMillis() - beforeStartPS} ms")
 
-    // init the model
-    val model = HIndexPSModel.fromMinMax(minId, maxId, nodes, $(psPartitionNum), $(useBalancePartition))
+    val modelContext = new ModelContext(${psPartitionNum}, minId, maxId + 1, -1,
+      "HIndexPSModel", sc.hadoopConfiguration)
+    val model = new HIndexPSModel(modelContext)
+    model.init()
+    val neighborTable = edges.flatMap { case (srcId, dstId) => Iterator((srcId, dstId), (dstId, srcId)) }
+      .groupByKey($(partitionNum)).map(x => (x._1, x._2.toArray.distinct))
 
-    // create sub-graph partitions
-    val graph = edges.flatMap { case (srcId, dstId) => Iterator((srcId, dstId), (dstId, srcId)) }
-      .groupByKey($(partitionNum))
-      .mapPartitionsWithIndex((index, adjTable) => Iterator(HIndexPartition.apply(index, adjTable)))
-    graph.persist($(storageLevel))
-    graph.foreachPartition(_ => Unit)
+    neighborTable.persist($(storageLevel))
 
     //init msgs with each node's degree
-    graph.foreach(_.initMsgs(model))
+    neighborTable.mapPartitionsWithIndex { case (index, iter) =>
+      HIndexOperator.initMsgs(index, iter, model, ${batchSize})
+    }.count()
 
-    // compute hindex, windex and gindex for each node
-    val res = graph.map(_.process(model))
-    res.persist()
-    res.count()
+    val numMsgs = model.numMsgs()
+    println(s"numNodes=$numMsgs")
+    model.checkpoint()
 
-    val retRDD = res.flatMap { case (node, cores) => node.zip(cores) }
-    val result = retRDD.map(r => Row.fromSeq(Seq[Any](r._1, r._2._1, r._2._2, r._2._3)))
+    val res = neighborTable.mapPartitionsWithIndex { case (index, iter) =>
+      HIndexOperator.process(index, iter, model, ${pullBatchSize})
+    }
 
-    dataset.sparkSession.createDataFrame(result, transformSchema(dataset.schema))
+    val ret = res.map(r => Row.fromSeq(Seq[Any](r._1, r._2, r._3, r._4)))
+
+    dataset.sparkSession.createDataFrame(ret, transformSchema(dataset.schema))
 
   }
 
 
   override def transformSchema(schema: StructType): StructType = {
     StructType(Seq(
-      StructField(s"$outputNodeIdCol", LongType, nullable = false),
-      StructField(s"h-index", IntegerType, nullable = false),
-      StructField(s"g-index", IntegerType, nullable = false),
-      StructField(s"w-index", IntegerType, nullable = false)
+      StructField(s"${
+        $(outputNodeIdCol)
+      }", LongType, nullable = false),
+      StructField(s"${
+        "HIndex"
+      }", IntegerType, nullable = false),
+      StructField(s"${
+        "GIndex"
+      }", IntegerType, nullable = false),
+      StructField(s"${
+        "WIndex"
+      }", IntegerType, nullable = false)
     ))
   }
 
