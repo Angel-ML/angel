@@ -170,6 +170,15 @@ object GraphIO {
       .csv(output)
   }
 
+  def appendSave(df: DataFrame, output: String, seq: String = "\t"): Unit = {
+    df.printSchema()
+    df.write
+      .mode(SaveMode.Append)
+      .option(HEADER, "false")
+      .option(DELIMITER, seq)
+      .csv(output)
+  }
+
   def defaultCheckpointDir: Option[String] = {
     val sparkContext = SparkContext.getOrCreate()
     sparkContext.getConf.getOption("spark.yarn.stagingDir")
