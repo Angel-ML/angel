@@ -17,14 +17,14 @@
 
 package com.tencent.angel.graph.rank.pagerank.edgecut
 
-import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
-import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
-import com.tencent.angel.psagent.PSAgentContext
-import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.graph.common.param.ModelContext
+import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.graph.rank.pagerank.PageRankModel
+import com.tencent.angel.graph.utils.ModelContextUtils
 import com.tencent.angel.spark.ml.util.{LoadBalancePartitioner, LoadBalanceWithEstimatePartitioner}
-import com.tencent.angel.spark.models.PSVector
+import com.tencent.angel.spark.models.{PSMatrix, PSVector}
 import com.tencent.angel.spark.models.impl.PSVectorImpl
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
 private[edgecut]
@@ -37,26 +37,33 @@ class PageRankPSModel(readMsgs: PSVector,
 private[edgecut] object PageRankPSModel {
   def fromMinMax(minId: Long, maxId: Long, data: RDD[Long], psNumPartition: Int,
                  useBalancePartition: Boolean, useEstimatePartitioner: Boolean,
-                 balancePartitionPercent: Float = 0.7f): PageRankPSModel = {
-    val matrix = new MatrixContext("pagerank", 3, minId, maxId)
-    matrix.setValidIndexNum(-1)
-    matrix.setRowType(RowType.T_FLOAT_SPARSE_LONGKEY)
-    matrix.setPartitionerClass(classOf[ColumnRangePartitioner])
+                 balancePartitionPercent: Float): PageRankPSModel = {
 
-    // If useEstimatePartitioner is true, means use LoadBalanceWithEstimatePartitioner
-    // If useEstimatePartitioner is false and useBalancePartition is true, means use LoadBalancePartitioner
-    if (useEstimatePartitioner) {
-      LoadBalanceWithEstimatePartitioner.partition(data, maxId, psNumPartition, matrix, balancePartitionPercent)
-    } else if (useBalancePartition) {
-      LoadBalancePartitioner.partition(data, maxId, psNumPartition, matrix, balancePartitionPercent)
+    val nodesNum = data.countApproxDistinct()
+
+    val modelContext = new ModelContext(
+      psNumPartition, minId, maxId + 1, nodesNum, "pagerank", SparkContext.getOrCreate().hadoopConfiguration)
+
+    // Create a matrix for embedding vectors
+    val matrixMaxId = modelContext.getMaxNodeId
+    val matrix = ModelContextUtils.createMatrixContext(modelContext, RowType.T_FLOAT_SPARSE_LONGKEY, 3)
+
+    // load balance for range partition
+    if (!modelContext.isUseHashPartition) {
+      if (useEstimatePartitioner) {
+        LoadBalanceWithEstimatePartitioner.partition(data, maxId, psNumPartition, matrix, balancePartitionPercent)
+      } else if (useBalancePartition) {
+        LoadBalancePartitioner.partition(data, psNumPartition, matrix)
+      }
     }
 
-    PSContext.instance().createMatrix(matrix)
-    //PSAgentContext.get().getMasterClient.createMatrix(matrix, 10000L)
-    val matrixId = PSAgentContext.get().getMasterClient.getMatrix("pagerank").getId
-    new PageRankPSModel(new PSVectorImpl(matrixId, 0, maxId, matrix.getRowType),
-      new PSVectorImpl(matrixId, 1, maxId, matrix.getRowType),
-      new PSVectorImpl(matrixId, 2, maxId, matrix.getRowType))
+    //create ps matrix
+    val psMatrix = PSMatrix.matrix(matrix)
+    val matrixId = psMatrix.id
+
+    new PageRankPSModel(new PSVectorImpl(matrixId, 0, matrixMaxId, matrix.getRowType),
+      new PSVectorImpl(matrixId, 1, matrixMaxId, matrix.getRowType),
+      new PSVectorImpl(matrixId, 2, matrixMaxId, matrix.getRowType))
   }
 
 }
