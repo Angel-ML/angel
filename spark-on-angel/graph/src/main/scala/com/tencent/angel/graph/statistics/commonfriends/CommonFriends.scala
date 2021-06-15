@@ -39,10 +39,13 @@ class CommonFriends(override val uid: String) extends Transformer
 
   def this() = this(Identifiable.randomUID("CommonFriends"))
 
+  private var maxComFriendsNum: Int = Int.MaxValue
+  def setMaxComFriendsNum(in: Int): Unit = { this.maxComFriendsNum = in }
+
   override def transform(dataset: Dataset[_]): DataFrame = {
 
     val sc = dataset.sparkSession.sparkContext
-    assert(sc.getCheckpointDir.nonEmpty, "set checkpoint dir first")
+//    assert(sc.getCheckpointDir.nonEmpty, "set checkpoint dir first")
 
     Log.withTimePrintln(s"======load edges from the first input======")
     val firstEdges: RDD[(Long, Long)] = {
