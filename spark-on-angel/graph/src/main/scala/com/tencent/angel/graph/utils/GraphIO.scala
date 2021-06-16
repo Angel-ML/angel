@@ -19,9 +19,10 @@ package com.tencent.angel.graph.utils
 
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
+import org.apache.spark.sql.{DataFrame, Dataset, SaveMode, SparkSession}
 
 object GraphIO {
 
@@ -186,4 +187,68 @@ object GraphIO {
         new Path(base, s".sparkStaging/${sparkContext.getConf.getAppId}").toString
       }
   }
+  
+  
+  def loadEdgesWithWeight(dataset: Dataset[_],
+                          srcNodeIdCol: String,
+                          dstNodeIdCol: String,
+                          weightCol: String,
+                          hasWeight: Boolean = true,
+                          needReplicateEdges: Boolean = false
+                         ): RDD[(Long, Long, Float)] = {
+    val edges =
+      if (hasWeight) {
+        dataset.select(srcNodeIdCol, dstNodeIdCol, weightCol).rdd
+          .filter(row => !row.anyNull)
+          .map(row => (row.getLong(0), row.getLong(1), row.getFloat(2)))
+          .filter(f => f._1 != f._2 && f._3 != 0.0f)
+      } else {
+        dataset.select(srcNodeIdCol, dstNodeIdCol).rdd
+          .filter(row => !row.anyNull)
+          .map(row => (row.getLong(0), row.getLong(1), 1.0f))
+          .filter(f => f._1 != f._2)
+      }
+    
+    if (needReplicateEdges) {
+      edges.flatMap(f => Iterator((f._1, f._2, f._3), (f._2, f._1, f._3)))
+    }
+    else {
+      edges
+    }
+  }
+  
+  def loadEdges(dataset: Dataset[_],
+                srcNodeIdCol: String,
+                dstNodeIdCol: String,
+                needReplicateEdges: Boolean = false) : RDD[(Long, Long)] = {
+    val edges = dataset.select(srcNodeIdCol, dstNodeIdCol).rdd
+      .filter(row => !row.anyNull)
+      .map(row => (row.getLong(0), row.getLong(1)))
+      .filter(f => f._1 != f._2)
+    
+    if (needReplicateEdges) {
+      edges.flatMap(f => Iterator((f._1, f._2), (f._2, f._1)))
+    }
+    else {
+      edges
+    }
+    
+  }
+  
+  def loadEdgesFromDF(dataset: Dataset[_],
+                      srcNodeIdCol: String,
+                      dstNodeIdCol: String,
+                      needReplicateEdges: Boolean = false) : RDD[(Long, Long)] = {
+    loadEdges(dataset, srcNodeIdCol, dstNodeIdCol, needReplicateEdges)
+  }
+  
+  def loadEdgesWithWeightFromDF(dataset: Dataset[_],
+                                srcNodeIdCol: String,
+                                dstNodeIdCol: String,
+                                weightCol: String,
+                                hasWeight: Boolean = true,
+                                needReplicateEdges: Boolean = false): RDD[(Long, Long, Float)] = {
+    loadEdgesWithWeight(dataset, srcNodeIdCol, dstNodeIdCol, weightCol, hasWeight, needReplicateEdges)
+  }
+  
 }

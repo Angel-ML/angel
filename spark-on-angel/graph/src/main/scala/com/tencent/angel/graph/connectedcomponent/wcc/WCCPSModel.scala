@@ -16,18 +16,19 @@
  */
 package com.tencent.angel.graph.connectedcomponent.wcc
 
+import com.tencent.angel.graph.common.param.ModelContext
+import com.tencent.angel.graph.utils.ModelContextUtils
 import com.tencent.angel.ml.math2.vector.{LongLongVector, Vector}
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.spark.ml.util.LoadBalancePartitioner
-import com.tencent.angel.spark.models.PSVector
+import com.tencent.angel.spark.models.{PSMatrix, PSVector}
 import com.tencent.angel.spark.models.impl.PSVectorImpl
 import com.tencent.angel.spark.util.VectorUtils
 import org.apache.spark.rdd.RDD
 
-class WCCPSModel(var inMsgs: PSVector,
-                 var outMsgs: PSVector) extends Serializable {
-  val dim: Long = inMsgs.dimension
+class WCCPSModel(var psVector: PSVector) extends Serializable {
+  val dim: Long = psVector.dimension
 
   /**
     * init ccid for each node
@@ -35,7 +36,7 @@ class WCCPSModel(var inMsgs: PSVector,
     * @param msgs < node,ccId > key-value vector
     */
   def initMsgs(msgs: Vector): Unit = {
-    inMsgs.update(msgs)
+    psVector.update(msgs)
   }
 
   /**
@@ -45,7 +46,7 @@ class WCCPSModel(var inMsgs: PSVector,
     * @return
     */
   def readMsgs(nodes: Array[Long]): LongLongVector = {
-    inMsgs.pull(nodes).asInstanceOf[LongLongVector]
+    psVector.pull(nodes).asInstanceOf[LongLongVector]
   }
 
   /**
@@ -54,7 +55,7 @@ class WCCPSModel(var inMsgs: PSVector,
     * @return < node,ccId > key-value vector
     */
   def readAllMsgs(): LongLongVector = {
-    inMsgs.pull().asInstanceOf[LongLongVector]
+    psVector.pull().asInstanceOf[LongLongVector]
   }
 
   /**
@@ -63,7 +64,7 @@ class WCCPSModel(var inMsgs: PSVector,
     * @param msgs < node,ccId > key-value vector
     */
   def writeMsgs(msgs: Vector): Unit = {
-    outMsgs.update(msgs)
+    psVector.update(msgs)
   }
 
   /**
@@ -72,45 +73,23 @@ class WCCPSModel(var inMsgs: PSVector,
     * @return
     */
   def numMsgs(): Long = {
-    VectorUtils.nnz(inMsgs)
-  }
-
-  /**
-    * two PSVector exchange data
-    */
-  def resetMsgs(): Unit = {
-    val temp = inMsgs
-    inMsgs = outMsgs
-    outMsgs = temp
-    outMsgs.reset
+    VectorUtils.nnz(psVector)
   }
 }
 
 object WCCPSModel {
-  /**
-    * to balance < node, labelId > key-value vector on ps
-    *
-    * @param minId                   minId in nodes
-    * @param maxId                   maxId in nodes
-    * @param data                    nodes
-    * @param psNumPartition          ps-partition num
-    * @param useBalancePartition     to balance ps-partition region
-    * @param balancePartitionPercent the max partition cannot  store more than 70%  < node,labelId>  key-value
-    * @return
-    */
-  def fromMinMax(minId: Long, maxId: Long, data: RDD[Long], psNumPartition: Int,
-                 useBalancePartition: Boolean, balancePartitionPercent: Float = 0.7f): WCCPSModel = {
-    val matrix = new MatrixContext("labels", 2, minId, maxId)
-    matrix.setValidIndexNum(-1)
-    matrix.setRowType(RowType.T_LONG_SPARSE_LONGKEY)
-
-    if (useBalancePartition) {
-      LoadBalancePartitioner.partition(data, maxId, psNumPartition, matrix, balancePartitionPercent)
+  def apply(modelContext: ModelContext, edges: RDD[(Long, Long)], useBalancePartition: Boolean,
+            balancePartitionPercent: Float): WCCPSModel = {
+    val matrix = ModelContextUtils.createMatrixContext(modelContext, RowType.T_LONG_SPARSE_LONGKEY)
+  
+    // TODO: remove later
+    if (!modelContext.isUseHashPartition && useBalancePartition) {
+      val nodes = edges.flatMap(e => Iterator(e._1, e._2))
+      LoadBalancePartitioner.partition(
+        nodes, modelContext.getMaxNodeId, modelContext.getPartitionNum, matrix, balancePartitionPercent)
     }
-
-    PSAgentContext.get().getMasterClient.createMatrix(matrix, 10000L)
-    val matrixId = PSAgentContext.get().getMasterClient.getMatrix("labels").getId
-    new WCCPSModel(new PSVectorImpl(matrixId, 0, maxId, matrix.getRowType),
-      new PSVectorImpl(matrixId, 1, maxId, matrix.getRowType))
+  
+    val psMatrix = PSMatrix.matrix(matrix)
+    new WCCPSModel(new PSVectorImpl(psMatrix.id, 0, modelContext.getMaxNodeId, matrix.getRowType))
   }
 }

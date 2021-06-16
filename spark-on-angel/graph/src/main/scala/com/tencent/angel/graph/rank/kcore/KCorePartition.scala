@@ -17,157 +17,434 @@
 
 package com.tencent.angel.graph.rank.kcore
 
-import java.util.{Arrays => JArrays}
-
+import com.tencent.angel.graph.utils.BatchIter
+import com.tencent.angel.graph.utils.collection.OpenHashMap
 import com.tencent.angel.ml.math2.VFactory
-import com.tencent.angel.ml.math2.vector.LongIntVector
 import it.unimi.dsi.fastutil.ints.IntArrayList
 import it.unimi.dsi.fastutil.longs.LongArrayList
 
-/**
-  * KCoreGraphPartition implementation
-  *
-  * @param index     partition index
-  * @param keys      node ids in this partition
-  * @param indptr    node neighbor index, the ith node neighbors index range is [indptr(i), indptr(i+1))
-  * @param neighbors node neighbors
-  * @param keyCores  node core
-  * @param neiCores  neighbor core
-  * @param indices   all node in this partition
-  * @param hIndices  hIndices
-  */
+import scala.collection.mutable
+
 private[kcore]
 class KCorePartition(index: Int,
-                     keys: Array[Long],
-                     idxptr: Array[Int],
-                     neighbors: Array[Long],
-                     keyCores: Array[Int],
-                     neiCores: Array[Int],
-                     indices: Array[Long],
-                     hIndices: Array[Int]) extends Serializable {
-  /**
-    * use the degree to init vertices core-value
-    *
-    * @param model
-    * @return
-    */
-  def initMsgs(model: KCorePSModel): Int = {
-    val msgs = VFactory.sparseLongKeyIntVector(model.dim)
-    for (i <- keys.indices)
-      msgs.set(keys(i), idxptr(i + 1) - idxptr(i))
-    model.initMsgs(msgs)
-    msgs.size().toInt
+                          keys: Array[Long],
+                          indptr: Array[Int],
+                          neighbors: Array[Long],
+                          indexMap: OpenHashMap[Long, Int],
+                          numStaticNeis: Array[Int] = null,
+                          static2: Array[Long] = null,
+                          threshold: Int = -1,
+                          mode: String = "full") extends Serializable {
+  
+  final val denseMode: String = "dense"
+  final val midMode: String = "mid"
+  final val sparseMode: String = "sparse"
+  final val fullMode: String = "full"
+  
+  def numNodes(): Int = keys.length
+  
+  def numEdges(): Int = neighbors.length
+  
+  def initCores(model: KCorePSModel, batchSize: Int = 100000): Unit = {
+    keys.indices.sliding(batchSize, batchSize).foreach { iter =>
+      val msgs = VFactory.sparseLongKeyIntVector(model.dim)
+      if (this.mode == this.sparseMode || this.mode == this.midMode) {
+        for (i <- iter) {
+          println(s"init cores at i: ${indptr(i + 1) - indptr(i) + numStaticNeis(i)}")
+          assert(indptr(i + 1) - indptr(i) + numStaticNeis(i) > 0)
+          msgs.set(keys(i), indptr(i + 1) - indptr(i) + numStaticNeis(i))
+        }
+        
+      }
+      else {
+        for (i <- iter)
+          msgs.set(keys(i), indptr(i + 1) - indptr(i))
+      }
+      
+      model.initCores(msgs)
+      println(s"part $index, init ${msgs.size().toInt} cores.")
+    }
   }
-
-  def process(model: KCorePSModel, numMsgs: Long, isFirstIteration: Boolean): KCorePartition = {
-
-    val inMsgs = if (numMsgs > indices.length || isFirstIteration) model.readMsgs(indices) else model.readAllMsgs()
-    val outMsgs = VFactory.sparseLongKeyIntVector(inMsgs.dim())
-    for (idx <- keys.indices) {
-      val newIndex = if (isFirstIteration) calcOneFirst(idx, inMsgs) else calcOne(idx, inMsgs)
-      if (newIndex < keyCores(idx)) {
-        outMsgs.set(keys(idx), newIndex)
-        keyCores(idx) = newIndex
+  
+  def firstIterations(model: KCorePSModel, batchSize: Int = 10000, curIteration: Int, numFirsts: Int, preMinCore: Int = 0): (Int, Long) = {
+    // first iteration, calc core for all nodes by batch
+    var minCore = Int.MaxValue
+    var batchIndex = 0
+    var numMsgs = 0L
+    keys.indices.sliding(batchSize, batchSize).foreach { iter =>
+      val before = System.currentTimeMillis()
+      val nbrs2pull = neighbors.slice(indptr(iter.head), indptr(iter.last + 1))
+      val keys2pull = keys.slice(iter.head, iter.last + 1)
+      val nodes2pull = nbrs2pull.union(keys2pull).distinct
+      numMsgs += nodes2pull.length
+      
+      // pull cores
+      val beforePull = System.currentTimeMillis()
+      val pullCores = model.readCores(nodes2pull)
+      val pullCoresTime = System.currentTimeMillis() - beforePull
+      
+      // start calculating
+      val outMsgs = VFactory.sparseLongKeyIntVector(iter.size)
+      val changed = VFactory.sparseLongKeyIntVector(pullCores.size())
+      var keys2calc = 0
+      for (idx <- iter) { // calc all keys for the first iteration
+        val x = pullCores.get(keys(idx))
+        if (x > preMinCore) {
+          keys2calc += 1
+          val neiCores = new IntArrayList()
+          if (curIteration < numFirsts) {
+            for (j <- indptr(idx) until indptr(idx + 1)) {
+              val t = pullCores.get(neighbors(j))
+              if (t > preMinCore) {
+                neiCores.add(t)
+              }
+            }
+            val neis = neiCores.toIntArray()
+            val numStaticNbrs = if (this.mode == this.denseMode || this.mode == this.fullMode) 0 else numStaticNeis(idx)
+            val newCore = if (neiCores.size + numStaticNbrs <= preMinCore) preMinCore else hindexWithPrior(neis, x, numStaticNbrs)
+            if (newCore < x) {
+              outMsgs.set(keys(idx), newCore)
+              minCore = Math.min(minCore, newCore)
+            }
+          } else {
+            val add = new LongArrayList()
+            for (j <- indptr(idx) until indptr(idx + 1)) {
+              val t = pullCores.get(neighbors(j))
+              if (t > preMinCore) {
+                neiCores.add(t)
+                add.add(neighbors(j))
+              }
+            }
+            val neis = neiCores.toIntArray()
+            val numStaticNbrs = if (this.mode == this.denseMode || this.mode == this.fullMode) 0 else numStaticNeis(idx)
+            val newCore = if (neiCores.size + numStaticNbrs <= preMinCore) preMinCore else hindexWithPrior(neis, x, numStaticNbrs)
+            if (newCore < x) {
+              add.toLongArray().foreach { n => changed.set(n, 1) }
+              outMsgs.set(keys(idx), newCore)
+              minCore = Math.min(minCore, newCore)
+            }
+          }
+        }
+      }
+      if (curIteration == numFirsts) {
+        model.writeMsgs(changed)
+        numMsgs += changed.size()
+      }
+      model.updateCores(outMsgs)
+      batchIndex += 1
+      numMsgs += outMsgs.size()
+      
+      println(s"iter $curIteration, part $index, batch $batchIndex (${iter.length} keys), calc all keys, " +
+        s"keys2calc vs keysChanged: $keys2calc vs ${outMsgs.size()}, " +
+        s"pulling cost $pullCoresTime ms (${nodes2pull.length}), total cost ${System.currentTimeMillis() - before} ms.")
+      outMsgs.clear()
+      changed.clear()
+    }
+    (minCore, numMsgs)
+  }
+  
+  def nextIterationsByBatch(model: KCorePSModel, batchSize: Int = 10000, curIteration: Int, preMinCore: Int = 0): (Int, Long) = {
+    // first iteration, calc core for all nodes by batch
+    var minCore = Int.MaxValue
+    var batchIndex = 0
+    var numMsgs = 0L
+    val before = System.currentTimeMillis()
+    assert(keys.length > 0)
+    val keys2calc = model.readTag(keys.clone())
+    numMsgs += keys2calc.length
+    
+    val pullKeys2calcTime = System.currentTimeMillis() - before
+    if (keys2calc.nonEmpty) {
+      keys2calc.sliding(batchSize, batchSize).foreach { batchKeys =>
+        val before = System.currentTimeMillis()
+        
+        // check nbrs2pull and pull cores
+        val nodes2pull = batchKeys.flatMap { key =>
+          val idx = indexMap(key)
+          neighbors.slice(indptr(idx), indptr(idx + 1))
+        }.union(batchKeys).distinct
+        numMsgs += nodes2pull.length
+        
+        val beforePull = System.currentTimeMillis()
+        val pullCores = model.readCores(nodes2pull)
+        val pullCoresTime = System.currentTimeMillis() - beforePull
+        
+        // start calculating
+        val outMsgs = VFactory.sparseLongKeyIntVector(keys2calc.length)
+        //        val changed = new LongArrayList()
+        val changed = VFactory.sparseLongKeyIntVector(pullCores.size())
+        batchKeys.foreach { key =>
+          val idx = indexMap(key)
+          val x = pullCores.get(keys(idx))
+          val neiCores = new IntArrayList()
+          val add = new LongArrayList()
+          for (j <- indptr(idx) until indptr(idx + 1)) {
+            val t = pullCores.get(neighbors(j))
+            if (t > preMinCore) {
+              neiCores.add(t)
+              add.add(neighbors(j))
+            }
+          }
+          val neis = neiCores.toIntArray()
+          val numStaticNbrs = if (this.mode == this.denseMode || this.mode == this.fullMode) 0 else numStaticNeis(idx)
+          //todo check for correctness
+          val newCore =
+            if ((neis.count(_ >= x) + numStaticNbrs) == x) x
+            else if ((neiCores.size + numStaticNbrs) <= preMinCore) preMinCore
+            else hindexWithPrior(neis, x, numStaticNbrs)
+          
+          assert(newCore > 0, "??????????")
+          
+          if (newCore < x) {
+            add.toLongArray().foreach { n => changed.set(n, 1) }
+            outMsgs.set(keys(idx), newCore)
+            minCore = Math.min(minCore, newCore)
+          }
+        }
+        
+        //        model.updateTag(changed.toLongArray)
+        model.writeMsgs(changed.clone())
+        model.updateCores(outMsgs.clone())
+        numMsgs += outMsgs.size()
+        numMsgs += changed.size()
+        
+        println(s"iter $curIteration, part $index(totalKeys2calc=${keys2calc.length}, pullKeys2calcTime=$pullKeys2calcTime), " +
+          s"batch $batchIndex , keys2calc vs keysChanged: ${batchKeys.length} vs ${outMsgs.size()}, " +
+          s"pullCoresTime=$pullCoresTime (${nodes2pull.length}), " +
+          s"total cost ${System.currentTimeMillis() - before} ms.")
+        batchIndex += 1
+        outMsgs.clear()
+        changed.clear()
+      }
+    } else {
+      println(s"iter $curIteration, part $index(totalKeys2calc=${keys2calc.length}, pullKeys2calcTime=$pullKeys2calcTime)")
+    }
+    (minCore, numMsgs)
+  }
+  
+  def compress(model: KCorePSModel, batchSize: Int = 10000): KCorePartition = {
+    val newIndexMap = new OpenHashMap[Long, Int]()
+    var seq = 0
+    val newIndexptr = new IntArrayList()
+    val newNeighbors = new LongArrayList()
+    val newKeys = new LongArrayList()
+    val newNumStaticNeis = new IntArrayList()
+    newIndexptr.add(0)
+    
+    keys.indices.sliding(batchSize, batchSize).foreach { iter =>
+      val nbrs2pull = neighbors.slice(indptr(iter.head), indptr(iter.last + 1))
+      val keys2pull = keys.slice(iter.head, iter.last + 1)
+      val nodes2pull = nbrs2pull.union(keys2pull).distinct
+      val pullCores = model.readCores(nodes2pull)
+      for (idx <- iter) {
+        if (pullCores.get(keys(idx)) > threshold) {
+          val newNeighbors_ = new LongArrayList()
+          var j = indptr(idx)
+          while (j < indptr(idx + 1)) {
+            if (pullCores.get(neighbors(j)) > threshold)
+              newNeighbors_.add(neighbors(j))
+            j += 1
+          }
+          val numStaticNbrs = if (this.mode == this.denseMode) 0 else numStaticNeis(idx)
+          if (newNeighbors_.size() + numStaticNbrs > threshold) {
+            newNeighbors.addAll(newNeighbors_)
+            newIndexptr.add(newNeighbors.size())
+            newKeys.add(keys(idx))
+            newIndexMap.update(keys(idx), seq)
+            if (this.mode == this.midMode) {
+              newNumStaticNeis.add(numStaticNbrs)
+            }
+            seq += 1
+          }
+        }
       }
     }
-
-    model.writeMsgs(outMsgs)
-    new KCorePartition(index, keys, idxptr, neighbors, keyCores, neiCores, indices, hIndices)
-
+    if (this.mode == this.denseMode) {
+      new KCorePartition(index, newKeys.toLongArray, newIndexptr.toIntArray,
+        newNeighbors.toLongArray, newIndexMap, null, null, threshold, this.mode)
+    }
+    else {
+      assert(this.mode == this.midMode, s"only dense-mode and mid-mode need to compress, please check mode")
+      new KCorePartition(index, newKeys.toLongArray, newIndexptr.toIntArray,
+        newNeighbors.toLongArray, newIndexMap, newNumStaticNeis.toIntArray(), null, threshold, this.mode)
+    }
+    
   }
-
-  def calcOne(idx: Int, inMsgs: LongIntVector): Int = {
-    var j = idxptr(idx)
-    var flag = false
-    while (j < idxptr(idx + 1)) {
-      val t = inMsgs.get(neighbors(j))
-      if (t != 0 && t != neiCores(j)) {
-        neiCores(j) = t
-        flag = true
+  
+  def save(model: KCorePSModel, batchSize: Int = 10000): Iterator[(Long, Int)] = {
+    val allKeys = if (this.mode == this.sparseMode) keys ++ this.static2 else keys
+    allKeys.sliding(batchSize, batchSize).flatMap { iter =>
+      val pulled = model.readCores(iter)
+      if (this.mode == this.fullMode || this.mode == this.midMode) {
+        iter.map(x => (x, pulled.get(x)))
       }
-      j += 1
+      else {
+        iter.flatMap { x =>
+          if (pulled.get(x) > threshold) Iterator.single(x, pulled.get(x))
+          else Iterator.empty
+        }
+      }
     }
-
-    if (flag)
-      calcHIndex(neiCores, idxptr(idx), idxptr(idx + 1))
-    else
-      keyCores(idx)
   }
-
-  def calcOneFirst(idx: Int, inMsgs: LongIntVector): Int = {
-    keyCores(idx) = inMsgs.get(keys(idx))
-    var j = idxptr(idx)
-    while (j < idxptr(idx + 1)) {
-      neiCores(j) = inMsgs.get(neighbors(j))
-      j += 1
+  
+  
+  def hindexWithPrior(arr: Array[Int], prior: Int, numStaticNbrs: Int = 0): Int = {
+    assert(arr.length + numStaticNbrs != 0, s"calc h-index for empty array with 0 static neighbors.")
+    val array = arr.sorted
+    var cnt = prior
+    var i = array.length - prior + numStaticNbrs
+    if (prior > array.length) {
+      cnt = array.length + numStaticNbrs
+      i = 0
     }
-    calcHIndex(neiCores, idxptr(idx), idxptr(idx + 1))
-  }
-
-  def calcHIndex(citations: Array[Int], from: Int, to: Int): Int = {
-    System.arraycopy(citations, from, hIndices, 0, to - from)
-    val start = 0
-    val end = to - from
-    JArrays.sort(hIndices, 0, end)
-    var i = end - 1
-    var cnt = 1
-    while (i >= start && hIndices(i) >= cnt) {
-      cnt += 1
-      i -= 1
+    while ( i < array.length && array(i) < cnt) {
+      i += 1
+      cnt -= 1
     }
-    cnt - 1
+    cnt
   }
-
-  def save(): (Array[Long], Array[Int]) =
-    (keys, keyCores)
 }
 
 
-private[kcore]
 object KCorePartition {
-  /**
-    * user CSR (index pointer) store the adjacency table of vertex
-    *
-    * @param index
-    * @param iterator Adjacency table of vertex
-    * @return
-    */
-  def apply(index: Int, iterator: Iterator[(Long, Iterable[Long])]): KCorePartition = {
-    //csr index pointer
-    val idxptr = new IntArrayList()
+  def applyFull(index: Int, iterator: Iterator[(Long, Array[Long])], batchSize: Int): KCorePartition = {
+    val indexMap = new OpenHashMap[Long, Int]()
+    var idx = 0
+    val indptr = new IntArrayList()
     val keys = new LongArrayList()
     val neighbours = new LongArrayList()
-
-    idxptr.add(0)
-    var maxDegree: Int = 0
-    while (iterator.hasNext) {
-      val entry = iterator.next()
-      val (node, ns) = (entry._1, entry._2.toArray.distinct)
-      ns.foreach(n => neighbours.add(n))
-      idxptr.add(neighbours.size())
-      keys.add(node)
-      maxDegree = math.max(ns.size, maxDegree)
+    
+    indptr.add(0)
+    BatchIter(iterator, batchSize).foreach { batchIter =>
+      batchIter.foreach { case (src, nbs) =>
+        nbs.distinct.foreach(t => neighbours.add(t))
+        indptr.add(neighbours.size())
+        keys.add(src)
+        indexMap.update(src, idx)
+        idx += 1
+      }
     }
-
     val keysArray = keys.toLongArray()
     val neighboursArray = neighbours.toLongArray()
-
-    new KCorePartition(index, keysArray, idxptr.toIntArray(),
-      neighboursArray, new Array[Int](keysArray.length),
-      new Array[Int](neighboursArray.length),
-      keysArray.union(neighboursArray).distinct,
-      new Array[Int](maxDegree))
+    println(s"apply, part $index, num keys=${keysArray.length}, num edges=${neighboursArray.length}")
+    new KCorePartition(index, keysArray, indptr.toIntArray(),
+      neighboursArray, indexMap, null, null, -1, "full")
   }
-
-  def apply(index: Int, keys: Array[Long],
-            idxptr: Array[Int],
-            neighbors: Array[Long],
-            keyCores: Array[Int],
-            neiCores: Array[Int],
-            indices: Array[Long],
-            hIndices: Array[Int]): KCorePartition = {
-    new KCorePartition(index, keys, idxptr,
-      neighbors, keyCores, neiCores, indices, hIndices)
+  
+  def applyDense(index: Int, iterator: Iterator[(Long, Array[Long])],
+                 model: KCorePSModel, batchSize: Int, threshold: Int): KCorePartition = {
+    val indexMap = new OpenHashMap[Long, Int]()
+    var idx = 0
+    val indptr = new IntArrayList()
+    val keys = new LongArrayList()
+    val neighbours = new LongArrayList()
+    
+    indptr.add(0)
+    BatchIter(iterator, batchSize).foreach { batchIter =>
+      val nodes2pull = new mutable.HashSet[Long]()
+      nodes2pull ++= batchIter.flatMap(_._2)
+      nodes2pull ++= batchIter.map(_._1)
+      val beforePull = System.currentTimeMillis()
+      val inMsgs = model.readMsgs(nodes2pull.toArray)
+      println(s"apply, part $index, pull ${nodes2pull.size} msgs from ps, cost ${System.currentTimeMillis() - beforePull} ms.")
+      batchIter.foreach { case (src, nbs) =>
+        if (inMsgs.get(src) > 0) {
+          val newNbs = new LongArrayList()
+          nbs.foreach { nb => if (inMsgs.get(nb) > 0) newNbs.add(nb)}
+          if (newNbs.size() > threshold) {
+            neighbours.addAll(newNbs)
+            indptr.add(neighbours.size())
+            keys.add(src)
+            indexMap.update(src, idx)
+            idx += 1
+          }
+        }
+      }
+    }
+    val keysArray = keys.toLongArray()
+    val neighboursArray = neighbours.toLongArray()
+    println(s"apply, part $index, num keys=${keysArray.length}, num edges=${neighboursArray.length}")
+    new KCorePartition(index, keysArray, indptr.toIntArray(),
+      neighboursArray, indexMap, null, null, threshold, "dense")
   }
-
+  
+  def applySparse(index: Int,iterator: Iterator[(Long, Array[Long], Int)],
+                  batchSize: Int, threshold: Int): KCorePartition = {
+    val indexMap = new OpenHashMap[Long, Int]()
+    var idx = 0
+    val indptr = new IntArrayList()
+    val keys = new LongArrayList()
+    val neighbours = new LongArrayList()
+    val numStaticNeis = new IntArrayList()
+    val static2 = new LongArrayList()
+    
+    indptr.add(0)
+    while (iterator.hasNext) {
+      val entry = iterator.next()
+      val (node, ns, numStatic) = (entry._1, entry._2, entry._3)
+      if (!(ns.isEmpty || (ns.length == 1 && numStatic == 0))) {
+        ns.foreach { nei => neighbours.add(nei) }
+        indptr.add(neighbours.size())
+        keys.add(node)
+        numStaticNeis.add(numStatic)
+        indexMap.update(node, idx)
+        idx += 1
+      } else {
+        static2.add(node)
+      }
+    }
+    
+    println(s"static2: ${static2.size()}")
+    println(s"keys: ${keys.size()}")
+    
+    val keysArray = keys.toLongArray()
+    val neighboursArray = neighbours.toLongArray()
+    new KCorePartition(index, keysArray, indptr.toIntArray(),
+      neighboursArray, indexMap, numStaticNeis.toIntArray(), static2.toLongArray(), -1, "sparse")
+  }
+  
+  def applyMid(index: Int, iterator: Iterator[(Long, Array[Long], Int)],
+               model: KCorePSModel, batchSize: Int, threshold: Int): KCorePartition = {
+    val indexMap = new OpenHashMap[Long, Int]()
+    var idx = 0
+    val indptr = new IntArrayList()
+    val keys = new LongArrayList()
+    val neighbours = new LongArrayList()
+    val numStaticNeis = new IntArrayList()
+    
+    indptr.add(0)
+    BatchIter(iterator, batchSize).foreach{ batchIter =>
+      val nodes2pull = new mutable.HashSet[Long]()
+      nodes2pull ++= batchIter.flatMap(_._2)
+      nodes2pull ++= batchIter.map(_._1)
+      val inMsgs = model.readMsgs(nodes2pull.toArray)
+      val beforePull = System.currentTimeMillis()
+      println(s"apply, part $index, pull ${nodes2pull.size} msgs from ps, cost ${System.currentTimeMillis() - beforePull} ms.")
+      batchIter.foreach{
+        case (src, nbrs, numStatic) =>
+          if (inMsgs.get(src) > 0) {
+            val newNbs = new LongArrayList()
+            nbrs.foreach{ nb =>
+              if (inMsgs.get(nb) > 0) {
+                newNbs.add(nb)
+              }
+            }
+            if (newNbs.size() + numStatic > threshold) {
+              neighbours.addAll(newNbs)
+              indptr.add(neighbours.size())
+              keys.add(src)
+              numStaticNeis.add(numStatic)
+              indexMap.update(src, idx)
+              idx += 1
+            }
+          }
+      }
+    }
+    
+    val keysArray = keys.toLongArray()
+    val neighboursArray = neighbours.toLongArray()
+    new KCorePartition(index, keysArray, indptr.toIntArray(),
+      neighboursArray, indexMap, numStaticNeis.toIntArray(), null, threshold, "mid")
+  }
+  
 }

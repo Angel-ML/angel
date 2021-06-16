@@ -19,37 +19,40 @@ package com.tencent.angel.spark.examples.cluster
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.graph.community.lpa.LPA
-import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
+import com.tencent.angel.graph.utils.GraphIO
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.storage.StorageLevel
 
 object LPAExample {
-
   def main(args: Array[String]): Unit = {
-
+    
     val params = ArgsUtil.parse(args)
     val mode = params.getOrElse("mode", "yarn-cluster")
     val sc = start(mode)
-
+    
     val input = params.getOrElse("input", null)
     val partitionNum = params.getOrElse("partitionNum", "100").toInt
     val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
+    val batchSize = params.getOrElse("batchSize", "10000").toInt
     val output = params.getOrElse("output", null)
     val srcIndex = params.getOrElse("src", "0").toInt
     val dstIndex = params.getOrElse("dst", "1").toInt
     val psPartitionNum = params.getOrElse("psPartitionNum",
       sc.getConf.get("spark.ps.instances", "10")).toInt
     val useBalancePartition = params.getOrElse("useBalancePartition", "false").toBoolean
-
+    
+    val maxIter = params.getOrElse("maxIter", "100000").toInt
+    
     val cpDir = params.get("cpDir").filter(_.nonEmpty).orElse(GraphIO.defaultCheckpointDir)
       .getOrElse(throw new Exception("checkpoint dir not provided"))
     sc.setCheckpointDir(cpDir)
-
-    val maxIter = params.getOrElse("maxIter", "10").toInt
-
-    val sep = Delimiter.parse(params.getOrElse("sep",Delimiter.SPACE))
-
-
+    
+    val sep = params.getOrElse("sep", "space") match {
+      case "space" => " "
+      case "comma" => ","
+      case "tab" => "\t"
+    }
+    
     val lpa = new LPA()
       .setPartitionNum(partitionNum)
       .setStorageLevel(storageLevel)
@@ -58,13 +61,13 @@ object LPAExample {
       .setDstNodeIdCol("dst")
       .setUseBalancePartition(useBalancePartition)
       .setMaxIter(maxIter)
-
+    
     val df = GraphIO.load(input, isWeighted = false, srcIndex, dstIndex, sep = sep)
+    
     val mapping = lpa.transform(df)
     GraphIO.save(mapping, output)
     stop()
   }
-
   def start(mode: String): SparkContext = {
     val conf = new SparkConf()
     conf.setMaster(mode)
