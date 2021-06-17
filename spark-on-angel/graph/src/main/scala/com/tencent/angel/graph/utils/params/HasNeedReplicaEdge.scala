@@ -4,7 +4,7 @@ import org.apache.spark.ml.param.{BooleanParam, Params}
 
 trait HasNeedReplicaEdge extends Params{
   /**
-    * Param for isCompressed.
+    * Param for flag of replica edges.
     *
     * @group param
     */
@@ -12,5 +12,7 @@ trait HasNeedReplicaEdge extends Params{
 
   final def getNeedReplicaEdge : Boolean = $(needReplicaEdge)
 
-  final def setNeedReplicaEdge (bool: Boolean): this.type = set(needReplicaEdge, bool)
+  setDefault(needReplicaEdge, false)
+  
+  final def setNeedReplicaEdge(bool: Boolean): this.type = set(needReplicaEdge, bool)
 }
