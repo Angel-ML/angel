@@ -19,8 +19,7 @@ package com.tencent.angel.graph.connectedcomponent.wcc
 import com.tencent.angel.graph.common.param.ModelContext
 import com.tencent.angel.graph.utils.ModelContextUtils
 import com.tencent.angel.ml.math2.vector.{LongLongVector, Vector}
-import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
-import com.tencent.angel.psagent.PSAgentContext
+import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.spark.ml.util.LoadBalancePartitioner
 import com.tencent.angel.spark.models.{PSMatrix, PSVector}
 import com.tencent.angel.spark.models.impl.PSVectorImpl

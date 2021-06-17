@@ -19,7 +19,7 @@ package com.tencent.angel.spark.examples.cluster
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.graph.community.lpa.LPA
-import com.tencent.angel.graph.utils.GraphIO
+import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.storage.StorageLevel
 
@@ -37,6 +37,7 @@ object LPAExample {
     val output = params.getOrElse("output", null)
     val srcIndex = params.getOrElse("src", "0").toInt
     val dstIndex = params.getOrElse("dst", "1").toInt
+    val needReplicaEdge = params.getOrElse("needReplicaEdge", "true").toBoolean
     val psPartitionNum = params.getOrElse("psPartitionNum",
       sc.getConf.get("spark.ps.instances", "10")).toInt
     val useBalancePartition = params.getOrElse("useBalancePartition", "false").toBoolean
@@ -46,12 +47,8 @@ object LPAExample {
     val cpDir = params.get("cpDir").filter(_.nonEmpty).orElse(GraphIO.defaultCheckpointDir)
       .getOrElse(throw new Exception("checkpoint dir not provided"))
     sc.setCheckpointDir(cpDir)
-    
-    val sep = params.getOrElse("sep", "space") match {
-      case "space" => " "
-      case "comma" => ","
-      case "tab" => "\t"
-    }
+  
+    val sep = Delimiter.parse(params.getOrElse("sep", Delimiter.TAB))
     
     val lpa = new LPA()
       .setPartitionNum(partitionNum)
@@ -61,6 +58,7 @@ object LPAExample {
       .setDstNodeIdCol("dst")
       .setUseBalancePartition(useBalancePartition)
       .setMaxIter(maxIter)
+      .setNeedReplicaEdge(needReplicaEdge)
     
     val df = GraphIO.load(input, isWeighted = false, srcIndex, dstIndex, sep = sep)
     

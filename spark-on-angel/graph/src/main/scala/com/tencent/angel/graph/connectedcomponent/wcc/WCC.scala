@@ -25,8 +25,9 @@ import org.apache.spark.SparkContext
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.{IntParam, ParamMap}
 import org.apache.spark.ml.util.Identifiable
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{DataFrame, Dataset, Row}
+import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 
 class WCC(override val uid: String) extends Transformer
   with HasWeightCol with HasSrcNodeIdCol with HasDstNodeIdCol
@@ -35,63 +36,113 @@ class WCC(override val uid: String) extends Transformer
   with HasStorageLevel with HasBatchSize with HasPullBatchSize
   with HasBufferSize with HasUseBalancePartition with HasNeedReplicaEdge {
   
-  final val batchNum = new IntParam(this, "batchNum", "batchNum")
-  final def setbatchNum(num: Int): this.type = set(batchNum, num)
-  setDefault(batchNum, 4)
+  final val compressIterNum = new IntParam(this, "compressIterNum", "compressIterNum")
+  final val localLimit = new IntParam(this, "localLimit", "localLimit")
+  final def setCompressIterNum(num: Int): this.type = set(compressIterNum, num)
+  final def setLocalLimit(num: Int): this.type = set(localLimit, num)
+  setDefault(compressIterNum, 3)
+  setDefault(localLimit, 100000000)
   
-  def this() = this(Identifiable.randomUID("WCC"))
+  def this() = this(Identifiable.randomUID("WCC-compress_ver"))
   
   override def transform(dataset: Dataset[_]): DataFrame = {
     // read edges
     val edges = GraphIO.loadEdgesFromDF(dataset, $(srcNodeIdCol), $(dstNodeIdCol), $(needReplicaEdge))
+    
     edges.persist($(storageLevel))
+    val numEdges = edges.count()
     
-    val (minId, maxId, numEdges) = Stats.summarize(edges)
-    println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
-    
-    // Start PS and init the model
-    println("start to run ps")
-    PSContext.getOrCreate(SparkContext.getOrCreate())
-    val modelContext = new ModelContext($(psPartitionNum), minId, maxId, -1,
-      "labels",  SparkContext.getOrCreate().hadoopConfiguration)
-    val model = WCCPSModel(modelContext, edges, $(useBalancePartition), $(balancePartitionPercent))
-    
-    // make un-directed graph, for wcc
-    var graph = edges.groupByKey($(partitionNum))
-      .mapPartitionsWithIndex((index, adjTable) => Iterator((0, WCCPartition.apply(index, adjTable))))
-    graph.persist($(storageLevel))
-    graph.foreachPartition(_ => Unit)
-    graph.count()
-    
-    edges.unpersist(blocking = false)
-    
-    graph.foreach(_._2.initMsgs(model, $(batchSize)))
-    graph.foreachPartition(_ => Unit)
-    graph.count()
-    
-    var numMsgs = model.numMsgs()
-    var curIteration = 0
-    var prev = graph
-    println(s"numMsgs=$numMsgs")
-    
-    // each node change its label into the min id of its neighbors (including itself).
-    var changedCnt = 0
-    do {
-      curIteration += 1
-      changedCnt = 0
-      //changedCnt = graph.map(_.process(model, numMsgs, curIteration == 1)).reduce((n1, n2) => n1 + n2)
-      graph = prev.map(_._2.process(model, $(pullBatchSize), numMsgs, curIteration == 1))
-      graph.persist($(storageLevel))
-      graph.count()
-      changedCnt = graph.map(_._1).reduce((n1, n2) => n1 + n2)
-      prev.unpersist(true)
-      prev = graph
+    val ss = SparkSession.builder().getOrCreate()
+    var retRDD: RDD[Row] = null
+    if (numEdges < $(localLimit)) {
+      println(s"edgeNum less than limit, turn to local computation")
+      val t1 = System.currentTimeMillis()
+      val localEdgeArray = edges.collect()
+      val localWCC = LocalWCC.process(localEdgeArray)
+      println("localWCC cost time "+(System.currentTimeMillis() - t1)*1.0f / 1000)
+      retRDD = ss.sparkContext.makeRDD(localWCC.toSeq, $(partitionNum))
+        .map(f => Row.fromSeq(Seq[Any](f._1, f._2)))
       
-      println(s"curIteration=$curIteration numMsgs=$changedCnt")
-    } while (changedCnt > 0)
-    
-    val retRDD = graph.map(_._2.save()).flatMap(f => f._1.zip(f._2))
-      .map(f => Row.fromSeq(Seq[Any](f._1, f._2)))
+      edges.unpersist(blocking = false)
+    }
+    else {
+      val (minId, maxId, numEdges) = Stats.summarize(edges)
+      
+      println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
+      
+      // Start PS and init the model
+      println("start to run ps")
+      PSContext.getOrCreate(SparkContext.getOrCreate())
+      
+      val modelContext = new ModelContext($(psPartitionNum), minId, maxId, -1,
+        "labels",  SparkContext.getOrCreate().hadoopConfiguration)
+      val model = WCCPSModel(modelContext, edges, $(useBalancePartition), $(balancePartitionPercent))
+      
+      // make un-directed graph, for wcc
+      var graph = edges.groupByKey($(partitionNum))
+        .mapPartitionsWithIndex((index, adjTable) => Iterator((0, WCCPartition.apply(index, adjTable))))
+      graph.persist($(storageLevel))
+      graph.foreachPartition(_ => Unit)
+      graph.count()
+      
+      graph.foreach(_._2.initMsgs(model, $(batchSize)))
+      graph.foreachPartition(_ => Unit)
+      graph.count()
+      
+      edges.unpersist(blocking = false)
+      
+      var numMsgs = model.numMsgs()
+      var curIteration = 0
+      var prev = graph
+      println(s"numMsgs=$numMsgs")
+      
+      // while procession on ps,
+      // each node change its label into the min id of its neighbors (including itself).
+      var changedCnt = 0
+      var edgeAfterCP = 0L
+      var compressCnt = 1
+      do{
+        do {
+          curIteration += 1
+          changedCnt = 0
+          graph = prev.map(_._2.process(model, $(pullBatchSize), numMsgs, curIteration == 1))
+          graph.persist($(storageLevel))
+          graph.count()
+          changedCnt = graph.map(_._1).reduce((n1, n2) => n1 + n2)
+          prev.unpersist(blocking = false)
+          prev = graph
+          // model.resetMsgs()
+          
+          println(s"curIteration=$curIteration numMsgs=$changedCnt")
+        } while ((changedCnt > 0) && (curIteration < ($(compressIterNum) * compressCnt)))
+        
+        compressCnt += 1
+        edgeAfterCP = graph.map(_._2.edgesIfCompress(model)).reduce((n1, n2) => n1 + n2)
+        println(s"rude estimate edge-num after $curIteration iters on ps: $edgeAfterCP")
+        
+      } while(edgeAfterCP > $(localLimit))
+      
+      println(s"finish ${$(compressIterNum) * (compressCnt-1)} of iters on ps, into local mode")
+      
+      val localEdgeArray = graph.map(_._2.compressEdges(model))
+        .reduce((Arr1, Arr2) => Arr1 ++ Arr2).toArray
+      println(s"local edge num: ${localEdgeArray.length}")
+      
+      println(s"graph compressed, turn to local computation")
+      val t1 = System.currentTimeMillis()
+      val localWCC = LocalWCC.process(localEdgeArray)
+      println("localWCC cost time "+(System.currentTimeMillis() - t1)*1.0f / 1000)
+      val localRDD = ss.sparkContext.makeRDD(localWCC.toSeq, $(partitionNum))
+      
+      retRDD = graph.map(_._2.save()).flatMap(f => f._2.zip(f._1))
+        .leftOuterJoin(localRDD).map { case (prevlb, (nd, curlb)) =>
+        curlb match {
+          case Some(curlb) => (nd, curlb)
+          case None => (nd, prevlb)
+        }
+      }.map(f => Row.fromSeq(Seq[Any](f._1, f._2)))
+      PSContext.stop()
+    }
     
     dataset.sparkSession.createDataFrame(retRDD, transformSchema(dataset.schema))
   }
