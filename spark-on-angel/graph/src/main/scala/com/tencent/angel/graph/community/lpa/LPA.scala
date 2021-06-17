@@ -17,7 +17,9 @@
 
 package com.tencent.angel.graph.community.lpa
 
+import com.tencent.angel.graph.common.param.ModelContext
 import com.tencent.angel.graph.utils.io.Log
+import com.tencent.angel.graph.utils.{GraphIO, Stats}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.graph.utils.params._
 import org.apache.spark.SparkContext
@@ -26,83 +28,82 @@ import org.apache.spark.ml.param.{IntParam, ParamMap}
 import org.apache.spark.ml.util.Identifiable
 import org.apache.spark.sql.types.{LongType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
-import org.apache.spark.storage.StorageLevel
 
 class LPA(override val uid: String) extends Transformer
   with HasSrcNodeIdCol with HasDstNodeIdCol with HasOutputNodeIdCol with HasOutputCoreIdCol
-  with HasStorageLevel with HasPartitionNum with HasPSPartitionNum with HasUseBalancePartition {
-
+  with HasStorageLevel with HasPartitionNum with HasPSPartitionNum with HasUseBalancePartition
+  with HasBalancePartitionPercent with HasNeedReplicaEdge {
+  
   final val maxIter = new IntParam(this, "maxIter", "maxIter")
-
   final def setMaxIter(numIters: Int): this.type = set(maxIter, numIters)
-
-  setDefault(maxIter, 10)
-
+  setDefault(maxIter, Int.MaxValue)
+  
   def this() = this(Identifiable.randomUID("LPA"))
-
+  
   override def transform(dataset: Dataset[_]): DataFrame = {
-    val edges = dataset.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd
-      .filter(row => !row.anyNull)
-      .map(row => (row.getLong(0), row.getLong(1)))
-      .filter(f => f._1 != f._2)
-
-    edges.persist(StorageLevel.DISK_ONLY)
-
-    val index = edges.flatMap(f => Iterator(f._1, f._2))
-    val maxId = index.max() + 1
-    val minId = index.min()
-    val numEdges = edges.count()
-
-    Log.withTimePrintln(s"minId=$minId maxId=$maxId numEdges=$numEdges storageLevel=${storageLevel}")
-
+    val edges = GraphIO.loadEdgesFromDF(dataset, $(srcNodeIdCol), $(dstNodeIdCol), $(needReplicaEdge))
+    edges.persist($(storageLevel))
+    
+    val (minId, maxId, numEdges) = Stats.summarize(edges)
+    Log.withTimePrintln(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
+    
     // Start PS and init the model
     Log.withTimePrintln("start to run ps")
     PSContext.getOrCreate(SparkContext.getOrCreate())
-
-    val model = LPAPSModel.fromMinMax(minId, maxId, index, $(psPartitionNum), $(useBalancePartition))
-
+    
+    val modelContext = new ModelContext($(psPartitionNum), minId, maxId, -1,
+      "lpa", SparkContext.getOrCreate().hadoopConfiguration)
+    val model = LPAPSModel(modelContext, edges, $(useBalancePartition), $(balancePartitionPercent))
+    
     var graph = edges.flatMap(f => Iterator((f._1, f._2), (f._2, f._1)))
       .groupByKey($(partitionNum))
       .mapPartitionsWithIndex((index, it) =>
-        Iterator(LPAPartition.apply(index, it)))
-
+        Iterator((0L, LPAGraphPartition.apply(index, it))))
+    
     graph.persist($(storageLevel))
     graph.foreachPartition(_ => Unit)
-
-    var numChanged = graph.map(_._1.initMsgs(model)).reduce(_ + _)
-
-    //Loop
-    var i = 0
+    graph.count()
+    
+    graph.foreach(_._2.initMsgs(model))
+    graph.foreachPartition(_ => Unit)
+    graph.count()
+    
+    edges.unpersist(blocking = false)
+    
+    var curIteration = 0
+    var numMsgs = model.numMsgs()
     var prev = graph
-    val maxIterations = $(maxIter)
-    Log.withTimePrintln(s"numChanged = $numChanged")
-
+    val maxIterNum = $(maxIter)
+    var changedNum = 0L
+    println(s"numMsgs = $numMsgs")
+    
     do {
-      i += 1
-      graph = prev.map(_._1.process(model))
+      curIteration += 1
+      graph = prev.map(_._2.process(model, numMsgs))
       graph.persist($(storageLevel))
-      numChanged = graph.map(_._2).reduce(_ + _)
       graph.count()
-      prev.unpersist(true)
+      changedNum = graph.map(_._1).reduce(_ + _)
+      prev.unpersist(false)
       prev = graph
       model.resetMsgs()
-      Log.withTimePrintln(s"LPA finished iteration + $i, and $numChanged nodes changed  lpa label")
-    } while (i < maxIterations && numChanged > 0)
-
-    val retRDD = graph.map(_._1.save).flatMap(f => f._1.zip(f._2))
+      numMsgs = model.numMsgs()
+      Log.withTimePrintln(s"LPA finished iteration $curIteration; $changedNum  nodes changed  lpa label")
+    } while (curIteration < maxIterNum && changedNum != 0)
+    
+    val retRDD = graph.map(_._2.save).flatMap(f => f._1.zip(f._2))
       .sortBy(_._2)
       .map(f => Row.fromSeq(Seq[Any](f._1, f._2)))
-
+    
     dataset.sparkSession.createDataFrame(retRDD, transformSchema(dataset.schema))
   }
-
+  
   override def transformSchema(schema: StructType): StructType = {
     StructType(Seq(
-      StructField(s"$outputNodeIdCol", LongType, nullable = false),
-      StructField(s"$outputCoreIdCol", LongType, nullable = false)
+      StructField(s"${$(outputNodeIdCol)}", LongType, nullable = false),
+      StructField(s"${$(outputCoreIdCol)}", LongType, nullable = false)
     ))
   }
-
+  
   override def copy(extra: ParamMap): Transformer = defaultCopy(extra)
-
+  
 }
