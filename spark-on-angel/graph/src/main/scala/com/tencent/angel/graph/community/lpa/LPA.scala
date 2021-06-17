@@ -18,6 +18,7 @@
 package com.tencent.angel.graph.community.lpa
 
 import com.tencent.angel.graph.common.param.ModelContext
+import com.tencent.angel.graph.utils.io.Log
 import com.tencent.angel.graph.utils.{GraphIO, Stats}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.graph.utils.params._
@@ -44,10 +45,10 @@ class LPA(override val uid: String) extends Transformer
     edges.persist($(storageLevel))
     
     val (minId, maxId, numEdges) = Stats.summarize(edges)
-    println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
+    Log.withTimePrintln(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
     
     // Start PS and init the model
-    println("start to run ps")
+    Log.withTimePrintln("start to run ps")
     PSContext.getOrCreate(SparkContext.getOrCreate())
     
     val modelContext = new ModelContext($(psPartitionNum), minId, maxId, -1,
@@ -86,7 +87,7 @@ class LPA(override val uid: String) extends Transformer
       prev = graph
       model.resetMsgs()
       numMsgs = model.numMsgs()
-      println(s"curIteration=$curIteration; changedNum=$changedNum nodes changed")
+      Log.withTimePrintln(s"LPA finished iteration $curIteration; $changedNum  nodes changed  lpa label")
     } while (curIteration < maxIterNum && changedNum != 0)
     
     val retRDD = graph.map(_._2.save).flatMap(f => f._1.zip(f._2))

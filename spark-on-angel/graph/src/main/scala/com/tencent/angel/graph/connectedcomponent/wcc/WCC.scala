@@ -18,6 +18,7 @@
 package com.tencent.angel.graph.connectedcomponent.wcc
 
 import com.tencent.angel.graph.common.param.ModelContext
+import com.tencent.angel.graph.utils.io.Log
 import com.tencent.angel.graph.utils.{GraphIO, Stats}
 import com.tencent.angel.graph.utils.params._
 import com.tencent.angel.spark.context.PSContext
@@ -55,11 +56,11 @@ class WCC(override val uid: String) extends Transformer
     val ss = SparkSession.builder().getOrCreate()
     var retRDD: RDD[Row] = null
     if (numEdges < $(localLimit)) {
-      println(s"edgeNum less than limit, turn to local computation")
+      Log.withTimePrintln(s"edgeNum less than limit, turn to local computation")
       val t1 = System.currentTimeMillis()
       val localEdgeArray = edges.collect()
       val localWCC = LocalWCC.process(localEdgeArray)
-      println("localWCC cost time "+(System.currentTimeMillis() - t1)*1.0f / 1000)
+      Log.withTimePrintln("localWCC cost time "+(System.currentTimeMillis() - t1)*1.0f / 1000)
       retRDD = ss.sparkContext.makeRDD(localWCC.toSeq, $(partitionNum))
         .map(f => Row.fromSeq(Seq[Any](f._1, f._2)))
       
@@ -68,10 +69,10 @@ class WCC(override val uid: String) extends Transformer
     else {
       val (minId, maxId, numEdges) = Stats.summarize(edges)
       
-      println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
+      Log.withTimePrintln(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
       
       // Start PS and init the model
-      println("start to run ps")
+      Log.withTimePrintln("start to run ps")
       PSContext.getOrCreate(SparkContext.getOrCreate())
       
       val modelContext = new ModelContext($(psPartitionNum), minId, maxId, -1,
@@ -94,7 +95,7 @@ class WCC(override val uid: String) extends Transformer
       var numMsgs = model.numMsgs()
       var curIteration = 0
       var prev = graph
-      println(s"numMsgs=$numMsgs")
+      Log.withTimePrintln(s"numMsgs=$numMsgs")
       
       // while procession on ps,
       // each node change its label into the min id of its neighbors (including itself).
@@ -113,7 +114,7 @@ class WCC(override val uid: String) extends Transformer
           prev = graph
           // model.resetMsgs()
           
-          println(s"curIteration=$curIteration numMsgs=$changedCnt")
+          println(s"WCC finished iteration $curIteration; $changedCnt nodes changed  wcc label")
         } while ((changedCnt > 0) && (curIteration < ($(compressIterNum) * compressCnt)))
         
         compressCnt += 1
@@ -126,12 +127,12 @@ class WCC(override val uid: String) extends Transformer
       
       val localEdgeArray = graph.map(_._2.compressEdges(model))
         .reduce((Arr1, Arr2) => Arr1 ++ Arr2).toArray
-      println(s"local edge num: ${localEdgeArray.length}")
+      Log.withTimePrintln(s"local edge num: ${localEdgeArray.length}")
       
-      println(s"graph compressed, turn to local computation")
+      Log.withTimePrintln(s"graph compressed, turn to local computation")
       val t1 = System.currentTimeMillis()
       val localWCC = LocalWCC.process(localEdgeArray)
-      println("localWCC cost time "+(System.currentTimeMillis() - t1)*1.0f / 1000)
+      Log.withTimePrintln("localWCC cost time "+(System.currentTimeMillis() - t1)*1.0f / 1000)
       val localRDD = ss.sparkContext.makeRDD(localWCC.toSeq, $(partitionNum))
       
       retRDD = graph.map(_._2.save()).flatMap(f => f._2.zip(f._1))

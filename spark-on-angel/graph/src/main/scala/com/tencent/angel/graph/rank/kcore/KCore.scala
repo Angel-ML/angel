@@ -18,6 +18,7 @@
 package com.tencent.angel.graph.rank.kcore
 
 import com.tencent.angel.graph.common.param.ModelContext
+import com.tencent.angel.graph.utils.io.Log
 import com.tencent.angel.graph.utils.{BatchIter, GraphIO, Stats}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.graph.utils.params._
@@ -63,14 +64,10 @@ class KCore(override val uid: String) extends Transformer
     edges.persist($(storageLevel))
     
     val (minId, maxId, numEdges) = Stats.summarize(edges)
-    println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
-    
-    
-    println(s"partition num: ???")
-    println($(partitionNum))
+    Log.withTimePrintln(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
     
     // Start PS and init the model
-    println("start to run ps")
+    Log.withTimePrintln("start to run ps")
     PSContext.getOrCreate(SparkContext.getOrCreate())
     val modelContext = new ModelContext($(psPartitionNum), minId, maxId, -1,
       "cores",  SparkContext.getOrCreate().hadoopConfiguration)
@@ -101,12 +98,12 @@ class KCore(override val uid: String) extends Transformer
     if ($(setCheckPoint)) {
       val cp0StartTime = System.currentTimeMillis()
       model.checkpoint(0)
-      println(s"iteration: 0, checkpoint, cost: ${System.currentTimeMillis() - cp0StartTime} ms")
+      Log.withTimePrintln(s"iteration: 0, checkpoint, cost: ${System.currentTimeMillis() - cp0StartTime} ms")
     }
     
     val numNodes = graph.map(_.numNodes()).sum()
     val numEdges_ = graph.map(_.numEdges()).sum()
-    println(s"curIteration=0, numCores=numNodes=$numNodes, numEdges=$numEdges_")
+    Log.withTimePrintln(s"curIteration=0, numCores=numNodes=$numNodes, numEdges=$numEdges_")
     
     var curIteration = 1
     var numMsgs = numNodes.toLong
@@ -133,7 +130,7 @@ class KCore(override val uid: String) extends Transformer
       }
       model.resetMsgs()
       numKeys2calc = model.numMsgs()
-      println(s"curIteration=$curIteration numMsgs=$numMsgs preMinCore=$preMinCore curMinCore=$curMinCore numKeys2calc=$numKeys2calc")
+      Log.withTimePrintln(s"curIteration=$curIteration numMsgs=$numMsgs preMinCore=$preMinCore curMinCore=$curMinCore numKeys2calc=$numKeys2calc")
       if (curMinCore != preMinCore) preMinCore = curMinCore
       
       if (compress && curMinCore > ${topK}) {
@@ -142,18 +139,18 @@ class KCore(override val uid: String) extends Transformer
         //        GraphIO.save(tempReDF, tempOutputDir)
         //        println(s"saved temp result to $tempOutputDir.")
         // compress
-        println(s"compress...")
+        Log.withTimePrintln(s"compress...")
         val startCompressTime = System.currentTimeMillis()
         graph = temp.map(_.compress(model, ${pullBatchSize})).persist(${storageLevel})
         graph.count()
         val endCompressTime = System.currentTimeMillis()
-        println(s"compress cost: ${endCompressTime - startCompressTime} ms.")
-        println(s"gen kcore sub graph cost: ${endCompressTime - startIterationTime} ms")
+        Log.withTimePrintln(s"compress cost: ${endCompressTime - startCompressTime} ms.")
+        Log.withTimePrintln(s"gen kcore sub graph cost: ${endCompressTime - startIterationTime} ms")
         temp.unpersist(blocking = false)
         temp = graph.filter(_.numNodes() > 0)
         val numNodes_ = temp.map(_.numNodes()).reduce(_ + _)
         val numEdges_ = temp.map(_.numEdges()).reduce(_ + _)
-        println(s"compress2 success, curIteration=$curIteration, numNodes_=$numNodes_, numEdges_=$numEdges_")
+        Log.withTimePrintln(s"compress2 success, curIteration=$curIteration, numNodes_=$numNodes_, numEdges_=$numEdges_")
         //        model.checkpoint(curIteration)
         compress = false
       }
@@ -161,17 +158,17 @@ class KCore(override val uid: String) extends Transformer
       if ($(setCheckPoint) && (curIteration % 50 == 0)) {
         val startCPTime = System.currentTimeMillis()
         model.checkpoint(curIteration)
-        println(s"iteration: $curIteration, checkpoint, cost: ${System.currentTimeMillis() - startCPTime} ms")
+        Log.withTimePrintln(s"iteration: $curIteration, checkpoint, cost: ${System.currentTimeMillis() - startCPTime} ms")
       }
       curIteration += 1
     } while (numMsgs > 0)
     val endIterationTime = System.currentTimeMillis()
     
-    println(s"iteration cost total: ${endIterationTime - startIterationTime}")
-    println(s"num iterations: $curIteration, total updates: $totalUpdates")
+    Log.withTimePrintln(s"iteration cost total: ${endIterationTime - startIterationTime}")
+    Log.withTimePrintln(s"num iterations: $curIteration, total updates: $totalUpdates")
     
     val retRdd = graph.flatMap(_.save(model, ${pullBatchSize})).sortBy(_._2, false)
-    println(s"numSavedNodes: ${retRdd.count()}")
+    Log.withTimePrintln(s"numSavedNodes: ${retRdd.count()}")
     
     //    dataset.sparkSession.createDataFrame(retRDD, transformSchema(dataset.schema))
     dataset.sparkSession.createDataFrame(retRdd.map(x => Row(x._1, x._2)), transformSchema(dataset.schema))
@@ -191,13 +188,13 @@ class KCore(override val uid: String) extends Transformer
     assert(staticCores != null, s"error: staticCores is null!")
     val ts1 = System.currentTimeMillis()
     staticCores.foreachPartition { iter => Iterator.single(KCore.initStaticCores(iter, model))}
-    println(s"push static cores cost: ${System.currentTimeMillis() - ts1} ms")
+    Log.withTimePrintln(s"push static cores cost: ${System.currentTimeMillis() - ts1} ms")
     
     // filter nodes that are needed to be calculated
     val startMkTableTime = System.currentTimeMillis()
     val neighborTable = KCore.edges2NeighborTable($(execMode), edges, ${partitionNum}, ${topK}, model, ${pullBatchSize}).persist($(storageLevel))
     val endMkTableTime = System.currentTimeMillis()
-    println(s"make neighbor table cost: ${endMkTableTime - startMkTableTime} ms.")
+    Log.withTimePrintln(s"make neighbor table cost: ${endMkTableTime - startMkTableTime} ms.")
     
     // filter static cores, nodes with degree=1 or nodes that are only connected to static nodes
     neighborTable.foreachPartition { iter =>
@@ -212,13 +209,13 @@ class KCore(override val uid: String) extends Transformer
         }
       }
       model.initCores(msgs)
-      println(s"2nd static cores, init ${msgs.size().toInt} cores.")
+      Log.withTimePrintln(s"2nd static cores, init ${msgs.size().toInt} cores.")
     }
     val graph = neighborTable.mapPartitionsWithIndex { case (index, it) =>
       Iterator(KCorePartition.applySparse(index, it, ${pullBatchSize}, ${topK}))}
     graph.persist($(storageLevel))
     graph.foreachPartition(_ => Unit)
-    println(s"graph parts: ${graph.count()}")
+    Log.withTimePrintln(s"graph parts: ${graph.count()}")
     neighborTable.unpersist(blocking = false)
     graph
   }
@@ -229,7 +226,7 @@ class KCore(override val uid: String) extends Transformer
       .persist($(storageLevel))
     neighborTable.count()
     val endMkTableTime = System.currentTimeMillis()
-    println(s"make neighbor table cost: ${endMkTableTime - startMkTableTime} ms.")
+    Log.withTimePrintln(s"make neighbor table cost: ${endMkTableTime - startMkTableTime} ms.")
     
     neighborTable.mapPartitionsWithIndex { case (index, iter) => KCore.initModel(index, iter, model, ${batchSize})}.count()
     val graph = neighborTable.mapPartitionsWithIndex { case (index, it) =>
@@ -247,7 +244,7 @@ class KCore(override val uid: String) extends Transformer
       .persist($(storageLevel))
     neighborTable.count()
     val endMkTableTime = System.currentTimeMillis()
-    println(s"make neighbor table cost: ${endMkTableTime - startMkTableTime} ms.")
+    Log.withTimePrintln(s"make neighbor table cost: ${endMkTableTime - startMkTableTime} ms.")
     
     val graph = neighborTable.mapPartitionsWithIndex((index, it) =>
       Iterator(KCorePartition.applyFull(index, it, $(batchSize))))
@@ -263,14 +260,14 @@ class KCore(override val uid: String) extends Transformer
     assert(staticCores != null, s"error: staticCores is null!")
     val ts1 = System.currentTimeMillis()
     staticCores.foreachPartition { iter => Iterator.single(KCore.initStaticCores(iter, model))}
-    println(s"push static cores cost: ${System.currentTimeMillis() - ts1} ms")
+    Log.withTimePrintln(s"push static cores cost: ${System.currentTimeMillis() - ts1} ms")
     
     // filter nodes that are needed to be calculated
     val startMkTableTime = System.currentTimeMillis()
     val neighborTable = KCore.edges2NeighborTable($(execMode), edges, ${partitionNum}, ${topK}, model, ${pullBatchSize}).persist($(storageLevel))
     neighborTable.count()
     val endMkTableTime = System.currentTimeMillis()
-    println(s"make neighbor table cost: ${endMkTableTime - startMkTableTime} ms.")
+    Log.withTimePrintln(s"make neighbor table cost: ${endMkTableTime - startMkTableTime} ms.")
     
     neighborTable.mapPartitionsWithIndex { case (index, iter) => KCore.initModel2(index, iter, model, ${batchSize})}.count()
     
@@ -346,7 +343,7 @@ object KCore {
     val len = nodes.length
     val msgs = VFactory.sparseLongKeyIntVector(len, nodes.toArray, Array.fill(len)(1))
     model.writeInMsgs(msgs)
-    println(s"init ${nodes.length} cores.")
+    Log.withTimePrintln(s"init ${nodes.length} cores.")
     msgs.clear()
     len
   }
@@ -356,7 +353,7 @@ object KCore {
     val len = nodes.length
     val msgs = VFactory.sparseLongKeyIntVector(len, nodes, cores)
     model.initCores(msgs)
-    println(s"2nd init $len cores.")
+    Log.withTimePrintln(s"2nd init $len cores.")
     msgs.clear()
   }
   
@@ -364,7 +361,7 @@ object KCore {
     val nodes = iter.toArray
     val msgs = VFactory.sparseLongKeyIntVector(nodes.length, nodes, Array.fill(nodes.length)(1))
     model.initStaticCores(msgs)
-    println(s"init ${msgs.size()} static cores.")
+    Log.withTimePrintln(s"init ${msgs.size()} static cores.")
     msgs.clear()
   }
   
