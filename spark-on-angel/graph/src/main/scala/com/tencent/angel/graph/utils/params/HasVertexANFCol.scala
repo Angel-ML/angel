@@ -18,15 +18,20 @@ package com.tencent.angel.graph.utils.params
 
 import org.apache.spark.ml.param.{Param, Params}
 
-trait HasOutputDistanceCol extends Params {
+trait HasVertexANFCol extends Params {
+  /**
+   * Param for name of output vertex ANF.
+   *
+   * @group param
+   */
+  final val vertexANFCol = new Param[String](this, "vertexANFCol",
+    "name for output vertex ANF column")
 
-  final val outputDistanceCol = new Param[String](this, "outputDistanceCol",
-    "name for distance column on sssp algorithm")
+  /** @group getParam */
+  final def getVertexANFCol: String = $(vertexANFCol)
 
-  final def getOutputDistanceCol: String = ${outputDistanceCol}
+  setDefault(vertexANFCol, "vertexANF")
 
-  setDefault(outputDistanceCol, "distance")
-
-  final def setOutputDistanceCol(name: String): this.type = set(outputDistanceCol, name)
-
+  /** @group setParam */
+  def setVertexANFCol(name: String): this.type = set(vertexANFCol, name)
 }

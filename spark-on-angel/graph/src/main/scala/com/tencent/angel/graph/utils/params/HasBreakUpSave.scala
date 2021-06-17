@@ -16,17 +16,21 @@
  */
 package com.tencent.angel.graph.utils.params
 
-import org.apache.spark.ml.param.{Param, Params}
+import org.apache.spark.ml.param.{BooleanParam, Params}
 
-trait HasOutputDistanceCol extends Params {
+trait HasBreakUpSave extends Params {
+  /**
+    * Param for BreakUpSave.
+    *
+    * @group param
+    */
+  final val breakUpSave = new BooleanParam(this, "breakUpSave", "breakUpSave")
 
-  final val outputDistanceCol = new Param[String](this, "outputDistanceCol",
-    "name for distance column on sssp algorithm")
+  /** @group getParam */
+  final def getBreakUpSave: Boolean = $(breakUpSave)
 
-  final def getOutputDistanceCol: String = ${outputDistanceCol}
+  setDefault(breakUpSave, false)
 
-  setDefault(outputDistanceCol, "distance")
-
-  final def setOutputDistanceCol(name: String): this.type = set(outputDistanceCol, name)
-
+  /** @group setParam */
+  final def setBreakUpSave(flag: Boolean): this.type = set(breakUpSave, flag)
 }

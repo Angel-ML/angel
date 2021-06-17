@@ -51,6 +51,8 @@ public class ByteBufSerdeUtils {
   public static final int FLOAT_LENGTH = 4;
   public static final int DOUBLE_LENGTH = 8;
 
+  public static final float[] emptyFloats = new float[0];
+
   // =======================================================
   // Boolean
   public static void serializeBoolean(ByteBuf out, boolean value) {
@@ -289,7 +291,7 @@ public class ByteBufSerdeUtils {
   }
 
   public static int serializedFloatsLen(float[] values, int start, int end) {
-    return FLOAT_LENGTH + (end - start) * FLOAT_LENGTH;
+    return INT_LENGTH + (end - start) * FLOAT_LENGTH;
   }
 
   public static int serializedFloatsLen(float[] values) {
@@ -331,7 +333,7 @@ public class ByteBufSerdeUtils {
   public static void serializeUTF8s(ByteBuf out, String[] values) {
     serializeInt(out, values.length);
     for (int i = 0; i < values.length; i++) {
-      if(values[i] != null) {
+      if (values[i] != null) {
         serializeBoolean(out, true);
         serializeUTF8(out, values[i]);
       } else {
@@ -355,7 +357,7 @@ public class ByteBufSerdeUtils {
     int len = INT_LENGTH;
     for (int i = 0; i < len; i++) {
       len += BOOLEN_LENGTH;
-      if(values[i] != null) {
+      if (values[i] != null) {
         len += serializedUTF8Len(values[i]);
       }
     }
@@ -1339,5 +1341,13 @@ public class ByteBufSerdeUtils {
 
   public static int serializedPartLen(PartitionKey partKey) {
     return partKey.bufferLen();
+  }
+
+  public static void serializeEmptyFloats(ByteBuf output) {
+    serializeFloats(output, emptyFloats);
+  }
+
+  public static int serializedEmptyFloatsLen() {
+    return serializedFloatsLen(emptyFloats);
   }
 }

@@ -18,15 +18,20 @@ package com.tencent.angel.graph.utils.params
 
 import org.apache.spark.ml.param.{Param, Params}
 
-trait HasOutputDistanceCol extends Params {
+trait HasCardDiffCol extends Params {
+  /**
+   * Param for name of output cardDiff.
+   *
+   * @group param
+   */
+  final val cardDiffCol = new Param[String](this, "cardDiffCol",
+    "name for output cardDiff column")
 
-  final val outputDistanceCol = new Param[String](this, "outputDistanceCol",
-    "name for distance column on sssp algorithm")
+  /** @group getParam */
+  final def getCardDiffCol: String = $(cardDiffCol)
 
-  final def getOutputDistanceCol: String = ${outputDistanceCol}
+  setDefault(cardDiffCol, "cardDiff")
 
-  setDefault(outputDistanceCol, "distance")
-
-  final def setOutputDistanceCol(name: String): this.type = set(outputDistanceCol, name)
-
+  /** @group setParam */
+  def setCardDiffCol(name: String): this.type = set(cardDiffCol, name)
 }

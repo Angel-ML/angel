@@ -21,6 +21,7 @@ import java.util
 import java.util.Random
 
 import com.tencent.angel.PartitionKey
+import com.tencent.angel.common.ByteBufSerdeUtils
 import com.tencent.angel.ml.matrix.psf.get.base._
 import com.tencent.angel.spark.models.PSMatrix
 import io.netty.buffer.ByteBuf
@@ -34,11 +35,11 @@ class PSPartitionAliasTable() {
   @volatile var prob: Array[Double] = _
   @volatile var alias: Array[Int] = _
 
-  def init(psMatrix: PSMatrix) = {
+  def init(psMatrix: PSMatrix): Unit = {
     // Get weight sums for all ps partitions
     val weights = psMatrix.psfGet(new GetPSPartWeight(new GetParam(psMatrix.id))).asInstanceOf[GetPSPartWeightResult].getWeights
     for (i <- weights.indices) {
-      println(s"index = $i, value=${weights(i)}")
+      println(s"index = ${i}, value=${weights(i)}")
     }
 
     // Build the alias table
@@ -53,7 +54,7 @@ class PSPartitionAliasTable() {
 }
 
 object PSPartitionAliasTable {
-  var instance: PSPartitionAliasTable = _
+  var instance: PSPartitionAliasTable = null
 
   def get(psMatrix: PSMatrix): PSPartitionAliasTable = {
     PSPartitionAliasTable.getClass.synchronized {
@@ -117,7 +118,7 @@ class PartGetPSPartWeightResult(var partKey: PartitionKey, var partWeight: Doubl
     */
   override def serialize(output: ByteBuf): Unit = {
     partKey.serialize(output)
-    output.writeDouble(partWeight)
+    ByteBufSerdeUtils.serializeDouble(output, partWeight)
   }
 
   /**
@@ -128,7 +129,7 @@ class PartGetPSPartWeightResult(var partKey: PartitionKey, var partWeight: Doubl
   override def deserialize(input: ByteBuf): Unit = {
     partKey = new PartitionKey()
     partKey.deserialize(input)
-    partWeight = input.readDouble()
+    partWeight = ByteBufSerdeUtils.deserializeDouble(input)
   }
 
   /**
@@ -137,7 +138,7 @@ class PartGetPSPartWeightResult(var partKey: PartitionKey, var partWeight: Doubl
     * @return int serialized data size of the object
     */
   override def bufferLen(): Int = {
-    partKey.bufferLen() + 8
+    partKey.bufferLen() + ByteBufSerdeUtils.DOUBLE_LENGTH
   }
 }
 

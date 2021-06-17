@@ -30,9 +30,7 @@ trait HasOutputPageRankCol extends Params {
     "name for output pagerank column")
 
   /** @group getParam */
-  final def getOutputPageRankCol: String = $ {
-    outputPageRankCol
-  }
+  final def getOutputPageRankCol: String = ${outputPageRankCol}
 
   setDefault(outputPageRankCol, "pagerank")
 

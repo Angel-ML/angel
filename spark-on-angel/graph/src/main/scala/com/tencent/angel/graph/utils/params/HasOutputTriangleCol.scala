@@ -23,9 +23,7 @@ trait HasOutputTriangleCol extends Params {
   final val outputTriangleCol = new Param[String](this, "outputTriangleCol",
     "name for triangle count column")
 
-  final def getOutputTriangleCol: String = $ {
-    outputTriangleCol
-  }
+  final def getOutputTriangleCol: String = ${outputTriangleCol}
 
   setDefault(outputTriangleCol, "triangleCount")
 

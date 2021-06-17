@@ -14,14 +14,14 @@
  * the License.
  *
  */
-
 package com.tencent.angel.graph.utils
 
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
+import org.apache.spark.sql.{DataFrame, Dataset, SaveMode, SparkSession}
 
 object GraphIO {
 
@@ -36,6 +36,8 @@ object GraphIO {
   private val string2Float = udf[Float, String](_.toFloat)
   private val long2Int = udf[Int, Long](_.toInt)
   private val string2Int = udf[Int, String](_.toInt)
+  private val int2String = udf[String, Int](_.toString)
+  private val long2String = udf[String, Long](_.toString)
 
   def convert2Float(df: DataFrame, structField: StructField, tmpSuffix: String): DataFrame = {
     val tmpName = structField.name + tmpSuffix
@@ -93,10 +95,27 @@ object GraphIO {
     }
   }
 
+  def convert2String(df: DataFrame, structField: StructField, tmpSuffix: String): DataFrame = {
+    val tmpName = structField.name + tmpSuffix
+    structField.dataType match {
+      case _: StringType => df
+      case _: LongType =>
+        df.withColumn(tmpName, long2String(df(structField.name)))
+          .drop(structField.name)
+          .withColumnRenamed(tmpName, structField.name)
+      case _: IntegerType =>
+        df.withColumn(tmpName, int2String(df(structField.name)))
+          .drop(structField.name)
+          .withColumnRenamed(tmpName, structField.name)
+      case t => throw new Exception(s"$t can't convert to String")
+    }
+  }
+
   def load(input: String, isWeighted: Boolean,
            srcIndex: Int = 0, dstIndex: Int = 1, weightIndex: Int = 2,
            sep: String = " "): DataFrame = {
     val ss = SparkSession.builder().getOrCreate()
+
     val schema = if (isWeighted) {
       StructType(Seq(
         StructField("src", LongType, nullable = false),
@@ -107,6 +126,124 @@ object GraphIO {
       StructType(Seq(
         StructField("src", LongType, nullable = false),
         StructField("dst", LongType, nullable = false)
+      ))
+    }
+    ss.read
+      .option("sep", sep)
+      .option("header", "false")
+      .schema(schema)
+      .csv(input)
+  }
+
+  def loadWithType(input: String, isEdgeType: Boolean, isSrcNodeType: Boolean, isDstNodeType: Boolean,
+                   srcIndex: Int = 0, dstIndex: Int = 1, edgeTypeIndex: Int = -1, srcTypeIndex: Int = -1,
+                   dstTypeIndex: Int = -1, sep: String = " "): DataFrame = {
+    val ss = SparkSession.builder().getOrCreate()
+    val schema = if (isEdgeType && isSrcNodeType && isDstNodeType) {
+      StructType(Seq(
+        StructField("src", LongType, nullable = false),
+        StructField("dst", LongType, nullable = false),
+        StructField("edgeType", FloatType, nullable = false),
+        StructField("srcType", FloatType, nullable = false),
+        StructField("dstType", FloatType, nullable = false)
+      ))
+    } else if (isEdgeType && isSrcNodeType) {
+      StructType(Seq(
+        StructField("src", LongType, nullable = false),
+        StructField("dst", LongType, nullable = false),
+        StructField("edgeType", FloatType, nullable = false),
+        StructField("srcType", FloatType, nullable = false)
+      ))
+    } else if (isEdgeType && isDstNodeType) {
+      StructType(Seq(
+        StructField("src", LongType, nullable = false),
+        StructField("dst", LongType, nullable = false),
+        StructField("edgeType", FloatType, nullable = false),
+        StructField("dstType", FloatType, nullable = false)
+      ))
+    } else if (isSrcNodeType && isDstNodeType) {
+      StructType(Seq(
+        StructField("src", LongType, nullable = false),
+        StructField("dst", LongType, nullable = false),
+        StructField("srcType", FloatType, nullable = false),
+        StructField("dstType", FloatType, nullable = false)
+      ))
+    } else if (isEdgeType) {
+      StructType(Seq(
+        StructField("src", LongType, nullable = false),
+        StructField("dst", LongType, nullable = false),
+        StructField("edgeType", FloatType, nullable = false)
+      ))
+    } else if (isSrcNodeType) {
+      StructType(Seq(
+        StructField("src", LongType, nullable = false),
+        StructField("dst", LongType, nullable = false),
+        StructField("srcType", FloatType, nullable = false)
+      ))
+    } else if (isDstNodeType) {
+      StructType(Seq(
+        StructField("src", LongType, nullable = false),
+        StructField("dst", LongType, nullable = false),
+        StructField("dstType", FloatType, nullable = false)
+      ))
+    } else {
+      StructType(Seq(
+        StructField("src", LongType, nullable = false),
+        StructField("dst", LongType, nullable = false)
+      ))
+    }
+    ss.read
+      .option("sep", sep)
+      .option("header", "false")
+      .schema(schema)
+      .csv(input)
+  }
+
+  def loadString(input: String, index: Int = 0): RDD[String] = {
+    val ss = SparkSession.builder().getOrCreate()
+    ss.sparkContext.textFile(input)
+  }
+
+  def loadStringWeight(input: String, isWeighted: Boolean,
+                       srcIndex: Int = 0, dstIndex: Int = 1, weightIndex: Int = 2,
+                       sep: String = " "): DataFrame = {
+    val ss = SparkSession.builder().getOrCreate()
+
+    val schema = if (isWeighted) {
+      StructType(Seq(
+        StructField("src", LongType, nullable = false),
+        StructField("dst", LongType, nullable = false),
+        StructField("weight", StringType, nullable = false)
+      ))
+    } else {
+      StructType(Seq(
+        StructField("src", LongType, nullable = false),
+        StructField("dst", LongType, nullable = false)
+      ))
+    }
+    ss.read
+      .option("sep", sep)
+      .option("header", "false")
+      .schema(schema)
+      .csv(input)
+  }
+
+  // user-item biGraph where the item ids are of string type
+  def loadBiGraph(input: String, isWeighted: Boolean,
+                  srcIndex: Int = 0, dstIndex: Int = 1, weightIndex: Int = 2,
+                  sep: String = " "): DataFrame = {
+    val ss = SparkSession.builder().getOrCreate()
+
+    val schema = if (isWeighted) {
+      StructType(Seq(
+        StructField("src", LongType, nullable = false),
+        StructField("dst", StringType, nullable = false),
+        StructField("weight", FloatType, nullable = false)
+      ))
+    } else {
+      StructType(Seq(
+        StructField("src", LongType, nullable = false),
+        StructField("dst", StringType, nullable = false)
       ))
     }
     ss.read
@@ -130,6 +267,7 @@ object GraphIO {
               srcIndex: Int = 0, dstIndex: Int = 1, weightIndex: Int = 2,
               sep: String = " "): DataFrame = {
     val ss = SparkSession.builder().getOrCreate()
+
     val schema = if (isWeighted) {
       StructType(Seq(
         StructField("src", IntegerType, nullable = false),
@@ -149,11 +287,62 @@ object GraphIO {
       .csv(input)
   }
 
+  def loadNodeSeed(input: String, nodeIndex: Int = 0, sep: String = ""): DataFrame = {
+    val ss = SparkSession.builder().getOrCreate()
+    val se1 = Array(StructField("node", LongType, nullable = false))
+    val schema = StructType(se1.toSeq)
+    ss.read
+      .option("sep", sep)
+      .option("header", "false")
+      .schema(schema)
+      .csv(input)
+  }
+
   def loadNodeAttrs(input: String, nodeIndex: Int = 0, attrIndexes: Array[Int], sep: String = " "): DataFrame = {
     val ss = SparkSession.builder().getOrCreate()
     val se1 = Array(StructField("node", LongType, nullable = false))
     val se = attrIndexes.map(x => StructField("attr_" + x, FloatType, nullable = false))
     val schema = StructType((se1 ++ se).toSeq)
+    ss.read
+      .option("sep", sep)
+      .option("header", "false")
+      .schema(schema)
+      .csv(input)
+  }
+
+  // load string type edge
+  def loadStringEdge(input: String, isWeighted: Boolean,
+                     srcIndex: Int = 0, dstIndex: Int = 1, weightIndex: Int = 2,
+                     sep: String = " "): DataFrame = {
+    val ss = SparkSession.builder().getOrCreate()
+
+    val schema = if (isWeighted) {
+      StructType(Seq(
+        StructField("src", StringType, nullable = false),
+        StructField("dst", StringType, nullable = false),
+        StructField("weight", FloatType, nullable = false)
+      ))
+    } else {
+      StructType(Seq(
+        StructField("src", StringType, nullable = false),
+        StructField("dst", StringType, nullable = false)
+      ))
+    }
+    ss.read
+      .option("sep", sep)
+      .option("header", "false")
+      .schema(schema)
+      .csv(input)
+  }
+
+
+  // load string2int map which was saved in the former string2int reindex process
+  def loadString2IntMap(input: String, srcIndex: Int = 0, dstIndex: Int = 1, sep: String = " "): DataFrame = {
+    val ss = SparkSession.builder().getOrCreate()
+    val schema = StructType(Seq(
+      StructField("src", StringType, nullable = false),
+      StructField("dst", IntegerType, nullable = false)
+    ))
     ss.read
       .option("sep", sep)
       .option("header", "false")
@@ -185,5 +374,133 @@ object GraphIO {
       .map { base =>
         new Path(base, s".sparkStaging/${sparkContext.getConf.getAppId}").toString
       }
+  }
+
+  def loadEdgesWithStringNodeId(dataset: Dataset[_],
+                                srcNodeIdCol: String,
+                                dstNodeIdCol: String,
+                                needReplicateEdges: Boolean = false
+                               ): RDD[(String, String)] = {
+    val edges =
+      dataset.select(srcNodeIdCol, dstNodeIdCol).rdd
+        .filter(row => !row.anyNull)
+        .map(row => (row.getString(0), row.getString(1)))
+        .filter(f => f._1 != f._2)
+
+    if (needReplicateEdges) {
+      edges.flatMap(f => Iterator((f._1, f._2), (f._2, f._1)))
+    }
+    else {
+      edges
+    }
+  }
+
+  def loadEdgesWithIntNodeId(dataset: Dataset[_],
+                             srcNodeIdCol: String,
+                             dstNodeIdCol: String,
+                             needReplicateEdges: Boolean = false
+                            ): RDD[(Int, Int)] = {
+    val edges =
+      dataset.select(srcNodeIdCol, dstNodeIdCol).rdd
+        .filter(row => !row.anyNull)
+        .map(row => (row.getString(0).toInt, row.getString(1).toInt))
+        .filter(f => f._1 != f._2)
+
+    if (needReplicateEdges) {
+      edges.flatMap(f => Iterator((f._1, f._2), (f._2, f._1)))
+    }
+    else {
+      edges
+    }
+  }
+
+  def loadEdgesWithWeightStringNodeId(dataset: Dataset[_],
+                                      srcNodeIdCol: String,
+                                      dstNodeIdCol: String,
+                                      weightCol: String,
+                                      hasWeight: Boolean = true,
+                                      needReplicateEdges: Boolean = false
+                                     ): RDD[(String, String, Float)] = {
+    val edges =
+      if (hasWeight) {
+        dataset.select(srcNodeIdCol, dstNodeIdCol, weightCol).rdd
+          .filter(row => !row.anyNull)
+          .map(row => (row.getString(0), row.getString(1), row.getFloat(2)))
+          .filter(f => f._1 != f._2 && f._3 != 0.0f)
+      } else {
+        dataset.select(srcNodeIdCol, dstNodeIdCol).rdd
+          .filter(row => !row.anyNull)
+          .map(row => (row.getString(0), row.getString(1), 1.0f))
+          .filter(f => f._1 != f._2)
+      }
+
+    if (needReplicateEdges) {
+      edges.flatMap(f => Iterator((f._1, f._2, f._3), (f._2, f._1, f._3)))
+    }
+    else {
+      edges
+    }
+  }
+
+  def loadEdgesWithWeight(dataset: Dataset[_],
+                          srcNodeIdCol: String,
+                          dstNodeIdCol: String,
+                          weightCol: String,
+                          hasWeight: Boolean = true,
+                          needReplicateEdges: Boolean = false
+                         ): RDD[(Long, Long, Float)] = {
+    val edges =
+      if (hasWeight) {
+        dataset.select(srcNodeIdCol, dstNodeIdCol, weightCol).rdd
+          .filter(row => !row.anyNull)
+          .map(row => (row.getLong(0), row.getLong(1), row.getFloat(2)))
+          .filter(f => f._1 != f._2 && f._3 != 0.0f)
+      } else {
+        dataset.select(srcNodeIdCol, dstNodeIdCol).rdd
+          .filter(row => !row.anyNull)
+          .map(row => (row.getLong(0), row.getLong(1), 1.0f))
+          .filter(f => f._1 != f._2)
+      }
+
+    if (needReplicateEdges) {
+      edges.flatMap(f => Iterator((f._1, f._2, f._3), (f._2, f._1, f._3)))
+    }
+    else {
+      edges
+    }
+  }
+
+  def loadEdges(dataset: Dataset[_],
+                srcNodeIdCol: String,
+                dstNodeIdCol: String,
+                needReplicateEdges: Boolean = false): RDD[(Long, Long)] = {
+    val edges = dataset.select(srcNodeIdCol, dstNodeIdCol).rdd
+      .filter(row => !row.anyNull)
+      .map(row => (row.getLong(0), row.getLong(1)))
+      .filter(f => f._1 != f._2)
+
+    if (needReplicateEdges) {
+      edges.flatMap(f => Iterator((f._1, f._2), (f._2, f._1)))
+    }
+    else {
+      edges
+    }
+
+  }
+
+  def loadEdgesFromDF(dataset: Dataset[_],
+                      srcNodeIdCol: String,
+                      dstNodeIdCol: String,
+                      needReplicateEdges: Boolean = false): RDD[(Long, Long)] = {
+    loadEdges(dataset, srcNodeIdCol, dstNodeIdCol, needReplicateEdges)
+  }
+
+  def loadEdgesWithWeightFromDF(dataset: Dataset[_],
+                                srcNodeIdCol: String,
+                                dstNodeIdCol: String,
+                                weightCol: String,
+                                hasWeight: Boolean = true,
+                                needReplicateEdges: Boolean = false): RDD[(Long, Long, Float)] = {
+    loadEdgesWithWeight(dataset, srcNodeIdCol, dstNodeIdCol, weightCol, hasWeight, needReplicateEdges)
   }
 }

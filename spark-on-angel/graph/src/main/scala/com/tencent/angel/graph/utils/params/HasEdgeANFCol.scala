@@ -16,21 +16,22 @@
  */
 package com.tencent.angel.graph.utils.params
 
-import org.apache.spark.ml.param.{IntParam, Params}
+import org.apache.spark.ml.param.{Param, Params}
 
-trait HasMaxIter extends Params {
+trait HasEdgeANFCol extends Params {
   /**
-    * Param for batch size.
-    *
-    * @group param
-    */
-  final val maxIter = new IntParam(this, "maxIter", "maxIter")
+   * Param for name of output edge ANF.
+   *
+   * @group param
+   */
+  final val edgeANFCol = new Param[String](this, "edgeANFCol",
+    "name for output edge ANF column")
 
   /** @group getParam */
-  final def getMaxIteration: Int = $(maxIter)
+  final def getEdgeANFCol: String = $(edgeANFCol)
 
-  setDefault(maxIter, 10000)
+  setDefault(edgeANFCol, "edgeANF")
 
   /** @group setParam */
-  final def setMaxIteration(size: Int): this.type = set(maxIter, size)
+  def setEdgeANFCol(name: String): this.type = set(edgeANFCol, name)
 }

@@ -1,5 +1,7 @@
 package com.tencent.angel.common;
 
+import static com.tencent.angel.common.ByteBufSerdeUtils.emptyFloats;
+
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.storage.IntDoubleSparseVectorStorage;
@@ -22,6 +24,7 @@ import com.tencent.angel.ps.storage.vector.ServerRowFactory;
 import com.tencent.angel.ps.storage.vector.element.IElement;
 import com.tencent.angel.psagent.matrix.transport.router.ValuePart;
 import com.tencent.angel.utils.StringUtils;
+import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap.Entry;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2FloatMap;
@@ -284,7 +287,7 @@ public class StreamSerdeUtils {
   }
 
   public static int serializedFloatsLen(float[] values, int start, int end) {
-    return FLOAT_LENGTH + (end - start) * FLOAT_LENGTH;
+    return INT_LENGTH + (end - start) * FLOAT_LENGTH;
   }
 
   public static int serializedFloatsLen(float[] values) {
@@ -1071,5 +1074,13 @@ public class StreamSerdeUtils {
   }
 
   public static void main(String[] args) {
+  }
+
+  public static void serializeEmptyFloats(DataOutputStream output) throws IOException {
+    serializeFloats(output, emptyFloats);
+  }
+
+  public static int serializedEmptyFloatsLen() {
+    return serializedFloatsLen(emptyFloats);
   }
 }

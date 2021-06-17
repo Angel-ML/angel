@@ -16,7 +16,7 @@
  */
 package com.tencent.angel.graph.utils.params
 
-import org.apache.spark.ml.param.{Param, Params, StringArrayParam}
+import org.apache.spark.ml.param.{Param, Params}
 
 trait HasInput extends Params {
 
