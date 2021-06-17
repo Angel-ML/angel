@@ -22,6 +22,8 @@ import scala.beans.BeanProperty
 class Param(@BeanProperty val maxIndex: Long,
             @BeanProperty val batchSize: Int,
             @BeanProperty val pullBatchSize: Int,
-            @BeanProperty val psPartNum: Int
+            @BeanProperty val psPartNum: Int,
+            @BeanProperty val minIndex: Long = 0L,
+            @BeanProperty val nodeNum: Long = -1L
            ) extends Serializable {
 }
