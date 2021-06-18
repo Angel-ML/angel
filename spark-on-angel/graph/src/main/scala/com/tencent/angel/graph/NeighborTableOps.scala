@@ -18,14 +18,19 @@
 package com.tencent.angel.graph
 
 import com.tencent.angel.graph.client.initneighbor2.{InitNeighbor => InitLongNeighbor, InitNeighborParam => InitLongNeighborParam}
+import com.tencent.angel.graph.common.param.ModelContext
+import com.tencent.angel.graph.common.psf.param.LongKeysUpdateParam
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
-import com.tencent.angel.ps.storage.vector.element.LongArrayElement
+import com.tencent.angel.ps.storage.vector.element.{ByteArrayElement, IElement, LongArrayElement}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.graph.data._
+import com.tencent.angel.graph.model.neighbor.simple.psf.init.InitNeighbors
 import com.tencent.angel.graph.psf.triangle._
+import com.tencent.angel.graph.utils.ModelContextUtils
 import com.tencent.angel.graph.utils.element.Element.VertexId
 import com.tencent.angel.graph.utils.element.{NeighborTable, NeighborTablePartition}
 import com.tencent.angel.spark.models.PSMatrix
+import com.twitter.chill.ScalaKryoInstantiator
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap
 import org.apache.spark.SparkContext
@@ -38,14 +43,10 @@ class NeighborTableOps(table: NeighborTableModel) extends Serializable {
 
   def initLongNeighbor[ED: ClassTag](data: RDD[NeighborTablePartition[ED]]): NeighborTableModel = {
     // Neighbor table : a (1, maxIndex + 1) dimension matrix
-    val mc: MatrixContext = new MatrixContext()
-    mc.setName(table.neighborTableName)
-    mc.setRowType(RowType.T_ANY_LONGKEY_SPARSE)
-    mc.setRowNum(1)
-    mc.setColNum(table.param.maxIndex)
-    mc.setMaxColNumInBlock(table.param.maxIndex / table.param.psPartNum)
-    mc.setValueType(classOf[LongArrayElement])
-    table.psMatrix = PSMatrix.matrix(mc)
+    val modelContext = new ModelContext(table.param.psPartNum, table.param.minIndex, table.param.maxIndex,
+      table.param.nodeNum, "simple_neighbor", data.sparkContext.hadoopConfiguration)
+    val mc = ModelContextUtils.createMatrixContext(modelContext, RowType.T_ANY_LONGKEY_SPARSE, classOf[ByteArrayElement])
+    table.psMatrix  = PSMatrix.matrix(mc)
 
     data.foreach { part =>
       val size = part.size
@@ -98,14 +99,17 @@ class NeighborTableOps(table: NeighborTableModel) extends Serializable {
   }
 
   def initLongNeighbor[ED: ClassTag](psMatrix: PSMatrix, pairs: Array[NeighborTable[ED]]): NeighborTableModel = {
-    val nodeIdToNeighbors = new Long2ObjectOpenHashMap[Array[Long]](pairs.length)
-    pairs.foreach { item =>
-      require(item.srcId < table.param.maxIndex, s"${item.srcId} exceeds the maximal node index ${table.param.maxIndex}")
-      nodeIdToNeighbors.put(item.srcId, item.neighborIds)
+    val nodeIds = new Array[Long](pairs.length)
+    val neighborElems = new Array[IElement](pairs.length)
+    var i = 0
+    while (i < pairs.length) {
+      val item = pairs(i)
+      nodeIds(i) = item.srcId
+      neighborElems(i) = new ByteArrayElement(ScalaKryoInstantiator.defaultPool.toBytesWithoutClass(item.neighborIds))
+        .asInstanceOf[IElement]
+      i += 1
     }
-    val func = new InitLongNeighbor(new InitLongNeighborParam(psMatrix.id, nodeIdToNeighbors))
-    psMatrix.asyncPsfUpdate(func).get()
-    nodeIdToNeighbors.clear()
+    psMatrix.psfUpdate(new InitNeighbors(new LongKeysUpdateParam(psMatrix.id, nodeIds, neighborElems)))
     println(s"init ${pairs.length} long neighbors")
     table
   }
