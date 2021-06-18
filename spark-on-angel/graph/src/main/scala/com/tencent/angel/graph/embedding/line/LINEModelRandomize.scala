@@ -14,10 +14,10 @@
  * the License.
  *
  */
-
 package com.tencent.angel.graph.embedding.line
 
 import com.tencent.angel.PartitionKey
+import com.tencent.angel.common.ByteBufSerdeUtils
 import com.tencent.angel.ml.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc, UpdateParam}
 import com.tencent.angel.ps.storage.partition.RowBasedPartition
 import com.tencent.angel.ps.storage.vector.ServerIntAnyRow
@@ -74,19 +74,19 @@ class RandomizePartitionUpdateParam(matrixId: Int,
 
   override def serialize(buf: ByteBuf): Unit = {
     super.serialize(buf)
-    buf.writeInt(dim)
-    buf.writeInt(order)
-    buf.writeInt(seed)
+    ByteBufSerdeUtils.serializeInt(buf, dim)
+    ByteBufSerdeUtils.serializeInt(buf, order)
+    ByteBufSerdeUtils.serializeInt(buf, seed)
   }
 
   override def deserialize(buf: ByteBuf): Unit = {
     super.deserialize(buf)
-    this.dim = buf.readInt()
-    this.order = buf.readInt()
-    this.seed = buf.readInt()
+    dim = ByteBufSerdeUtils.deserializeInt(buf)
+    order = ByteBufSerdeUtils.deserializeInt(buf)
+    seed = ByteBufSerdeUtils.deserializeInt(buf)
   }
 
-  override def bufferLen: Int = super.bufferLen + 12
+  override def bufferLen: Int = super.bufferLen + ByteBufSerdeUtils.INT_LENGTH * 3
 }
 
 /**

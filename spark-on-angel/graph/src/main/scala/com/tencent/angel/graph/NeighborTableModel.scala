@@ -20,7 +20,9 @@ package com.tencent.angel.graph
 import com.tencent.angel.graph.client.initneighbor.{InitNeighbor, InitNeighborOver, InitNeighborOverParam, InitNeighborParam}
 import com.tencent.angel.graph.client.initneighbor2.{InitNeighbor => InitLongNeighbor, InitNeighborParam => InitLongNeighborParam}
 import com.tencent.angel.graph.client.sampleneighbor.{SampleNeighbor, SampleNeighborParam, SampleNeighborResult}
-import com.tencent.angel.graph.client.sampleneighbor2.{SampleNeighbor => SampleLongNeighbor, SampleNeighborParam => SampleLongNeighborParam, SampleNeighborResult => SampleLongNeighborResult}
+import com.tencent.angel.graph.common.psf.param.LongKeysGetParam
+import com.tencent.angel.graph.common.psf.result.GetLongsResult
+import com.tencent.angel.graph.model.neighbor.simple.psf.get.GetByteNeighbor
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.ps.storage.partition.CSRPartition
 import com.tencent.angel.ps.storage.vector.element.LongArrayElement
@@ -148,8 +150,8 @@ class NeighborTableModel(@BeanProperty val param: Param) extends Serializable {
   }
 
   def sampleLongNeighbors(nodeIds: Array[Long], count: Int): Long2ObjectOpenHashMap[Array[Long]] = {
-    psMatrix.psfGet(new SampleLongNeighbor(new SampleLongNeighborParam(psMatrix.id, nodeIds, count)))
-      .asInstanceOf[SampleLongNeighborResult].getNodeIdToNeighbors
+    psMatrix.psfGet(new GetByteNeighbor(new LongKeysGetParam(psMatrix.id, nodeIds)))
+      .asInstanceOf[GetLongsResult].getData
   }
 
   def getLongNeighborsByteAttrs(nodeIds: Array[Long]): Long2ObjectOpenHashMap[NeighborsAttrsCompressedElement] = {
@@ -165,8 +167,8 @@ class NeighborTableModel(@BeanProperty val param: Param) extends Serializable {
 
 object NeighborTableModel {
 
-  def apply(maxIndex: Long, batchSize: Int, pullBatch: Int, psPartNum: Int): NeighborTableModel = {
-    val param = new Param(maxIndex, batchSize, pullBatch, psPartNum)
+  def apply(maxIndex: Long, batchSize: Int, pullBatch: Int, psPartNum: Int, minIndex: Long = 0L, numNodes: Long = -1L): NeighborTableModel = {
+    val param = new Param(maxIndex, batchSize, pullBatch, psPartNum, minIndex, numNodes)
     new NeighborTableModel(param)
   }
 

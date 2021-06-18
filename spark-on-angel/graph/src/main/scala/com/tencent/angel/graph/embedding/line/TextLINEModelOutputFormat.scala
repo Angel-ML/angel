@@ -14,7 +14,6 @@
  * the License.
  *
  */
-
 package com.tencent.angel.graph.embedding.line
 
 import java.io.{DataInputStream, DataOutputStream}
@@ -29,9 +28,21 @@ import org.apache.hadoop.conf.Configuration
   * @param conf
   */
 class TextLINEModelOutputFormat(conf: Configuration) extends ComplexRowFormat(conf) {
-  val featSep: String = conf.get("line.feature.sep", " ")
-  val keyValueSep: String = conf.get("line.keyvalue.sep", ":")
-  val modelOrder: Int = conf.get("line.model.order", "2").toInt
+  val featSep = conf.get("angel.line.feature.sep", "space") match {
+    case "space" => " "
+    case "comma" => ","
+    case "tab" => "\t"
+    case "colon" => ":"
+    case "bar" => "\\|"
+  }
+  val keyValueSep = conf.get("angel.line.keyvalue.sep", "colon") match {
+    case "space" => " "
+    case "comma" => ","
+    case "tab" => "\t"
+    case "colon" => ":"
+    case "bar" => "\\|"
+  }
+  val modelOrder = conf.get("angel.line.model.order", "2").toInt
 
   override def load(input: DataInputStream): IndexAndElement = {
     val line = input.readLine()
@@ -42,7 +53,11 @@ class TextLINEModelOutputFormat(conf: Configuration) extends ComplexRowFormat(co
       indexAndElement.index = keyValues(0).toLong
       val feats = new Array[Float](keyValues.length - 1)
       (1 until keyValues.length).foreach(i => feats(i - 1) = keyValues(i).toFloat)
-      indexAndElement.element = new LINENode(feats, null)
+      if (modelOrder == 1) {
+        indexAndElement.element = new LINENode(feats, null)
+      } else {
+        indexAndElement.element = new LINENode(feats, new Array[Float](feats.length))
+      }
     } else {
       indexAndElement.index = keyValues(0).toLong
       val inputFeats = keyValues(1).split(featSep).map(f => f.toFloat)
@@ -51,7 +66,6 @@ class TextLINEModelOutputFormat(conf: Configuration) extends ComplexRowFormat(co
       } else {
         indexAndElement.element = new LINENode(inputFeats, new Array[Float](inputFeats.length))
       }
-
     }
     indexAndElement
   }
@@ -76,7 +90,10 @@ class TextLINEModelOutputFormat(conf: Configuration) extends ComplexRowFormat(co
       }
       index += 1
     })
-
     output.writeBytes(sb.toString())
   }
+
+  override def save(key: String, value: IElement, output: DataOutputStream): Unit = {}
+
+  override def save(key: IElement, value: IElement, output: DataOutputStream): Unit = {}
 }

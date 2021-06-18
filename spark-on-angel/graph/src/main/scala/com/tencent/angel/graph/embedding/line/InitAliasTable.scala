@@ -20,10 +20,10 @@ package com.tencent.angel.graph.embedding.line
 import java.util
 
 import com.tencent.angel.PartitionKey
+import com.tencent.angel.common.ByteBufSerdeUtils
+import com.tencent.angel.graph.utils.GraphMatrixUtils
 import com.tencent.angel.ml.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc, UpdateParam}
-import com.tencent.angel.ps.storage.partition.RowBasedPartition
-import com.tencent.angel.ps.storage.vector.ServerIntAnyRow
-import com.tencent.angel.ps.storage.vector.storage.IntArrayElementStorage
+import com.tencent.angel.ps.storage.vector.storage.{IntArrayElementStorage, IntElementMapStorage}
 import com.tencent.angel.psagent.PSAgentContext
 import io.netty.buffer.ByteBuf
 
@@ -46,47 +46,81 @@ class InitAliasTable(param: InitAliasTableParam) extends UpdateFunc(param) {
   override def partitionUpdate(partParam: PartitionUpdateParam): Unit = {
     // Get row from matrix partition that store neighbor table on PS
     val initParam = partParam.asInstanceOf[PartInitAliasTableParam]
-    val matrix = psContext.getMatrixStorageManager.getMatrix(initParam.getMatrixId)
-    val part = matrix.getPartition(initParam.getPartKey.getPartitionId)
-    val row = part.asInstanceOf[RowBasedPartition].getRow(0).asInstanceOf[ServerIntAnyRow]
+    val row = GraphMatrixUtils.getPSIntKeyRow(psContext, initParam)
 
     // Get the matrix partition that store alias table on PS
     val aliasTable = psContext.getMatrixStorageManager.getMatrix(initParam.aliasTableId)
     val aliasTablePart = aliasTable.getPartition(initParam.getPartKey.getPartitionId).asInstanceOf[EdgeAliasTablePartition]
 
     val offset = row.getStorage.getIndexOffset.toInt
-    val data = row.getStorage.asInstanceOf[IntArrayElementStorage].getData
 
-    // Get total number of edges
-    var edgeNum = 0
-    data.foreach(e => {
-      if (e.asInstanceOf[LINENode].getNeighbors != null) edgeNum += e.asInstanceOf[LINENode].getNeighbors.length
-    })
+    if (row.getStorage.isInstanceOf[IntArrayElementStorage]) {
+      val data = row.getStorage.asInstanceOf[IntArrayElementStorage].getData
 
-    val srcNodes = new Array[Int](edgeNum)
-    val dstNodes = new Array[Int](edgeNum)
-    val weights = new Array[Float](edgeNum)
+      // Get total number of edges
+      var edgeNum = 0
+      data.foreach(e => {
+        if (e.asInstanceOf[LINENode].getNeighbors != null) edgeNum += e.asInstanceOf[LINENode].getNeighbors.length
+      })
 
-    var posOffset: Int = 0
+      val srcNodes = new Array[Int](edgeNum)
+      val dstNodes = new Array[Int](edgeNum)
+      val weights = new Array[Float](edgeNum)
 
-    // Copy the edges and weights from neighbor table to srcNodes, dstNodes and weights
-    data.zipWithIndex.foreach(e => {
-      val node = e._1.asInstanceOf[LINENode]
-      val nodeId = e._2 + offset
-      if (node.getNeighbors != null) {
-        for (i <- posOffset until posOffset + node.getNeighbors.length) {
-          srcNodes(i) = nodeId
+      var posOffset: Int = 0
+
+      // Copy the edges and weights from neighbor table to srcNodes, dstNodes and weights
+      data.zipWithIndex.foreach(e => {
+        val node = e._1.asInstanceOf[LINENode]
+        val nodeId = e._2 + offset
+        if (node.getNeighbors != null) {
+          for (i <- (posOffset until posOffset + node.getNeighbors.length)) {
+            srcNodes(i) = nodeId
+          }
+          System.arraycopy(node.getNeighbors, 0, dstNodes, posOffset, node.getNeighbors.length)
+          System.arraycopy(node.getWeights, 0, weights, posOffset, node.getNeighbors.length)
+          posOffset += node.getNeighbors.length
         }
-        System.arraycopy(node.getNeighbors, 0, dstNodes, posOffset, node.getNeighbors.length)
-        System.arraycopy(node.getWeights, 0, weights, posOffset, node.getNeighbors.length)
-        posOffset += node.getNeighbors.length
-      }
-    })
+      })
 
-    // Build the alias table
-    val storage = new EdgeAliasTableStorage(offset, srcNodes, dstNodes, weights)
-    storage.buildAliasTable()
-    aliasTablePart.setStorage(storage)
+      // Build the alias table
+      val storage = new EdgeAliasTableStorage(offset, srcNodes, dstNodes, weights)
+      storage.buildAliasTable
+      aliasTablePart.setStorage(storage)
+    } else if (row.getStorage.isInstanceOf[IntElementMapStorage]) {
+      val data = row.getStorage.asInstanceOf[IntElementMapStorage].getData
+
+      // Get total number of edges
+      var edgeNum = 0
+      data.foreach(e => {
+        if (e._2.asInstanceOf[LINENode].getNeighbors != null) edgeNum += e._2.asInstanceOf[LINENode].getNeighbors.length
+      })
+
+      val srcNodes = new Array[Int](edgeNum)
+      val dstNodes = new Array[Int](edgeNum)
+      val weights = new Array[Float](edgeNum)
+
+      var posOffset: Int = 0
+
+      // Copy the edges and weights from neighbor table to srcNodes, dstNodes and weights
+      data.zipWithIndex.foreach(e => {
+        val node = e._1._2.asInstanceOf[LINENode]
+        val nodeId = e._2 + offset
+        if (node.getNeighbors != null) {
+          for (i <- (posOffset until posOffset + node.getNeighbors.length)) {
+            srcNodes(i) = nodeId
+          }
+          System.arraycopy(node.getNeighbors, 0, dstNodes, posOffset, node.getNeighbors.length)
+          System.arraycopy(node.getWeights, 0, weights, posOffset, node.getNeighbors.length)
+          posOffset += node.getNeighbors.length
+        }
+      })
+
+      // Build the alias table
+      val storage = new EdgeAliasTableStorage(offset, srcNodes, dstNodes, weights)
+      storage.buildAliasTable
+      aliasTablePart.setStorage(storage)
+    }
   }
 }
 
@@ -113,21 +147,24 @@ class InitAliasTableParam(matrixId: Int, aliasTableId: Int) extends UpdateParam(
   }
 }
 
-class PartInitAliasTableParam(matrixId: Int, partKey: PartitionKey, var aliasTableId: Int) extends PartitionUpdateParam(matrixId, partKey) {
+class PartInitAliasTableParam(
+                               matrixId: Int,
+                               partKey: PartitionKey,
+                               var aliasTableId: Int) extends PartitionUpdateParam(matrixId, partKey) {
 
   def this() = this(-1, null, -1)
 
   override def serialize(output: ByteBuf): Unit = {
     super.serialize(output)
-    output.writeInt(aliasTableId)
+    ByteBufSerdeUtils.serializeInt(output, aliasTableId)
   }
 
   override def deserialize(input: ByteBuf): Unit = {
     super.deserialize(input)
-    aliasTableId = input.readInt()
+    aliasTableId = ByteBufSerdeUtils.deserializeInt(input)
   }
 
   override def bufferLen: Int = {
-    super.bufferLen() + 4
+    super.bufferLen() + ByteBufSerdeUtils.INT_LENGTH
   }
 }

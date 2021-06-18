@@ -22,64 +22,68 @@ import it.unimi.dsi.fastutil.ints.IntArrayList
 import it.unimi.dsi.fastutil.longs.LongArrayList
 
 class WCCPartition(index: Int,
-                   keys: Array[Long],
-                   indptr: Array[Int],
-                   neighbors: Array[Long],
-                   keyLabels: Array[Long],
-                   indices: Array[Long]) extends Serializable {
-  def initMsgs(model: WCCPSModel): Long = {
-    val msgs = VFactory.sparseLongKeyLongVector(model.dim)
-    for (i <- keys.indices) {
-      msgs.set(keys(i), keys(i))
-      keyLabels(i) = keys(i)
+                              keys: Array[Long],
+                              indptr: Array[Int],
+                              neighbors: Array[Long],
+                              keyLabels: Array[Long],
+                              indices: Array[Long]) extends Serializable {
+  
+  lazy val size: Int = keys.length
+  
+  def initMsgs(model: WCCPSModel, batchSize: Int): Unit = {
+    keys.indices.sliding(batchSize, batchSize).foreach { iter =>
+      val msgs = VFactory.sparseLongKeyLongVector(model.dim)
+      for (i <- iter) {
+        msgs.set(keys(i), keys(i))
+        keyLabels(i) = keys(i)
+      }
+      model.initMsgs(msgs)
+      
+      println(s"part $index init ${msgs.size().toInt} msgs")
     }
-    model.initMsgs(msgs)
-    msgs.size()
   }
-
+  
   // if label of node is larger than its neighbors',
   // change it into min among its neighbors' labels
-  def process(model: WCCPSModel, numMsgs: Long, isFirstIteration: Boolean): (WCCPartition, Long) = {
+  def process(model: WCCPSModel, batchSize: Int, numMsgs: Long, isFirstIteration: Boolean): (Int, WCCPartition) = {
     var changedNum = 0
+    val inMsgs = model.readMsgs(indices)
+    var batchStartTime = System.currentTimeMillis()
+    
     if (numMsgs > indices.length || isFirstIteration) {
-      val inMsgs = model.readMsgs(indices)
-      val outMsgs = VFactory.sparseLongKeyLongVector(inMsgs.dim())
-
-      for (idx <- keys.indices) {
+      //      val inMsgs = model.readMsgs(indices)
+      for( idx <- keys.indices) {
         keyLabels(idx) = inMsgs.get(keys(idx))
-        val newLabel = minNbrLabel(idx, inMsgs)
-        if (newLabel < keyLabels(idx)) {
-          keyLabels(idx) = newLabel
-          changedNum += 1
-        }
-        outMsgs.set(keys(idx), newLabel)
       }
-      model.writeMsgs(outMsgs)
-      (new WCCPartition(index, keys, indptr, neighbors, keyLabels, indices), changedNum)
-
     }
-    else {
-      val inMsgs = model.readAllMsgs()
+    changedNum = makeBatchIterator(batchSize).flatMap { case(from, to) =>
+      //todo can reduce memory by pulling only needed nodes from ps, time cost will increase
+      //      val inMsgs = model.readMsgs(indices)
+      batchStartTime = System.currentTimeMillis()
       val outMsgs = VFactory.sparseLongKeyLongVector(inMsgs.dim())
-
-      for (idx <- keys.indices) {
+      var changedInBatch = 0
+      (from until to).foreach { idx =>
         val newLabel = minNbrLabel(idx, inMsgs)
         if (newLabel < keyLabels(idx)) {
           keyLabels(idx) = newLabel
-          changedNum += 1
+          changedInBatch += 1
         }
         outMsgs.set(keys(idx), newLabel)
       }
-
       model.writeMsgs(outMsgs)
-      (new WCCPartition(index, keys, indptr, neighbors, keyLabels, indices), changedNum)
-    }
+      
+      println(s"part $index batch ($from, $to), cost time: ${System.currentTimeMillis() - batchStartTime} ms")
+      
+      Iterator(changedInBatch)
+    }.sum
+    (changedNum, new WCCPartition(index, keys, indptr, neighbors, keyLabels, indices))
+    
   }
-
+  
   def save(): (Array[Long], Array[Long]) = {
     (keys, keyLabels)
   }
-
+  
   def minNbrLabel(idx: Int, inMsgs: LongLongVector): Long = {
     var j = indptr(idx)
     var minLabel = keyLabels(idx)
@@ -91,29 +95,78 @@ class WCCPartition(index: Int,
       j += 1
     }
     minLabel
-
+    
   }
+  
+  def makeBatchIterator(batchSize: Int): Iterator[(Int, Int)] = new Iterator[(Int, Int)] {
+    var index = 0
+    
+    override def next(): (Int, Int) = {
+      val preIndex = index
+      index = index + batchSize
+      (preIndex, math.min(index, WCCPartition.this.size))
+    }
+    
+    override def hasNext: Boolean = {
+      index < WCCPartition.this.size
+    }
+  }
+  
+  def compressEdges(model: WCCPSModel): Set[(Long, Long)] = {
+    val msgs = model.readMsgs(indices)
+    val comEdges = collection.mutable.Set[(Long, Long)]()
+    for (idx <- keys.indices) {
+      var j = indptr(idx)
+      val srcTag = keyLabels(idx)
+      while (j < indptr(idx + 1)) {
+        val nbrTag = msgs.get(neighbors(j))
+        if (srcTag < nbrTag) {
+          comEdges.add((srcTag, nbrTag))
+        }
+        j += 1
+      }
+    }
+    comEdges.toSet
+  }
+  
+  def edgesIfCompress(model: WCCPSModel): Long = {
+    val msgs = model.readMsgs(indices)
+    val comEdges = collection.mutable.Set[(Long, Long)]()
+    for (idx <- keys.indices) {
+      var j = indptr(idx)
+      val srcTag = keyLabels(idx)
+      while (j < indptr(idx + 1)) {
+        val nbrTag = msgs.get(neighbors(j))
+        if (srcTag < nbrTag) {
+          comEdges.add((srcTag, nbrTag))
+        }
+        j += 1
+      }
+    }
+    comEdges.size.toLong
+  }
+  
 }
 
 object WCCPartition {
-  def apply(index: Int, iterator: Iterator[(Long, Iterable[Long])]): (WCCPartition, Long) = {
+  def apply(index: Int, iterator: Iterator[(Long, Iterable[Long])]): WCCPartition = {
     val indptr = new IntArrayList()
     val keys = new LongArrayList()
     val neighbors = new LongArrayList()
-
+    
     indptr.add(0)
-
+    
     while (iterator.hasNext) {
       val (node, ns) = iterator.next()
       keys.add(node)
       ns.toArray.distinct.foreach(n => neighbors.add(n))
       indptr.add(neighbors.size())
     }
-
+    
     val keysArray = keys.toLongArray()
     val neighborsArray = neighbors.toLongArray()
-    val nodes = keysArray.union(neighborsArray).distinct
-    (new WCCPartition(index, keysArray, indptr.toIntArray(),
-      neighborsArray, new Array[Long](keysArray.length), nodes), nodes.length)
+    
+    new WCCPartition(index, keysArray, indptr.toIntArray(),
+      neighborsArray, new Array[Long](keysArray.length), keysArray.union(neighborsArray).distinct)
   }
 }

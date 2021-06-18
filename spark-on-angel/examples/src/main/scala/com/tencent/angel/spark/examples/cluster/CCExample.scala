@@ -17,14 +17,12 @@
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.graph.connectedcomponent.wcc.WCC
-import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.storage.StorageLevel
 
 object CCExample {
-  
   def main(args: Array[String]): Unit = {
     
     val params = ArgsUtil.parse(args)
@@ -33,45 +31,66 @@ object CCExample {
     
     val input = params.getOrElse("input", null)
     val partitionNum = params.getOrElse("partitionNum", "100").toInt
+    val compressIterNum = params.getOrElse("compressIterNum", "3").toInt
+    val localLimit = params.getOrElse("localLimit", "100000000").toInt
     val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
     val output = params.getOrElse("output", null)
     val srcIndex = params.getOrElse("src", "0").toInt
     val dstIndex = params.getOrElse("dst", "1").toInt
+    val batchSize = params.getOrElse("batchSize", "10000").toInt
+    val pullBatchSize = params.getOrElse("pullBatchSize", "2000").toInt
     val psPartitionNum = params.getOrElse("psPartitionNum",
       sc.getConf.get("spark.ps.instances", "10")).toInt
     val useBalancePartition = params.getOrElse("useBalancePartition", "false").toBoolean
+    val balancePartitionPercent = params.getOrElse("balancePartitionPercent", "0.7").toFloat
     
     val cpDir = params.get("cpDir").filter(_.nonEmpty).orElse(GraphIO.defaultCheckpointDir)
       .getOrElse(throw new Exception("checkpoint dir not provided"))
     sc.setCheckpointDir(cpDir)
-
-    val sep = Delimiter.parse(params.getOrElse("sep",Delimiter.SPACE))
-
-
-    val cc = new WCC()
+  
+    val sep = Delimiter.parse(params.getOrElse("sep", Delimiter.TAB))
+    
+    val ccc = new WCC()
       .setPartitionNum(partitionNum)
       .setStorageLevel(storageLevel)
       .setPSPartitionNum(psPartitionNum)
+      .setCompressIterNum(compressIterNum)
+      .setLocalLimit(localLimit)
       .setSrcNodeIdCol("src")
       .setDstNodeIdCol("dst")
       .setUseBalancePartition(useBalancePartition)
+      .setBalancePartitionPercent(balancePartitionPercent)
+      .setBatchSize(batchSize)
+      .setPullBatchSize(pullBatchSize)
     
     val df = GraphIO.load(input, isWeighted = false, srcIndex, dstIndex, sep = sep)
-    val mapping = cc.transform(df)
+    
+    val mapping = ccc.transform(df)
     GraphIO.save(mapping, output)
     stop()
   }
   
   def start(mode: String): SparkContext = {
     val conf = new SparkConf()
+    
+    // Add jvm parameters for executors
+    if (mode != "local") {
+      var executorJvmOptions = conf.get("spark.executor.extraJavaOptions")
+      executorJvmOptions += " -XX:ConcGCThreads=4 -XX:ParallelGCThreads=4 -Xss4M "
+      conf.set("spark.executor.extraJavaOptions", executorJvmOptions)
+      println(s"executorJvmOptions = ${executorJvmOptions}")
+    }
+    
+    
     conf.setMaster(mode)
-    conf.setAppName("CC")
+    conf.setAppName("CompressCC")
     val sc = new SparkContext(conf)
+    //PSContext.getOrCreate(sc)
     sc
   }
   
   def stop(): Unit = {
-    PSContext.stop()
+    //PSContext.stop()
     SparkContext.getOrCreate().stop()
   }
 }

@@ -22,16 +22,21 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
+import com.tencent.angel.graph.common.param.ModelContext
+import com.tencent.angel.graph.common.psf.param.IntKeysUpdateParam
+import com.tencent.angel.graph.utils.ModelContextUtils
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.model.output.format.{MatrixFilesMeta, ModelFilesConstent}
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
+import com.tencent.angel.ps.storage.vector.element.IElement
 import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
 import com.tencent.angel.spark.ml.util.LogUtils
 import com.tencent.angel.spark.models.PSMatrix
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
 import scala.util.Random
@@ -41,7 +46,7 @@ import scala.util.Random
   *
   * @param embeddingMatrix embedding matrix
   */
-class LINEPSModel(embeddingMatrix: PSMatrix, minNodeId: Int, maxNodeId: Int) extends AlgoPSModel {
+class LINEPSModel(embeddingMatrix: PSMatrix, modelContext: ModelContext) extends AlgoPSModel {
   checkpointContext.addReadWriteMatrix(embeddingMatrix)
 
   /**
@@ -53,11 +58,13 @@ class LINEPSModel(embeddingMatrix: PSMatrix, minNodeId: Int, maxNodeId: Int) ext
     * @return sample results
     */
   def negativeSample(nodeIds: Array[Int], dstNodeIds: Array[Int], sampleNum: Int, seed: Int): Array[Array[Int]] = {
+    //val seed = UUID.randomUUID().hashCode()
     val rand = new Random(seed)
     val sampleNodes = new Array[Array[Int]](nodeIds.length)
     var nodeIndex: Int = 0
 
-    for (i <- nodeIds.indices) {
+    val maxNodeId = modelContext.getMaxNodeId.toInt
+    for (i <- (0 until nodeIds.length)) {
       var sampleIndex: Int = 0
       sampleNodes(nodeIndex) = new Array[Int](sampleNum)
       while (sampleIndex < sampleNum) {
@@ -108,11 +115,44 @@ class LINEPSModel(embeddingMatrix: PSMatrix, minNodeId: Int, maxNodeId: Int) ext
     * @param order     order
     */
   def randomInitialize(seed: Int, dimension: Int, order: Int): Unit = {
-    val beforeRandomize = System.currentTimeMillis()
-    embeddingMatrix.asyncPsfUpdate(new LINEModelRandomize(
-      new RandomizeUpdateParam(embeddingMatrix.id, dimension, order, seed)))
-      .get(1800000, TimeUnit.MILLISECONDS)
-    logTime(s"Model successfully Randomized, cost ${(System.currentTimeMillis() - beforeRandomize) / 1000.0}s")
+    if (modelContext.isUseHashPartition) {
+      // Init as mini-batch
+      modelContext.getMinNodeId.toInt.to(modelContext.getMaxNodeId.toInt).sliding(10000000, 10000000).foreach(e => {
+        embeddingMatrix.asyncPsfUpdate(new LINEModelRandomizeAsNodes(
+          new RandomizeUpdateAsNodesParam(embeddingMatrix.id, dimension, e.toArray, order, seed)))
+          .get(60000, TimeUnit.MILLISECONDS)
+      })
+      val beforeRandomize = System.currentTimeMillis()
+
+      logTime(s"Model successfully Randomized, cost ${(System.currentTimeMillis() - beforeRandomize) / 1000.0}s")
+    } else {
+      // Just init by range
+      val beforeRandomize = System.currentTimeMillis()
+      embeddingMatrix.asyncPsfUpdate(new LINEModelRandomize(
+        new RandomizeUpdateParam(embeddingMatrix.id, dimension, order, seed)))
+        .get(1800000, TimeUnit.MILLISECONDS)
+      logTime(s"Model successfully Randomized, cost ${(System.currentTimeMillis() - beforeRandomize) / 1000.0}s")
+    }
+  }
+
+  def extraInitialize(extraRDD: RDD[String], batchSize: Int, order: Int): Unit = {
+    val beforeInitialize = System.currentTimeMillis()
+    extraRDD.mapPartitions { iterator =>
+      iterator.sliding(batchSize, batchSize)
+        .map(batch => extraUpdate(batch.toArray, order))
+    }.count()
+    LogUtils.logTime(s"Model successfully extra Initial, cost ${(System.currentTimeMillis() - beforeInitialize) / 1000.0}s")
+  }
+
+  def extraUpdate(strings: Array[String], order: Int): Unit = {
+    val inputUpdates = new Int2ObjectOpenHashMap[Array[Float]]()
+    strings.map { line =>
+      val splits = line.split(":")
+      val key = splits(0).toInt
+      val value = splits(1).split(" ").map(v => v.toFloat)
+      inputUpdates.put(key, value)
+    }
+    embeddingMatrix.psfUpdate(new LINEAdjust(new LINEAdjustParam(embeddingMatrix.id, inputUpdates, null, order, true)))
   }
 
   /**
@@ -206,46 +246,51 @@ object LINEPSModel {
   val neighborTable = "neighborTable"
   val aliasTable = "aliasTable"
 
-  def fromMinMax(minId: Long, maxId: Long, psNumPartition: Int, order: Int, dimension: Int,
-                 isWeighted: Boolean, oldModelPath: String): LINEPSModel = {
-    // Create a matrix for embedding vectors
-    val rawMaxId = maxId
-    var matrixMaxId = maxId
+  def apply(modelContext: ModelContext, order: Int, dimension: Int,
+            isWeighted: Boolean, oldModelPath: String, extraEmbeddingRDD: RDD[String],
+            batchSize: Int): LINEPSModel = {
+    // Create a matrix for embedding vector
+    var matrixMaxId = modelContext.getMaxNodeId
+
     if (oldModelPath != null && oldModelPath.length > 0) {
+      // Load max node id from exist model
       matrixMaxId = getMaxId(oldModelPath)
       LogUtils.logTime("Load model's max id is: " + matrixMaxId)
     }
-    val embeddingContext: MatrixContext = new MatrixContext(embedding, 1, matrixMaxId)
-    embeddingContext.setMaxRowNumInBlock(1)
-    embeddingContext.setMaxColNumInBlock(matrixMaxId / psNumPartition)
-    embeddingContext.setRowType(RowType.T_ANY_INTKEY_DENSE)
-    embeddingContext.setValueType(classOf[LINENode])
-    embeddingContext.setInitFunc(new LINEInitFunc(order, dimension))
 
+    val embeddingContext: MatrixContext = ModelContextUtils.createMatrixContext(modelContext,
+      embedding, RowType.T_ANY_INTKEY_SPARSE, classOf[LINENode])
+
+    // If use range partition, as id is in int range and continues, we use dense format to speed up data access
+    if (modelContext.isUseRangePartition) {
+      embeddingContext.setRowType(RowType.T_ANY_INTKEY_DENSE)
+    }
     val embeddingMatrix: PSMatrix = PSMatrix.matrix(embeddingContext)
 
     var model: LINEPSModel = null
     if (isWeighted) {
       // Create a matrix for alias table
-      val aliasTableContext = new MatrixContext(aliasTable, 1, matrixMaxId)
-      aliasTableContext.setMaxRowNumInBlock(1)
-      aliasTableContext.setMaxColNumInBlock(matrixMaxId / psNumPartition)
-      aliasTableContext.setRowType(RowType.T_INT_DENSE)
-      aliasTableContext.setPartitionClass(classOf[EdgeAliasTablePartition])
+      val aliasTableContext = ModelContextUtils.createMatrixContextWithUserDefinePartition(
+        modelContext, aliasTable, RowType.T_INT_SPARSE, classOf[EdgeAliasTablePartition])
+
       val aliasTableMatrix: PSMatrix = PSMatrix.matrix(aliasTableContext)
 
-      model = new LINEWithWeightPSModel(embeddingMatrix, embeddingMatrix, aliasTableMatrix, minId.toInt, rawMaxId.toInt)
+      model = new LINEWithWeightPSModel(embeddingMatrix, embeddingMatrix, aliasTableMatrix, modelContext)
     } else {
-      model = new LINEPSModel(embeddingMatrix, minId.toInt, rawMaxId.toInt)
+      model = new LINEPSModel(embeddingMatrix, modelContext)
     }
 
     if (oldModelPath != null && oldModelPath.length > 0) {
       LogUtils.logTime("Old model path is: " + oldModelPath + " now loading...")
       model.load(oldModelPath)
     } else {
-      model.randomInitialize(model.hashCode(), dimension, order)
+      if (extraEmbeddingRDD != null) {
+        model.randomInitialize(model.hashCode(), dimension, order)
+        model.extraInitialize(extraEmbeddingRDD, batchSize, order)
+      } else {
+        model.randomInitialize(model.hashCode(), dimension, order)
+      }
     }
-
     model
   }
 
@@ -278,7 +323,7 @@ object LINEPSModel {
   * @param maxNodeId           max node id
   */
 class LINEWithWeightPSModel(embeddingMatrix: PSMatrix, neighborTableMatrix: PSMatrix, aliasTableMatrix: PSMatrix,
-                            minNodeId: Int, maxNodeId: Int) extends LINEPSModel(embeddingMatrix: PSMatrix, minNodeId, maxNodeId) {
+                            modelContext: ModelContext) extends LINEPSModel(embeddingMatrix: PSMatrix, modelContext) {
 
   /**
     * Notice the PS that all neighbors are push, PS will build the alias table
@@ -299,7 +344,7 @@ class LINEWithWeightPSModel(embeddingMatrix: PSMatrix, neighborTableMatrix: PSMa
   def initNeighbors(pairs: Seq[(Int, Iterable[(Int, Float)])]): VoidResult = {
     var index = 0
     val nodeIds = new Array[Int](pairs.size)
-    val edgeWightPairs = new Array[EdgeWeightPairs](pairs.size)
+    val edgeWightPairs = new Array[IElement](pairs.size)
 
     pairs.foreach(pair => {
       nodeIds(index) = pair._1
@@ -318,7 +363,9 @@ class LINEWithWeightPSModel(embeddingMatrix: PSMatrix, neighborTableMatrix: PSMa
 
     neighborTableMatrix.asyncPsfUpdate(
       new InitEdgeWeight(
-        new InitEgdeWeightParam(neighborTableMatrix.id, nodeIds, edgeWightPairs))).get(1800000, TimeUnit.MILLISECONDS)
+        new IntKeysUpdateParam(
+          neighborTableMatrix.id, nodeIds, edgeWightPairs)))
+      .get(1800000, TimeUnit.MILLISECONDS)
   }
 
   /**

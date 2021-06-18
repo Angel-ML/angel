@@ -17,6 +17,7 @@
 
 package com.tencent.angel.graph.embedding.line
 
+
 import com.tencent.angel.graph.utils.params._
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.ParamMap
@@ -26,7 +27,6 @@ import org.apache.spark.sql.{DataFrame, Dataset}
 
 /**
   * LINE
-  *
   * @param uid
   */
 class LINE(override val uid: String) extends Transformer
@@ -34,26 +34,28 @@ class LINE(override val uid: String) extends Transformer
   with HasCheckPointInterval with HasModelSaveInterval with HasSaveMeta with HasEpochNum with HasBatchSize
   with HasSrcNodeIdCol with HasDstNodeIdCol with HasNeedRemapping with HasSubSample with HasOutput
   with HasStorageLevel with HasPartitionNum with HasPSPartitionNum
-  with HasWeightCol with HasIsWeighted with HasOldModelPath {
+  with HasWeightCol with HasIsWeighted with HasOldModelPath with HasExtraEmbeddingPath with HasUseBalancePartition {
 
   def this() = this(Identifiable.randomUID("LINE"))
+
+  // val edgeCounter = new Object2IntOpenHashMap[Edge]()
 
   /**
     * LINE PS model
     */
-  @volatile var model: LINEModel = _
+  @volatile var model:LINEModel = null
 
   override def transform(dataset: Dataset[_]): DataFrame = {
-    if ($(isWeighted)) {
-      model = new LINEWithWightModel(dataset, $(embedding), $(negative), $(stepSize),
-        $(order), $(psPartitionNum), $(batchSize), $(epochNum), $(partitionNum),
-        $(srcNodeIdCol), $(dstNodeIdCol), $(weightCol), $(remapping), $(subSample),
-        $(output), $(checkpointInterval), $(saveModelInterval), $(saveMeta), $(oldModelPath))
+    if(${isWeighted}) {
+      model = new LINEWithWightModel(dataset, ${embedding}, ${negative}, ${stepSize}, ${order},
+        ${psPartitionNum}, ${batchSize}, ${epochNum}, ${partitionNum}, ${srcNodeIdCol}, ${dstNodeIdCol},
+        ${weightCol}, ${remapping}, ${subSample}, ${output}, ${checkpointInterval}, ${saveModelInterval},
+        ${saveMeta}, ${oldModelPath}, ${extraEmbeddingPath}, ${useBalancePartition})
     } else {
-      model = new LINEModel(dataset, $(embedding), $(negative), $(stepSize), $(order),
-        $(psPartitionNum), $(batchSize), $(epochNum), $(partitionNum), $(srcNodeIdCol),
-        $(dstNodeIdCol), $(remapping), $(subSample), $(output), $(checkpointInterval),
-        $(saveModelInterval), $(saveMeta), $(oldModelPath))
+      model = new LINEModel(dataset, ${embedding}, ${negative}, ${stepSize}, ${order},
+        ${psPartitionNum}, ${batchSize}, ${epochNum}, ${partitionNum}, ${srcNodeIdCol}, ${dstNodeIdCol},
+        ${remapping}, ${subSample}, ${output}, ${checkpointInterval}, ${saveModelInterval}, ${saveMeta},
+        ${oldModelPath}, ${extraEmbeddingPath}, ${useBalancePartition})
     }
 
     model.train()

@@ -10,6 +10,10 @@ public abstract class KeyPart extends DataPart {
     this.rowId = rowId;
   }
 
+  public int getRowId() {
+    return rowId;
+  }
+
   public abstract KeyType getKeyType();
 
   public abstract RouterType getRouterType();

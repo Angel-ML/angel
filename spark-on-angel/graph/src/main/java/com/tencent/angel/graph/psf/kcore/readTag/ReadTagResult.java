@@ -14,19 +14,27 @@
  * the License.
  *
  */
-package com.tencent.angel.graph.utils.params
 
-import org.apache.spark.ml.param.{Param, Params}
+package com.tencent.angel.graph.psf.kcore.readTag;
 
-trait HasOutputDistanceCol extends Params {
+import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 
-  final val outputDistanceCol = new Param[String](this, "outputDistanceCol",
-    "name for distance column on sssp algorithm")
+public class ReadTagResult extends GetResult {
 
-  final def getOutputDistanceCol: String = ${outputDistanceCol}
+    /**
+     * Node id to neighbors map
+     */
+    private long[] nodes;
 
-  setDefault(outputDistanceCol, "distance")
+    ReadTagResult(long[] nodes) {
+        this.nodes = nodes;
+    }
 
-  final def setOutputDistanceCol(name: String): this.type = set(outputDistanceCol, name)
+    public long[] getNodes() {
+        return nodes;
+    }
 
+    public void setNodes(long[] nodes) {
+        this.nodes = nodes;
+    }
 }

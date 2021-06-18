@@ -23,6 +23,7 @@ import com.tencent.angel.graph.utils.io.Log
 import com.tencent.angel.graph.utils.params._
 import com.tencent.angel.psagent.PSAgentContext
 import org.apache.spark.ml.Transformer
+import org.apache.spark.ml.param.shared.HasMaxIter
 import org.apache.spark.ml.param.{BooleanParam, IntParam, ParamMap}
 import org.apache.spark.ml.util.Identifiable
 import org.apache.spark.sql.types.{FloatType, LongType, StructField, StructType}

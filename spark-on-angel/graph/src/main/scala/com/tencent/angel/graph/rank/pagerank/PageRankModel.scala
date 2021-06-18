@@ -37,8 +37,7 @@ class PageRankModel(readMsgs: PSVector,
     ranks.update(values)
 
   def sendMsgs(msgs: Vector): Unit = {
-    msgs.setRowId(writeMsgs.id)
-    writeMsgs.psfUpdate(new MyIncrement(new IncrementRowsParam(writeMsgs.poolId, Array(msgs)))).get()
+    writeMsgs.increment(msgs)
   }
 
   def readMsgs(nodes: Array[Long]): LongFloatVector =

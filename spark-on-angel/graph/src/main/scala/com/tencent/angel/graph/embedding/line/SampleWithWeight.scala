@@ -21,6 +21,7 @@ import java.util
 import java.util.Random
 
 import com.tencent.angel.PartitionKey
+import com.tencent.angel.common.ByteBufSerdeUtils
 import com.tencent.angel.ml.matrix.psf.get.base._
 import com.tencent.angel.psagent.PSAgentContext
 import io.netty.buffer.ByteBuf
@@ -99,7 +100,7 @@ class SampleWithWeightParam(matrixId: Int, sampleNum: Int, sampleBatchSize: Int,
     var lastIndex = 0
 
     // Counter the sample number for each partition
-    for (index <- partSamples.indices) {
+    for (index <- (0 until partSamples.length)) {
       if (partSamples(index) != partId) {
         partParams.add(new PartSampleWithWeightParam(matrixId, parts(partId), index - lastIndex))
         lastIndex = index
@@ -116,28 +117,32 @@ class SampleWithWeightParam(matrixId: Int, sampleNum: Int, sampleBatchSize: Int,
 
   def samples(num: Int, aliasTable: PSPartitionAliasTable): Array[Int] = {
     val samples = aliasTable.batchSample(new Random(this.hashCode()), num)
+    //val counter = new Int2IntOpenHashMap()
+    //samples.foreach(e => counter.addTo(e, 1))
+    //counter.foreach(e => println(s"key=${e._1}, value=${e._2}"))
     samples
   }
 }
 
-class PartSampleWithWeightParam(matrixId: Int, part: PartitionKey, var number: Int) extends PartitionGetParam(matrixId, part) {
+class PartSampleWithWeightParam(
+                                 matrixId: Int,
+                                 part: PartitionKey,
+                                 var number: Int) extends PartitionGetParam(matrixId, part) {
 
   def this() = this(-1, null, -1)
 
   override def serialize(output: ByteBuf): Unit = {
     super.serialize(output)
-    output.writeInt(number)
+    ByteBufSerdeUtils.serializeInt(output, number)
   }
 
   override def deserialize(input: ByteBuf): Unit = {
     super.deserialize(input)
-    number = input.readInt()
+    number = ByteBufSerdeUtils.deserializeInt(input)
   }
 
   override def bufferLen: Int = {
-    var len = super.bufferLen()
-    len += 4
-    len
+    super.bufferLen() + ByteBufSerdeUtils.INT_LENGTH
   }
 }
 
@@ -157,9 +162,8 @@ class PartSampleWithWeightResult(var srcNodes: Array[Int], var dstNodes: Array[I
     * @param output the Netty ByteBuf
     */
   override def serialize(output: ByteBuf): Unit = {
-    output.writeInt(srcNodes.length)
-    srcNodes.foreach(e => output.writeInt(e))
-    dstNodes.foreach(e => output.writeInt(e))
+    ByteBufSerdeUtils.serializeInts(output, srcNodes)
+    ByteBufSerdeUtils.serializeInts(output, dstNodes)
   }
 
   /**
@@ -168,16 +172,8 @@ class PartSampleWithWeightResult(var srcNodes: Array[Int], var dstNodes: Array[I
     * @param input the input stream
     */
   override def deserialize(input: ByteBuf): Unit = {
-    val len = input.readInt()
-    srcNodes = new Array[Int](len)
-    dstNodes = new Array[Int](len)
-    for (index <- 0 until len) {
-      srcNodes(index) = input.readInt()
-    }
-
-    for (index <- 0 until len) {
-      dstNodes(index) = input.readInt()
-    }
+    srcNodes = ByteBufSerdeUtils.deserializeInts(input)
+    dstNodes = ByteBufSerdeUtils.deserializeInts(input)
   }
 
   /**
@@ -186,6 +182,6 @@ class PartSampleWithWeightResult(var srcNodes: Array[Int], var dstNodes: Array[I
     * @return int serialized data size of the object
     */
   override def bufferLen(): Int = {
-    4 + 4 * srcNodes.length + 4 * dstNodes.length
+    ByteBufSerdeUtils.serializedIntsLen(srcNodes) + ByteBufSerdeUtils.serializedIntsLen(dstNodes)
   }
 }

@@ -32,6 +32,10 @@ public class GeneralPartGetParam extends PartitionGetParam {
     this.indicesPart = indicesPart;
   }
 
+  public int getRowId() {
+    return this.indicesPart.getRowId();
+  }
+
   @Override
   public void serialize(ByteBuf buf) {
     super.serialize(buf);

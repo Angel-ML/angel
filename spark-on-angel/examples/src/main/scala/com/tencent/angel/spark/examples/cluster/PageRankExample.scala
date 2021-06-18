@@ -48,7 +48,12 @@ object PageRankExample {
     val balancePartitionPercent = params.getOrElse("balancePartitionPercent", "0.7").toFloat
     val version = params.getOrElse("version", "edge-cut")
     val numBatch = params.getOrElse("numBatch", "1").toInt
-    val sep = Delimiter.parse(params.getOrElse("sep",Delimiter.SPACE))
+
+    val sep = params.getOrElse("sep", "space") match {
+      case "space" => " "
+      case "comma" => ","
+      case "tab" => "\t"
+    }
 
 
     val edges = GraphIO.load(input, isWeighted = isWeight,
