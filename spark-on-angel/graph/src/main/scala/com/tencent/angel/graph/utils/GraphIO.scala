@@ -199,7 +199,7 @@ object GraphIO {
       .csv(input)
   }
 
-  def loadString(input: String, index: Int = 0): RDD[String] = {
+  def loadString(input: String): RDD[String] = {
     val ss = SparkSession.builder().getOrCreate()
     ss.sparkContext.textFile(input)
   }
