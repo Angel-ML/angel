@@ -79,9 +79,11 @@ object Word2vecExample {
       .setMaxIndex(maxWordId)
       .setNumRowDataSet(numDocs)
       .setMaxLength(maxLength)
+      .setSaveMeta(false)
 
     val model = new Word2VecModel(param)
-    model.train(docs, param, output)
+    model.train(docs, param)
+    model.save(output, 5, false)
     denseToString.foreach(rdd => rdd.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "/mapping"))
     PSContext.stop()
     sc.stop()
