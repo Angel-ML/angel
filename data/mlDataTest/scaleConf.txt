@@ -1,0 +1,16 @@
+{
+    "minmax":[
+      {
+        "colStr": "1",
+        "min": "0",
+        "max":"1"
+      }
+       ],
+  "standard":[
+       {
+        "colStr": "2",
+        "std": "true",
+        "mean":"false"
+       }
+       ]
+}

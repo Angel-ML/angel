@@ -1,0 +1,40 @@
+{
+  "fields": [
+    {
+      "name": "target",
+      "index": "0"
+    },
+    {
+      "name": "f1",
+      "index": "1"
+    },
+    {
+      "name": "f2",
+      "index": "2"
+    },
+    {
+      "name": "f3",
+      "index": "3"
+    }
+  ],
+  "feature_cross": {
+    "id_features": [
+      {
+        "name": "f1"
+      },
+      {
+        "name": "f3"
+      }
+    ],
+    "comb_features": [
+      {
+        "name": "f1_f2",
+        "dependencies": "f1,f2"
+      },
+      {
+        "name": "f2_f3",
+        "dependencies": "f2,f3"
+      }
+    ]
+  }
+}
