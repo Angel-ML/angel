@@ -20,6 +20,7 @@ package com.tencent.angel.spark.ml
 
 import org.apache.spark.mllib.linalg.VectorUDT
 import org.apache.spark.sql.types._
+import org.apache.spark.ml.linalg.SQLDataTypes.{VectorType => MLVectorType}
 
 package object util {
 
@@ -29,6 +30,14 @@ package object util {
 
   val SPLIT_SEPARATOR = "\\s+|,"
   val KEY_VALUE_SEP = ":"
+
+  val unlabeledDefaultFeatExpr = s"0-${Int.MaxValue}"
+  val defaultFeatExpr = s"0-${Int.MaxValue}"
+  val labeledDefaultFeatExpr = s"1-${Int.MaxValue}"
+
+  val SEP_COMMA = ","
+  val SEP_HYPHEN = "-"
+
 
   object StorageType {
     val LOCAL = "LOCAL"
@@ -111,4 +120,13 @@ package object util {
       StructField(DFStruct.FEATURE, ArrayType(LongType, containsNull = false), false) ::
       Nil)
 
+  val LIBSVM_ST_ML = StructType(
+    StructField(DFStruct.LABEL, DoubleType, false) ::
+      StructField(DFStruct.FEATURE, MLVectorType, false) ::
+      Nil)
+
+  val LIBSVM_PREDICT_ST_ML = StructType(
+    StructField(DFStruct.ID, StringType, false) ::
+      StructField(DFStruct.FEATURE, MLVectorType, false) ::
+      Nil)
 }
