@@ -39,7 +39,7 @@ class DeepWalk(override val uid: String) extends Transformer
     println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
 
     val edges = rawEdges.map { case (src, dst, w) => (src, (dst, w)) }
-    edges.take(5).foreach(println)
+
     // calc alias table for each node
     val aliasTable = edges.groupByKey($(partitionNum)).map(x => (x._1, x._2.toArray.distinct))
       .mapPartitionsWithIndex { case (partId, iter) =>
