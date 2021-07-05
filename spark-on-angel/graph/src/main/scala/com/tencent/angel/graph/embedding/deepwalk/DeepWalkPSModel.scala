@@ -1,64 +1,61 @@
-/*
- * Tencent is pleased to support the open source community by making Angel available.
- *
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- *
- * https://opensource.org/licenses/Apache-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- *
- */
-
 package com.tencent.angel.graph.embedding.deepwalk
 
-import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
-import com.tencent.angel.graph.psf.neighbors.samplebyaliastable.initaliastable.{InitNeighborAliasTable, InitNeighborAliasTableParam}
-import com.tencent.angel.graph.psf.neighbors.samplebyaliastable.samplealiastable.{GetNeighborAliasTable, GetNeighborAliasTableParam, GetNeighborAliasTableResult, NeighborsAliasTableElement}
+import com.tencent.angel.graph.common.param.ModelContext
+import com.tencent.angel.graph.common.psf.param.LongKeysUpdateParam
+import com.tencent.angel.graph.common.psf.result.GetLongsResult
+import com.tencent.angel.graph.model.general.init.GeneralInit
+import com.tencent.angel.graph.utils.ModelContextUtils
+import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ps.storage.vector.element.IElement
 import com.tencent.angel.spark.ml.util.LoadBalancePartitioner
 import com.tencent.angel.spark.models.PSMatrix
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap
 import org.apache.spark.rdd.RDD
+import com.tencent.angel.graph.psf.neighbors.SampleNeighborsWithCount.{GetNeighborWithCountParam, GetNeighborsWithCount, NeighborsAliasTableElement}
 
-class DeepWalkPSModel (var edgesPsMatrix: PSMatrix) extends Serializable{
+class DeepWalkPSModel(val edgesPsMatrix: PSMatrix) extends Serializable {
   //push node adjacency list
+
   def initNodeNei(msgs: Long2ObjectOpenHashMap[NeighborsAliasTableElement]): Unit = {
-    val func = new InitNeighborAliasTable(new InitNeighborAliasTableParam(edgesPsMatrix.id, msgs))
-    edgesPsMatrix.asyncPsfUpdate(func).get()
+    val nodeIds = new Array[Long](msgs.size())
+    val neighborElems = new Array[IElement](msgs.size())
+    val iter = msgs.long2ObjectEntrySet().fastIterator()
+    var index = 0
+    while (iter.hasNext) {
+      val i = iter.next()
+      nodeIds(index) = i.getLongKey
+      neighborElems(index) = i.getValue
+      index += 1
+    }
+
+    edgesPsMatrix.psfUpdate(new GeneralInit(new LongKeysUpdateParam(edgesPsMatrix.id, nodeIds, neighborElems))).get()
   }
+
 
   //pull node adjacency list
   def getSampledNeighbors(psMatrix: PSMatrix, nodeIds: Array[Long], count: Array[Int]): Long2ObjectOpenHashMap[Array[Long]] = {
-    psMatrix.psfGet(new GetNeighborAliasTable(new GetNeighborAliasTableParam(psMatrix.id, nodeIds, count)))
-      .asInstanceOf[GetNeighborAliasTableResult].getNodeIdToNeighbors
+    psMatrix.psfGet(
+      new GetNeighborsWithCount(
+        new GetNeighborWithCountParam(psMatrix.id, nodeIds, count))).asInstanceOf[GetLongsResult].getData
   }
 
+  def checkpoint(): Unit = {
+    edgesPsMatrix.checkpoint()
+  }
 }
 
 object DeepWalkPSModel {
-  def fromMinMax(minId: Long, maxId: Long, data: RDD[Long], psNumPartition: Int, useBalancePartition: Boolean): DeepWalkPSModel = {
-    val edgesMatrix = new MatrixContext()
-    edgesMatrix.setName("edgeMatrix")
-    edgesMatrix.setRowType(RowType.T_ANY_LONGKEY_SPARSE)
-    edgesMatrix.setRowNum(1)
-    edgesMatrix.setColNum(maxId - minId)
-    edgesMatrix.setMaxColNumInBlock(maxId / psNumPartition)
-    edgesMatrix.setValueType(classOf[NeighborsAliasTableElement])
-    edgesMatrix.setIndexEnd(maxId)
-    edgesMatrix.setIndexStart(minId)
+  def apply(modelContext: ModelContext, data: RDD[Long],
+            useBalancePartition: Boolean, balancePartitionPercent: Float): DeepWalkPSModel = {
+    val matrix = ModelContextUtils.createMatrixContext(modelContext, RowType.T_ANY_LONGKEY_SPARSE, classOf[NeighborsAliasTableElement])
 
-    // use balance ps partition
-    if (useBalancePartition) {
-      //LoadBalancePartitioner.partition(data, maxId, psNumPartition, edgesMatrix)
-      LoadBalancePartitioner.partition(data, psNumPartition, edgesMatrix)
-    }
+    // TODO: remove later
+    if (!modelContext.isUseHashPartition && useBalancePartition)
+      LoadBalancePartitioner.partition(
+        data, modelContext.getMaxNodeId, modelContext.getPartitionNum, matrix, balancePartitionPercent)
 
-    val edgesPsMatrix = PSMatrix.matrix(edgesMatrix)
-    new DeepWalkPSModel(edgesPsMatrix)
+    val psMatrix = PSMatrix.matrix(matrix)
+    new DeepWalkPSModel(psMatrix)
+
   }
 }
