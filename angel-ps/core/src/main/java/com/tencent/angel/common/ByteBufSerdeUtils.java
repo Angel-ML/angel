@@ -51,7 +51,13 @@ public class ByteBufSerdeUtils {
   public static final int FLOAT_LENGTH = 4;
   public static final int DOUBLE_LENGTH = 8;
 
+  public static final boolean[] emptyBooleans = new boolean[0];
+  public static final byte[] emptyBytes = new byte[0];
+  public static final char[] emptyChars = new char[0];
+  public static final int[] emptyInts = new int[0];
+  public static final long[] emptyLongs = new long[0];
   public static final float[] emptyFloats = new float[0];
+  public static final double[] emptyDoubles = new double[0];
 
   // =======================================================
   // Boolean
@@ -185,12 +191,20 @@ public class ByteBufSerdeUtils {
   // =======================================================
   // Byte array
   public static void serializeBytes(ByteBuf out, byte[] values, int start, int end) {
-    serializeInt(out, end - start);
-    out.writeBytes(values, start, end - start);
+    if(values == null) {
+      serializeInt(out, 0);
+    } else {
+      serializeInt(out, end - start);
+      out.writeBytes(values, start, end - start);
+    }
   }
 
   public static void serializeBytes(ByteBuf out, byte[] values) {
-    serializeBytes(out, values, 0, values.length);
+    if(values == null) {
+      serializeInt(out, 0);
+    } else {
+      serializeBytes(out, values, 0, values.length);
+    }
   }
 
   public static byte[] deserializeBytes(ByteBuf in) {
@@ -201,24 +215,40 @@ public class ByteBufSerdeUtils {
   }
 
   public static int serializedBytesLen(byte[] values, int start, int end) {
-    return BYTE_LENGTH + (end - start) * BYTE_LENGTH;
+    if(values == null) {
+      return INT_LENGTH;
+    } else {
+      return INT_LENGTH + (end - start) * BYTE_LENGTH;
+    }
   }
 
   public static int serializedBytesLen(byte[] values) {
-    return serializedBytesLen(values, 0, values.length);
+    if(values == null) {
+      return INT_LENGTH;
+    } else {
+      return serializedBytesLen(values, 0, values.length);
+    }
   }
 
   // =======================================================
   // Int array
   public static void serializeInts(ByteBuf out, int[] values, int start, int end) {
-    serializeInt(out, end - start);
-    for (int i = start; i < end; i++) {
-      serializeInt(out, values[i]);
+    if(values == null) {
+      serializeInt(out, 0);
+    } else {
+      serializeInt(out, end - start);
+      for (int i = start; i < end; i++) {
+        serializeInt(out, values[i]);
+      }
     }
   }
 
   public static void serializeInts(ByteBuf out, int[] values) {
-    serializeInts(out, values, 0, values.length);
+    if(values == null) {
+      serializeInt(out, 0);
+    } else {
+      serializeInts(out, values, 0, values.length);
+    }
   }
 
   public static int[] deserializeInts(ByteBuf in) {
@@ -231,24 +261,40 @@ public class ByteBufSerdeUtils {
   }
 
   public static int serializedIntsLen(int[] values, int start, int end) {
-    return INT_LENGTH + (end - start) * INT_LENGTH;
+    if(values == null) {
+      return INT_LENGTH;
+    } else {
+      return INT_LENGTH + (end - start) * INT_LENGTH;
+    }
   }
 
   public static int serializedIntsLen(int[] values) {
-    return serializedIntsLen(values, 0, values.length);
+    if(values == null) {
+      return INT_LENGTH;
+    } else {
+      return serializedIntsLen(values, 0, values.length);
+    }
   }
 
   // =======================================================
   // Long array
   public static void serializeLongs(ByteBuf out, long[] values, int start, int end) {
-    serializeInt(out, end - start);
-    for (int i = start; i < end; i++) {
-      serializeLong(out, values[i]);
+    if(values == null) {
+      serializeInt(out, 0);
+    } else {
+      serializeInt(out, end - start);
+      for (int i = start; i < end; i++) {
+        serializeLong(out, values[i]);
+      }
     }
   }
 
   public static void serializeLongs(ByteBuf out, long[] values) {
-    serializeLongs(out, values, 0, values.length);
+    if(values == null) {
+      serializeInt(out, 0);
+    } else {
+      serializeLongs(out, values, 0, values.length);
+    }
   }
 
   public static long[] deserializeLongs(ByteBuf in) {
@@ -261,24 +307,40 @@ public class ByteBufSerdeUtils {
   }
 
   public static int serializedLongsLen(long[] values, int start, int end) {
-    return LONG_LENGTH + (end - start) * LONG_LENGTH;
+    if(values == null) {
+      return INT_LENGTH;
+    } else {
+      return INT_LENGTH + (end - start) * LONG_LENGTH;
+    }
   }
 
   public static int serializedLongsLen(long[] values) {
-    return serializedLongsLen(values, 0, values.length);
+    if(values == null) {
+      return INT_LENGTH;
+    } else {
+      return serializedLongsLen(values, 0, values.length);
+    }
   }
 
   // =======================================================
   // Float array
   public static void serializeFloats(ByteBuf out, float[] values, int start, int end) {
-    serializeInt(out, end - start);
-    for (int i = start; i < end; i++) {
-      serializeFloat(out, values[i]);
+    if(values == null) {
+      serializeInt(out, 0);
+    } else {
+      serializeInt(out, end - start);
+      for (int i = start; i < end; i++) {
+        serializeFloat(out, values[i]);
+      }
     }
   }
 
   public static void serializeFloats(ByteBuf out, float[] values) {
-    serializeFloats(out, values, 0, values.length);
+    if(values == null) {
+      serializeInt(out, 0);
+    } else {
+      serializeFloats(out, values, 0, values.length);
+    }
   }
 
   public static float[] deserializeFloats(ByteBuf in) {
@@ -291,24 +353,40 @@ public class ByteBufSerdeUtils {
   }
 
   public static int serializedFloatsLen(float[] values, int start, int end) {
-    return INT_LENGTH + (end - start) * FLOAT_LENGTH;
+    if(values == null) {
+      return INT_LENGTH;
+    } else {
+      return INT_LENGTH + (end - start) * FLOAT_LENGTH;
+    }
   }
 
   public static int serializedFloatsLen(float[] values) {
-    return serializedFloatsLen(values, 0, values.length);
+    if(values == null) {
+      return INT_LENGTH;
+    } else {
+      return serializedFloatsLen(values, 0, values.length);
+    }
   }
 
   // =======================================================
   // Double array
   public static void serializeDoubles(ByteBuf out, double[] values, int start, int end) {
-    serializeInt(out, end - start);
-    for (int i = start; i < end; i++) {
-      serializeDouble(out, values[i]);
+    if(values == null) {
+      serializeInt(out, 0);
+    } else {
+      serializeInt(out, end - start);
+      for (int i = start; i < end; i++) {
+        serializeDouble(out, values[i]);
+      }
     }
   }
 
   public static void serializeDoubles(ByteBuf out, double[] values) {
-    serializeDoubles(out, values, 0, values.length);
+    if(values == null) {
+      serializeInt(out, 0);
+    } else {
+      serializeDoubles(out, values, 0, values.length);
+    }
   }
 
   public static double[] deserializeDoubles(ByteBuf in) {
@@ -321,11 +399,19 @@ public class ByteBufSerdeUtils {
   }
 
   public static int serializedDoublesLen(double[] values, int start, int end) {
-    return DOUBLE_LENGTH + (end - start) * DOUBLE_LENGTH;
+    if(values == null) {
+      return INT_LENGTH;
+    } else {
+      return INT_LENGTH + (end - start) * DOUBLE_LENGTH;
+    }
   }
 
   public static int serializedDoublesLen(double[] values) {
-    return serializedDoublesLen(values, 0, values.length);
+    if(values == null) {
+      return INT_LENGTH;
+    } else {
+      return serializedDoublesLen(values, 0, values.length);
+    }
   }
 
   // =======================================================
