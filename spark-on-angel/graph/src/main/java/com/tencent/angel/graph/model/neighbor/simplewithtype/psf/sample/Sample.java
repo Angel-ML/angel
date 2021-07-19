@@ -71,7 +71,7 @@ public class Sample extends GetFunc {
       Entry entry = iter.next();
       distinctNodeIds[index] = entry.getLongKey();
       TypeNeighborElement element = (TypeNeighborElement) row.get(distinctNodeIds[index]);
-      samples[index] = element.sample(sampleType, r, distinctNodeIds[index], entry.getIntValue());
+      samples[index] = element.Sample(sampleType, r, distinctNodeIds[index], entry.getIntValue());
       index++;
     }
 

@@ -23,9 +23,6 @@ import com.tencent.angel.graph.utils.GraphIO
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
-// a deep walker for heterogenous and unweighted graph
-// clear the output dir before running
-
 object MetaPath2VecExample {
   def main(args: Array[String]): Unit = {
 
@@ -41,6 +38,8 @@ object MetaPath2VecExample {
     val output = params.getOrElse("output", null)
     val srcIndex = params.getOrElse("src", "0").toInt
     val dstIndex = params.getOrElse("dst", "1").toInt
+    val isWeighted = params.getOrElse("isWeighted", "false").toBoolean
+    val weightIndex = params.getOrElse("weightIndex", "2").toInt
     val psPartitionNum = params.getOrElse("psPartitionNum",
       sc.getConf.get("spark.ps.instances", "2")).toInt
 
@@ -51,6 +50,7 @@ object MetaPath2VecExample {
     var metaPath = params.getOrElse("metaPath", "0-1-2-1-0") // should be symmetrical, eg: 0-0, 0-1-0, 0-1-2-1-0
     val nodeTypePath = params.getOrElse("nodeTypePath", null)
     val walkLength = params.getOrElse("walkLength", "20").toInt
+    val needReplicateEdge = params.getOrElse("needReplicateEdge", "false").toBoolean
     val numWalks = params.getOrElse("numWalks", "1").toInt
 
     // read and set metaPath
@@ -78,8 +78,10 @@ object MetaPath2VecExample {
       .setStorageLevel(storageLevel)
       .setPSPartitionNum(psPartitionNum)
       .setBatchSize(batchSize)
+      .setIsWeighted(isWeighted)
       .setWalkLength(walkLength)
       .setPullBatchSize(pullBatchSize)
+      .setNeedReplicaEdge(needReplicateEdge)
       .setEpochNum(numWalks)
 
     metaPath2Vec.setOutputDir(output)
@@ -94,7 +96,7 @@ object MetaPath2VecExample {
       metaPath2Vec.setNodeAttr(nodeAttrs)
     }
 
-    val df = GraphIO.load(input, isWeighted = false, srcIndex, dstIndex, sep = sep)
+    val df = GraphIO.load(input, isWeighted = isWeighted, srcIndex, dstIndex, weightIndex, sep = sep)
 
     val mapping = metaPath2Vec.transform(df)
     //    GraphIO.save(mapping, output)
