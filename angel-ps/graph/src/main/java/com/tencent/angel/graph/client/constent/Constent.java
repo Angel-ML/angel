@@ -15,18 +15,12 @@
  *
  */
 
-package com.tencent.angel.graph
+package com.tencent.angel.graph.client.constent;
 
-import scala.beans.BeanProperty
+import com.tencent.angel.ml.math2.vector.IntFloatVector;
 
-class Param(@BeanProperty val maxIndex: Long,
-            @BeanProperty val batchSize: Int,
-            @BeanProperty val pullBatchSize: Int,
-            @BeanProperty val psPartNum: Int,
-            @BeanProperty val numNodes: Long = Int.MaxValue.toLong,
-            @BeanProperty val minIndex: Long = 0L,
-            @BeanProperty val matrixName: String = "BaseGraph",
-            @BeanProperty val useBalancePartition: Boolean = false,
-            @BeanProperty val nodeNum: Long = 0L
-           ) extends Serializable {
+public class Constent {
+    public final static long[] emptyLongs = new long[0];
+    public final static int[] emptyInts = new int[0];
+    public final static IntFloatVector[] emptyIntFloatVectors = new IntFloatVector[0];
 }

@@ -14,19 +14,33 @@
  * the License.
  *
  */
+package com.tencent.angel.graph.client.psf.summary;
 
-package com.tencent.angel.graph
+import com.tencent.angel.ml.matrix.psf.aggr.enhance.UnaryAggrFunc;
+import com.tencent.angel.ps.storage.vector.ServerRow;
 
-import scala.beans.BeanProperty
+public class NnzNode extends UnaryAggrFunc {
 
-class Param(@BeanProperty val maxIndex: Long,
-            @BeanProperty val batchSize: Int,
-            @BeanProperty val pullBatchSize: Int,
-            @BeanProperty val psPartNum: Int,
-            @BeanProperty val numNodes: Long = Int.MaxValue.toLong,
-            @BeanProperty val minIndex: Long = 0L,
-            @BeanProperty val matrixName: String = "BaseGraph",
-            @BeanProperty val useBalancePartition: Boolean = false,
-            @BeanProperty val nodeNum: Long = 0L
-           ) extends Serializable {
+    public NnzNode(int matrixId, int rowId) {
+        super(matrixId, rowId);
+    }
+
+    public NnzNode() {
+        super(-1, -1);
+    }
+
+    @Override
+    public double mergeInit() {
+        return 0;
+    }
+
+    @Override
+    public double mergeOp(double a, double b) {
+        return a + b;
+    }
+
+    @Override
+    public double processRow(ServerRow row) {
+        return row.size();
+    }
 }

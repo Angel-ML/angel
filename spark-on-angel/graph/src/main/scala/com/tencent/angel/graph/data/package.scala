@@ -14,19 +14,17 @@
  * the License.
  *
  */
-
 package com.tencent.angel.graph
 
-import scala.beans.BeanProperty
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet
 
-class Param(@BeanProperty val maxIndex: Long,
-            @BeanProperty val batchSize: Int,
-            @BeanProperty val pullBatchSize: Int,
-            @BeanProperty val psPartNum: Int,
-            @BeanProperty val numNodes: Long = Int.MaxValue.toLong,
-            @BeanProperty val minIndex: Long = 0L,
-            @BeanProperty val matrixName: String = "BaseGraph",
-            @BeanProperty val useBalancePartition: Boolean = false,
-            @BeanProperty val nodeNum: Long = 0L
-           ) extends Serializable {
+package object data {
+
+  type VertexId = Long
+
+  type PartitionId = Int
+
+  type VertexSet = LongOpenHashSet
+
+  type CounterTriangleDirected = Array[Int]
 }

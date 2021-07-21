@@ -15,18 +15,31 @@
  *
  */
 
-package com.tencent.angel.graph
+package com.tencent.angel.graph.client.psf.sample.samplenodefeats;
 
-import scala.beans.BeanProperty
+import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
+import java.util.Collections;
+import java.util.List;
 
-class Param(@BeanProperty val maxIndex: Long,
-            @BeanProperty val batchSize: Int,
-            @BeanProperty val pullBatchSize: Int,
-            @BeanProperty val psPartNum: Int,
-            @BeanProperty val numNodes: Long = Int.MaxValue.toLong,
-            @BeanProperty val minIndex: Long = 0L,
-            @BeanProperty val matrixName: String = "BaseGraph",
-            @BeanProperty val useBalancePartition: Boolean = false,
-            @BeanProperty val nodeNum: Long = 0L
-           ) extends Serializable {
+public class SampleNodeFeatResult extends GetResult {
+
+  /**
+   * randomly sampled node features array
+   */
+  public List<IntFloatVector> feats;
+
+  SampleNodeFeatResult(List<IntFloatVector> feats) {
+    this.feats = feats;
+  }
+
+  SampleNodeFeatResult() {
+    this(null);
+  }
+
+  public IntFloatVector[] getNodeFeats() {
+    Collections.shuffle(feats);
+    IntFloatVector[] res = new IntFloatVector[feats.size()];
+    return feats.toArray(res);
+  }
 }
