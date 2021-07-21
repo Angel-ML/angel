@@ -14,19 +14,21 @@
  * the License.
  *
  */
+package com.tencent.angel.graph.client.psf.get.getnodefeats;
 
-package com.tencent.angel.graph
+import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
-import scala.beans.BeanProperty
+public class GetNodeFeatsResult extends GetResult {
 
-class Param(@BeanProperty val maxIndex: Long,
-            @BeanProperty val batchSize: Int,
-            @BeanProperty val pullBatchSize: Int,
-            @BeanProperty val psPartNum: Int,
-            @BeanProperty val numNodes: Long = Int.MaxValue.toLong,
-            @BeanProperty val minIndex: Long = 0L,
-            @BeanProperty val matrixName: String = "BaseGraph",
-            @BeanProperty val useBalancePartition: Boolean = false,
-            @BeanProperty val nodeNum: Long = 0L
-           ) extends Serializable {
+  private final Long2ObjectOpenHashMap<IntFloatVector> nodeIdToFeats;
+
+  public GetNodeFeatsResult(Long2ObjectOpenHashMap<IntFloatVector> nodeIdToFeats) {
+    this.nodeIdToFeats = nodeIdToFeats;
+  }
+
+  public Long2ObjectOpenHashMap<IntFloatVector> getnodeIdToFeats() {
+    return nodeIdToFeats;
+  }
 }
