@@ -17,7 +17,11 @@
 package com.tencent.angel.graph.psf.hyperanf;
 
 import com.tencent.angel.ml.math2.VFactory;
-import com.tencent.angel.ml.matrix.psf.get.base.*;
+import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
+import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
+import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ml.matrix.psf.get.getrow.GetRowResult;
 import com.tencent.angel.ml.matrix.psf.get.indexed.IndexPartGetLongResult;
 import com.tencent.angel.ps.storage.partition.ServerPartition;
@@ -28,7 +32,6 @@ import com.tencent.angel.graph.psf.pagerank.GetNodesParam;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-
 import java.util.List;
 
 public class GetNodes extends GetFunc {
@@ -48,7 +51,8 @@ public class GetNodes extends GetFunc {
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam partParam) {
     ServerPartition part = psContext.getMatrixStorageManager().getPart(partParam.getPartKey());
-    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager().getRow(partParam.getPartKey(), 0);
+    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager()
+            .getRow(partParam.getPartKey(), 0);
     LongArrayList ret = new LongArrayList();
 
     row.startRead();
@@ -71,11 +75,12 @@ public class GetNodes extends GetFunc {
     for (PartitionGetResult result : partResults) {
       if (result instanceof IndexPartGetLongResult) {
         long[] values = ((IndexPartGetLongResult) result).getValues();
-        for (int i = 0; i < values.length; i++)
+        for (int i = 0; i < values.length; i++) {
           ret.add(values[i]);
+        }
       }
     }
     return new GetRowResult(ResponseType.SUCCESS,
-      VFactory.denseLongVector(ret.toLongArray()));
+            VFactory.denseLongVector(ret.toLongArray()));
   }
 }

@@ -19,11 +19,11 @@ package com.tencent.angel.graph.rank.closeness
 
 import java.util.Collections
 
-import com.tencent.angel.graph.utils.io.Log
-import com.tencent.angel.graph.utils.params._
+import com.tencent.angel.graph.common.param.ModelContext
 import com.tencent.angel.psagent.PSAgentContext
+import com.tencent.angel.graph.utils.params._
+import org.apache.spark.SparkContext
 import org.apache.spark.ml.Transformer
-import org.apache.spark.ml.param.shared.HasMaxIter
 import org.apache.spark.ml.param.{BooleanParam, IntParam, ParamMap}
 import org.apache.spark.ml.util.Identifiable
 import org.apache.spark.sql.types.{FloatType, LongType, StructField, StructType}
@@ -38,7 +38,7 @@ import org.apache.spark.storage.StorageLevel
 
 class Closeness(override val uid: String) extends Transformer
   with HasDstNodeIdCol with HasOutputNodeIdCol with HasOutputCentralityCol with HasSrcNodeIdCol
-  with HasStorageLevel with HasPartitionNum with HasPSPartitionNum with HasBatchSize with HasMaxIter
+  with HasStorageLevel with HasPartitionNum with HasPSPartitionNum with HasBatchSize
   with HasWeightCol with HasIsWeighted with HasUseBalancePartition with HasBalancePartitionPercent {
 
   /**
@@ -50,7 +50,7 @@ class Closeness(override val uid: String) extends Transformer
     */
   final val p = new IntParam(this, "p", "p")
   final val sp = new IntParam(this, "sp", "sp")
-  // final val maxIter = new IntParam(this, "maxIter", "maxIter")
+  final val maxIter = new IntParam(this, "maxIter", "maxIter")
   final val msgNumBatch = new IntParam(this, "msgBatchSize", "msgBatchSize")
   final val verboseSaving = new BooleanParam(this, "verboseSaving", "verboseSaving")
   final val isDirected = new BooleanParam(this, "isDirected", "isDirected")
@@ -69,7 +69,7 @@ class Closeness(override val uid: String) extends Transformer
 
   setDefault(p, 6)
   setDefault(sp, 0)
-  setDefault(maxIter, 10)
+  setDefault(maxIter, 200)
   setDefault(msgNumBatch, 4)
   setDefault(verboseSaving, false)
   setDefault(isDirected, true)
@@ -81,12 +81,10 @@ class Closeness(override val uid: String) extends Transformer
     val edges =
       if ($(isDirected))
         dataset.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd
-          .filter(row => !row.anyNull)
           .map(row => (row.getLong(0), row.getLong(1)))
           .filter(f => f._1 != f._2)
       else
         dataset.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd
-          .filter(row => !row.anyNull)
           .flatMap(row => Iterator((row.getLong(0), row.getLong(1)), (row.getLong(1), row.getLong(0))))
           .filter(f => f._1 != f._2)
     edges.persist(StorageLevel.DISK_ONLY)
@@ -94,10 +92,11 @@ class Closeness(override val uid: String) extends Transformer
     val index = edges.flatMap(f => Array(f._1, f._2))
     val (minId, maxId, numEdges) = edges.mapPartitions(summarizeApplyOp).reduce(summarizeReduceOp)
 
-    Log.withTimePrintln(s"minId=$minId maxId=$maxId numEdges=$numEdges p=${$(p)} sp=${$(sp)}")
+    println(s"minId=$minId maxId=$maxId numEdges=$numEdges p=${$(p)} sp=${$(sp)}")
 
-    val model = ClosenessPSModel.fromMinMax(minId, maxId + 1, index, $(psPartitionNum), $(useBalancePartition), $(balancePartitionPercent))
-    val graph = edges.groupByKey($(partitionNum))
+    val modelContext = new ModelContext($(psPartitionNum), minId, maxId + 1, -1, "closeness", SparkContext.getOrCreate().hadoopConfiguration)
+    val model = ClosenessPSModel(modelContext, index, $(useBalancePartition), $(balancePartitionPercent))
+    val graph = edges.groupByKey(${partitionNum})
       .mapPartitionsWithIndex((index, it) =>
         Iterator.single(ClosenessPartition.apply(index, it, $(p), $(sp))))
 
@@ -106,19 +105,19 @@ class Closeness(override val uid: String) extends Transformer
 
     graph.map(_.init(model)).collect()
 
-    //Loop
-    var i = 1
+    model.checkpoint()
+    var r = 1
     var numActives = 1L
     do {
       numActives = graph.map(_.process(model, $(msgNumBatch))).reduce(_ + _)
-      model.computeCloseness(i)
-      Log.withTimePrintln(s"Closeness finished iteration + $i, and the number of active msg is $numActives")
-      i += 1
-    } while (i <= $(maxIter) && numActives > 0)
+      model.computeCloseness(r)
+      println(s"iter=$r, activeMsgs=$numActives")
+      r += 1
+    } while (r <= $(maxIter) && numActives > 0)
 
     val numNodes = model.numNodes()
     val maxCardinality = model.maxCardinality()
-    Log.withTimePrintln(s"numNodes=$numNodes maxCardinality=$maxCardinality")
+    println(s"numNodes=$numNodes maxCardinality=$maxCardinality")
 
     val (partitionIds, ends) = splitPartitionIds(model)
     val retRDD = if ($(verboseSaving)) {
@@ -180,23 +179,23 @@ class Closeness(override val uid: String) extends Transformer
 
   override def transformSchema(schema: StructType): StructType = {
     StructType(Seq(
-      StructField(s"$outputNodeIdCol", LongType, nullable = false),
-      StructField(s"$outputCentralityCol", FloatType, nullable = false)
+      StructField(s"${$(outputNodeIdCol)}", LongType, nullable = false),
+      StructField(s"${$(outputCentralityCol)}", FloatType, nullable = false)
     ))
   }
 
   def schema(verbose: Boolean): StructType = {
     if (verbose)
       StructType(Seq(
-        StructField(s"$outputNodeIdCol", LongType, nullable = false),
-        StructField(s"$outputCentralityCol", FloatType, nullable = false),
+        StructField(s"${$(outputNodeIdCol)}", LongType, nullable = false),
+        StructField(s"${$(outputCentralityCol)}", FloatType, nullable = false),
         StructField(s"cardinality", LongType, nullable = false),
         StructField(s"distSum", LongType, nullable = false)
       ))
     else
       StructType(Seq(
-        StructField(s"$outputNodeIdCol", LongType, nullable = false),
-        StructField(s"$outputCentralityCol", FloatType, nullable = false)
+        StructField(s"${$(outputNodeIdCol)}", LongType, nullable = false),
+        StructField(s"${$(outputCentralityCol)}", FloatType, nullable = false)
       ))
   }
 
