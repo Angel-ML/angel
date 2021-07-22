@@ -38,7 +38,8 @@ public class MaxCardinality extends UnaryAggrFunc {
     double maxCardinality = 0;
     ObjectIterator<Long2ObjectMap.Entry<IElement>> it = ((ServerLongAnyRow) row).iterator();
     while (it.hasNext()) {
-      maxCardinality = Math.max(maxCardinality, ((HyperLogLogPlusElement)it.next().getValue()).getCardinality());
+      maxCardinality = Math
+              .max(maxCardinality, ((HyperLogLogPlusElement) it.next().getValue()).getCardinality());
     }
     return maxCardinality;
   }

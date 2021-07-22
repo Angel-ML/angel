@@ -18,16 +18,18 @@ package com.tencent.angel.graph.psf.hyperanf;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
+import com.tencent.angel.ps.storage.vector.element.IElement;
 import com.tencent.angel.psagent.PSAgentContext;
-import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplitUtils;
+import com.tencent.angel.psagent.matrix.transport.router.KeyValuePart;
+import com.tencent.angel.psagent.matrix.transport.router.RouterUtils;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Map.Entry;
 
 public class UpdateHyperLogLogParam extends UpdateParam {
 
@@ -35,7 +37,8 @@ public class UpdateHyperLogLogParam extends UpdateParam {
   private int p;
   private int sp;
 
-  public UpdateHyperLogLogParam(int matrixId, Long2ObjectOpenHashMap<HyperLogLogPlus> updates, int p, int sp) {
+  public UpdateHyperLogLogParam(int matrixId, Long2ObjectOpenHashMap<HyperLogLogPlus> updates,
+                                int p, int sp) {
     super(matrixId);
     this.updates = updates;
     this.p = p;
@@ -44,35 +47,42 @@ public class UpdateHyperLogLogParam extends UpdateParam {
 
   @Override
   public List<PartitionUpdateParam> split() {
-    long[] nodes = updates.keySet().toLongArray();
-    Arrays.sort(nodes);
 
-    List<PartitionUpdateParam> params = new ArrayList<>();
-    List<PartitionKey> parts = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
+    MatrixMeta meta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
+    PartitionKey[] parts = meta.getPartitionKeys();
 
-    if (!RowUpdateSplitUtils.isInRange(nodes, parts)) {
-      throw new AngelException(
-        "node id is not in range [" + parts.get(0).getStartCol() + ", " + parts
-          .get(parts.size() - 1).getEndCol());
+    KeyValuePart[] splits = splitHLLMap(meta, updates);
+    assert parts.length == splits.length;
+    List<PartitionUpdateParam> partParams = new ArrayList<>(parts.length);
+    for (int i = 0; i < parts.length; i++) {
+      if (splits[i] != null && splits[i].size() > 0) {
+        partParams.add(new UpdateHyperLogLogPartParam(matrixId, parts[i], splits[i], p, sp));
+      }
     }
 
-    int nodeIndex = 0;
-    int partIndex = 0;
-    while (nodeIndex < nodes.length || partIndex < parts.size()) {
-      int length = 0;
-      long endOffset = parts.get(partIndex).getEndCol();
-      while (nodeIndex < nodes.length && nodes[nodeIndex] < endOffset) {
-        nodeIndex++;
-        length++;
-      }
-
-      if (length > 0) {
-        params.add(new UpdateHyperLogLogPartParam(matrixId,
-          parts.get(partIndex), updates, p, sp, nodes, nodeIndex - length,
-          nodeIndex));
-      }
-      partIndex++;
-    }
-    return params;
+    return partParams;
   }
+
+  public KeyValuePart[] splitHLLMap(MatrixMeta matrixMeta, Long2ObjectOpenHashMap<HyperLogLogPlus> data) {
+    int len = data.size();
+    long[] keys = new long[len];
+    IElement[] values = new IElement[len];
+
+    if (data != null && data.size() > 0) {
+      ObjectIterator<Entry<Long, HyperLogLogPlus>> iter =  data.entrySet().iterator();
+      int index = 0;
+      while (iter.hasNext()) {
+        Entry<Long, HyperLogLogPlus> entry = iter.next();
+        keys[index] = entry.getKey();
+        values[index] = new HLLPlusElement(entry.getValue());
+        index += 1;
+      }
+
+      return RouterUtils.split(matrixMeta, 0, keys, values);
+    } else {
+      KeyValuePart[] keyValueParts = new KeyValuePart[matrixMeta.getPartitionNum()];
+      return keyValueParts;
+    }
+  }
+
 }

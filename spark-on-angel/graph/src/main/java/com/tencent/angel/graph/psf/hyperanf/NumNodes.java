@@ -17,9 +17,12 @@
 package com.tencent.angel.graph.psf.hyperanf;
 
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarPartitionAggrResult;
-import com.tencent.angel.ml.matrix.psf.get.base.*;
+import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
+import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
+import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
-
 import java.util.List;
 
 public class NumNodes extends GetFunc {
@@ -38,7 +41,8 @@ public class NumNodes extends GetFunc {
 
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam partParam) {
-    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager().getRow(partParam.getPartKey(), 0);
+    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager()
+            .getRow(partParam.getPartKey(), 0);
     return new ScalarPartitionAggrResult(row.size());
   }
 
@@ -47,7 +51,7 @@ public class NumNodes extends GetFunc {
     long numNodes = 0;
     for (PartitionGetResult result : partResults) {
       if (result instanceof ScalarPartitionAggrResult) {
-        long value = (long)((ScalarPartitionAggrResult) result).result;
+        long value = (long) ((ScalarPartitionAggrResult) result).result;
         numNodes += value;
       }
     }
