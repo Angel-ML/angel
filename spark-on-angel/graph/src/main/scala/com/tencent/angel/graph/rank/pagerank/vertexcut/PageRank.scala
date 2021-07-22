@@ -33,7 +33,7 @@ class PageRank(override val uid: String) extends Transformer
   with HasStorageLevel with HasPartitionNum with HasPSPartitionNum
   with HasWeightCol with HasIsWeighted with HasUseBalancePartition
   with HasUseEstimatePartition with HasBalancePartitionPercent
-  with HasApproNodeNum {
+  with HasApproNodeNum with HasBatchSize {
 
 
   final val tol = new FloatParam(this, "tol", "tol")
@@ -115,9 +115,25 @@ class PageRank(override val uid: String) extends Transformer
 
     model.normalizeRanks(numNodes)
 
-    val (partitionIds, ends) = PageRankOps.splitPartitionIds(model.matrixId, graph.getNumPartitions)
-    val retRDD = graph.flatMap(f => PageRankOps.save(f.getIndex, model, partitionIds, ends, $(numBatch)))
-      .flatMap(f => f._1.zip(f._2))
+    val batchs = math.max($(psPartitionNum) / $(numBatch), $(batchSize))
+    val retRDD = edges.flatMap(f => Array(f._1, f._2))
+      .map(key=> (key, 1))
+      .groupByKey($(partitionNum))
+      .mapPartitions{ iter =>
+        val batchIterator = iter.map(_._1).sliding(batchs, batchs)
+
+        new Iterator[Array[(Long, Float)]] with Serializable {
+          override def hasNext: Boolean = {
+            batchIterator.hasNext
+          }
+
+          override def next: Array[(Long, Float)] = {
+            val batch = batchIterator.next().toArray
+            val ranks = model.readRanks(batch)
+            batch.map(key => (key, ranks.get(key)))
+          }
+        }
+      }.flatMap(p=>p)
       .map { case (node, rank) => Row.fromSeq(Seq[Any](node, rank)) }
 
     val outputSchema = transformSchema(dataset.schema)

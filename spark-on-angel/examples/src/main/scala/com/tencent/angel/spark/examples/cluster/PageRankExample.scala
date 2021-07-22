@@ -48,6 +48,7 @@ object PageRankExample {
     val balancePartitionPercent = params.getOrElse("balancePartitionPercent", "0.7").toFloat
     val version = params.getOrElse("version", "edge-cut")
     val numBatch = params.getOrElse("numBatch", "1").toInt
+    val batchSize = params.getOrElse("batchSize", "1000").toInt
 
     val sep = params.getOrElse("sep", "space") match {
       case "space" => " "
@@ -63,10 +64,10 @@ object PageRankExample {
     val ranks = version match {
       case "edge-cut" => edgeCutPageRank(edges, partitionNum, psPartitionNum,
         storageLevel, tol, resetProp, isWeight,
-        useBalancePartition, balancePartitionPercent, numBatch)
+        useBalancePartition, balancePartitionPercent, numBatch, batchSize)
       case "vertex-cut" => vertexCutPageRank(edges, partitionNum, psPartitionNum,
         storageLevel, tol, resetProp, isWeight,
-        useBalancePartition, balancePartitionPercent, numBatch)
+        useBalancePartition, balancePartitionPercent, numBatch, batchSize)
     }
 
     GraphIO.save(ranks, output)
@@ -78,7 +79,7 @@ object PageRankExample {
                         storageLevel: StorageLevel,
                         tol: Float, resetProb: Float, isWeighted: Boolean,
                         useBalancePartition: Boolean,
-                        balancePartitionPercent: Float, numBatch: Int): DataFrame = {
+                        balancePartitionPercent: Float, numBatch: Int,  batchSize: Int): DataFrame = {
     val pageRank = new VertexCutPageRank()
       .setPartitionNum(partitionNum)
       .setStorageLevel(storageLevel)
@@ -89,6 +90,7 @@ object PageRankExample {
       .setUseBalancePartition(useBalancePartition)
       .setBalancePartitionPercent(balancePartitionPercent)
       .setNumBatch(numBatch)
+      .setBatchSize(batchSize)
     pageRank.transform(edges)
   }
 
@@ -97,7 +99,7 @@ object PageRankExample {
                       storageLevel: StorageLevel,
                       tol: Float, resetProb: Float, isWeighted: Boolean,
                       useBalancePartition: Boolean,
-                      balancePartitionPercent: Float, numBatch: Int): DataFrame = {
+                      balancePartitionPercent: Float, numBatch: Int, batchSize: Int): DataFrame = {
     val pageRank = new EdgeCutPageRank()
       .setPartitionNum(partitionNum)
       .setStorageLevel(storageLevel)
@@ -108,6 +110,7 @@ object PageRankExample {
       .setUseBalancePartition(useBalancePartition)
       .setBalancePartitionPercent(balancePartitionPercent)
       .setNumBatch(numBatch)
+      .setBatchSize(batchSize)
     pageRank.transform(edges)
   }
 
