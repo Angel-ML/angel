@@ -168,7 +168,7 @@ class NeighborTableModel(@BeanProperty val param: Param) extends Serializable {
 object NeighborTableModel {
 
   def apply(maxIndex: Long, batchSize: Int, pullBatch: Int, psPartNum: Int, minIndex: Long = 0L, numNodes: Long = -1L): NeighborTableModel = {
-    val param = new Param(maxIndex, batchSize, pullBatch, psPartNum, minIndex, numNodes)
+    val param = new Param(maxIndex, batchSize, pullBatch, psPartNum, numNodes, minIndex)
     new NeighborTableModel(param)
   }
 
