@@ -25,8 +25,8 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 
 /**
- * UpdateFunc for computing the cardinality and closeness without normalization,
- * updating the activeness status, and switching the read/write counter
+ * UpdateFunc for computing the cardinality and closeness without normalization, updating the
+ * activeness status, and switching the read/write counter
  */
 public class ComputeCloseness extends UpdateFunc {
 
@@ -45,7 +45,8 @@ public class ComputeCloseness extends UpdateFunc {
   @Override
   public void partitionUpdate(PartitionUpdateParam partParam) {
     ComputeClosenessPartParam param = (ComputeClosenessPartParam) partParam;
-    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager().getRow(param.getPartKey(), 0);
+    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager()
+            .getRow(param.getPartKey(), 0);
     int r = param.getR();
 
     ObjectIterator<Long2ObjectMap.Entry<IElement>> iter = row.iterator();

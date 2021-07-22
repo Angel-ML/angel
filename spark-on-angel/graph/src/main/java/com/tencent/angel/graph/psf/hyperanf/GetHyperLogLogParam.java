@@ -17,14 +17,13 @@
 package com.tencent.angel.graph.psf.hyperanf;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.psagent.PSAgentContext;
-import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplitUtils;
-
+import com.tencent.angel.psagent.matrix.transport.router.KeyPart;
+import com.tencent.angel.psagent.matrix.transport.router.RouterUtils;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class GetHyperLogLogParam extends GetParam {
@@ -42,32 +41,15 @@ public class GetHyperLogLogParam extends GetParam {
 
   @Override
   public List<PartitionGetParam> split() {
-    Arrays.sort(nodes);
+    MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
+    PartitionKey[] parts = matrixMeta.getPartitionKeys();
+    KeyPart[] keyParts = RouterUtils.split(matrixMeta, 0, nodes);
+    List<PartitionGetParam> params = new ArrayList<>(parts.length);
 
-    List<PartitionGetParam> params = new ArrayList<>();
-    List<PartitionKey> parts = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
-
-    if (!RowUpdateSplitUtils.isInRange(nodes, parts)) {
-      throw new AngelException(
-          "node id is not in range [" + parts.get(0).getStartCol() + ", " + parts
-              .get(parts.size() - 1).getEndCol() + ", nodes[0]=" + nodes[0] + ", nodes[-1]=" + nodes[nodes.length - 1]);
-    }
-
-    int nodeIndex = 0;
-    int partIndex = 0;
-    while (nodeIndex < nodes.length || partIndex < parts.size()) {
-      int length = 0;
-      long endOffset = parts.get(partIndex).getEndCol();
-      while (nodeIndex < nodes.length && nodes[nodeIndex] < endOffset) {
-        nodeIndex++;
-        length++;
+    for (int i = 0; i < parts.length; i++) {
+      if (keyParts[i] != null && keyParts[i].size() > 0) {
+        params.add(new GetHyperLogLogPartParam(matrixId, parts[i], keyParts[i], n, isDirected));
       }
-
-      if (length > 0) {
-        params.add(new GetHyperLogLogPartParam(matrixId,
-            parts.get(partIndex), nodes, n, nodeIndex - length, nodeIndex, isDirected));
-      }
-      partIndex++;
     }
 
     return params;
