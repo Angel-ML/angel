@@ -15,7 +15,6 @@
  *
  */
 
-
 package com.tencent.angel.ps.storage.vector;
 
 import com.tencent.angel.exception.WaitLockTimeOutException;
@@ -73,7 +72,7 @@ public abstract class ServerRow implements GeneralOp {
    * @param estElemNum the estimated element number, use for sparse vector
    */
   public ServerRow(int rowId, RowType rowType, long startCol, long endCol,
-      long estElemNum, RouterType routerType) {
+                   long estElemNum, RouterType routerType) {
     this(rowId, rowType, startCol, endCol, estElemNum, null, routerType);
   }
 
@@ -87,7 +86,7 @@ public abstract class ServerRow implements GeneralOp {
    * @param estElemNum the estimated element number, use for sparse vector
    */
   public ServerRow(int rowId, RowType rowType, long startCol, long endCol, long estElemNum,
-      IStorage storage, RouterType routerType) {
+                   IStorage storage, RouterType routerType) {
     this.rowId = rowId;
     this.rowType = rowType;
     this.startCol = startCol;
@@ -253,7 +252,7 @@ public abstract class ServerRow implements GeneralOp {
       ret = lock.writeLock().tryLock(milliseconds, TimeUnit.MILLISECONDS);
     } catch (Throwable e) {
       throw new WaitLockTimeOutException(
-          "wait write lock timeout " + StringUtils.stringifyException(e), milliseconds);
+              "wait write lock timeout " + StringUtils.stringifyException(e), milliseconds);
     }
 
     if (!ret) {
@@ -286,7 +285,7 @@ public abstract class ServerRow implements GeneralOp {
       ret = lock.readLock().tryLock(milliseconds, TimeUnit.MILLISECONDS);
     } catch (Throwable e) {
       throw new WaitLockTimeOutException(
-          "wait read lock timeout " + StringUtils.stringifyException(e), milliseconds);
+              "wait read lock timeout " + StringUtils.stringifyException(e), milliseconds);
     }
 
     if (!ret) {
@@ -431,8 +430,17 @@ public abstract class ServerRow implements GeneralOp {
   }
 
   @Override
+  public long dataSize() {
+    long headLen = 4 * 4 + 2 * 8 + 4;
+    if(storage != null) {
+      headLen += storage.getClass().getName().getBytes().length + storage.dataSize();
+    }
+    return headLen ;
+  }
+
+  @Override
   public String toString() {
     return "ServerRow [rowId=" + rowId + ", clock=" + clock + ", endCol=" + endCol + ", startCol="
-        + startCol + ", rowVersion=" + rowVersion + "]";
+            + startCol + ", rowVersion=" + rowVersion + "]";
   }
 }

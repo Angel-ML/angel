@@ -100,6 +100,14 @@ public abstract class CSRStorage extends ServerPartitionStorage implements ICSRS
     return super.bufferLen() + 4 + rowOffsets.length * 4 + 4 + columnIndices.length * 4;
   }
 
+  @Override
+  public long dataSize() {
+    long dataLen = super.bufferLen() + 4 + 4;
+    if (rowOffsets != null) dataLen +=  rowOffsets.length * 4;
+    if (columnIndices != null) dataLen += columnIndices.length * 4;
+    return dataLen;
+  }
+
   public int[] getRowOffsets() {
     return rowOffsets;
   }

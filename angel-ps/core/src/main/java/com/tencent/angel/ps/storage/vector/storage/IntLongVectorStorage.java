@@ -17,7 +17,6 @@
 
 package com.tencent.angel.ps.storage.vector.storage;
 
-
 import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.ml.math2.VFactory;
 import com.tencent.angel.ml.math2.vector.IntLongVector;
@@ -75,7 +74,7 @@ public class IntLongVectorStorage extends IntLongStorage {
 
       default: {
         throw new UnsupportedOperationException(
-            "Unsupport operation: update " + updateType + " to " + this.getClass().getName());
+                "Unsupport operation: update " + updateType + " to " + this.getClass().getName());
       }
     }
 
@@ -314,8 +313,8 @@ public class IntLongVectorStorage extends IntLongStorage {
   public IntLongVectorStorage adaptiveClone() {
     if(isSparse()) {
       return new IntLongVectorStorage(VFactory
-          .sortedLongVector(vector.getDim(), vector.getStorage().getIndices(),
-              vector.getStorage().getValues()), indexOffset);
+              .sortedLongVector(vector.getDim(), vector.getStorage().getIndices(),
+                      vector.getStorage().getValues()), indexOffset);
     } else {
       return this;
     }
@@ -339,10 +338,17 @@ public class IntLongVectorStorage extends IntLongStorage {
   }
 
   @Override
+  public long dataSize() {
+    long dataLen = super.bufferLen();
+    if (vector != null && vector.getStorage() != null) dataLen += VectorStorageUtils.bufferLen(vector);
+    return dataLen;
+  }
+
+  @Override
   public void indexGet(KeyType keyType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func) {
     if (keyType != KeyType.INT) {
       throw new UnsupportedOperationException(
-          this.getClass().getName() + " only support int type index now");
+              this.getClass().getName() + " only support int type index now");
     }
 
     if (func != null) {

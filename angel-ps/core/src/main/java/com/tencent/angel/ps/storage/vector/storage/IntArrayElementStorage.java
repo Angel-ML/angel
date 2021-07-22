@@ -37,7 +37,7 @@ public class IntArrayElementStorage extends IntElementStorage {
   }
 
   public IntArrayElementStorage(Class<? extends IElement> objectClass, IElement[] data,
-      long indexOffset) {
+                                long indexOffset) {
     super(objectClass, indexOffset);
     this.data = data;
   }
@@ -225,5 +225,16 @@ public class IntArrayElementStorage extends IntElementStorage {
   @Override
   public int dataLen() {
     return bufferLen();
+  }
+
+  @Override
+  public long dataSize() {
+    long dataLen = super.bufferLen() + 8;
+    if (data != null) {
+      for (int i = 0; i < data.length; i++) {
+        if (data[i] != null) dataLen += (4 + data[i].bufferLen());
+      }
+    }
+    return  dataLen;
   }
 }
