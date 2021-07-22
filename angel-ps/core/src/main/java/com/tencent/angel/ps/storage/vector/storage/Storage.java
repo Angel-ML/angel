@@ -15,7 +15,6 @@
  *
  */
 
-
 package com.tencent.angel.ps.storage.vector.storage;
 
 import io.netty.buffer.ByteBuf;
@@ -61,6 +60,10 @@ public abstract class Storage implements IStorage {
   }
 
   public int dataLen() {
+    return 8;
+  }
+
+  public long dataSize() {
     return 8;
   }
 }

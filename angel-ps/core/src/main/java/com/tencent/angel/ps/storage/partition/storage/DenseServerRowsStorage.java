@@ -101,7 +101,7 @@ public class DenseServerRowsStorage extends ServerRowsStorage {
       @Override
       public Map.Entry<Integer, ServerRow> next() {
         Map.Entry<Integer, ServerRow> entry = new AbstractMap.SimpleEntry(currIndex + rowIdOffset,
-            data[currIndex]);
+                data[currIndex]);
         currIndex++;
         return entry;
       }
@@ -194,6 +194,25 @@ public class DenseServerRowsStorage extends ServerRowsStorage {
         len += data[i].bufferLen();
       }
     }
+    return len;
+  }
+
+  @Override
+  public long dataSize() {
+    long len = 0;
+    len += super.bufferLen();
+    len += 8;
+
+    if (data != null) {
+      // Rows data
+      for (int i = 0; i < data.length; i++) {
+        if (data[i] != null) {
+          len += 8;
+          len += data[i].dataSize();
+        }
+      }
+    }
+
     return len;
   }
 }
