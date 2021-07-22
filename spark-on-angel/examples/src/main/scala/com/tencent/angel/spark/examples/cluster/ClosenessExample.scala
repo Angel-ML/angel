@@ -47,6 +47,7 @@ object ClosenessExample {
     val verboseSaving = params.getOrElse("verboseSaving", "true").toBoolean
     val isDirected = params.getOrElse("isDirected", "true").toBoolean
     val percent = params.getOrElse("balancePartitionPercent", "0.7").toFloat
+    val maxIter = params.getOrElse("maxIter", "2").toInt
 
     val sep = params.getOrElse("sep",  "space") match {
       case "space" => " "
@@ -65,6 +66,7 @@ object ClosenessExample {
       .setVerboseSaving(verboseSaving)
       .setIsDirected(isDirected)
       .setBalancePartitionPercent(percent)
+      .setMaxIter(maxIter)
 
     val df = GraphIO.load(input, isWeighted = isWeight,
       srcIndex = srcIndex, dstIndex = dstIndex,
