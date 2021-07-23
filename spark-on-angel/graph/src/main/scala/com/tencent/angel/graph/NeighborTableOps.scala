@@ -43,8 +43,10 @@ class NeighborTableOps(table: NeighborTableModel) extends Serializable {
 
   def initLongNeighbor[ED: ClassTag](data: RDD[NeighborTablePartition[ED]]): NeighborTableModel = {
     // Neighbor table : a (1, maxIndex + 1) dimension matrix
+    println(s"table.param.minIndex=${table.param.minIndex}, table.param.maxIndex=${table.param.maxIndex}, " +
+      s"table.param.numNodes=${table.param.numNodes}")
     val modelContext = new ModelContext(table.param.psPartNum, table.param.minIndex, table.param.maxIndex,
-      table.param.nodeNum, "simple_neighbor", data.sparkContext.hadoopConfiguration)
+      table.param.numNodes, "simple_neighbor", data.sparkContext.hadoopConfiguration)
     val mc = ModelContextUtils.createMatrixContext(modelContext, RowType.T_ANY_LONGKEY_SPARSE, classOf[ByteArrayElement])
     table.psMatrix  = PSMatrix.matrix(mc)
 

@@ -119,12 +119,11 @@ class Closeness(override val uid: String) extends Transformer
     val maxCardinality = model.maxCardinality()
     println(s"numNodes=$numNodes maxCardinality=$maxCardinality")
 
-    val (partitionIds, ends) = splitPartitionIds(model)
     val retRDD = if ($(verboseSaving)) {
-      graph.map(_.saveClosenessAndCentrality(model, partitionIds, ends, maxCardinality, $(isDirected)))
+      graph.map(_.saveClosenessAndCentrality(model, maxCardinality, $(isDirected)))
         .flatMap(f => f._1.zip(f._2)).map { case (node, res) => Row.fromSeq(Seq[Any](node, res._1.toFloat, res._2, res._3)) }
     } else {
-      graph.map(_.save(model, partitionIds, ends, maxCardinality)).flatMap(f => f._1.zip(f._2))
+      graph.map(_.save(model, maxCardinality)).flatMap(f => f._1.zip(f._2))
         .map { case (node, rank) => Row.fromSeq(Seq[Any](node, rank)) }
     }
 
