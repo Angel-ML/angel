@@ -18,6 +18,11 @@ We implemented large-scale PageRank calculation based on Spark On Angel, where p
   - dataPartitionNum：The number of input data partitions is generally set to 3-4 times the number of spark executors times the number of executor cores.
   - tol：the tolerance allowed at convergence (smaller => more accurate), the default is 0.01
   - resetProp：the random reset probability (alpha), the default is 0.15
+  - isWeight：whether the edge is weighted, the default is false
+  - version：edge network cutting method(edge-cut：cut by edge，vertex-cut：cut by vertex), the default is edge-cut
+  - batchSize：pull the results in batches when saving the node rank value, batchSize is the size of the batch, the default is 1000
+  - storageLevel: storage level([details](https://spark.apache.org/docs/0.8.1/api/core/org/apache/spark/storage/StorageLevel$.html)), the default is MEMORY_ONLY
+  - useBalancePartition：whether use balance partition, the default is false
 
 ### Resource parameters
 
@@ -42,8 +47,8 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.PageRankExample \
-  ../lib/spark-on-angel-examples-3.1.0.jar \
-  input:$input output:$output tol:0.01 :5 resetProp:0.15
+  ../lib/spark-on-angel-examples-3.2.0.jar \
+  input:$input output:$output tol:0.01 resetProp:0.15 version:edge-cut batchSize:1000 psPartitionNum:10 dataPartitionNum:10
 ```
 
 ### FAQ
