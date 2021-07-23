@@ -65,48 +65,15 @@ class ClosenessPartition(index: Int,
     outMsgs.size()
   }
 
-  def save(model: ClosenessPSModel, partitionIds: Array[Int],
-           ends: Array[Int], numNodes: Long): (Array[Long], Array[Float]) = {
-    val length = if (index > 0) ends(index) - ends(index - 1) else ends(0)
-    val start = if (index > 0) ends(index - 1) else 0
-    val myPartitionIds = new Array[Int](length)
-    for (i <- start until ends(index))
-      myPartitionIds(i - start) = partitionIds(i)
-
-    var nodes = new Array[Long](0)
-    if (length > 0) {
-      nodes = model.getNodes(myPartitionIds)
-      if (nodes.length > 0) {
-        val retMap = model.readCloseness(nodes.clone(), numNodes)
-        (nodes, nodes.map(retMap.getOrDefault(_, 0.0).toFloat))
-      }
-      else
-        (nodes, new Array[Float](0))
-    } else {
-      (nodes, new Array[Float](0))
-    }
+  def save(model: ClosenessPSModel, numNodes: Long): (Array[Long], Array[Float]) = {
+    val retMap = model.readCloseness(keys.clone(), numNodes)
+    (keys, keys.map(retMap.getOrDefault(_, 0.0).toFloat))
   }
 
-  def saveClosenessAndCentrality(model: ClosenessPSModel, partitionIds: Array[Int],
-                                 ends: Array[Int], numNodes: Long, isDirected: Boolean): (Array[Long], Array[(JDouble, JLong, JLong)]) = {
-    val length = if (index > 0) ends(index) - ends(index - 1) else ends(0)
-    val start = if (index > 0) ends(index - 1) else 0
-    val myPartitionIds = new Array[Int](length)
-    for (i <- start until ends(index))
-      myPartitionIds(i - start) = partitionIds(i)
-
-    var nodes = new Array[Long](0)
-    if (length > 0) {
-      nodes = model.getNodes(myPartitionIds)
-      if (nodes.length > 0) {
-        val retMap = model.readClosenessAndCardinality(nodes.clone(), numNodes, isDirected)
-        (nodes, nodes.map(retMap.getOrDefault(_, (0d, 0L, 0L))))
-      }
-      else
-        (nodes, new Array[(JDouble, JLong, JLong)](0))
-    } else {
-      (nodes, new Array[(JDouble, JLong, JLong)](0))
-    }
+  def saveClosenessAndCentrality(model: ClosenessPSModel, numNodes: Long,
+                                 isDirected: Boolean): (Array[Long], Array[(JDouble, JLong, JLong)]) = {
+    val retMap = model.readClosenessAndCardinality(keys.clone(), numNodes, isDirected)
+    (keys, keys.map(retMap.getOrDefault(_, (0d, 0L, 0L))))
   }
 }
 
