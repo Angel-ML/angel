@@ -44,8 +44,8 @@ class ClosenessPSModel(matrix: PSMatrix) extends Serializable {
     matrix.checkpoint()
   }
 
-  def init(nodes: Array[Long], p: Int, sp: Int): Unit = {
-    val func = new InitHyperLogLog(matrix.id, p, sp, nodes)
+  def init(nodes: Array[Long], p: Int, sp: Int, seed: Long): Unit = {
+    val func = new InitHyperLogLog(matrix.id, p, sp, nodes, seed)
     matrix.psfUpdate(func).get()
   }
 
@@ -54,8 +54,8 @@ class ClosenessPSModel(matrix: PSMatrix) extends Serializable {
     matrix.psfGet(func).asInstanceOf[GetHyperLogLogResult].getResults
   }
 
-  def sendMsgs(updates: Long2ObjectOpenHashMap[HyperLogLogPlus], p: Int, sp: Int): Unit = {
-    val func = new UpdateHyperLogLog(matrix.id, updates, p, sp)
+  def sendMsgs(updates: Long2ObjectOpenHashMap[HyperLogLogPlus], p: Int, sp: Int, seed: Long): Unit = {
+    val func = new UpdateHyperLogLog(matrix.id, updates, p, sp, seed)
     matrix.psfUpdate(func).get()
   }
 

@@ -25,13 +25,13 @@ import it.unimi.dsi.fastutil.longs.{Long2ObjectOpenHashMap, LongArrayList}
 
 private[closeness]
 class ClosenessPartition(index: Int,
-                         keys: Array[Long],
-                         indptr: Array[Int],
-                         outNodes: Array[Long],
-                         p: Int, sp: Int) {
+                              keys: Array[Long],
+                              indptr: Array[Int],
+                              outNodes: Array[Long],
+                              p: Int, sp: Int, seed: Long) {
 
   def init(model: ClosenessPSModel): Unit = {
-    model.init(keys.clone(), p, sp)
+    model.init((keys ++ outNodes).distinct, p, sp, seed)
   }
 
   def process(model: ClosenessPSModel, numBatch: Int): Long = {
@@ -61,7 +61,7 @@ class ClosenessPartition(index: Int,
         }
       }
     }
-    model.sendMsgs(outMsgs, p, sp)
+    model.sendMsgs(outMsgs, p, sp, seed)
     outMsgs.size()
   }
 
@@ -110,9 +110,9 @@ class ClosenessPartition(index: Int,
   }
 }
 
-private[closeness]
+private [closeness]
 object ClosenessPartition {
-  def apply(index: Int, iter: Iterator[(Long, Iterable[Long])], p: Int, sp: Int): ClosenessPartition = {
+  def apply(index: Int, iter: Iterator[(Long, Iterable[Long])], p: Int, sp: Int, seed: Long): ClosenessPartition = {
     val indptr = new IntArrayList()
     val outNodes = new LongArrayList()
     val keys = new LongArrayList()
@@ -122,7 +122,7 @@ object ClosenessPartition {
     while (iter.hasNext) {
       val entry = iter.next()
       val (node, outs) = (entry._1, entry._2)
-      outs.toArray.distinct.foreach { n => outNodes.add(n) }
+      outs.toArray.distinct.foreach {n => outNodes.add(n)}
       indptr.add(outNodes.size())
       keys.add(node)
       idx += 1
@@ -132,6 +132,6 @@ object ClosenessPartition {
       keys.toLongArray(),
       indptr.toIntArray(),
       outNodes.toLongArray(),
-      p, sp)
+      p, sp, seed)
   }
 }

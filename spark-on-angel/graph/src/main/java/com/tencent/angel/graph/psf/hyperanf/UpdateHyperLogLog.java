@@ -32,8 +32,8 @@ public class UpdateHyperLogLog extends UpdateFunc {
   }
 
   public UpdateHyperLogLog(int matrixId, Long2ObjectOpenHashMap<HyperLogLogPlus> updates, int p,
-                           int sp) {
-    super(new UpdateHyperLogLogParam(matrixId, updates, p, sp));
+      int sp, long seed) {
+    super(new UpdateHyperLogLogParam(matrixId, updates, p, sp, seed));
   }
 
   public UpdateHyperLogLog() {
@@ -48,6 +48,7 @@ public class UpdateHyperLogLog extends UpdateFunc {
     ILongKeyAnyValuePartOp split = (ILongKeyAnyValuePartOp) param.getKeyValuePart();
     int p = param.getP();
     int sp = param.getSp();
+    long seed = param.getSeed();
     long[] keys = split.getKeys();
     IElement[] values = split.getValues();
 
@@ -58,7 +59,7 @@ public class UpdateHyperLogLog extends UpdateFunc {
           long key = keys[i];
           HyperLogLogPlus value = ((HLLPlusElement) values[i]).getCounter();
           if (!row.exist(key))
-            row.set(key, new HyperLogLogPlusElement(key, p, sp));
+            row.set(key, new HyperLogLogPlusElement(key, p, sp, seed));
           HyperLogLogPlusElement hllElem = (HyperLogLogPlusElement) row.get(key);
           if (hllElem.isActive()) {
             hllElem.merge(value);

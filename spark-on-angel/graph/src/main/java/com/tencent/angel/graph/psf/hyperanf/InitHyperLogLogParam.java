@@ -31,12 +31,14 @@ public class InitHyperLogLogParam extends UpdateParam {
   private long[] nodes;
   private int p;
   private int sp;
+  private long seed;
 
-  public InitHyperLogLogParam(int matrixId, int p, int sp, long[] nodes) {
+  public InitHyperLogLogParam(int matrixId, int p, int sp, long[] nodes, long seed) {
     super(matrixId);
     this.p = p;
     this.sp = sp;
     this.nodes = nodes;
+    this.seed = seed;
   }
 
   @Override
@@ -48,7 +50,7 @@ public class InitHyperLogLogParam extends UpdateParam {
 
     for (int i = 0; i < parts.length; i++) {
       if (keyParts[i] != null && keyParts[i].size() > 0) {
-        params.add(new InitHyperLogLogPartParam(matrixId, parts[i], keyParts[i], p, sp));
+        params.add(new InitHyperLogLogPartParam(matrixId, parts[i], keyParts[i], p, sp, seed));
       }
     }
 

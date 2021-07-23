@@ -24,8 +24,8 @@ import com.tencent.angel.psagent.matrix.transport.router.operator.ILongKeyPartOp
 
 public class InitHyperLogLog extends UpdateFunc {
 
-  public InitHyperLogLog(int matrixId, int p, int sp, long[] nodes) {
-    super(new InitHyperLogLogParam(matrixId, p, sp, nodes));
+  public InitHyperLogLog(int matrixId, int p, int sp, long[] nodes, long seed) {
+    super(new InitHyperLogLogParam(matrixId, p, sp, nodes, seed));
   }
 
   public InitHyperLogLog(InitHyperLogLogParam param) {
@@ -46,11 +46,12 @@ public class InitHyperLogLog extends UpdateFunc {
     long[] nodes = split.getKeys();
     int p = param.getP();
     int sp = param.getSp();
+    long seed = param.getSeed();
 
     row.startWrite();
     try {
       for (int i = 0; i < nodes.length; i++) {
-        row.set(nodes[i], new HyperLogLogPlusElement(nodes[i], p, sp));
+        row.set(nodes[i], new HyperLogLogPlusElement(nodes[i], p, sp, seed));
       }
     } finally {
       row.endWrite();

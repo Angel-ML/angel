@@ -36,13 +36,15 @@ public class UpdateHyperLogLogParam extends UpdateParam {
   private Long2ObjectOpenHashMap<HyperLogLogPlus> updates;
   private int p;
   private int sp;
+  private long seed;
 
   public UpdateHyperLogLogParam(int matrixId, Long2ObjectOpenHashMap<HyperLogLogPlus> updates,
-                                int p, int sp) {
+      int p, int sp, long seed) {
     super(matrixId);
     this.updates = updates;
     this.p = p;
     this.sp = sp;
+    this.seed = seed;
   }
 
   @Override
@@ -56,7 +58,7 @@ public class UpdateHyperLogLogParam extends UpdateParam {
     List<PartitionUpdateParam> partParams = new ArrayList<>(parts.length);
     for (int i = 0; i < parts.length; i++) {
       if (splits[i] != null && splits[i].size() > 0) {
-        partParams.add(new UpdateHyperLogLogPartParam(matrixId, parts[i], splits[i], p, sp));
+        partParams.add(new UpdateHyperLogLogPartParam(matrixId, parts[i], splits[i], p, sp, seed));
       }
     }
 
