@@ -25,10 +25,10 @@ import it.unimi.dsi.fastutil.longs.{Long2ObjectOpenHashMap, LongArrayList}
 
 private[closeness]
 class ClosenessPartition(index: Int,
-                              keys: Array[Long],
-                              indptr: Array[Int],
-                              outNodes: Array[Long],
-                              p: Int, sp: Int, seed: Long) {
+                         keys: Array[Long],
+                         indptr: Array[Int],
+                         outNodes: Array[Long],
+                         p: Int, sp: Int, seed: Long) {
 
   def init(model: ClosenessPSModel): Unit = {
     model.init((keys ++ outNodes).distinct, p, sp, seed)
@@ -70,11 +70,13 @@ class ClosenessPartition(index: Int,
     (keys, keys.map(retMap.getOrDefault(_, 0.0).toFloat))
   }
 
-  def saveClosenessAndCentrality(model: ClosenessPSModel, numNodes: Long,
+  def saveClosenessAndCentrality(model: ClosenessPSModel,
+                                 numNodes: Long,
                                  isDirected: Boolean): (Array[Long], Array[(JDouble, JLong, JLong)]) = {
     val retMap = model.readClosenessAndCardinality(keys.clone(), numNodes, isDirected)
     (keys, keys.map(retMap.getOrDefault(_, (0d, 0L, 0L))))
   }
+
 }
 
 private [closeness]
