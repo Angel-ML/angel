@@ -15,7 +15,6 @@
  *
  */
 
-
 package com.tencent.angel.ps.storage.partition.storage;
 
 import com.tencent.angel.ml.matrix.RowType;
@@ -171,6 +170,25 @@ public class SparseServerRowsStorage extends ServerRowsStorage {
       if(rowEntry.getValue() != null) {
         len += 8;
         len += rowEntry.getValue().bufferLen();
+      }
+    }
+
+    return len;
+  }
+
+  @Override
+  public long dataSize() {
+    long len = 0;
+    len += super.bufferLen();
+    len += 8;
+
+    if (data != null) {
+      // Rows data
+      for(Entry<Integer, ServerRow> rowEntry : data.entrySet()) {
+        if(rowEntry != null && rowEntry.getValue() != null) {
+          len += 8;
+          len += rowEntry.getValue().dataSize();
+        }
       }
     }
 

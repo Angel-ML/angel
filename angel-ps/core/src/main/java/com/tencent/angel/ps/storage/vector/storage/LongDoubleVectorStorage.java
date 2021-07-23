@@ -15,7 +15,6 @@
  *
  */
 
-
 package com.tencent.angel.ps.storage.vector.storage;
 
 import com.tencent.angel.common.ByteBufSerdeUtils;
@@ -99,7 +98,7 @@ public class LongDoubleVectorStorage extends LongDoubleStorage {
 
       default: {
         throw new UnsupportedOperationException(
-            "Unsupport operation: update " + updateType + " to " + this.getClass().getName());
+                "Unsupport operation: update " + updateType + " to " + this.getClass().getName());
       }
     }
 
@@ -247,7 +246,7 @@ public class LongDoubleVectorStorage extends LongDoubleStorage {
       case SPARSE: {
         // Attention: Only update exist element
         ObjectIterator<Long2DoubleMap.Entry> iter = vector.getStorage()
-            .entryIterator();
+                .entryIterator();
         Long2DoubleMap.Entry entry;
         while (iter.hasNext()) {
           entry = iter.next();
@@ -302,7 +301,7 @@ public class LongDoubleVectorStorage extends LongDoubleStorage {
   public LongDoubleVectorStorage adaptiveClone() {
     if (isSparse()) {
       return new LongDoubleVectorStorage(VFactory.sortedLongKeyDoubleVector(vector.dim(),
-          vector.getStorage().getIndices(), vector.getStorage().getValues()), indexOffset);
+              vector.getStorage().getIndices(), vector.getStorage().getValues()), indexOffset);
     } else {
       return this;
     }
@@ -323,5 +322,12 @@ public class LongDoubleVectorStorage extends LongDoubleStorage {
   @Override
   public int bufferLen() {
     return super.bufferLen() + VectorStorageUtils.bufferLen(vector);
+  }
+
+  @Override
+  public long dataSize() {
+    long dataLen = super.bufferLen();
+    if (vector != null && vector.getStorage() != null) dataLen += VectorStorageUtils.bufferLen(vector);
+    return dataLen;
   }
 }

@@ -15,7 +15,6 @@
  *
  */
 
-
 package com.tencent.angel.ps;
 
 import com.google.protobuf.ServiceException;
@@ -168,6 +167,11 @@ public class ParameterServer {
   private volatile MasterClient master;
 
   /**
+   * Data collection interval
+   */
+  private volatile int dataCollectionInterval;
+
+  /**
    * HA update pusher TODO
    */
   // private volatile PS2PSPusherImpl ps2PSPusher;
@@ -184,6 +188,7 @@ public class ParameterServer {
   private static final AtomicInteger runningWorkerGroupNum = new AtomicInteger(0);
   private static final AtomicInteger runningWorkerNum = new AtomicInteger(0);
   private static final AtomicInteger runningTaskNum = new AtomicInteger(0);
+  private static final AtomicInteger heartbeatCount = new AtomicInteger(0);
 
   public static int getRunningWorkerGroupNum() {
     return runningWorkerGroupNum.get();
@@ -219,7 +224,7 @@ public class ParameterServer {
    * @param conf the conf
    */
   public ParameterServer(int serverIndex, int attemptIndex, String appMasterHost, int appMasterPort,
-      Configuration conf) {
+                         Configuration conf) {
     this.attemptId = new PSAttemptId(new ParameterServerId(serverIndex), attemptIndex);
     this.attemptIdProto = ProtobufUtil.convertToIdProto(attemptId);
     this.attemptIndex = attemptIndex;
@@ -318,7 +323,7 @@ public class ParameterServer {
 
   private void exit(int code) {
     AngelDeployMode deployMode = context.getDeployMode();
-    if (deployMode == AngelDeployMode.YARN || deployMode == AngelDeployMode.KUBERNETES) {
+    if (deployMode == AngelDeployMode.YARN) {
       System.exit(code);
     }
   }
@@ -335,25 +340,25 @@ public class ParameterServer {
     conf.addResource(AngelConf.ANGEL_JOB_CONF_FILE);
 
     conf.setInt("io.file.buffer.size", conf.getInt(AngelConf.ANGEL_PS_IO_FILE_BUFFER_SIZE,
-        AngelConf.DEFAULT_ANGEL_PS_IO_FILE_BUFFER_SIZE));
+            AngelConf.DEFAULT_ANGEL_PS_IO_FILE_BUFFER_SIZE));
 
     String user = System.getenv(ApplicationConstants.Environment.USER.name());
     UserGroupInformation.setConfiguration(conf);
 
     String runningMode =
-        conf.get(AngelConf.ANGEL_RUNNING_MODE, AngelConf.DEFAULT_ANGEL_RUNNING_MODE);
+            conf.get(AngelConf.ANGEL_RUNNING_MODE, AngelConf.DEFAULT_ANGEL_RUNNING_MODE);
     if (runningMode.equals(RunningMode.ANGEL_PS_WORKER.toString())) {
       LOG.debug("AngelEnvironment.TASK_NUMBER.name()=" + AngelEnvironment.TASK_NUMBER.name());
       conf.set(AngelConf.ANGEL_TASK_ACTUAL_NUM, System.getenv(AngelEnvironment.TASK_NUMBER.name()));
     }
 
     final ParameterServer psServer =
-        new ParameterServer(serverIndex, attemptIndex, appMasterHost, appMasterPort, conf);
+            new ParameterServer(serverIndex, attemptIndex, appMasterHost, appMasterPort, conf);
 
     try {
       Credentials credentials = UserGroupInformation.getCurrentUser().getCredentials();
       UserGroupInformation psUGI = UserGroupInformation
-          .createRemoteUser(System.getenv(ApplicationConstants.Environment.USER.toString()));
+              .createRemoteUser(System.getenv(ApplicationConstants.Environment.USER.toString()));
       // Add tokens to new user so that it may execute its task correctly.
       psUGI.addCredentials(credentials);
 
@@ -432,16 +437,19 @@ public class ParameterServer {
   public void initialize() throws IOException, InstantiationException, IllegalAccessException {
     LOG.info("Initialize a parameter server");
     ServerRow.maxLockWaitTimeMs = conf.getInt(AngelConf.ANGEL_PS_MAX_LOCK_WAITTIME_MS,
-        AngelConf.DEFAULT_ANGEL_PS_MAX_LOCK_WAITTIME_MS);
+            AngelConf.DEFAULT_ANGEL_PS_MAX_LOCK_WAITTIME_MS);
 
     ServerRow.useAdaptiveKey = conf.getBoolean(AngelConf.ANGEL_PS_USE_ADAPTIVE_KEY_ENABLE,
-        AngelConf.DEFAULT_ANGEL_PS_USE_ADAPTIVE_KEY_ENABLE);
+            AngelConf.DEFAULT_ANGEL_PS_USE_ADAPTIVE_KEY_ENABLE);
 
     ServerRow.useAdaptiveStorage = conf.getBoolean(AngelConf.ANGEL_PS_USE_ADAPTIVE_STORAGE_ENABLE,
-        AngelConf.DEFAULT_ANGEL_PS_USE_ADAPTIVE_STORAGE_ENABLE);
+            AngelConf.DEFAULT_ANGEL_PS_USE_ADAPTIVE_STORAGE_ENABLE);
 
     ServerRow.sparseToDenseFactor = conf.getFloat(AngelConf.ANGEL_PS_SPARSE_TO_DENSE_FACTOR,
-        AngelConf.DEFAULT_ANGEL_PS_SPARSE_TO_DENSE_FACTOR);
+            AngelConf.DEFAULT_ANGEL_PS_SPARSE_TO_DENSE_FACTOR);
+
+    dataCollectionInterval = conf.getInt(AngelConf.ANGEL_PS_HEARTBEAT_DATA_COLLECTION_INTERVAL,
+            AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_DATA_COLLECTION_INTERVAL);
 
     locationManager = new PSLocationManager(context);
     locationManager.setMasterLocation(masterLocation);
@@ -471,7 +479,7 @@ public class ParameterServer {
 
   private void startHeartbeat() {
     final int heartbeatInterval = conf.getInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS,
-        AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_INTERVAL_MS);
+            AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_INTERVAL_MS);
     LOG.info("Starting HeartbeatThread, interval is " + heartbeatInterval + " ms");
     heartbeatThread = new Thread(() -> {
       while (!stopped.get() && !Thread.currentThread().isInterrupted()) {
@@ -521,8 +529,8 @@ public class ParameterServer {
       if (context.getPartReplication() > 1) {
         for (PartitionMeta part : matrix.getPartitionMetas().values()) {
           partBuilder.setPartId(part.getPartId()).setStatus(
-              context.getMatrixStorageManager().getPart(matrix.getId(), part.getPartId()).getState()
-                  .getNumber());
+                  context.getMatrixStorageManager().getPart(matrix.getId(), part.getPartId()).getState()
+                          .getNumber());
           matrixBuilder.addPartReports(partBuilder.build());
         }
       }
@@ -532,85 +540,83 @@ public class ParameterServer {
     return ret;
   }
 
-  private void heartbeat() {
+  private void heartbeat() throws Exception {
     PSReportRequest.Builder builder = PSReportRequest.newBuilder();
     builder.setPsAttemptId(attemptIdProto);
 
-    //calculate data size of all partitions of ps
-    Map<Integer,ServerMatrix> serverMatrixMap = matrixStorageManager.getMatrices();
-    long dataSize = 0;
-    for(ServerMatrix serverMatrix : serverMatrixMap.values()) {
-      Map<Integer, ServerPartition> partitions = serverMatrix.getPartitions();
-      for (ServerPartition partitoin: partitions.values()) {
-        dataSize += partitoin.bufferLen();
+
+    if (heartbeatCount.incrementAndGet() % dataCollectionInterval == 0) {
+      //calculate data size of all partitions of ps
+      Map<Integer,ServerMatrix> serverMatrixMap = matrixStorageManager.getMatrices();
+      long dataSize = 0;
+      for(ServerMatrix serverMatrix : serverMatrixMap.values()) {
+        Map<Integer, ServerPartition> partitions = serverMatrix.getPartitions();
+        for (ServerPartition partition: partitions.values()) {
+          dataSize += partition.dataSize();
+        }
       }
+
+      Pair.Builder pairBuilder = Pair.newBuilder();
+      pairBuilder.setKey("key");
+      pairBuilder.setValue("value");
+      builder.addMetrics(pairBuilder.build());
+
+      // totalRPC
+      pairBuilder.setKey("totalRPC");
+      pairBuilder.setValue(WorkerPool.total.toString());
+      builder.addMetrics(pairBuilder.build());
+
+      // request size
+      pairBuilder.setKey("requestSize");
+      pairBuilder.setValue(
+              String.format("%.2f", WorkerPool.requestSize.longValue() * 1.0 / 1024/ 1024));
+      builder.addMetrics(pairBuilder.build());
+
+      // data size
+      pairBuilder.setKey("dataSize");
+      pairBuilder.setValue(String.format("%.2f", dataSize * 1.0 / 1024/ 1024));
+      builder.addMetrics(pairBuilder.build());
+      builder.addAllMatrixReports(buildMatrixReports());
     }
-
-    Pair.Builder pairBuilder = Pair.newBuilder();
-    pairBuilder.setKey("key");
-    pairBuilder.setValue("value");
-    builder.addMetrics(pairBuilder.build());
-
-    // totalRPC
-    pairBuilder.setKey("totalRPC");
-    pairBuilder.setValue(WorkerPool.total.toString());
-    builder.addMetrics(pairBuilder.build());
-
-    // request size
-    pairBuilder.setKey("requestSize");
-    pairBuilder.setValue(
-        String.format("%.2f", WorkerPool.requestSize.longValue() * 1.0 / 1024/ 1024));
-    builder.addMetrics(pairBuilder.build());
-
-    // data size
-    pairBuilder.setKey("dataSize");
-    pairBuilder.setValue(String.format("%.2f", dataSize * 1.0 / 1024/ 1024));
-    builder.addMetrics(pairBuilder.build());
-    builder.addAllMatrixReports(buildMatrixReports());
 
     PSReportResponse ret;
     PSReportRequest request = builder.build();
     LOG.debug("ps hb = " + request);
-    try {
-      ret = master.psReport(request);
-      switch (ret.getPsCommand()) {
-        case PSCOMMAND_REGISTER:
-          try {
-            register();
-          } catch (Exception x) {
-            LOG.error("register failed: ", x);
-            stop(-1);
-          }
-          break;
-
-        case PSCOMMAND_SHUTDOWN:
-          LOG.error("shutdown command come from appmaster, exit now!!");
+    ret = master.psReport(request);
+    switch (ret.getPsCommand()) {
+      case PSCOMMAND_REGISTER:
+        try {
+          register();
+        } catch (Exception x) {
+          LOG.error("register failed: ", x);
           stop(-1);
-          break;
+        }
+        break;
 
-        default:
-          break;
-      }
+      case PSCOMMAND_SHUTDOWN:
+        LOG.error("shutdown command come from appmaster, exit now!!");
+        stop(-1);
+        break;
 
-      LOG.debug("ps hb ret = " + ret);
-      if (ret.hasNeedSaveMatrices()) {
-        saver.save(ProtobufUtil.convert(ret.getNeedSaveMatrices()));
-      }
-
-      if (ret.hasNeedLoadMatrices()) {
-        loader.load(ProtobufUtil.convert(ret.getNeedLoadMatrices()));
-      }
-      syncMatrices(ret.getNeedCreateMatricesList(), ret.getNeedReleaseMatrixIdsList(),
-          ret.getNeedRecoverPartsList());
-    } catch (Throwable e) {
-      LOG.error("send heartbeat to appmaster failed ", e);
-      stop(-1);
+      default:
+        break;
     }
+
+    LOG.debug("ps hb ret = " + ret);
+    if (ret.hasNeedSaveMatrices()) {
+      saver.save(ProtobufUtil.convert(ret.getNeedSaveMatrices()));
+    }
+
+    if (ret.hasNeedLoadMatrices()) {
+      loader.load(ProtobufUtil.convert(ret.getNeedLoadMatrices()));
+    }
+    syncMatrices(ret.getNeedCreateMatricesList(), ret.getNeedReleaseMatrixIdsList(),
+            ret.getNeedRecoverPartsList());
   }
 
   private void syncMatrices(List<MLProtos.MatrixMetaProto> needCreateMatrices,
-      List<Integer> needReleaseMatrices, List<RecoverPartKeyProto> needRecoverParts)
-      throws Exception {
+                            List<Integer> needReleaseMatrices, List<RecoverPartKeyProto> needRecoverParts)
+          throws Exception {
     if (!needCreateMatrices.isEmpty()) {
       createMatrices(ProtobufUtil.convertToMatricesMeta(needCreateMatrices));
     }
@@ -654,16 +660,16 @@ public class ParameterServer {
             } else {
               inputPath = new Path(saveResults.get(saveResults.size() - 1).getMatrixPath());
               LOG.info(
-                  "There is " + saveResults.size() + " checkpoint results for matrix + "
-                      + matrixMetas
-                      .get(i).getName()
-                      + " we choose the latest result in dir " + saveResults
-                      .get(saveResults.size() - 1).getMatrixPath());
+                      "There is " + saveResults.size() + " checkpoint results for matrix + "
+                              + matrixMetas
+                              .get(i).getName()
+                              + " we choose the latest result in dir " + saveResults
+                              .get(saveResults.size() - 1).getMatrixPath());
             }
           } catch (ServiceException e) {
             LOG.error(
-                "Get checkpoint results for matrix " + matrixMetas.get(i).getName() + " failed ",
-                e);
+                    "Get checkpoint results for matrix " + matrixMetas.get(i).getName() + " failed ",
+                    e);
           }
         }
 
@@ -676,31 +682,31 @@ public class ParameterServer {
             } else {
               inputPath = new Path(saveResults.get(saveResults.size() - 1).getMatrixPath());
               LOG.info(
-                  "There is " + saveResults.size() + " old save results for matrix + " + matrixMetas
-                      .get(i).getName()
-                      + " we choose the latest result in dir " + saveResults
-                      .get(saveResults.size() - 1).getMatrixPath());
+                      "There is " + saveResults.size() + " old save results for matrix + " + matrixMetas
+                              .get(i).getName()
+                              + " we choose the latest result in dir " + saveResults
+                              .get(saveResults.size() - 1).getMatrixPath());
             }
           } catch (ServiceException e) {
             LOG.error("Get save results for matrix " + matrixMetas.get(i).getName() + " failed ",
-                e);
+                    e);
           }
         }
 
         if (inputPath != null) {
           LOG.info("Load matrix " + matrixMetas.get(i).getName() + " from " + inputPath.toString());
           matrixLoadContexts.add(new PSMatrixLoadContext(matrixMetas.get(i).getId(),
-              inputPath.toString(),
-              new ArrayList<>(matrixMetas.get(i).getPartitionMetas().keySet()),
-              SnapshotFormat.class.getName()));
+                  inputPath.toString(),
+                  new ArrayList<>(matrixMetas.get(i).getPartitionMetas().keySet()),
+                  SnapshotFormat.class.getName()));
         } else {
           // Just init it again
           if (matrixMetas.get(i).getInitFunc() != null) {
             LOG.info("Matrix " + matrixMetas.get(i) + " has a init function " + matrixMetas.get(i)
-                .getInitFunc().getClass().getName() + ", use this function to reinit the matrix");
+                    .getInitFunc().getClass().getName() + ", use this function to reinit the matrix");
             long startTs = System.currentTimeMillis();
             matrixMetas.get(i).getInitFunc()
-                .init(context.getMatrixStorageManager().getMatrix(matrixMetas.get(i).getId()));
+                    .init(context.getMatrixStorageManager().getMatrix(matrixMetas.get(i).getId()));
             LOG.info("Reinit the matrix use time " + (System.currentTimeMillis() - startTs));
           }
         }
@@ -746,7 +752,7 @@ public class ParameterServer {
 
     if (getAttemptIndex() > 0) {
       LOG.info("PS " + getServerId() + " running attempt " + getAttemptIndex()
-          + " load matrices from snapshot if need");
+              + " load matrices from snapshot if need");
       List<MatrixMeta> matrixMetas = master.getMatricesMeta();
       if (!matrixMetas.isEmpty()) {
         createMatrices(matrixMetas);
