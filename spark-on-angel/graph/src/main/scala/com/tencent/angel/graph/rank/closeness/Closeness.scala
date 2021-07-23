@@ -42,12 +42,12 @@ class Closeness(override val uid: String) extends Transformer
   with HasWeightCol with HasIsWeighted with HasUseBalancePartition with HasBalancePartitionPercent {
 
   /**
-    * The value of p and sp define the precision of
-    * the Normal and Sparse set representations for HLLCounters.
-    * It's recommended to set sp = 0 (i.e. to use normal representation)
-    * Note that p must be at least 4, and that
-    * when sp != 0, p must be a value between 4 and sp, while sp must be less than 32.
-    */
+   * The value of p and sp define the precision of
+   * the Normal and Sparse set representations for HLLCounters.
+   * It's recommended to set sp = 0 (i.e. to use normal representation)
+   * Note that p must be at least 4, and that
+   * when sp != 0, p must be a value between 4 and sp, while sp must be less than 32.
+   */
   final val p = new IntParam(this, "p", "p")
   final val sp = new IntParam(this, "sp", "sp")
   final val maxIter = new IntParam(this, "maxIter", "maxIter")
@@ -96,9 +96,11 @@ class Closeness(override val uid: String) extends Transformer
 
     val modelContext = new ModelContext($(psPartitionNum), minId, maxId + 1, -1, "closeness", SparkContext.getOrCreate().hadoopConfiguration)
     val model = ClosenessPSModel(modelContext, index, $(useBalancePartition), $(balancePartitionPercent))
+
+    val seed = System.currentTimeMillis()
     val graph = edges.groupByKey(${partitionNum})
       .mapPartitionsWithIndex((index, it) =>
-        Iterator.single(ClosenessPartition.apply(index, it, $(p), $(sp))))
+        Iterator.single(ClosenessPartition.apply(index, it, $(p), $(sp), seed)))
 
     graph.persist($(storageLevel))
     graph.foreachPartition(_ => Unit)

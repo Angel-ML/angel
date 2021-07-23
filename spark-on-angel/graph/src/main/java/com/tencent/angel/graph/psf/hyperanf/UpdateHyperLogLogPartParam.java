@@ -27,17 +27,19 @@ public class UpdateHyperLogLogPartParam extends PartitionUpdateParam {
   private KeyValuePart keyValuePart;
   private int p;
   private int sp;
+  private long seed;
 
   public UpdateHyperLogLogPartParam(int matrixId, PartitionKey pkey, KeyValuePart keyValuePart,
-                                    int p, int sp) {
+      int p, int sp, long seed) {
     super(matrixId, pkey);
     this.keyValuePart = keyValuePart;
     this.p = p;
     this.sp = sp;
+    this.seed = seed;
   }
 
   public UpdateHyperLogLogPartParam() {
-    this(-1, null, null, -1, -1);
+    this(-1, null, null, -1, -1, -1);
   }
 
   public KeyValuePart getKeyValuePart() {
@@ -52,6 +54,8 @@ public class UpdateHyperLogLogPartParam extends PartitionUpdateParam {
     return p;
   }
 
+  public long getSeed() { return seed; }
+
   public void clear() {
     keyValuePart = null;
   }
@@ -62,6 +66,7 @@ public class UpdateHyperLogLogPartParam extends PartitionUpdateParam {
 
     ByteBufSerdeUtils.serializeInt(buf, p);
     ByteBufSerdeUtils.serializeInt(buf, sp);
+    ByteBufSerdeUtils.serializeLong(buf, seed);
 
     if (keyValuePart != null) {
       ByteBufSerdeUtils.serializeBoolean(buf,true);
@@ -77,6 +82,7 @@ public class UpdateHyperLogLogPartParam extends PartitionUpdateParam {
 
     p = ByteBufSerdeUtils.deserializeInt(buf);
     sp = ByteBufSerdeUtils.deserializeInt(buf);
+    seed = ByteBufSerdeUtils.deserializeLong(buf);
 
     if (ByteBufSerdeUtils.deserializeBoolean(buf)) {
       keyValuePart = ByteBufSerdeUtils.deserializeKeyValuePart(buf);
@@ -87,7 +93,7 @@ public class UpdateHyperLogLogPartParam extends PartitionUpdateParam {
   public int bufferLen() {
     int len = super.bufferLen();
 
-    len += (ByteBufSerdeUtils.INT_LENGTH * 2 + ByteBufSerdeUtils.BOOLEN_LENGTH);
+    len += (ByteBufSerdeUtils.INT_LENGTH * 2 + ByteBufSerdeUtils.BOOLEN_LENGTH + ByteBufSerdeUtils.LONG_LENGTH);
 
     if (keyValuePart != null) {
       len += ByteBufSerdeUtils.serializedKeyValuePartLen(keyValuePart);

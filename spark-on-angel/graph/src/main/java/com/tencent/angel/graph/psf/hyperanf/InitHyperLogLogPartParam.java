@@ -27,13 +27,15 @@ public class InitHyperLogLogPartParam extends PartitionUpdateParam {
   private KeyPart nodes;
   private int p;
   private int sp;
+  private long seed;
 
   public InitHyperLogLogPartParam(int matrixId, PartitionKey partKey,
-                                  KeyPart nodes, int p, int sp) {
+      KeyPart nodes, int p, int sp, long seed) {
     super(matrixId, partKey);
     this.nodes = nodes;
     this.p = p;
     this.sp = sp;
+    this.seed = seed;
   }
 
   public InitHyperLogLogPartParam() {
@@ -51,12 +53,15 @@ public class InitHyperLogLogPartParam extends PartitionUpdateParam {
     return sp;
   }
 
+  public long getSeed() { return seed; }
+
   @Override
   public void serialize(ByteBuf buf) {
     super.serialize(buf);
     ByteBufSerdeUtils.serializeKeyPart(buf, nodes);
     ByteBufSerdeUtils.serializeInt(buf, p);
     ByteBufSerdeUtils.serializeInt(buf, sp);
+    ByteBufSerdeUtils.serializeLong(buf, seed);
   }
 
   @Override
@@ -65,11 +70,12 @@ public class InitHyperLogLogPartParam extends PartitionUpdateParam {
     nodes = ByteBufSerdeUtils.deserializeKeyPart(buf);
     p = ByteBufSerdeUtils.deserializeInt(buf);
     sp = ByteBufSerdeUtils.deserializeInt(buf);
+    seed = ByteBufSerdeUtils.deserializeLong(buf);
   }
 
   @Override
   public int bufferLen() {
     return super.bufferLen() + ByteBufSerdeUtils.serializedKeyPartLen(nodes)
-            + ByteBufSerdeUtils.INT_LENGTH * 2;
+        + ByteBufSerdeUtils.INT_LENGTH * 2 + ByteBufSerdeUtils.LONG_LENGTH;
   }
 }
