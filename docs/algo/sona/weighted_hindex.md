@@ -1,12 +1,13 @@
 # H-Index
 ## 1. 算法介绍
-HIndex算法是计算一个节点h-index指数的算法。在一个graph中，一个节点的h-index值为h时，表示该节点至少有h个邻居的度大于或等于h，通常来说，h-index值越高，表明该节点的影响力越大，适用于社交网络中关键节点挖掘等场景。
+Weighted HIndex算法是计算一个带权图中的节点h-index指数的算法。与HIndex不同的是，该算法考虑了边权重对节点指数的影响，具体可参考[Vital nodes identification in complex networks](https://www.sciencedirect.com/science/article/abs/pii/S0370157316301570)第51页。通常来说，h-index值越高，表明该节点的影响力越大，适用于社交网络中关键节点挖掘等场景。
 
 ## 2. 运行
 #### 算法IO参数
 
 - input：输入，hdfs路径，无向图，不带权。每行表示一条边： srcId 分隔符 dstId
-- output: 输出，hdfs路径。每行表示一个顶点及其对应的hindex值：nodeId tab hindex值 tab gindex值 tab windex值
+- output: 输出，hdfs路径。每行表示一个顶点及其对应的hindex值：nodeId tab hindex值
+- isWeighted：边是否带权，当为false时默认边权为1.0
 - sep: 分隔符，输入中每条边的起始顶点、目标顶点之间的分隔符: `tab`, `空格`等
 
 #### 算法参数
@@ -34,13 +35,13 @@ $SPARK_HOME/bin/spark-submit \
   --conf spark.ps.cores=1 \
   --conf spark.ps.jars=$SONA_ANGEL_JARS \
   --conf spark.ps.memory=10g \
-  --name "hindex angel" \
+  --name "whindex angel" \
   --jars $SONA_SPARK_JARS  \
   --driver-memory 5g \
   --num-executors 1 \
   --executor-cores 4 \
   --executor-memory 10g \
-  --class org.apache.spark.angel.examples.graph.HIndexExample \
+  --class org.apache.spark.angel.examples.graph.WeightedHIndexExample \
   ../lib/spark-on-angel-examples-3.2.0.jar
   input:$input output:$output sep:tab storageLevel:MEMORY_ONLY useBalancePartition:true \
   partitionNum:4 psPartitionNum:1

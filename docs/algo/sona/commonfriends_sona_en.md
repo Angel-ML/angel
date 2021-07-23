@@ -4,11 +4,13 @@
 
 ## 1. Algorithm Introduction
 
-Common friends this algorithm can be used in two scenarios:
+Common friends this algorithm can be used in three scenarios:
 
 1、 Input a total number of relationship chains, calculate the number of common friends with existing links, and can be used to describe the degree of relationship closeness.
 
 2、 Input the total relationship chain and the edge table of the common friends to be calculated, and calculate the number of the common friends of the specified connection, which can be used for connection prediction or reasoning.
+
+3、Incremented computation, this is suitable when edges of a graph are incremented by time, and all edges are needed to be calculated at set intervals.
 
 ## 2. Distributed implementation
 
@@ -30,6 +32,11 @@ During the implementation of common friends, the adjacency table of vertices nee
 - batchSize： the mini batchSize of vertices when push neighborTable to ps
 - pullBatchSize： the mini batchSize of vertices when calculating commo friends for each vertex
 - isCompressed：Whether the edge is compressed or not. 1 indicates the compressed edge
+- isIncremented：whether run incremented computation，incEdgesPath is needed when isIncremented is set as True, and the input should contain each edge's num of common friends at the third line.
+- incEdgesPath：path of incremented edges
+- maxNodeId：the max node id in the graph, needed when param isIncremented is set as True
+- minNodeId：the min node id in the graph, needed when param isIncremented is set as True
+- maxComFriendsNum：the max num of common friends, only output the result which is below or equal to maxComFriendsNum, otherwise it would be replaced by -1
 - storageLevel：RDD storage level，`DISK_ONLY`/`MEMORY_ONLY`/`MEMORY_AND_DISK`
 
 ### Resource parameters
@@ -58,7 +65,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class org.apache.spark.angel.examples.cluster.CommonFriendsExample \
-  ../lib/spark-on-angel-examples-3.1.0.jar
+  ../lib/spark-on-angel-examples-3.2.0.jar
   input:$input extraInput:$extraInput output:$output sep:tab storageLevel:MEMORY_ONLY useBalancePartition:true \
   partitionNum:4 psPartitionNum:1 batchSize:3000 pullBatchSize:1000 src:1 dst:2 mode:yarn-cluster
 ```
