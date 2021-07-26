@@ -16,10 +16,15 @@
  */
 package com.tencent.angel.graph.psf.hyperanf;
 
-import com.tencent.angel.ml.matrix.psf.get.base.*;
+import com.tencent.angel.graph.utils.GraphMatrixUtils;
+import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
+import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
+import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
+import com.tencent.angel.psagent.matrix.transport.router.operator.ILongKeyPartOp;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
-
 import java.util.List;
 
 public class GetCloseness extends GetFunc {
@@ -39,17 +44,19 @@ public class GetCloseness extends GetFunc {
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam partParam) {
     GetHyperLogLogPartParam param = (GetHyperLogLogPartParam) partParam;
-    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager().getRow(param.getPartKey(), 0);
+    ServerLongAnyRow row = GraphMatrixUtils.getPSLongKeyRow(psContext, param);
+
+    ILongKeyPartOp keyPart = (ILongKeyPartOp) param.getNodes();
+    long[] nodes = keyPart.getKeys();
 
     long n = param.getN();
-    long[] nodes = param.getNodes();
     Long2DoubleOpenHashMap closenesses = new Long2DoubleOpenHashMap();
     for (int i = 0; i < nodes.length; i++) {
       HyperLogLogPlusElement hllElem = (HyperLogLogPlusElement) row.get(nodes[i]);
       if (hllElem.getCloseness() < n - 1) {
         closenesses.put(nodes[i], 0);
       } else {
-        closenesses.put(nodes[i], (double)n / (double)hllElem.getCloseness());
+        closenesses.put(nodes[i], (double) n / (double) hllElem.getCloseness());
       }
     }
     return new GetClosenessPartResult(closenesses);

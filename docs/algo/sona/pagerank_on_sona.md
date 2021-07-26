@@ -18,7 +18,12 @@
   - dataPartitionNum：输入数据的partition数，一般设为spark executor个数乘以executor core数的3-4倍
   - tol：停止更新条件，越小表示结果越准确，默认为0.01
   - resetProp：随机重置概率(alpha), 默认为0.15
-
+  - isWeight：边是否带权，默认为false
+  - version：网络切割方式（edge-cut：按边切割，vertex-cut：按点切割），默认为edge-cut
+  - batchSize：保存节点rank值时分批拉取结果，batchSize为批次的大小，默认为1000
+  - storageLevel: 存储级别（[可选值参考](https://spark.apache.org/docs/0.8.1/api/core/org/apache/spark/storage/StorageLevel$.html)），默认为MEMORY_ONLY
+  - useBalancePartition：是否使用均衡分区， 默认为否
+ 
 ### 资源参数
 
   - Angel PS个数和内存大小：ps.instance与ps.memory的乘积是ps总的配置内存。为了保证Angel不挂掉，需要配置模型大小两倍左右的内存。对于PageRank来说，模型大小的计算公式为： 节点数 * 3 * 4 Byte，据此可以估算不同规模的Graph输入下需要配置的ps内存大小
@@ -43,8 +48,8 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.PageRankExample \
-  ../lib/spark-on-angel-examples-3.1.0.jar \
-  input:$input output:$output tol:0.01 :5 resetProp:0.15
+  ../lib/spark-on-angel-examples-3.2.0.jar \
+  input:$input output:$output tol:0.01 resetProp:0.15 version:edge-cut batchSize:1000 psPartitionNum:10 dataPartitionNum:10
 ```
 
 ### 常见问题

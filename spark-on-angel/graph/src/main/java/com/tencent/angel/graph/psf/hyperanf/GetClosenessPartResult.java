@@ -42,7 +42,7 @@ public class GetClosenessPartResult extends PartitionGetResult {
   public void serialize(ByteBuf output) {
     output.writeInt(closenesses.size());
     ObjectIterator<Long2DoubleMap.Entry> it =
-        closenesses.long2DoubleEntrySet().fastIterator();
+            closenesses.long2DoubleEntrySet().fastIterator();
     while (it.hasNext()) {
       Long2DoubleMap.Entry entry = it.next();
       output.writeLong(entry.getLongKey());

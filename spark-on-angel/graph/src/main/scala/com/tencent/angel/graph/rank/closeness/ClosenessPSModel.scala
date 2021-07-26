@@ -20,14 +20,14 @@ package com.tencent.angel.graph.rank.closeness
 import java.lang.{Double => JDouble, Long => JLong}
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus
-import com.tencent.angel.graph.psf.hyperanf._
+import com.tencent.angel.graph.common.param.ModelContext
+import com.tencent.angel.graph.utils.ModelContextUtils
 import com.tencent.angel.ml.math2.storage.IntLongDenseVectorStorage
 import com.tencent.angel.ml.math2.vector.IntLongVector
+import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
 import com.tencent.angel.ml.matrix.psf.get.getrow.GetRowResult
-import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
-import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
-import com.tencent.angel.psagent.PSAgentContext
+import com.tencent.angel.graph.psf.hyperanf._
 import com.tencent.angel.spark.ml.util.LoadBalancePartitioner
 import com.tencent.angel.spark.models.PSMatrix
 import com.tencent.angel.spark.models.impl.PSMatrixImpl
@@ -40,8 +40,12 @@ class ClosenessPSModel(matrix: PSMatrix) extends Serializable {
   final val matrixId = matrix.id
   final val dim = matrix.columns
 
-  def init(nodes: Array[Long], p: Int, sp: Int): Unit = {
-    val func = new InitHyperLogLog(matrix.id, p, sp, nodes)
+  def checkpoint(): Unit = {
+    matrix.checkpoint()
+  }
+
+  def init(nodes: Array[Long], p: Int, sp: Int, seed: Long): Unit = {
+    val func = new InitHyperLogLog(matrix.id, p, sp, nodes, seed)
     matrix.psfUpdate(func).get()
   }
 
@@ -50,8 +54,8 @@ class ClosenessPSModel(matrix: PSMatrix) extends Serializable {
     matrix.psfGet(func).asInstanceOf[GetHyperLogLogResult].getResults
   }
 
-  def sendMsgs(updates: Long2ObjectOpenHashMap[HyperLogLogPlus], p: Int, sp: Int): Unit = {
-    val func = new UpdateHyperLogLog(matrix.id, updates, p, sp)
+  def sendMsgs(updates: Long2ObjectOpenHashMap[HyperLogLogPlus], p: Int, sp: Int, seed: Long): Unit = {
+    val func = new UpdateHyperLogLog(matrix.id, updates, p, sp, seed)
     matrix.psfUpdate(func).get()
   }
 
@@ -91,23 +95,16 @@ class ClosenessPSModel(matrix: PSMatrix) extends Serializable {
 }
 
 object ClosenessPSModel {
-  def fromMinMax(minId: Long, maxId: Long,
-                 index: RDD[Long],
-                 psNumPartition: Int,
-                 useBalancePartition: Boolean,
-                 balancePartitionPercent: Float = 0.7f): ClosenessPSModel = {
-    val matrix = new MatrixContext("closeness", 1, minId, maxId)
-    matrix.setValidIndexNum(-1)
-    matrix.setRowType(RowType.T_ANY_LONGKEY_SPARSE)
-    matrix.setPartitionerClass(classOf[ColumnRangePartitioner])
-    matrix.setValueType(classOf[HyperLogLogPlusElement])
+  def apply(modelContext: ModelContext,
+            index: RDD[Long],
+            useBalancePartition: Boolean,
+            percent: Float): ClosenessPSModel = {
+    val matrix = ModelContextUtils.createMatrixContext(modelContext, RowType.T_ANY_LONGKEY_SPARSE, classOf[HyperLogLogPlusElement])
 
-    if (useBalancePartition) {
-      LoadBalancePartitioner.partition(index, maxId, psNumPartition, matrix, balancePartitionPercent)
-    }
+    if (useBalancePartition)
+      LoadBalancePartitioner.partition(index, modelContext.getMaxNodeId, modelContext.getPartitionNum, matrix, percent)
 
-    PSAgentContext.get().getMasterClient.createMatrix(matrix, 10000L)
-    val matrixId = PSAgentContext.get().getMasterClient.getMatrix("closeness").getId
-    new ClosenessPSModel(new PSMatrixImpl(matrixId, matrix.getName, 1, maxId, matrix.getRowType))
+    val psMatrix = PSMatrix.matrix(matrix)
+    new ClosenessPSModel(new PSMatrixImpl(psMatrix.id, matrix.getName, 1, modelContext.getMaxNodeId, matrix.getRowType))
   }
 }

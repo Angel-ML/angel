@@ -23,10 +23,9 @@ class Param(@BeanProperty val maxIndex: Long,
             @BeanProperty val batchSize: Int,
             @BeanProperty val pullBatchSize: Int,
             @BeanProperty val psPartNum: Int,
-            @BeanProperty val numNodes: Long = Int.MaxValue.toLong,
+            @BeanProperty val numNodes: Long = -1L,
             @BeanProperty val minIndex: Long = 0L,
             @BeanProperty val matrixName: String = "BaseGraph",
-            @BeanProperty val useBalancePartition: Boolean = false,
-            @BeanProperty val nodeNum: Long = 0L
+            @BeanProperty val useBalancePartition: Boolean = false
            ) extends Serializable {
 }

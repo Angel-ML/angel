@@ -31,40 +31,47 @@ object ClosenessExample {
     val sc = start(mode)
 
     val input = params.getOrElse("input", "")
-    val output = params.getOrElse("output", null)
     val partitionNum = params.getOrElse("partitionNum", "100").toInt
+    val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
+    val batchSize = params.getOrElse("batchSize", "10000").toInt
+    val output = params.getOrElse("output", null)
     val psPartitionNum = params.getOrElse("psPartitionNum",
       sc.getConf.get("spark.ps.instances", "10")).toInt
-    val msgNumBatch = params.getOrElse("msgNumBatch", "4").toInt
-    val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
-
+    val isWeight = params.getOrElse("isWeight", "false").toBoolean
     val srcIndex = params.getOrElse("srcIndex", "0").toInt
     val dstIndex = params.getOrElse("dstIndex", "1").toInt
-    val maxIter = params.getOrElse("maxIter", "100").toInt
+    val weightIndex = params.getOrElse("weightIndex", "2").toInt
     val useBalancePartition = params.getOrElse("useBalancePartition", "false").toBoolean
-    val percent = params.getOrElse("balancePartitionPercent", "0.7").toFloat
-
     val p = params.getOrElse("p", "6").toInt
+    val msgNumBatch = params.getOrElse("msgNumBatch", "4").toInt
     val verboseSaving = params.getOrElse("verboseSaving", "true").toBoolean
-
     val isDirected = params.getOrElse("isDirected", "true").toBoolean
-    val sep = Delimiter.parse(params.getOrElse("sep",Delimiter.SPACE))
+    val percent = params.getOrElse("balancePartitionPercent", "0.7").toFloat
+    val maxIter = params.getOrElse("maxIter", "2").toInt
 
+    val sep = params.getOrElse("sep",  "space") match {
+      case "space" => " "
+      case "comma" => ","
+      case "tab" => "\t"
+    }
 
     val closeness = new Closeness()
       .setPartitionNum(partitionNum)
       .setPSPartitionNum(psPartitionNum)
-      .setMsgNumBatch(msgNumBatch)
-      .setMaxIter(maxIter)
       .setStorageLevel(storageLevel)
+      .setBatchSize(batchSize)
       .setP(p)
-      .setVerboseSaving(verboseSaving)
       .setUseBalancePartition(useBalancePartition)
-      .setBalancePartitionPercent(percent)
+      .setMsgNumBatch(msgNumBatch)
+      .setVerboseSaving(verboseSaving)
       .setIsDirected(isDirected)
+      .setBalancePartitionPercent(percent)
+      .setMaxIter(maxIter)
 
-    val df = GraphIO.load(input, false,
-      srcIndex = srcIndex, dstIndex = dstIndex, sep = sep)
+    val df = GraphIO.load(input, isWeighted = isWeight,
+      srcIndex = srcIndex, dstIndex = dstIndex,
+      weightIndex = weightIndex, sep = sep)
+    PSContext.getOrCreate(sc)
 
     val mapping = closeness.transform(df)
     GraphIO.save(mapping, output)
@@ -77,7 +84,7 @@ object ClosenessExample {
     conf.setAppName("AngelCloseness")
     conf.set(AngelConf.ANGEL_PSAGENT_UPDATE_SPLIT_ADAPTION_ENABLE, "false")
     val sc = new SparkContext(conf)
-    PSContext.getOrCreate(sc)
+    //    PSContext.getOrCreate(sc)
     sc
   }
 

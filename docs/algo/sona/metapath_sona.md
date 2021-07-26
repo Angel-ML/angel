@@ -1,16 +1,23 @@
-# H-Index
+# MetaPath 游走
 ## 1. 算法介绍
-HIndex算法是计算一个节点h-index指数的算法。在一个graph中，一个节点的h-index值为h时，表示该节点至少有h个邻居的度大于或等于h，通常来说，h-index值越高，表明该节点的影响力越大，适用于社交网络中关键节点挖掘等场景。
+MetaPath2Vec是一个异构图上的图表示算法，其原理是先通过游走得到一系列长路径，再将其作为样本训练word2vec，从而得到每个节点的embedding表示。本算法仅包含游走部分。
 
 ## 2. 运行
 #### 算法IO参数
 
-- input：输入，hdfs路径，无向图，不带权。每行表示一条边： srcId 分隔符 dstId
-- output: 输出，hdfs路径。每行表示一个顶点及其对应的hindex值：nodeId tab hindex值 tab gindex值 tab windex值
+- input：输入，hdfs路径，无向图，带权（可选）。每行表示一条边： srcId 分隔符 dstId （分隔符 weight）
+- output: 输出，hdfs路径。每行表示一条游走路径
 - sep: 分隔符，输入中每条边的起始顶点、目标顶点之间的分隔符: `tab`, `空格`等
+- isWeighted：边是否带权
+- metaPath：游走路径，必须是对称的路径，如“0-1-2-1-0”
+- nodeTypePath：节点类型，hdfs路径，两列，分别表示节点id及其对应的节点类型，节点类型用int表示
+
 
 #### 算法参数
 
+- walkLength：每条路径的游走长度（或节点个数）
+- numWalks：游走轮数，每轮游走指从metaPath中包含的所有类型的节点开始，游走walkLength长度
+- needReplicateEdge：是否需要将graph转成无向图
 - partitionNum：数据分区数，spark rdd数据的分区数量
 - psPartitionNum：参数服务器上模型的分区数量
 - useBalancePartition：参数服务器对输入数据节点存储划分是否均衡分区，如果输入节点的索引不是均匀的话建议选择是
@@ -18,7 +25,7 @@ HIndex算法是计算一个节点h-index指数的算法。在一个graph中，�
 
 #### 资源参数
 
-- ps个数和内存大小：ps.instance与ps.memory的乘积是ps总的配置内存。为了保证Angel不挂掉，需要配置ps上数据存储量大小两倍左右的内存。对于HIndex来说，ps上放置的是(nodeId,degree)的key-value结构的vector，数据类型是(Long,Int),据此可以估算不同规模的Graph输入下需要配置的ps内存大小
+- ps个数和内存大小：ps.instance与ps.memory的乘积是ps总的配置内存。为了保证Angel不挂掉，需要配置ps上数据存储量大小两倍左右的内存。
 - Spark的资源配置：num-executors与executor-memory的乘积是executors总的配置内存，最好能存下2倍的输入数据。 如果内存紧张，1倍也是可以接受的，但是相对会慢一点。 比如说100亿的边集大概有600G大小， 50G * 20 的配置是足够的。 在资源实在紧张的情况下， 尝试加大分区数目！
 
 #### 任务提交示例
@@ -34,15 +41,16 @@ $SPARK_HOME/bin/spark-submit \
   --conf spark.ps.cores=1 \
   --conf spark.ps.jars=$SONA_ANGEL_JARS \
   --conf spark.ps.memory=10g \
-  --name "hindex angel" \
+  --name "metaPath angel" \
   --jars $SONA_SPARK_JARS  \
   --driver-memory 5g \
   --num-executors 1 \
   --executor-cores 4 \
   --executor-memory 10g \
-  --class org.apache.spark.angel.examples.graph.HIndexExample \
+  --class org.apache.spark.angel.examples.graph.MetaPath2VecExample \
   ../lib/spark-on-angel-examples-3.2.0.jar
-  input:$input output:$output sep:tab storageLevel:MEMORY_ONLY useBalancePartition:true \
+  input:$input output:$output nodeTypePath:$nodeTypePath metaPath:0-1-2-1-0\
+  sep:tab storageLevel:MEMORY_ONLY useBalancePartition:true \
   partitionNum:4 psPartitionNum:1
 ```
 

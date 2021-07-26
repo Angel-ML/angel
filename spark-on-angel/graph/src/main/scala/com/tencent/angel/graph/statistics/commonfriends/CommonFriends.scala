@@ -14,10 +14,11 @@
  * the License.
  *
  */
-
 package com.tencent.angel.graph.statistics.commonfriends
 
-import com.tencent.angel.graph.utils.io.Log
+import com.tencent.angel.graph.common.param.ModelContext
+import com.tencent.angel.graph.data.neighbor.NeighborDataOps
+import com.tencent.angel.graph.model.neighbor.simple.SimpleNeighborTableModel
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.graph.utils.params._
 import com.tencent.angel.graph.utils.{GraphIO, PartitionTools}
@@ -37,7 +38,7 @@ class CommonFriends(override val uid: String) extends Transformer
   with HasSrcNodeIndex with HasDstNodeIndex with HasCompressIndex
   with HasInput with HasExtraInputs with HasDelimiter {
 
-  def this() = this(Identifiable.randomUID("CommonFriends"))
+  def this() = this(Identifiable.randomUID("commonFriends"))
 
   private var maxComFriendsNum: Int = Int.MaxValue
   def setMaxComFriendsNum(in: Int): Unit = { this.maxComFriendsNum = in }
@@ -45,56 +46,81 @@ class CommonFriends(override val uid: String) extends Transformer
   override def transform(dataset: Dataset[_]): DataFrame = {
 
     val sc = dataset.sparkSession.sparkContext
-//    assert(sc.getCheckpointDir.nonEmpty, "set checkpoint dir first")
 
-    Log.withTimePrintln(s"======load edges from the first input======")
+    val numPart = sc.getConf.getInt("spark.default.parallelism", $(partitionNum))
+    println(s"default parallelism: $numPart")
+    println(s"partition number: ${$(partitionNum)}")
+
+    println(s"======load edges from the first input======")
     val firstEdges: RDD[(Long, Long)] = {
-      if ($(isCompressed))
-        CommonFriendsOperator.loadCompressedEdges(dataset, $(srcNodeIdCol), $(dstNodeIdCol), $(compressCol))
-      else
-        CommonFriendsOperator.loadEdges(dataset, $(srcNodeIdCol), $(dstNodeIdCol))
+      if ($(isCompressed)) {
+        NeighborDataOps.loadCompressedEdges(dataset, $(srcNodeIdCol), $(dstNodeIdCol), $(compressCol))
+      } else {
+        NeighborDataOps.loadEdges(dataset, $(srcNodeIdCol), $(dstNodeIdCol))
+      }
     }
 
-    Log.withTimePrintln(s"======convert edges to neigbor tables======")
+    println(s"======sample edges======")
+    println(firstEdges.take(10).mkString(","))
+
+    println(s"======convert edges to neigbors tables======")
     val firstNeighbors: RDD[(Long, Array[Long])] =
-      CommonFriendsOperator.edges2NeighborTable(firstEdges, $(partitionNum)).persist($(storageLevel))
+      NeighborDataOps.edges2NeighborTable(firstEdges, $(partitionNum)).persist($(storageLevel))
 
-    Log.withTimePrintln(s"======statistics of the data======")
-    val stats = CommonFriendsOperator.statsByNeighborTable(firstNeighbors)
-    Log.withTimePrintln(s"num of nodes = ${stats._3}")
-    Log.withTimePrintln(s"num of edges = ${stats._4}")
-    Log.withTimePrintln(s"min node id = ${stats._1}, max node id = ${stats._2}")
+    println(s"======sample neighbor tables======")
+    firstNeighbors.take(10).foreach { case (src, neighbors) =>
+      println(s"src = $src, neighbors = ${neighbors.mkString(",")}")
+    }
 
-    Log.withTimePrintln(s"======start parameter server======")
+    println(s"======statistics of the data======")
+    val stats = NeighborDataOps.statsByNeighborTable(firstNeighbors)
+    println(s"min node id = ${stats._1}")
+    println(s"max node id = ${stats._2}")
+    println(s"num of nodes = ${stats._3}")
+    println(s"num of edges = ${stats._4}")
+
+    println(s"======start parameter server======")
     val psStartTime = System.currentTimeMillis()
     startPS(dataset.sparkSession.sparkContext)
+    println(s"start parameter server costs ${System.currentTimeMillis() - psStartTime} ms")
 
-    Log.withTimePrintln(s"======push neighbor tables to parameter server======")
-    val psModel = CommonFriendsPSModel(stats._2 + 1, $(batchSize), $(pullBatchSize), $(psPartitionNum))
-    psModel.initLongNeighborTable(firstNeighbors)
-    psModel.checkpoint()
+    println(s"======push neighbor tables to parameter server======")
+    val initTableStartTime = System.currentTimeMillis()
+    val modelContext = new ModelContext($(psPartitionNum), stats._1, stats._2 + 1, stats._3,
+      "simple_neighbor", sc.hadoopConfiguration)
+    val model = new SimpleNeighborTableModel(modelContext)
+    model.init()
 
-    CommonFriendsOperator.testPS(firstNeighbors, psModel, 10)
-    val checkValid = CommonFriendsOperator.checkValid(firstNeighbors, psModel, 10)
+    firstNeighbors.mapPartitions { iter => {
+      // Init the neighbor table use many mini-batch to avoid big object
+      iter.sliding($(batchSize), $(batchSize)).map(pairs => model.initNeighbors(pairs))
+    }
+    }.count()
+
+    println(s"initializing the neighbor table costs ${System.currentTimeMillis() - initTableStartTime} ms")
+    val cpTableStartTime = System.currentTimeMillis()
+    model.checkpoint()
+    println(s"checkpoint of neighbor table costs ${System.currentTimeMillis() - cpTableStartTime} ms")
+
+    NeighborDataOps.testPS(firstNeighbors, model, 10)
+    val checkValid = NeighborDataOps.checkValid(firstNeighbors, model, 10)
     require(checkValid, s"result with executor RDD and that with PS are different")
 
-    Log.withTimePrintln(s"======load edges from the second input======")
+    println(s"======load edges from the second input======")
     val extraInput = $(extraInputs)
     assert(extraInput.length == 1, s"multiple inputs for non-friends are not supported")
     val isOneInput = extraInput(0).equals($(input))
 
+    if (!isOneInput) firstNeighbors.unpersist()
+
     val secondDF: DataFrame = if (!isOneInput) {
-      firstNeighbors.unpersist()
       GraphIO.load(extraInput(0),
         isWeighted = false,
         srcIndex = $(srcNodeIndex),
         dstIndex = $(dstNodeIndex),
         sep = $(delimiter))
-    } else {
-      null
-    }
+    } else null
 
-    //use 2D partition strategy to balance vertices
     val partitioner = PartitionTools.edge2DPartitioner($(partitionNum))
     val secondEdges: RDD[(Long, Long)] = if (!isOneInput) {
       secondDF.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd.mapPartitions { iter =>
@@ -110,22 +136,25 @@ class CommonFriends(override val uid: String) extends Transformer
     } else sc.emptyRDD
 
     val numSecondEdges = secondEdges.count()
-    Log.withTimePrintln(s"num of edges in the second input = $numSecondEdges")
+    println(s"num of edges in the second input = $numSecondEdges")
 
-    Log.withTimePrintln(s"======start calculation======")
+    println(s"======sample edges in the second input======")
+    println(secondEdges.take(10).mkString(","))
+
+    println(s"======start calculation======")
     val rawResult: RDD[Row] = if (!isOneInput) {
       secondEdges.mapPartitionsWithIndex { case (partId, iter) =>
-        CommonFriendsOperator.runEdgePartition(iter, partId, psModel)
+        CommonFriendsOperator.runEdgePartition(iter, partId, ${pullBatchSize}, model, maxComFriendsNum)
       }
     } else {
       firstNeighbors.mapPartitionsWithIndex { case (partId, iter) =>
-        CommonFriendsOperator.runNeighborPartition(iter, partId, psModel)
+        CommonFriendsOperator.runNeighborPartition(iter, partId, ${pullBatchSize}, model, maxComFriendsNum)
       }
     }
 
-    Log.withTimePrintln(s"======sample results======")
+    println(s"======sample results======")
     rawResult.take(10).foreach { row =>
-      Log.withTimePrintln(s"src = ${row.getLong(0)}, dst = ${row.getLong(1)}, num of common friends = ${row.getInt(2)}")
+      println(s"src = ${row.getLong(0)}, dst = ${row.getLong(1)}, num of common friends = ${row.getInt(2)}")
     }
 
     val outputSchema = transformSchema(dataset.schema)
@@ -138,9 +167,9 @@ class CommonFriends(override val uid: String) extends Transformer
 
   override def transformSchema(schema: StructType): StructType = {
     StructType(Seq(
-      StructField(s"$srcNodeIdCol", LongType, nullable = false),
-      StructField(s"$dstNodeIdCol", LongType, nullable = false),
-      StructField(s"$numCommonFriendsCol", IntegerType, nullable = false)
+      StructField($(srcNodeIdCol), LongType, nullable = false),
+      StructField($(dstNodeIdCol), LongType, nullable = false),
+      StructField($(numCommonFriendsCol), IntegerType, nullable = false)
     ))
   }
 
