@@ -47,9 +47,9 @@ $SPARK_HOME/bin/spark-submit \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.DeepWalkExample \
   ../lib/spark-on-angel-examples-3.2.0.jar
-  input:$input output:$output nodeTypePath:$nodeTypePath metaPath:0-1-2-1-0\
+  input:$input output:$output \
   sep:tab storageLevel:MEMORY_ONLY useBalancePartition:true \
-  partitionNum:4 psPartitionNum:1
+  partitionNum:4 psPartitionNum:1 walkLength:10 needReplicateEdge:true
 ```
 
 #### 常见问题
