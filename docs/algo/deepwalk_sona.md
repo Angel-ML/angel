@@ -45,7 +45,7 @@ $SPARK_HOME/bin/spark-submit \
   --conf spark.ps.cores=1 \
   --conf spark.ps.jars=$SONA_ANGEL_JARS \
   --conf spark.ps.memory=10g \
-  --name "metaPath angel" \
+  --name "deepwalk angel" \
   --jars $SONA_SPARK_JARS  \
   --driver-memory 5g \
   --num-executors 1 \
