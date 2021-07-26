@@ -17,10 +17,8 @@
 
 package com.tencent.angel.graph.rank.closeness
 
-import java.util.Collections
 
 import com.tencent.angel.graph.common.param.ModelContext
-import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.graph.utils.params._
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.Transformer
@@ -31,10 +29,10 @@ import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.storage.StorageLevel
 
 /**
-  * Implementation of Effective Closeness algorithm proposed by [[http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.231.8735&rep=rep1&type=pdf Kang et al., 2011]].
-  * Utilizes HyperLogLog++ counter to approximate cardinality for each node.
-  * Note that this algorithm only supports unweighted graph.
-  */
+ * Implementation of Effective Closeness algorithm proposed by [[http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.231.8735&rep=rep1&type=pdf Kang et al., 2011]].
+ * Utilizes HyperLogLog++ counter to approximate cardinality for each node.
+ * Note that this algorithm only supports unweighted graph.
+ */
 
 class Closeness(override val uid: String) extends Transformer
   with HasDstNodeIdCol with HasOutputNodeIdCol with HasOutputCentralityCol with HasSrcNodeIdCol
@@ -156,27 +154,6 @@ class Closeness(override val uid: String) extends Transformer
   def summarizeReduceOp(t1: (Long, Long, Long),
                         t2: (Long, Long, Long)): (Long, Long, Long) =
     (math.min(t1._1, t2._1), math.max(t1._2, t2._2), t1._3 + t2._3)
-
-  def splitPartitionIds(model: ClosenessPSModel): (Array[Int], Array[Int]) = {
-    val parts = PSAgentContext.get().getMatrixMetaManager.getPartitions(model.matrixId)
-    Collections.shuffle(parts)
-
-    val length = parts.size()
-    val sizes = new Array[Int]($(partitionNum))
-    for (i <- sizes.indices)
-      sizes(i) = length / sizes.length
-    for (i <- 0 until (length % sizes.length))
-      sizes(i) += 1
-
-    for (i <- 1 until sizes.length)
-      sizes(i) += sizes(i - 1)
-
-    val partitionIds = new Array[Int](length)
-    for (i <- 0 until length)
-      partitionIds(i) = parts.get(i).getPartitionId
-
-    (partitionIds, sizes)
-  }
 
   override def transformSchema(schema: StructType): StructType = {
     StructType(Seq(
