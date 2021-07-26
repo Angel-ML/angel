@@ -5,7 +5,7 @@ DeepWalk是一种重复访问已访问节点的深度优先遍历的图表示学
 ## 2. 运行
 #### 算法IO参数
 
-- input：输入，hdfs路径，无向图，带权（可选）。每行表示一条边： srcId 分隔符 dstId （分隔符 weight）
+- input：输入，hdfs路径，无向或者有向图，有权或者无权（可选）。每行表示一条边： srcId 分隔符 dstId （分隔符 weight）
 - output: 输出，hdfs路径。每行表示一条游走路径
 - sep: 分隔符，输入中每条边的起始顶点、目标顶点之间的分隔符: `tab`, `空格`等
 - isWeighted：边是否带权
