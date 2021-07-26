@@ -1,6 +1,6 @@
-# MetaPath 游走
+# DeepWalk 游走
 ## 1. 算法介绍
-MetaPath2Vec是一个异构图上的图表示算法，其原理是先通过游走得到一系列长路径，再将其作为样本训练word2vec，从而得到每个节点的embedding表示。本算法仅包含游走部分。
+DeepWalk是一种重复访问已访问节点的深度优先遍历的图表示学习算法。DeepWalk算法使用随机游走(RandomWalk)的方式在图中进行节点采样，给定当前访问起始节点，从其邻居中随机采样节点作为下一个访问节点，重复此过程，直到访问序列长度满足预设条件。本算法仅包含游走部分。
 
 ## 2. 运行
 #### 算法IO参数
@@ -9,8 +9,6 @@ MetaPath2Vec是一个异构图上的图表示算法，其原理是先通过游�
 - output: 输出，hdfs路径。每行表示一条游走路径
 - sep: 分隔符，输入中每条边的起始顶点、目标顶点之间的分隔符: `tab`, `空格`等
 - isWeighted：边是否带权
-- metaPath：游走路径，必须是对称的路径，如“0-1-2-1-0”
-- nodeTypePath：节点类型，hdfs路径，两列，分别表示节点id及其对应的节点类型，节点类型用int表示
 
 
 #### 算法参数
@@ -47,7 +45,7 @@ $SPARK_HOME/bin/spark-submit \
   --num-executors 1 \
   --executor-cores 4 \
   --executor-memory 10g \
-  --class org.apache.spark.angel.examples.graph.MetaPath2VecExample \
+  --class com.tencent.angel.spark.examples.cluster.DeepWalkExample \
   ../lib/spark-on-angel-examples-3.2.0.jar
   input:$input output:$output nodeTypePath:$nodeTypePath metaPath:0-1-2-1-0\
   sep:tab storageLevel:MEMORY_ONLY useBalancePartition:true \
@@ -55,5 +53,5 @@ $SPARK_HOME/bin/spark-submit \
 ```
 
 #### 常见问题
-- 在差不多10min的时候，任务挂掉： 很可能的原因是angel申请不到资源！由于HIndex基于Spark On Angel开发，实际上涉及到Spark和Angel两个系统，在向Yarn申请资源时是独立进行的。 在Spark任务拉起之后，由Spark向Yarn提交Angel的任务，如果不能在给定时间内申请到资源，就会报超时错误，任务挂掉！ 解决方案是： 1）确认资源池有足够的资源 2） 添加spakr conf: spark.hadoop.angel.am.appstate.timeout.ms=xxx 调大超时时间，默认值为600000，也就是10分钟
+- 在差不多10min的时候，任务挂掉： 很可能的原因是angel申请不到资源！由于DeepWalk基于Spark On Angel开发，实际上涉及到Spark和Angel两个系统，在向Yarn申请资源时是独立进行的。 在Spark任务拉起之后，由Spark向Yarn提交Angel的任务，如果不能在给定时间内申请到资源，就会报超时错误，任务挂掉！ 解决方案是： 1）确认资源池有足够的资源 2） 添加spakr conf: spark.hadoop.angel.am.appstate.timeout.ms=xxx 调大超时时间，默认值为600000，也就是10分钟
 
