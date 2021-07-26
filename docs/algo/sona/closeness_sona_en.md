@@ -53,7 +53,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class org.apache.spark.angel.examples.cluster.ClosenessExample \
-  ../lib/spark-on-angel-examples-3.1.0.jar
+  ../lib/spark-on-angel-examples-3.2.0.jar
   input:$input output:$output sep:tab storageLevel:MEMORY_ONLY useBalancePartition:true \
   balancePartitionPercent:0.7 partitionNum:4 psPartitionNum:1 msgNumBatch:8 \   
   pullBatchSize:1000 verboseSaving:true src:1 dst:2 mode:yarn-cluster

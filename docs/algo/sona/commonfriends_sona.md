@@ -4,11 +4,13 @@
 
 ## 1. 算法介绍
 
-Common Friends该算法的使用兼顾两种场景:
+Common Friends该算法的使用兼顾三种场景:
 
-一、输入全量的关系链，计算已存在连边的共同好友数；可用于刻画关系紧密程度。
+一、输入全量的关系链，计算已存在连边的共同好友数，可用于刻画关系紧密程度。
 
 二、输入全量关系链和待计算共同好友的边表，计算指定连边的共同好友数，可用于连接预测或推理。
+
+三、增量计算：当输入graph每隔一段时间有新增边，并需要例行化计算全量共同好友时，可在原计算结果的基础上做增量计算，适用于输入graph较大，而新增边相对较少，新加入的节点或边只影响graph中少部分边的共同好友个数的场景，相比每次进行全量计算，耗时显著降低。
 
 ## 2. 分布式实现
 
@@ -29,6 +31,11 @@ Common Friends的实现过程中，需要将顶点的邻接表存储在多个PS�
   - batchSize： 向ps推送邻接表时的mini batch大小
   - pullBatchSize： 每个mini batch的大小
   - isCompressed：边是否压缩，1表示压缩的双向边
+  - isIncremented：是否增量计算，设为True时需要填写增量边路径，同时input必须是已计算好的全量边结果
+  - incEdgesPath：增量边路径
+  - maxNodeId：graph中的最大节点id，当isIncremented设为True时需要填写
+  - minNodeId：graph中的最小节点id，当isIncremented设为True时需要填写
+  - maxComFriendsNum：最大的共同好友数，当某条边的共同好友个数小于等于该值时，输出共同好友数，否则输出-1
   - storageLevel：RDD存储级别，`DISK_ONLY`/`MEMORY_ONLY`/`MEMORY_AND_DISK`
 
 ### 资源参数
@@ -57,7 +64,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class org.apache.spark.angel.examples.cluster.CommonFriendsExample \
-  ../lib/spark-on-angel-examples-3.1.0.jar
+  ../lib/spark-on-angel-examples-3.2.0.jar
   input:$input extraInput:$extraInput output:$output sep:tab storageLevel:MEMORY_ONLY useBalancePartition:true \
   partitionNum:4 psPartitionNum:1 batchSize:3000 pullBatchSize:1000 src:1 dst:2 mode:yarn-cluster
 ```
