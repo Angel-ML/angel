@@ -17,13 +17,14 @@
 package com.tencent.angel.graph.psf.hyperanf;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
+import com.tencent.angel.graph.utils.GraphMatrixUtils;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
+import com.tencent.angel.psagent.matrix.transport.router.operator.ILongKeyPartOp;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-
 import java.util.List;
 
 public class GetHyperLogLog extends GetFunc {
@@ -43,10 +44,12 @@ public class GetHyperLogLog extends GetFunc {
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam partParam) {
     GetHyperLogLogPartParam param = (GetHyperLogLogPartParam) partParam;
-    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager().getRow(param.getPartKey(), 0);
+    ServerLongAnyRow row = GraphMatrixUtils.getPSLongKeyRow(psContext, param);
 
-    long[] nodes = param.getNodes();
-    Long2ObjectOpenHashMap<HyperLogLogPlus> logs = new Long2ObjectOpenHashMap<>();
+    ILongKeyPartOp keyPart = (ILongKeyPartOp) param.getNodes();
+    long[] nodes = keyPart.getKeys();
+
+    Long2ObjectOpenHashMap<HyperLogLogPlus> logs = new Long2ObjectOpenHashMap<>(nodes.length);
     row.startRead(20000);
     try {
       for (int i = 0; i < nodes.length; i++) {
@@ -63,8 +66,13 @@ public class GetHyperLogLog extends GetFunc {
 
   @Override
   public GetResult merge(List<PartitionGetResult> partResults) {
-    Long2ObjectOpenHashMap<HyperLogLogPlus> logs = new Long2ObjectOpenHashMap<>();
-    for (PartitionGetResult r: partResults) {
+    int size = 0;
+    for (PartitionGetResult result : partResults) {
+      size += ((GetHyperLogLogPartResult) result).getLogs().size();
+    }
+
+    Long2ObjectOpenHashMap<HyperLogLogPlus> logs = new Long2ObjectOpenHashMap<>(size);
+    for (PartitionGetResult r : partResults) {
       GetHyperLogLogPartResult rr = (GetHyperLogLogPartResult) r;
       logs.putAll(rr.getLogs());
     }

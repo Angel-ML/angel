@@ -15,7 +15,6 @@
  *
  */
 
-
 package com.tencent.angel.psagent.matrix.transport;
 
 import com.google.protobuf.ServiceException;
@@ -44,7 +43,6 @@ import com.tencent.angel.ps.server.data.request.RequestHeader;
 import com.tencent.angel.ps.server.data.request.UpdateUDFRequest;
 import com.tencent.angel.ps.server.data.response.GetUDFResponse;
 import com.tencent.angel.ps.server.data.response.Response;
-import com.tencent.angel.ps.server.data.response.ResponseData;
 import com.tencent.angel.ps.server.data.response.ResponseHeader;
 import com.tencent.angel.ps.server.data.response.ResponseType;
 import com.tencent.angel.ps.server.data.response.UpdateUDFResponse;
@@ -2065,19 +2063,21 @@ public class MatrixTransportClient implements MatrixTransportInterface {
               return;
             }
 
-            // Add the response to the cache
-            responseCache.add(request, response);
+            synchronized (responseCache) {
+              // Add the response to the cache
+              responseCache.add(request, response);
 
-            // Check can merge or not
-            if(responseCache.canMerge()) {
-              // Merge
-              responseHandler.handle(futureResult, userRequest, responseCache);
+              // Check can merge or not
+              if(responseCache.canMerge()) {
+                // Merge
+                responseHandler.handle(futureResult, userRequest, responseCache);
 
-              // Clear response cache
-              responseCache.clear();
+                // Clear response cache
+                responseCache.clear();
 
-              // Remove the response cache
-              adapter.clear(userRequestId);
+                // Remove the response cache
+                adapter.clear(userRequestId);
+              }
             }
 
             // Handle success

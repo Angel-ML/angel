@@ -17,70 +17,71 @@
 package com.tencent.angel.graph.psf.hyperanf;
 
 import com.tencent.angel.PartitionKey;
+import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.psagent.matrix.transport.router.KeyPart;
 import io.netty.buffer.ByteBuf;
 
 public class GetHyperLogLogPartParam extends PartitionGetParam {
-  private long[] nodes;
-  private int startIndex;
-  private int endIndex;
+
+  private KeyPart nodes;
   private long n;
   private boolean isDirected;
 
-  public GetHyperLogLogPartParam(int matrixId, PartitionKey partKey,
-                                 long[] nodes, long n, int startIndex, int endIndex, boolean isDirected) {
+  public GetHyperLogLogPartParam(int matrixId, PartitionKey partKey, KeyPart nodes, long n,
+                                 boolean isDirected) {
     super(matrixId, partKey);
     this.nodes = nodes;
-    this.startIndex = startIndex;
-    this.endIndex = endIndex;
     this.n = n;
     this.isDirected = isDirected;
   }
 
   public GetHyperLogLogPartParam() {
-    super();
   }
 
-  public long[] getNodes() {
+  public KeyPart getNodes() {
     return nodes;
+  }
+
+  public void setNodes(KeyPart nodes) {
+    this.nodes = nodes;
   }
 
   public long getN() {
     return n;
   }
 
+  public void setN(long n) {
+    this.n = n;
+  }
+
   public boolean isDirected() {
     return isDirected;
+  }
+
+  public void setDirected(boolean directed) {
+    isDirected = directed;
   }
 
   @Override
   public void serialize(ByteBuf buf) {
     super.serialize(buf);
-    buf.writeInt(endIndex - startIndex);
-    for (int i = startIndex; i < endIndex; i++)
-      buf.writeLong(nodes[i]);
-    buf.writeLong(n);
-    buf.writeBoolean(isDirected);
+    ByteBufSerdeUtils.serializeKeyPart(buf, nodes);
+    ByteBufSerdeUtils.serializeLong(buf, n);
+    ByteBufSerdeUtils.serializeBoolean(buf, isDirected);
   }
 
   @Override
   public void deserialize(ByteBuf buf) {
     super.deserialize(buf);
-    int len = buf.readInt();
-    nodes = new long[len];
-    for (int i = 0; i < len; i++)
-      nodes[i] = buf.readLong();
-    n = buf.readLong();
-    isDirected = buf.readBoolean();
+    nodes = ByteBufSerdeUtils.deserializeKeyPart(buf);
+    n = ByteBufSerdeUtils.deserializeLong(buf);
+    isDirected = ByteBufSerdeUtils.deserializeBoolean(buf);
   }
 
   @Override
   public int bufferLen() {
-    int len = super.bufferLen();
-    len += 4;
-    len += 8 * (endIndex - startIndex);
-    len += 8;
-    len += 1;
-    return len;
+    return super.bufferLen() + ByteBufSerdeUtils.serializedKeyPartLen(nodes)
+            + ByteBufSerdeUtils.LONG_LENGTH + ByteBufSerdeUtils.BOOLEN_LENGTH;
   }
 }

@@ -15,7 +15,6 @@
  *
  */
 
-
 package com.tencent.angel.psagent;
 
 import com.tencent.angel.client.AngelClient;
@@ -100,7 +99,7 @@ public class UpdateRowsHashTest {
   int feaNum = 100000;
   int nnz = 5000;
   int rowNum = 5;
-  int partNum = 10;
+  int partNum = 100;
   double zero = 0.00000001;
 
   static {

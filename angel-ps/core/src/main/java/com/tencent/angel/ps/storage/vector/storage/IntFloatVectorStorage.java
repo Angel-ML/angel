@@ -61,7 +61,7 @@ public class IntFloatVectorStorage extends IntFloatStorage {
   public void indexGet(KeyType keyType, int indexSize, ByteBuf in, ByteBuf out, InitFunc func) {
     if (keyType != KeyType.INT) {
       throw new UnsupportedOperationException(
-          this.getClass().getName() + " only support int type index now");
+              this.getClass().getName() + " only support int type index now");
     }
 
     if (func != null) {
@@ -104,7 +104,7 @@ public class IntFloatVectorStorage extends IntFloatStorage {
 
       default: {
         throw new UnsupportedOperationException(
-            "Unsupport operation: update " + updateType + " to " + this.getClass().getName());
+                "Unsupport operation: update " + updateType + " to " + this.getClass().getName());
       }
     }
   }
@@ -164,7 +164,7 @@ public class IntFloatVectorStorage extends IntFloatStorage {
       }
     } else {
       for (int i = 0; i < size; i++) {
-       set(ByteBufSerdeUtils.deserializeInt(buf), ByteBufSerdeUtils.deserializeFloat(buf));
+        set(ByteBufSerdeUtils.deserializeInt(buf), ByteBufSerdeUtils.deserializeFloat(buf));
       }
     }
   }
@@ -371,8 +371,8 @@ public class IntFloatVectorStorage extends IntFloatStorage {
   public IntFloatVectorStorage adaptiveClone() {
     if(isSparse()) {
       return new IntFloatVectorStorage(VFactory
-          .sortedFloatVector(vector.getDim(), vector.getStorage().getIndices(),
-              vector.getStorage().getValues()), indexOffset);
+              .sortedFloatVector(vector.getDim(), vector.getStorage().getIndices(),
+                      vector.getStorage().getValues()), indexOffset);
     } else {
       return this;
     }
@@ -394,5 +394,12 @@ public class IntFloatVectorStorage extends IntFloatStorage {
   @Override
   public int bufferLen() {
     return super.bufferLen() + VectorStorageUtils.bufferLen(vector);
+  }
+
+  @Override
+  public long dataSize() {
+    long dataLen = super.bufferLen();
+    if (vector != null && vector.getStorage() != null) dataLen += VectorStorageUtils.bufferLen(vector);
+    return dataLen;
   }
 }

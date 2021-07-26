@@ -19,6 +19,7 @@ package com.tencent.angel.graph.psf.hyperanf;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 
 public class NumNodesResult extends GetResult {
+
   private long result;
 
   public NumNodesResult(long result) {

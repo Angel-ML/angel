@@ -938,6 +938,9 @@ public class AngelConf extends Configuration {
       ANGEL_PS_PREFIX + "heartbeat.timeout.ms";
   public static final long DEFAULT_ANGEL_PS_HEARTBEAT_TIMEOUT_MS = 600000;
 
+  public static final String ANGEL_PS_HEARTBEAT_DATA_COLLECTION_INTERVAL = ANGEL_PS_PREFIX + "heartbeat.data.collection.interval";
+  public static final int DEFAULT_ANGEL_PS_HEARTBEAT_DATA_COLLECTION_INTERVAL = 5;
+
   /**
    * PS executors thread pool size
    */

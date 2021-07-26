@@ -20,7 +20,6 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.psagent.PSAgentContext;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -45,11 +44,13 @@ public class GetNodesParam extends GetParam {
     List<PartitionGetParam> partParams = new ArrayList<>(partitionIds.length);
 
     Map<Integer, PartitionKey> partsMap = new HashMap<>();
-    for (PartitionKey pkey: parts)
+    for (PartitionKey pkey : parts) {
       partsMap.put(pkey.getPartitionId(), pkey);
+    }
 
-    for (int i = 0; i < partitionIds.length; i++)
+    for (int i = 0; i < partitionIds.length; i++) {
       partParams.add(new PartitionGetParam(matrixId, partsMap.get(partitionIds[i])));
+    }
     return partParams;
   }
 }

@@ -62,6 +62,13 @@ public class IntCSRStorage extends CSRStorage {
     return super.bufferLen() + 4 + values.length * 4;
   }
 
+  @Override
+  public long dataSize() {
+    long dataLen = super.bufferLen() + 4;
+    if (values != null) dataLen += values.length * 4;
+    return dataLen;
+  }
+
   public int[] getValues() {
     return values;
   }

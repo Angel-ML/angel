@@ -15,7 +15,6 @@
  *
  */
 
-
 package com.tencent.angel.ps.storage.vector.storage;
 
 import com.tencent.angel.common.ByteBufSerdeUtils;
@@ -220,5 +219,20 @@ public class StringElementMapStorage extends StringElementStorage {
     @Override
     public int dataLen() {
         return bufferLen();
+    }
+
+    @Override
+    public long dataSize() {
+        long dataLen = super.bufferLen() + 4;
+
+        if (data != null) {
+            // Element data
+            for (Entry<String, IElement> entry : data.entrySet()) {
+                if (entry != null && entry.getKey() != null && entry.getValue() != null)
+                    dataLen += (ByteBufSerdeUtils.serializedUTF8Len(entry.getKey())
+                            + ByteBufSerdeUtils.serializedObjectLen(entry.getValue()));
+            }
+        }
+        return dataLen;
     }
 }
