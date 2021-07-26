@@ -214,6 +214,8 @@ public class UserRequestAdapter {
     MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager()
         .getMatrixMeta(request.getMatrixId());
 
+    PartitionKey[] parts = matrixMeta.getPartitionKeys();
+
     // Split the user request to partition requests
     FutureResult<Vector> result = new FutureResult<>();
     KeyPart[] splits;
@@ -227,6 +229,8 @@ public class UserRequestAdapter {
           "Unsupport index request type " + request.getClass().toString());
     }
     LOG.info("Get by indices split use time: " + (System.currentTimeMillis() - startTs));
+
+    assert parts.length == splits.length;
 
     // filter empty partition requests
     int needRequestPartNum = noEmptyPartNum(splits);
@@ -247,7 +251,7 @@ public class UserRequestAdapter {
     for (int i = 0; i < splits.length; i++) {
       if (splits[i] != null && splits[i].size() > 0) {
         sendIndexGetRowRequest(matrixClient, requestId, request.getMatrixId(),
-            request.getRowId(), i, splits[i], request.getFunc());
+                request.getRowId(), parts[i].getPartitionId(), splits[i], request.getFunc());
       }
     }
 
@@ -365,6 +369,8 @@ public class UserRequestAdapter {
     }
     LOG.info("Get by indices split use time: " + (System.currentTimeMillis() - startTs));
 
+    assert matrixParts.length == splits.length;
+
     // filter empty partition requests
     int needRequestPartNum = noEmptyPartNum(splits);
     if (needRequestPartNum == 0) {
@@ -383,7 +389,7 @@ public class UserRequestAdapter {
     for (int i = 0; i < splits.length; i++) {
       if (splits[i] != null && splits[i].size() > 0) {
         sendIndexGetRowsRequest(matrixClient, requestId, request.getMatrixId(), request.getRowIds(),
-            i, splits[i], request.getFunc());
+                matrixParts[i].getPartitionId(), splits[i], request.getFunc());
       }
     }
     return result;
@@ -594,6 +600,7 @@ public class UserRequestAdapter {
     delta.setRowId(rowId);
 
     MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
+    PartitionKey[] parts = matrixMeta.getPartitionKeys();
     CompStreamKeyValuePart[] splits = RouterUtils.splitStream(matrixMeta, delta);
 
     FutureResult<VoidResult> result = new FutureResult<>();
@@ -613,7 +620,7 @@ public class UserRequestAdapter {
     MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
     for (int i = 0; i < splits.length; i++) {
       if (splits[i] != null && splits[i].size() > 0) {
-        sendUpdateRequest(matrixClient, requestId, matrixId, i, splits[i], op);
+        sendUpdateRequest(matrixClient, requestId, matrixId, parts[i].getPartitionId(), splits[i], op);
       }
     }
     return result;
@@ -641,6 +648,7 @@ public class UserRequestAdapter {
 
     delta.setMatrixId(matrixId);
     MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
+    PartitionKey[] parts = matrixMeta.getPartitionKeys();
     CompStreamKeyValuePart[] splits = RouterUtils.splitStream(matrixMeta, delta);
 
     int needRequestPartNum = noEmptyPartNum(splits);
@@ -660,7 +668,7 @@ public class UserRequestAdapter {
     MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
     for (int i = 0; i < splits.length; i++) {
       if (splits[i] != null && splits[i].size() > 0) {
-        sendUpdateRequest(matrixClient, requestId, matrixId, i, splits[i], op);
+        sendUpdateRequest(matrixClient, requestId, matrixId, parts[i].getPartitionId(), splits[i], op);
       }
     }
     return result;
@@ -675,6 +683,7 @@ public class UserRequestAdapter {
     }
 
     MatrixMeta matrixMeta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
+    PartitionKey[] parts = matrixMeta.getPartitionKeys();
     CompStreamKeyValuePart[] splits = RouterUtils.splitStream(matrixMeta, rows);
 
     int needRequestPartNum = noEmptyPartNum(splits);
@@ -694,7 +703,7 @@ public class UserRequestAdapter {
     MatrixTransportClient matrixClient = PSAgentContext.get().getMatrixTransportClient();
     for (int i = 0; i < splits.length; i++) {
       if (splits[i] != null && splits[i].size() > 0) {
-        sendUpdateRequest(matrixClient, requestId, matrixId, i, splits[i], op);
+        sendUpdateRequest(matrixClient, requestId, matrixId, parts[i].getPartitionId(), splits[i], op);
       }
     }
     return result;

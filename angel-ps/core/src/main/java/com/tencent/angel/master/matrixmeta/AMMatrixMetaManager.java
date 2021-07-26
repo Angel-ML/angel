@@ -239,7 +239,7 @@ public class AMMatrixMetaManager {
     assignReplicationSlaves(partitions);
 
     int size = partitions.size();
-    Map<Integer, PartitionMeta> partIdToMetaMap = new HashMap<>(size);
+    Map<Integer, PartitionMeta> partIdToMetaMap = new TreeMap<>();
     for (int i = 0; i < size; i++) {
       partIdToMetaMap.put(partitions.get(i).getPartId(), partitions.get(i));
     }
