@@ -44,7 +44,7 @@ object KCoreExample {
     val balancePartitionPercent = params.getOrElse("balancePartitionPercent", "0.7").toFloat
     var degreeThreshold = params.getOrElse("degreeThreshold", "1").toInt
     val initialCorePath = params.getOrElse("initialCorePath", null)
-    val needReplicaEdge = params.getOrElse("needReplicaEdge", "false").toBoolean
+    val needReplicaEdge = params.getOrElse("needReplicaEdge", "true").toBoolean
     val execMode = params.getOrElse("execMode", "full")
     val cpDir = params.get("cpDir").filter(_.nonEmpty).orElse(GraphIO.defaultCheckpointDir)
       .getOrElse(throw new Exception("checkpoint dir not provided"))
