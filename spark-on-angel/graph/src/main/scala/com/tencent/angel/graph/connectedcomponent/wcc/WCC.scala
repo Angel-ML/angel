@@ -34,7 +34,7 @@ class WCC(override val uid: String) extends Transformer
   with HasWeightCol with HasSrcNodeIdCol with HasDstNodeIdCol
   with HasOutputNodeIdCol with HasOutputCoreIdCol with HasBalancePartitionPercent
   with HasIsWeighted with HasPartitionNum with HasPSPartitionNum
-  with HasStorageLevel with HasBatchSize with HasPullBatchSize
+  with HasStorageLevel with HasBatchSize with HasPullBatchSize with HasSetCheckPoint
   with HasBufferSize with HasUseBalancePartition with HasNeedReplicaEdge {
   
   final val compressIterNum = new IntParam(this, "compressIterNum", "compressIterNum")
@@ -48,8 +48,8 @@ class WCC(override val uid: String) extends Transformer
   
   override def transform(dataset: Dataset[_]): DataFrame = {
     // read edges
-    val edges = GraphIO.loadEdgesFromDF(dataset, $(srcNodeIdCol), $(dstNodeIdCol), $(needReplicaEdge))
-    
+    val edges = GraphIO.loadEdgesFromDF(dataset, $(srcNodeIdCol), $(dstNodeIdCol))
+  
     edges.persist($(storageLevel))
     val numEdges = edges.count()
     
@@ -80,68 +80,83 @@ class WCC(override val uid: String) extends Transformer
       val model = WCCPSModel(modelContext, edges, $(useBalancePartition), $(balancePartitionPercent))
       
       // make un-directed graph, for wcc
-      var graph = edges.groupByKey($(partitionNum))
-        .mapPartitionsWithIndex((index, adjTable) => Iterator((0, WCCPartition.apply(index, adjTable))))
+      val graph =
+        if ($(needReplicaEdge)) {
+          edges.flatMap(f => Iterator((f._1, f._2), (f._2, f._1))).groupByKey($(partitionNum))
+            .mapPartitionsWithIndex((index, adjTable) => Iterator(WCCPartition.apply(index, adjTable)))
+        }
+        else {
+          edges.groupByKey($(partitionNum))
+            .mapPartitionsWithIndex((index, adjTable) => Iterator(WCCPartition.apply(index, adjTable)))
+        }
+      
       graph.persist($(storageLevel))
       graph.foreachPartition(_ => Unit)
-      graph.count()
       
-      graph.foreach(_._2.initMsgs(model, $(batchSize)))
-      graph.foreachPartition(_ => Unit)
-      graph.count()
-      
+      graph.foreach(_.initMsgs(model, $(batchSize)))
+  
+      if ($(setCheckPoint)) {
+        println(s"set checkpoint for ps")
+        val timeCkp = System.currentTimeMillis()
+        model.checkpoint(0)
+        println(s"make ps checkpoint cost: ${System.currentTimeMillis() - timeCkp} ms")
+      }
       edges.unpersist(blocking = false)
-      
-      var numMsgs = model.numMsgs()
+  
+      val numMsgs = model.numMsgs()
       var curIteration = 0
-      var prev = graph
       Log.withTimePrintln(s"numMsgs=$numMsgs")
       
       // while procession on ps,
       // each node change its label into the min id of its neighbors (including itself).
-      var changedCnt = 0
+      var changedCnt = 0L
       var edgeAfterCP = 0L
       var compressCnt = 1
       do{
         do {
           curIteration += 1
-          changedCnt = 0
-          graph = prev.map(_._2.process(model, $(pullBatchSize), numMsgs, curIteration == 1))
-          graph.persist($(storageLevel))
-          graph.count()
-          changedCnt = graph.map(_._1).reduce((n1, n2) => n1 + n2)
-          prev.unpersist(blocking = false)
-          prev = graph
-          // model.resetMsgs()
-          
+          changedCnt = 0L
+          changedCnt = graph.map(_.process(model, $(batchSize))).reduce((n1, n2) => n1 + n2)
+  
           println(s"WCC finished iteration $curIteration; $changedCnt nodes changed  wcc label")
         } while ((changedCnt > 0) && (curIteration < ($(compressIterNum) * compressCnt)))
-        
+  
         compressCnt += 1
-        edgeAfterCP = graph.map(_._2.edgesIfCompress(model)).reduce((n1, n2) => n1 + n2)
+        edgeAfterCP = graph.map(_.edgesIfCompress(model, $(batchSize))).reduce((n1, n2) => n1 + n2)
         println(s"rude estimate edge-num after $curIteration iters on ps: $edgeAfterCP")
-        
-      } while(edgeAfterCP > $(localLimit))
+  
+      } while((edgeAfterCP > $(localLimit)) && (changedCnt > 0))
       
       println(s"finish ${$(compressIterNum) * (compressCnt-1)} of iters on ps, into local mode")
-      
-      val localEdgeArray = graph.map(_._2.compressEdges(model))
+  
+      if ($(setCheckPoint)) {
+        println(s"set checkpoint for ps")
+        val timeCkp = System.currentTimeMillis()
+        model.checkpoint(1)
+        println(s"make ps checkpoint cost: ${System.currentTimeMillis() - timeCkp} ms")
+      }
+  
+      val localEdgeArray = graph.map(_.compressEdges(model, $(batchSize)))
         .reduce((Arr1, Arr2) => Arr1 ++ Arr2).toArray
-      Log.withTimePrintln(s"local edge num: ${localEdgeArray.length}")
+      println(s"local edge num: ${localEdgeArray.length}")
       
       Log.withTimePrintln(s"graph compressed, turn to local computation")
       val t1 = System.currentTimeMillis()
       val localWCC = LocalWCC.process(localEdgeArray)
       Log.withTimePrintln("localWCC cost time "+(System.currentTimeMillis() - t1)*1.0f / 1000)
-      val localRDD = ss.sparkContext.makeRDD(localWCC.toSeq, $(partitionNum))
       
-      retRDD = graph.map(_._2.save()).flatMap(f => f._2.zip(f._1))
-        .leftOuterJoin(localRDD).map { case (prevlb, (nd, curlb)) =>
-        curlb match {
-          case Some(curlb) => (nd, curlb)
-          case None => (nd, prevlb)
+      val broadcastValue = dataset.sparkSession.sparkContext.broadcast(localWCC)
+      retRDD = graph.flatMap(_.save(model, $(batchSize))).mapPartitions{ iter =>
+        val innerMap = broadcastValue.value
+        iter.flatMap{
+          case (nd, lb) =>
+            val curlb = innerMap.getOrElse(lb, lb)
+            Iterator.single((nd, curlb))
         }
       }.map(f => Row.fromSeq(Seq[Any](f._1, f._2)))
+  
+      retRDD.persist($(storageLevel))
+      retRDD.count()
       PSContext.stop()
     }
     

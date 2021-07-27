@@ -44,7 +44,7 @@ object KCoreExample {
     val balancePartitionPercent = params.getOrElse("balancePartitionPercent", "0.7").toFloat
     var degreeThreshold = params.getOrElse("degreeThreshold", "1").toInt
     val initialCorePath = params.getOrElse("initialCorePath", null)
-    val needReplicaEdge = params.getOrElse("needPeplicaEdge", "false").toBoolean
+    val needReplicaEdge = params.getOrElse("needReplicaEdge", "false").toBoolean
     val execMode = params.getOrElse("execMode", "full")
     val cpDir = params.get("cpDir").filter(_.nonEmpty).orElse(GraphIO.defaultCheckpointDir)
       .getOrElse(throw new Exception("checkpoint dir not provided"))
@@ -115,7 +115,7 @@ object KCoreExample {
     val conf = new SparkConf()
 
     // Add jvm parameters for executors
-    if (!mode.contains("local")) {
+    if (!mode.startsWith("local")) {
       var executorJvmOptions = conf.get("spark.executor.extraJavaOptions")
       executorJvmOptions += " -XX:ConcGCThreads=4 -XX:ParallelGCThreads=4 -Xss4M "
       conf.set("spark.executor.extraJavaOptions", executorJvmOptions)

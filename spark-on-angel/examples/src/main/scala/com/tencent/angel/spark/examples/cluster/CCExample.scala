@@ -16,6 +16,7 @@
  */
 package com.tencent.angel.spark.examples.cluster
 
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.graph.connectedcomponent.wcc.WCC
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
@@ -43,7 +44,9 @@ object CCExample {
       sc.getConf.get("spark.ps.instances", "10")).toInt
     val useBalancePartition = params.getOrElse("useBalancePartition", "false").toBoolean
     val balancePartitionPercent = params.getOrElse("balancePartitionPercent", "0.7").toFloat
-    
+    val needReplicaEdge = params.getOrElse("needReplicaEdge", "true").toBoolean
+    val setCheckPoint = params.getOrElse("setCheckPoint", "true").toBoolean
+  
     val cpDir = params.get("cpDir").filter(_.nonEmpty).orElse(GraphIO.defaultCheckpointDir)
       .getOrElse(throw new Exception("checkpoint dir not provided"))
     sc.setCheckpointDir(cpDir)
@@ -62,6 +65,8 @@ object CCExample {
       .setBalancePartitionPercent(balancePartitionPercent)
       .setBatchSize(batchSize)
       .setPullBatchSize(pullBatchSize)
+      .setNeedReplicaEdge(needReplicaEdge)
+      .setCheckPoint(setCheckPoint)
     
     val df = GraphIO.load(input, isWeighted = false, srcIndex, dstIndex, sep = sep)
     
@@ -74,14 +79,15 @@ object CCExample {
     val conf = new SparkConf()
     
     // Add jvm parameters for executors
-    if (mode != "local") {
+    if (!mode.startsWith("local")) {
       var executorJvmOptions = conf.get("spark.executor.extraJavaOptions")
       executorJvmOptions += " -XX:ConcGCThreads=4 -XX:ParallelGCThreads=4 -Xss4M "
       conf.set("spark.executor.extraJavaOptions", executorJvmOptions)
       println(s"executorJvmOptions = ${executorJvmOptions}")
     }
-    
-    
+  
+    conf.set("spark.hadoop." + AngelConf.ANGEL_PS_BACKUP_INTERVAL_MS, "2400000")
+  
     conf.setMaster(mode)
     conf.setAppName("CompressCC")
     val sc = new SparkContext(conf)

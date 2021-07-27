@@ -30,7 +30,7 @@
 - psPartitionNum： ps分区数
 - useBalancePartition：是否使用均衡分区，默认为false
 - balancePartitionPercent：均衡分区度，默认为0.7
-
+- needReplicaEdge: 是否需要将边进行反向构造无向图
 
 ### 任务提交示例
 进入angel环境bin目录下
@@ -53,5 +53,6 @@ $SPARK_HOME/bin/spark-submit \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.KCoreExample \
   ../lib/spark-on-angel-examples-3.1.0.jar
-  input:$input output:$output sep:" " batchSize:1000 partitionNum:2 psPartitionNum：2 useBalancePartition:false 
+  input:$input output:$output sep:space batchSize:1000 partitionNum:2 psPartitionNum:2 \
+  useBalancePartition:false needReplicaEdge:true
 ```

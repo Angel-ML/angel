@@ -32,7 +32,7 @@ When calculating K-Core, it is necessary to store variable data corresponding to
 - psPartitionNum: ps partition number
 - useBalancePartition: whether to use balanced partition, the default is false
 - balancePartitionPercent: Balance partition degree, the default is 0.7
-
+- needReplicaEdge: Whether to construct undirected graphs with reversed edges.
 
 ### Task Submission Example
 Enter the bin directory of the angel environment
@@ -56,5 +56,6 @@ $SPARK_HOME/bin/spark-submit \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.KCoreExample \
   ../lib/spark-on-angel-examples-3.1.0.jar
-  input:$input output:$output sep:" " batchSize:1000 partitionNum:2 psPartitionNum：2 useBalancePartition:false 
+  input:$input output:$output sep:space batchSize:1000 partitionNum:2 psPartitionNum:2 \
+  useBalancePartition:false needReplicaEdge:true
 ```
