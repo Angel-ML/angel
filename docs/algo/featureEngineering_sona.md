@@ -566,3 +566,96 @@ $SPARK_HOME/bin/spark-submit \
   
 ```
 
+# Scaler
+## 1. 算法介绍
+Scaler模块集成了最大最小值归一化（MinMaxScaler）和标准化（StandardScaler）两种方式，用户可通过特征配置文件来指定某个特征的归一化方法。下面分别介绍这两种方法：  <br>
+MinMaxScaler算法对特征数据进行统一的归一化处理，默认归一化后的特征数值范围在[0,1]，用户也可以指定归一化后的取值范围为[min,max]。  <br>
+该归一化的计算公式为： <br>
+```
+((x-EMin)/(EMax-EMin))*(max-min)+min
+```
+其中x表示需要归一化的特征值，EMin表示该特征下的最小值，EMax表示该特征下的最大值，min与max为用户设定的归一化后的数值范围。注意，当某列特征的最大最小值相等时，该列所有数值归一化为0.5*(max - min) + min。
+StandardScaler算法主要对特征进行标准化处理，原始特征数据通过该算法的转化将成为方差为1，均值为0的新的特征。计算公式为：
+```
+((x-Mean)/Var)
+```
+其中，Mean代表该特征的平均值，Var表示该特征的样本标准差。以下的特殊情况应该注意:  <br>
+(1)如果Var为0，则x标准化后的结果直接为0.0  <br>
+(2)不需要均值化处理：此时算法只做方差处理，即：x/Var  <br>
+(3)不需要方差处理:x直接取值(x-Mean)  <br>
+
+
+算法不涉及ps相关资源
+## 2. 运行
+#### 算法IO参数
+
+- input：输入，特征表
+- output: 输出，在原始输入数据格式不变的基础上，对相应的特征进行归一化处理
+- standardPath:保存特征的均值和方差，可选
+- sep: 数据分隔符，支持：空格(space)，逗号(comma)，tab(\t)
+- user-files：特征配置文件名
+scaleConfPath：特征配置文件名，从tesla页面上传配置文件。下面是一个该模块的JSON格式的特征配置文件样例  <br>
+```
+{
+    "minmax":[
+      {
+        "colStr": "1-2",
+        "min": "0",
+	"max":"1"
+      },
+      {
+	"colStr":"5",
+        "min":"-1",
+        "max": "1"
+       }
+       ],
+	"standard":[
+       {
+        "colStr": "3,6-7",
+        "std": "true",
+	"mean":"false"
+       },
+       {
+        "colStr": "8,9",
+	"std":"true",
+	"mean":"true"
+       }
+       ]
+}
+
+```
+
+特征配置参数:  <br>
+"minmax"和"standard":分别代表了相应的归一化模块MinMaxScaler和StandardScaler  <br>
+"colStr":需要做相应处理的特征id,取值根据该特征在原始表的所在列，从0开始计数。多个特征可用","隔开，还可用"-"标识特征的起始到结束列，例如"1-20"表示第1列到第20列。   <br>
+"min":归一化后的最小值   <br>
+"max":归一化后的最大值   <br>
+"std":是否需要做方差的标准化  <br>
+"mean":是否需要做均值的标准化  <br>
+
+#### 算法参数
+- sampleRate：样本抽样率
+- partitionNum：数据分区数，spark rdd数据的分区数量
+
+#### 任务提交示例
+
+```
+input=hdfs://my-hdfs/data
+output=hdfs://my-hdfs/output
+
+source ./spark-on-angel-env.sh
+$SPARK_HOME/bin/spark-submit \
+  --master yarn-cluster\
+  --name "ScalerExample angel" \
+  --jars $SONA_SPARK_JARS  \
+  --driver-memory 5g \
+  --num-executors 1 \
+  --executor-cores 4 \
+  --executor-memory 10g \
+  --files ./localPath/scaleConf.txt \
+  --class com.tencent.angel.spark.examples.cluster.ScalerExample \
+  ../lib/spark-on-angel-examples-3.2.0.jar \
+  input:$input output:$output sep:tab partitionNum:4 \
+  sampleRate:1 user-files:scaleConf.txt \
+  
+```
