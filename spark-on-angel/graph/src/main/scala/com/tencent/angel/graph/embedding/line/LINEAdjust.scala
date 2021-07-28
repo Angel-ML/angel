@@ -31,6 +31,8 @@ import com.tencent.angel.psagent.matrix.transport.router.{KeyValuePart, RouterUt
 import io.netty.buffer.ByteBuf
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 
+import scala.util.Random
+
 class LINEAdjust(var param: LINEAdjustParam) extends UpdateFunc(param) {
 
   def this() = this(null)
@@ -60,7 +62,12 @@ class LINEAdjust(var param: LINEAdjustParam) extends UpdateFunc(param) {
             })
           } else {
             inputNodes.zip(inputUpdates).foreach(e => {
-              apy(row.get(e._1).asInstanceOf[LINENode].getInputFeats, e._2.asInstanceOf[FloatArrayElement].getData)
+              val ele = row.get(e._1)
+              if (ele == null) {
+                val dim = e._2.asInstanceOf[FloatArrayElement].getData.length
+                row.set(e._1, new LINENode(null, new Array[Float](dim)))
+              }
+              row.get(e._1).asInstanceOf[LINENode].setInputFeats(e._2.asInstanceOf[FloatArrayElement].getData)
             })
           }
         }
@@ -72,9 +79,25 @@ class LINEAdjust(var param: LINEAdjustParam) extends UpdateFunc(param) {
         val outputUpdates = outputData.getValues
 
         if (outputNodes != null) {
-          outputNodes.zip(outputUpdates).foreach(e => {
-            inc(row.get(e._1).asInstanceOf[LINENode].getOutputFeats, e._2.asInstanceOf[FloatArrayElement].getData)
-          })
+          if (!extraInitial) {
+            outputNodes.zip(outputUpdates).foreach(e => {
+              inc(row.get(e._1).asInstanceOf[LINENode].getOutputFeats, e._2.asInstanceOf[FloatArrayElement].getData)
+            })
+          } else {
+            val rand = new Random(System.currentTimeMillis())
+            outputNodes.zip(outputUpdates).foreach(e => {
+              val ele = row.get(e._1)
+              if (ele == null) {
+                val dim = e._2.asInstanceOf[FloatArrayElement].getData.length
+                val embedding = new Array[Float](dim)
+                for (i <- 0 until dim) {
+                  embedding(i) = (rand.nextFloat() - 0.5f) / dim
+                }
+                row.set(e._1, new LINENode(embedding, null))
+              }
+              row.get(e._1).asInstanceOf[LINENode].setOutputFeats(e._2.asInstanceOf[FloatArrayElement].getData)
+            })
+          }
         }
       }
     } finally {
@@ -85,12 +108,6 @@ class LINEAdjust(var param: LINEAdjustParam) extends UpdateFunc(param) {
   def inc(dst: Array[Float], src: Array[Float]): Unit = {
     for (i <- dst.indices) {
       dst(i) += src(i)
-    }
-  }
-
-  def apy(dst: Array[Float], src: Array[Float]): Unit = {
-    for (i <- dst.indices) {
-      dst(i) = src(i)
     }
   }
 }

@@ -32,22 +32,20 @@ object LINEExample {
     val params = ArgsUtil.parse(args)
     val input = params.getOrElse("input", "")
     val output = params.getOrElse("output", "")
-    val oldModelInput = params.getOrElse("oldModelPath", "")
-
+    val extraInputEmbeddingPath = params.getOrElse("extraInputEmbeddingPath", "")
+    val extraContextEmbeddingPath = params.getOrElse("extraContextEmbeddingPath", "")
     val embeddingDim = params.getOrElse("embedding", "10").toInt
     val numNegSamples = params.getOrElse("negative", "5").toInt
     val numEpoch = params.getOrElse("epoch", "10").toInt
-
     val stepSize = params.getOrElse("stepSize", "0.1").toFloat
     val batchSize = params.getOrElse("batchSize", "10000").toInt
     val psPartitionNum = params.getOrElse("psPartitionNum", "10").toInt
     val dataPartitionNum = params.getOrElse("dataPartitionNum", "100").toInt
     val withRemapping = params.getOrElse("remapping", "false").toBoolean
     val order = params.get("order").fold(2)(_.toInt)
-    val saveModelInterval = params.getOrElse("saveModelInterval", "10").toInt
-    val checkpointInterval = params.getOrElse("checkpointInterval", "2").toInt
-    val saveMeta = params.getOrElse("saveMeta", "false").toBoolean
-
+    val saveModelInterval = params.getOrElse("saveModelInterval", "5").toInt
+    val checkpointInterval = params.getOrElse("checkpointInterval", "5").toInt
+    val saveContextEmbedding = params.getOrElse("saveContextEmbedding", "false").toBoolean
     val isWeight = params.getOrElse("isWeight", "false").toBoolean
     val sep = Delimiter.parse(params.getOrElse("sep",Delimiter.SPACE))
 
@@ -74,12 +72,13 @@ object LINEExample {
       .setSaveModelInterval(saveModelInterval)
       .setCheckpointInterval(checkpointInterval)
       .setOutput(output)
-      .setOldModelPath(oldModelInput)
-      .setSaveMeta(saveMeta)
+      .setSaveContextEmbedding(saveContextEmbedding)
+      .setExtraInputEmbeddingPath(extraInputEmbeddingPath)
+      .setExtraContextEmbeddingPath(extraContextEmbeddingPath)
 
     val edges: DataFrame = GraphIO.load(input, isWeight, sep = sep)
     line.transform(edges)
-    line.save(output, numEpoch, saveMeta)
+    line.save(output, numEpoch, saveContextEmbedding)
     stop()
   }
 

@@ -37,8 +37,8 @@ object Word2vecExample {
     val params = ArgsUtil.parse(args)
     val input = params.getOrElse("input", "")
     val output = params.getOrElse("output", "")
-    val loadPath = params.getOrElse("loadPath", "")
-    val extraEmbeddingPath = params.getOrElse("extraEmbeddingPath", "")
+    val extraInputEmbeddingPath = params.getOrElse("extraInputEmbeddingPath", "")
+    val extraContextEmbeddingPath = params.getOrElse("extraContextEmbeddingPath", "")
     val nodeTypePath = params.getOrElse("nodeTypePath", "")
     val embeddingDim = params.getOrElse("embedding", "32").toInt
     val windowSize = params.getOrElse("window", "10").toInt
@@ -50,7 +50,7 @@ object Word2vecExample {
     val logStep = params.getOrElse("logStep", "1024").toInt
     val psPartitionNum = params.getOrElse("psPartitionNum", "10").toInt
     val dataPartitionNum = params.getOrElse("dataPartitionNum", "100").toInt
-    val saveMeta = params.getOrElse("saveMeta", "true").toBoolean
+    val saveContextEmbedding = params.getOrElse("saveContextEmbedding", "false").toBoolean
     val withRemapping = params.getOrElse("remapping", "false").toBoolean
     val storageLevel = params.getOrElse("storageLevel", "MEMORY_ONLY")
     val saveModelInterval = params.getOrElse("saveModelInterval", "2").toInt
@@ -117,9 +117,10 @@ object Word2vecExample {
       .setModelCPInterval(checkpointInterval)
       .setModelSaveInterval(saveModelInterval)
       .setNodeTypePath(nodeTypePath)
-      .setSaveMeta(saveMeta)
+      .setSaveContextEmbedding(saveContextEmbedding)
       .setModelPath(output)
-      .setLoadPath(loadPath)
+      .setExtraInputEmbeddingPath(extraInputEmbeddingPath)
+      .setExtraContextEmbeddingPath(extraContextEmbeddingPath)
     val model = new Word2VecModel(param)
     if (nodeTypePath.length > 0) {
       if(withRemapping) {
@@ -137,22 +138,26 @@ object Word2vecExample {
         model.initNodeType(nodeTypeRDD, param)
       }
     }
-    if (loadPath.length > 0) {
-      model.load(loadPath)
+    //init model
+    var extraInputEmbeddingRDD: RDD[String] = null
+    if (extraInputEmbeddingPath.length > 0) {
+      extraInputEmbeddingRDD = GraphIO.loadString(extraInputEmbeddingPath)
+    }
+    var extraContextEmbeddingRDD: RDD[String] = null
+    if (extraContextEmbeddingPath.length > 0) {
+      extraContextEmbeddingRDD = GraphIO.loadString(extraContextEmbeddingPath)
+    }
+    if (extraInputEmbeddingRDD != null || extraContextEmbeddingRDD != null) {
+      model.extraInitialize(extraInputEmbeddingRDD, extraContextEmbeddingRDD, param)
     } else {
-      if (extraEmbeddingPath.length > 0) {
-        val extraRDD = GraphIO.loadString(extraEmbeddingPath)
-        model.extraInitialize(extraRDD, param)
-      } else {
-        model.randomInitialize(Random.nextInt())
-      }
+      model.randomInitialize(Random.nextInt())
     }
     if (withRemapping) {
       model.deleteIfExists(output + "/mapping", SparkSession.builder().getOrCreate())
       denseToString.foreach(rdd => rdd.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "/mapping"))
     }
     model.train(trainRDD, param)
-    model.save(output, numEpoch, saveMeta)
+    model.save(output, numEpoch, saveContextEmbedding)
     stop()
   }
 

@@ -86,29 +86,69 @@ class Word2VecModel(params: Word2VecParam) extends Serializable {
     LogUtils.logTime(s"Model successfully Randomized, cost ${(System.currentTimeMillis() - beforeRandomize) / 1000.0}s")
   }
 
-  def extraInitialize(extraRDD: RDD[String], params: Word2VecParam): Unit = {
+  def extraInitialize(extraInputRDD: RDD[String], extraOutputRDD: RDD[String], params: Word2VecParam): Unit = {
     randomInitialize(Random.nextInt())
-    val conf = AngelPSContext.convertToHadoop(SparkContext.getOrCreate().getConf)
-    val featSep = conf.get("angel.line.feature.sep", "space") match {
+    val conf = SparkContext.getOrCreate().getConf
+    val keyValueSep = conf.get("spark.hadoop.angel.line.keyvalue.sep", "colon") match {
       case "space" => " "
       case "comma" => ","
       case "tab" => "\t"
       case "colon" => ":"
       case "bar" => "\\|"
     }
-    val keyValueSep = conf.get("angel.line.keyvalue.sep", "colon") match {
+    val featSep = conf.get("spark.hadoop.angel.line.feature.sep", "space") match {
       case "space" => " "
       case "comma" => ","
       case "tab" => "\t"
       case "colon" => ":"
       case "bar" => "\\|"
     }
-    val beforeInitialize = System.currentTimeMillis()
-    extraRDD.mapPartitions { iterator =>
-      iterator.sliding(5000, 5000)
-        .map(batch => extraUpdate(batch.toArray, keyValueSep, featSep))
-    }.count()
-    LogUtils.logTime(s"Model successfully extra Initial, cost ${(System.currentTimeMillis() - beforeInitialize) / 1000.0}s")
+    var beforeInitialize = System.currentTimeMillis()
+    if (extraInputRDD != null) {
+      extraInputRDD.mapPartitions { iterator =>
+        iterator.sliding(5000, 5000)
+          .foreach(batch => extraUpdate(batch.toArray, keyValueSep, featSep, true))
+        Iterator.single()
+      }.count()
+    }
+    LogUtils.logTime(s"Model successfully extra Initial input embedding, " +
+      s"cost ${(System.currentTimeMillis() - beforeInitialize) / 1000.0}s")
+    if (extraOutputRDD != null) {
+      beforeInitialize = System.currentTimeMillis()
+      extraOutputRDD.mapPartitions { iterator =>
+        iterator.sliding(5000, 5000)
+          .foreach(batch => extraUpdate(batch.toArray, keyValueSep, featSep, false))
+        Iterator.single()
+      }.count()
+      LogUtils.logTime(s"Model successfully extra Initial output embedding, " +
+        s"cost ${(System.currentTimeMillis() - beforeInitialize) / 1000.0}s")
+    }
+  }
+
+  def extraUpdate(strings: Array[String], keyValueSep: String, featSep: String, isInput: Boolean): Unit = {
+    val updates = new Int2ObjectOpenHashMap[Array[Float]]()
+    if (keyValueSep.equals(featSep)) {
+      strings.map { line =>
+        val splits = line.split(keyValueSep)
+        val key = splits(0).toInt
+        val value = splits.slice(1, splits.length).map(v => v.toFloat)
+        updates.put(key, value)
+      }
+    } else {
+      strings.map { line =>
+        val splits = line.split(keyValueSep)
+        val key = splits(0).toInt
+        val value = splits(1).split(featSep).map(v => v.toFloat)
+        updates.put(key, value)
+      }
+    }
+    if (isInput) {
+      psMatrix.psfUpdate(new LINEAdjust(new LINEAdjustParam(matrixId, updates, null,
+        2, true)))
+    } else {
+      psMatrix.psfUpdate(new LINEAdjust(new LINEAdjustParam(matrixId, null, updates,
+        2, true)))
+    }
   }
 
   def initNodeType(nodeTypeRDD: RDD[(Int, Int)], params: Word2VecParam): Long = {
@@ -120,26 +160,6 @@ class Word2VecModel(params: Word2VecParam) extends Serializable {
           nodeTypeMatrix.update(update)
         }
     }.count()
-  }
-
-  def extraUpdate(strings: Array[String], keyValueSep: String, featSep: String): Unit = {
-    val inputUpdates = new Int2ObjectOpenHashMap[Array[Float]]()
-    strings.map{line =>
-      if (featSep.equals(keyValueSep)) {
-        val splits = line.split(keyValueSep)
-        val key = splits(0).toInt
-        val value = new Array[Float](splits.length - 1)
-        (1 until splits.length).foreach(i => value(i - 1) = splits(i).toFloat)
-        inputUpdates.put(key, value)
-      } else {
-        val splits = line.split(keyValueSep)
-        val key = splits(0).toInt
-        val value = splits(1).split(featSep).map(v => v.toFloat)
-        inputUpdates.put(key, value)
-      }
-    }
-    psMatrix.asyncPsfUpdate(new LINEAdjust(new LINEAdjustParam(matrixId, inputUpdates, null,
-      2, true))).get(120000, TimeUnit.MILLISECONDS)
   }
 
   def train(corpus: RDD[Array[Int]], params: Word2VecParam): Unit = {
@@ -181,39 +201,53 @@ class Word2VecModel(params: Word2VecParam) extends Serializable {
     if (epoch % params.saveModelInterval == 0 && epoch < params.numEpoch) {
       LogUtils.logTime(s"Epoch=$epoch, save the model")
       startTs = System.currentTimeMillis()
-      save(params.modelPath, epoch,  params.saveMeta)
+      save(params.modelPath, epoch,  params.saveContextEmbedding)
       LogUtils.logTime(s"save use time=${System.currentTimeMillis() - startTs}")
     }
   }
 
-  def save(modelPathRoot: String, epoch: Int, saveMeta: Boolean): Unit = {
-    save(new Path(modelPathRoot, s"CP_$epoch").toString, saveMeta)
+  def save(modelPathRoot: String, epoch: Int, saveContextEmbedding: Boolean): Unit = {
+    save(new Path(modelPathRoot, s"CP_$epoch").toString, saveContextEmbedding)
   }
 
-  def save(modelPath: String, saveMeta: Boolean): Unit = {
+  def save(modelPath: String, saveContextEmbedding: Boolean): Unit = {
     LogUtils.logTime(s"saving model to $modelPath")
     val ss = SparkSession.builder().getOrCreate()
     deleteIfExists(modelPath, ss)
 
-    val saveContext = new ModelSaveContext(modelPath)
-    saveContext.addMatrix(new MatrixSaveContext(matrixName, classOf[TextLINEModelOutputFormat].getTypeName))
-    PSContext.instance().save(saveContext)
+    if (saveContextEmbedding) {
+      // Save input and context embedding use "TextLINEModelOutputFormat" and "TextLINEModelContextEmbOutputFormat"
+      val inputEmbSaveContext = new ModelSaveContext(new Path(modelPath, s"inputEmbedding").toString)
+      inputEmbSaveContext.addMatrix(new MatrixSaveContext(matrixName, classOf[TextLINEModelOutputFormat].getTypeName))
+      PSContext.instance().save(inputEmbSaveContext)
+      val contextEmbSaveContext = new ModelSaveContext(new Path(modelPath, s"outputEmbedding").toString)
+      contextEmbSaveContext.addMatrix(new MatrixSaveContext(matrixName, classOf[TextLINEModelContextEmbOutputFormat].getTypeName))
+      PSContext.instance().save(contextEmbSaveContext)
+      deleteMetaIfExists(new Path(modelPath, s"inputEmbedding").toString)
+      deleteMetaIfExists(new Path(modelPath, s"outputEmbedding").toString)
+    } else {
+      // Save use "TextLINEModelOutputFormat" format
+      val saveContext = new ModelSaveContext(modelPath)
+      saveContext.addMatrix(new MatrixSaveContext(matrixName, classOf[TextLINEModelOutputFormat].getTypeName))
+      PSContext.instance().save(saveContext)
+      deleteMetaIfExists(modelPath)
+    }
+  }
 
-    if(!saveMeta) {
-      // Remove the meta file
-      try {
-        val metaPath = new Path(new Path(modelPath, psMatrix.name), ModelFilesConstent.modelMetaFileName)
-        // Build hadoop conf
-        val conf = AngelPSContext.convertToHadoop(SparkContext.getOrCreate().getConf)
-        val fs = metaPath.getFileSystem(conf)
-        // Remove
-        val ret = fs.delete(metaPath, true)
-        if(!ret) {
-          LogUtils.logTime(s"Warning: remove meta file failed !!!")
-        }
-      } catch {
-        case e:Throwable => LogUtils.logTime(s"Warning: remove meta file failed !!!")
+  private def deleteMetaIfExists(modelPath: String): Unit = {
+    // Remove the meta file
+    try {
+      val metaPath = new Path(new Path(modelPath, matrixName), ModelFilesConstent.modelMetaFileName)
+      // Build hadoop conf
+      val conf = AngelPSContext.convertToHadoop(SparkContext.getOrCreate().getConf)
+      val fs = metaPath.getFileSystem(conf)
+      // Remove
+      val ret = fs.delete(metaPath, true)
+      if (!ret) {
+        LogUtils.logTime(s"Warning: remove meta file failed !!!")
       }
+    } catch {
+      case e: Throwable => LogUtils.logTime(s"Warning: remove meta file failed !!!")
     }
   }
 
