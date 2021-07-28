@@ -659,3 +659,45 @@ $SPARK_HOME/bin/spark-submit \
   sampleRate:1 user-files:scaleConf.txt \
   
 ```
+# Reindex（重索引）
+## 1. 算法介绍
+对图的节点id进行重索引，生成从0开始的递增新节点id，返回重索引后的边文件和重索引前后节点的映射关系 <br>
+算法不涉及ps相关资源
+## 2. 运行
+#### 算法IO参数
+
+- input：输入，网络结构输入，支持hdfs/tdw路径，每行表示一条边。当输入为hdfs时，必须是“ src分隔符dst”两列的格式，当输入为tdw时，需要指定src/dst所在的列数，默认分别为0/1，若是tdw输入，则输入表既可以是数值类型src(long) | dst(long) | weight(float)又可以是string类型 src(string) | dst(string) | weight(string)
+- srcIndex:src节点所在列
+- dstIndex:dst节点所在列
+- weightIndex:表示权重所在列
+- isWeighted:输入是否是带权图
+- output: 输出，重索引后的边文件，2或3列，支持tdw和HDFS; 若输出表是tdw则需用户先创建表，格式也是既可以是数值类型或者string类型，src(long) | dst(long) | weight(float) 或者 src(string) | dst(string) | weight(string)
+- maps:重索引的映射字典，2列，第一列是old id，第二列是new id；支持tdw和HDFS；若是tdw输出则需用户先创建表，格式也是既可以是数值类型或者string类型，oldid | newid
+- sep: 数据分隔符，支持：空格(space)，逗号(comma)，tab(\t)
+
+
+#### 算法参数
+- partitionNum：数据分区数，spark rdd数据的分区数量
+
+#### 任务提交示例
+
+```
+input=hdfs://my-hdfs/data
+output=hdfs://my-hdfs/output
+maps=hdfs://my-hdfs/maps
+
+source ./spark-on-angel-env.sh
+$SPARK_HOME/bin/spark-submit \
+  --master yarn-cluster\
+  --name "ReindexExample angel" \
+  --jars $SONA_SPARK_JARS  \
+  --driver-memory 5g \
+  --num-executors 1 \
+  --executor-cores 4 \
+  --executor-memory 10g \
+  --class com.tencent.angel.spark.examples.cluster.ReindexExample \
+  ../lib/spark-on-angel-examples-3.2.0.jar \
+  input:$input output:$output maps:$maps sep:tab partitionNum:4 \
+  srcIndex:0 dstIndex:1 weightIndex:2 isWeighted:false \
+  
+```
