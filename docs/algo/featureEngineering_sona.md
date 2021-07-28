@@ -51,7 +51,7 @@ $SPARK_HOME/bin/spark-submit \
 #### 算法IO参数
 
 - input：输入，任何数据
-- output: 输出，抽样后的数据，格式与输入数据一致
+- output: 输出，填充后的数据，格式与输入数据一致
 - sep: 数据分隔符，支持：空格(space)，逗号(comma)，tab(\t)
 
 #### 算法参数
@@ -93,7 +93,7 @@ fillStatPath=hdfs://my-hdfs/fillStatPath
 source ./spark-on-angel-env.sh
 $SPARK_HOME/bin/spark-submit \
   --master yarn-cluster\
-  --name "DataSampling angel" \
+  --name "FillMissingValueExample angel" \
   --jars $SONA_SPARK_JARS  \
   --driver-memory 5g \
   --num-executors 1 \
@@ -104,5 +104,44 @@ $SPARK_HOME/bin/spark-submit \
   ../lib/spark-on-angel-examples-3.2.0.jar
   input:$input output:$output fillStatPath:$fillStatPath sep:tab partitionNum:4 \
   user-files:FillMissingValueConf.txt \
+  
+```
+
+# Spliter
+## 1. 算法介绍
+该模块是根据fraction数值将数据集分割为两部分，并将两部分分别存储
+算法不涉及ps相关资源
+## 2. 运行
+#### 算法IO参数
+
+- input：输入，任何数据
+- output1: 分割后的数据1，格式与输入数据一致
+- output2: 分割后的数据2，格式与输入数据一致
+- sep: 数据分隔符，支持：空格(space)，逗号(comma)，tab(\t)
+
+#### 算法参数
+- fraction：数据分割比例，0.0-1.0之间的小数
+- partitionNum：数据分区数，spark rdd数据的分区数量
+
+#### 任务提交示例
+
+```
+input=hdfs://my-hdfs/data
+output1=hdfs://my-hdfs/output1
+output2=hdfs://my-hdfs/output2
+
+source ./spark-on-angel-env.sh
+$SPARK_HOME/bin/spark-submit \
+  --master yarn-cluster\
+  --name "SpliterExample angel" \
+  --jars $SONA_SPARK_JARS  \
+  --driver-memory 5g \
+  --num-executors 1 \
+  --executor-cores 4 \
+  --executor-memory 10g \
+  --class com.tencent.angel.spark.examples.cluster.SpliterExample \
+  ../lib/spark-on-angel-examples-3.2.0.jar
+  input:$input output1:$output1 output2:$output2 sep:tab partitionNum:4 \
+  fraction:0.8 \
   
 ```
