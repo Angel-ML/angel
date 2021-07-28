@@ -33,7 +33,8 @@ class Word2VecParam extends Serializable {
   var sampleRate: Float = _
   var numPSPart: Int = 1
   var modelPath: String = _
-  var loadPath: String = _
+  var extraInputEmbeddingPath: String = _
+  var extraContextEmbeddingPath: String = _
   var checkpointInterval: Int = Int.MaxValue
   var saveModelInterval: Int = Int.MaxValue
   var order: Int = _
@@ -42,7 +43,7 @@ class Word2VecParam extends Serializable {
   var seed: Int = _
   var maxLength: Int = -1
   var nodeTypePath: String = ""
-  var saveMeta: Boolean = _
+  var saveContextEmbedding: Boolean = _
 
   def setMaxLength(maxLength: Int): this.type = {
     this.maxLength = maxLength
@@ -137,8 +138,13 @@ class Word2VecParam extends Serializable {
     this
   }
 
-  def setLoadPath(loadPath: String): this.type = {
-    this.modelPath = modelPath
+  def setExtraInputEmbeddingPath(extraInputEmbeddingPath: String): this.type = {
+    this.extraInputEmbeddingPath = extraInputEmbeddingPath
+    this
+  }
+
+  def setExtraContextEmbeddingPath(extraContextEmbeddingPath: String): this.type = {
+    this.extraContextEmbeddingPath = extraContextEmbeddingPath
     this
   }
 
@@ -147,8 +153,8 @@ class Word2VecParam extends Serializable {
     this
   }
 
-  def setSaveMeta(saveMeta: Boolean): this.type = {
-    this.saveMeta = saveMeta
+  def setSaveContextEmbedding(saveContextEmbedding: Boolean): this.type = {
+    this.saveContextEmbedding = saveContextEmbedding
     this
   }
 

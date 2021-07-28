@@ -79,7 +79,7 @@ object Word2vecExample {
       .setMaxIndex(maxWordId)
       .setNumRowDataSet(numDocs)
       .setMaxLength(maxLength)
-      .setSaveMeta(false)
+      .setSaveContextEmbedding(false)
 
     val model = new Word2VecModel(param)
     model.train(docs, param)

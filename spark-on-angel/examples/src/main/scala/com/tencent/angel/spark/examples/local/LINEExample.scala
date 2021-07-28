@@ -56,7 +56,7 @@ object LINEExample {
       .setIsWeighted(false)
       .setRemapping(false)
       .setOutput(output)
-      .setSaveMeta(false)
+      .setSaveContextEmbedding(false)
 
     val edges: DataFrame = load(input, false, " ")
     line.transform(edges)
