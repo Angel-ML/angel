@@ -33,7 +33,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.DataSamplingExample \
-  ../lib/spark-on-angel-examples-3.2.0.jar
+  ../lib/spark-on-angel-examples-3.2.0.jar \
   input:$input output:$output sep:tab partitionNum:4 \
   sampleRate:0.8 takeSample:25 \
   
@@ -101,7 +101,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-memory 10g \
   --files ./localPath/FillMissingValueConf.txt \
   --class com.tencent.angel.spark.examples.cluster.FillMissingValueExample \
-  ../lib/spark-on-angel-examples-3.2.0.jar
+  ../lib/spark-on-angel-examples-3.2.0.jar \
   input:$input output:$output fillStatPath:$fillStatPath sep:tab partitionNum:4 \
   user-files:FillMissingValueConf.txt \
   
@@ -140,7 +140,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.SpliterExample \
-  ../lib/spark-on-angel-examples-3.2.0.jar
+  ../lib/spark-on-angel-examples-3.2.0.jar \
   input:$input output1:$output1 output2:$output2 sep:tab partitionNum:4 \
   fraction:0.8 \
   
@@ -272,8 +272,8 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.DummyExample \
-  --files ./localPath/featConfPath 
-  ../lib/spark-on-angel-examples-3.2.0.jar
+  --files ./localPath/featConfPath \
+  ../lib/spark-on-angel-examples-3.2.0.jar \
   input:$input output:$output sep:tab partitionNum:4 user-files:featConfPath \
   negSampleRate:1 countThreshold:5 \
   
