@@ -243,13 +243,17 @@ Dummy模块输入的数据是Table数据类型。  <br>
 #### 算法IO参数
 
 - input：输入，任何数据
-- output: 输出，抽样后的数据，格式与输入数据一致
+- output: 输出，特征Dummy的输出包含三个目录，featureCount、featureIndexs、instances。输出路径，当instanceDir、indexDir、countDir不存在时，自动生成路径
 - sep: 数据分隔符，支持：空格(space)，逗号(comma)，tab(\t)
-- featureCols：表示需要计算的特征所在列，例如“1-10,12,15”，其说明取特征在表中的第1到第10列，第12列以及第15列，从0开始计数
+- baseFeatIndexPath：指定了特征One-Hot时，使用的feature name到index之间的映射。属于选填参数。当需要基于上次特征Dummy的结果做增量更新或者预测数据的dummy，需要指定该参数，保证两次dummy的index是一致的。
+- user-files: 配置文件
+- instanceDir:保存了One-Hot后的dummmy格式的样本数据
+- indexDir:保存了feature name到feature index的映射关系，中间用“:”分隔；
+- countDir:保存了dummy后的特征空间维度，只保存了一个Int值，
 
 #### 算法参数
-- sampleRate：样本抽样率
-- takeSample：抽样数目，选填
+- countThreshold：某个特征在整个数据集中出现的频次小于该阈值时，将会被过滤掉。一般设置成5左右
+- negSampleRate:大部分应用场景中，负样本比例太大，可通过该参数对负样本采样
 - partitionNum：数据分区数，spark rdd数据的分区数量
 
 #### 任务提交示例
@@ -261,16 +265,17 @@ output=hdfs://my-hdfs/output
 source ./spark-on-angel-env.sh
 $SPARK_HOME/bin/spark-submit \
   --master yarn-cluster\
-  --name "DataSampling angel" \
+  --name "DummyExample angel" \
   --jars $SONA_SPARK_JARS  \
   --driver-memory 5g \
   --num-executors 1 \
   --executor-cores 4 \
   --executor-memory 10g \
-  --class com.tencent.angel.spark.examples.cluster.DataSamplingExample \
+  --class com.tencent.angel.spark.examples.cluster.DummyExample \
+  --files ./localPath/featConfPath 
   ../lib/spark-on-angel-examples-3.2.0.jar
-  input:$input output:$output sep:tab partitionNum:4 \
-  sampleRate:0.8 takeSample:25 \
+  input:$input output:$output sep:tab partitionNum:4 user-files:featConfPath \
+  negSampleRate:1 countThreshold:5 \
   
 ```
 
