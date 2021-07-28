@@ -464,3 +464,105 @@ $SPARK_HOME/bin/spark-submit \
   sampleRate:1 user-files:DiscreteJson.txt \
   
 ```
+
+# Information Based
+## 1. 算法介绍
+基于信息的特征选择，该模块共包括4种算法：信息增益（Information Gain）、基尼系数（gini）、信息增益率（Information Gain Ratio）以及对称不确定性(Symmetry Uncertainly) <br>
+算法不涉及ps相关资源  <br>
+
+输入：Table数据   <br>
+输出：特征重要度矩阵，如要计算重要度的特征为1,2,3，则输出格式为：  <br>
+```
+# 特征重要度矩阵
+X IGR GI MI SU
+1 0.03 0.04 0.2 0.07
+2 0.15 0.018 0.38 0.009
+3 0.25 0.33 0.025 0.17
+```
+第一行表示特征重要度计算指标(X可忽略)，IGR表示信息增益率，GI表示基尼系数，MI表示信息增益，SU表示对称不确定性。其余各行表示特征id(即输入数据中特征所在列号，从0开始) 以及各个指标对应的结果。
+
+## 2. 运行
+#### 算法IO参数
+
+- input：输入，带有目标标签列的Table数据
+- output: 输出，抽样后的数据，格式与输入数据一致
+- sep: 数据分隔符，支持：空格(space)，逗号(comma)，tab(\t)
+- featureCols：表示需要计算的特征所在列，例如“1-10,12,15”，其说明取特征在表中的第1到第10列，第12列以及第15列，从0开始计数
+- labelCol:目标标签所在列，根据目标标签在表中的位置，从0开始计数
+
+
+#### 算法参数
+- sampleRate：样本抽样率
+- partitionNum：数据分区数，spark rdd数据的分区数量
+
+#### 任务提交示例
+
+```
+input=hdfs://my-hdfs/data
+output=hdfs://my-hdfs/output
+
+source ./spark-on-angel-env.sh
+$SPARK_HOME/bin/spark-submit \
+  --master yarn-cluster\
+  --name "InfoComputeExample angel" \
+  --jars $SONA_SPARK_JARS  \
+  --driver-memory 5g \
+  --num-executors 1 \
+  --executor-cores 4 \
+  --executor-memory 10g \
+  --class com.tencent.angel.spark.examples.cluster.InfoComputeExample \
+  ../lib/spark-on-angel-examples-3.2.0.jar \
+  input:$input output:$output sep:tab partitionNum:4 \
+  sampleRate:1 labelCol:0 featureCols:1-10 \
+  
+```
+
+# RandomizedSVD
+## 1. 算法介绍
+RandomizedSVD算法是根据论文《Finding structure with randomness: Probabilistic algorithms for constructing approximate matrix decompositions》原理以及spark平台实现的矩阵svd分解算法。 <br>
+算法不涉及ps相关资源
+## 2. 运行
+#### 算法IO参数
+
+- input：输入，labeled数据，带有行标号的数据，每行数据表示矩阵的行标号以及矩阵中该行的值
+- outputS: 所有特征值的行向量表示法的输出路径，即奇异值矩阵主对角线元素组成的行向量，并以降序排列的输出路径
+- outputV:右奇异向量V的保存路径，labeled数据，每行以对应的行标号开始
+- outputU:左奇异向量U的保存路径，labeled数据，每行以对应的行标号开始
+- sep: 数据分隔符，支持：空格(space)，逗号(comma)，tab(\t)
+- featureCols：表示需要计算的特征所在列，例如“1-10,12,15”，其说明取特征在表中的第1到第10列，第12列以及第15列，从0开始计数
+- labelCol:label所在列，从0开始计数
+- 
+
+#### 算法参数
+- sampleRate：样本抽样率
+- K：奇异值的个数
+- rCond:条件数倒数
+- iterationNormalizer:迭代方式，分为两种："QR"与"none","QR"方式表示每轮迭代都需要进行QR分解，"none"方式表示每轮迭代仅进行左乘矩阵A以及A的转置，中间无"QR"分解过程
+- qOverSample:采样参数q
+- numIteration:迭代轮数，如果是auto，最终迭代次数为 if (k < (min(matRow, matCol) * 0.1)) 7 else 4
+- partitionNum：数据分区数，spark rdd数据的分区数量
+
+#### 任务提交示例
+
+```
+input=hdfs://my-hdfs/data
+outputS=hdfs://my-hdfs/outputS
+outputV=hdfs://my-hdfs/outputV
+outputU=hdfs://my-hdfs/outputU
+
+source ./spark-on-angel-env.sh
+$SPARK_HOME/bin/spark-submit \
+  --master yarn-cluster\
+  --name "RandomizedSVDExample angel" \
+  --jars $SONA_SPARK_JARS  \
+  --driver-memory 5g \
+  --num-executors 1 \
+  --executor-cores 4 \
+  --executor-memory 10g \
+  --class com.tencent.angel.spark.examples.cluster.RandomizedSVDExample \
+  ../lib/spark-on-angel-examples-3.2.0.jar \
+  input:$input outputS:$outputS outputU:$outputU outputV:$outputV sep:tab partitionNum:4 \
+  sampleRate:1 iterationNormalizer:QR numIteration:3 qOverSample:1 K:2 abelCol:0 rCond:1e-9 \
+  
+```
+
