@@ -346,3 +346,44 @@ $SPARK_HOME/bin/spark-submit \
   sampleRate:0.8 newColStr:1-5 oriColStr:7-9 method:pearson \
   
 ```
+
+# MultualInformation
+## 1. 算法介绍
+该模块采用互信息公式计算特征之间的相关性，当值越大说明特征相关性越强。其中互信息的原理与计算公式可参考,同PearsonOrSpearman模块，MultualInformation模块的相关性计算主要分为两种：一是对新的特征进行两两之间的相关性计算，结果为一个对角矩阵，每个对角矩阵的元素为两两特征之间的相关性系数，该值越大，说明这两个特征相关性越强；二是将新特征与旧特征分别进行相关性计算。 <br>
+输出：输出格式同Correlation的输出，但新特征两两之间的相关系数矩阵中对角线元素为该特征的信息熵，其他元素为特征之间的互信息。 <br>
+算法不涉及ps相关资源
+## 2. 运行
+#### 算法IO参数
+
+- input：输入，特征输入文件
+- output: 输出，互信息输出
+- sep: 数据分隔符，支持：空格(space)，逗号(comma)，tab(\t)
+- newColStr：新特征所在列，例如“1-10,12,15”，其说明取特征在表中的第1到第10列，第12列以及第15列，从0开始计数
+- oriColStr：旧特征所在列，例如“1-10,12,15”，其说明取特征在表中的第1到第10列，第12列以及第15列，从0开始计数
+
+#### 算法参数
+- sampleRate：样本抽样率
+- takeSample：抽样数目，选填
+- partitionNum：数据分区数，spark rdd数据的分区数量
+
+#### 任务提交示例
+
+```
+input=hdfs://my-hdfs/data
+output=hdfs://my-hdfs/output
+
+source ./spark-on-angel-env.sh
+$SPARK_HOME/bin/spark-submit \
+  --master yarn-cluster\
+  --name "MutualInformationExample angel" \
+  --jars $SONA_SPARK_JARS  \
+  --driver-memory 5g \
+  --num-executors 1 \
+  --executor-cores 4 \
+  --executor-memory 10g \
+  --class com.tencent.angel.spark.examples.cluster.MutualInformationExample \
+  ../lib/spark-on-angel-examples-3.2.0.jar \
+  input:$input output:$output sep:tab partitionNum:4 \
+  sampleRate:0.8 newColStr:1-5 oriColStr:7-9
+  
+```
