@@ -387,3 +387,80 @@ $SPARK_HOME/bin/spark-submit \
   sampleRate:0.8 newColStr:1-5 oriColStr:7-9
   
 ```
+
+
+# Discrete
+## 1. 算法介绍
+Discrete算法对特征数据进行离散化处理。离散方法包括等频和等值离散方式，等频离散法按照特征值从小到大的顺序将特征值划分到对应的桶中，每个桶中容纳的元素个数是相同的；等值离散法根据特征值中的最小值和最大值确定每个桶的划分边界，从而保证每个桶的划分宽度在数值上相等。 <br>
+算法不涉及ps相关资源
+## 2. 运行
+#### 算法IO参数
+
+- input：输入，任何数据
+- output: 输出，抽样后的数据，格式与输入数据一致
+- sep: 数据分隔符，支持：空格(space)，逗号(comma)，tab(\t)
+- disBoundsPath:离散特征边界的存放路径，格式为：特征id+边界组成的数组(边界之间用空格隔开)
+
+
+#### 算法参数
+- sampleRate：样本抽样率
+- partitionNum：数据分区数，spark rdd数据的分区数量
+- user-files：特征配置文件名
+
+featureConfName：特征配置文件名，从tesla页面上传配置文件。下面是一个该模块的JSON格式的特征配置文件样例：
+```
+{
+    "feature": [
+      {
+        "id": "2",
+        "discreteType": "equFre",
+        "numBin": "3"
+      },
+      {
+	"id": "5",
+        "discreteType": "equVal",
+        "numBin": "3",
+	"min": "0",
+	"max": "100"
+       },
+       {
+        "id": "0",
+        "discreteType": "equVal",
+        "numBin": "2",
+	"min":"-1"
+      }
+    ]
+}
+```
+以上是对3个特征进行配置，特征配置之间的顺序没有要求，如果某些特征不需要离散配置，则不写在配置中。该配置文件中的"feature"不可更改，用户只需对如下参数进行修改即可:  <br>
+特征配置参数:  <br>
+"id":表示特征Id,注意该Id是输入数据中特征所在的列号，从0开始计数   <br>
+"discreteType":离散化的类型，"equFre"表示等频离散，"equVal"表示等值离散   <br>
+"numBin":离散化的桶数，需注意，在等频离散方法中，如果桶数设置过大，每个桶中的元素个数过少，导致离散边界中有重复的点，则出错  <br>
+"min":针对等值离散的配置，限定了特征值的最小值，如果特征值中有比这个值还小的则出错。如果没有需要可不填，同下面的"max"  <br>
+"max":针对等值离散的配置，限定了特征值的最大值，如果特征值中有比这个值还大的则出错，没有需要可不填
+
+#### 任务提交示例
+
+```
+input=hdfs://my-hdfs/data
+output=hdfs://my-hdfs/output
+disBoundsPath=hdfs://my-hdfs/disBoundsPath
+
+
+source ./spark-on-angel-env.sh
+$SPARK_HOME/bin/spark-submit \
+  --master yarn-cluster\
+  --name "DiscretizeExample angel" \
+  --jars $SONA_SPARK_JARS  \
+  --driver-memory 5g \
+  --num-executors 1 \
+  --executor-cores 4 \
+  --executor-memory 10g \
+  --files ./localPath/DiscreteJson.txt \
+  --class com.tencent.angel.spark.examples.cluster.DiscretizeExample \
+  ../lib/spark-on-angel-examples-3.2.0.jar \
+  input:$input output:$output disBoundsPath:$disBoundsPath sep:tab partitionNum:4 \
+  sampleRate:1 user-files:DiscreteJson.txt \
+  
+```
