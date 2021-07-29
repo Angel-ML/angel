@@ -193,7 +193,7 @@ class KCorePartition(index: Int,
             else if ((neiCores.size + numStaticNbrs) <= preMinCore) preMinCore
             else hindexWithPrior(neis, x, numStaticNbrs)
           
-          assert(newCore > 0, "??????????")
+          assert(newCore > 0)
           
           if (newCore < x) {
             add.toLongArray().foreach { n => changed.set(n, 1) }

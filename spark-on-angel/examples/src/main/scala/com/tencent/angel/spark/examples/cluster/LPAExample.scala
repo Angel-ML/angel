@@ -57,8 +57,9 @@ object LPAExample {
       .setSrcNodeIdCol("src")
       .setDstNodeIdCol("dst")
       .setUseBalancePartition(useBalancePartition)
-      .setMaxIter(maxIter)
+      .setMaxIteration(maxIter)
       .setNeedReplicaEdge(needReplicaEdge)
+      .setBatchSize(batchSize)
     
     val df = GraphIO.load(input, isWeighted = false, srcIndex, dstIndex, sep = sep)
     
@@ -66,6 +67,7 @@ object LPAExample {
     GraphIO.save(mapping, output)
     stop()
   }
+  
   def start(mode: String): SparkContext = {
     val conf = new SparkConf()
     conf.setMaster(mode)

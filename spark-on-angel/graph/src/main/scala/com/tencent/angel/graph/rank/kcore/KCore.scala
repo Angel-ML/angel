@@ -60,9 +60,9 @@ class KCore(override val uid: String) extends Transformer
   def setOutput(in: String): Unit = { this.outputDir = in }
   
   override def transform(dataset: Dataset[_]): DataFrame = {
-    val edges = GraphIO.loadEdgesFromDF(dataset, $(srcNodeIdCol), $(dstNodeIdCol), $(needReplicaEdge))
+    val edges = GraphIO.loadEdgesFromDF(dataset, $(srcNodeIdCol), $(dstNodeIdCol))
     edges.persist($(storageLevel))
-    
+  
     val (minId, maxId, numEdges) = Stats.summarize(edges)
     Log.withTimePrintln(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
     
@@ -72,7 +72,7 @@ class KCore(override val uid: String) extends Transformer
     val modelContext = new ModelContext($(psPartitionNum), minId, maxId, -1,
       "cores",  SparkContext.getOrCreate().hadoopConfiguration)
     val model = KCorePSModel(modelContext, edges, $(execMode), $(useBalancePartition), $(balancePartitionPercent))
-    
+  
     var graph =
       if ($(execMode) == "dense") {
         makeDenseGraph(edges, model)
@@ -188,13 +188,13 @@ class KCore(override val uid: String) extends Transformer
     assert(staticCores != null, s"error: staticCores is null!")
     val ts1 = System.currentTimeMillis()
     staticCores.foreachPartition { iter => Iterator.single(KCore.initStaticCores(iter, model))}
-    Log.withTimePrintln(s"push static cores cost: ${System.currentTimeMillis() - ts1} ms")
+    println(s"push static cores cost: ${System.currentTimeMillis() - ts1} ms")
     
     // filter nodes that are needed to be calculated
     val startMkTableTime = System.currentTimeMillis()
-    val neighborTable = KCore.edges2NeighborTable($(execMode), edges, ${partitionNum}, ${topK}, model, ${pullBatchSize}).persist($(storageLevel))
+    val neighborTable = KCore.edges2NeighborTable($(execMode), edges, ${partitionNum}, ${topK}, model, ${pullBatchSize}, $(needReplicaEdge)).persist($(storageLevel))
     val endMkTableTime = System.currentTimeMillis()
-    Log.withTimePrintln(s"make neighbor table cost: ${endMkTableTime - startMkTableTime} ms.")
+    println(s"make neighbor table cost: ${endMkTableTime - startMkTableTime} ms.")
     
     // filter static cores, nodes with degree=1 or nodes that are only connected to static nodes
     neighborTable.foreachPartition { iter =>
@@ -209,24 +209,24 @@ class KCore(override val uid: String) extends Transformer
         }
       }
       model.initCores(msgs)
-      Log.withTimePrintln(s"2nd static cores, init ${msgs.size().toInt} cores.")
+      println(s"2nd static cores, init ${msgs.size().toInt} cores.")
     }
     val graph = neighborTable.mapPartitionsWithIndex { case (index, it) =>
       Iterator(KCorePartition.applySparse(index, it, ${pullBatchSize}, ${topK}))}
     graph.persist($(storageLevel))
     graph.foreachPartition(_ => Unit)
-    Log.withTimePrintln(s"graph parts: ${graph.count()}")
+    println(s"graph parts: ${graph.count()}")
     neighborTable.unpersist(blocking = false)
     graph
   }
   
   def makeDenseGraph(edges: RDD[(Long, Long)], model: KCorePSModel): RDD[KCorePartition] = {
     val startMkTableTime = System.currentTimeMillis()
-    val neighborTable = KCore.edges2NeighborTable($(execMode), edges, $(partitionNum), $(topK))
+    val neighborTable = KCore.edges2NeighborTable($(execMode), edges, $(partitionNum), $(topK), $(needReplicaEdge))
       .persist($(storageLevel))
     neighborTable.count()
     val endMkTableTime = System.currentTimeMillis()
-    Log.withTimePrintln(s"make neighbor table cost: ${endMkTableTime - startMkTableTime} ms.")
+    println(s"make neighbor table cost: ${endMkTableTime - startMkTableTime} ms.")
     
     neighborTable.mapPartitionsWithIndex { case (index, iter) => KCore.initModel(index, iter, model, ${batchSize})}.count()
     val graph = neighborTable.mapPartitionsWithIndex { case (index, it) =>
@@ -240,11 +240,11 @@ class KCore(override val uid: String) extends Transformer
   
   def makeFullGraph(edges: RDD[(Long, Long)]): RDD[KCorePartition]  = {
     val startMkTableTime = System.currentTimeMillis()
-    val neighborTable = KCore.edges2NeighborTable($(execMode), edges, $(partitionNum), $(topK))
+    val neighborTable = KCore.edges2NeighborTable($(execMode), edges, $(partitionNum), $(topK), $(needReplicaEdge))
       .persist($(storageLevel))
     neighborTable.count()
     val endMkTableTime = System.currentTimeMillis()
-    Log.withTimePrintln(s"make neighbor table cost: ${endMkTableTime - startMkTableTime} ms.")
+    println(s"make neighbor table cost: ${endMkTableTime - startMkTableTime} ms.")
     
     val graph = neighborTable.mapPartitionsWithIndex((index, it) =>
       Iterator(KCorePartition.applyFull(index, it, $(batchSize))))
@@ -260,14 +260,14 @@ class KCore(override val uid: String) extends Transformer
     assert(staticCores != null, s"error: staticCores is null!")
     val ts1 = System.currentTimeMillis()
     staticCores.foreachPartition { iter => Iterator.single(KCore.initStaticCores(iter, model))}
-    Log.withTimePrintln(s"push static cores cost: ${System.currentTimeMillis() - ts1} ms")
+    println(s"push static cores cost: ${System.currentTimeMillis() - ts1} ms")
     
     // filter nodes that are needed to be calculated
     val startMkTableTime = System.currentTimeMillis()
-    val neighborTable = KCore.edges2NeighborTable($(execMode), edges, ${partitionNum}, ${topK}, model, ${pullBatchSize}).persist($(storageLevel))
+    val neighborTable = KCore.edges2NeighborTable($(execMode), edges, ${partitionNum}, ${topK}, model, ${pullBatchSize}, $(needReplicaEdge)).persist($(storageLevel))
     neighborTable.count()
     val endMkTableTime = System.currentTimeMillis()
-    Log.withTimePrintln(s"make neighbor table cost: ${endMkTableTime - startMkTableTime} ms.")
+    println(s"make neighbor table cost: ${endMkTableTime - startMkTableTime} ms.")
     
     neighborTable.mapPartitionsWithIndex { case (index, iter) => KCore.initModel2(index, iter, model, ${batchSize})}.count()
     
@@ -283,10 +283,12 @@ class KCore(override val uid: String) extends Transformer
 }
 
 object KCore {
-  def edges2NeighborTable(mode: String, edges: RDD[(Long, Long)], partitionNum: Int, degreeThreshold: Int = -1): RDD[(Long, Array[Long])] = {
+  def edges2NeighborTable(mode: String, edges: RDD[(Long, Long)], partitionNum: Int, degreeThreshold: Int = -1,
+                          needReplicaEdge: Boolean): RDD[(Long, Array[Long])] = {
     assert(mode.toLowerCase == "dense" || mode.toLowerCase == "full")
     val threshold = if (mode.toLowerCase == "dense") degreeThreshold else -1
-    edges.groupByKey(partitionNum).mapPartitions { iter =>
+    val newEdges = if (needReplicaEdge) edges.flatMap(f => Iterator((f._2, f._1), (f._1, f._2))) else edges
+    newEdges.groupByKey(partitionNum).mapPartitions { iter =>
       if (iter.nonEmpty) {
         iter.flatMap { case (src, group) =>
           val neis = group.toArray.distinct
@@ -295,13 +297,15 @@ object KCore {
         }
       } else Iterator.empty
     }
+    
   }
   
   def edges2NeighborTable(mode: String, edges: RDD[(Long, Long)], partitionNum: Int, degreeThreshold: Int,
-                          model: KCorePSModel, batchSize: Int): RDD[(Long, Array[Long], Int)] = {
+                          model: KCorePSModel, batchSize: Int, needReplicaEdge: Boolean): RDD[(Long, Array[Long], Int)] = {
     assert(mode.toLowerCase == "sparse" || mode.toLowerCase == "mid")
     val threshold = if (mode.toLowerCase == "mid") degreeThreshold else -1
-    edges.groupByKey(partitionNum).mapPartitions { iter =>
+    val newEdges = if (needReplicaEdge) edges.flatMap(f => Iterator((f._2, f._1), (f._1, f._2))) else edges
+    newEdges.groupByKey(partitionNum).mapPartitions { iter =>
       BatchIter(iter, batchSize).flatMap { batchIter =>
         val nodes2Pull = new mutable.HashSet[Long]()
         batchIter.foreach { case (src, neighbors) =>

@@ -25,43 +25,40 @@ import it.unimi.dsi.fastutil.longs.{Long2IntOpenHashMap, LongArrayList}
 class LPAGraphPartition(index: Int,
                         keys: Array[Long],
                         indptr: Array[Int],
-                        neighbors: Array[Long],
-                        labels: Array[Long],
-                        indices: Array[Long]) {
+                        neighbors: Array[Long]) {
   
-  def initMsgs(model: LPAPSModel): Int = {
-    val msgs = VFactory.sparseLongKeyLongVector(model.dim)
-    for (i <- keys.indices)
-      msgs.set(keys(i), keys(i))
-    model.initMsgs(msgs)
-    msgs.size().toInt
+  def initMsgs(model: LPAPSModel, batchSize: Int): Int = {
+    keys.indices.sliding(batchSize, batchSize).map{ iter =>
+      val msgs = VFactory.sparseLongKeyLongVector(iter.size)
+      iter.foreach(idx => msgs.set(keys(idx), keys(idx)))
+      model.initMsgs(msgs)
+      msgs.size().toInt
+    }.sum
   }
   
-  def msgToString(msgs: LongLongVector): String = {
-    val it = msgs.getStorage.entryIterator()
-    val sb = new StringBuilder
-    while (it.hasNext) {
-      val entry = it.next()
-      sb.append(s"${entry.getLongKey}:${entry.getLongValue} ")
-    }
-    sb.toString()
-  }
-  
-  def process(model: LPAPSModel, numMsgs: Long): (Long, LPAGraphPartition) = {
-    val inMsgs = model.readMsgs(indices) //todo 如果ps的inMsgs没有key，会返回0
-    val outMsgs = VFactory.sparseLongKeyLongVector(inMsgs.dim())
+  def process(model: LPAPSModel, batchSize: Int): Long = {
     var changedNum = 0L
-    for (idx <- keys.indices) {
-      val newLabel = calcLabel(idx, inMsgs)
-      if (newLabel != labels(idx)) {
-        changedNum += 1
+    var batchCnt = 0
+    keys.indices.sliding(batchSize, batchSize).foreach{ iter =>
+      val before = System.currentTimeMillis()
+      val nbrs2pull = neighbors.slice(indptr(iter.head), indptr(iter.last + 1))
+      val keys2pull = keys.slice(iter.head, iter.last + 1)
+      val nodes2pull = nbrs2pull.union(keys2pull).distinct
+      
+      val inMsgs = model.readMsgs(nodes2pull)
+      val outMsgs = VFactory.sparseLongKeyLongVector(inMsgs.dim())
+      iter.foreach{ idx =>
+        val newLabel = calcLabel(idx, inMsgs)
+        if (newLabel != inMsgs.get(keys(idx))) {
+          changedNum += 1
+        }
+        outMsgs.set(keys(idx), newLabel)
       }
-      outMsgs.set(keys(idx), newLabel)
-      labels(idx) = newLabel
+      model.writeMsgs(outMsgs)
+      println(s"part $index process batch $batchCnt cost: ${System.currentTimeMillis() - before} ms")
+      batchCnt += 1
     }
-    model.writeMsgs(outMsgs)
-    
-    (changedNum, new LPAGraphPartition(index, keys, indptr, neighbors, labels, indices))
+    changedNum
   }
   
   def calcLabel(idx: Int, inMsgs: LongLongVector): Long = {
@@ -69,10 +66,11 @@ class LPAGraphPartition(index: Int,
     val labelCount = new Long2IntOpenHashMap()
     var (label, count) = (inMsgs.get(neighbors(j)), 1)
     while (j < indptr(idx + 1)) {
-      labelCount.addTo(inMsgs.get(neighbors(j)), 1)
-      if (labelCount.get(inMsgs.get(neighbors(j))) > count) {
-        label = inMsgs.get(neighbors(j))
-        count = labelCount.get(inMsgs.get(neighbors(j)))
+      val nbrLabel = inMsgs.get(neighbors(j))
+      labelCount.addTo(nbrLabel, 1)
+      if (labelCount.get(nbrLabel) > count) {
+        label = nbrLabel
+        count = labelCount.get(nbrLabel)
       }
       j += 1
     }
@@ -80,8 +78,12 @@ class LPAGraphPartition(index: Int,
     label
   }
   
-  def save(): (Array[Long], Array[Long]) =
-    (keys, labels)
+  def save(model: LPAPSModel, batchSize: Int): Array[(Long, Long)] = {
+    keys.sliding(batchSize, batchSize).flatMap{ iter =>
+      val inMsgs = model.readMsgs(iter)
+      iter.map(k => (k, inMsgs.get(k)))
+    }.toArray
+  }
 }
 
 object LPAGraphPartition {
@@ -103,8 +105,6 @@ object LPAGraphPartition {
     val keysArray = keys.toLongArray()
     val neighborsArray = neighbors.toLongArray()
     
-    new LPAGraphPartition(index, keysArray,
-      indptr.toIntArray(), neighborsArray,
-      new Array[Long](keysArray.length), keysArray.union(neighborsArray).distinct)
+    new LPAGraphPartition(index, keysArray, indptr.toIntArray(), neighborsArray)
   }
 }

@@ -26,7 +26,8 @@ import com.tencent.angel.spark.models.impl.PSVectorImpl
 import com.tencent.angel.spark.util.VectorUtils
 import org.apache.spark.rdd.RDD
 
-class WCCPSModel(var psVector: PSVector) extends Serializable {
+class WCCPSModel(var psVector: PSVector,
+                 var psMatrix: PSMatrix) extends Serializable {
   val dim: Long = psVector.dimension
 
   /**
@@ -74,21 +75,29 @@ class WCCPSModel(var psVector: PSVector) extends Serializable {
   def numMsgs(): Long = {
     VectorUtils.nnz(psVector)
   }
+  
+  /**
+    * save checkout point
+    * @param id checkpoint id
+    */
+  def checkpoint(id: Int): Unit = {
+    psMatrix.checkpoint(id)
+  }
 }
 
 object WCCPSModel {
   def apply(modelContext: ModelContext, edges: RDD[(Long, Long)], useBalancePartition: Boolean,
             balancePartitionPercent: Float): WCCPSModel = {
     val matrix = ModelContextUtils.createMatrixContext(modelContext, RowType.T_LONG_SPARSE_LONGKEY)
-  
+    
     // TODO: remove later
     if (!modelContext.isUseHashPartition && useBalancePartition) {
       val nodes = edges.flatMap(e => Iterator(e._1, e._2))
       LoadBalancePartitioner.partition(
         nodes, modelContext.getMaxNodeId, modelContext.getPartitionNum, matrix, balancePartitionPercent)
     }
-  
+    
     val psMatrix = PSMatrix.matrix(matrix)
-    new WCCPSModel(new PSVectorImpl(psMatrix.id, 0, modelContext.getMaxNodeId, matrix.getRowType))
+    new WCCPSModel(new PSVectorImpl(psMatrix.id, 0, modelContext.getMaxNodeId, matrix.getRowType), psMatrix)
   }
 }

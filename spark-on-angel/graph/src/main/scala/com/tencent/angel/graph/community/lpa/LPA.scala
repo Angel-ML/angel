@@ -24,7 +24,7 @@ import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.graph.utils.params._
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.Transformer
-import org.apache.spark.ml.param.{IntParam, ParamMap}
+import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.util.Identifiable
 import org.apache.spark.sql.types.{LongType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
@@ -32,16 +32,12 @@ import org.apache.spark.sql.{DataFrame, Dataset, Row}
 class LPA(override val uid: String) extends Transformer
   with HasSrcNodeIdCol with HasDstNodeIdCol with HasOutputNodeIdCol with HasOutputCoreIdCol
   with HasStorageLevel with HasPartitionNum with HasPSPartitionNum with HasUseBalancePartition
-  with HasBalancePartitionPercent with HasNeedReplicaEdge {
-  
-  final val maxIter = new IntParam(this, "maxIter", "maxIter")
-  final def setMaxIter(numIters: Int): this.type = set(maxIter, numIters)
-  setDefault(maxIter, Int.MaxValue)
+  with HasBalancePartitionPercent with HasNeedReplicaEdge with HasMaxIteration with HasBatchSize {
   
   def this() = this(Identifiable.randomUID("LPA"))
   
   override def transform(dataset: Dataset[_]): DataFrame = {
-    val edges = GraphIO.loadEdgesFromDF(dataset, $(srcNodeIdCol), $(dstNodeIdCol), $(needReplicaEdge))
+    val edges = GraphIO.loadEdgesFromDF(dataset, $(srcNodeIdCol), $(dstNodeIdCol))
     edges.persist($(storageLevel))
     
     val (minId, maxId, numEdges) = Stats.summarize(edges)
@@ -54,43 +50,35 @@ class LPA(override val uid: String) extends Transformer
     val modelContext = new ModelContext($(psPartitionNum), minId, maxId, -1,
       "lpa", SparkContext.getOrCreate().hadoopConfiguration)
     val model = LPAPSModel(modelContext, edges, $(useBalancePartition), $(balancePartitionPercent))
-    
-    var graph = edges.flatMap(f => Iterator((f._1, f._2), (f._2, f._1)))
+  
+    val loadGraphTime = System.currentTimeMillis()
+    val newEdges = if ($(needReplicaEdge)) edges.flatMap(f => Iterator((f._1, f._2), (f._2, f._1))) else edges
+    var graph = newEdges
       .groupByKey($(partitionNum))
       .mapPartitionsWithIndex((index, it) =>
-        Iterator((0L, LPAGraphPartition.apply(index, it))))
+        Iterator(LPAGraphPartition.apply(index, it)))
     
     graph.persist($(storageLevel))
     graph.foreachPartition(_ => Unit)
-    graph.count()
-    
-    graph.foreach(_._2.initMsgs(model))
-    graph.foreachPartition(_ => Unit)
-    graph.count()
-    
+    println(s"make graph partitions cost: ${(System.currentTimeMillis() - loadGraphTime) / 1000.0} s")
+  
+    graph.foreach(_.initMsgs(model, $(batchSize)))
     edges.unpersist(blocking = false)
-    
+  
     var curIteration = 0
-    var numMsgs = model.numMsgs()
-    var prev = graph
-    val maxIterNum = $(maxIter)
+    val maxIterNum = $(maxIteration)
     var changedNum = 0L
-    println(s"numMsgs = $numMsgs")
-    
+
     do {
+      val iterationTime = System.currentTimeMillis()
       curIteration += 1
-      graph = prev.map(_._2.process(model, numMsgs))
-      graph.persist($(storageLevel))
-      graph.count()
-      changedNum = graph.map(_._1).reduce(_ + _)
-      prev.unpersist(false)
-      prev = graph
+      changedNum = graph.map(_.process(model, $(batchSize))).reduce(_ + _)
       model.resetMsgs()
-      numMsgs = model.numMsgs()
-      Log.withTimePrintln(s"LPA finished iteration $curIteration; $changedNum  nodes changed  lpa label")
+      Log.withTimePrintln(s"LPA finished iteration $curIteration; $changedNum  nodes changed lpa label, " +
+        s"cost: ${(System.currentTimeMillis() - iterationTime) / 1000.0} s")
     } while (curIteration < maxIterNum && changedNum != 0)
-    
-    val retRDD = graph.map(_._2.save).flatMap(f => f._1.zip(f._2))
+  
+    val retRDD = graph.flatMap(_.save(model, $(batchSize)))
       .sortBy(_._2)
       .map(f => Row.fromSeq(Seq[Any](f._1, f._2)))
     
