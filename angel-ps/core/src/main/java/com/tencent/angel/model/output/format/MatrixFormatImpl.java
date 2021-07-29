@@ -62,6 +62,7 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
   private final static Log LOG = LogFactory.getLog(MatrixFormatImpl.class);
   protected final Configuration conf;
   protected final int partNumPerFile;
+  protected final boolean useRange;
 
   public MatrixFormatImpl(Configuration conf) {
     this(conf, -1);
@@ -70,6 +71,8 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
   public MatrixFormatImpl(Configuration conf, int partNumPerFile) {
     this.conf = conf;
     this.partNumPerFile = partNumPerFile;
+    this.useRange = "range".equalsIgnoreCase(
+            conf.get(AngelConf.ANGEL_PS_ROUTER_TYPE, AngelConf.DEFAULT_ANGEL_PS_ROUTER_TYPE));
   }
 
   /**
@@ -607,11 +610,20 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
       streamPos = out.getPos();
       partition = matrix.getPartition(partIds.get(i));
       PartitionKey partKey = partition.getPartitionKey();
-      MatrixPartitionMeta partMeta =
+      MatrixPartitionMeta partMeta;
+      long startCol = 0;
+      long endCol = 0;
+      if(useRange) {
+        startCol = partKey.getStartCol();
+        endCol = partKey.getEndCol();
+      }
+
+      partMeta =
           new MatrixPartitionMeta(partKey.getPartitionId(), partKey.getStartRow(),
-              partKey.getEndRow(), partKey.getStartCol(), partKey.getEndCol(),
+              partKey.getEndRow(), startCol, endCol,
               partition.getElemNum(),
               destFile.getName(), streamPos, 0);
+
       save(partition, partMeta, saveContext, out);
       partMeta.setLength(out.getPos() - streamPos);
       dataFilesMeta.addPartitionMeta(partIds.get(i), partMeta);
