@@ -6,9 +6,7 @@
 
 LINE算法是一个网络表示学习算法，也可以认为是针对图数据的预处理算法。算法的输入是一个网络拓扑，输出每个节点的向量表示。LINE算法本身在于分别优化两个目标函数：
 
-![](http://latex.codecogs.com/png.latex?\dpi{150}O_1=-\sum_{(i,j)\inE}w_{ij}\logp_1(v_i,v_j))
-
-![](http://latex.codecogs.com/png.latex?\dpi{150}O_2=-\sum_{(i,j)\inE}w_{ij}\logp_2(v_j|v_i))
+![](../../img/line.png)
 
 其中，![](http://latex.codecogs.com/png.latex?O_1)刻画了节点之间的一阶相似性(直接连边)，![](http://latex.codecogs.com/png.latex?O_2)刻画了节点之间的二阶相似性(相似邻居)。换句话说，
 
