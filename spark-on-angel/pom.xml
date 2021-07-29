@@ -150,7 +150,6 @@
 						<arg>-deprecation</arg>
 						<arg>-feature</arg>
 					</args>
-					<forkMode>never</forkMode>
 					<jvmArgs>
 						<jvmArg>-Xms1024m</jvmArg>
 						<jvmArg>-Xmx3g</jvmArg>
@@ -188,7 +187,6 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.19.1</version>
 				<configuration>
-					<forkMode>never</forkMode>
 					<includes>
 						<include>**/Test*.java</include>
 						<include>**/*Test.java</include>
@@ -217,7 +215,6 @@
 				<artifactId>scalatest-maven-plugin</artifactId>
 				<version>1.0</version>
 				<configuration>
-					<forkMode>never</forkMode>
 					<reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
 					<junitxml>.</junitxml>
 					<filereports>sparkOnAngel.txt</filereports>
