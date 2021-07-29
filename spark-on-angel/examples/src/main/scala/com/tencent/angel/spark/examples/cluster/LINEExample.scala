@@ -76,7 +76,7 @@ object LINEExample {
       .setExtraInputEmbeddingPath(extraInputEmbeddingPath)
       .setExtraContextEmbeddingPath(extraContextEmbeddingPath)
 
-    val edges: DataFrame = GraphIO.load(input, isWeight, sep = sep)
+    val edges: DataFrame = GraphIO.loadStringEdge(input, isWeight, sep = sep)
     line.transform(edges)
     line.save(output, numEpoch, saveContextEmbedding)
     stop()

@@ -17,7 +17,6 @@
 
 package com.tencent.angel.graph.embedding.line
 
-import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.concurrent.TimeUnit
@@ -27,7 +26,7 @@ import com.tencent.angel.graph.common.psf.param.IntKeysUpdateParam
 import com.tencent.angel.graph.utils.ModelContextUtils
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
-import com.tencent.angel.model.output.format.{MatrixFilesMeta, ModelFilesConstent}
+import com.tencent.angel.model.output.format.ModelFilesConstent
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.ps.storage.vector.element.IElement
 import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
@@ -169,7 +168,7 @@ class LINEPSModel(embeddingMatrix: PSMatrix, modelContext: ModelContext) extends
           .foreach(batch => extraUpdate(batch.toArray, order, keyValueSep, featSep, false))
         Iterator.single()
       }.count()
-      LogUtils.logTime(s"Model successfully extra Initial output embedding, " +
+      LogUtils.logTime(s"Model successfully extra Initial context embedding, " +
         s"cost ${(System.currentTimeMillis() - beforeInitialize) / 1000.0}s")
     }
   }

@@ -21,6 +21,7 @@ import java.util
 
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.common.ByteBufSerdeUtils
+import com.tencent.angel.exception.AngelException
 import com.tencent.angel.graph.utils.GraphMatrixUtils
 import com.tencent.angel.ml.matrix.MatrixMeta
 import com.tencent.angel.ml.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc, UpdateParam}
@@ -138,17 +139,43 @@ class LINEAdjustParam(matrixId: Int,
       })
       partParams
     } else {
-      val inputSplits = splitIntFloatsMap(matrixMeta, inputUpdates)
-      val outputSplits = splitIntFloatsMap(matrixMeta, outputUpdates)
+      val inputSplits = if (inputUpdates != null && !inputUpdates.isEmpty) {
+        splitIntFloatsMap(matrixMeta, inputUpdates)
+      } else null
 
-      for (index <- (0 until parts.length)) {
-        if ((inputSplits(index) != null && inputSplits(index).size() > 0)
-          || (outputSplits(index) != null && outputSplits(index).size() > 0)) {
-          partParams.add(
-            new PartLINEAdjustParam(
-              matrixId, parts(index), order, extraInitial, inputSplits(index), outputSplits(index)))
+      val outputSplits = if (outputUpdates != null && !outputUpdates.isEmpty) {
+        splitIntFloatsMap(matrixMeta, outputUpdates)
+      } else null
+
+      if (inputSplits != null && outputSplits != null) {
+        for (index <- (0 until parts.length)) {
+          if ((inputSplits(index) != null && inputSplits(index).size() > 0)
+            || (outputSplits(index) != null && outputSplits(index).size() > 0)) {
+            partParams.add(
+              new PartLINEAdjustParam(
+                matrixId, parts(index), order, extraInitial, inputSplits(index), outputSplits(index)))
+          }
         }
+      } else if (inputSplits != null && outputSplits == null) {
+        for (index <- (0 until parts.length)) {
+          if ((inputSplits(index) != null && inputSplits(index).size() > 0)) {
+            partParams.add(
+              new PartLINEAdjustParam(
+                matrixId, parts(index), order, extraInitial, inputSplits(index), null))
+          }
+        }
+      } else if (inputSplits == null && outputSplits != null) {
+        for (index <- (0 until parts.length)) {
+          if ((outputSplits(index) != null && outputSplits(index).size() > 0)) {
+            partParams.add(
+              new PartLINEAdjustParam(
+                matrixId, parts(index), order, extraInitial, null, outputSplits(index)))
+          }
+        }
+      } else {
+        throw new AngelException("Invalid parameters, both inputUpdates and outputUpdates are null")
       }
+
       partParams
     }
   }
@@ -232,4 +259,3 @@ class PartLINEAdjustParam(matrixId: Int,
     len
   }
 }
-
