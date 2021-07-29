@@ -43,6 +43,8 @@ object DeepWalkExample {
     val walkLength = params.getOrElse("walkLength", "10").toInt
     val isWeighted = params.getOrElse("isWeighted", "false").toBoolean
     val needReplicateEdge = params.getOrElse("needReplicateEdge", "true").toBoolean
+    val numWalks = params.getOrElse("numWalks", "3").toInt
+
     val sep = params.getOrElse("sep", "space") match {
       case "space" => " "
       case "comma" => ","
@@ -69,11 +71,11 @@ object DeepWalkExample {
       .setNeedReplicaEdge(needReplicateEdge)
       .setUseEdgeBalancePartition(useEdgeBalancePartition)
       .setUseBalancePartition(useBalancePartition)
+      .setEpochNum(numWalks)
 
+    deepwalk.setOutputDir(output)
     val df = GraphIO.load(input, isWeighted = isWeighted, srcIndex, dstIndex, weightIndex, sep = sep)
     val mapping = deepwalk.transform(df)
-
-    GraphIO.save(mapping, output)
 
     stop()
   }
