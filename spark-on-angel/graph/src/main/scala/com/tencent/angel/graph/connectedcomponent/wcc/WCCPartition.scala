@@ -21,72 +21,71 @@ import com.tencent.angel.ml.math2.vector.LongLongVector
 import it.unimi.dsi.fastutil.ints.IntArrayList
 import it.unimi.dsi.fastutil.longs.LongArrayList
 
+import scala.collection.mutable
+
 class WCCPartition(index: Int,
-                              keys: Array[Long],
-                              indptr: Array[Int],
-                              neighbors: Array[Long],
-                              keyLabels: Array[Long],
-                              indices: Array[Long]) extends Serializable {
-  
-  lazy val size: Int = keys.length
+                   keys: Array[Long],
+                   indptr: Array[Int],
+                   neighbors: Array[Long]) extends Serializable {
   
   def initMsgs(model: WCCPSModel, batchSize: Int): Unit = {
     keys.indices.sliding(batchSize, batchSize).foreach { iter =>
-      val msgs = VFactory.sparseLongKeyLongVector(model.dim)
+      val msgs = VFactory.sparseLongKeyLongVector(iter.size)
       for (i <- iter) {
         msgs.set(keys(i), keys(i))
-        keyLabels(i) = keys(i)
       }
       model.initMsgs(msgs)
       
-      println(s"part $index init ${msgs.size().toInt} msgs")
+      println(s"part $index batch (${iter.head}, ${iter.last}) init ${msgs.size().toInt} msgs")
     }
   }
   
   // if label of node is larger than its neighbors',
   // change it into min among its neighbors' labels
-  def process(model: WCCPSModel, batchSize: Int, numMsgs: Long, isFirstIteration: Boolean): (Int, WCCPartition) = {
-    var changedNum = 0
-    val inMsgs = model.readMsgs(indices)
+  def process(model: WCCPSModel, batchSize: Int): Long = {
+    var changedNum = 0L
     var batchStartTime = System.currentTimeMillis()
-    
-    if (numMsgs > indices.length || isFirstIteration) {
-      //      val inMsgs = model.readMsgs(indices)
-      for( idx <- keys.indices) {
-        keyLabels(idx) = inMsgs.get(keys(idx))
-      }
-    }
-    changedNum = makeBatchIterator(batchSize).flatMap { case(from, to) =>
-      //todo can reduce memory by pulling only needed nodes from ps, time cost will increase
-      //      val inMsgs = model.readMsgs(indices)
+  
+    keys.indices.sliding(batchSize, batchSize).foreach { iter =>
       batchStartTime = System.currentTimeMillis()
-      val outMsgs = VFactory.sparseLongKeyLongVector(inMsgs.dim())
-      var changedInBatch = 0
-      (from until to).foreach { idx =>
-        val newLabel = minNbrLabel(idx, inMsgs)
-        if (newLabel < keyLabels(idx)) {
-          keyLabels(idx) = newLabel
+      val nbrs2pull = neighbors.slice(indptr(iter.head), indptr(iter.last + 1))
+      val keys2pull = keys.slice(iter.head, iter.last + 1)
+      val nodes2pull = nbrs2pull.union(keys2pull).distinct
+    
+      val beforePull = System.currentTimeMillis()
+      val pullMsgs = model.readMsgs(nodes2pull)
+      val pullMsgsTime = System.currentTimeMillis() - beforePull
+    
+      val outMsgs = VFactory.sparseLongKeyLongVector(iter.size)
+      var changedInBatch = 0L
+      iter.foreach { idx =>
+        val newLabel = minNbrLabel(idx, pullMsgs)
+        if (newLabel < pullMsgs.get(keys(idx))) {
           changedInBatch += 1
         }
         outMsgs.set(keys(idx), newLabel)
       }
       model.writeMsgs(outMsgs)
-      
-      println(s"part $index batch ($from, $to), cost time: ${System.currentTimeMillis() - batchStartTime} ms")
-      
-      Iterator(changedInBatch)
-    }.sum
-    (changedNum, new WCCPartition(index, keys, indptr, neighbors, keyLabels, indices))
     
+      println(s"part $index batch (${iter.head}, ${iter.last}), pull from ps cost: $pullMsgsTime ms," +
+        s"total cost time: ${System.currentTimeMillis() - batchStartTime} ms")
+    
+      changedNum += changedInBatch
+    }
+    changedNum
   }
   
-  def save(): (Array[Long], Array[Long]) = {
-    (keys, keyLabels)
+  // return (node, label) pairs
+  def save(model: WCCPSModel, batchSize: Int): Array[(Long, Long)] = {
+    keys.sliding(batchSize, batchSize).flatMap{ iter =>
+      val msgs = model.readMsgs(iter)
+      iter.map(k => (k, msgs.get(k)))
+    }.toArray
   }
   
   def minNbrLabel(idx: Int, inMsgs: LongLongVector): Long = {
     var j = indptr(idx)
-    var minLabel = keyLabels(idx)
+    var minLabel = inMsgs.get(keys(idx))
     while (j < indptr(idx + 1)) {
       val t = inMsgs.get(neighbors(j))
       if (minLabel > t) {
@@ -95,55 +94,75 @@ class WCCPartition(index: Int,
       j += 1
     }
     minLabel
-    
   }
   
-  def makeBatchIterator(batchSize: Int): Iterator[(Int, Int)] = new Iterator[(Int, Int)] {
-    var index = 0
-    
-    override def next(): (Int, Int) = {
-      val preIndex = index
-      index = index + batchSize
-      (preIndex, math.min(index, WCCPartition.this.size))
-    }
-    
-    override def hasNext: Boolean = {
-      index < WCCPartition.this.size
-    }
-  }
   
-  def compressEdges(model: WCCPSModel): Set[(Long, Long)] = {
-    val msgs = model.readMsgs(indices)
-    val comEdges = collection.mutable.Set[(Long, Long)]()
-    for (idx <- keys.indices) {
-      var j = indptr(idx)
-      val srcTag = keyLabels(idx)
-      while (j < indptr(idx + 1)) {
-        val nbrTag = msgs.get(neighbors(j))
-        if (srcTag < nbrTag) {
-          comEdges.add((srcTag, nbrTag))
+  def compressEdges(model: WCCPSModel, batchSize: Int): Set[(Long, Long)] = {
+    
+    val comEdges = mutable.HashSet[(Long, Long)]()
+    var batchStartTime = System.currentTimeMillis()
+    
+    keys.indices.sliding(batchSize, batchSize).foreach { iter =>
+      batchStartTime = System.currentTimeMillis()
+      val nbrs2pull = neighbors.slice(indptr(iter.head), indptr(iter.last + 1))
+      val keys2pull = keys.slice(iter.head, iter.last + 1)
+      val nodes2pull = nbrs2pull.union(keys2pull).distinct
+      
+      val beforePull = System.currentTimeMillis()
+      val pullMsgs = model.readMsgs(nodes2pull)
+      val pullMsgsTime = System.currentTimeMillis() - beforePull
+      
+      iter.foreach{ idx =>
+        var j = indptr(idx)
+        val srcTag = pullMsgs.get(keys(idx))
+        while (j < indptr(idx + 1)) {
+          val nbrTag = pullMsgs.get(neighbors(j))
+          if (srcTag < nbrTag) {
+            comEdges.add((srcTag, nbrTag))
+          }
+          j += 1
         }
-        j += 1
       }
+      
+      println(s"part $index, compressing edges, batch (${iter.head}, ${iter.last}), pull from ps cost: $pullMsgsTime ms," +
+        s"total cost time: ${System.currentTimeMillis() - batchStartTime} ms")
     }
     comEdges.toSet
   }
   
-  def edgesIfCompress(model: WCCPSModel): Long = {
-    val msgs = model.readMsgs(indices)
-    val comEdges = collection.mutable.Set[(Long, Long)]()
-    for (idx <- keys.indices) {
-      var j = indptr(idx)
-      val srcTag = keyLabels(idx)
-      while (j < indptr(idx + 1)) {
-        val nbrTag = msgs.get(neighbors(j))
-        if (srcTag < nbrTag) {
-          comEdges.add((srcTag, nbrTag))
+  def edgesIfCompress(model: WCCPSModel, batchSize: Int): Long = {
+    
+    val comEdges = mutable.HashSet[(Long, Long)]()
+    var batchStartTime = System.currentTimeMillis()
+    
+    keys.indices.sliding(batchSize, batchSize).foreach { iter =>
+      batchStartTime = System.currentTimeMillis()
+      val nbrs2pull = neighbors.slice(indptr(iter.head), indptr(iter.last + 1))
+      val keys2pull = keys.slice(iter.head, iter.last + 1)
+      val nodes2pull = nbrs2pull.union(keys2pull).distinct
+      
+      val beforePull = System.currentTimeMillis()
+      val pullMsgs = model.readMsgs(nodes2pull)
+      val pullMsgsTime = System.currentTimeMillis() - beforePull
+      
+      iter.foreach{ idx =>
+        var j = indptr(idx)
+        val srcTag = pullMsgs.get(keys(idx))
+        while (j < indptr(idx + 1)) {
+          val nbrTag = pullMsgs.get(neighbors(j))
+          if (srcTag < nbrTag) {
+            comEdges.add((srcTag, nbrTag))
+          }
+          j += 1
         }
-        j += 1
       }
+      
+      println(s"part $index, calculating edge num if compressed, batch (${iter.head}, ${iter.last}), pull from ps cost: $pullMsgsTime ms," +
+        s"total cost time: ${System.currentTimeMillis() - batchStartTime} ms")
     }
-    comEdges.size.toLong
+    val size = comEdges.size.toLong
+    comEdges.clear()
+    size
   }
   
 }
@@ -166,7 +185,6 @@ object WCCPartition {
     val keysArray = keys.toLongArray()
     val neighborsArray = neighbors.toLongArray()
     
-    new WCCPartition(index, keysArray, indptr.toIntArray(),
-      neighborsArray, new Array[Long](keysArray.length), keysArray.union(neighborsArray).distinct)
+    new WCCPartition(index, keysArray, indptr.toIntArray(), neighborsArray)
   }
 }

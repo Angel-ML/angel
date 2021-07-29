@@ -33,7 +33,7 @@ object LPAExample {
       .setSrcNodeIdCol("src")
       .setDstNodeIdCol("dst")
       .setUseBalancePartition(useBalancePartition)
-      .setMaxIter(maxIter)
+      .setMaxIteration(maxIter)
 
     val df = GraphIO.load(input, isWeighted = false, srcIndex, dstIndex, sep = sep)
     val mapping = lpa.transform(df)
