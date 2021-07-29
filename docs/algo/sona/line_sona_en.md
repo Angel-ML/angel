@@ -6,9 +6,9 @@
 
 The LINE algorithm is a network representation learning algorithm(also be considered as a preprocessing algorithm for graph data). The algorithm recieve a network as input and, produces the vector representation for each node. The LINE algorithm  mainly focuses on optimizing two objective functions:
 
-![](http://latex.codecogs.com/png.latex?\dpi{150}O_1=-\sum_{(i,j)\in E}w_{ij}\log p_1(v_i,v_j))
+![](http://latex.codecogs.com/png.latex?\dpi{150}O_1=-\sum_{(i,j)\inE}w_{ij}\logp_1(v_i,v_j))
 
-![](http://latex.codecogs.com/png.latex?\dpi{150}O_2=-\sum_{(i,j)\in E}w_{ij}\log p_2(v_j|v_i))
+![](http://latex.codecogs.com/png.latex?\dpi{150}O_2=-\sum_{(i,j)\inE}w_{ij}\logp_2(v_j|v_i))
 
 where, ![](http://latex.codecogs.com/png.latex?O_1) characterizes the first-order similarity between nodes (direct edge), and ![](http://latex.codecogs.com/png.latex?O_2) depicts the second-order similarity between nodes (similar neighbors). in other words,
 
