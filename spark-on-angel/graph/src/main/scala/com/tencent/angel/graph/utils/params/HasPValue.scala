@@ -1,6 +1,6 @@
 package com.tencent.angel.graph.utils.params
 
-import org.apache.spark.ml.param.{DoubleParam, ParamMap, Params}
+import org.apache.spark.ml.param.{DoubleParam, Params}
 
 
 trait HasPValue extends Params {

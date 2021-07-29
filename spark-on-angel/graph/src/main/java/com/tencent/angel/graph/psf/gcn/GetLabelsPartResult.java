@@ -20,6 +20,7 @@ import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import io.netty.buffer.ByteBuf;
 
 public class GetLabelsPartResult extends PartitionGetResult {
+
   private long[] keys;
   private float[] values;
 
@@ -28,7 +29,8 @@ public class GetLabelsPartResult extends PartitionGetResult {
     this.values = values;
   }
 
-  public GetLabelsPartResult() {}
+  public GetLabelsPartResult() {
+  }
 
   public long[] getKeys() {
     return keys;
@@ -46,10 +48,12 @@ public class GetLabelsPartResult extends PartitionGetResult {
   public void serialize(ByteBuf output) {
     assert (keys.length == values.length);
     output.writeInt(keys.length);
-    for (int i = 0; i < keys.length; i++)
+    for (int i = 0; i < keys.length; i++) {
       output.writeLong(keys[i]);
-    for (int i = 0; i < values.length; i++)
+    }
+    for (int i = 0; i < values.length; i++) {
       output.writeFloat(values[i]);
+    }
   }
 
   @Override
@@ -57,10 +61,12 @@ public class GetLabelsPartResult extends PartitionGetResult {
     int len = input.readInt();
     keys = new long[len];
     values = new float[len];
-    for (int i = 0; i < len; i++)
+    for (int i = 0; i < len; i++) {
       keys[i] = input.readLong();
-    for (int i = 0; i < len; i++)
+    }
+    for (int i = 0; i < len; i++) {
       values[i] = input.readFloat();
+    }
   }
 
   @Override

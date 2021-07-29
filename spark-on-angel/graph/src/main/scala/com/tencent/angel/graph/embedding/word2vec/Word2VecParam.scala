@@ -1,3 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.graph.embedding.word2vec
 
 class Word2VecParam extends Serializable {
@@ -9,11 +26,15 @@ class Word2VecParam extends Serializable {
   var learningRate: Float = _
   var decayRate: Float = _
   var batchSize: Int = _
+  var logStep: Int = _
   var numEpoch: Int = _
   var maxIndex: Int = _
+  var minIndex: Int = _
   var sampleRate: Float = _
   var numPSPart: Int = 1
   var modelPath: String = _
+  var extraInputEmbeddingPath: String = _
+  var extraContextEmbeddingPath: String = _
   var checkpointInterval: Int = Int.MaxValue
   var saveModelInterval: Int = Int.MaxValue
   var order: Int = _
@@ -21,6 +42,8 @@ class Word2VecParam extends Serializable {
   var numRowDataSet: Option[Long] = None
   var seed: Int = _
   var maxLength: Int = -1
+  var nodeTypePath: String = ""
+  var saveContextEmbedding: Boolean = _
 
   def setMaxLength(maxLength: Int): this.type = {
     this.maxLength = maxLength
@@ -79,6 +102,12 @@ class Word2VecParam extends Serializable {
     this
   }
 
+  def setLogStep(logStep: Int): this.type = {
+    require(logStep > 0, s"require log step > 0, $logStep given")
+    this.logStep = logStep
+    this
+  }
+
   def setNumEpoch(numEpoch: Int): this.type = {
     require(numEpoch > 0, s"require num of epoch > 0, $numEpoch given")
     this.numEpoch = numEpoch
@@ -91,6 +120,12 @@ class Word2VecParam extends Serializable {
     this
   }
 
+  def setMinIndex(minIndex: Long): this.type = {
+    require(minIndex > 0 && minIndex < Int.MaxValue, s"require minIndex > 0 && minIndex < Int.maxValue, $maxIndex given")
+    this.minIndex = minIndex.toInt
+    this
+  }
+
   def setSampleRate(sampleRate: Float): this.type = {
     require(sampleRate > 0, s"sample rate belongs to [0, 1], $sampleRate given")
     this.sampleRate = sampleRate
@@ -100,6 +135,26 @@ class Word2VecParam extends Serializable {
   def setModelPath(modelPath: String): this.type = {
     require(null != modelPath && modelPath.nonEmpty, s"require non empty path to save model, $modelPath given")
     this.modelPath = modelPath
+    this
+  }
+
+  def setExtraInputEmbeddingPath(extraInputEmbeddingPath: String): this.type = {
+    this.extraInputEmbeddingPath = extraInputEmbeddingPath
+    this
+  }
+
+  def setExtraContextEmbeddingPath(extraContextEmbeddingPath: String): this.type = {
+    this.extraContextEmbeddingPath = extraContextEmbeddingPath
+    this
+  }
+
+  def setNodeTypePath(nodeTypePath: String): this.type = {
+    this.nodeTypePath = nodeTypePath
+    this
+  }
+
+  def setSaveContextEmbedding(saveContextEmbedding: Boolean): this.type = {
+    this.saveContextEmbedding = saveContextEmbedding
     this
   }
 

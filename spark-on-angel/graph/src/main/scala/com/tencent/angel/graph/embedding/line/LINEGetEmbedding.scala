@@ -20,12 +20,12 @@ package com.tencent.angel.graph.embedding.line
 import java.util
 
 import com.tencent.angel.PartitionKey
-import com.tencent.angel.graph.data.NodeUtils
+import com.tencent.angel.common.ByteBufSerdeUtils
+import com.tencent.angel.graph.utils.GraphMatrixUtils
 import com.tencent.angel.ml.matrix.psf.get.base._
-import com.tencent.angel.ps.storage.partition.RowBasedPartition
-import com.tencent.angel.ps.storage.vector.ServerIntAnyRow
 import com.tencent.angel.psagent.PSAgentContext
-import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplitUtils
+import com.tencent.angel.psagent.matrix.transport.router.operator.IIntKeyPartOp
+import com.tencent.angel.psagent.matrix.transport.router.{KeyPart, RouterUtils}
 import io.netty.buffer.ByteBuf
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 
@@ -43,12 +43,20 @@ class LINEGetEmbedding(param: LINEGetEmbeddingParam) extends GetFunc(param) {
     */
   override def partitionGet(partParam: PartitionGetParam): PartitionGetResult = {
     val getEmbeddingParam = partParam.asInstanceOf[PartLINEGetEmbeddingParam]
-    val matrix = psContext.getMatrixStorageManager.getMatrix(getEmbeddingParam.getMatrixId)
-    val part = matrix.getPartition(getEmbeddingParam.getPartKey.getPartitionId)
-    val row = part.asInstanceOf[RowBasedPartition].getRow(0).asInstanceOf[ServerIntAnyRow]
+    val row = GraphMatrixUtils.getPSIntKeyRow(psContext, getEmbeddingParam)
 
-    val srcNodeIds = getEmbeddingParam.srcNodeIds
-    val targetNodeIds = getEmbeddingParam.targetNodeIds
+    val srcData = getEmbeddingParam.srcNodeIds
+    val targetData = getEmbeddingParam.targetNodeIds
+    var srcNodeIds: Array[Int] = null
+    if (srcData != null) {
+      srcNodeIds = srcData.asInstanceOf[IIntKeyPartOp].getKeys
+    }
+
+    var targetNodeIds: Array[Int] = null
+    if (targetData != null) {
+      targetNodeIds = targetData.asInstanceOf[IIntKeyPartOp].getKeys
+    }
+
     val order = getEmbeddingParam.order
 
     // Get the number of nodes that need get feats
@@ -156,72 +164,51 @@ class LINEGetEmbeddingParam(matrixId: Int, srcNodes: Array[Int], dstNodes: Array
 
     targetNodeNum = targetNodeIds.length
 
-    val parts = PSAgentContext.get().getMatrixMetaManager.getPartitions(matrixId, 0)
+    val matrixMeta = PSAgentContext.get().getMatrixMetaManager.getMatrixMeta(matrixId)
+    val parts = matrixMeta.getPartitionKeys
 
-    // Sort and split the node ids
-    val srcIndicesViews = RowUpdateSplitUtils.split(srcNodes.clone(), parts, false)
-    val targetIndicesViews = RowUpdateSplitUtils.split(targetNodeIds, parts, false)
+    val srcSplits = RouterUtils.split(matrixMeta, 0, srcNodes.clone(), false)
+    val targetSplits = RouterUtils.split(matrixMeta, 0, targetNodeIds, false)
 
-    val partToParams = new util.HashMap[PartitionKey, PartLINEGetEmbeddingParam](targetIndicesViews.size())
-
-    // Merge the src node splits and target node splits
-    val srcIter = srcIndicesViews.entrySet().iterator()
-    while (srcIter.hasNext) {
-      val entry = srcIter.next()
-      partToParams.put(entry.getKey, new PartLINEGetEmbeddingParam(matrixId, entry.getKey,
-        entry.getValue.getIndices, entry.getValue.getStart, entry.getValue.getEnd,
-        null, -1, -1, order))
-    }
-
-    val targetIter = targetIndicesViews.entrySet().iterator()
-    while (targetIter.hasNext) {
-      val entry = targetIter.next()
-      val partParam = partToParams.get(entry.getKey)
-      if (partParam == null) {
-        partToParams.put(entry.getKey, new PartLINEGetEmbeddingParam(matrixId, entry.getKey,
-          null, -1, -1,
-          entry.getValue.getIndices, entry.getValue.getStart, entry.getValue.getEnd,
-          order))
-      } else {
-        partParam.targetNodeIds = entry.getValue.getIndices
-        partParam.targetStart = entry.getValue.getStart
-        partParam.targetEnd = entry.getValue.getEnd
+    val partParams = new util.ArrayList[PartitionGetParam](parts.length)
+    for (index <- (0 until parts.length)) {
+      if ((srcSplits(index) != null && srcSplits(index).size() > 0)
+        || (targetSplits(index) != null && targetSplits(index).size() > 0)) {
+        partParams.add(
+          new PartLINEGetEmbeddingParam(
+            matrixId, parts(index), srcSplits(index), targetSplits(index), order))
       }
     }
 
-    val partParams = new util.ArrayList[PartitionGetParam]
-    partParams.addAll(partToParams.values())
     partParams
   }
 }
 
-class PartLINEGetEmbeddingParam(matrixId: Int, part: PartitionKey, var srcNodeIds: Array[Int],
-                                var srcStart: Int, var srcEnd: Int, var targetNodeIds: Array[Int],
-                                var targetStart: Int, var targetEnd: Int, var order: Int) extends PartitionGetParam(matrixId, part) {
+class PartLINEGetEmbeddingParam(matrixId: Int,
+                                part: PartitionKey,
+                                var srcNodeIds: KeyPart,
+                                var targetNodeIds: KeyPart,
+                                var order: Int) extends PartitionGetParam(matrixId, part) {
 
-  def this() = this(-1, null, null, -1, -1, null, -1, -1, -1)
+  def this() = this(-1, null, null, null, -1)
 
   override def serialize(buf: ByteBuf): Unit = {
     super.serialize(buf)
 
     // Src nodes
     if (srcNodeIds != null) {
-      buf.writeInt(srcEnd - srcStart)
-      for (i <- srcStart until srcEnd) {
-        buf.writeInt(srcNodeIds(i))
-      }
+      ByteBufSerdeUtils.serializeBoolean(buf, true)
+      ByteBufSerdeUtils.serializeKeyPart(buf, srcNodeIds)
     } else {
-      buf.writeInt(0)
+      ByteBufSerdeUtils.serializeBoolean(buf, false)
     }
 
     // Target nodes
     if (targetNodeIds != null) {
-      buf.writeInt(targetEnd - targetStart)
-      for (i <- targetStart until targetEnd) {
-        buf.writeInt(targetNodeIds(i))
-      }
+      ByteBufSerdeUtils.serializeBoolean(buf, true)
+      ByteBufSerdeUtils.serializeKeyPart(buf, targetNodeIds)
     } else {
-      buf.writeInt(0)
+      ByteBufSerdeUtils.serializeBoolean(buf, false)
     }
 
     // Order
@@ -230,22 +217,15 @@ class PartLINEGetEmbeddingParam(matrixId: Int, part: PartitionKey, var srcNodeId
 
   override def deserialize(buf: ByteBuf): Unit = {
     super.deserialize(buf)
+
     // Src node
-    val srcNodeNum = buf.readInt()
-    if (srcNodeNum > 0) {
-      srcNodeIds = new Array[Int](srcNodeNum)
-      for (i <- 0 until srcNodeNum) {
-        srcNodeIds(i) = buf.readInt()
-      }
+    if (ByteBufSerdeUtils.deserializeBoolean(buf)) {
+      srcNodeIds = ByteBufSerdeUtils.deserializeKeyPart(buf)
     }
 
     // Target node
-    val targetNodeNum = buf.readInt()
-    if (targetNodeNum > 0) {
-      targetNodeIds = new Array[Int](targetNodeNum)
-      for (i <- 0 until targetNodeNum) {
-        targetNodeIds(i) = buf.readInt()
-      }
+    if (ByteBufSerdeUtils.deserializeBoolean(buf)) {
+      targetNodeIds = ByteBufSerdeUtils.deserializeKeyPart(buf)
     }
 
     // Order
@@ -253,7 +233,16 @@ class PartLINEGetEmbeddingParam(matrixId: Int, part: PartitionKey, var srcNodeId
   }
 
   override def bufferLen(): Int = {
-    super.bufferLen() + 4 + (srcEnd - srcStart) * 4 + 4 + (targetEnd - targetStart) * 4 + 4
+    var len = super.bufferLen()
+    len += ByteBufSerdeUtils.BOOLEN_LENGTH * 2
+    if (srcNodeIds != null) {
+      len += ByteBufSerdeUtils.serializedKeyPartLen(srcNodeIds)
+    }
+
+    if (targetNodeIds != null) {
+      len += ByteBufSerdeUtils.serializedKeyPartLen(targetNodeIds)
+    }
+    len
   }
 }
 
@@ -269,29 +258,37 @@ class PartLINEGetEmbeddingResult(var part: PartitionKey, var srcFeats: Int2Objec
     */
   override def serialize(output: ByteBuf): Unit = {
     if (srcFeats != null) {
-      output.writeInt(srcFeats.size())
+      ByteBufSerdeUtils.serializeInt(output, srcFeats.size())
 
       val resIter = srcFeats.int2ObjectEntrySet().fastIterator()
       while (resIter.hasNext) {
         val entry = resIter.next()
-        output.writeInt(entry.getIntKey)
-        NodeUtils.serialize(entry.getValue, output)
+        ByteBufSerdeUtils.serializeInt(output, entry.getIntKey)
+        if (entry.getValue != null) {
+          ByteBufSerdeUtils.serializeFloats(output, entry.getValue)
+        } else {
+          ByteBufSerdeUtils.serializeEmptyFloats(output)
+        }
       }
     } else {
-      output.writeInt(0)
+      ByteBufSerdeUtils.serializeInt(output, 0)
     }
 
     if (targetFeats != null) {
-      output.writeInt(targetFeats.size())
+      ByteBufSerdeUtils.serializeInt(output, targetFeats.size())
 
       val resIter = targetFeats.int2ObjectEntrySet().fastIterator()
       while (resIter.hasNext) {
         val entry = resIter.next()
-        output.writeInt(entry.getIntKey)
-        NodeUtils.serialize(entry.getValue, output)
+        ByteBufSerdeUtils.serializeInt(output, entry.getIntKey)
+        if (entry.getValue != null) {
+          ByteBufSerdeUtils.serializeFloats(output, entry.getValue)
+        } else {
+          ByteBufSerdeUtils.serializeEmptyFloats(output)
+        }
       }
     } else {
-      output.writeInt(0)
+      ByteBufSerdeUtils.serializeInt(output, 0)
     }
   }
 
@@ -301,20 +298,32 @@ class PartLINEGetEmbeddingResult(var part: PartitionKey, var srcFeats: Int2Objec
     * @param input the input stream
     */
   override def deserialize(input: ByteBuf): Unit = {
-    var len = input.readInt()
+    var len = ByteBufSerdeUtils.deserializeInt(input)
     if (len > 0) {
       srcFeats = new Int2ObjectOpenHashMap[Array[Float]](len)
-      for (i <- 0 until len) {
-        srcFeats.put(input.readInt(), NodeUtils.deserializeFloats(input))
-      }
+      (0 until len).foreach(_ => {
+        //srcFeats.put(input.readInt(), NodeUtils.deserializeFloatFromShort(input))
+        val nodeId = ByteBufSerdeUtils.deserializeInt(input)
+        var feats = ByteBufSerdeUtils.deserializeFloats(input)
+        if (feats.length == 0) {
+          feats = null
+        }
+        srcFeats.put(nodeId, feats)
+      })
     }
 
     len = input.readInt()
     if (len > 0) {
       targetFeats = new Int2ObjectOpenHashMap[Array[Float]](len)
-      for (i <- 0 until len) {
-        targetFeats.put(input.readInt(), NodeUtils.deserializeFloats(input))
-      }
+      (0 until len).foreach(_ => {
+        //srcFeats.put(input.readInt(), NodeUtils.deserializeFloatFromShort(input))
+        val nodeId = ByteBufSerdeUtils.deserializeInt(input)
+        var feats = ByteBufSerdeUtils.deserializeFloats(input)
+        if (feats.length == 0) {
+          feats = null
+        }
+        targetFeats.put(nodeId, feats)
+      })
     }
   }
 
@@ -324,7 +333,7 @@ class PartLINEGetEmbeddingResult(var part: PartitionKey, var srcFeats: Int2Objec
     * @return int serialized data size of the object
     */
   override def bufferLen(): Int = {
-    var len = 8
+    var len = ByteBufSerdeUtils.INT_LENGTH * 2
 
     var elemLen = 0
     if (srcFeats != null) {
@@ -332,8 +341,11 @@ class PartLINEGetEmbeddingResult(var part: PartitionKey, var srcFeats: Int2Objec
       var break = false
       while (resIter.hasNext && !break) {
         val entry = resIter.next()
-        elemLen = 4 + NodeUtils.dataLen(entry.getValue)
-        break = true
+
+        if (entry.getValue != null) {
+          elemLen = ByteBufSerdeUtils.INT_LENGTH + ByteBufSerdeUtils.serializedFloatsLen(entry.getValue)
+          break = true
+        }
       }
 
       len += elemLen * srcFeats.size()
@@ -344,8 +356,10 @@ class PartLINEGetEmbeddingResult(var part: PartitionKey, var srcFeats: Int2Objec
       var break = false
       while (resIter.hasNext && !break) {
         val entry = resIter.next()
-        elemLen = 4 + NodeUtils.dataLen(entry.getValue)
-        break = true
+        if (entry.getValue != null) {
+          elemLen = ByteBufSerdeUtils.INT_LENGTH + ByteBufSerdeUtils.serializedFloatsLen(entry.getValue)
+          break = true
+        }
       }
 
       len += elemLen * targetFeats.size()
@@ -353,5 +367,7 @@ class PartLINEGetEmbeddingResult(var part: PartitionKey, var srcFeats: Int2Objec
 
     len
   }
+
+
 }
 

@@ -33,12 +33,12 @@ import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import com.tencent.angel.graph.utils.Stats._
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 
-// a deep walker for heterogenous and unweighted graph
 
 class MetaPath2Vec(override val uid: String) extends Transformer
   with HasSrcNodeIdCol with HasDstNodeIdCol with HasOutputNodeIdCol with HasOutputCoreIdCol
   with HasStorageLevel with HasPartitionNum with HasPSPartitionNum with HasBatchSize
-  with HasWeightCol with HasWalkLength with HasPullBatchSize with HasEpochNum {
+  with HasIsWeighted with HasWeightCol with HasWalkLength with HasNeedReplicaEdge
+  with HasPullBatchSize with HasEpochNum {
 
   def this() = this(Identifiable.randomUID("metaPath2vec"))
 
@@ -74,12 +74,12 @@ class MetaPath2Vec(override val uid: String) extends Transformer
   override def transform(dataset: Dataset[_]): DataFrame = {
     val sc = dataset.sparkSession.sparkContext
 
-    // only support unweighted edges for now
-    val rawEdges = NeighborDataOps.loadEdges(dataset, ${srcNodeIdCol}, ${dstNodeIdCol})
+    val rawEdges = NeighborDataOps.loadEdgesWithWeight(dataset, ${srcNodeIdCol}, ${dstNodeIdCol},
+      ${weightCol}, isWeighted = ${isWeighted})
       .repartition(${partitionNum})
       .persist(${storageLevel})
 
-    val (minId, maxId, numEdges) = rawEdges.mapPartitions(summarizeApplyOp).reduce(summarizeReduceOp)
+    val (minId, maxId, numEdges) = rawEdges.mapPartitions(summarizeApplyOp1).reduce(summarizeReduceOp)
     println(s"minId=$minId maxId=$maxId numEdges=$numEdges")
 
     // start ps and create ps matrix
@@ -101,15 +101,15 @@ class MetaPath2Vec(override val uid: String) extends Transformer
     }
 
     // pull node type from ps and join with edges
-    val neighborTable = rawEdges.flatMap(x => Iterator((x._1, x._2), (x._2, x._1)))
+    val neighborTable = rawEdges.flatMap(x => Iterator((x._1, (x._2, x._3)), (x._2, (x._1, x._3))))
       .groupByKey(${partitionNum})
       .map(x => (x._1, x._2.toArray.distinct))
     //    neighborTable.unpersist()
 
     if (nodeAttr != null) {
-      neighborTable.foreachPartition{ iter => MetaPath2VecOperator.initNeighborTableWithType(iter, ${batchSize}, model) }
+      neighborTable.foreachPartition{ iter => MetaPath2VecOperator.initNeighborTableWithType(iter, ${batchSize}, model, ${isWeighted}) }
     } else {
-      neighborTable.foreachPartition{ iter => MetaPath2VecOperator.initNeighborTable(iter, ${batchSize}, model) }
+      neighborTable.foreachPartition{ iter => MetaPath2VecOperator.initNeighborTable(iter, ${batchSize}, model, ${isWeighted}) }
     }
     val before = System.currentTimeMillis()
     model.checkpoint()
@@ -149,9 +149,5 @@ class MetaPath2Vec(override val uid: String) extends Transformer
   }
 
   override def copy(extra: ParamMap): Transformer = defaultCopy(extra)
-
-}
-
-object MetaPath2Vec {
 
 }

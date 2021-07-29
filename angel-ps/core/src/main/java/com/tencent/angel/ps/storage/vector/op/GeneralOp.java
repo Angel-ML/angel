@@ -76,4 +76,10 @@ public interface GeneralOp extends DeepClone, Serialize, StreamSerialize {
    * @param op update method
    */
   void update(RowType updateType, ByteBuf buf, UpdateOp op);
+
+  /**
+   * Get data size
+   * @return
+   */
+  long dataSize();
 }

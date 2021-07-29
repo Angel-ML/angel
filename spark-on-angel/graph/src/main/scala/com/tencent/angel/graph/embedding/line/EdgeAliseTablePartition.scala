@@ -21,6 +21,7 @@ import java.io.{DataInputStream, DataOutputStream}
 import java.util.Random
 
 import com.tencent.angel.PartitionKey
+import com.tencent.angel.common.StreamSerdeUtils
 import com.tencent.angel.ml.matrix.RowType
 import com.tencent.angel.ps.server.data.request.UpdateOp
 import com.tencent.angel.ps.storage.partition.UserDefinePartition
@@ -37,11 +38,11 @@ import org.apache.commons.logging.LogFactory
   * @param estSparsity estimate sparsity
   * @param storage     partition storage
   */
-class EdgeAliasTablePartition(partKey: PartitionKey, rowType: RowType, nodeNum: Long,
+class EdgeAliasTablePartition(partKey: PartitionKey, rowType: RowType, estSparsity: Long,
                               storage: EdgeAliasTableStorage)
-  extends UserDefinePartition(partKey, rowType, nodeNum, storage) with IEdgeAliasTableOp {
+  extends UserDefinePartition(partKey, rowType, -1, storage) with IEdgeAliasTableOp {
 
-  def this() = this(null, RowType.T_ANY_LONGKEY_SPARSE, -1, null)
+  def this() = this(null, RowType.T_ANY_LONGKEY_SPARSE, 0, null)
 
   override def init(): Unit = {}
 
@@ -78,7 +79,7 @@ object EdgeAliasTablePartition {
 
     val storeage = new EdgeAliasTableStorage(0, srcNodes, dstNodes, weights)
     storeage.init()
-    storeage.buildAliasTable()
+    storeage.buildAliasTable
 
     val samples = storeage.batchSample(100000000)
     val srcs = samples._1
@@ -111,14 +112,14 @@ class EdgeAliasTableStorage(@transient var rowOffset: Int, @transient var srcNod
 
   def this() = this(-1, null, null, null)
 
-  @volatile var prob: Array[Float] = _
-  @volatile var alias: Array[Int] = _
+  @volatile var prob: Array[Float] = null
+  @volatile var alias: Array[Int] = null
   val rand = new Random(System.currentTimeMillis())
   @volatile var sum: Double = 0.0
 
   override def init(): Unit = {}
 
-  def buildAliasTable(): Unit = {
+  def buildAliasTable: Unit = {
     weights.foreach(e => sum += e)
     val aliasTable = AliasTableUtils.buildAliasTable(weights)
     prob = aliasTable._1
@@ -143,7 +144,7 @@ class EdgeAliasTableStorage(@transient var rowOffset: Int, @transient var srcNod
   override def batchSample(number: Int): (Array[Int], Array[Int]) = {
     val srcSampleEdges = new Array[Int](number)
     val dstSampleEdges = new Array[Int](number)
-    for (i <- 0 until number) {
+    for (i <- (0 until number)) {
       val id = rand.nextInt(prob.length)
       val v = rand.nextDouble().toFloat
       if (v < prob(id)) {
@@ -168,18 +169,16 @@ class EdgeAliasTableStorage(@transient var rowOffset: Int, @transient var srcNod
   override def serialize(output: DataOutputStream): Unit = {
     super.serialize(output)
     if (srcNodes == null || dstNodes == null || prob == null || alias == null) {
-      output.writeBoolean(false)
+      StreamSerdeUtils.serializeBoolean(output, false)
       EdgeAliasTableStorage.LOG.warn("Alias table is not valid, write snapshot failed ")
     } else {
-      output.writeBoolean(true)
-      output.writeDouble(sum)
-      output.writeInt(srcNodes.length)
-      for (i <- 0 until srcNodes.length) {
-        output.writeInt(srcNodes(i))
-        output.writeInt(dstNodes(i))
-        output.writeFloat(prob(i))
-        output.writeInt(alias(i))
-      }
+      StreamSerdeUtils.serializeBoolean(output, true)
+      StreamSerdeUtils.serializeDouble(output, sum)
+
+      StreamSerdeUtils.serializeInts(output, srcNodes)
+      StreamSerdeUtils.serializeInts(output, dstNodes)
+      StreamSerdeUtils.serializeFloats(output, prob)
+      StreamSerdeUtils.serializeInts(output, alias)
     }
   }
 
@@ -190,22 +189,15 @@ class EdgeAliasTableStorage(@transient var rowOffset: Int, @transient var srcNod
     */
   override def deserialize(input: DataInputStream): Unit = {
     super.deserialize(input)
-    if (!input.readBoolean()) {
+    if (!StreamSerdeUtils.deserializeBoolean(input)) {
       throw new RuntimeException("Recover alias table failed!!!")
     } else {
-      sum = input.readDouble()
-      val len = input.readInt()
-      srcNodes = new Array[Int](len)
-      dstNodes = new Array[Int](len)
-      prob = new Array[Float](len)
-      alias = new Array[Int](len)
+      sum = StreamSerdeUtils.deserializeDouble(input)
 
-      for (i <- 0 until len) {
-        srcNodes(i) = input.readInt()
-        dstNodes(i) = input.readInt()
-        prob(i) = input.readFloat()
-        alias(i) = input.readInt()
-      }
+      srcNodes = StreamSerdeUtils.deserializeInts(input)
+      dstNodes = StreamSerdeUtils.deserializeInts(input)
+      prob = StreamSerdeUtils.deserializeFloats(input)
+      alias = StreamSerdeUtils.deserializeInts(input)
     }
   }
 }

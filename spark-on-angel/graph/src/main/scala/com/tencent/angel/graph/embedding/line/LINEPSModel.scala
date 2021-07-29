@@ -22,16 +22,21 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
+import com.tencent.angel.graph.common.param.ModelContext
+import com.tencent.angel.graph.common.psf.param.IntKeysUpdateParam
+import com.tencent.angel.graph.utils.ModelContextUtils
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.model.output.format.{MatrixFilesMeta, ModelFilesConstent}
 import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
+import com.tencent.angel.ps.storage.vector.element.IElement
 import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
 import com.tencent.angel.spark.ml.util.LogUtils
 import com.tencent.angel.spark.models.PSMatrix
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
 import scala.util.Random
@@ -41,7 +46,7 @@ import scala.util.Random
   *
   * @param embeddingMatrix embedding matrix
   */
-class LINEPSModel(embeddingMatrix: PSMatrix, minNodeId: Int, maxNodeId: Int) extends AlgoPSModel {
+class LINEPSModel(embeddingMatrix: PSMatrix, modelContext: ModelContext) extends AlgoPSModel {
   checkpointContext.addReadWriteMatrix(embeddingMatrix)
 
   /**
@@ -53,15 +58,18 @@ class LINEPSModel(embeddingMatrix: PSMatrix, minNodeId: Int, maxNodeId: Int) ext
     * @return sample results
     */
   def negativeSample(nodeIds: Array[Int], dstNodeIds: Array[Int], sampleNum: Int, seed: Int): Array[Array[Int]] = {
+    //val seed = UUID.randomUUID().hashCode()
     val rand = new Random(seed)
     val sampleNodes = new Array[Array[Int]](nodeIds.length)
     var nodeIndex: Int = 0
 
+    val maxNodeId = modelContext.getMaxNodeId.toInt
+    val minNodeId = modelContext.getMinNodeId.toInt
     for (i <- nodeIds.indices) {
       var sampleIndex: Int = 0
       sampleNodes(nodeIndex) = new Array[Int](sampleNum)
       while (sampleIndex < sampleNum) {
-        val target = rand.nextInt(maxNodeId)
+        val target = rand.nextInt(maxNodeId - minNodeId) + minNodeId
         if (target != nodeIds(i) && target != dstNodeIds(i)) {
           sampleNodes(nodeIndex)(sampleIndex) = target
           sampleIndex += 1
@@ -108,11 +116,89 @@ class LINEPSModel(embeddingMatrix: PSMatrix, minNodeId: Int, maxNodeId: Int) ext
     * @param order     order
     */
   def randomInitialize(seed: Int, dimension: Int, order: Int): Unit = {
-    val beforeRandomize = System.currentTimeMillis()
-    embeddingMatrix.asyncPsfUpdate(new LINEModelRandomize(
-      new RandomizeUpdateParam(embeddingMatrix.id, dimension, order, seed)))
-      .get(1800000, TimeUnit.MILLISECONDS)
-    logTime(s"Model successfully Randomized, cost ${(System.currentTimeMillis() - beforeRandomize) / 1000.0}s")
+    if (modelContext.isUseHashPartition) {
+      // Init as mini-batch
+      modelContext.getMinNodeId.toInt.to(modelContext.getMaxNodeId.toInt).sliding(1000000, 1000000).foreach(e => {
+        embeddingMatrix.asyncPsfUpdate(new LINEModelRandomizeAsNodes(
+          new RandomizeUpdateAsNodesParam(embeddingMatrix.id, dimension, e.toArray, order, seed)))
+          .get(60000, TimeUnit.MILLISECONDS)
+      })
+      val beforeRandomize = System.currentTimeMillis()
+
+      logTime(s"Model successfully Randomized, cost ${(System.currentTimeMillis() - beforeRandomize) / 1000.0}s")
+    } else {
+      // Just init by range
+      val beforeRandomize = System.currentTimeMillis()
+      embeddingMatrix.asyncPsfUpdate(new LINEModelRandomize(
+        new RandomizeUpdateParam(embeddingMatrix.id, dimension, order, seed)))
+        .get(1800000, TimeUnit.MILLISECONDS)
+      logTime(s"Model successfully Randomized, cost ${(System.currentTimeMillis() - beforeRandomize) / 1000.0}s")
+    }
+  }
+
+  def extraInitialize(extraInputRDD: RDD[String], extraContextRDD: RDD[String], batchSize: Int, order: Int): Unit = {
+    val conf = SparkContext.getOrCreate().getConf
+    val keyValueSep = conf.get("spark.hadoop.angel.line.keyvalue.sep", "colon") match {
+      case "space" => " "
+      case "comma" => ","
+      case "tab" => "\t"
+      case "colon" => ":"
+      case "bar" => "\\|"
+    }
+    val featSep = conf.get("spark.hadoop.angel.line.feature.sep", "space") match {
+      case "space" => " "
+      case "comma" => ","
+      case "tab" => "\t"
+      case "colon" => ":"
+      case "bar" => "\\|"
+    }
+    var beforeInitialize = System.currentTimeMillis()
+    if (extraInputRDD != null) {
+      extraInputRDD.mapPartitions { iterator =>
+        iterator.sliding(batchSize, batchSize)
+          .foreach(batch => extraUpdate(batch.toArray, order, keyValueSep, featSep, true))
+        Iterator.single()
+      }.count()
+    }
+    LogUtils.logTime(s"Model successfully extra Initial input embedding, " +
+      s"cost ${(System.currentTimeMillis() - beforeInitialize) / 1000.0}s")
+    if (extraContextRDD != null && order == 2) {
+      beforeInitialize = System.currentTimeMillis()
+      extraContextRDD.mapPartitions { iterator =>
+        iterator.sliding(batchSize, batchSize)
+          .foreach(batch => extraUpdate(batch.toArray, order, keyValueSep, featSep, false))
+        Iterator.single()
+      }.count()
+      LogUtils.logTime(s"Model successfully extra Initial output embedding, " +
+        s"cost ${(System.currentTimeMillis() - beforeInitialize) / 1000.0}s")
+    }
+  }
+
+  def extraUpdate(strings: Array[String], order: Int, keyValueSep: String, featSep: String, isInput: Boolean): Unit = {
+    val updates = new Int2ObjectOpenHashMap[Array[Float]]()
+    if (keyValueSep.equals(featSep)) {
+      strings.map { line =>
+        val splits = line.split(keyValueSep)
+        val key = splits(0).toInt
+        val value = splits.slice(1, splits.length).map(v => v.toFloat)
+        updates.put(key, value)
+      }
+    } else {
+      strings.map { line =>
+        val splits = line.split(keyValueSep)
+        val key = splits(0).toInt
+        val value = splits(1).split(featSep).map(v => v.toFloat)
+        updates.put(key, value)
+      }
+    }
+    if (isInput) {
+      embeddingMatrix.psfUpdate(new LINEAdjust(new LINEAdjustParam(embeddingMatrix.id, updates, null,
+        order, true)))
+    } else {
+      embeddingMatrix.psfUpdate(new LINEAdjust(new LINEAdjustParam(embeddingMatrix.id, null, updates,
+        order, true)))
+    }
+
   }
 
   /**
@@ -132,8 +218,8 @@ class LINEPSModel(embeddingMatrix: PSMatrix, minNodeId: Int, maxNodeId: Int) ext
     * @param modelPathRoot model save root path
     * @param epoch         epoch index
     */
-  def save(modelPathRoot: String, epoch: Int, saveMeta: Boolean): Unit = {
-    save(new Path(modelPathRoot, s"CP_$epoch").toString, saveMeta)
+  def save(modelPathRoot: String, epoch: Int, saveContextEmbedding: Boolean, order: Int): Unit = {
+    save(new Path(modelPathRoot, s"CP_$epoch").toString, saveContextEmbedding, order)
   }
 
   /**
@@ -141,34 +227,47 @@ class LINEPSModel(embeddingMatrix: PSMatrix, minNodeId: Int, maxNodeId: Int) ext
     *
     * @param modelPath save path
     */
-  def save(modelPath: String, saveMeta: Boolean): Unit = {
+  def save(modelPath: String, saveContextEmbedding: Boolean, order: Int): Unit = {
     logTime(s"saving model to $modelPath")
     val ss = SparkSession.builder().getOrCreate()
 
     // Delete if exist
     deleteIfExists(modelPath, ss)
 
-    // Save use "TextLINEModelOutputFormat" format
-    val saveContext = new ModelSaveContext(modelPath)
-    saveContext.addMatrix(new MatrixSaveContext(embeddingMatrix.name, classOf[TextLINEModelOutputFormat].getTypeName))
-    PSContext.instance().save(saveContext)
+    // Save Model
+    if (saveContextEmbedding && order == 2) {
+      // Save input and context embedding use "TextLINEModelOutputFormat" and "TextLINEModelContextEmbOutputFormat"
+      val inputEmbSaveContext = new ModelSaveContext(new Path(modelPath, s"inputEmbedding").toString)
+      inputEmbSaveContext.addMatrix(new MatrixSaveContext(embeddingMatrix.name, classOf[TextLINEModelOutputFormat].getTypeName))
+      PSContext.instance().save(inputEmbSaveContext)
+      val outputEmbSaveContext = new ModelSaveContext(new Path(modelPath, s"contextEmbedding").toString)
+      outputEmbSaveContext.addMatrix(new MatrixSaveContext(embeddingMatrix.name, classOf[TextLINEModelContextEmbOutputFormat].getTypeName))
+      PSContext.instance().save(outputEmbSaveContext)
+      deleteMetaIfExists(new Path(modelPath, s"inputEmbedding").toString)
+      deleteMetaIfExists(new Path(modelPath, s"contextEmbedding").toString)
+    } else {
+      // Save use "TextLINEModelOutputFormat" format
+      val saveContext = new ModelSaveContext(modelPath)
+      saveContext.addMatrix(new MatrixSaveContext(embeddingMatrix.name, classOf[TextLINEModelOutputFormat].getTypeName))
+      PSContext.instance().save(saveContext)
+      deleteMetaIfExists(modelPath)
+    }
+  }
 
-
-    if (!saveMeta) {
-      // Remove the meta file
-      try {
-        val metaPath = new Path(new Path(modelPath, embeddingMatrix.name), ModelFilesConstent.modelMetaFileName)
-        // Build hadoop conf
-        val conf = AngelPSContext.convertToHadoop(SparkContext.getOrCreate().getConf)
-        val fs = metaPath.getFileSystem(conf)
-        // Remove
-        val ret = fs.delete(metaPath, true)
-        if (!ret) {
-          logTime(s"Warning: remove meta file failed !!!")
-        }
-      } catch {
-        case e: Throwable => logTime(s"Warning: remove meta file failed !!!")
+  private def deleteMetaIfExists(modelPath: String): Unit = {
+    // Remove the meta file
+    try {
+      val metaPath = new Path(new Path(modelPath, embeddingMatrix.name), ModelFilesConstent.modelMetaFileName)
+      // Build hadoop conf
+      val conf = AngelPSContext.convertToHadoop(SparkContext.getOrCreate().getConf)
+      val fs = metaPath.getFileSystem(conf)
+      // Remove
+      val ret = fs.delete(metaPath, true)
+      if (!ret) {
+        logTime(s"Warning: remove meta file failed !!!")
       }
+    } catch {
+      case e: Throwable => logTime(s"Warning: remove meta file failed !!!")
     }
   }
 
@@ -206,65 +305,41 @@ object LINEPSModel {
   val neighborTable = "neighborTable"
   val aliasTable = "aliasTable"
 
-  def fromMinMax(minId: Long, maxId: Long, psNumPartition: Int, order: Int, dimension: Int,
-                 isWeighted: Boolean, oldModelPath: String): LINEPSModel = {
-    // Create a matrix for embedding vectors
-    val rawMaxId = maxId
-    var matrixMaxId = maxId
-    if (oldModelPath != null && oldModelPath.length > 0) {
-      matrixMaxId = getMaxId(oldModelPath)
-      LogUtils.logTime("Load model's max id is: " + matrixMaxId)
-    }
-    val embeddingContext: MatrixContext = new MatrixContext(embedding, 1, matrixMaxId)
-    embeddingContext.setMaxRowNumInBlock(1)
-    embeddingContext.setMaxColNumInBlock(matrixMaxId / psNumPartition)
-    embeddingContext.setRowType(RowType.T_ANY_INTKEY_DENSE)
-    embeddingContext.setValueType(classOf[LINENode])
-    embeddingContext.setInitFunc(new LINEInitFunc(order, dimension))
+  def apply(modelContext: ModelContext, order: Int, dimension: Int,
+            isWeighted: Boolean, extraInputEmbeddingRDD: RDD[String], extraContextEmbeddingRDD: RDD[String],
+            batchSize: Int): LINEPSModel = {
+    LogUtils.logTime(s"Init model, min id = ${modelContext.getMinNodeId} " +
+      s"and max id = ${modelContext.getMaxNodeId}")
+    // Create a matrix for embedding vector
+    val embeddingContext: MatrixContext = ModelContextUtils.createMatrixContext(modelContext,
+      embedding, RowType.T_ANY_INTKEY_SPARSE, classOf[LINENode])
 
+    // If use range partition, as id is in int range and continues, we use dense format to speed up data access
+    if (modelContext.isUseRangePartition) {
+      embeddingContext.setRowType(RowType.T_ANY_INTKEY_DENSE)
+    }
     val embeddingMatrix: PSMatrix = PSMatrix.matrix(embeddingContext)
 
     var model: LINEPSModel = null
     if (isWeighted) {
       // Create a matrix for alias table
-      val aliasTableContext = new MatrixContext(aliasTable, 1, matrixMaxId)
-      aliasTableContext.setMaxRowNumInBlock(1)
-      aliasTableContext.setMaxColNumInBlock(matrixMaxId / psNumPartition)
-      aliasTableContext.setRowType(RowType.T_INT_DENSE)
-      aliasTableContext.setPartitionClass(classOf[EdgeAliasTablePartition])
+      val aliasTableContext = ModelContextUtils.createMatrixContextWithUserDefinePartition(
+        modelContext, aliasTable, RowType.T_INT_SPARSE, classOf[EdgeAliasTablePartition])
+
       val aliasTableMatrix: PSMatrix = PSMatrix.matrix(aliasTableContext)
 
-      model = new LINEWithWeightPSModel(embeddingMatrix, embeddingMatrix, aliasTableMatrix, minId.toInt, rawMaxId.toInt)
+      model = new LINEWithWeightPSModel(embeddingMatrix, embeddingMatrix, aliasTableMatrix, modelContext)
     } else {
-      model = new LINEPSModel(embeddingMatrix, minId.toInt, rawMaxId.toInt)
+      model = new LINEPSModel(embeddingMatrix, modelContext)
     }
-
-    if (oldModelPath != null && oldModelPath.length > 0) {
-      LogUtils.logTime("Old model path is: " + oldModelPath + " now loading...")
-      model.load(oldModelPath)
+    // init model
+    if (extraInputEmbeddingRDD != null || extraContextEmbeddingRDD != null) {
+      model.randomInitialize(model.hashCode(), dimension, order)
+      model.extraInitialize(extraInputEmbeddingRDD, extraContextEmbeddingRDD, batchSize, order)
     } else {
       model.randomInitialize(model.hashCode(), dimension, order)
     }
-
     model
-  }
-
-  def getMaxId(oldModelPath: String): Long = {
-    val meteFilePath = new Path(new Path(oldModelPath, LINEPSModel.embedding), ModelFilesConstent.modelMetaFileName)
-    val meta = new MatrixFilesMeta
-    val conf = AngelPSContext.convertToHadoop(SparkContext.getOrCreate().getConf)
-    val fs = meteFilePath.getFileSystem(conf)
-    if (!fs.exists(meteFilePath)) throw new IOException("matrix meta file does not exist ")
-    val input = fs.open(meteFilePath)
-    try
-      meta.read(input)
-    catch {
-      case e: Throwable =>
-        throw new IOException("Read meta failed ", e)
-    } finally input.close()
-    val colNum = meta.getCol
-    LogUtils.logTime("Load model max col is: " + colNum)
-    colNum
   }
 }
 
@@ -274,11 +349,9 @@ object LINEPSModel {
   * @param embeddingMatrix     embedding matrix
   * @param neighborTableMatrix neighbor table matrix
   * @param aliasTableMatrix    alias table matrix
-  * @param minNodeId           min node id
-  * @param maxNodeId           max node id
   */
 class LINEWithWeightPSModel(embeddingMatrix: PSMatrix, neighborTableMatrix: PSMatrix, aliasTableMatrix: PSMatrix,
-                            minNodeId: Int, maxNodeId: Int) extends LINEPSModel(embeddingMatrix: PSMatrix, minNodeId, maxNodeId) {
+                            modelContext: ModelContext) extends LINEPSModel(embeddingMatrix: PSMatrix, modelContext) {
 
   /**
     * Notice the PS that all neighbors are push, PS will build the alias table
@@ -299,7 +372,7 @@ class LINEWithWeightPSModel(embeddingMatrix: PSMatrix, neighborTableMatrix: PSMa
   def initNeighbors(pairs: Seq[(Int, Iterable[(Int, Float)])]): VoidResult = {
     var index = 0
     val nodeIds = new Array[Int](pairs.size)
-    val edgeWightPairs = new Array[EdgeWeightPairs](pairs.size)
+    val edgeWightPairs = new Array[IElement](pairs.size)
 
     pairs.foreach(pair => {
       nodeIds(index) = pair._1
@@ -318,7 +391,9 @@ class LINEWithWeightPSModel(embeddingMatrix: PSMatrix, neighborTableMatrix: PSMa
 
     neighborTableMatrix.asyncPsfUpdate(
       new InitEdgeWeight(
-        new InitEgdeWeightParam(neighborTableMatrix.id, nodeIds, edgeWightPairs))).get(1800000, TimeUnit.MILLISECONDS)
+        new IntKeysUpdateParam(
+          neighborTableMatrix.id, nodeIds, edgeWightPairs)))
+      .get(1800000, TimeUnit.MILLISECONDS)
   }
 
   /**

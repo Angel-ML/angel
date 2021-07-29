@@ -57,7 +57,7 @@ class TriangleCountingUndirected(override val uid: String) extends Transformer
     // push neighbor table to parameter server
     val initTableStartTime = System.currentTimeMillis()
     val neighborModel = NeighborTableModel(stats.maxVertexId + 1,
-      $(batchSize), $(pullBatchSize), $(psPartitionNum))
+      $(batchSize), $(pullBatchSize), $(psPartitionNum), stats.minVertexId, stats.numVertices)
 
     neighborModel.initLongNeighbor(neighborPartitions)
     Log.withTimePrintln(s"pushing neighbor table to ps cost ${System.currentTimeMillis() - initTableStartTime} ms")

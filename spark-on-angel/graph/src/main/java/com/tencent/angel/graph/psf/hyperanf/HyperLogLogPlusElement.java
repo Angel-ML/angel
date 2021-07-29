@@ -18,38 +18,49 @@ package com.tencent.angel.graph.psf.hyperanf;
 
 import com.clearspring.analytics.stream.cardinality.CardinalityMergeException;
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
+import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.ps.storage.vector.element.IElement;
+import com.tencent.angel.utils.StringUtils;
 import io.netty.buffer.ByteBuf;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class HyperLogLogPlusElement implements IElement {
+
+  private static final Log LOG = LogFactory.getLog(UpdateHyperLogLogPartParam.class);
 
   private HyperLogLogPlus readCounter;
   private HyperLogLogPlus writeCounter;
   private int p, sp;
   private long node;
   private int isActive;
-  private Long closeness;
+  private long closeness;
+  private long seed;
 
 
-  public HyperLogLogPlusElement(long node, int p, int sp) {
+  public HyperLogLogPlusElement(long node, int p, int sp, long seed) {
     readCounter = new HyperLogLogPlus(p, sp);
     this.node = node;
     this.p = p;
     this.sp = sp;
     this.isActive = 1;
     this.closeness = 0L;
-    long hashed = jenkins(node, System.currentTimeMillis());
+    this.seed = seed;
+    long hashed = jenkins(node, seed);
     readCounter.offerHashed(hashed);
     writeCounter = readCounter;
   }
 
+  public HyperLogLogPlusElement() {
+    this(-1, -1, -1, null, null, -1, -1, -1);
+  }
+
   private HyperLogLogPlusElement(long node, int p, int sp,
-                                 HyperLogLogPlus readCounter, HyperLogLogPlus writeCounter,
-                                 int isActive, long closeness) {
+      HyperLogLogPlus readCounter, HyperLogLogPlus writeCounter,
+      int isActive, long closeness, long seed) {
     this.node = node;
     this.p = p;
     this.sp = sp;
@@ -57,15 +68,20 @@ public class HyperLogLogPlusElement implements IElement {
     this.writeCounter = writeCounter;
     this.isActive = isActive;
     this.closeness = closeness;
+    this.seed = seed;
   }
 
   public HyperLogLogPlus getHyperLogLogPlus() {
     return readCounter;
   }
 
-  public boolean isActive() { return isActive > 0; }
+  public boolean isActive() {
+    return isActive > 0;
+  }
 
-  public long getCloseness() { return closeness; }
+  public long getCloseness() {
+    return closeness;
+  }
 
   public long getCardinality() {
     return readCounter.cardinality();
@@ -82,7 +98,8 @@ public class HyperLogLogPlusElement implements IElement {
     try {
       writeCounter = (HyperLogLogPlus) writeCounter.merge(other);
     } catch (CardinalityMergeException e) {
-      e.printStackTrace();
+      LOG.error("Merge failed, details = " + StringUtils.stringifyException(e));
+      throw new RuntimeException(e);
     }
   }
 
@@ -93,6 +110,7 @@ public class HyperLogLogPlusElement implements IElement {
     output.writeInt(sp);
     output.writeInt(isActive);
     output.writeLong(closeness);
+    output.writeLong(seed);
     try {
       byte[] bytes = readCounter.getBytes();
       output.writeInt(bytes.length);
@@ -101,7 +119,8 @@ public class HyperLogLogPlusElement implements IElement {
       output.writeInt(bytes.length);
       output.writeBytes(bytes);
     } catch (IOException e) {
-      e.printStackTrace();
+      LOG.error("Serialize failed, details = " + StringUtils.stringifyException(e));
+      throw new RuntimeException(e);
     }
   }
 
@@ -112,26 +131,29 @@ public class HyperLogLogPlusElement implements IElement {
     sp = input.readInt();
     isActive = input.readInt();
     closeness = input.readLong();
+    seed = input.readLong();
     int len = input.readInt();
     byte[] bytes = new byte[len];
     input.readBytes(bytes);
     try {
       readCounter = HyperLogLogPlus.Builder.build(bytes);
     } catch (IOException e) {
-      e.printStackTrace();
+      LOG.error("ReadCounter failed, details = " + StringUtils.stringifyException(e));
+      throw new RuntimeException(e);
     }
     len = input.readInt();
     bytes = new byte[len];
     try {
       writeCounter = HyperLogLogPlus.Builder.build(bytes);
     } catch (IOException e) {
-      e.printStackTrace();
+      LOG.error("WriteCounter failed, details = " + StringUtils.stringifyException(e));
+      throw new RuntimeException(e);
     }
   }
 
   @Override
   public int bufferLen() {
-    return 8 + 4 + 4 + 4 + 8 + 4 + readCounter.sizeof() + 4 + writeCounter.sizeof();
+    return ByteBufSerdeUtils.INT_LENGTH * 5 + ByteBufSerdeUtils.LONG_LENGTH * 3 + readCounter.sizeof() + writeCounter.sizeof();
   }
 
   @Override
@@ -141,6 +163,7 @@ public class HyperLogLogPlusElement implements IElement {
     output.writeInt(sp);
     output.writeInt(isActive);
     output.writeLong(closeness);
+    output.writeLong(seed);
     byte[] bytes = readCounter.getBytes();
     output.writeInt(bytes.length);
     output.writeBytes(new String(bytes));
@@ -156,6 +179,7 @@ public class HyperLogLogPlusElement implements IElement {
     sp = input.readInt();
     isActive = input.readInt();
     closeness = input.readLong();
+    seed = input.readLong();
     int len = input.readInt();
     byte[] bytes = new byte[len];
     input.readFully(bytes);
@@ -178,25 +202,23 @@ public class HyperLogLogPlusElement implements IElement {
       HyperLogLogPlus readPlus = HyperLogLogPlus.Builder.build(bytes);
       bytes = writeCounter.getBytes();
       HyperLogLogPlus writePlus = HyperLogLogPlus.Builder.build(bytes);
-      return new HyperLogLogPlusElement(node, p, sp, readPlus, writePlus, isActive, closeness);
+      return new HyperLogLogPlusElement(node, p, sp, readPlus, writePlus, isActive, closeness, seed);
     } catch (IOException e) {
-      e.printStackTrace();
+      LOG.error("DeepClone failed, details = " + StringUtils.stringifyException(e));
+      throw new RuntimeException(e);
     }
-    return null;
+//    return null;
   }
-
 
 
   /**
    * Function to compute the hash function from node IDs.
    *
-   * Taken from the WebGraph framework, specifically the class
-   * IntHyperLogLogCounterArray.
+   * Taken from the WebGraph framework, specifically the class IntHyperLogLogCounterArray.
    *
-   * Note that the `x` parameter is a `Long`, but the function will also work
-   * with `Int` values.
+   * Note that the `x` parameter is a `Long`, but the function will also work with `Int` values.
    *
-   * @param x    the element to hash, i.e. the node ID
+   * @param x the element to hash, i.e. the node ID
    * @param seed the seed to set up internal state.
    * @return the hashed value of `x`
    */
@@ -205,18 +227,42 @@ public class HyperLogLogPlusElement implements IElement {
     long a = seed + x;
     long b = seed;
     long c = 0x9e3779b97f4a7c13L; /* the golden ratio; an arbitrary value */
-    a -= b; a -= c; a ^= (c >>> 43);
-    b -= c; b -= a; b ^= (a << 9);
-    c -= a; c -= b; c ^= (b >>> 8);
-    a -= b; a -= c; a ^= (c >>> 38);
-    b -= c; b -= a; b ^= (a << 23);
-    c -= a; c -= b; c ^= (b >>> 5);
-    a -= b; a -= c; a ^= (c >>> 35);
-    b -= c; b -= a; b ^= (a << 49);
-    c -= a; c -= b; c ^= (b >>> 11);
-    a -= b; a -= c; a ^= (c >>> 12);
-    b -= c; b -= a; b ^= (a << 18);
-    c -= a; c -= b; c ^= (b >>> 22);
+    a -= b;
+    a -= c;
+    a ^= (c >>> 43);
+    b -= c;
+    b -= a;
+    b ^= (a << 9);
+    c -= a;
+    c -= b;
+    c ^= (b >>> 8);
+    a -= b;
+    a -= c;
+    a ^= (c >>> 38);
+    b -= c;
+    b -= a;
+    b ^= (a << 23);
+    c -= a;
+    c -= b;
+    c ^= (b >>> 5);
+    a -= b;
+    a -= c;
+    a ^= (c >>> 35);
+    b -= c;
+    b -= a;
+    b ^= (a << 49);
+    c -= a;
+    c -= b;
+    c ^= (b >>> 11);
+    a -= b;
+    a -= c;
+    a ^= (c >>> 12);
+    b -= c;
+    b -= a;
+    b ^= (a << 18);
+    c -= a;
+    c -= b;
+    c ^= (b >>> 22);
     return c;
   }
 

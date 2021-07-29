@@ -26,6 +26,53 @@ object NeighborDataOps {
     }
   }
 
+  def loadEdgesWithWeight(dataset: Dataset[_],
+                          srcNodeIdCol: String,
+                          dstNodeIdCol: String,
+                          weightCol: String,
+                          isWeighted: Boolean = false,
+                          needReplicateEdges: Boolean = false,
+                          dropSelfLoopEdges: Boolean = true,
+                          needProcessMultiEdges: Boolean = false,
+                          dropNotPositiveEdges: Boolean = true
+                         ): RDD[(Long, Long, Float)] = {
+
+    var edge = if (isWeighted) {
+      dataset.select(srcNodeIdCol, dstNodeIdCol, weightCol).rdd.filter(row => !row.anyNull).mapPartitions { iter =>
+        iter.flatMap { row =>
+          if (dropSelfLoopEdges && row.getLong(0) == row.getLong(1))
+            Iterator.empty
+          else if (dropNotPositiveEdges && row.getFloat(2) <= 0)
+            Iterator.empty
+          else {
+            Iterator.single(row.getLong(0), row.getLong(1), row.getFloat(2))
+          }
+        }
+      }
+    } else {
+      dataset.select(srcNodeIdCol, dstNodeIdCol).rdd.filter(row => !row.anyNull).mapPartitions { iter =>
+        iter.flatMap { row =>
+          if (dropSelfLoopEdges && row.getLong(0) == row.getLong(1))
+            Iterator.empty
+          else {
+            Iterator.single(row.getLong(0), row.getLong(1), 1.0f)
+          }
+        }
+      }
+    }
+
+    if (needProcessMultiEdges) {
+      edge = edge.map { case (src, dst, wgt) =>
+        if (src < dst) ((src, dst), wgt) else ((dst, src), wgt)
+      }.reduceByKey(_ + _).map(a => (a._1._1, a._1._2, a._2))
+    }
+
+    if (needReplicateEdges)
+      edge.flatMap { a => Iterator((a._1, a._2, a._3), (a._2, a._1, a._3)) }
+    else
+      edge.map { a => (a._1, a._2, a._3) }
+  }
+
   def loadCompressedEdges(dataset: Dataset[_],
                           srcNodeIdCol: String,
                           dstNodeIdCol: String,

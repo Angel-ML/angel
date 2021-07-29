@@ -20,14 +20,18 @@ package com.tencent.angel.graph.embedding.line
 import java.util
 
 import com.tencent.angel.PartitionKey
-import com.tencent.angel.graph.data.NodeUtils
+import com.tencent.angel.common.ByteBufSerdeUtils
+import com.tencent.angel.graph.utils.GraphMatrixUtils
+import com.tencent.angel.ml.matrix.MatrixMeta
 import com.tencent.angel.ml.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc, UpdateParam}
-import com.tencent.angel.ps.storage.partition.RowBasedPartition
-import com.tencent.angel.ps.storage.vector.ServerIntAnyRow
+import com.tencent.angel.ps.storage.vector.element.{FloatArrayElement, IElement}
 import com.tencent.angel.psagent.PSAgentContext
-import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplitUtils
+import com.tencent.angel.psagent.matrix.transport.router.operator.IIntKeyAnyValuePartOp
+import com.tencent.angel.psagent.matrix.transport.router.{KeyValuePart, RouterUtils}
 import io.netty.buffer.ByteBuf
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
+
+import scala.util.Random
 
 class LINEAdjust(var param: LINEAdjustParam) extends UpdateFunc(param) {
 
@@ -40,29 +44,60 @@ class LINEAdjust(var param: LINEAdjustParam) extends UpdateFunc(param) {
     */
   override def partitionUpdate(partParam: PartitionUpdateParam): Unit = {
     val adjustParam = partParam.asInstanceOf[PartLINEAdjustParam]
-    val inputUpdates = adjustParam.inputUpdates
-    val outputUpdates = adjustParam.outputUpdates
     val order = adjustParam.order
-
-    val matrix = psContext.getMatrixStorageManager.getMatrix(adjustParam.getMatrixId)
-    val part = matrix.getPartition(adjustParam.getPartKey.getPartitionId)
-    val row = part.asInstanceOf[RowBasedPartition].getRow(0).asInstanceOf[ServerIntAnyRow]
+    val extraInitial = adjustParam.extraInitial
+    val row = GraphMatrixUtils.getPSIntKeyRow(psContext, adjustParam)
 
     //row.startWrite()
     try {
-      if (inputUpdates != null) {
-        val iter = inputUpdates.int2ObjectEntrySet().fastIterator()
-        while (iter.hasNext) {
-          val entry = iter.next()
-          inc(row.get(entry.getIntKey).asInstanceOf[LINENode].getInputFeats, entry.getValue)
+      if (adjustParam.inputUpdates != null) {
+        val inputData = adjustParam.inputUpdates.asInstanceOf[IIntKeyAnyValuePartOp]
+        val inputNodes = inputData.getKeys
+        val inputUpdates = inputData.getValues
+
+        if (inputNodes != null) {
+          if (!extraInitial) {
+            inputNodes.zip(inputUpdates).foreach(e => {
+              inc(row.get(e._1).asInstanceOf[LINENode].getInputFeats, e._2.asInstanceOf[FloatArrayElement].getData)
+            })
+          } else {
+            inputNodes.zip(inputUpdates).foreach(e => {
+              val ele = row.get(e._1)
+              if (ele == null) {
+                val dim = e._2.asInstanceOf[FloatArrayElement].getData.length
+                row.set(e._1, new LINENode(null, new Array[Float](dim)))
+              }
+              row.get(e._1).asInstanceOf[LINENode].setInputFeats(e._2.asInstanceOf[FloatArrayElement].getData)
+            })
+          }
         }
       }
 
-      if (order == 2 && outputUpdates != null) {
-        val iter = outputUpdates.int2ObjectEntrySet().fastIterator()
-        while (iter.hasNext) {
-          val entry = iter.next()
-          inc(row.get(entry.getIntKey).asInstanceOf[LINENode].getOutputFeats, entry.getValue)
+      if (order == 2 && adjustParam.outputUpdates != null) {
+        val outputData = adjustParam.outputUpdates.asInstanceOf[IIntKeyAnyValuePartOp]
+        val outputNodes = outputData.getKeys
+        val outputUpdates = outputData.getValues
+
+        if (outputNodes != null) {
+          if (!extraInitial) {
+            outputNodes.zip(outputUpdates).foreach(e => {
+              inc(row.get(e._1).asInstanceOf[LINENode].getOutputFeats, e._2.asInstanceOf[FloatArrayElement].getData)
+            })
+          } else {
+            val rand = new Random(System.currentTimeMillis())
+            outputNodes.zip(outputUpdates).foreach(e => {
+              val ele = row.get(e._1)
+              if (ele == null) {
+                val dim = e._2.asInstanceOf[FloatArrayElement].getData.length
+                val embedding = new Array[Float](dim)
+                for (i <- 0 until dim) {
+                  embedding(i) = (rand.nextFloat() - 0.5f) / dim
+                }
+                row.set(e._1, new LINENode(embedding, null))
+              }
+              row.get(e._1).asInstanceOf[LINENode].setOutputFeats(e._2.asInstanceOf[FloatArrayElement].getData)
+            })
+          }
         }
       }
     } finally {
@@ -77,154 +112,123 @@ class LINEAdjust(var param: LINEAdjustParam) extends UpdateFunc(param) {
   }
 }
 
-class LINEAdjustParam(matrixId: Int, inputUpdates: Int2ObjectOpenHashMap[Array[Float]],
-                      outputUpdates: Int2ObjectOpenHashMap[Array[Float]], order: Int) extends UpdateParam(matrixId) {
+class LINEAdjustParam(matrixId: Int,
+                      inputUpdates: Int2ObjectOpenHashMap[Array[Float]],
+                      outputUpdates: Int2ObjectOpenHashMap[Array[Float]],
+                      order: Int,
+                      extraInitial: Boolean = false) extends UpdateParam(matrixId) {
   /**
     * Split list.
     *
     * @return the list
     */
   override def split(): util.List[PartitionUpdateParam] = {
-    val parts = PSAgentContext.get().getMatrixMetaManager.getPartitions(matrixId, 0)
+    val matrixMeta = PSAgentContext.get().getMatrixMetaManager.getMatrixMeta(matrixId)
+    val parts = matrixMeta.getPartitionKeys
 
+    val partParams = new util.ArrayList[PartitionUpdateParam](parts.length)
     // If order == 1, we just need split inputUpdates
     if (order == 1) {
-      val nodeIds: Array[Int] = inputUpdates.keySet().toIntArray
-      val indicesViews = RowUpdateSplitUtils.split(nodeIds, parts, false)
-      val partParams = new util.ArrayList[PartitionUpdateParam](indicesViews.size())
-
-      val iter = indicesViews.entrySet().iterator()
-      while (iter.hasNext) {
-        val entry = iter.next()
-        partParams.add(new PartLINEAdjustParam(matrixId, entry.getKey, order, entry.getValue.getIndices,
-          entry.getValue.getStart, entry.getValue.getEnd, inputUpdates, null, -1, -1, null))
-      }
+      val splits = splitIntFloatsMap(matrixMeta, inputUpdates)
+      splits.zipWithIndex.foreach(e => {
+        if (e._1 != null && e._1.size() > 0) {
+          partParams.add(
+            new PartLINEAdjustParam(matrixId, parts(e._2), order, extraInitial, splits(e._2), null))
+        }
+      })
       partParams
     } else {
-      var partToParams: util.HashMap[PartitionKey, PartitionUpdateParam] = null
+      val inputSplits = splitIntFloatsMap(matrixMeta, inputUpdates)
+      val outputSplits = splitIntFloatsMap(matrixMeta, outputUpdates)
 
-      // Split output updaters first
-      if (outputUpdates != null && !outputUpdates.isEmpty) {
-        val outputNodeIds = outputUpdates.keySet().toIntArray()
-        val indicesViews = RowUpdateSplitUtils.split(outputNodeIds, parts, false)
-        partToParams = new util.HashMap[PartitionKey, PartitionUpdateParam](indicesViews.size())
-
-        val iter = indicesViews.entrySet().iterator()
-        while (iter.hasNext) {
-          val entry = iter.next()
-          partToParams.put(entry.getKey, new PartLINEAdjustParam(matrixId, entry.getKey, order,
-            null, -1, -1, null,
-            entry.getValue.getIndices, entry.getValue.getStart, entry.getValue.getEnd, outputUpdates))
+      for (index <- (0 until parts.length)) {
+        if ((inputSplits(index) != null && inputSplits(index).size() > 0)
+          || (outputSplits(index) != null && outputSplits(index).size() > 0)) {
+          partParams.add(
+            new PartLINEAdjustParam(
+              matrixId, parts(index), order, extraInitial, inputSplits(index), outputSplits(index)))
         }
       }
-
-      // Merge input update splits
-      if (inputUpdates != null && !inputUpdates.isEmpty) {
-        val inputNodeIds = inputUpdates.keySet().toIntArray
-        val indicesViews = RowUpdateSplitUtils.split(inputNodeIds, parts, false)
-
-        if (partToParams == null) {
-          partToParams = new util.HashMap[PartitionKey, PartitionUpdateParam]()
-        }
-
-        val iter = indicesViews.entrySet().iterator()
-        while (iter.hasNext) {
-          val entry = iter.next()
-          val partParam = partToParams.get(entry.getKey)
-          if (partParam == null) {
-            partToParams.put(entry.getKey, new PartLINEAdjustParam(matrixId, entry.getKey, order, entry.getValue.getIndices,
-              entry.getValue.getStart, entry.getValue.getEnd, inputUpdates, null, -1, -1, null))
-          } else {
-            partParam.asInstanceOf[PartLINEAdjustParam].inputUpdates = inputUpdates
-            partParam.asInstanceOf[PartLINEAdjustParam].inputNodeIds = entry.getValue.getIndices
-            partParam.asInstanceOf[PartLINEAdjustParam].inputStart = entry.getValue.getStart
-            partParam.asInstanceOf[PartLINEAdjustParam].intputEnd = entry.getValue.getEnd
-          }
-        }
-      }
-      val partParams = new util.ArrayList[PartitionUpdateParam](partToParams.size())
-      partParams.addAll(partToParams.values())
       partParams
+    }
+  }
+
+  def splitIntFloatsMap(matrixMeta: MatrixMeta, data: Int2ObjectOpenHashMap[Array[Float]]): Array[KeyValuePart] = {
+    val nodeIds: Array[Int] = new Array[Int](data.size())
+    val updates: Array[IElement] = new Array[IElement](data.size())
+
+    if (data != null && data.size() > 0) {
+      val iter = data.entrySet().iterator()
+      var index = 0
+      while (iter.hasNext) {
+        val entry = iter.next()
+        nodeIds(index) = entry.getKey
+        updates(index) = new FloatArrayElement(entry.getValue)
+        index += 1
+      }
+
+      RouterUtils.split(matrixMeta, 0, nodeIds, updates)
+    } else {
+      new Array[KeyValuePart](matrixMeta.getPartitionNum)
     }
   }
 }
 
-class PartLINEAdjustParam(matrixId: Int, part: PartitionKey, var order: Int, var inputNodeIds: Array[Int], var inputStart: Int, var intputEnd: Int,
-                          var inputUpdates: Int2ObjectOpenHashMap[Array[Float]],
-                          var outputNodeIds: Array[Int], var outputStart: Int, var outputEnd: Int,
-                          var outputUpdates: Int2ObjectOpenHashMap[Array[Float]]) extends PartitionUpdateParam(matrixId, part) {
+class PartLINEAdjustParam(matrixId: Int,
+                          part: PartitionKey,
+                          var order: Int,
+                          var extraInitial: Boolean,
+                          var inputUpdates: KeyValuePart,
+                          var outputUpdates: KeyValuePart) extends PartitionUpdateParam(matrixId, part) {
 
-  def this() = this(-1, null, 1, null, -1, -1, null, null, -1, -1, null)
+  def this() = this(-1, null, 1, false, null, null)
 
   override def serialize(buf: ByteBuf): Unit = {
     super.serialize(buf)
-    buf.writeInt(order)
+    ByteBufSerdeUtils.serializeInt(buf, order)
+    ByteBufSerdeUtils.serializeBoolean(buf, extraInitial)
 
-    if (inputNodeIds != null) {
-      //Size
-      buf.writeInt(intputEnd - inputStart)
-
-      // Node grads
-      for (i <- inputStart until intputEnd) {
-        // Node id
-        buf.writeInt(inputNodeIds(i))
-        // Node grads
-        NodeUtils.serialize(inputUpdates.get(inputNodeIds(i)), buf)
-      }
+    if (inputUpdates != null) {
+      ByteBufSerdeUtils.serializeBoolean(buf, true)
+      ByteBufSerdeUtils.serializeKeyValuePart(buf, inputUpdates)
     } else {
-      buf.writeInt(0)
+      ByteBufSerdeUtils.serializeBoolean(buf, false)
     }
 
-    if (outputNodeIds != null) {
-      //Size
-      buf.writeInt(outputEnd - outputStart)
-
-      // Node grads
-      for (i <- outputStart until outputEnd) {
-        // Node id
-        buf.writeInt(outputNodeIds(i))
-        // Node grads
-        NodeUtils.serialize(outputUpdates.get(outputNodeIds(i)), buf)
-      }
+    if (outputUpdates != null) {
+      ByteBufSerdeUtils.serializeBoolean(buf, true)
+      ByteBufSerdeUtils.serializeKeyValuePart(buf, outputUpdates)
     } else {
-      buf.writeInt(0)
+      ByteBufSerdeUtils.serializeBoolean(buf, false)
     }
   }
 
   override def deserialize(buf: ByteBuf): Unit = {
     super.deserialize(buf)
+    order = ByteBufSerdeUtils.deserializeInt(buf)
+    extraInitial = ByteBufSerdeUtils.deserializeBoolean(buf)
 
-    order = buf.readInt()
-    // Node number
-    var nodeNum = buf.readInt()
-    if (nodeNum > 0) {
-      inputUpdates = new Int2ObjectOpenHashMap[Array[Float]](nodeNum)
-      for (i <- 0 until nodeNum) {
-        inputUpdates.put(buf.readInt(), NodeUtils.deserializeFloats(buf))
-      }
+    if (ByteBufSerdeUtils.deserializeBoolean(buf)) {
+      inputUpdates = ByteBufSerdeUtils.deserializeKeyValuePart(buf)
     }
 
-    nodeNum = buf.readInt()
-    if (nodeNum > 0) {
-      outputUpdates = new Int2ObjectOpenHashMap[Array[Float]](nodeNum)
-      for (i <- 0 until nodeNum) {
-        outputUpdates.put(buf.readInt(), NodeUtils.deserializeFloats(buf))
-      }
+    if (ByteBufSerdeUtils.deserializeBoolean(buf)) {
+      outputUpdates = ByteBufSerdeUtils.deserializeKeyValuePart(buf)
     }
   }
 
   override def bufferLen(): Int = {
     var len = super.bufferLen()
-    len += 4
-    len += 4
-    if (inputNodeIds != null && inputNodeIds.nonEmpty) {
-      len += (intputEnd - inputStart) * (4 + NodeUtils.dataLen(inputUpdates.get(inputNodeIds(inputStart))))
+    len += ByteBufSerdeUtils.INT_LENGTH + ByteBufSerdeUtils.BOOLEN_LENGTH
+    len += ByteBufSerdeUtils.BOOLEN_LENGTH
+    if (inputUpdates != null) {
+      len += ByteBufSerdeUtils.serializedKeyValuePartLen(inputUpdates)
     }
 
-    if (outputNodeIds != null && outputNodeIds.nonEmpty) {
-      len += (outputEnd - outputStart) * (4 + NodeUtils.dataLen(outputUpdates.get(outputNodeIds(outputStart))))
+    len += ByteBufSerdeUtils.BOOLEN_LENGTH
+    if (outputUpdates != null) {
+      len += ByteBufSerdeUtils.serializedKeyValuePartLen(outputUpdates)
     }
-
     len
   }
 }

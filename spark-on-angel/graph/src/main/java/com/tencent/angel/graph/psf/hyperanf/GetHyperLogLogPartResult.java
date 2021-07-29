@@ -18,14 +18,18 @@ package com.tencent.angel.graph.psf.hyperanf;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
+import com.tencent.angel.utils.StringUtils;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-
 import java.io.IOException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class GetHyperLogLogPartResult extends PartitionGetResult {
+
+  private static final Log LOG = LogFactory.getLog(UpdateHyperLogLogPartParam.class);
 
   private Long2ObjectOpenHashMap<HyperLogLogPlus> logs;
 
@@ -45,7 +49,7 @@ public class GetHyperLogLogPartResult extends PartitionGetResult {
   public void serialize(ByteBuf output) {
     output.writeInt(logs.size());
     ObjectIterator<Long2ObjectMap.Entry<HyperLogLogPlus>> it =
-      logs.long2ObjectEntrySet().fastIterator();
+            logs.long2ObjectEntrySet().fastIterator();
     try {
       while (it.hasNext()) {
         Long2ObjectMap.Entry<HyperLogLogPlus> entry = it.next();
@@ -55,7 +59,8 @@ public class GetHyperLogLogPartResult extends PartitionGetResult {
         output.writeBytes(bytes);
       }
     } catch (IOException e) {
-      e.printStackTrace();
+      LOG.error("Serialize failed, details = " + StringUtils.stringifyException(e));
+      throw new RuntimeException(e);
     }
   }
 
@@ -73,7 +78,8 @@ public class GetHyperLogLogPartResult extends PartitionGetResult {
         logs.put(key, plus);
       }
     } catch (IOException e) {
-      e.printStackTrace();
+      LOG.error("Deserialize failed, details = " + StringUtils.stringifyException(e));
+      throw new RuntimeException(e);
     }
   }
 
@@ -81,12 +87,17 @@ public class GetHyperLogLogPartResult extends PartitionGetResult {
   public int bufferLen() {
     int len = 4;
     ObjectIterator<Long2ObjectMap.Entry<HyperLogLogPlus>> it =
-      logs.long2ObjectEntrySet().fastIterator();
-    while (it.hasNext()) {
-      Long2ObjectMap.Entry<HyperLogLogPlus> entry = it.next();
-      len += 8;
-      len += 4;
-      len += entry.getValue().sizeof();
+            logs.long2ObjectEntrySet().fastIterator();
+    try {
+      while (it.hasNext()) {
+        Long2ObjectMap.Entry<HyperLogLogPlus> entry = it.next();
+        len += 8;
+        len += 4;
+        len += entry.getValue().getBytes().length;
+      }
+    } catch (IOException e) {
+      LOG.error("calc bufferLen failed, details = " + StringUtils.stringifyException(e));
+      throw new RuntimeException(e);
     }
     return len;
   }

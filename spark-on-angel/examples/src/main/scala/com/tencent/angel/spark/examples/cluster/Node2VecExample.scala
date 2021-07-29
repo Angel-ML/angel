@@ -1,8 +1,10 @@
 package com.tencent.angel.spark.examples.cluster
 
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.graph.embedding.node2vec.Node2Vec
 import com.tencent.angel.graph.utils.GraphIO
+import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.storage.StorageLevel
 
@@ -38,8 +40,12 @@ object Node2VecExample {
     val percent = params.getOrElse("balancePartitionPercent", "0.7").toFloat
 
     // Spark setup
+    val conf = new SparkConf()
+    // close automatic checkpoint
+    conf.set("spark.hadoop." + AngelConf.ANGEL_PS_BACKUP_AUTO_ENABLE, "false")
     val spark = SparkSession.builder()
       .master(mode)
+      .config(conf)
       .appName("node2vec")
       .getOrCreate()
 

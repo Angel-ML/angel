@@ -22,6 +22,10 @@ import scala.beans.BeanProperty
 class Param(@BeanProperty val maxIndex: Long,
             @BeanProperty val batchSize: Int,
             @BeanProperty val pullBatchSize: Int,
-            @BeanProperty val psPartNum: Int
+            @BeanProperty val psPartNum: Int,
+            @BeanProperty val numNodes: Long = -1L,
+            @BeanProperty val minIndex: Long = 0L,
+            @BeanProperty val matrixName: String = "BaseGraph",
+            @BeanProperty val useBalancePartition: Boolean = false
            ) extends Serializable {
 }

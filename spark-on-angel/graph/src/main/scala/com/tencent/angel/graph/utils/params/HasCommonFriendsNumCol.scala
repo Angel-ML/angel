@@ -17,7 +17,7 @@
 
 package com.tencent.angel.graph.utils.params
 
-import org.apache.spark.ml.param.{IntParam, Param, Params}
+import org.apache.spark.ml.param.{Param, Params}
 
 trait HasCommonFriendsNumCol extends Params {
   /**

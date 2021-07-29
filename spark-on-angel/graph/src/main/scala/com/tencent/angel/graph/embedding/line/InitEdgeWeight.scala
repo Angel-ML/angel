@@ -18,26 +18,22 @@
 
 package com.tencent.angel.graph.embedding.line
 
-import java.util
+import java.io.{DataInputStream, DataOutputStream}
 
-import com.tencent.angel.PartitionKey
-import com.tencent.angel.common.Serialize
-import com.tencent.angel.ml.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc, UpdateParam}
-import com.tencent.angel.ps.storage.partition.RowBasedPartition
-import com.tencent.angel.ps.storage.vector.ServerIntAnyRow
-import com.tencent.angel.psagent.PSAgentContext
-import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplitUtils
-import com.tencent.angel.utils.Sort
+import com.tencent.angel.common.{ByteBufSerdeUtils, StreamSerdeUtils}
+import com.tencent.angel.graph.common.psf.param.IntKeysUpdateParam
+import com.tencent.angel.graph.utils.GraphMatrixUtils
+import com.tencent.angel.ml.matrix.psf.update.base.{GeneralPartUpdateParam, PartitionUpdateParam, UpdateFunc}
+import com.tencent.angel.ps.storage.vector.element.IElement
+import com.tencent.angel.psagent.matrix.transport.router.operator.IIntKeyAnyValuePartOp
 import io.netty.buffer.ByteBuf
-
-import scala.collection.JavaConversions._
 
 /**
   * A PS function to init neighbor table and edge weights
   *
   * @param param function params
   */
-class InitEdgeWeight(param: InitEgdeWeightParam) extends UpdateFunc(param) {
+class InitEdgeWeight(param: IntKeysUpdateParam) extends UpdateFunc(param) {
 
   def this() = this(null)
 
@@ -48,108 +44,28 @@ class InitEdgeWeight(param: InitEgdeWeightParam) extends UpdateFunc(param) {
     */
   override def partitionUpdate(partParam: PartitionUpdateParam): Unit = {
     // Get the matrix partition that store neighbor table on PS
-    val initParam = partParam.asInstanceOf[PartInitEgdeWeightParam]
-    val matrix = psContext.getMatrixStorageManager.getMatrix(initParam.getMatrixId)
-    val part = matrix.getPartition(initParam.getPartKey.getPartitionId)
-    val row = part.asInstanceOf[RowBasedPartition].getRow(0).asInstanceOf[ServerIntAnyRow]
+    val initParam = partParam.asInstanceOf[GeneralPartUpdateParam]
+    val row = GraphMatrixUtils.getPSIntKeyRow(psContext, initParam)
 
-    initParam.srcNodes.zip(initParam.edges).foreach(e => {
-      val node = row.get(e._1).asInstanceOf[LINENode]
-      if (e._2 != null) {
-        node.setNeighbors(e._2.dstNodes)
-        node.setWeights(e._2.weights)
-      }
-    })
+    val srcNodes = initParam.getKeyValuePart.asInstanceOf[IIntKeyAnyValuePartOp].getKeys
+    val targetAndWeights = initParam.getKeyValuePart.asInstanceOf[IIntKeyAnyValuePartOp].getValues
+
+    row.startWrite()
+    try {
+      srcNodes.zip(targetAndWeights).foreach(e => {
+        val node = row.get(e._1).asInstanceOf[LINENode]
+        if (e._2 != null) {
+          node.setNeighbors(e._2.asInstanceOf[EdgeWeightPairs].dstNodes)
+          node.setWeights(e._2.asInstanceOf[EdgeWeightPairs].weights)
+        }
+      })
+    } finally {
+      row.endWrite()
+    }
   }
 }
 
-/**
-  * Function parameters
-  *
-  * @param matrixId neighbor table matrix id
-  * @param srcNodes src nodes
-  * @param edges    node neighbors and weights
-  */
-class InitEgdeWeightParam(matrixId: Int, srcNodes: Array[Int], edges: Array[EdgeWeightPairs]) extends UpdateParam(matrixId) {
-  /**
-    * Split list.
-    *
-    * @return the list
-    */
-  override def split(): util.List[PartitionUpdateParam] = {
-    val parts = PSAgentContext.get().getMatrixMetaManager.getPartitions(matrixId, 0)
-    Sort.quickSort(srcNodes, edges, 0, srcNodes.length - 1)
-
-    val srcIndicesViews = RowUpdateSplitUtils.split(srcNodes, parts, true)
-
-    val partParams = new util.ArrayList[PartitionUpdateParam](srcIndicesViews.size())
-    srcIndicesViews.foreach(e => {
-      partParams.add(new PartInitEgdeWeightParam(matrixId, e._1, srcNodes, e._2.getStart, e._2.getEnd, edges))
-    })
-
-    partParams
-  }
-}
-
-class PartInitEgdeWeightParam(matrixId: Int, partKey: PartitionKey, var srcNodes: Array[Int],
-                              startPos: Int, endPos: Int, var edges: Array[EdgeWeightPairs])
-  extends PartitionUpdateParam(matrixId, partKey) {
-
-  def this() = this(-1, null, null, -1, -1, null)
-
-  override def serialize(output: ByteBuf): Unit = {
-    super.serialize(output)
-    output.writeInt(endPos - startPos)
-
-
-    for (i <- startPos until endPos) {
-      // Src node id
-      output.writeInt(srcNodes(i))
-
-      // Dst node id and weight
-      if (edges(i) != null) {
-        output.writeBoolean(true)
-        edges(i).serialize(output)
-      } else {
-        // Empty
-        output.writeBoolean(false)
-      }
-    }
-  }
-
-  override def deserialize(input: ByteBuf): Unit = {
-    super.deserialize(input)
-    val len = input.readInt()
-    srcNodes = new Array[Int](len)
-    edges = new Array[EdgeWeightPairs](len)
-
-    for (i <- 0 until len) {
-      srcNodes(i) = input.readInt()
-      if (input.readBoolean()) {
-        edges(i) = new EdgeWeightPairs()
-        edges(i).deserialize(input)
-      }
-    }
-  }
-
-  override def bufferLen: Int = {
-    var len = super.bufferLen()
-    len += 4
-
-    for (i <- 0 until srcNodes.length) {
-      len += 4
-      if (edges(i) != null) {
-        len += (4 + edges(i).bufferLen())
-      } else {
-        len += 4
-      }
-    }
-
-    len
-  }
-}
-
-class EdgeWeightPairs(var dstNodes: Array[Int], var weights: Array[Float]) extends Serialize {
+class EdgeWeightPairs(var dstNodes: Array[Int], var weights: Array[Float]) extends IElement {
   def this() = this(null, null)
 
   /**
@@ -158,9 +74,8 @@ class EdgeWeightPairs(var dstNodes: Array[Int], var weights: Array[Float]) exten
     * @param output the Netty ByteBuf
     */
   override def serialize(output: ByteBuf): Unit = {
-    output.writeInt(dstNodes.length)
-    dstNodes.foreach(e => output.writeInt(e))
-    weights.foreach(e => output.writeFloat(e))
+    ByteBufSerdeUtils.serializeInts(output, dstNodes)
+    ByteBufSerdeUtils.serializeFloats(output, weights)
   }
 
   /**
@@ -169,17 +84,8 @@ class EdgeWeightPairs(var dstNodes: Array[Int], var weights: Array[Float]) exten
     * @param input the input stream
     */
   override def deserialize(input: ByteBuf): Unit = {
-    val len = input.readInt()
-    dstNodes = new Array[Int](len)
-    weights = new Array[Float](len)
-
-    for (i <- 0 until len) {
-      dstNodes(i) = input.readInt()
-    }
-
-    for (i <- 0 until len) {
-      weights(i) = input.readFloat()
-    }
+    dstNodes = ByteBufSerdeUtils.deserializeInts(input)
+    weights = ByteBufSerdeUtils.deserializeFloats(input)
   }
 
   /**
@@ -187,5 +93,30 @@ class EdgeWeightPairs(var dstNodes: Array[Int], var weights: Array[Float]) exten
     *
     * @return int serialized data size of the object
     */
-  override def bufferLen(): Int = 4 + dstNodes.length * (4 + 4)
+  override def bufferLen(): Int =
+    ByteBufSerdeUtils.serializedIntsLen(dstNodes) + ByteBufSerdeUtils.serializedFloatsLen(weights)
+
+  override def deepClone(): AnyRef = new EdgeWeightPairs(dstNodes.clone(), weights.clone())
+
+  /**
+    * Serialize object to the Output stream.
+    *
+    * @param output the Netty ByteBuf
+    */
+  override def serialize(output: DataOutputStream): Unit = {
+    StreamSerdeUtils.serializeInts(output, dstNodes)
+    StreamSerdeUtils.serializeFloats(output, weights)
+  }
+
+  /**
+    * Deserialize object from the input stream.
+    *
+    * @param input the input stream
+    */
+  override def deserialize(input: DataInputStream): Unit = {
+    dstNodes = StreamSerdeUtils.deserializeInts(input)
+    weights = StreamSerdeUtils.deserializeFloats(input)
+  }
+
+  override def dataLen(): Int = bufferLen()
 }

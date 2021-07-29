@@ -16,14 +16,16 @@
  */
 package com.tencent.angel.graph.psf.hyperanf;
 
+import com.tencent.angel.graph.utils.GraphMatrixUtils;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
+import com.tencent.angel.psagent.matrix.transport.router.operator.ILongKeyPartOp;
 
 public class InitHyperLogLog extends UpdateFunc {
 
-  public InitHyperLogLog(int matrixId, int p, int sp, long[] nodes) {
-    super(new InitHyperLogLogParam(matrixId, p, sp, nodes));
+  public InitHyperLogLog(int matrixId, int p, int sp, long[] nodes, long seed) {
+    super(new InitHyperLogLogParam(matrixId, p, sp, nodes, seed));
   }
 
   public InitHyperLogLog(InitHyperLogLogParam param) {
@@ -35,17 +37,22 @@ public class InitHyperLogLog extends UpdateFunc {
   }
 
   @Override
-  public void partitionUpdate(PartitionUpdateParam partParm) {
-    InitHyperLogLogPartParam param = (InitHyperLogLogPartParam) partParm;
-    ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager().getRow(param.getPartKey(), 0);
+  public void partitionUpdate(PartitionUpdateParam partParam) {
+    InitHyperLogLogPartParam param = (InitHyperLogLogPartParam) partParam;
+    ServerLongAnyRow row = GraphMatrixUtils.getPSLongKeyRow(psContext, param);
 
+    // Get nodes and features
+    ILongKeyPartOp split = (ILongKeyPartOp) param.getNodes();
+    long[] nodes = split.getKeys();
     int p = param.getP();
     int sp = param.getSp();
-    long[] nodes = param.getNodes();
+    long seed = param.getSeed();
+
     row.startWrite();
     try {
-      for (int i = 0; i < nodes.length; i++)
-        row.set(nodes[i], new HyperLogLogPlusElement(nodes[i], p, sp));
+      for (int i = 0; i < nodes.length; i++) {
+        row.set(nodes[i], new HyperLogLogPlusElement(nodes[i], p, sp, seed));
+      }
     } finally {
       row.endWrite();
     }

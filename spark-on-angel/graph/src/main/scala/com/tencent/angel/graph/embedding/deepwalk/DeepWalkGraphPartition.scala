@@ -1,23 +1,6 @@
-/*
- * Tencent is pleased to support the open source community by making Angel available.
- *
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- *
- * https://opensource.org/licenses/Apache-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- *
- */
-
 package com.tencent.angel.graph.embedding.deepwalk
 
-import com.tencent.angel.graph.psf.neighbors.samplebyaliastable.samplealiastable.NeighborsAliasTableElement
+import com.tencent.angel.graph.psf.neighbors.SampleNeighborsWithCount.NeighborsAliasTableElement
 import it.unimi.dsi.fastutil.longs.{Long2ObjectOpenHashMap, LongArrayList}
 
 import scala.collection.mutable.ArrayBuffer
@@ -47,12 +30,13 @@ class DeepWalkGraphPartition(index: Int, srcNodesArray: Array[Long], srcNodesSam
         val oldPathTail = oldPath.last // the tail node of path
         val tailNeighbors = nodesToNeighboes.get(oldPathTail) //the neighbors of tail node
         if (tailNeighbors.nonEmpty) {
-          val sampleFromNeighbors = tailNeighbors(rnd.nextInt(tailNeighbors.length)) // sample a node randomly from tail node's neighbors
+          val sampleFromNeighbors = tailNeighbors(rnd.nextInt(tailNeighbors.size)) // sample a node randomly from tail node's neighbors
           srcNodesSamplePaths(idx) = Array.concat(oldPath, Array(sampleFromNeighbors)) // merge old path and sample node
         }
 
       }
     }
+
     println(s"partition $index: ---------- iteration $iteration terminated ----------")
     new DeepWalkGraphPartition(index, srcNodesArray, srcNodesSamplePaths, batchSize)
 
@@ -60,7 +44,19 @@ class DeepWalkGraphPartition(index: Int, srcNodesArray: Array[Long], srcNodesSam
 
   def save(): Array[Array[Long]] =
     srcNodesSamplePaths
+
+  def deepClone(): DeepWalkGraphPartition = {
+    val newSrcNodesArray = srcNodesArray.clone()
+    val newPaths = new Array[Array[Long]](srcNodesSamplePaths.length)
+    var i = 0
+    while (i < srcNodesSamplePaths.length) {
+      newPaths(i) = srcNodesSamplePaths(i)
+      i += 1
+    }
+    new DeepWalkGraphPartition(index, newSrcNodesArray, newPaths, batchSize)
+  }
 }
+
 
 object DeepWalkGraphPartition {
   def initPSMatrixAndNodePath(model: DeepWalkPSModel, index: Int, iterator: Iterator[(Long, Array[Long], Array[Float], Array[Int])], batchSize: Int): DeepWalkGraphPartition = {

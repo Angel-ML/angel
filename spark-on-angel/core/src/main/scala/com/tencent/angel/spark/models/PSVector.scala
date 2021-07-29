@@ -19,15 +19,15 @@
 package com.tencent.angel.spark.models
 
 import java.util.concurrent.Future
+
 import scala.collection.Map
-
 import org.apache.spark.SparkException
-
 import com.tencent.angel.ml.math2.vector.Vector
-import com.tencent.angel.ml.matrix.RowType
+import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
 import com.tencent.angel.ml.matrix.psf.get.base.{GetFunc, GetResult}
 import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
 import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.spark.models.impl.PSVectorImpl
 
 /**
  * PSVector is a vector store on the PS nodes
@@ -131,5 +131,11 @@ object PSVector{
   def sparse(dimension: Long, capacity: Int = 20, rowType: RowType = RowType.T_DOUBLE_SPARSE_LONGKEY,
       additionalConfiguration:Map[String, String] = Map()): PSVector = {
     sparse(dimension, capacity, dimension, rowType, additionalConfiguration)
+  }
+
+  def vector(mc : MatrixContext): PSVector = {
+    val matrixMeta = PSContext.instance()
+      .createMatrix(mc)
+    new PSVectorImpl(matrixMeta.getId, 0, matrixMeta.getColNum, matrixMeta.getRowType)
   }
 }

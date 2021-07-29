@@ -23,9 +23,7 @@ trait HasOutputDistanceCol extends Params {
   final val outputDistanceCol = new Param[String](this, "outputDistanceCol",
     "name for distance column on sssp algorithm")
 
-  final def getOutputDistanceCol: String = $ {
-    outputDistanceCol
-  }
+  final def getOutputDistanceCol: String = ${outputDistanceCol}
 
   setDefault(outputDistanceCol, "distance")
 

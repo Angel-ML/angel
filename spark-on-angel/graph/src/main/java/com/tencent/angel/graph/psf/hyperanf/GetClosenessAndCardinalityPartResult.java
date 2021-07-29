@@ -18,8 +18,6 @@ package com.tencent.angel.graph.psf.hyperanf;
 
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import io.netty.buffer.ByteBuf;
-import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
-import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
@@ -29,7 +27,8 @@ public class GetClosenessAndCardinalityPartResult extends PartitionGetResult {
 
   private Long2ObjectOpenHashMap<Tuple3<Double, Long, Long>> closenesses;
 
-  public GetClosenessAndCardinalityPartResult(Long2ObjectOpenHashMap<Tuple3<Double, Long, Long>> closenesses) {
+  public GetClosenessAndCardinalityPartResult(
+          Long2ObjectOpenHashMap<Tuple3<Double, Long, Long>> closenesses) {
     this.closenesses = closenesses;
   }
 
@@ -45,7 +44,7 @@ public class GetClosenessAndCardinalityPartResult extends PartitionGetResult {
   public void serialize(ByteBuf output) {
     output.writeInt(closenesses.size());
     ObjectIterator<Long2ObjectMap.Entry<Tuple3<Double, Long, Long>>> it =
-        closenesses.long2ObjectEntrySet().fastIterator();
+            closenesses.long2ObjectEntrySet().fastIterator();
     while (it.hasNext()) {
       Long2ObjectMap.Entry<Tuple3<Double, Long, Long>> entry = it.next();
       output.writeLong(entry.getLongKey());

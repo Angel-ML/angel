@@ -310,6 +310,25 @@ public class RouterUtils {
   // Keys and values split: int/long/string/object key, object value
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+  /**
+   * Split keys by matrix partition
+   *
+   * @param matrixMeta matrix meta data
+   * @param keys the keys need partitioned
+   * @return partition key to key partition map
+   */
+  public static KeyValuePart[] split(MatrixMeta matrixMeta, int rowId, long[] keys,
+                                     int[] values, boolean isSorted) {
+    if(matrixMeta.isHash()) {
+      return HashRouterUtils.split(matrixMeta, rowId, keys, values);
+    } else {
+      return RangeRouterUtils.split(matrixMeta, rowId, keys, values, isSorted);
+    }
+  }
+
+
+
   /**
    * Split keys by matrix partition
    *

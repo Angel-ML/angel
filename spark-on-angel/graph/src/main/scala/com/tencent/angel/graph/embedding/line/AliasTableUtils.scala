@@ -57,6 +57,7 @@ object AliasTableUtils {
     var smallIndex = 0
 
     for (index <- weights.indices.reverse) {
+      // println(s"index = ${index}")
       if (weights(index) < 1) {
         smallEdges(smallIndex) = index
         smallIndex += 1
@@ -136,6 +137,7 @@ object AliasTableUtils {
     var smallIndex = 0
 
     for (index <- weights.indices.reverse) {
+      // println(s"index = ${index}")
       if (weights(index) < 1) {
         smallEdges(smallIndex) = index
         smallIndex += 1
@@ -179,7 +181,7 @@ object AliasTableUtils {
     }
 
     for (i <- weights.indices) {
-      println(s"i=$i, prob=${prob(i)}, alias=${alias(i)}")
+      println(s"i=${i}, prob=${prob(i)}, alias=${alias(i)}")
     }
 
     (prob, alias)
@@ -196,7 +198,7 @@ object AliasTableUtils {
     */
   def batchSample(rand: Random, prob: Array[Float], alias: Array[Int], sampleNum: Int): Array[Int] = {
     val indices = new Array[Int](sampleNum)
-    for (i <- 0 until sampleNum) {
+    for (i <- (0 until sampleNum)) {
       val id = rand.nextInt(prob.length)
       val v = rand.nextDouble().toFloat
       if (v < prob(id)) {
@@ -219,7 +221,7 @@ object AliasTableUtils {
     */
   def batchSample(rand: Random, prob: Array[Double], alias: Array[Int], sampleNum: Int): Array[Int] = {
     val indices = new Array[Int](sampleNum)
-    for (i <- 0 until sampleNum) {
+    for (i <- (0 until sampleNum)) {
       val id = rand.nextInt(prob.length)
       val v = rand.nextDouble()
       if (v < prob(id)) {
