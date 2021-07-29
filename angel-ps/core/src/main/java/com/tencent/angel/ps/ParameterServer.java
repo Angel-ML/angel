@@ -576,8 +576,8 @@ public class ParameterServer {
       pairBuilder.setKey("dataSize");
       pairBuilder.setValue(String.format("%.2f", dataSize * 1.0 / 1024/ 1024));
       builder.addMetrics(pairBuilder.build());
-      builder.addAllMatrixReports(buildMatrixReports());
     }
+    builder.addAllMatrixReports(buildMatrixReports());
 
     PSReportResponse ret;
     PSReportRequest request = builder.build();

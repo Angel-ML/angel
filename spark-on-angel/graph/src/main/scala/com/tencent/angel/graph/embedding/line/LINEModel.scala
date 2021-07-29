@@ -58,8 +58,8 @@ import scala.collection.mutable.ArrayBuffer
 class LINEModel(dataset: Dataset[_], embeddingDim: Int, negativeNum: Int, stepSize: Float, order: Int,
                 psPartNum: Int, batchSize: Int, epochNum: Int, dataPartNum: Int, srcNodeIdCol: String,
                 dstNodeIdCol: String, needMapping: Boolean, needSumSampling: Boolean,
-                output: String, checkpointInterval: Int, modelSaveInterval: Int, saveMeta: Boolean,
-                oldModelPath: String, extraEmbeddingPath: String, useBalancePartition: Boolean) extends Serializable {
+                output: String, checkpointInterval: Int, modelSaveInterval: Int, saveContextEmbedding: Boolean,
+                extraInputEmbeddingPath: String, extraContextEmbeddingPath: String, useBalancePartition: Boolean) extends Serializable {
 
   /**
     * Model on PS
@@ -80,7 +80,7 @@ class LINEModel(dataset: Dataset[_], embeddingDim: Int, negativeNum: Int, stepSi
     val (minId, maxId, numEdges) = newEdges.mapPartitions(summarizeApplyOp)
       .reduce(summarizeReduceOp)
 
-    LogUtils.logTime(s"minId=${minId}, maxId=${maxId}, numEdges=${numEdges}, embedding dim=${embeddingDim}")
+    LogUtils.logTime(s"minId=$minId, maxId=$maxId, numEdges=$numEdges, embedding dim=$embeddingDim")
 
     // Start PS and init the model
     LogUtils.logTime("start to run ps")
@@ -88,15 +88,15 @@ class LINEModel(dataset: Dataset[_], embeddingDim: Int, negativeNum: Int, stepSi
 
     // Create matrix and init PS model
     LogUtils.logTime("Create matrices in PS")
-    var extraEmbeddingRDD: RDD[String] = null
-    if (extraEmbeddingPath.length > 0) {
-      extraEmbeddingRDD = newEdges.sparkContext.textFile(extraEmbeddingPath)
+    var extraInputEmbeddingRDD: RDD[String] = null
+    if (extraInputEmbeddingPath.length > 0) {
+      extraInputEmbeddingRDD = newEdges.sparkContext.textFile(extraInputEmbeddingPath)
     }
-    var data: RDD[Int] = null
-    if (useBalancePartition) {
-      data = newEdges.flatMap(x => Iterator(x._1, x._2)).cache()
+    var extraContextEmbeddingRDD: RDD[String] = null
+    if (extraContextEmbeddingPath.length > 0) {
+      extraContextEmbeddingRDD = newEdges.sparkContext.textFile(extraContextEmbeddingPath)
     }
-    initPSModel(minId, maxId, oldModelPath, extraEmbeddingRDD)
+    initPSModel(minId, maxId, extraInputEmbeddingRDD, extraContextEmbeddingRDD)
 
     // Get mini-batch data set
     val trainBatches = LINEModel.buildDataBatches(newEdges, batchSize)
@@ -230,7 +230,7 @@ class LINEModel(dataset: Dataset[_], embeddingDim: Int, negativeNum: Int, stepSi
     if (epoch % modelSaveInterval == 0 && epoch < epochNum) {
       LogUtils.logTime(s"Epoch=${epoch}, save the model")
       startTs = System.currentTimeMillis()
-      getPSModel.save(output, epoch, saveMeta)
+      getPSModel.save(output, epoch, saveContextEmbedding, order)
       LogUtils.logTime(s"save use time=${System.currentTimeMillis() - startTs}")
     }
   }
@@ -241,12 +241,12 @@ class LINEModel(dataset: Dataset[_], embeddingDim: Int, negativeNum: Int, stepSi
     * @param minId min node id
     * @param maxId max node id
     */
-  def initPSModel(minId: Int, maxId: Int, oldModelPath: String, extraEmbeddingRDD: RDD[String]): Unit = {
+  def initPSModel(minId: Int, maxId: Int, extraInputEmbeddingRDD: RDD[String], extraContextEmbeddingRDD: RDD[String]): Unit = {
     val modelContext = new ModelContext(
-      psPartNum, minId, maxId + 1, (maxId - minId), "embedding", SparkContext.getOrCreate().hadoopConfiguration)
+      psPartNum, minId, maxId + 1, maxId - minId, "embedding", SparkContext.getOrCreate().hadoopConfiguration)
 
-    psModel = LINEPSModel(modelContext, order, embeddingDim, false, oldModelPath,
-      extraEmbeddingRDD, batchSize)
+    psModel = LINEPSModel(modelContext, order, embeddingDim, false, extraInputEmbeddingRDD,
+      extraContextEmbeddingRDD, batchSize)
   }
 
   def getPSModel: LINEPSModel = psModel
@@ -554,8 +554,8 @@ class LINEModel(dataset: Dataset[_], embeddingDim: Int, negativeNum: Int, stepSi
     Iterator.single((minId, maxId, numEdges))
   }
 
-  def save(outPath: String, epochNum: Int, saveMeta: Boolean): Unit = {
-    psModel.save(outPath, epochNum, saveMeta)
+  def save(outPath: String, epochNum: Int, saveContextEmbedding: Boolean): Unit = {
+    psModel.save(outPath, epochNum, saveContextEmbedding, order)
   }
 }
 
@@ -621,11 +621,11 @@ object LINEModel {
 class LINEWithWightModel(dataset: Dataset[_], embeddingDim: Int, negativeNum: Int, stepSize: Float, order: Int,
                          psPartNum: Int, batchSize: Int, epochNum: Int, dataPartNum: Int, srcNodeIdCol: String,
                          dstNodeIdCol: String, weightCol: String, needMapping: Boolean, needSumSampling: Boolean,
-                         output: String, checkpointInterval: Int, modelSaveInterval: Int, saveMeta: Boolean,
-                         oldModelPath: String, extraEmbeddingPath: String, useBalancePartition: Boolean)
+                         output: String, checkpointInterval: Int, modelSaveInterval: Int, saveContextEmbedding: Boolean,
+                         extraInputEmbeddingPath: String, extraContextEmbeddingPath: String, useBalancePartition: Boolean)
   extends LINEModel(dataset, embeddingDim, negativeNum, stepSize, order, psPartNum, batchSize,
     epochNum, dataPartNum, srcNodeIdCol, dstNodeIdCol, needMapping, needSumSampling, output, checkpointInterval,
-    modelSaveInterval, saveMeta, oldModelPath, extraEmbeddingPath, useBalancePartition) {
+    modelSaveInterval, saveContextEmbedding, extraInputEmbeddingPath, extraContextEmbeddingPath, useBalancePartition) {
 
   override def train(): Unit = {
     // Generate edge table with weight
@@ -650,17 +650,16 @@ class LINEWithWightModel(dataset: Dataset[_], embeddingDim: Int, negativeNum: In
 
     // Create matrix and init PS model
     LogUtils.logTime("Create matrices in PS")
-    var extraEmbeddingRDD: RDD[String] = null
-    if (extraEmbeddingPath.length > 0) {
-      extraEmbeddingRDD = edges.sparkContext.textFile(extraEmbeddingPath)
+    var extraInputEmbeddingRDD: RDD[String] = null
+    if (extraInputEmbeddingPath.length > 0) {
+      extraInputEmbeddingRDD = newEdges.sparkContext.textFile(extraInputEmbeddingPath)
+    }
+    var extraContextEmbeddingRDD: RDD[String] = null
+    if (extraContextEmbeddingPath.length > 0) {
+      extraContextEmbeddingRDD = newEdges.sparkContext.textFile(extraContextEmbeddingPath)
     }
 
-    var data: RDD[Int] = null
-    if (useBalancePartition) {
-      data = newEdges.flatMap(x => Iterator(x._1, x._2)).cache()
-    }
-
-    initPSModel(minId, maxId, oldModelPath, extraEmbeddingRDD)
+    initPSModel(minId, maxId, extraInputEmbeddingRDD, extraContextEmbeddingRDD)
 
     // Group by the edge use src node id
     LogUtils.logTime("Group by the edge use src node id")
@@ -760,11 +759,10 @@ class LINEWithWightModel(dataset: Dataset[_], embeddingDim: Int, negativeNum: In
     (loss, dots.length.toLong, Array(sampleWeightsTime, sampleTime, getEmbeddingTime, dotTime, gradientTime, calUpdateTime, pushTime))
   }
 
-  override def initPSModel(minId: Int, maxId: Int, oldModelPath: String, extraEmbeddingRDD: RDD[String]): Unit = {
+  override def initPSModel(minId: Int, maxId: Int, extraInputEmbeddingRDD: RDD[String], extraContextEmbeddingRDD: RDD[String]): Unit = {
     val modelContext = new ModelContext(
       psPartNum, minId, maxId + 1, maxId - minId, "embedding", SparkContext.getOrCreate().hadoopConfiguration)
-    psModel = LINEPSModel(modelContext, order, embeddingDim, true, oldModelPath,
-      extraEmbeddingRDD, batchSize)
+    psModel = LINEPSModel(modelContext, order, embeddingDim, true, extraInputEmbeddingRDD, extraContextEmbeddingRDD, batchSize)
   }
 
   override def getPSModel: LINEWithWeightPSModel = super.getPSModel.asInstanceOf[LINEWithWeightPSModel]

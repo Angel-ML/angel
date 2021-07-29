@@ -21,6 +21,7 @@ import java.util
 
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.common.ByteBufSerdeUtils
+import com.tencent.angel.exception.AngelException
 import com.tencent.angel.graph.utils.GraphMatrixUtils
 import com.tencent.angel.ml.matrix.MatrixMeta
 import com.tencent.angel.ml.matrix.psf.update.base.{PartitionUpdateParam, UpdateFunc, UpdateParam}
@@ -30,6 +31,8 @@ import com.tencent.angel.psagent.matrix.transport.router.operator.IIntKeyAnyValu
 import com.tencent.angel.psagent.matrix.transport.router.{KeyValuePart, RouterUtils}
 import io.netty.buffer.ByteBuf
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
+
+import scala.util.Random
 
 class LINEAdjust(var param: LINEAdjustParam) extends UpdateFunc(param) {
 
@@ -60,7 +63,12 @@ class LINEAdjust(var param: LINEAdjustParam) extends UpdateFunc(param) {
             })
           } else {
             inputNodes.zip(inputUpdates).foreach(e => {
-              apy(row.get(e._1).asInstanceOf[LINENode].getInputFeats, e._2.asInstanceOf[FloatArrayElement].getData)
+              val ele = row.get(e._1)
+              if (ele == null) {
+                val dim = e._2.asInstanceOf[FloatArrayElement].getData.length
+                row.set(e._1, new LINENode(null, new Array[Float](dim)))
+              }
+              row.get(e._1).asInstanceOf[LINENode].setInputFeats(e._2.asInstanceOf[FloatArrayElement].getData)
             })
           }
         }
@@ -72,9 +80,25 @@ class LINEAdjust(var param: LINEAdjustParam) extends UpdateFunc(param) {
         val outputUpdates = outputData.getValues
 
         if (outputNodes != null) {
-          outputNodes.zip(outputUpdates).foreach(e => {
-            inc(row.get(e._1).asInstanceOf[LINENode].getOutputFeats, e._2.asInstanceOf[FloatArrayElement].getData)
-          })
+          if (!extraInitial) {
+            outputNodes.zip(outputUpdates).foreach(e => {
+              inc(row.get(e._1).asInstanceOf[LINENode].getOutputFeats, e._2.asInstanceOf[FloatArrayElement].getData)
+            })
+          } else {
+            val rand = new Random(System.currentTimeMillis())
+            outputNodes.zip(outputUpdates).foreach(e => {
+              val ele = row.get(e._1)
+              if (ele == null) {
+                val dim = e._2.asInstanceOf[FloatArrayElement].getData.length
+                val embedding = new Array[Float](dim)
+                for (i <- 0 until dim) {
+                  embedding(i) = (rand.nextFloat() - 0.5f) / dim
+                }
+                row.set(e._1, new LINENode(embedding, null))
+              }
+              row.get(e._1).asInstanceOf[LINENode].setOutputFeats(e._2.asInstanceOf[FloatArrayElement].getData)
+            })
+          }
         }
       }
     } finally {
@@ -85,12 +109,6 @@ class LINEAdjust(var param: LINEAdjustParam) extends UpdateFunc(param) {
   def inc(dst: Array[Float], src: Array[Float]): Unit = {
     for (i <- dst.indices) {
       dst(i) += src(i)
-    }
-  }
-
-  def apy(dst: Array[Float], src: Array[Float]): Unit = {
-    for (i <- dst.indices) {
-      dst(i) = src(i)
     }
   }
 }
@@ -121,17 +139,43 @@ class LINEAdjustParam(matrixId: Int,
       })
       partParams
     } else {
-      val inputSplits = splitIntFloatsMap(matrixMeta, inputUpdates)
-      val outputSplits = splitIntFloatsMap(matrixMeta, outputUpdates)
+      val inputSplits = if (inputUpdates != null && !inputUpdates.isEmpty) {
+        splitIntFloatsMap(matrixMeta, inputUpdates)
+      } else null
 
-      for (index <- (0 until parts.length)) {
-        if ((inputSplits(index) != null && inputSplits(index).size() > 0)
-          || (outputSplits(index) != null && outputSplits(index).size() > 0)) {
-          partParams.add(
-            new PartLINEAdjustParam(
-              matrixId, parts(index), order, extraInitial, inputSplits(index), outputSplits(index)))
+      val outputSplits = if (outputUpdates != null && !outputUpdates.isEmpty) {
+        splitIntFloatsMap(matrixMeta, outputUpdates)
+      } else null
+
+      if (inputSplits != null && outputSplits != null) {
+        for (index <- (0 until parts.length)) {
+          if ((inputSplits(index) != null && inputSplits(index).size() > 0)
+            || (outputSplits(index) != null && outputSplits(index).size() > 0)) {
+            partParams.add(
+              new PartLINEAdjustParam(
+                matrixId, parts(index), order, extraInitial, inputSplits(index), outputSplits(index)))
+          }
         }
+      } else if (inputSplits != null && outputSplits == null) {
+        for (index <- (0 until parts.length)) {
+          if ((inputSplits(index) != null && inputSplits(index).size() > 0)) {
+            partParams.add(
+              new PartLINEAdjustParam(
+                matrixId, parts(index), order, extraInitial, inputSplits(index), null))
+          }
+        }
+      } else if (inputSplits == null && outputSplits != null) {
+        for (index <- (0 until parts.length)) {
+          if ((outputSplits(index) != null && outputSplits(index).size() > 0)) {
+            partParams.add(
+              new PartLINEAdjustParam(
+                matrixId, parts(index), order, extraInitial, null, outputSplits(index)))
+          }
+        }
+      } else {
+        throw new AngelException("Invalid parameters, both inputUpdates and outputUpdates are null")
       }
+
       partParams
     }
   }
@@ -215,4 +259,3 @@ class PartLINEAdjustParam(matrixId: Int,
     len
   }
 }
-

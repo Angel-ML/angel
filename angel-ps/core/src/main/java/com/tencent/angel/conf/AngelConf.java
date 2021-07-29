@@ -15,7 +15,6 @@
  *
  */
 
-
 package com.tencent.angel.conf;
 
 import com.tencent.angel.RunningMode;
@@ -153,7 +152,7 @@ public class AngelConf extends Configuration {
    */
   public static final String ANGEL_SAVE_MODEL_MAX_RESULTS_FOR_SINGLE_MATRIX =
       "angel.save.model.max.results.for.single.matrix";
-  public static final int DEFAULT_ANGEL_SAVE_MODEL_MAX_RESULTS_FOR_SINGLE_MATRIX = 2;
+  public static final int DEFAULT_ANGEL_SAVE_MODEL_MAX_RESULTS_FOR_SINGLE_MATRIX = 4;
 
   /**
    * Maximum save results number

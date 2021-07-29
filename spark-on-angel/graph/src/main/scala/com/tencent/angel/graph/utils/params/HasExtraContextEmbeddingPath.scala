@@ -14,20 +14,17 @@
  * the License.
  *
  */
-package com.tencent.angel.graph.psf.gcn;
+package com.tencent.angel.graph.utils.params
 
-import com.tencent.angel.ml.math2.vector.LongFloatVector;
-import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
+import org.apache.spark.ml.param.{Param, Params}
 
-public class GetLabelsResult extends GetResult {
+trait HasExtraContextEmbeddingPath extends Params {
+  final val extraContextEmbeddingPath = new Param[String](this, "extraContextEmbeddingPath",
+    "extraContextEmbeddingPath")
 
-  private LongFloatVector vector;
+  final def getExtraContextEmbeddingPath: String = $(extraContextEmbeddingPath)
 
-  public GetLabelsResult(LongFloatVector vector) {
-    this.vector = vector;
-  }
+  setDefault(extraContextEmbeddingPath, null)
 
-  public LongFloatVector getVector() {
-    return vector;
-  }
+  final def setExtraContextEmbeddingPath(in: String): this.type = set(extraContextEmbeddingPath, in)
 }

@@ -14,23 +14,23 @@
  * the License.
  *
  */
-
-package com.tencent.angel.graph.embedding.line
+package com.tencent.angel.graph.utils.params
 
 import org.apache.spark.ml.param.{BooleanParam, Params}
 
-trait HasSaveMeta extends Params {
+trait HasSaveContextEmbedding extends Params {
   /**
-    * Param for isWeighted.
+    * Param for save context embedding.
     *
     * @group param
     */
-  final val saveMeta = new BooleanParam(this, "saveMeta", "Save meta or not")
+  final val saveContextEmbedding = new BooleanParam(this, "saveContextEmbedding",
+    "Save Context Embedding or not")
 
   /** @group getParam */
-  final def getSaveMeta: Boolean = $(saveMeta)
+  final def getSaveContextEmbedding: Boolean = $(saveContextEmbedding)
 
-  setDefault(saveMeta, false)
+  setDefault(saveContextEmbedding, false)
 
-  final def setSaveMeta(bool: Boolean): this.type = set(saveMeta, bool)
+  final def setSaveContextEmbedding(bool: Boolean): this.type = set(saveContextEmbedding, bool)
 }
