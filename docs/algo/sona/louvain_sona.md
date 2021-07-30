@@ -33,7 +33,10 @@ Louvain算法包含两个过程
 - enableCheck：是否对社区id或度进行检查
 - bufferSize： 缓冲区大小
 - storageLevel： 存储级别
+### 资源参数
 
+  - Angel PS个数和内存大小：ps.instance与ps.memory的乘积是ps总的配置内存。为了保证Angel不挂掉，需要配置模型大小两倍左右的内存。 Louvain模型大小的计算公式为： 节点数*（8+8+4）Byte，比如说1亿节点，模型大小差不多有2G大小，那么配置instances=2, memory=2就差不多了。 另外，在可能的情况下，ps数目越小，数据传输的量会越小，但是单个ps的压力会越大，需要一定的权衡。
+  - Spark的资源配置：num-executors与executor-memory的乘积是executors总的配置内存，最好能存下2倍的输入数据。 如果内存紧张，1倍也是可以接受的，但是相对会慢一点。 比如说100亿的边集大概有600G大小， 50G * 20 的配置是足够的。 在资源实在紧张的情况下， 尝试加大分区数目！
 
 ### 任务提交示例
 进入angel环境bin目录下
@@ -58,3 +61,6 @@ $SPARK_HOME/bin/spark-submit \
   ../lib/spark-on-angel-examples-3.1.0.jar
   input:$input output:$output numFold:10 numOpt:3 eps:0.0 batchSize:1000 partitionNum:2 psPartitionNum:2 enableCheck:false bufferSize:1000000 storageLevel:MEMORY_ONLY
 ```
+
+#### 常见问题
+- 在差不多10min的时候，任务挂掉： 很可能的原因是angel申请不到资源！由于Louvain基于Spark On Angel开发，实际上涉及到Spark和Angel两个系统，在向Yarn申请资源时是独立进行的。 在Spark任务拉起之后，由Spark向Yarn提交Angel的任务，如果不能在给定时间内申请到资源，就会报超时错误，任务挂掉！ 解决方案是： 1）确认资源池有足够的资源 2） 添加spakr conf: spark.hadoop.angel.am.appstate.timeout.ms=xxx 调大超时时间，默认值为600000，也就是10分钟
