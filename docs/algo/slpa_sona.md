@@ -31,7 +31,7 @@ SLPA（Speaker-listener Label Propagation Algorithm）由Jierui Xie等人于2011
 
 #### 资源参数
 
-- ps个数和内存大小：ps.instance与ps.memory的乘积是ps总的配置内存。为了保证Angel不挂掉，需要配置ps上数据存储量大小两倍左右的内存。
+- ps个数和内存大小：ps.instance与ps.memory的乘积是ps总的配置内存。为了保证Angel不挂掉，需要配置ps上数据存储量大小两倍左右的内存。对于SLPA算法来说，如果是1亿节点，numMaxCommunities为3的话，模型大小为 1亿*(8+4)bytes*3*2 大小为7.2G，那么配置instances=2, memory=8G 就差不多了
 - Spark的资源配置：num-executors与executor-memory的乘积是executors总的配置内存，最好能存下2倍的输入数据。 如果内存紧张，1倍也是可以接受的，但是相对会慢一点。 比如说100亿的边集大概有600G大小， 50G * 20 的配置是足够的。 在资源实在紧张的情况下， 尝试加大分区数目！
 
 #### 任务提交示例
