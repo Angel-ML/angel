@@ -51,13 +51,13 @@ $SPARK_HOME/bin/spark-submit \
   --conf spark.ps.cores=1 \
   --conf spark.ps.jars=$SONA_ANGEL_JARS \
   --conf spark.ps.memory=10g \
-  --name "slpa angel" \
+  --name "CopraExample angel" \
   --jars $SONA_SPARK_JARS  \
   --driver-memory 5g \
   --num-executors 1 \
   --executor-cores 4 \
   --executor-memory 10g \
-  --class com.tencent.angel.spark.examples.cluster.SLPAExample \
+  --class com.tencent.angel.spark.examples.cluster.CopraExample \
   ../lib/spark-on-angel-examples-3.2.0.jar
   input:$input output:$output \
   sep:tab storageLevel:MEMORY_ONLY useBalancePartition:true maxIteration：10\
