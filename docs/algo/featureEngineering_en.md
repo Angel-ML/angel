@@ -64,7 +64,7 @@ missingValue 2:888 <br>
 
 user-files user configuration files, for example
 ```
-# 样例数据的json配置文件
+# Json configuration file of sample data
  
 {
     "feature": [
@@ -152,7 +152,7 @@ $SPARK_HOME/bin/spark-submit \
 There are two stages in the Dummy module, **feature cross** and **feature One-Hot**. ** Feature cross ** According to the json configuration file, cross the specified feature fields to generate the feature composed of feature name; ** Feature One-Hot ** Encode the feature name into a globally unified and continuous index. <br>
 Algorithm does not involve ps related resources
 
-## 2. 输入数据
+## 2. Input data
 The data input by the Dummy module is of the Table data type. <br>
 ```
 // Sample data
@@ -326,7 +326,7 @@ In the above data, the first line is the Id of the new feature and the old featu
 - method: the method of correlation calculation, divided into two types: pearson and spearman, blank means using pearson method
 - partitionNum: the number of data partitions, the number of spark rdd data partitions
 
-#### 任务提交示例
+#### Submitting scripts
 
 ```
 input=hdfs://my-hdfs/data
@@ -397,10 +397,10 @@ Algorithm does not involve ps related resources
 ## 2. Running example
 #### Algorithm IO parameters
 
--input: input, any data
--output: output, sampled data, the format is consistent with the input data
--sep: data separator, support: space (space), comma (comma), tab (\t)
--disBoundsPath: The storage path of the discrete feature boundary, the format is: an array of feature id + boundary (the boundary is separated by a space)
+- input: input, any data
+- output: output, sampled data, the format is consistent with the input data
+- sep: data separator, support: space (space), comma (comma), tab (\t)
+- disBoundsPath: The storage path of the discrete feature boundary, the format is: an array of feature id + boundary (the boundary is separated by a space)
 
 
 #### Algorithm parameters
