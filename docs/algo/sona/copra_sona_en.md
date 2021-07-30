@@ -1,6 +1,6 @@
 # COPRA algorithm
 ## 1. Algorithm Introduction
-COPRA算法是一种基于LPA的扩展算法，可以用于重叠社区的发现。
+The COPRA algorithm is an extended algorithm based on LPA, which can be used for the discovery of overlapping communities.
 
 ## 2. Running example
 #### Algorithm IO parameters
