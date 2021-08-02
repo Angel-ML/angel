@@ -1829,7 +1829,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
         }
       }
 
-      LOG.info("Send request " + request.getHeader());
+      //LOG.info("Send request " + request.getHeader());
 
       // Serialize the request
       startTs = System.currentTimeMillis();
@@ -2009,7 +2009,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
         ResponseHeader header = response.getHeader();
         seqId = header.getSeqId();
 
-        LOG.info("ResponseHeader=" + header);
+        //LOG.info("ResponseHeader=" + header);
 
         // Get Request
         Request request = seqIdToRequestMap.get(header.seqId);

@@ -120,7 +120,7 @@ class Word2VecModel(params: Word2VecParam) extends Serializable {
           .foreach(batch => extraUpdate(batch.toArray, keyValueSep, featSep, false))
         Iterator.single()
       }.count()
-      LogUtils.logTime(s"Model successfully extra Initial output embedding, " +
+      LogUtils.logTime(s"Model successfully extra Initial context embedding, " +
         s"cost ${(System.currentTimeMillis() - beforeInitialize) / 1000.0}s")
     }
   }
@@ -220,11 +220,11 @@ class Word2VecModel(params: Word2VecParam) extends Serializable {
       val inputEmbSaveContext = new ModelSaveContext(new Path(modelPath, s"inputEmbedding").toString)
       inputEmbSaveContext.addMatrix(new MatrixSaveContext(matrixName, classOf[TextLINEModelOutputFormat].getTypeName))
       PSContext.instance().save(inputEmbSaveContext)
-      val contextEmbSaveContext = new ModelSaveContext(new Path(modelPath, s"outputEmbedding").toString)
+      val contextEmbSaveContext = new ModelSaveContext(new Path(modelPath, s"contextEmbedding").toString)
       contextEmbSaveContext.addMatrix(new MatrixSaveContext(matrixName, classOf[TextLINEModelContextEmbOutputFormat].getTypeName))
       PSContext.instance().save(contextEmbSaveContext)
       deleteMetaIfExists(new Path(modelPath, s"inputEmbedding").toString)
-      deleteMetaIfExists(new Path(modelPath, s"outputEmbedding").toString)
+      deleteMetaIfExists(new Path(modelPath, s"contextEmbedding").toString)
     } else {
       // Save use "TextLINEModelOutputFormat" format
       val saveContext = new ModelSaveContext(modelPath)
