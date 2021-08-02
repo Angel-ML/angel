@@ -2,7 +2,7 @@ package com.tencent.angel.graph.data
 
 object CheckMotif {
 
-  def srcNbrsMotifV2(src: Long, dst: Long, node: Long, src2dst: (Byte, Float), src2node: Byte): (Byte, Byte, Byte) = {
+  def srcNbrsMotif(src: Long, dst: Long, node: Long, src2dst: (Byte, Float), src2node: Byte): (Byte, Byte, Byte) = {
     var (srcIn, srcOut) = (0, 0)
     var (dstIn, dstOut) = (0, 0)
     var (nodeIn, nodeOut) = (0, 0)
@@ -39,7 +39,7 @@ object CheckMotif {
     (motifTag(0), motifTag(1), motifTag(2))
   }
 
-  def dstNbrsMotifV2(src: Long, dst: Long, node: Long, src2dst: (Byte, Float), dst2node: Byte): (Byte, Byte, Byte) = {
+  def dstNbrsMotif(src: Long, dst: Long, node: Long, src2dst: (Byte, Float), dst2node: Byte): (Byte, Byte, Byte) = {
     var (srcIn, srcOut) = (0, 0)
     var (dstIn, dstOut) = (0, 0)
     var (nodeIn, nodeOut) = (0, 0)

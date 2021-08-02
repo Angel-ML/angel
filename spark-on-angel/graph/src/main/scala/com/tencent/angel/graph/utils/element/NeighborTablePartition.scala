@@ -608,7 +608,7 @@ object NeighborTablePartition {
       while (i <= 2) {
         val validIdx = filterMinView.filter(srcNbrs_tags(_) == i)
         if (validIdx.length > 0) {
-          val (srcMotif, dstMotif, nodeMotif) = CheckMotif.srcNbrsMotifV2(src, dst, srcNbrs_nodes(validIdx(0)), tag, i.toByte)
+          val (srcMotif, dstMotif, nodeMotif) = CheckMotif.srcNbrsMotif(src, dst, srcNbrs_nodes(validIdx(0)), tag, i.toByte)
           var m = 0f
           if (isWeighted) validIdx.foreach { idx => m += intensityScore2(tag._2, srcNbrs_attrs(idx)) } else m = validIdx.length.toFloat
           motifCount.append(((src, srcMotif), m))
@@ -618,14 +618,14 @@ object NeighborTablePartition {
         val nbrsMaxSmall = filterMaxView.filter { idx => srcNbrs_tags(idx) == i && srcNbrs_nodes(idx) < src }
         val nbrsMaxBig = filterMaxView.filter { idx => srcNbrs_tags(idx) == i && srcNbrs_nodes(idx) > src }
         if (nbrsMaxSmall.length > 0) {
-          val (srcMotif, dstMotif, nodeMotif) = CheckMotif.srcNbrsMotifV2(src, dst, srcNbrs_nodes(nbrsMaxSmall(0)), tag, i.toByte)
+          val (srcMotif, dstMotif, nodeMotif) = CheckMotif.srcNbrsMotif(src, dst, srcNbrs_nodes(nbrsMaxSmall(0)), tag, i.toByte)
           var m = 0f
           if (isWeighted) nbrsMaxSmall.foreach { idx => m += intensityScore2(tag._2, srcNbrs_attrs(idx)) } else m = nbrsMaxSmall.length.toFloat
           motifCount.append(((dst, nodeMotif), m))
         }
 
         if (nbrsMaxBig.length > 0) {
-          val (srcMotif, dstMotif, nodeMotif) = CheckMotif.srcNbrsMotifV2(src, dst, srcNbrs_nodes(nbrsMaxBig(0)), tag, i.toByte)
+          val (srcMotif, dstMotif, nodeMotif) = CheckMotif.srcNbrsMotif(src, dst, srcNbrs_nodes(nbrsMaxBig(0)), tag, i.toByte)
           var m = 0f
           if (isWeighted) nbrsMaxBig.foreach { idx => m += intensityScore2(tag._2, srcNbrs_attrs(idx)) } else m = nbrsMaxBig.length.toFloat
           motifCount.append(((dst, dstMotif), m))
@@ -648,7 +648,7 @@ object NeighborTablePartition {
         val nbrMax = filterMaxView.filter { idx => dstNbrs_tags(idx) == i }
 
         if (nbrSmall.length > 0) {
-          val (srcMotif, dstMotif, nodeMotif) = CheckMotif.dstNbrsMotifV2(src, dst, dstNbrs_nodes(nbrSmall(0)), tag, i.toByte)
+          val (srcMotif, dstMotif, nodeMotif) = CheckMotif.dstNbrsMotif(src, dst, dstNbrs_nodes(nbrSmall(0)), tag, i.toByte)
           var m = 0f
           if (isWeighted) nbrSmall.foreach { case idx => m += intensityScore2(tag._2, dstNbrs_attrs(idx)) } else m = nbrSmall.length.toFloat
           motifCount.append(((src, srcMotif), m))
@@ -656,7 +656,7 @@ object NeighborTablePartition {
         }
 
         if (nbrBig.length > 0) {
-          val (srcMotif, dstMotif, nodeMotif) = CheckMotif.dstNbrsMotifV2(src, dst, dstNbrs_nodes(nbrBig(0)), tag, i.toByte)
+          val (srcMotif, dstMotif, nodeMotif) = CheckMotif.dstNbrsMotif(src, dst, dstNbrs_nodes(nbrBig(0)), tag, i.toByte)
           var m = 0f
           if (isWeighted) nbrBig.foreach { idx => m += intensityScore2(tag._2, dstNbrs_attrs(idx)) } else m = nbrBig.length.toFloat
           motifCount.append(((src, srcMotif), m))
@@ -664,7 +664,7 @@ object NeighborTablePartition {
         }
 
         if (nbrMax.length > 0) {
-          val (srcMotif, dstMotif, nodeMotif) = CheckMotif.dstNbrsMotifV2(src, dst, dstNbrs_nodes(nbrMax(0)), tag, i.toByte)
+          val (srcMotif, dstMotif, nodeMotif) = CheckMotif.dstNbrsMotif(src, dst, dstNbrs_nodes(nbrMax(0)), tag, i.toByte)
           var m = 0f
           if (isWeighted) nbrMax.foreach { case idx => m += intensityScore2(tag._2, dstNbrs_attrs(idx)) } else m = nbrMax.length.toFloat
           motifCount.append(((src, nodeMotif), m))
