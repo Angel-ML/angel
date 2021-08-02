@@ -51,7 +51,7 @@ We used Spark On Angel to implement the SkipGram model based on negative samplin
 ### Resource allocation recommendations
 
   - Angel PS number and memory: In order to ensure that Angel does not hang up, it is necessary to configure memory that is about twice the size of the model. The calculation formula for the size of the Word2Vec model is: Number of nodes * Embedding feature dimension * 2 * 4 Byte. For example, in a 1kw node, 100-dimensional, the model size is almost 8G in size, then configuration instances=4, memory= 4 is almost there. In addition, the bottleneck of the Word2Vec algorithm is mainly in communication, so the number of ps should be equal to the number of workers, preferably not less than 1:3, so that the pressure of ps communication will not be too great.
-  - Spark resource configuration: The product of num-executors and executor-memory is the total configured memory of executors, and it is best to store 2 times the input data. If the memory is tight, 1x is acceptable, but it will be relatively slow. For example, a 10 billion edge set is about 600G in size, and a 50G * 20 configuration is sufficient.
+  - Spark resource configuration: The product of num-executors and executor-memory is the total configured memory of executors, and it is best to store 2 times the input data. If the memory is tight, 1x is acceptable, but it will be relatively slow. For example, a 10 billion edge set is about 160G in size, and a 20G * 20 configuration is sufficient.
   
 ### Submitting scripts
 ```
