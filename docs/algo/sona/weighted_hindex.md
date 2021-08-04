@@ -14,7 +14,6 @@ Weighted HIndex算法是计算一个带权图中的节点h-index指数的算法�
 
 - partitionNum：数据分区数，spark rdd数据的分区数量
 - psPartitionNum：参数服务器上模型的分区数量
-- useBalancePartition：参数服务器对输入数据节点存储划分是否均衡分区，如果输入节点的索引不是均匀的话建议选择是
 - storageLevel：RDD存储级别，`DISK_ONLY`/`MEMORY_ONLY`/`MEMORY_AND_DISK`
 
 #### 资源参数
