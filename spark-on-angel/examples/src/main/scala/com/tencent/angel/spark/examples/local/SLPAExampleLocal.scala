@@ -1,19 +1,19 @@
 package com.tencent.angel.spark.examples.local
 
 import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.graph.community.slpa.SLPA
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.spark.ml.graph.algo.communitydetection.slpa.SLPA
-import com.tencent.angel.spark.ml.graph.utils.GraphIO
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
+import com.tencent.angel.graph.utils.GraphIO
 
 object SLPAExampleLocal {
   def main(args: Array[String]): Unit = {
     val mode = "local"
-    val input = "data/graph/karate_club_network.txt"
+    val input = "data/bc/karate_club_network.txt"
     val storageLevel = StorageLevel.fromString("MEMORY_ONLY")
     val batchSize = 50
-    val output = "/Users/jiangyasong/Documents/dataSet/output"
+    val output = "data/output/outTmp"
     val srcIndex = 0
     val dstIndex = 1
     val weightIndex = 2
@@ -24,11 +24,11 @@ object SLPAExampleLocal {
     val arrayBoundsPath = null
     val numMaxCommunities = 5
     val preserveRate = 0.1f
-    val needReplicaEdge = true
+    val needReplicaEdge = false
     val sep = " "
     val maxIteration = 10
     val useBalancePartition = true
-    start()
+    start(mode)
 
     val slpa = new SLPA()
       .setStorageLevel(storageLevel)
