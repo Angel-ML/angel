@@ -121,7 +121,7 @@ class Word2VecParam extends Serializable {
   }
 
   def setMinIndex(minIndex: Long): this.type = {
-    require(minIndex > 0 && minIndex < Int.MaxValue, s"require minIndex > 0 && minIndex < Int.maxValue, $maxIndex given")
+    require(minIndex >= 0 && minIndex < Int.MaxValue, s"require minIndex >= 0 && minIndex < Int.maxValue, $minIndex given")
     this.minIndex = minIndex.toInt
     this
   }

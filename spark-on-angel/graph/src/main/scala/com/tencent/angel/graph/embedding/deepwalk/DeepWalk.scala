@@ -104,12 +104,10 @@ class DeepWalk(override val uid: String) extends Transformer
       if (epoch == 0) {
         GraphIO.save(tempRe, output)
       }
-      /*
-    else {
-      GraphIO.appendSave(tempRe, output)
-    }
 
-       */
+      else {
+        GraphIO.appendSave(tempRe, output)
+      }
       println(s"epoch $epoch, saved results to $output")
       epoch += 1
       graph.unpersist()

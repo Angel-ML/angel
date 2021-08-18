@@ -35,6 +35,11 @@ We maintain the community id of the node and the weight information correspondin
 - bufferSize: buffer size
 - storageLevel: storage level
 
+#### Resource parameters
+- Angel PS number and memory size: The product of ps.instance and ps.memory is the total configured memory of ps. In order to ensure that Angel does not hang up, it is necessary to configure memory that is about twice the size of the model. The formula for calculating the size of the Louvain model is: Number of nodes * (8+8+4) Byte, for example, 100 million nodes, the model size is almost 2G in size, then the configuration of instances=2, memory=2 is almost the same. In addition, where possible, the smaller the number of ps, the smaller the amount of data transmission, but the greater the pressure of a single ps, which requires a certain trade-off.
+- Spark resource configuration: The product of num-executors and executor-memory is the total configuration memory of executors, and it is best to store 2 times the input data. If the memory is tight, 1x is acceptable, but it will be relatively slow. For example, a 10 billion edge set is about 600G in size, and a 50G * 20 configuration is sufficient. When resources are really tight, try to increase the number of partitions!
+
+
 ### Task Submission Example
 Enter the bin directory of the angel environment
 
@@ -56,6 +61,9 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.LouvainExample \
-  ../lib/spark-on-angel-examples-3.1.0.jar
+  ../lib/spark-on-angel-examples-3.2.0.jar
   input:$input output:$output numFold:10 numOpt:3 eps:0.0 batchSize:1000 partitionNum:2 psPartitionNum:2 enableCheck:false bufferSize:1000000 storageLevel:MEMORY_ONLY
 ```
+- At about 10 minutes, the task hangs: The most likely reason is that Angel cannot apply for resources! Since Louvain is developed based on Spark On Angel, it actually involves two systems, Spark and Angel, and their application for resources from Yarn is carried out independently. After the Spark task is started, Spark submits the Angel task to Yarn. If the resource cannot be applied for within a given time, a timeout error will be reported and the task will hang! The solution is: 1) Confirm that the resource pool has sufficient resources 2) Add spark conf: spark.hadoop.angel.am.appstate.timeout.ms = xxx to increase the timeout time, the default value is 600000, which is 10 minutes
+
+

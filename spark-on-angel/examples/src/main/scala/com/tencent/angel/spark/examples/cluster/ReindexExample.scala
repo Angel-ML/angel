@@ -49,7 +49,10 @@ object ReindexExample {
         .filter(f => (!f(0).isEmpty) && (!f(1).isEmpty))
     }
 
-    val nodes = edgesRDD.flatMap { f => Iterator((f(0), 1), (f(1), 1)) }.reduceByKey(_ + _).map(f => f._1)
+    val nodes = edgesRDD.flatMap { f=>Iterator((f(0), 0.toByte), (f(1), 0.toByte))
+    }.distinct().sortByKey().map(a=>a._1).cache()
+
+    nodes.count()
     val nodeWithIndex = nodes.zipWithIndex().map(ele => (ele._1, ele._2)).cache()
 
     def buildRoutingTable(index: Int, iterator: Iterator[Array[String]]): Iterator[(String, Int)] = {

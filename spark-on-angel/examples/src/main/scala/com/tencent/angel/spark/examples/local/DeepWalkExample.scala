@@ -20,7 +20,7 @@ object DeepWalkExample {
     val partitionNum = 1
     val useEdgeBalancePartition = false
     val isWeighted = false
-    val needReplicateEdge =false
+    val needReplicateEdge =true
 
     val sep = " "
     val walkLength = 10
@@ -40,7 +40,7 @@ object DeepWalkExample {
       .setIsWeighted(isWeighted)
       .setNeedReplicaEdge(needReplicateEdge)
       .setUseEdgeBalancePartition(useEdgeBalancePartition)
-      .setEpochNum(1)
+      .setEpochNum(2)
 
     deepwalk.setOutputDir(output)
     val df = GraphIO.load(input, isWeighted = isWeighted, srcIndex, dstIndex, weightIndex, sep = sep)

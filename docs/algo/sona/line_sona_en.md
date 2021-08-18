@@ -6,9 +6,7 @@
 
 The LINE algorithm is a network representation learning algorithm(also be considered as a preprocessing algorithm for graph data). The algorithm recieve a network as input and, produces the vector representation for each node. The LINE algorithm  mainly focuses on optimizing two objective functions:
 
-![](http://latex.codecogs.com/png.latex?\dpi{150}O_1=-\sum_{(i,j)\in E}w_{ij}\log p_1(v_i,v_j))
-
-![](http://latex.codecogs.com/png.latex?\dpi{150}O_2=-\sum_{(i,j)\in E}w_{ij}\log p_2(v_j|v_i))
+![](../../img/line.png)
 
 where, ![](http://latex.codecogs.com/png.latex?O_1) characterizes the first-order similarity between nodes (direct edge), and ![](http://latex.codecogs.com/png.latex?O_2) depicts the second-order similarity between nodes (similar neighbors). in other words,
 
@@ -63,7 +61,7 @@ For more details, please refer to the paper [[1]](https://arxiv.org/abs/1503.035
 ### Resource allocation recommendations
 
   - Angel PS number and memory: In order to ensure that Angel does not hang up, it is necessary to configure memory that is about twice the size of the model. The calculation formula for the size of the LINE model is: Number of nodes * Embedding feature dimension * order * 4 Byte. For example, in a 1kw node, 100-dimensional, 2-level configuration, the model size is almost 8G in size, then configuration instances=4, memory= 4 is almost there. In addition, the bottleneck of the LINE algorithm is mainly in communication, so the number of ps should be equal to the number of workers, preferably not less than 1:3, so that the pressure of ps communication will not be too great.
-  - Spark resource configuration: The product of num-executors and executor-memory is the total configured memory of executors, and it is best to store 2 times the input data. If the memory is tight, 1x is acceptable, but it will be relatively slow. For example, a 10 billion edge set is about 600G in size, and a 50G * 20 configuration is sufficient.
+  - Spark resource configuration: The product of num-executors and executor-memory is the total configured memory of executors, and it is best to store 2 times the input data. If the memory is tight, 1x is acceptable, but it will be relatively slow. For example, a 10 billion edge set is about 160G in size, and a 20G * 20 configuration is sufficient.
   
 ### Submitting scripts
 ```

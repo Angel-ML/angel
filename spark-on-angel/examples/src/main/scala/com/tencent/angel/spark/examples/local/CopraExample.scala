@@ -29,7 +29,7 @@ object CopraExample {
 
     val mode = "local"
     val input = "data/bc/karate_club_network.txt"
-    val output = "/Users/jiangyasong/Documents/dataSet/output"
+    val output = "data/output/outputTmp"
     val partitionNum = 1
     val storageLevel = StorageLevel.MEMORY_ONLY
     val batchSize = 2
