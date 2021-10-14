@@ -33,6 +33,13 @@
         <main.basedir>${project.parent.parent.basedir}</main.basedir>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>nexus</id>
+            <url>https://app.camunda.com/nexus/content/groups/public</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.angel</groupId>
