@@ -67,6 +67,19 @@
       <organizationUrl>https://www.tencent.com</organizationUrl>
     </developer>
   </developers>
+	
+  <repositories>
+      <repository>
+          <id>alimaven</id>
+          <url>http://maven.aliyun.com/nexus/content/groups/public/ </url>
+          <releases>
+              <enabled>true</enabled>
+          </releases>
+          <snapshots>
+              <enabled>true</enabled>
+          </snapshots>
+      </repository>
+  </repositories>
 
   <distributionManagement>
     <snapshotRepository>
