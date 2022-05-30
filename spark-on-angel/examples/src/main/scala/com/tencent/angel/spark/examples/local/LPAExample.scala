@@ -20,7 +20,7 @@ object LPAExample {
     val srcIndex = params.getOrElse("src", "0").toInt
     val dstIndex = params.getOrElse("dst", "1").toInt
     val useBalancePartition = params.getOrElse("useBalancePartition", "false").toBoolean
-    val maxIter = params.getOrElse("maxIter", "10").toInt
+    val maxIter = params.getOrElse("maxIter", "2").toInt
     val sc = start(mode)
 
     val sep = Delimiter.parse(params.getOrElse("sep",Delimiter.SPACE))

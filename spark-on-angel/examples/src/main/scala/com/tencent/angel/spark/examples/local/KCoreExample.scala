@@ -38,6 +38,7 @@ object KCoreExample {
       .setPartitionNum(partitionNum)
       .setStorageLevel(storageLevel)
       .setPSPartitionNum(psPartitionNum)
+      .setExecMode("full")
 
     val df = GraphIO.load(input, isWeighted = false)
     val mapping = kCore.transform(df)

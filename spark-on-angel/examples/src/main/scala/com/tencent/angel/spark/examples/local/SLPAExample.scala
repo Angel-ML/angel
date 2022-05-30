@@ -7,7 +7,7 @@ import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 import com.tencent.angel.graph.utils.GraphIO
 
-object SLPAExampleLocal {
+object SLPAExample {
   def main(args: Array[String]): Unit = {
     val mode = "local"
     val input = "data/bc/karate_club_network.txt"

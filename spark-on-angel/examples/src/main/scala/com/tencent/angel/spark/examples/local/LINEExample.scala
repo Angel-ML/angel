@@ -42,14 +42,14 @@ object LINEExample {
     sc.setLogLevel("WARN")
 
     val input = "data/bc/edge"
-    val output = "model/"
+    val output = "file:///tmp/model/"
 
     val line = new LINE()
       .setEmbedding(10)
       .setNegative(5)
       .setStepSize(0.1f)
       .setOrder(2)
-      .setEpochNum(10)
+      .setEpochNum(2)
       .setBatchSize(100)
       .setPartitionNum(50)
       .setPSPartitionNum(10)
@@ -57,6 +57,8 @@ object LINEExample {
       .setRemapping(false)
       .setOutput(output)
       .setSaveContextEmbedding(false)
+      .setExtraContextEmbeddingPath("")
+      .setExtraInputEmbeddingPath("")
 
     val edges: DataFrame = load(input, false, " ")
     line.transform(edges)
