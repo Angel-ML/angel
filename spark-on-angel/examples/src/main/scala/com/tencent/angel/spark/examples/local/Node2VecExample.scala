@@ -10,8 +10,8 @@ object Node2VecExample {
 
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
-    val input = params.getOrElse("input", "")
-    val output = params.getOrElse("output", "")
+    val input = params.getOrElse("input", "data/bc/edge")
+    val output = params.getOrElse("output", "model/node2vec")
     val batchSize = params.getOrElse("batchSize", "128").toInt
     val psPartNum = params.getOrElse("psPartNum", "2").toInt
     val dataPartNum = params.getOrElse("dataPartNum", "4").toInt
@@ -42,10 +42,6 @@ object Node2VecExample {
       .master(mode)
       .appName("node2vec")
       .getOrCreate()
-
-    val cpDir = params.get("cpDir").filter(_.nonEmpty).orElse(GraphIO.defaultCheckpointDir)
-      .getOrElse(throw new Exception("checkpoint dir not provided"))
-    spark.sparkContext.setCheckpointDir(cpDir)
 
     // PS setup
     val start = System.currentTimeMillis()

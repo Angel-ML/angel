@@ -23,7 +23,7 @@ object HIndexExample {
       .setStorageLevel(storageLevel)
       .setPSPartitionNum(psPartitionNum)
 
-    val df = GraphIO.load(input, isWeighted = false, sep = " ")
+    val df = GraphIO.load(input, isWeighted = false)
     val mapping = hindex.transform(df)
     GraphIO.save(mapping, output)
     stop()

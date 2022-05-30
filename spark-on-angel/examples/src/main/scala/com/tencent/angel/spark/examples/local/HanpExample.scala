@@ -15,25 +15,22 @@ object HanpExample {
     val mode = "local"
     val sc = start(mode)
 
-    val input = params.getOrElse("input", "")
+    val input = params.getOrElse("input", "data/bc/edge")
     val partitionNum = params.getOrElse("partitionNum", "1").toInt
     val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
-    val output = params.getOrElse("output", "")
+    val output = params.getOrElse("output", "model/hanp")
     val srcIndex = params.getOrElse("src", "0").toInt
     val dstIndex = params.getOrElse("dst", "1").toInt
     val weightIndex = params.getOrElse("weightCol", "2").toInt
     val psPartitionNum = params.getOrElse("psPartitionNum",
       sc.getConf.get("spark.ps.instances", "2")).toInt
     val useBalancePartition = params.getOrElse("useBalancePartition", "false").toBoolean
-    val isWeighted = params.getOrElse("isWeighted", "true").toBoolean
+    val isWeighted = params.getOrElse("isWeighted", "false").toBoolean
 
-    val cpDir = params.get("cpDir").filter(_.nonEmpty).orElse(GraphIO.defaultCheckpointDir)
-      .getOrElse(throw new Exception("checkpoint dir not provided"))
-    sc.setCheckpointDir(cpDir)
     val preserveRate = params.getOrElse("preserveRate", "0.1").toFloat
     val delta = params.getOrElse("delta", "0.1").toFloat
 
-    val sep = params.getOrElse("sep", "tab") match {
+    val sep = params.getOrElse("sep", "space") match {
       case "space" => " "
       case "comma" => ","
       case "tab" => "\t"

@@ -30,7 +30,7 @@ object Word2vecExample {
 
   def main(args: Array[String]): Unit = {
     val conf = new SparkConf()
-    conf.setMaster("local[1]")
+    conf.setMaster("local[2]")
     conf.setAppName("Word2vec example")
     conf.set("spark.ps.model", "LOCAL")
     conf.set("spark.ps.jars", "")
@@ -44,7 +44,7 @@ object Word2vecExample {
     PSContext.getOrCreate(sc)
 
     val input = "data/text8/text8.split.head"
-    val output = "/tmp/word2vec"
+    val output = "file:///tmp/word2vec"
 
     val data = sc.textFile(input)
     data.cache()
@@ -60,28 +60,34 @@ object Word2vecExample {
 
     val numDocs = docs.count()
     val maxWordId = docs.map(_.max).max().toLong + 1
+    val minWordId = docs.map(_.min).min().toLong
     val numTokens = docs.map(_.length).sum().toLong
     val maxLength = docs.map(_.length).max()
 
-    println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens")
+    println(s"numDocs=$numDocs minWordId=$minWordId maxWordId=$maxWordId numTokens=$numTokens")
     PSContext.getOrCreate(sc)
 
     val param = new Word2VecParam()
       .setLearningRate(0.1f)
       .setDecayRate(0.5f)
       .setEmbeddingDim(32)
-      .setBatchSize(50)
-      .setWindowSize(10)
+      .setBatchSize(20)
+      .setWindowSize(5)
       .setNumPSPart(Some(10))
       .setSeed(Random.nextInt())
-      .setNumEpoch(5)
+      .setNumEpoch(2)
       .setNegSample(5)
       .setMaxIndex(maxWordId)
+      .setMinIndex(minWordId)
       .setNumRowDataSet(numDocs)
       .setMaxLength(maxLength)
       .setSaveContextEmbedding(false)
+      .setExtraInputEmbeddingPath("")
+      .setExtraContextEmbeddingPath("")
+      .setLogStep(5)
 
     val model = new Word2VecModel(param)
+    model.randomInitialize(Random.nextInt())
     model.train(docs, param)
     model.save(output, 5, false)
     denseToString.foreach(rdd => rdd.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "/mapping"))
