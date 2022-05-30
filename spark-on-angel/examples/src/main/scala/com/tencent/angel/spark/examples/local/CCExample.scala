@@ -12,15 +12,14 @@ object CCExample {
   def main(args: Array[String]): Unit = {
 
     val params = ArgsUtil.parse(args)
-    val data = params.getOrElse("data", "edge")
-    val mode = "local"
-    val input = "data/bc/" + data
-    val output = "model/cc"
-    val partitionNum = 1
+    val input = params.getOrElse("input", "data/bc/edge")
+    val mode = params.getOrElse("mode", "local")
+    val output = params.getOrElse("output", "model/cc")
+    val partitionNum = params.getOrElse("partitionNum", "2").toInt
     val storageLevel = StorageLevel.MEMORY_ONLY
-    val psPartitionNum = 1
-    val srcIndex = 0
-    val dstIndex = 1
+    val psPartitionNum = params.getOrElse("psPartitionNum", "2").toInt
+    val srcIndex = params.getOrElse("srcIndex", "0").toInt
+    val dstIndex = params.getOrElse("dstIndex", "1").toInt
     val useBalancePartition = false
 
 
