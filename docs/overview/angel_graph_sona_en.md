@@ -73,7 +73,7 @@ In order to apply this graph computing framework easily, we have implemented sev
 We compare the performance between graphx and angel graph in two real datasets. The first dataset DS1 contains 0.8 billion vertices and 11 billion edges. The second dataset DS2 contains
 2 billion vertices and 140 billion edges.  Performance comparison on traditional graph algorithms：
 
-![angel-graph-benchmark](F:/Github/img/angel_graph_benchmark.png)
+![angel-graph-benchmark](../img/angel_graph_benchmark.png)
 
 The detailed introduction to Angel graph, please refer to this paper [PSGraph: How Tencent trains extremely large-scale graphs with Spark?](https://conferences.computer.org/icde/2020/pdfs/ICDE2020-5acyuqhpJ6L9P042wmjY1p/290300b549/290300b549.pdf)
 

@@ -16,7 +16,7 @@ Once a Spark on Angel application has been packaged, it can be launched by the s
 - set the Angel PS resource parameters: spark.ps.instance, spark.ps.cores, spark.ps.memory
 
 
-## Running Example (BreezeSGD)
+## Running Example (PageRank)
 
 ```bash
 #! /bin/bash
