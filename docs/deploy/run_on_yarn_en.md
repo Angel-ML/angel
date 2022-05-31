@@ -15,46 +15,59 @@ The environment requirements for running Angel on Yarn include:
 
 * A client-side gateway for submitting Angel jobs
 	* Java >= 1.8
-	* can submit MR jobs 
+	* Spark >= 2.4.0 
 	* Angel distribution package angel-\<version\>-bin.zip
 
 
 ### 2. **Angel Job Example**
 
-Taking LogisticRegression as an example:
+Taking PageRank as an example:
 
 1. **Uploading Data** (this step can be skipped if you already have data in the HDFS, just pay attention to specify the right data format)
 
-	* find the distribution package and its `data` directory, which contains LogisticRegression data
+	* find the distribution package and its `data` directory, which contains graph data
 	* on HDFS, create a new directory where we are going to upload the data
 
 		```
-		hadoop fs -mkdir hdfs://<hdfs name>/test/lr_data
+		hadoop fs -mkdir hdfs://<hdfs name>/test/pagerank_data
 		```
 	* upload the data 
 
 		```
-		hadoop fs -put data/exampledata/LRLocalExampleData/a9a.train hdfs://<hdfs name>/test/lr_data
+		hadoop fs -put data/bc/edge hdfs://<hdfs name>/test/pagerank_data
 		```
 2. **Submitting the Job**
 
-	* use `angel-submit` under the `bin` directory in the distribution package to submit Angel jobs to the Hadoop cluster
+	* use `spark-submit` to submit Angel jobs to the Hadoop cluster
 
-	> **please make sure the cluster has enough resources; for the following example, at least 6GB memory and 3 vcores are needed to start the job**
+	> **please make sure the cluster has enough resources; for the following example, at least 6GB memory and 4 vcores are needed to start the job**
 	
-		```bsh
-		./angel-submit \
-			--angel.app.submit.class com.tencent.angel.example.quickstart.QSLRRunner\
-			--angel.train.data.path "hdfs://<hdfs name>/test/lr_data" \
-			--angel.log.path "hdfs://<hdfs name>/test/log" \
-			--angel.save.model.path "hdfs://<hdfs name>/test/model" \
-			--action.type train \
-			--ml.data.type dummy \
-			--ml.feature.num 1024 \
-			--angel.job.name LR_test \
-			--angel.am.memory.gb 2 \
-			--angel.worker.memory.gb 2 \
-			--angel.ps.memory.gb 2
+		```
+		#!/bin/bash
+        input=hdfs://<hdfs name>/test/pagerank_data
+        output=hdfs://<hdfs name>/test/pagerank_output
+        queue=your_queue_name
+        
+        source ./spark-on-angel-env.sh
+        
+        ${SPARK_HOME}/bin/spark-submit \
+            --master yarn-cluster \
+            --conf spark.ps.jars=$SONA_ANGEL_JARS \
+            --conf spark.ps.instances=2 \
+            --conf spark.ps.cores=1 \
+            --conf spark.ps.memory=1g \
+            --jars $SONA_SPARK_JARS\
+            --name "PageRank-spark-on-angel" \
+            --queue $queue \
+            --driver-memory 1g \
+            --num-executors 2 \
+            --executor-cores 1 \
+            --executor-memory 1g \
+            --class com.tencent.angel.spark.examples.cluster.PageRankExample \
+            ./../lib/spark-on-angel-examples-${ANGEL_VERSION}.jar \
+            input:$input \
+            output:$output \
+            resetProp:0.15
 		```
 
 	**Meaning of the Parameters**
@@ -62,37 +75,14 @@ Taking LogisticRegression as an example:
 
 	| Parameter    | Meaning  |
 	| --- | --- |
-	| action.type  | computing type, supporting "train" and "predict" for model training and prediction, respectively  |
-	| angel.app.submit.class | the entry point for your application: the run class of an algorithm|
-	| angel.train.data.path | training data path |
-	| angel.log.path | metrics log path |
-	| angel.save.model.path | save path |
-	| ml.data.type | data type, supporting libsvm and dummy |
-	| ml.feature.num | number of features |
-	| angel.job.name | job name |
-	| angel.am.memory.gb | requested memory for master |
-	| angel.worker.memory.gb | requested memory for each worker |
-	| angel.ps.memory.gb | requested memory for one PS|
+	| spark.ps.jars  | the jar package that angel ps depends on is configured in the `spark-on-angel-env.sh` script  |
+	| spark.ps.instances | requested total PS |
+	| spark.ps.cores | requested cores for each PS |
+	| spark.ps.memory | requested memory for each PS |
+	| resetProp | algorithm parameters |
 
 
 	For the ease of usage, there are more other parameters that you can configure:
 
 	* system parameters: [system configuration](config_details_en.md)
-	* algorithm parameters: [Logistic Regression](../algo/lr_on_angel_en.md)
-
-3. **Monitoring the Progress**
-
-
-	Once a job is submitted, logs will be printed in the console, such as URL and iteration progress:
-
-	![][1]
-
-	Open the URL, you can see more detailed logs of the progress and algorithm metrics for each component of the Angel job:
-
-	![][2]
-
-	We are currently working to make the monitoring page more user-friendly with better visual presentation. 
-
-
-  [1]: ../img/angel_client_log.png
-  [2]: ../img/lr_worker_log.png
+	* algorithm parameters: [PageRank](../algo/sona/pagerank_on_angel_en.md)

@@ -1,4 +1,4 @@
-# Angel-Graph
+# Angel Graph
 
 The world today is one with complex networks, where all things, including people and objects, are interconnected and their connections are becoming more and more complicated and diversified. Since many practical problems can be modeled as graphs, with graph technologies like traditional graph mining, graph representation learning and graph neural network, rich information can be mined from massive relational structure data , which mitigates the lack of single point analysis and ultimately bring great benefits  in financial payment, security risk control, advertisement recommendation and many other business scenarios.
 
@@ -38,7 +38,7 @@ The module of Spark on Angel  in the framework serves as a flexible parameter se
 - Angel PS(Parameter Server)： Store mutable data such as node attributes in the abstract form of vectors ( customized data structure of element and load balancing partitions are also supported), and update node attributes in place as well as implement flexible calculations tailored to specific algorithms through angel's unique PS functions.
 - Angel Agent：Work as  agents for spark executors and the parameter server
 
-#### Pytorch Component 
+#### PyTorch Component 
 
 - Python Client：use torchscript syntax to write algorithm models, submit it to spark executor for loading, and complete distributed training and prediction of the model through angel PS.
 
@@ -73,7 +73,7 @@ In order to apply this graph computing framework easily, we have implemented sev
 We compare the performance between graphx and angel graph in two real datasets. The first dataset DS1 contains 0.8 billion vertices and 11 billion edges. The second dataset DS2 contains
 2 billion vertices and 140 billion edges.  Performance comparison on traditional graph algorithms：
 
-![angel-graph-benchmark](F:/Github/img/angel_graph_benchmark.png)
+![angel-graph-benchmark](../img/angel_graph_benchmark.png)
 
 The detailed introduction to Angel graph, please refer to this paper [PSGraph: How Tencent trains extremely large-scale graphs with Spark?](https://conferences.computer.org/icde/2020/pdfs/ICDE2020-5acyuqhpJ6L9P042wmjY1p/290300b549/290300b549.pdf)
 

@@ -2,27 +2,34 @@
 
 ---
 
-1. **编译环境依赖**
-    * Jdk >= 1.8
-    * Maven >= 3.0.5
-    * Python >=3.6
-	    * 如果要运行PyAngel
-    * Protobuf >= 2.5.0
-	    * 需与hadoop环境自带的protobuf版本保持一致。目前hadoop官方发布包使用的是2.5.0版本，所以推荐使用2.5.0版本，除非你自己使用更新的protobuf版本编译了hadoop
-
-2. **源码下载**
+1. **源码下载**
 
 	```git clone https://github.com/tencent/angel```
 
-3. **编译**
+2. **编译**
 
-	进入源码根目录，执行命令：
+    2.1. **手动编译**
+    
+     2.1.1. **编译环境依赖**
+        
+            * Jdk >= 1.8
+            * Maven >= 3.0.5
+            * Protobuf >= 2.5.0
+                * 需与hadoop环境自带的protobuf版本保持一致。目前hadoop官方发布包使用的是2.5.0版本，所以推荐使用2.5.0版本，除非你自己使用更新的protobuf版本编译了hadoop
 
-	```mvn clean package -Dmaven.test.skip=true```
+     2.1.2. **编译命令**
+        
+            进入源码根目录，执行命令：
+        
+            ```mvn clean package -Dmaven.test.skip=true```
+        
+            编译完成后，在源码根目录`dist/target`目录下会生成一个发布包：`angel-${version}-bin.zip`
+            
+    2.2. **使用docker编译**
+    
+            如果有安装docker环境, 直接执行根目录下的`docker-build.sh`脚本即可编译，不需要手动安装依赖; 编译完成后`dist`目录下会生成发布包：`angel-${version}-bin.zip`
 
-	编译完成后，在源码根目录`dist/target`目录下会生成一个发布包：`angel-${version}-bin.zip`
-
-4. **发布包**
+3. **发布包**
 
 	发布包解压后，根目录下有几个子目录：
 

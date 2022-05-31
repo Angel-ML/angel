@@ -21,7 +21,7 @@
 * [代码结构](./docs/overview/code_framework.md)
 * [设计理念](./docs/overview/design_philosophy.md)
 * [Spark on Angel](./docs/overview/spark_on_angel.md)
-  * [机器学习](./docs/overview/spark_on_angel_mllib.md)
+  * [机器学习](./docs/overview/spark_on_angel.md)
   * [图计算](./docs/overview/angel_graph_sona.md)
 
 
@@ -33,23 +33,22 @@
 * [核心接口](./docs/apis/core_api.md)
 * [周边辅助](./docs/assistant/hobby_api.md)
 
+## Quick Start
+* [Spark on Angel入门](./docs/tutorials/spark_on_angel_quick_start.md)
+
+## Deployment
+
+* [下载和编译](./docs/deploy/source_compile.md)
+* [本地运行](./docs/deploy/local_run.md)
+* [Yarn运行](./docs/deploy/run_on_yarn.md)
+* [系统配置](./docs/deploy/config_details.md)
+* [资源配置指南](./docs/deploy/resource_config_guide.md)
+* [使用OpenBlas给算法加速](./docs/deploy/blas_for_densematrix.md)
+
 ## Programming Guide
 
 * [Angel编程手册](./docs/programmers_guide/angel_programing_guide.md)
 * [Spark on Angel编程手册](./docs/programmers_guide/spark_on_angel_programing_guide.md)
-
-## Deep Learning Architexture
-* [Angel中的计算图](./docs/basic/computinggraph_on_angel.md)
-* [Angel中的层](./docs/basic/layers_on_angel.md)
-* [Angel中优化器](./docs/basic/optimizer_on_angel.md)
-* [Angel中的损失函数](./docs/basic/lossfunc_on_angel.md)
-* [Angel中的传输函数](./docs/basic/transfunc_on_angel.md)
-* [Angel中的学习率Decay](./docs/basic/batchsize_decay.md)
-
-## Quick Start
-* [Angel入门](./docs/tutorials/angel_ps_quick_start.md)
-* [Spark on Angel入门](./docs/tutorials/spark_on_angel_quick_start.md)
-* [Angel Json配置](./docs/basic/json_conf.md)
 
 ## Algorithm
 * [**Angel or Spark On Angel？**](./docs/algo/angel_or_spark_on_angel.md)
@@ -66,7 +65,7 @@
 		* [GBDT](./docs/algo/gbdt_on_angel.md)
 		* [LDA\*](./docs/algo/lda_on_angel.md) ([WarpLDA](./docs/algo/warp_lda_on_angel.md))
 * **Spark on Angel**
-	* **Angel-Mllib**
+	* **Angel Mllib**
 		* [FM](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/recommendation.md)
 		* [DeepFM](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/recommendation.md)
 		* [DeepAndWide](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/recommendation.md)
@@ -78,7 +77,7 @@
         * [Logistic Regression(LR)](./docs/algo/sona/lr_sona.md)
         * [FTRLFM](./docs/algo/ftrl_fm_spark_en.md)
         * [GBDT](./docs/algo/sona/feature_gbdt_sona.md)
-  * **Angel-Graph**
+  * **Angel Graph**
     * [PageRank](./docs/algo/sona/pagerank_on_sona.md)
     * [KCORE](./docs/algo/sona/kcore_sona.md)
     * [HIndex](./docs/algo/sona/hindex_sona.md)
@@ -93,16 +92,6 @@
     * [GraphSage](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/graph.md)
     * [GCN](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/graph.md)
     * [DGI](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/graph.md)
-
-
-## Deployment
-
-* [下载和编译](./docs/deploy/source_compile.md)
-* [本地运行](./docs/deploy/local_run.md)
-* [Yarn运行](./docs/deploy/run_on_yarn.md)
-* [系统配置](./docs/deploy/config_details.md)
-* [资源配置指南](./docs/deploy/resource_config_guide.md)
-* [使用OpenBlas给算法加速](./docs/deploy/blas_for_densematrix.md)
 
 ## Community
 * Mailing list: angel-tsc@lists.deeplearningfoundation.org
@@ -123,22 +112,13 @@
 
   ![](/docs/img/wx_support.png )
 
-
-
-
 ## Papers
-
-  1. Lele Yu, Bin Cui, Ce Zhang, Yingxia Shao. [LDA*: A Robust and Large-scale Topic Modeling System](http://www.vldb.org/pvldb/vol10/p1406-yu.pdf). VLDB, 2017
-  2. Jiawei Jiang, Bin Cui, Ce Zhang, Lele Yu. [Heterogeneity-aware Distributed Parameter Servers](http://dl.acm.org/citation.cfm?id=3035933). SIGMOD, 2017
-  3. Jie Jiang, Lele Yu, Jiawei Jiang, Yuhong Liu and Bin Cui. [Angel: a new large-scale machine learning system](https://academic.oup.com/nsr/article/3052720). National Science Review (NSR), 2017
-  4. Jie Jiang, Jiawei Jiang,  Bin Cui and Ce Zhang. [TencentBoost: A Gradient Boosting Tree System with Parameter Server](http://ieeexplore.ieee.org/abstract/document/7929984/).	ICDE, 2017
-  5. Jiawei Jiang, Bin Cui, Ce Zhang and Fangcheng Fu. [DimBoost: Boosting Gradient Boosting Decision Tree to Higher Dimensions](https://dl.acm.org/citation.cfm?id=3196892). SIGMOD, 2018.
-  6. Jiawei Jiang, Pin Xiao, Lele Yu, Xiaosen Li.[PSGraph: How Tencent trains extremely large-scale graphs with Spark?](https://conferences.computer.org/icde/2020/pdfs/ICDE2020-5acyuqhpJ6L9P042wmjY1p/290300b549/290300b549.pdf).ICDE, 2020.
-
-## Presentation
-
-1. [Angel: A Machine Learning Framework for High Dimensionality](https://cdn.oreillystatic.com/en/assets/1/event/273/Angel_%E9%9D%A2%E5%90%91%E9%AB%98%E7%BB%B4%E5%BA%A6%E7%9A%84%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E8%AE%A1%E7%AE%97%E6%A1%86%E6%9E%B6%20_Angel_%20A%20machine%20learning%20framework%20for%20high%20dimensionality_%20%E8%AE%B2%E8%AF%9D.pdf).  Strata China, 2017
-
-2. [方圆并济：基于 Spark on Angel 的高性能机器学习](./docs/slides/Angel_QCon_2017.pdf).  QCon ShangHai China, 2017
-
-3. [基于Angel和Spark Streaming的高维度Online Learning](./docs/slides/Angel_GIAC_2017.pdf). GIAC China, 2017
+  1. [PaSca: A Graph Neural Architecture Search System under the Scalable Paradigm](https://dl.acm.org/doi/pdf/10.1145/3485447.3511986). WWW, 2022
+  2. [Graph Attention Multi-Layer Perceptron](). KDD, 2022
+  3. [Node Dependent Local Smoothing for Scalable Graph Learning](https://proceedings.neurips.cc/paper/2021/file/a9eb812238f753132652ae09963a05e9-Paper.pdf). NeurlPS, 2021
+  4. [PSGraph: How Tencent trains extremely large-scale graphs with Spark?](https://conferences.computer.org/icde/2020/pdfs/ICDE2020-5acyuqhpJ6L9P042wmjY1p/290300b549/290300b549.pdf).ICDE, 2020.
+  5. [DimBoost: Boosting Gradient Boosting Decision Tree to Higher Dimensions](https://dl.acm.org/citation.cfm?id=3196892). SIGMOD, 2018.
+  6. [LDA*: A Robust and Large-scale Topic Modeling System](http://www.vldb.org/pvldb/vol10/p1406-yu.pdf). VLDB, 2017
+  7. [Heterogeneity-aware Distributed Parameter Servers](http://net.pku.edu.cn/~cuibin/Papers/2017%20sigmod.pdf). SIGMOD, 2017
+  8. [Angel: a new large-scale machine learning system](http://net.pku.edu.cn/~cuibin/Papers/2017NSRangel.pdf). National Science Review (NSR), 2017
+  9. [TencentBoost: A Gradient Boosting Tree System with Parameter Server](http://net.pku.edu.cn/~cuibin/Papers/2017%20ICDE%20boost.pdf).	ICDE, 2017

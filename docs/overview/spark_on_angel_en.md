@@ -65,3 +65,6 @@ Driver has an added action of starting up and managing PS node:
 
 **Spark executor's new execution process:**
 
+- data process
+- model training
+
