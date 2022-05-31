@@ -14,13 +14,14 @@ Spark on Angel同时支持YARN和Local两种运行模型，从而方便用户在
 
 	- 需要导入环境脚本：source ./spark-on-angel-env.sh
 	- 要配置好Jar包位置：spark.ps.jars=\$SONA_ANGEL_JARS和--jars \$SONA_SPARK_JARS
+	- 配置Angel PS需要的资源参数：spark.ps.instance, spark.ps.cores, spark.ps.memory
 
 ## 提交任务
 
 完成Spark on Angel的程序编写打包后，可以通过spark-submit的脚本提交任务。不过，有以下几个需要注意的地方：
 
 
-## 运行Example（BreezeSGD）
+## 运行Example（PageRank）
 
 ```bash
 #! /bin/bash
@@ -35,47 +36,46 @@ Spark on Angel同时支持YARN和Local两种运行模型，从而方便用户在
 
 source ./spark-on-angel-env.sh
 
-$SPARK_HOME/bin/spark-submit \
+${SPARK_HOME}/bin/spark-submit \
     --master yarn-cluster \
     --conf spark.ps.jars=$SONA_ANGEL_JARS \
-    --conf spark.ps.instances=10 \
+    --conf spark.ps.instances=2 \
     --conf spark.ps.cores=2 \
-    --conf spark.ps.memory=6g \
+    --conf spark.ps.memory=2g \
     --jars $SONA_SPARK_JARS\
-    --name "LR-spark-on-angel" \
-    --driver-memory 10g \
-    --num-executors 10 \
+    --name "PageRank-spark-on-angel" \
+    --driver-memory 1g \
+    --num-executors 2 \
     --executor-cores 2 \
-    --executor-memory 4g \
-    --class com.tencent.angel.spark.examples.basic.LR \
+    --executor-memory 2g \
+    --class com.tencent.angel.spark.examples.cluster.PageRankExample \
     ./../lib/spark-on-angel-examples-${ANGEL_VERSION}.jar \
-    input:<input_path> \
-    lr:0.1 \
-    ./../lib/spark-on-angel-examples-${ANGEL_VERSION}.jar
+    input:${ANGEL_HDFS_HOME}/data/bc/edge \
+    output:${ANGEL_HDFS_HOME} \
+    resetProp:0.15
 ```
 
 > 注意要指定Angel PS的资源参数：spark.ps.instance，spark.ps.cores，spark.ps.memory
 
 
-##  最简版本的LR
+## PageRank代码片段
 
-[完整代码](https://github.com/Tencent/angel/blob/branch-1.3.0/spark-on-angel/examples/src/main/scala/com/tencent/angel/spark/examples/ml/AngelLR.scala)
+[完整代码](https://github.com/Tencent/angel/blob/branch-3.2.0/spark-on-angel/examples/src/main/scala/com/tencent/angel/spark/examples/cluster/PageRankExample.scala)
 
 ```scala
-PSContext.getOrCreate(sc)
-val psW = PSVector.dense(numFeatures) // weights
-val psG = PSVector.duplicate(psW) // gradients of weights
-println("Initial psW: " + psW.dimension)
-for (i <- 1 to ITERATIONS) {
-  println("On iteration " + i)
-  val localW = psW.pull()
-  trainData.map { case (x, label) =>
-    val g = x.mul(-label * (1 - 1.0 / (1.0 + math.exp(-label * localW.dot(x)))))
-    psG.increment(g)
-  }.count()
-  VectorUtils.axpy(-lr / numFeatures, psG, psW)
-  psG.reset
-}
-println(s"Final psW: ${psW.pull().asInstanceOf[IntDoubleVector].getStorage.getValues.mkString(" ")}")
+val edges = GraphIO.load(input, isWeighted = isWeight,
+      srcIndex = srcIndex, dstIndex = dstIndex,
+      weightIndex = weightIndex, sep = sep)
+
+    val ranks = version match {
+      case "edge-cut" => edgeCutPageRank(edges, partitionNum, psPartitionNum,
+        storageLevel, tol, resetProp, isWeight,
+        useBalancePartition, balancePartitionPercent, numBatch, batchSize)
+      case "vertex-cut" => vertexCutPageRank(edges, partitionNum, psPartitionNum,
+        storageLevel, tol, resetProp, isWeight,
+        useBalancePartition, balancePartitionPercent, numBatch, batchSize)
+    }
+
+    GraphIO.save(ranks, output)
 ```
 

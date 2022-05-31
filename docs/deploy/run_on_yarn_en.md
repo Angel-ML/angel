@@ -40,7 +40,7 @@ Taking PageRank as an example:
 
 	* use `spark-submit` to submit Angel jobs to the Hadoop cluster
 
-	> **please make sure the cluster has enough resources; for the following example, at least 5GB memory and 4 vcores are needed to start the job**
+	> **please make sure the cluster has enough resources; for the following example, at least 6GB memory and 4 vcores are needed to start the job**
 	
 		```
 		#!/bin/bash
@@ -75,11 +75,10 @@ Taking PageRank as an example:
 
 	| Parameter    | Meaning  |
 	| --- | --- |
-	| spark.ps.jars  | the jar package that angel ps depends on is configured in the xx script  |
+	| spark.ps.jars  | the jar package that angel ps depends on is configured in the `spark-on-angel-env.sh` script  |
 	| spark.ps.instances | requested total PS |
 	| spark.ps.cores | requested cores for each PS |
 	| spark.ps.memory | requested memory for each PS |
-	| angel.save.model.path | save path |
 	| resetProp | algorithm parameters |
 
 
