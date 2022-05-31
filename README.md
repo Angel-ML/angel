@@ -21,8 +21,8 @@ We welcome everyone interested in machine learning or graph computing to contrib
 * [Code Framework](./docs/overview/code_framework_en.md)
 * [Design](./docs/overview/design_philosophy_en.md)
 * [Spark on Angel](./docs/overview/spark_on_angel_en.md)
-  * [Machine Learning](./docs/overview/spark_on_angel_mllib.md)
-  * [Graph Computing](./docs/overview/angel_graph_sona.md)
+  * [Machine Learning](./docs/overview/spark_on_angel_en.md)
+  * [Graph Computing](./docs/overview/angel_graph_sona_en.md)
 
 ## Design
 
@@ -33,13 +33,19 @@ We welcome everyone interested in machine learning or graph computing to contrib
 
 
 ## Quick Start
-* [Quick Start](./docs/tutorials/angel_ps_quick_start_en.md)
-* [Spark on Angel Quick Start](./docs/tutorials/spark_on_angel_quick_start_en.md)
 
+* [Quick Start Example](./docs/tutorials/spark_on_angel_quick_start_en.md)
+
+## Deployment
+
+* [Compilation Guide](./docs/deploy/source_compile_en.md)
+* [Running on Local](./docs/deploy/local_run_en.md)
+* [Running on Yarn](./docs/deploy/run_on_yarn_en.md)
+* [Configuration Details](./docs/deploy/config_details_en.md)
+* [Resource Configuration Guide](./docs/deploy/resource_config_guide_en.md)
 
 ## Programming Guide
 
-* [Angel Programming Guide](./docs/programmers_guide/angel_programing_guide_en.md)
 * [Spark on Angel Programming Guide](./docs/programmers_guide/spark_on_angel_programing_guide_en.md)
 
 ## Algorithm
@@ -58,7 +64,7 @@ We welcome everyone interested in machine learning or graph computing to contrib
     - [GBDT](./docs/algo/gbdt_on_angel_en.md)
     - [LDA\*](./docs/algo/lda_on_angel_en.md) ([WarpLDA](./docs/algo/warp_lda_on_angel.md))
 - **Spark on Angel**
-  - **Angel-Mllib**
+  - **Angel Mllib**
     - [FM](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/recommendation.md)
     - [DeepFM](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/recommendation.md)
     - [DeepAndWide](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/recommendation.md)
@@ -70,7 +76,7 @@ We welcome everyone interested in machine learning or graph computing to contrib
     - [Logistic Regression(LR)](./docs/algo/sona/lr_sona.md)
     - [FTRLFM](./docs/algo/ftrl_fm_spark_en.md)
     - [GBDT](./docs/algo/sona/feature_gbdt_sona.md)
-  - **Angel-Graph**
+  - **Angel Graph**
     - [PageRank](./docs/algo/sona/pagerank_on_sona_en.md)
     - [KCORE](./docs/algo/sona/kcore_sona_en.md)
     - [HIndex](./docs/algo/sona/hindex_sona_en.md)
@@ -86,14 +92,6 @@ We welcome everyone interested in machine learning or graph computing to contrib
     - [GCN](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/graph.md)
     - [DGI](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/graph.md)
 
-## Deployment
-
-* [Compilation Guide](./docs/deploy/source_compile_en.md)
-* [Running on Local](./docs/deploy/local_run_en.md)
-* [Running on Yarn](./docs/deploy/run_on_yarn_en.md)
-* [Configuration Details](./docs/deploy/config_details_en.md)
-* [Resource Configuration Guide](./docs/deploy/resource_config_guide_en.md)
-
 ## Community
 * Mailing list: angel-tsc@lists.deeplearningfoundation.org
 * Angel homepage in Linux FD: https://lists.deeplearningfoundation.org/g/angel-main
@@ -105,9 +103,12 @@ We welcome everyone interested in machine learning or graph computing to contrib
 * [Angel FAQ](https://github.com/Tencent/angel/wiki/Angel%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98)
 
 ## Papers
-  1. Lele Yu, Bin Cui, Ce Zhang, Yingxia Shao. [LDA*: A Robust and Large-scale Topic Modeling System](http://www.vldb.org/pvldb/vol10/p1406-yu.pdf). VLDB, 2017
-  2. Jiawei Jiang, Bin Cui, Ce Zhang, Lele Yu. [Heterogeneity-aware Distributed Parameter Servers](http://net.pku.edu.cn/~cuibin/Papers/2017%20sigmod.pdf). SIGMOD, 2017
-  3. Jie Jiang, Lele Yu, Jiawei Jiang, Yuhong Liu and Bin Cui. [Angel: a new large-scale machine learning system](http://net.pku.edu.cn/~cuibin/Papers/2017NSRangel.pdf). National Science Review (NSR), 2017
-  4. Jie Jiang, Jiawei Jiang,  Bin Cui and Ce Zhang. [TencentBoost: A Gradient Boosting Tree System with Parameter Server](http://net.pku.edu.cn/~cuibin/Papers/2017%20ICDE%20boost.pdf).	ICDE, 2017
-  5. Jiawei Jiang, Bin Cui, Ce Zhang and Fangcheng Fu. [DimBoost: Boosting Gradient Boosting Decision Tree to Higher Dimensions](https://dl.acm.org/citation.cfm?id=3196892). SIGMOD, 2018.
-  6. Jiawei Jiang, Pin Xiao, Lele Yu, Xiaosen Li.[PSGraph: How Tencent trains extremely large-scale graphs with Spark?](https://conferences.computer.org/icde/2020/pdfs/ICDE2020-5acyuqhpJ6L9P042wmjY1p/290300b549/290300b549.pdf).ICDE, 2020.
+  1. [PaSca: A Graph Neural Architecture Search System under the Scalable Paradigm](https://dl.acm.org/doi/pdf/10.1145/3485447.3511986). WWW, 2022
+  2. [Graph Attention Multi-Layer Perceptron](). KDD, 2022
+  3. [Node Dependent Local Smoothing for Scalable Graph Learning](https://proceedings.neurips.cc/paper/2021/file/a9eb812238f753132652ae09963a05e9-Paper.pdf). NeurlPS, 2021
+  4. [PSGraph: How Tencent trains extremely large-scale graphs with Spark?](https://conferences.computer.org/icde/2020/pdfs/ICDE2020-5acyuqhpJ6L9P042wmjY1p/290300b549/290300b549.pdf).ICDE, 2020.
+  5. [DimBoost: Boosting Gradient Boosting Decision Tree to Higher Dimensions](https://dl.acm.org/citation.cfm?id=3196892). SIGMOD, 2018.
+  6. [LDA*: A Robust and Large-scale Topic Modeling System](http://www.vldb.org/pvldb/vol10/p1406-yu.pdf). VLDB, 2017
+  7. [Heterogeneity-aware Distributed Parameter Servers](http://net.pku.edu.cn/~cuibin/Papers/2017%20sigmod.pdf). SIGMOD, 2017
+  8. [Angel: a new large-scale machine learning system](http://net.pku.edu.cn/~cuibin/Papers/2017NSRangel.pdf). National Science Review (NSR), 2017
+  9. [TencentBoost: A Gradient Boosting Tree System with Parameter Server](http://net.pku.edu.cn/~cuibin/Papers/2017%20ICDE%20boost.pdf).	ICDE, 2017

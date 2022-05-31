@@ -1,4 +1,4 @@
-# Angel-Graph
+# Angel Graph
 
 The world today is one with complex networks, where all things, including people and objects, are interconnected and their connections are becoming more and more complicated and diversified. Since many practical problems can be modeled as graphs, with graph technologies like traditional graph mining, graph representation learning and graph neural network, rich information can be mined from massive relational structure data , which mitigates the lack of single point analysis and ultimately bring great benefits  in financial payment, security risk control, advertisement recommendation and many other business scenarios.
 
@@ -38,7 +38,7 @@ The module of Spark on Angel  in the framework serves as a flexible parameter se
 - Angel PS(Parameter Server)： Store mutable data such as node attributes in the abstract form of vectors ( customized data structure of element and load balancing partitions are also supported), and update node attributes in place as well as implement flexible calculations tailored to specific algorithms through angel's unique PS functions.
 - Angel Agent：Work as  agents for spark executors and the parameter server
 
-#### Pytorch Component 
+#### PyTorch Component 
 
 - Python Client：use torchscript syntax to write algorithm models, submit it to spark executor for loading, and complete distributed training and prediction of the model through angel PS.
 
