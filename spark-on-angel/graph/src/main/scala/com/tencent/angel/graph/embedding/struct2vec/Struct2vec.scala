@@ -1,58 +1,63 @@
 package com.tencent.angel.graph.embedding.struct2vec
 
-import breeze.linalg.BroadcastedColumns.broadcastOp
-import breeze.linalg.BroadcastedRows.broadcastOp
-import breeze.linalg.Vector.castFunc
+import com.tencent.angel.graph.embedding.struct2vec.{Struct2vecParams,Struct2vecGraphPartition}
 
 import java.lang.Math.{abs, max, min}
-import breeze.linalg.sum
-import breeze.numerics.exp
-
 import scala.collection.JavaConversions.asJavaCollection
 import scala.collection.immutable.Map
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer, Queue, Set}
 import scala.util.Random
-
-class Struct2vec {
-
-  private val graph_Nodes : List[Int] = List()
-  private val idx2Nodes : List[Int] = List()
-  private val Nodes2idx : List[Int] = List()
-  private val idx : List[Int] = List.range(0,idx2Nodes.length,1)
-  private val graph : List[Int] = List()
-  private val embedding :Map[String,Int] = Map()
-
-  val reuse :Boolean => _
-  val output :String => _
-  val opt1_reduce_len :Boolean => _
-  val opt2_reduce_sim_calc :Boolean => _
-  val opt3_num_layers: Int => _
-
-//  def this() {
-//    this(s"Node2Vec_${(new Random).nextInt()}")
-//  }
-//
-//  def setOutputDir(in: String): Unit = {
-//    output = in
-//  }
+import struct2vec.Struct2vecParams
 
 
-  private def Init(
-                    name: String, walk_length: Int, workers: Int, stay_prob: Float, opt1_reduce_len: Boolean,
-                    opt2_reduce_sim_calc: Boolean, opt3_num_layers: Int, reuse : Boolean
-                  ) = {
-    //inital parmas
-    val opt1_reduce_len :Boolean = opt1_reduce_len
-    val opt2_reduce_sim_calc :Boolean = opt2_reduce_sim_calc
-    val opt3_num_layers: Int = opt3_num_layers
 
+class Struct2vec(params: Struct2vecParams ) {
+
+//  private val graph_Nodes : List[Int] = List()
+//  private val idx2Nodes : List[Int] = List()
+//  private val Nodes2idx : List[Int] = List()
+//  private val idx : List[Int] = List.range(0,idx2Nodes.length,1)
+//  private val graph : List[Int] = List()
+//  private val embedding :Map[String,Int] = Map()
+
+
+
+
+  private def createMatrix(name: String,
+                           numRow: Int,
+                           minId: Long,
+                           maxId: Long,
+                           rowType: RowType,
+                           psNumPartition: Int,
+                           data: RDD[(Long, Long)],
+                           useBalancePartition: Boolean,
+                           percent: Float): PSMatrixImpl = {
+
+    val modelContext = new ModelContext($(psPartitionNum), minId, maxId, -1, name,
+      SparkContext.getOrCreate().hadoopConfiguration)
+
+    val matrix = ModelContextUtils.createMatrixContext(modelContext, rowType,
+      classOf[LongArrayElement])
+
+    if (useBalancePartition && (!modelContext.isUseHashPartition)) {
+      index = data.flatMap(f => Iterator(f._1, f._2))
+        .persist($(storageLevel))
+      LoadBalancePartitioner.partition(index, modelContext.getMaxNodeId,
+        modelContext.getPartitionNum, matrix, percent)
+    }
+
+    val psMatrix = PSMatrix.matrix(matrix)
+    val psMatrixImpl = new PSMatrixImpl(psMatrix.id, matrix.getName, 1,
+      modelContext.getMaxNodeId, matrix.getRowType)
+
+    if (useBalancePartition && (!modelContext.isUseHashPartition))
+      index.unpersist()
+
+    psMatrixImpl
   }
 
-  private def create_context_graph(max_num_layers: Int, workers: Int): Unit = {
-
-  }
-
+  //计算有序的度列表
   def compute_orderd_degreelist(max_num_layers: Int): Map[Int, Int] = {
     var degreeList : Map[Int, Int] = Map()
     var nodes = graph_Nodes
@@ -63,6 +68,7 @@ class Struct2vec {
     return degreeList
   }
 
+  //获取有序度的节点
   def get_order_degreelist_node(root: Int, max_num_layers: Int=0):Int = {
 
     if (max_num_layers == 0) {max_num_layers = Double.PositiveInfinity }
@@ -121,6 +127,7 @@ class Struct2vec {
     }
   }
 
+  //计算结构距离
   def compute_structural_distance(max_num_layers:Int,workers:Int=1,verbose:Int=0): Unit = {
 
     if (opt1_reduce_len == true){
@@ -190,6 +197,7 @@ class Struct2vec {
     return degrees
   }
 
+  //获得层级
   def get_layer_rep(pair_distance:Map[(Int,Int),Map[Int,(Int,Int)]]) {
     val layer_distances:Map[Int,Map[(Int,Int),(Int,Int)]]= Map()
     var layer_adj:Map[Int,Map[Int,ListBuffer[Int]]] = Map()
@@ -208,6 +216,7 @@ class Struct2vec {
     return layer_adj,layer_distances
   }
 
+  //权重表
   def get_transition_probs(layers_adj:Map[Int,Map[Int,ListBuffer[Int]]],
                            layers_distances:Map[Int,Map[(Int,Int),(Int,Int)]]) {
 
@@ -269,6 +278,7 @@ class Struct2vec {
     return result
   }
 
+  //dtw转换成结构距离
   def convert_dtw_struc_dist(distances:Map[Map[Int,List[(Int,Int)]],Map[Int,List[Int]]],startLayer:Int=1) = {
     for((vertices , layers)<-distances){
       var keys_layers = layers.keys.toList
@@ -280,6 +290,7 @@ class Struct2vec {
     return distances
   }
 
+  //确定度
   def verifyDegrees(degree:Int,degree_v_root:Int,degree_a:Int,degree_b:Int): Int ={
     var degree_now :Int = 0
     if(degree_b == -1){
@@ -294,6 +305,7 @@ class Struct2vec {
     return degree_now
   }
 
+  //计算dtw距离
   def compute_dtw_dist(part_list:List[(Int,List[Int])],degreeList:Map[Int,List[Int]],dist_func:String){
     var dtw_dist :Map[(Int,Int),Int] = Map()
     for((v1,nbs)<- part_list){
@@ -307,7 +319,7 @@ class Struct2vec {
         }
       }
     }
-     return dtw_dist
+    dtw_dist
   }
 
 
