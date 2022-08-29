@@ -1,9 +1,20 @@
-package com.tencent.angel.graph.embedding.struct2vec
+package struct2vec
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 object Alias_table {
+
+  def calcAliasTable(partId: Int, iter: Iterator[(Long, Array[(Long, Float)])]): Iterator[(Long, Array[Long], Array[Float], Array[Int])] = {
+    iter.map { case (src, neighbors) =>
+      val (events, weights) = neighbors.unzip
+      val weightsSum = weights.sum
+      val len = weights.length
+      val areaRatio = weights.map(_ / weightsSum * len)
+      val (accept, alias) = createAliasTable(areaRatio)
+      (src, events, accept, alias)
+    }
+  }
 
   def createAliasTable(areaRatio: Array[Float]): (Array[Float], Array[Int]) = {
     val len = areaRatio.length

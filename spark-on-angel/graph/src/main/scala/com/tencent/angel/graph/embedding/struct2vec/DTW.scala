@@ -1,6 +1,6 @@
-package com.tencent.angel.graph.embedding.struct2vec
+package struct2vec
 
-import com.tencent.angel.graph.embedding.struct2vec.fastdtwUtils.{ CostMatrix, IndexConstraints, MatrixEntry, PassthroughIndexConstraints, Space, TimeSeriesElement }
+import fastdtwUtils.{ CostMatrix, IndexConstraints, MatrixEntry, PassthroughIndexConstraints, Space, TimeSeriesElement }
 
 /**
  * A wrapper for the cost matrix calculation based on a specified metric

@@ -1,10 +1,8 @@
-package com.tencent.angel.graph.embedding.struct2vec
+package struct2vec
 
 import com.tencent.angel.graph.psf.neighbors.SampleNeighborsWithCount.NeighborsAliasTableElement
 
 import scala.util.Random
-
-
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
@@ -67,7 +65,7 @@ class Struct2vecGraphPartition(index: Int, srcNodesArray: Array[Long], srcNodesS
 
 //单例对象
 object Struct2vecGraphPartition {
-  def initPSMatrixAndNodePath(model: Struct2vecPSModel, index: Int, iterator: Iterator[(Long, Array[Long], Array[Float], Array[Int])], batchSize: Int): DeepWalkGraphPartition = {
+  def initPSMatrixAndNodePath(model: Struct2vecPSModel, index: Int, iterator: Iterator[(Long, Array[Long], Array[Float], Array[Int])], batchSize: Int): Struct2vecGraphPartition = {
     val srcNodes = new LongArrayList()
     iterator.sliding(batchSize, batchSize).foreach { pairs =>
       val nodeId2Neighbors = new Long2ObjectOpenHashMap[NeighborsAliasTableElement](pairs.length)
@@ -90,5 +88,7 @@ object Struct2vecGraphPartition {
     }
     new Struct2vecGraphPartition(index, iterator, srcNodesSamplePaths.toArray, batchSize)
   }
+
+
 }
 

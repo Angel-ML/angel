@@ -8,6 +8,7 @@ class Struct2vecParams extends Serializable {
   var opt1_reduce_len: Boolean = true
   var opt2_reduce_sim_calc: Boolean = false
   var opt3_num_layers:Int = _
+  var max_num_layers:Int = _
   var embeddingDim: Int = _
   var negSample: Int = _
   var learningRate: Float = _
@@ -187,6 +188,12 @@ class Struct2vecParams extends Serializable {
 
   def setNodesNumPerRow(nodesNumPerRow: Option[Int]): this.type = {
     nodesNumPerRow.foreach(this.nodesNumPerRow = _)
+    this
+  }
+
+  def setMaxLayers(layers: Int): this.type = {
+    require(max_num_layers>0, s"require num of max layer > 0, $max_num_layers given")
+    this.max_num_layers = layers
     this
   }
 

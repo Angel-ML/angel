@@ -1,7 +1,7 @@
-package com.tencent.angel.graph.embedding.struct2vec.fastdtw
+package struct2vec.fastdtw
 
-import com.tencent.angel.graph.embedding.struct2vec.DTW
-import com.tencent.angel.graph.embedding.struct2vec.fastdtwUtils.{CostMatrix, RangeDiagonalConstraints, Space, TimeSeriesElement}
+import struct2vec.DTW
+import struct2vec.fastdtwUtils.{CostMatrix, RangeDiagonalConstraints, Space, TimeSeriesElement}
 
 /**
  * @param searchRadius

@@ -1,4 +1,4 @@
-package com.tencent.angel.graph.embedding.struct2vec
+package struct2vec
 
 import struct2vec.Alias_table.alias_sample
 
