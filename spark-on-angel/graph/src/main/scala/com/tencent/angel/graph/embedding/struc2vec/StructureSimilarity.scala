@@ -36,11 +36,12 @@ class StructureSimilarity(adjMatrix:Array[Array[Int]]) {
                 structSimi(0)(i)(j) = DTW.compute(getHopRingK(i,0),getHopRingK(j,0))
         }else{
               for(i<-0 until n; j<- 0 until n){
-                if (structSimi(k-1)(i)(j)==Double.NaN)
+                // notice that NaN == NaN (false!)
+                if (structSimi(k-1)(i)(j).isNaN)
                    structSimi(k)(i)(j) = Double.NaN
                 else{
                   val temp: Double = DTW.compute(getHopRingK(i,k),getHopRingK(j,k))
-                  if(temp == Double.NaN)
+                  if(temp.isNaN)
                     structSimi(k)(i)(j) = Double.NaN
                   else
                     structSimi(k)(i)(j) = structSimi(k-1)(i)(j)+temp

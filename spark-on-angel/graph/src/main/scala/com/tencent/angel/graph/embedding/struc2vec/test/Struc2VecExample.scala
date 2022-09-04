@@ -42,7 +42,7 @@ object Struc2VecExample {
         .setIsWeighted(isWeighted)
         .setNeedReplicaEdge(needReplicateEdge)
         .setUseEdgeBalancePartition(useEdgeBalancePartition)
-        .setEpochNum(2)
+        .setEpochNum(3)
 
       struc2Vec.setOutputDir(output)
       val df = GraphIO.load(input, isWeighted = isWeighted, srcIndex, dstIndex, weightIndex, sep = sep)
@@ -63,6 +63,7 @@ object Struc2VecExample {
       sc.setCheckpointDir("data/cp")
       //PSContext.getOrCreate(sc)
     }
+
 
     def stop(): Unit = {
 
