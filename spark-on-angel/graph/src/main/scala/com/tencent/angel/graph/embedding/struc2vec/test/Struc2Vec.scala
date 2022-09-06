@@ -145,7 +145,7 @@ class Struc2Vec(override val uid: String) extends Transformer
 
 
   override def transformSchema(schema: StructType): StructType = {
-    StructType(Seq(StructField("src",IntegerType, nullable = false),StructField("epochNum",IntegerType,nullable = false),StructField("path",StringType,nullable = false)))
+    StructType(Seq(StructField("src",IntegerType, nullable = false),StructField("epochNum",IntegerType,nullable = false),StructField("path",ArrayType(StringType),nullable = false)))
   }
 
 
@@ -232,7 +232,7 @@ object Struc2Vec {
     (x._1,Math.log(Math.E+temp.length))
   }
 
-  def process(x: (Int, Int), aliasArray: Array[(Int, Int, Array[Int], Array[Double], Array[Int])], cross: Array[((Int, Int), Double)], walkLen: Int, diam:Int): (Int,Int,String) = {
+  def process(x: (Int, Int), aliasArray: Array[(Int, Int, Array[Int], Array[Double], Array[Int])], cross: Array[((Int, Int), Double)], walkLen: Int, diam:Int): (Int,Int,Array[String]) = {
     // ((Int,Int,Array[Int]))
     // initialize path
     val path = new ArrayBuffer[Int]()
@@ -272,6 +272,7 @@ object Struc2Vec {
         }else{
           // decide up or down
           val up = cross.filter(x => x._1._1==curLayer&&x._1._2==curNode)(0)._2
+          // since node in higher layer
           if(cross.filter(x => x._1._1==curLayer+1 && x._1._2==curNode).length!=0){
             val ifUp = new Random().nextDouble()
             if (ifUp < (up / (up + 1)))
@@ -284,6 +285,6 @@ object Struc2Vec {
         }
       }
     }
-    (src,epochNum,path.toArray.mkString(" "))
+    (src,epochNum,path.toArray.mkString(" ").split(" "))
   }
 }

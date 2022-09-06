@@ -6,7 +6,7 @@ import com.tencent.angel.graph.utils.GraphIO
 import com.tencent.angel.spark.context.PSContext
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
-
+import org.apache.spark.ml.feature.Word2Vec
 import scala.collection.mutable.ArrayBuffer
 
 object Struc2VecExample {
@@ -25,7 +25,7 @@ object Struc2VecExample {
       val needReplicateEdge = true
 
       val sep = " "
-      val walkLength = 10
+      val walkLength = 15
 
 
       start()
@@ -42,13 +42,32 @@ object Struc2VecExample {
         .setIsWeighted(isWeighted)
         .setNeedReplicaEdge(needReplicateEdge)
         .setUseEdgeBalancePartition(useEdgeBalancePartition)
-        .setEpochNum(3)
+        .setEpochNum(2)
 
       struc2Vec.setOutputDir(output)
       val df = GraphIO.load(input, isWeighted = isWeighted, srcIndex, dstIndex, weightIndex, sep = sep)
       val mapping = struc2Vec.transform(df)
 
+
       mapping.show()
+
+      val path = mapping.select("path")
+
+
+
+      val word2Vec = new Word2Vec()
+        .setInputCol("path")
+        .setOutputCol("result")
+        .setVectorSize(10)
+        .setMinCount(0)
+
+      val model = word2Vec.fit(mapping)
+      val result = model.transform(mapping)
+      result.show()
+//      result.select("result").take(3).foreach(println)
+      println(s"count = ${result.count()}")
+
+
 
       stop()
     }
@@ -66,7 +85,7 @@ object Struc2VecExample {
 
 
     def stop(): Unit = {
-
+      SparkContext.getOrCreate().stop()
     }
 
 }
