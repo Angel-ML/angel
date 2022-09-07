@@ -1,10 +1,11 @@
-package struct2vec
+package com.tencent.angel.graph.embedding.struct2vec
 
 import com.tencent.angel.graph.psf.neighbors.SampleNeighborsWithCount.NeighborsAliasTableElement
 
-import scala.util.Random
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
+import scala.collection.mutable.ArrayBuffer
+
 
 
 class Struct2vecGraphPartition(index: Int, srcNodesArray: Array[Long], srcNodesSamplePaths: Array[Array[Long]], batchSize: Int) {

@@ -1,4 +1,4 @@
-package struct2vec
+package com.tencent.angel.graph.embedding.struct2vec
 
 
 import com.tencent.angel.graph.common.param.ModelContext
@@ -61,7 +61,7 @@ object Struct2vecPSModel {
         data, modelContext.getMaxNodeId, modelContext.getPartitionNum, matrix, balancePartitionPercent)
 
     val psMatrix = PSMatrix.matrix(matrix)
-    new DeepWalkPSModel(psMatrix)
+    new Struct2vecPSModel(psMatrix)
 
   }
 }

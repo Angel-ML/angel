@@ -1,37 +1,46 @@
-package struct2vec
+package com.tencent.angel.graph.embedding.struct2vec
 
 import com.tencent.angel.graph.embedding.struct2vec.{Struct2vecGraphPartition, Struct2vecParams}
+import com.tencent.angel.graph.common.param.ModelContext
+import com.tencent.angel.graph.data.neighbor.NeighborDataOps
+import com.tencent.angel.graph.utils.params._
+import com.tencent.angel.graph.utils.{GraphIO, Stats}
+import com.tencent.angel.spark.context.PSContext
+import org.apache.spark.SparkContext
+import org.apache.spark.ml.Transformer
+import org.apache.spark.ml.param.ParamMap
+import org.apache.spark.ml.util.Identifiable
+import org.apache.spark.sql.types.{StructType, _}
+import org.apache.spark.sql.{DataFrame, Dataset, Row}
+import org.apache.spark.storage.StorageLevel
 
-import java.lang.Math.{abs, log, max, min}
-import scala.collection.JavaConversions.asJavaCollection
-import scala.collection.immutable.Map
-import scala.collection.mutable
+import java.lang.Math.{abs, exp, log, max, min}
+import scala.collection.{Seq, mutable}
 import scala.collection.mutable.{ArrayBuffer, ListBuffer, Queue, Set}
-import scala.util.Random
-import struct2vec.Struct2vecParams
 import struct2vec.fastdtw.fastdtw
 import struct2vec.fastdtwUtils.{EuclideanSpace, TimeSeriesElement, VectorValue}
+import struct2vec.Alias_table.createAliasTable
 
-import java.util
-import java.util.ArrayList
-import scala.util.control.Breaks.break
-
+import java.lang.Math.exp
 
 
 class Struct2vec(params: Struct2vecParams ) {
 
-//  private val graph_Nodes : List[Int] = List()
-  private val idx2Nodes : Array[Int] = Array()
-  private val Nodes2idx : List[Int] = List()
-//  private val idx : List[Int] = List.range(0,idx2Nodes.length,1)
-//  private val graph : List[Int] = List()
-//  private val embedding :Map[String,Int] = Map()
 
+  private val idx2Nodes : Array[Int] = Array()
+
+  private var output: String = _
+
+  def this() = this(Identifiable.randomUID("Struct2vec"))
+
+  def setOutputDir(in: String): Unit = {
+    output = in
+  }
 
   override def transform(dataset: Dataset[_]): DataFrame = {
     //create origin edges RDD and data preprocessing
 
-    val rawEdges = NeighborDataOps.loadEdgesWithWeight(dataset, params.srcNodeIdCol), params.dstNodeIdCol, params.weightCol, params.isWeighted, params.needReplicaEdge, true, false, false)
+    val rawEdges = NeighborDataOps.loadEdgesWithWeight(dataset, params.srcNodeIdCol, params.dstNodeIdCol, params.weightCol, params.isWeighted, params.needReplicaEdge, true, false, false)
     rawEdges.repartition(params.partitionNum).persist(params.StorageLevel.DISK_ONLY)
     val (minId, maxId, numEdges) = Stats.summarizeWithWeight(rawEdges)
     println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${params.StorageLevel}")
@@ -69,9 +78,65 @@ class Struct2vec(params: Struct2vecParams ) {
     //trigger action
     graphOri.foreachPartition(_ => Unit)
 
+    // checkpoint
+    model.checkpoint()
+
+    var epoch = 0
+    while (epoch < $(epochNum)) {
+      var graph = graphOri.map(x => x.deepClone())
+      //sample paths with random walk
+      var curIteration = 0
+      var prev = graph
+      val beginTime = System.currentTimeMillis()
+      do {
+        val beforeSample = System.currentTimeMillis()
+        curIteration += 1
+        graph = prev.map(_.process(model, curIteration))
+        graph.persist($(storageLevel))
+        graph.count()
+        prev.unpersist(true)
+        prev = graph
+        var sampleTime = (System.currentTimeMillis() - beforeSample)
+        println(s"epoch $epoch, iter $curIteration, sampleTime: $sampleTime")
+      } while (curIteration < $(walkLength) - 1)
 
 
+      val EndTime = (System.currentTimeMillis() - beginTime)
+      println(s"epoch $epoch, Struct2vecWithWeight all sampleTime: $EndTime")
+
+      val temp = graph.flatMap(_.save())
+      println(s"epoch $epoch, num path: ${temp.count()}")
+      println(s"epoch $epoch, num invalid path: ${
+        temp.filter(_.length != ${
+          walkLength
+        }).count()
+      }")
+      val tempRe = dataset.sparkSession.createDataFrame(temp.map(x => Row(x.mkString(" "))), transformSchema(dataset.schema))
+      if (epoch == 0) {
+        GraphIO.save(tempRe, output)
+      }
+
+      else {
+        GraphIO.appendSave(tempRe, output)
+      }
+      println(s"epoch $epoch, saved results to $output")
+      epoch += 1
+      graph.unpersist()
+    }
+
+    val t = SparkContext.getOrCreate().parallelize(List("1", "2"), 1)
+    dataset.sparkSession.createDataFrame(t.map(x => Row(x)), transformSchema(dataset.schema))
   }
+
+
+  override def transformSchema(schema: StructType): StructType = {
+    StructType(Seq(StructField("path", StringType, nullable = false)))
+  }
+
+
+  override def copy(extra: ParamMap): Transformer = defaultCopy(extra)
+
+
 
   def compute_orderd_degreelist(graph_adj:Iterator[(Long,Array[Long])],max_num_layers:Int):ArrayBuffer[Array[Array[(Long,Long)]]]={
     val order_list: ArrayBuffer[Array[Array[(Long,Long)]]] = ArrayBuffer()
@@ -104,7 +169,7 @@ class Struct2vec(params: Struct2vecParams ) {
         degree_list(degree) += 1  // count node freq
 
         for(nei <- neighbors){
-          var nei_index = Nodes2idx(nei.toInt)
+          var nei_index = idx2Nodes(nei.toInt)
           if( !visited(nei_index)){
             visited(nei_index) = true
             queue.enqueue(nei_index)
@@ -131,7 +196,7 @@ class Struct2vec(params: Struct2vecParams ) {
                                   graph_adj:Iterator[(Long,Array[Long])],
                                   max_num_layers:Int,
                                   degrees:(ArrayBuffer[Long],Array[Long],Array[Long]),
-                                  workers:Int=1,verbose:Int=0): Unit = {
+                                  workers:Int=1,verbose:Int=0) = {
 
     if (params.opt2_reduce_sim_calc == true) {
       var degreeListSelected: Array[Array[Array[(Long,Long)]]] = Array()
@@ -162,8 +227,8 @@ class Struct2vec(params: Struct2vecParams ) {
 //      var results = Parallel(workers)(delayed(cpmpute_dtw_dist)(part_list,degreelist,dist_func))
 //     }
     var dtw_dist = compute_dtw_dist(graph_adj,degreeList)
-    structural_dist = convert_dtw_struc_dist(dtw_dist)
-    distances
+    var structural_dist = convert_dtw_struc_dist(dtw_dist)
+    structural_dist
     }
 
 
@@ -194,7 +259,17 @@ class Struct2vec(params: Struct2vecParams ) {
     }
     (vertices,degrees_before,degrees_after)  // ( degree->数组索引,(node,before,after))
   }
-
+  //确定度
+  def verifyDegrees(degree_v_root:Int,degree_a:Long,degree_b:Long): Long ={
+    if(degree_b == -1)
+      degree_a
+    else if (degree_a == -1)
+      degree_b
+    else if (abs(degree_b - degree_v_root) < abs(degree_a - degree_v_root))
+      degree_b
+    else
+      degree_a
+  }
 
   def judge_degree_one(before:Long):Long = {
     if(before==0) -1
@@ -280,108 +355,125 @@ class Struct2vec(params: Struct2vecParams ) {
   def change_layer_distance(layers_distance:Array[(Long,Long,Double)]) ={
     layers_distance.map{case(vx,vy,distance) => ((vx,vy),distance)}.toArray
   }
-  //权重表
-  def get_transition_probs(layers_distance:Array[((Long,Long),Double)],
-                           layers_adj:Array[(Int,Array[Long])]) ={
 
-//    var layers_alias
-//    var layers_accept
-
-    for(layer <- 0 to layers_adj.length){
-      var neighbors = layers_adj(layer)
-      var layer_distance = layers_distance(layer)
-
-      for( (v,nei) <- neighbors ){
-        var e_list : ArrayBuffer[Double]= ArrayBuffer()
-        var sum_weight =0.0
-
-        for(n <- nei) {
-//          var wd = layer_distance()
+  def search_distance(layers_distance:Array[((Long,Long),Double)],v:Tuple2[Long,Long]):Float = {
+    layers_distance.foreach {
+      case (v_pair, dist) =>
+        if (v_pair == v) {
+          return dist.toFloat
         }
-        }
+    }
+    0
+  }
+
+  //转移概率
+  def get_transition_probs(layers_distance: Array[((Long, Long), Double)],
+                           layers_adj: Array[(Int, Array[Long])]) = {
+
+    var layers_alias: Array[Array[Int]] = Array()
+    var layers_accept: Array[Array[Float]] = Array()
+    var layers = 1
+    val v_pair = layers_distance.map(f => f._1)
+    var wd, w = 0.0
+    var norm_weights: Array[ArrayBuffer[Float]] = Array()
+
+    layers_adj.foreach { case (v, neighbors) =>
+
+      var e_list: ArrayBuffer[Float] = ArrayBuffer()
+      var sum_weight = 0.0
+
+
+      for (nei <- neighbors) {
+        if (v_pair.contains((v, nei))) {
+          wd = search_distance(layers_distance, (v, nei))
+        } else wd = search_distance(layers_distance, (nei, v))
+
+        w = exp(-wd)
+        e_list.append(w.toFloat)
+        sum_weight += w
       }
+      e_list = for (x <- e_list) yield {
+        x / sum_weight
+      }
+      var e_list_w: Array[Float] = Array()
+      for (i <- 0 to e_list.length) e_list_w(i) = e_list(i)
+      norm_weights(v) = e_list
 
+      var acp_alias = createAliasTable(e_list_w)
+      layers_accept(layers) = acp_alias._1
+      layers_alias(layers) = acp_alias._2
 
-//  (layers_accept , layers_alias)
+    }
+    (layers_accept, layers_alias)
   }
 
-  def cost(a:List[Int],b:List[Int]):Double ={
-    val ep=0.5
-    val m = max(a(0),b(0))+ep
-    val mi = min(a(0),b(0))+ep
-    val result = ((m/mi)-1)
+
+  def cost(a: List[Int], b: List[Int]): Double = {
+    val ep = 0.5
+    val m = max(a(0), b(0)) + ep
+    val mi = min(a(0), b(0)) + ep
+    val result = ((m / mi) - 1)
     return result
   }
 
-  def cost_min(a:List[Int],b:List[Int]): Double ={
-    val ep=0.5
-    val m = max(a(0),b(0))+ep
-    val mi = min(a(0),b(0))+ep
-    val result = ((m/mi)-1) * min(a(1),b(1))
+  def cost_min(a: List[Int], b: List[Int]): Double = {
+    val ep = 0.5
+    val m = max(a(0), b(0)) + ep
+    val mi = min(a(0), b(0)) + ep
+    val result = ((m / mi) - 1) * min(a(1), b(1))
     return result
   }
 
-  def cost_max(a:List[Int],b:List[Int]):Double={
-    val ep=0.5
-    val m = max(a(0),b(0))+ep
-    val mi = min(a(0),b(0))+ep
-    val result = ((m/mi)-1)*max(a(1),b(1))
+  def cost_max(a: List[Int], b: List[Int]): Double = {
+    val ep = 0.5
+    val m = max(a(0), b(0)) + ep
+    val mi = min(a(0), b(0)) + ep
+    val result = ((m / mi) - 1) * max(a(1), b(1))
     return result
   }
 
   //dtw转换成结构距离  (layer,(v1,v2,dist))
-  def convert_dtw_struc_dist(distances:ArrayBuffer[(Long,Long,Int,Double)],startLayer:Int =1) = {
-    var dist = distances.map{ case (src,dist,layer,distance) => ((src,dist),(layer,distance))}
-    var pair = dist.groupBy(_._1).map(x=>(x._1,x._2.map(x=>(x._2._1,x._2._2)))).toArray  //((v1,v2),ArrayBuffer(layer,distance))
-    for((vertices,layer_distance)<-pair){
-      var keys_layers = for((layer,distance) <- layer_distance) yield layer
+  def convert_dtw_struc_dist(distances: ArrayBuffer[(Long, Long, Int, Double)], startLayer: Int = 1) = {
+    var dist = distances.map { case (src, dist, layer, distance) => ((src, dist), (layer, distance)) }
+    var pair = dist.groupBy(_._1).map(x => (x._1, x._2.map(x => (x._2._1, x._2._2)))).toArray //((v1,v2),ArrayBuffer(layer,distance))
+    for ((vertices, layer_distance) <- pair) {
+      var keys_layers = for ((layer, distance) <- layer_distance) yield layer
       keys_layers.sorted
-      var startLayer = min(keys_layers.length,startLayer)
+      var startLayer = min(keys_layers.length, startLayer)
       for (layer <- 0 to startLayer)
         keys_layers.remove(0)
 
-      for(layer <- keys_layers)
-        layer_distance(layer) = (layer,layer_distance(layer)._2+layer_distance(layer-1)._2)
+      for (layer <- keys_layers)
+        layer_distance(layer) = (layer, layer_distance(layer)._2 + layer_distance(layer - 1)._2)
     }
     pair
   }
 
-  //确定度
-  def verifyDegrees(degree_v_root:Int,degree_a:Long,degree_b:Long): Long ={
-    if(degree_b == -1)
-      degree_a
-    else if (degree_a == -1)
-      degree_b
-    else if (abs(degree_b - degree_v_root) < abs(degree_a - degree_v_root))
-      degree_b
-    else
-      degree_a
-  }
 
   //计算dtw距离
-  def compute_dtw_dist(part_graph:Iterator[(Long,Array[Long])],degreeList:ArrayBuffer[Array[Array[(Long,Long)]]]) ={
-    val pair_v  = new ArrayBuffer[(Long,Long,Int,Double)]
-//    val layer_dist = new ArrayList[(Int,Double)]
+  def compute_dtw_dist(part_graph: Iterator[(Long, Array[Long])], degreeList: ArrayBuffer[Array[Array[(Long, Long)]]]) = {
+    val pair_v = new ArrayBuffer[(Long, Long, Int, Double)]
+    //    val layer_dist = new ArrayList[(Int,Double)]
 
-    part_graph.foreach{ case (v1,neighbors)  =>
+    part_graph.foreach { case (v1, neighbors) =>
       var lists_v1 = degreeList(v1.toInt)
-      neighbors.foreach( v2 =>{
+      neighbors.foreach(v2 => {
         var lists_v2 = degreeList(v2.toInt)
-        var max_layer = min(lists_v1.length,lists_v2.length)
+        var max_layer = min(lists_v1.length, lists_v2.length)
 
-        for(layer <- 0 to max_layer) yield {
-          var v1_degree_list = lists_v1(layer).map(f=>f._1.toDouble).toSeq.map(v=>TimeSeriesElement(Some(VectorValue(v))))
-          var v2_degree_list = lists_v2(layer).map(f=>f._1.toDouble).toSeq.map(v=>TimeSeriesElement(Some(VectorValue(v))))
-          var fdtw = new fastdtw(1,EuclideanSpace)
+        for (layer <- 0 to max_layer) yield {
+          var v1_degree_list = lists_v1(layer).map(f => f._1.toDouble).toSeq.map(v => TimeSeriesElement(Some(VectorValue(v))))
+          var v2_degree_list = lists_v2(layer).map(f => f._1.toDouble).toSeq.map(v => TimeSeriesElement(Some(VectorValue(v))))
+          var fdtw = new fastdtw(1, EuclideanSpace)
           //          var path = fdtw.evaluate(v1_degree_list,v2_degree_list).optimalPath
-          var dist = fdtw.evaluate(v1_degree_list,v2_degree_list).optimalCost
-          pair_v.append((v1,v2,layer,dist))
+          var dist = fdtw.evaluate(v1_degree_list, v2_degree_list).optimalCost
+          pair_v.append((v1, v2, layer, dist))
         }
       })
     }
-  pair_v
+    pair_v
   }
 
 
-
 }
+
