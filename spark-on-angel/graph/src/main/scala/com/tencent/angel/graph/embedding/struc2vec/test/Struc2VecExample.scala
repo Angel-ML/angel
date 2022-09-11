@@ -6,12 +6,12 @@ import com.tencent.angel.graph.utils.GraphIO
 import com.tencent.angel.spark.context.PSContext
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.ml.feature.Word2Vec
+import org.apache.spark.ml.feature.{Word2Vec,PCA}
 import scala.collection.mutable.ArrayBuffer
 
 object Struc2VecExample {
     def main(args: Array[String]): Unit = {
-      val input = "data/bc/karate_club_network.txt"
+      val input = "data/bc/mirrored_karate_club_network.txt"
       val storageLevel = StorageLevel.fromString("MEMORY_ONLY")
       val batchSize = 10
       val output = "data/output/output1"
@@ -42,30 +42,46 @@ object Struc2VecExample {
         .setIsWeighted(isWeighted)
         .setNeedReplicaEdge(needReplicateEdge)
         .setUseEdgeBalancePartition(useEdgeBalancePartition)
-        .setEpochNum(2)
+        .setEpochNum(5)
 
       struc2Vec.setOutputDir(output)
       val df = GraphIO.load(input, isWeighted = isWeighted, srcIndex, dstIndex, weightIndex, sep = sep)
       val mapping = struc2Vec.transform(df)
 
-
       mapping.show()
 
       val path = mapping.select("path")
 
-
-
+      // get node embeddings by word2vec
       val word2Vec = new Word2Vec()
         .setInputCol("path")
         .setOutputCol("result")
         .setVectorSize(10)
         .setMinCount(0)
+        .setWindowSize(3)
 
       val model = word2Vec.fit(mapping)
       val result = model.transform(mapping)
-      result.show()
+      val vec  = model.getVectors
+
+
+//       visulization by pca
+      val pca = new PCA()
+        .setInputCol("vector")
+        .setOutputCol("pcaFeatures")
+        .setK(2)
+        .fit(vec)
+
+      val result2 = pca.transform(vec)
+
+      result2.show(68,false)
+
+      result2.select("word","pcaFeatures").show(68,false)
+
+//      result2.select("word","pcaFeatures").rdd.saveAsTextFile("C:\\Users\\Lzh\\Desktop\\result.txt")
+//      vec.show()
 //      result.select("result").take(3).foreach(println)
-      println(s"count = ${result.count()}")
+//      println(s"vec(0) = ${vecArr(0)}")
 
 
 
