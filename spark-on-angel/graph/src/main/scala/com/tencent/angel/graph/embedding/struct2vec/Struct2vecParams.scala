@@ -1,9 +1,18 @@
 package com.tencent.angel.graph.embedding.struct2vec
 
+import org.apache.spark.storage.StorageLevel
+
 class Struct2vecParams extends Serializable {
 
+  var srcNodeIdCol= "src"
+  var dstNodeIdCol= "dst"
+  var weightCol= "weight"
   var partitionNum: Int = _
   var walkLength: Int = _
+  var psPartitionNum: Int = _
+  var useBalancePartition: Boolean=true
+  var balancePartitionPercent: Float=_
+  var storageLevel=StorageLevel.MEMORY_ONLY
   var stay_prob: Float = _
   var opt1_reduce_len: Boolean = true
   var opt2_reduce_sim_calc: Boolean = false
@@ -15,7 +24,7 @@ class Struct2vecParams extends Serializable {
   var decayRate: Float = _
   var batchSize: Int = _
   var logStep: Int = _
-  var numEpoch: Int = _
+  var epochNum: Int = _
   var maxIndex: Int = _
   var minIndex: Int = _
   var sampleRate: Float = _

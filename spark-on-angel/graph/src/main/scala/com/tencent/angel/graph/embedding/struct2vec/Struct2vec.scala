@@ -13,6 +13,7 @@ import org.apache.spark.ml.util.Identifiable
 import org.apache.spark.sql.types.{StructType, _}
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.storage.StorageLevel
+import struct2vec.Alias_table
 
 import java.lang.Math.{abs, exp, log, max, min}
 import scala.collection.{Seq, mutable}
@@ -27,11 +28,10 @@ import java.lang.Math.exp
 class Struct2vec(params: Struct2vecParams ) {
 
 
-  private val idx2Nodes : Array[Int] = Array()
+  val idx2Nodes : Array[Long] = Array()
 
-  private var output: String = _
+  var output: String = _
 
-  def this() = this(Identifiable.randomUID("Struct2vec"))
 
   def setOutputDir(in: String): Unit = {
     output = in
@@ -44,7 +44,9 @@ class Struct2vec(params: Struct2vecParams ) {
     rawEdges.repartition(params.partitionNum).persist(params.StorageLevel.DISK_ONLY)
     val (minId, maxId, numEdges) = Stats.summarizeWithWeight(rawEdges)
     println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${params.StorageLevel}")
-    for(i <- 0 to maxId) idx2Nodes(i) = i
+    for(i <- 0 to maxId) {
+      idx2Nodes(i)=i
+    }
 
     val edges = rawEdges.map { case (src, dst, w) => (src, (dst, w)) }
 
@@ -62,11 +64,11 @@ class Struct2vec(params: Struct2vecParams ) {
     val modelContext = new ModelContext(params.psPartitionNum, minId, maxId + 1, -1,
       "struct2vec", SparkContext.getOrCreate().hadoopConfiguration)
 
-    //    val data = edges.map(_._2._1) // ps loadBalance by in degree
     val data = edges.flatMap(f => Iterator(f._1, f._2._1)) //拿出（src，neighbors）
 
-    //val model = DeepWalkPSModel.fromMinMax(minId, maxId, data, $(psPartitionNum), useBalancePartition = $(useBalancePartition))
+
     val model = Struct2vecPSModel(modelContext, data, params.useBalancePartition, params.balancePartitionPercent)
+
     val degreed_list = compute_orderd_degreelist(data,params.max_num_layers )
     val degrees = create_vector(data)
 
@@ -74,7 +76,7 @@ class Struct2vec(params: Struct2vecParams ) {
     val graphOri = aliasTable.mapPartitionsWithIndex((index, adjTable) =>
       Iterator(Struct2vecGraphPartition.initPSMatrixAndNodePath(model, index, adjTable, params.batchSize))))
 
-    graphOri.persist($(storageLevel))
+    graphOri.persist((params.storageLevel))
     //trigger action
     graphOri.foreachPartition(_ => Unit)
 
@@ -82,7 +84,7 @@ class Struct2vec(params: Struct2vecParams ) {
     model.checkpoint()
 
     var epoch = 0
-    while (epoch < $(epochNum)) {
+    while (epoch < params.epochNum) {
       var graph = graphOri.map(x => x.deepClone())
       //sample paths with random walk
       var curIteration = 0
@@ -92,13 +94,13 @@ class Struct2vec(params: Struct2vecParams ) {
         val beforeSample = System.currentTimeMillis()
         curIteration += 1
         graph = prev.map(_.process(model, curIteration))
-        graph.persist($(storageLevel))
+        graph.persist(params.storageLevel)
         graph.count()
         prev.unpersist(true)
         prev = graph
         var sampleTime = (System.currentTimeMillis() - beforeSample)
         println(s"epoch $epoch, iter $curIteration, sampleTime: $sampleTime")
-      } while (curIteration < $(walkLength) - 1)
+      } while (curIteration < params.walkLength - 1)
 
 
       val EndTime = (System.currentTimeMillis() - beginTime)
@@ -108,7 +110,7 @@ class Struct2vec(params: Struct2vecParams ) {
       println(s"epoch $epoch, num path: ${temp.count()}")
       println(s"epoch $epoch, num invalid path: ${
         temp.filter(_.length != ${
-          walkLength
+          params.walkLength
         }).count()
       }")
       val tempRe = dataset.sparkSession.createDataFrame(temp.map(x => Row(x.mkString(" "))), transformSchema(dataset.schema))
@@ -170,9 +172,9 @@ class Struct2vec(params: Struct2vecParams ) {
 
         for(nei <- neighbors){
           var nei_index = idx2Nodes(nei.toInt)
-          if( !visited(nei_index)){
-            visited(nei_index) = true
-            queue.enqueue(nei_index)
+          if( !visited(nei_index.toInt)){
+            visited(nei_index.toInt) = true
+            queue.enqueue(nei_index.toInt)
           }
         }
         count-=1
@@ -220,7 +222,7 @@ class Struct2vec(params: Struct2vecParams ) {
       var vertices: Array[Array[Int]] = Array()
 
       for(v <- idx2Nodes) {
-        vertices(v) = for(vd <- idx2Nodes if vd > v ) yield vd
+        vertices(v) = for(vd <- idx2Nodes if vd > v ) yield vd.toInt
       }
     }
 //      for(part_list in partition_dict(vertices,workers)){
