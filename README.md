@@ -94,7 +94,7 @@ We welcome everyone interested in machine learning or graph computing to contrib
 
 ## Community
 * Mailing list: angel-tsc@lists.deeplearningfoundation.org
-* Angel homepage in Linux FD: https://lists.deeplearningfoundation.org/g/angel-main
+* Angel homepage in Linux FD: https://angelml.ai/
 * [Committers & Contributors](./COMMITTERS.md)
 * [Contributing to Angel](./CONTRIBUTING.md)
 * [Roadmap](https://github.com/Angel-ML/angel/wiki/Roadmap)
