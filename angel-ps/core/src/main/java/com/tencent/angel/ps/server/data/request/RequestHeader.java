@@ -13,6 +13,7 @@ public class RequestHeader implements Serialize {
   public int matrixId;
   public int partId;
   public int handleElemNum;
+  public int tryCount;
 
   public RequestHeader() {
   }
@@ -27,6 +28,7 @@ public class RequestHeader implements Serialize {
     ByteBufSerdeUtils.serializeInt(output, matrixId);
     ByteBufSerdeUtils.serializeInt(output, partId);
     ByteBufSerdeUtils.serializeInt(output, handleElemNum);
+    ByteBufSerdeUtils.serializeInt(output, tryCount);
   }
 
   @Override
@@ -39,11 +41,12 @@ public class RequestHeader implements Serialize {
     matrixId = ByteBufSerdeUtils.deserializeInt(input);
     partId = ByteBufSerdeUtils.deserializeInt(input);
     handleElemNum = ByteBufSerdeUtils.deserializeInt(input);
+    tryCount = ByteBufSerdeUtils.deserializeInt(input);
   }
 
   @Override
   public int bufferLen() {
-    return ByteBufSerdeUtils.INT_LENGTH * 8;
+    return ByteBufSerdeUtils.INT_LENGTH * 9;
   }
 
   @Override
@@ -57,6 +60,7 @@ public class RequestHeader implements Serialize {
         ", matrixId=" + matrixId +
         ", partId=" + partId +
         ", handleElemNum=" + handleElemNum +
+        ", tryCount=" + tryCount +
         '}';
   }
 
@@ -123,4 +127,8 @@ public class RequestHeader implements Serialize {
   public void setHandleElemNum(int handleElemNum) {
     this.handleElemNum = handleElemNum;
   }
+
+  public int getTryCount() { return tryCount; }
+
+  public void setTryCount(int tryCount) { this.tryCount = tryCount; }
 }
