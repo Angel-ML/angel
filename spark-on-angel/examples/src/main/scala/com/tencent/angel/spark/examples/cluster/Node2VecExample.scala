@@ -2,7 +2,7 @@ package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.graph.embedding.node2vec.Node2Vec
+import com.tencent.angel.graph.embedding.node2vec.{Node2Vec,Node2VecV1}
 import com.tencent.angel.graph.utils.GraphIO
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
@@ -38,6 +38,7 @@ object Node2VecExample {
     val setCheckPoint = params.getOrElse("setCheckPoint", "false").toBoolean
     val epochNum = params.getOrElse("epochNum", "1").toInt
     val percent = params.getOrElse("balancePartitionPercent", "0.7").toFloat
+    val dynamicInitNeighbor = params.getOrElse("dynamicInitNeighbor", "false").toBoolean
 
     // Spark setup
     val conf = new SparkConf()
@@ -60,24 +61,48 @@ object Node2VecExample {
     data.printSchema()
     println("the data loading time: " + ((System.currentTimeMillis()-start)/1000.0))
 
-    val n2v = new Node2Vec()
-      .setPSPartitionNum(psPartNum)
-      .setPartitionNum(dataPartNum)
-      .setBatchSize(batchSize)
-      .setEpochNum(epochNum)
-      .setWalkLength(walkLength)
-      .setPValue(pValue)
-      .setQValue(qValue)
-      .setNeedReplicaEdge(needReplicaEdge)
-      .setIsTrunc(useTrunc)
-      .setIsWeighted(isWeighted)
-      .setTruncLength(truncLength)
-      .setUseBalancePartition(useBalancePartition)
-      .setStorageLevel(storageLevel)
-      .setCheckPoint(setCheckPoint)
-      .setBalancePartitionPercent(percent)
+    val n2v = if (dynamicInitNeighbor) {
+      val n2v = new Node2VecV1()
+        .setPSPartitionNum(psPartNum)
+        .setPartitionNum(dataPartNum)
+        .setBatchSize(batchSize)
+        .setEpochNum(epochNum)
+        .setWalkLength(walkLength)
+        .setPValue(pValue)
+        .setQValue(qValue)
+        .setNeedReplicaEdge(needReplicaEdge)
+        .setIsTrunc(useTrunc)
+        .setIsWeighted(isWeighted)
+        .setTruncLength(truncLength)
+        .setUseBalancePartition(useBalancePartition)
+        .setStorageLevel(storageLevel)
+        .setCheckPoint(setCheckPoint)
+        .setBalancePartitionPercent(percent)
+        .setDynamicInitNeighbor(dynamicInitNeighbor)
+      n2v.setOutputDir(output)
+      n2v
+    } else {
+      val n2v = new Node2Vec()
+        .setPSPartitionNum(psPartNum)
+        .setPartitionNum(dataPartNum)
+        .setBatchSize(batchSize)
+        .setEpochNum(epochNum)
+        .setWalkLength(walkLength)
+        .setPValue(pValue)
+        .setQValue(qValue)
+        .setNeedReplicaEdge(needReplicaEdge)
+        .setIsTrunc(useTrunc)
+        .setIsWeighted(isWeighted)
+        .setTruncLength(truncLength)
+        .setUseBalancePartition(useBalancePartition)
+        .setStorageLevel(storageLevel)
+        .setCheckPoint(setCheckPoint)
+        .setBalancePartitionPercent(percent)
 
-    n2v.setOutputDir(output)
+      n2v.setOutputDir(output)
+      n2v
+    }
+
     // sampling walkpaths
     println("begin to fit|train ...")
     if (!isWeighted) {
