@@ -20,7 +20,7 @@ class Node2VecGraphPartition(index: Int, srcNodesArray: Array[Long],
 
   private implicit val rand: Random = new Random()
 
-  def process(neighbor: PSMatrix, iteration: Int): Node2VecGraphPartition = {
+  def process(neighbor: PSMatrix, iteration: Int, dynamicInitNeighbor: Boolean=false): Node2VecGraphPartition = {
     println(s"partition $index: ---------- iteration $iteration starts ----------")
     println(s"the size of srcNodesArray and the batchSize are ${srcNodesArray.size}, $batchSize.")
 
@@ -45,7 +45,7 @@ class Node2VecGraphPartition(index: Int, srcNodesArray: Array[Long],
         val maybeNeedPullKeys = CachedNeigh.set2arr(maybeNeedPullKeyBuf)
         println(s"${Thread.currentThread()}, number of neighs need pull " +
           s"${maybeNeedPullKeys.length}")
-        val pulled = getByteNeighborWithTrunc(maybeNeedPullKeys, neighbor, useTrunc, truncLength)
+        val pulled = Node2VecGraphPartition.getByteNeighborWithTrunc(maybeNeedPullKeys, neighbor, useTrunc, truncLength, dynamicInitNeighbor)
         val neighs = new Long2ObjectOpenHashMap[LongOpenHashSet](pulled.size())
         val iter = pulled.long2ObjectEntrySet().fastIterator()
         while (iter.hasNext) {
@@ -137,11 +137,11 @@ class Node2VecGraphPartition(index: Int, srcNodesArray: Array[Long],
   }
 
   protected def getByteNeighborWithTrunc(nodeIds: Array[Long], neighbor: PSMatrix,
-                                         useTrunc: Boolean, truncLen: Int):
+                                         useTrunc: Boolean, truncLen: Int, dynamicInitNeighbor: Boolean=false):
   Long2ObjectOpenHashMap[Array[Long]] = {
     neighbor.psfGet(
       new GetNeighborWithTrunc(
-        new LongKeysGetParam(neighbor.id, nodeIds), useTrunc, truncLen))
+        new LongKeysGetParam(neighbor.id, nodeIds), useTrunc, truncLen, dynamicInitNeighbor))
       .asInstanceOf[GetLongsResult].getData
   }
 
@@ -292,6 +292,46 @@ class Node2VecGraphPartition(index: Int, srcNodesArray: Array[Long],
 
 
 object Node2VecGraphPartition {
+  protected def getByteNeighborWithTrunc(nodeIds: Array[Long], neighbor: PSMatrix,
+                                         useTrunc: Boolean, truncLen: Int, dynamicInitNeighbor: Boolean=false):
+  Long2ObjectOpenHashMap[Array[Long]] = {
+    neighbor.psfGet(
+      new GetNeighborWithTrunc(
+        new LongKeysGetParam(neighbor.id, nodeIds), useTrunc, truncLen, dynamicInitNeighbor))
+      .asInstanceOf[GetLongsResult].getData
+  }
+
+  def initNodePaths(index: Int, psMatrix: PSMatrix, iterator: Iterator[Long], batchSize: Int,
+                    p: Double, q: Double, iteration: Int, useTrunc: Boolean, truncLength: Int, dynamicInitNeighbor: Boolean=false):
+  Node2VecGraphPartition = {
+    val srcNodes = new LongArrayList()
+    val dstNodes = new LongArrayList()
+
+    iterator.sliding(batchSize, batchSize).zipWithIndex.foreach { case (nodes_, batchIndex) =>
+      val nodes = nodes_.toArray
+      val pulled = getByteNeighborWithTrunc(nodes, psMatrix, false, 1, dynamicInitNeighbor)
+      val iter = pulled.long2ObjectEntrySet().fastIterator()
+
+      while (iter.hasNext) {
+        val entry = iter.next()
+        val key = entry.getLongKey
+        val value = entry.getValue
+        srcNodes.add(key)
+        dstNodes.add(value(Random.nextInt(value.length)))
+      }
+    }
+
+    val srcNodesArray = srcNodes.toLongArray()
+    val dstNodesArray = dstNodes.toLongArray()
+    val srcNodesSamplePaths = ArrayBuffer[Array[Long]]()
+    for (i <- 0 until srcNodesArray.length) {
+      srcNodesSamplePaths.append(Array(srcNodesArray(i)) ++ Array(dstNodesArray(i)))
+    }
+
+    new Node2VecGraphPartition(index, srcNodesArray, srcNodesSamplePaths.toArray, batchSize,
+      p, q, iteration, useTrunc, truncLength)
+  }
+
   def initNodePaths(index: Int, iterator: Iterator[(Long, Array[Long])], batchSize: Int,
                     p: Double, q:Double, iteration: Int, useTrunc: Boolean, truncLength: Int):
   Node2VecGraphPartition = {

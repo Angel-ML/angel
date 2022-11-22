@@ -16,13 +16,13 @@ import scala.collection.JavaConversions._
  * Sample the neighbor with truncation if needed
  */
 
-class GetNeighborWithTrunc(param: LongKeysGetParam, useTrunc: Boolean, truncLen: Int)
+class GetNeighborWithTrunc(param: LongKeysGetParam, useTrunc: Boolean, truncLen: Int, dynamicInitNeighbor: Boolean=false)
   extends GetFunc(param) {
 
   def this() = this(null, false, -1)
 
   override def partitionGet(partParam: PartitionGetParam): PartitionGetResult =
-    NeighborGetUtils.partitionGet(psContext, partParam, useTrunc, truncLen)
+    NeighborGetUtils.partitionGet(psContext, partParam, useTrunc, truncLen, dynamicInitNeighbor)
 
   override def merge(partResults: util.List[PartitionGetResult]): GetResult = {
     val emp = new Array[Long](0)
