@@ -23,6 +23,10 @@ object Stats {
     edge.mapPartitions(summarizeApplyOp).reduce(summarizeReduceOp)
   }
 
+  def summarizeForDegree(degree: RDD[(Long, Int)]): (Long, Long, Long) = {
+    degree.mapPartitions(summarizeApplyOpForDegree).reduce(summarizeReduceOp)
+  }
+
   def summarizeWithWeight(edge: RDD[(Long, Long, Float)]): (Long, Long, Long) = {
     edge.mapPartitions(summarizeApplyOp1).reduce(summarizeReduceOp)
   }
@@ -42,6 +46,21 @@ object Stats {
     }
 
     Iterator.single((minId, maxId + 1, numEdges))
+  }
+
+  def summarizeApplyOpForDegree(iterator: Iterator[(Long, Int)]): Iterator[(Long, Long, Long)] = {
+    var minId = Long.MaxValue
+    var maxId = Long.MinValue
+    var numEdges = 0
+    while (iterator.hasNext) {
+      val entry = iterator.next()
+      val (src, degree) = (entry._1, entry._2)
+      minId = math.min(minId, degree)
+      maxId = math.max(maxId, degree)
+      numEdges += 1
+    }
+
+    Iterator.single((minId, maxId, numEdges))
   }
 
   def summarizeApplyOp1(iterator: Iterator[(Long, Long, Float)]): Iterator[(Long, Long, Long)] = {

@@ -24,6 +24,9 @@ import io.netty.buffer.ByteBuf;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
+import org.apache.commons.lang.ArrayUtils;
+import com.twitter.chill.ScalaKryoInstantiator;
 
 /**
  * The complex object that contains a integer array,, it can be stored in PS
@@ -46,6 +49,20 @@ public class ByteArrayElement implements IElement {
 
   public void setData(byte[] data) {
     this.data = data;
+  }
+
+  public void add(byte[] incs) {
+    long[] arr1 = ScalaKryoInstantiator.defaultPool().fromBytes(this.data, long[].class);
+    long[] arr2 = ScalaKryoInstantiator.defaultPool().fromBytes(incs, long[].class);
+    this.data = ScalaKryoInstantiator.defaultPool().toBytesWithoutClass(ArrayUtils.addAll(arr1, arr2));
+  }
+
+  public void trans() {
+    if (this.data != null) {
+      long[] arr = ScalaKryoInstantiator.defaultPool().fromBytes(this.data, long[].class);
+      Arrays.sort(arr);
+      this.data = ScalaKryoInstantiator.defaultPool().toBytesWithoutClass(arr);
+    }
   }
 
   @Override
@@ -85,3 +102,4 @@ public class ByteArrayElement implements IElement {
     return bufferLen();
   }
 }
+
