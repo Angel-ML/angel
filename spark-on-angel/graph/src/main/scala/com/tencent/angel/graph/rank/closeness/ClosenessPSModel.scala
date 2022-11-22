@@ -59,8 +59,8 @@ class ClosenessPSModel(matrix: PSMatrix) extends Serializable {
     matrix.psfUpdate(func).get()
   }
 
-  def computeCloseness(r: Int): Unit = {
-    val func = new ComputeCloseness(matrix.id, r)
+  def computeCloseness(r: Int, isConnected: Boolean): Unit = {
+    val func = new ComputeCloseness(matrix.id, r, isConnected)
     matrix.psfUpdate(func).get()
   }
 
@@ -70,15 +70,16 @@ class ClosenessPSModel(matrix: PSMatrix) extends Serializable {
       .getStorage.asInstanceOf[IntLongDenseVectorStorage].getValues
   }
 
-  def readCloseness(nodes: Array[Long], numNodes: Long): Long2DoubleOpenHashMap = {
-    val func = new GetCloseness(matrix.id, nodes, numNodes)
+  def readCloseness(nodes: Array[Long], numNodes: Long, isConnected: Boolean): Long2DoubleOpenHashMap = {
+    val func = new GetCloseness(matrix.id, nodes, numNodes, isConnected)
     matrix.psfGet(func).asInstanceOf[GetClosenessResult].getResults
   }
 
   def readClosenessAndCardinality(nodes: Array[Long],
                                   numNodes: Long,
-                                  isDirected: Boolean): Long2ObjectOpenHashMap[(JDouble, JLong, JLong)] = {
-    val func = new GetClosenessAndCardinality(matrix.id, nodes, numNodes, isDirected)
+                                  isDirected: Boolean,
+                                  isConnected: Boolean): Long2ObjectOpenHashMap[(JDouble, JLong, JDouble)] = {
+    val func = new GetClosenessAndCardinality(matrix.id, nodes, numNodes, isDirected, isConnected)
     matrix.psfGet(func).asInstanceOf[GetClosenessAndCardinalityResult].getResults
   }
 

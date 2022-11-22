@@ -27,13 +27,15 @@ public class GetHyperLogLogPartParam extends PartitionGetParam {
   private KeyPart nodes;
   private long n;
   private boolean isDirected;
+  private boolean isConnected;
 
   public GetHyperLogLogPartParam(int matrixId, PartitionKey partKey, KeyPart nodes, long n,
-                                 boolean isDirected) {
+      boolean isDirected, boolean isConnected) {
     super(matrixId, partKey);
     this.nodes = nodes;
     this.n = n;
     this.isDirected = isDirected;
+    this.isConnected = isConnected;
   }
 
   public GetHyperLogLogPartParam() {
@@ -63,12 +65,17 @@ public class GetHyperLogLogPartParam extends PartitionGetParam {
     isDirected = directed;
   }
 
+  public boolean isConnected() { return isConnected; }
+
+  public void setConnected(boolean connected) { isConnected = connected; }
+
   @Override
   public void serialize(ByteBuf buf) {
     super.serialize(buf);
     ByteBufSerdeUtils.serializeKeyPart(buf, nodes);
     ByteBufSerdeUtils.serializeLong(buf, n);
     ByteBufSerdeUtils.serializeBoolean(buf, isDirected);
+    ByteBufSerdeUtils.serializeBoolean(buf, isConnected);
   }
 
   @Override
@@ -77,11 +84,12 @@ public class GetHyperLogLogPartParam extends PartitionGetParam {
     nodes = ByteBufSerdeUtils.deserializeKeyPart(buf);
     n = ByteBufSerdeUtils.deserializeLong(buf);
     isDirected = ByteBufSerdeUtils.deserializeBoolean(buf);
+    isConnected = ByteBufSerdeUtils.deserializeBoolean(buf);
   }
 
   @Override
   public int bufferLen() {
     return super.bufferLen() + ByteBufSerdeUtils.serializedKeyPartLen(nodes)
-            + ByteBufSerdeUtils.LONG_LENGTH + ByteBufSerdeUtils.BOOLEN_LENGTH;
+        + ByteBufSerdeUtils.LONG_LENGTH + ByteBufSerdeUtils.BOOLEN_LENGTH * 2;
   }
 }

@@ -26,10 +26,12 @@ import java.util.List;
 public class ComputeClosenessParam extends UpdateParam {
 
   private int r;
+  private boolean isConnected;
 
-  public ComputeClosenessParam(int matrixId, int r) {
+  public ComputeClosenessParam(int matrixId, int r, boolean isConnected) {
     super(matrixId);
     this.r = r;
+    this.isConnected = isConnected;
   }
 
   @Override
@@ -39,7 +41,7 @@ public class ComputeClosenessParam extends UpdateParam {
     List<PartitionKey> parts = PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
 
     for (PartitionKey key : parts) {
-      params.add(new ComputeClosenessPartParam(matrixId, key, r));
+      params.add(new ComputeClosenessPartParam(matrixId, key, r, isConnected));
     }
 
     return params;

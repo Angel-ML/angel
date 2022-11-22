@@ -38,6 +38,7 @@ public class HyperLogLogPlusElement implements IElement {
   private long node;
   private int isActive;
   private long closeness;
+  private float rCloseness;
   private long seed;
 
 
@@ -48,6 +49,7 @@ public class HyperLogLogPlusElement implements IElement {
     this.sp = sp;
     this.isActive = 1;
     this.closeness = 0L;
+    this.rCloseness = 0.0f;
     this.seed = seed;
     long hashed = jenkins(node, seed);
     readCounter.offerHashed(hashed);
@@ -55,12 +57,12 @@ public class HyperLogLogPlusElement implements IElement {
   }
 
   public HyperLogLogPlusElement() {
-    this(-1, -1, -1, null, null, -1, -1, -1);
+    this(-1, -1, -1, null, null, -1, -1, -1, -1);
   }
 
   private HyperLogLogPlusElement(long node, int p, int sp,
       HyperLogLogPlus readCounter, HyperLogLogPlus writeCounter,
-      int isActive, long closeness, long seed) {
+      int isActive, long closeness, float rCloseness, long seed) {
     this.node = node;
     this.p = p;
     this.sp = sp;
@@ -68,6 +70,7 @@ public class HyperLogLogPlusElement implements IElement {
     this.writeCounter = writeCounter;
     this.isActive = isActive;
     this.closeness = closeness;
+    this.rCloseness = rCloseness;
     this.seed = seed;
   }
 
@@ -80,16 +83,22 @@ public class HyperLogLogPlusElement implements IElement {
   }
 
   public long getCloseness() {
-    return closeness;
+    return closeness > 0 ? closeness : 1;
   }
+
+  public float getrCloseness() { return rCloseness > 0 ? rCloseness : 1; }
 
   public long getCardinality() {
     return readCounter.cardinality();
   }
 
-  public void updateCloseness(long r) {
+  public void updateCloseness(long r, boolean isConnected) {
     long delta = writeCounter.cardinality() - readCounter.cardinality();
-    this.closeness += r * delta;
+    if (isConnected) {
+      this.closeness += r * delta;
+    } else {
+      this.rCloseness += (1.0/r) * delta;
+    }
     this.isActive = delta > 0 ? 1 : 0;
     readCounter = writeCounter;
   }
@@ -110,6 +119,7 @@ public class HyperLogLogPlusElement implements IElement {
     output.writeInt(sp);
     output.writeInt(isActive);
     output.writeLong(closeness);
+    output.writeFloat(rCloseness);
     output.writeLong(seed);
     try {
       byte[] bytes = readCounter.getBytes();
@@ -131,6 +141,7 @@ public class HyperLogLogPlusElement implements IElement {
     sp = input.readInt();
     isActive = input.readInt();
     closeness = input.readLong();
+    rCloseness = input.readFloat();
     seed = input.readLong();
     int len = input.readInt();
     byte[] bytes = new byte[len];
@@ -153,7 +164,7 @@ public class HyperLogLogPlusElement implements IElement {
 
   @Override
   public int bufferLen() {
-    return ByteBufSerdeUtils.INT_LENGTH * 5 + ByteBufSerdeUtils.LONG_LENGTH * 3 + readCounter.sizeof() + writeCounter.sizeof();
+    return ByteBufSerdeUtils.INT_LENGTH * 5 + ByteBufSerdeUtils.LONG_LENGTH * 3 + ByteBufSerdeUtils.FLOAT_LENGTH + readCounter.sizeof() + writeCounter.sizeof();
   }
 
   @Override
@@ -163,6 +174,7 @@ public class HyperLogLogPlusElement implements IElement {
     output.writeInt(sp);
     output.writeInt(isActive);
     output.writeLong(closeness);
+    output.writeFloat(rCloseness);
     output.writeLong(seed);
     byte[] bytes = readCounter.getBytes();
     output.writeInt(bytes.length);
@@ -179,6 +191,7 @@ public class HyperLogLogPlusElement implements IElement {
     sp = input.readInt();
     isActive = input.readInt();
     closeness = input.readLong();
+    rCloseness = input.readFloat();
     seed = input.readLong();
     int len = input.readInt();
     byte[] bytes = new byte[len];
@@ -202,7 +215,7 @@ public class HyperLogLogPlusElement implements IElement {
       HyperLogLogPlus readPlus = HyperLogLogPlus.Builder.build(bytes);
       bytes = writeCounter.getBytes();
       HyperLogLogPlus writePlus = HyperLogLogPlus.Builder.build(bytes);
-      return new HyperLogLogPlusElement(node, p, sp, readPlus, writePlus, isActive, closeness, seed);
+      return new HyperLogLogPlusElement(node, p, sp, readPlus, writePlus, isActive, closeness, rCloseness, seed);
     } catch (IOException e) {
       LOG.error("DeepClone failed, details = " + StringUtils.stringifyException(e));
       throw new RuntimeException(e);

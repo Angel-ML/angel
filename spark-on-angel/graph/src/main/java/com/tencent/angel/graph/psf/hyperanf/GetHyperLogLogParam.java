@@ -31,12 +31,14 @@ public class GetHyperLogLogParam extends GetParam {
   private long[] nodes;
   private long n;
   private boolean isDirected;
+  private boolean isConnected;
 
-  public GetHyperLogLogParam(int matrixId, long[] nodes, long n, boolean isDirected) {
+  public GetHyperLogLogParam(int matrixId, long[] nodes, long n, boolean isDirected, boolean isConnected) {
     super(matrixId);
     this.nodes = nodes;
     this.n = n;
     this.isDirected = isDirected;
+    this.isConnected = isConnected;
   }
 
   @Override
@@ -48,7 +50,7 @@ public class GetHyperLogLogParam extends GetParam {
 
     for (int i = 0; i < parts.length; i++) {
       if (keyParts[i] != null && keyParts[i].size() > 0) {
-        params.add(new GetHyperLogLogPartParam(matrixId, parts[i], keyParts[i], n, isDirected));
+        params.add(new GetHyperLogLogPartParam(matrixId, parts[i], keyParts[i], n, isDirected, isConnected));
       }
     }
 

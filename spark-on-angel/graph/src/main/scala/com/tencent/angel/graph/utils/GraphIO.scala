@@ -503,4 +503,66 @@ object GraphIO {
                                 needReplicateEdges: Boolean = false): RDD[(Long, Long, Float)] = {
     loadEdgesWithWeight(dataset, srcNodeIdCol, dstNodeIdCol, weightCol, hasWeight, needReplicateEdges)
   }
+
+  def saveParquet(df: DataFrame, output: String, seq: String = "\t"): Unit = {
+    df.printSchema()
+    df.write
+      .mode(SaveMode.Overwrite)
+      .option(HEADER, "false")
+      .option(DELIMITER, seq)
+      .parquet(output)
+  }
+
+  def appendSaveParquet(df: DataFrame, output: String, seq: String = "\t"): Unit = {
+    df.printSchema()
+    df.write
+      .mode(SaveMode.Append)
+      .option(HEADER, "false")
+      .option(DELIMITER, seq)
+      .parquet(output)
+
+  }
+
+
+  def loadStringInfoLabel(input: String, isLabeled: Boolean,
+                          srcIndex: Int = 0, dstIndex: Int = 1, infoIndex: Int = 2, labelIndex: Int = 3,
+                          sep: String = " "): DataFrame = {
+    val ss = SparkSession.builder().getOrCreate()
+    val schema = if (isLabeled) {
+      StructType(Seq(
+        StructField("src", LongType, nullable = false),
+        StructField("dst", LongType, nullable = false),
+        StructField("info", LongType, nullable = false),
+        StructField("label", StringType, nullable = false)
+      ))
+    } else {
+      StructType(Seq(
+        StructField("src", LongType, nullable = false),
+        StructField("dst", LongType, nullable = false),
+        StructField("info", LongType, nullable = false)
+      ))
+    }
+    ss.read
+      .option("sep", sep)
+      .option("header", "false")
+      .schema(schema)
+      .csv(input)
+  }
+
+
+  def loadVertexType(input: String, srcIndex: Int = 0, dstIndex: Int = 1,
+                     sep: String = " "): DataFrame = {
+    val ss = SparkSession.builder().getOrCreate()
+    val schema =
+      StructType(Seq(
+        StructField("vertex", LongType, nullable = false),
+        StructField("type", StringType, nullable = false)
+      ))
+    ss.read
+      .option("sep", sep)
+      .option("header", "false")
+      .schema(schema)
+      .csv(input)
+  }
+
 }

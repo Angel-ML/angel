@@ -25,10 +25,10 @@ import scala.Tuple3;
 
 public class GetClosenessAndCardinalityPartResult extends PartitionGetResult {
 
-  private Long2ObjectOpenHashMap<Tuple3<Double, Long, Long>> closenesses;
+  private Long2ObjectOpenHashMap<Tuple3<Double, Long, Double>> closenesses;
 
   public GetClosenessAndCardinalityPartResult(
-          Long2ObjectOpenHashMap<Tuple3<Double, Long, Long>> closenesses) {
+      Long2ObjectOpenHashMap<Tuple3<Double, Long, Double>> closenesses) {
     this.closenesses = closenesses;
   }
 
@@ -36,21 +36,21 @@ public class GetClosenessAndCardinalityPartResult extends PartitionGetResult {
     this.closenesses = new Long2ObjectOpenHashMap<>();
   }
 
-  public Long2ObjectOpenHashMap<Tuple3<Double, Long, Long>> getClosenesses() {
+  public Long2ObjectOpenHashMap<Tuple3<Double, Long, Double>> getClosenesses() {
     return closenesses;
   }
 
   @Override
   public void serialize(ByteBuf output) {
     output.writeInt(closenesses.size());
-    ObjectIterator<Long2ObjectMap.Entry<Tuple3<Double, Long, Long>>> it =
-            closenesses.long2ObjectEntrySet().fastIterator();
+    ObjectIterator<Long2ObjectMap.Entry<Tuple3<Double, Long, Double>>> it =
+        closenesses.long2ObjectEntrySet().fastIterator();
     while (it.hasNext()) {
-      Long2ObjectMap.Entry<Tuple3<Double, Long, Long>> entry = it.next();
+      Long2ObjectMap.Entry<Tuple3<Double, Long, Double>> entry = it.next();
       output.writeLong(entry.getLongKey());
       output.writeDouble(entry.getValue()._1());
       output.writeLong(entry.getValue()._2());
-      output.writeLong(entry.getValue()._3());
+      output.writeDouble(entry.getValue()._3());
     }
 
   }
@@ -63,7 +63,7 @@ public class GetClosenessAndCardinalityPartResult extends PartitionGetResult {
       long key = input.readLong();
       double centrality = input.readDouble();
       long cardinality = input.readLong();
-      long disSum = input.readLong();
+      double disSum = input.readDouble();
       closenesses.put(key, new Tuple3<>(centrality, cardinality, disSum));
     }
   }

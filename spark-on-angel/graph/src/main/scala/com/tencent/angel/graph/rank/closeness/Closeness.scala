@@ -52,6 +52,7 @@ class Closeness(override val uid: String) extends Transformer
   final val msgNumBatch = new IntParam(this, "msgBatchSize", "msgBatchSize")
   final val verboseSaving = new BooleanParam(this, "verboseSaving", "verboseSaving")
   final val isDirected = new BooleanParam(this, "isDirected", "isDirected")
+  final val isConnected = new BooleanParam(this, "isConnected", "isConnected")
 
   final def setP(precision: Int): this.type = set(p, precision)
 
@@ -65,12 +66,15 @@ class Closeness(override val uid: String) extends Transformer
 
   final def setIsDirected(directed: Boolean): this.type = set(isDirected, directed)
 
+  final def setIsConnected(connected: Boolean): this.type = set(isConnected, connected)
+
   setDefault(p, 6)
   setDefault(sp, 0)
   setDefault(maxIter, 200)
   setDefault(msgNumBatch, 4)
   setDefault(verboseSaving, false)
   setDefault(isDirected, true)
+  setDefault(isConnected, true)
   setDefault(balancePartitionPercent, 0.5f)
 
   def this() = this(Identifiable.randomUID("Closeness"))
@@ -96,9 +100,9 @@ class Closeness(override val uid: String) extends Transformer
     val model = ClosenessPSModel(modelContext, index, $(useBalancePartition), $(balancePartitionPercent))
 
     val seed = System.currentTimeMillis()
-    val graph = edges.groupByKey(${partitionNum})
+    val graph = edges.groupByKey($(partitionNum))
       .mapPartitionsWithIndex((index, it) =>
-        Iterator.single(ClosenessPartition.apply(index, it, $(p), $(sp), seed)))
+        Iterator.single(ClosenessGraphPartition.apply(index, it, $(p), $(sp), seed)))
 
     graph.persist($(storageLevel))
     graph.foreachPartition(_ => Unit)
@@ -110,7 +114,7 @@ class Closeness(override val uid: String) extends Transformer
     var numActives = 1L
     do {
       numActives = graph.map(_.process(model, $(msgNumBatch))).reduce(_ + _)
-      model.computeCloseness(r)
+      model.computeCloseness(r, $(isConnected))
       println(s"iter=$r, activeMsgs=$numActives")
       r += 1
     } while (r <= $(maxIter) && numActives > 0)
@@ -119,11 +123,12 @@ class Closeness(override val uid: String) extends Transformer
     val maxCardinality = model.maxCardinality()
     println(s"numNodes=$numNodes maxCardinality=$maxCardinality")
 
+    val n = if ($(isConnected)) maxCardinality else numNodes-1
     val retRDD = if ($(verboseSaving)) {
-      graph.map(_.saveClosenessAndCentrality(model, maxCardinality, $(isDirected)))
-        .flatMap(f => f._1.zip(f._2)).map { case (node, res) => Row.fromSeq(Seq[Any](node, res._1.toFloat, res._2, res._3)) }
+      graph.map(_.saveClosenessAndCentrality(model, n, $(isDirected), $(isConnected)))
+        .flatMap(f => f._1.zip(f._2)).map { case (node, res) => Row.fromSeq(Seq[Any](node, res._1.toFloat, res._2, res._3.toFloat)) }
     } else {
-      graph.map(_.save(model, maxCardinality)).flatMap(f => f._1.zip(f._2))
+      graph.map(_.save(model, n, $(isConnected))).flatMap(f => f._1.zip(f._2))
         .map { case (node, rank) => Row.fromSeq(Seq[Any](node, rank)) }
     }
 
@@ -168,7 +173,7 @@ class Closeness(override val uid: String) extends Transformer
         StructField(s"${$(outputNodeIdCol)}", LongType, nullable = false),
         StructField(s"${$(outputCentralityCol)}", FloatType, nullable = false),
         StructField(s"cardinality", LongType, nullable = false),
-        StructField(s"distSum", LongType, nullable = false)
+        StructField(s"distSum", FloatType, nullable = false)
       ))
     else
       StructType(Seq(
