@@ -28,12 +28,12 @@ import scala.util.Random
 
 class Node2Vec(override val uid: String) extends Transformer
   with Node2VecParams with DefaultParamsWritable with Logging {
-  private var neighbor: PSMatrix = _
-  private var minId: Long = -1
-  private var maxId: Long = -1
-  private var index: RDD[Long] = _
-  private var conf: SparkConf = _
-  private var output: String = _
+  var neighbor: PSMatrix = _
+  var minId: Long = -1
+  var maxId: Long = -1
+  var index: RDD[Long] = _
+  var conf: SparkConf = _
+  var output: String = _
 
   def this() {
     this(s"Node2Vec_${(new Random).nextInt()}")
