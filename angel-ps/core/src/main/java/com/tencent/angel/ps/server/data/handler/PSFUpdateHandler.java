@@ -35,6 +35,7 @@ public class PSFUpdateHandler extends Handler {
     Constructor<? extends UpdateFunc> constructor = funcClass.getConstructor();
     constructor.setAccessible(true);
     UpdateFunc func = constructor.newInstance();
+    context.setTryCount(header.getTryCount());
     func.setPsContext(context);
     func.partitionUpdate(request.getPartParam());
     return new UpdateUDFResponse();

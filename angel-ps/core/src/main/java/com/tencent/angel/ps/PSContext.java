@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -41,6 +41,7 @@ public class PSContext {
    * PS
    */
   private final ParameterServer ps;
+  private int tryCount;
 
   /**
    * Create a PSContext
@@ -208,4 +209,8 @@ public class PSContext {
     return getConf().getBoolean(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER,
         AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER);
   }
+
+  public void setTryCount(int tryCount) { this.tryCount = tryCount; }
+
+  public int getTryCount() { return this.tryCount; }
 }

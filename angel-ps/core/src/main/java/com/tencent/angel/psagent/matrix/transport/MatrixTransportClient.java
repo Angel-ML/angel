@@ -1768,6 +1768,7 @@ public class MatrixTransportClient implements MatrixTransportInterface {
       request.getContext().setActualServerId(psLoc.psId);
       request.getContext().setLocation(psLoc.loc);
       request.getContext().addTryCounter();
+      request.getHeader().setTryCount(request.getContext().getTryCounter());
 
       // If location is null, means that the server is not ready
       if (psLoc.loc == null) {
