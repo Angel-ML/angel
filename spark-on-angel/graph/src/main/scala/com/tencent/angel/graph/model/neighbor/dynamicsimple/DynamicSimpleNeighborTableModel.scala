@@ -3,6 +3,7 @@ package com.tencent.angel.graph.model.neighbor.dynamicsimple
 import com.tencent.angel.graph.common.param.ModelContext
 import com.tencent.angel.graph.common.psf.param.{LongKeysGetParam, LongKeysUpdateParam}
 import com.tencent.angel.graph.common.psf.result.GetFloatsResult
+import com.tencent.angel.graph.model.neighbor.dynamicsimple.psf.{AddNeighbors, AddNeighborsParam, AddWeightedNeighbors, GetWeights, InitAlias, InitNeighbors, InitNeighborsParam}
 import com.tencent.angel.graph.model.ops.CommonOps
 import com.tencent.angel.graph.utils.ModelContextUtils
 import com.tencent.angel.ml.matrix.{MatrixContext, RowType}

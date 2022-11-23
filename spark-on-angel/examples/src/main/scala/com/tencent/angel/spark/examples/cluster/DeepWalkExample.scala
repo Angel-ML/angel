@@ -43,6 +43,7 @@ object DeepWalkExample {
     val walkLength = params.getOrElse("walkLength", "10").toInt
     val isWeighted = params.getOrElse("isWeighted", "false").toBoolean
     val needReplicateEdge = params.getOrElse("needReplicateEdge", "true").toBoolean
+    val dynamicInitNeighbor = params.getOrElse("dynamicInitNeighbor", "false").toBoolean
     val numWalks = params.getOrElse("numWalks", "3").toInt
 
     val sep = params.getOrElse("sep", "space") match {
@@ -58,25 +59,43 @@ object DeepWalkExample {
       .getOrElse(throw new Exception("checkpoint dir not provided"))
     sc.setCheckpointDir(cpDir)
 
-    val deepwalk = new DeepWalk()
-      .setStorageLevel(storageLevel)
-      .setPSPartitionNum(psPartitionNum)
-      .setSrcNodeIdCol("src")
-      .setDstNodeIdCol("dst")
-      .setWeightCol("weight")
-      .setBatchSize(batchSize)
-      .setWalkLength(walkLength)
-      .setPartitionNum(partitionNum)
-      .setIsWeighted(isWeighted)
-      .setNeedReplicaEdge(needReplicateEdge)
-      .setUseEdgeBalancePartition(useEdgeBalancePartition)
-      .setUseBalancePartition(useBalancePartition)
-      .setEpochNum(numWalks)
+    if (isWeighted) {
+      val deepwalk = new DeepWalk()
+        .setStorageLevel(storageLevel)
+        .setPSPartitionNum(psPartitionNum)
+        .setSrcNodeIdCol("src")
+        .setDstNodeIdCol("dst")
+        .setWeightCol("weight")
+        .setBatchSize(batchSize)
+        .setWalkLength(walkLength)
+        .setPartitionNum(partitionNum)
+        .setIsWeighted(isWeighted)
+        .setNeedReplicaEdge(needReplicateEdge)
+        .setUseEdgeBalancePartition(useEdgeBalancePartition)
+        .setEpochNum(numWalks)
+        .setDynamicInitNeighbor(dynamicInitNeighbor)
 
-    deepwalk.setOutputDir(output)
-    val df = GraphIO.load(input, isWeighted = isWeighted, srcIndex, dstIndex, weightIndex, sep = sep)
-    val mapping = deepwalk.transform(df)
-
+      deepwalk.setOutputDir(output)
+      val df = GraphIO.load(input, isWeighted = isWeighted, srcIndex, dstIndex, weightIndex, sep = sep)
+      val mapping = deepwalk.transform(df)
+    }
+    else {
+      val deepwalk = new DeepWalkNoWeight()
+        .setStorageLevel(storageLevel)
+        .setPSPartitionNum(psPartitionNum)
+        .setSrcNodeIdCol("src")
+        .setDstNodeIdCol("dst")
+        .setBatchSize(batchSize)
+        .setWalkLength(walkLength)
+        .setPartitionNum(partitionNum)
+        .setNeedReplicaEdge(needReplicateEdge)
+        .setUseEdgeBalancePartition(useEdgeBalancePartition)
+        .setEpochNum(numWalks)
+        .setDynamicInitNeighbor(dynamicInitNeighbor)
+      deepwalk.setOutputDir(output)
+      val df = GraphIO.load(input, isWeighted = isWeighted, srcIndex, dstIndex, weightIndex, sep = sep)
+      val mapping = deepwalk.transform(df)
+    }
     stop()
   }
 
