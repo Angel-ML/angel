@@ -5,11 +5,12 @@ import it.unimi.dsi.fastutil.longs.{Long2ObjectOpenHashMap, LongArrayList}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
+import org.apache.spark.TaskContext
 
 
 class DeepWalkGraphPartition(index: Int, srcNodesArray: Array[Long], srcNodesSamplePaths: Array[Array[Long]], batchSize: Int) {
 
-  def process(model: DeepWalkPSModel, iteration: Int): DeepWalkGraphPartition = {
+  def process(model: DeepWalkPSModel, iteration: Int, dynamicInitNeighbor: Boolean=false): DeepWalkGraphPartition = {
     println(s"partition $index: ---------- iteration $iteration starts ----------")
     val rnd = new Random()
     //sample nodes path batch by batch
@@ -21,7 +22,7 @@ class DeepWalkGraphPartition(index: Int, srcNodesArray: Array[Long], srcNodesSam
 
       //pull nodes neighbors
       val beforeSample = System.currentTimeMillis()
-      val nodesToNeighboes = model.getSampledNeighbors(model.edgesPsMatrix, nodes.toArray, count.toArray)
+      val nodesToNeighboes = model.getSampledNeighbors(model.edgesPsMatrix, nodes.toArray, count.toArray, dynamicInitNeighbor)
       println(s"partition $index, iter $iteration, sampleTime: ${System.currentTimeMillis() - beforeSample} ms")
 
       //process each node
@@ -59,19 +60,17 @@ class DeepWalkGraphPartition(index: Int, srcNodesArray: Array[Long], srcNodesSam
 
 
 object DeepWalkGraphPartition {
-  def initPSMatrixAndNodePath(model: DeepWalkPSModel, index: Int, iterator: Iterator[(Long, Array[Long], Array[Float], Array[Int])], batchSize: Int): DeepWalkGraphPartition = {
-    val srcNodes = new LongArrayList()
-    iterator.sliding(batchSize, batchSize).foreach { pairs =>
+  def initPSMatrix(model: DeepWalkPSModel, index: Int, iterator: Iterator[(Long, Array[Long], Array[Float], Array[Int])], batchSize: Int): Iterator[Long] = {
+    iterator.sliding(batchSize, batchSize).map { pairs =>
       val nodeId2Neighbors = new Long2ObjectOpenHashMap[NeighborsAliasTableElement](pairs.length)
       pairs.foreach { case (src, neighbors, accept, alias) =>
         val elem = new NeighborsAliasTableElement(neighbors, accept, alias)
         nodeId2Neighbors.put(src, elem)
-        srcNodes.add(src)
       }
       model.initNodeNei(nodeId2Neighbors)
       nodeId2Neighbors.clear()
+      pairs.length.toLong
     }
-    initNodePaths(index,srcNodes.toLongArray(),batchSize)
   }
 
   def initNodePaths(index: Int, iterator: Array[Long], batchSize: Int): DeepWalkGraphPartition = {
