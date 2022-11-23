@@ -9,6 +9,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param.ParamMap
 import org.apache.spark.ml.util.Identifiable
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.{StructType, _}
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.storage.StorageLevel
@@ -29,22 +30,13 @@ class DeepWalk(override val uid: String) extends Transformer
     output = in
   }
 
-  override def transform(dataset: Dataset[_]): DataFrame = {
-
+  def initialize(dataset: Dataset[_]): (DeepWalkPSModel, RDD[DeepWalkGraphPartition]) = {
     //create origin edges RDD and data preprocessing
 
-    val rawEdges = NeighborDataOps.loadEdgesWithWeight(dataset, $(srcNodeIdCol), $(dstNodeIdCol), $(weightCol), $(isWeighted), $(needReplicaEdge), true, false, false)
-    rawEdges.repartition($(partitionNum)).persist(StorageLevel.DISK_ONLY)
+    val rawEdges_ = NeighborDataOps.loadEdgesWithWeight(dataset, $(srcNodeIdCol), $(dstNodeIdCol), $(weightCol), $(isWeighted), $(needReplicaEdge), true, false, false)
+    val rawEdges = rawEdges_.repartition($(partitionNum)).persist(StorageLevel.DISK_ONLY)
     val (minId, maxId, numEdges) = Stats.summarizeWithWeight(rawEdges)
     println(s"minId=$minId maxId=$maxId numEdges=$numEdges level=${$(storageLevel)}")
-
-    val edges = rawEdges.map { case (src, dst, w) => (src, (dst, w)) }
-
-    // calc alias table for each node
-    val aliasTable = edges.groupByKey($(partitionNum)).map(x => (x._1, x._2.toArray.distinct))
-      .mapPartitionsWithIndex { case (partId, iter) =>
-        DeepWalk.calcAliasTable(partId, iter)
-      }
 
     //ps process;create ps nodes adjacency matrix
     println("start to run ps")
@@ -55,20 +47,64 @@ class DeepWalk(override val uid: String) extends Transformer
       "deepwalk", SparkContext.getOrCreate().hadoopConfiguration)
 
     //    val data = edges.map(_._2._1) // ps loadBalance by in degree
-    val data = edges.flatMap(f => Iterator(f._1, f._2._1))
+    val data = rawEdges.flatMap(f => Iterator(f._1, f._2))
     //val model = DeepWalkPSModel.fromMinMax(minId, maxId, data, $(psPartitionNum), useBalancePartition = $(useBalancePartition))
-    val model = DeepWalkPSModel(modelContext, data, $(useBalancePartition), $(balancePartitionPercent))
+    val model = DeepWalkPSModel(modelContext, data, $(useBalancePartition), $(balancePartitionPercent), $(dynamicInitNeighbor))
 
-    //push node adjacency list into ps matrix;create graph with （node，sample path）
-    val graphOri = aliasTable.mapPartitionsWithIndex((index, adjTable) =>
-      Iterator(DeepWalkGraphPartition.initPSMatrixAndNodePath(model, index, adjTable, $(batchSize))))
+    val start = System.currentTimeMillis()
+
+    val graphOri = if ($(dynamicInitNeighbor)) {
+      println("Update the adjacency list using dynamic initialization")
+      val degree = rawEdges.map(x => (x._1, 1)).reduceByKey(_ + _)
+      degree.persist($(storageLevel))
+
+      var startTime = System.currentTimeMillis()
+      val initNumNodes = model.initNeighborsDegree(degree, $(batchSize), $(isWeighted))
+      println(s"init $initNumNodes nodes' space to PS, cost ${System.currentTimeMillis() - startTime} ms.")
+
+      startTime = System.currentTimeMillis()
+      val numEdges = model.addNodeNei(rawEdges, $(batchSize))
+      println(s"add $numEdges edges to PS, cost ${System.currentTimeMillis() - startTime} ms.")
+
+      // pull weights and calculate alias and push to ps
+      startTime = System.currentTimeMillis()
+      val transNumNodes = model.createAlias(degree.map(_._1), $(batchSize))
+      println(s"created $transNumNodes nodes' alias, cost ${System.currentTimeMillis() - startTime} ms.")
+
+      val graphOri = degree.mapPartitionsWithIndex((index, edges) =>
+        Iterator(DeepWalkGraphPartition.initNodePaths(index, edges.map(r => r._1).toArray, $(batchSize))))
+      graphOri
+    } else {
+      println("Update the adjacency list using static initialization")
+      // calc alias table for each node
+      val edges = rawEdges.map { case (src, dst, w) => (src, (dst, w)) }
+      val aliasTable = edges.groupByKey($(partitionNum)).map(x => (x._1, x._2.toArray.distinct))
+        .mapPartitionsWithIndex { case (partId, iter) =>
+          DeepWalk.calcAliasTable(partId, iter)
+        }
+      //push node adjacency list into ps matrix
+      var startTime = System.currentTimeMillis()
+      val numEdges = aliasTable.mapPartitionsWithIndex((index, adjTable) =>
+        DeepWalkGraphPartition.initPSMatrix(model, index, adjTable, $(batchSize))).reduce(_ + _)
+      println(s"init $numEdges edges to PS, cost ${System.currentTimeMillis() - startTime} ms.")
+
+      // create graph with （node，sample path）
+      val graphOri = aliasTable.mapPartitionsWithIndex((index, adjTable) =>
+        Iterator(DeepWalkGraphPartition.initNodePaths(index, adjTable.map(r => r._1).toArray, $(batchSize))))
+      graphOri
+    }
 
     graphOri.persist($(storageLevel))
     //trigger action
     graphOri.foreachPartition(_ => Unit)
-
+    println(s"initialize neighborTable cost ${(System.currentTimeMillis() - start) / 1000}s")
     // checkpoint
     model.checkpoint()
+    (model, graphOri)
+  }
+
+  override def transform(dataset: Dataset[_]): DataFrame = {
+    val (model, graphOri) = initialize(dataset)
 
     var epoch = 0
     while (epoch < $(epochNum)) {
@@ -80,7 +116,7 @@ class DeepWalk(override val uid: String) extends Transformer
       do {
         val beforeSample = System.currentTimeMillis()
         curIteration += 1
-        graph = prev.map(_.process(model, curIteration))
+        graph = prev.map(_.process(model, curIteration, $(dynamicInitNeighbor)))
         graph.persist($(storageLevel))
         graph.count()
         prev.unpersist(true)
