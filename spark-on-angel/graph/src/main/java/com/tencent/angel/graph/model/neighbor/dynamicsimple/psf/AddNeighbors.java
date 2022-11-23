@@ -45,7 +45,7 @@ public class AddNeighbors extends UpdateFunc {
         long[] nodeIds = split.getKeys();
         IElement[] neighbors = split.getValues();
         boolean isTaskAttempt = updateParam.getIsAttempt();
-        int tryCount = 1;
+        int tryCount = psContext.getTryCount();
         boolean isAttempt = isTaskAttempt || tryCount > 1;
 
         int lockTime = psContext.getConf().getInt(AngelConf.ANGEL_PS_MAX_LOCK_WAITTIME_MS, AngelConf.DEFAULT_ANGEL_PS_MAX_LOCK_WAITTIME_MS);

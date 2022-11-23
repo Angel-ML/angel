@@ -17,7 +17,7 @@ import scala.collection.mutable.ArrayBuffer
 
 class DeepWalk(override val uid: String) extends Transformer
   with HasSrcNodeIdCol with HasDstNodeIdCol with HasOutputNodeIdCol with HasOutputCoreIdCol
-  with HasStorageLevel with HasPartitionNum with HasPSPartitionNum with HasMaxIteration
+  with HasStorageLevel with HasPartitionNum with HasPSPartitionNum with HasMaxIteration with HasDynamicInitNeighbor
   with HasBatchSize with HasArrayBoundsPath with HasIsWeighted with HasWeightCol with HasUseBalancePartition
   with HasNeedReplicaEdge with HasUseEdgeBalancePartition with HasWalkLength with HasEpochNum with HasBalancePartitionPercent {
 
