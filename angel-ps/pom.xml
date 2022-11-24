@@ -271,6 +271,12 @@
       <artifactId>commons-math3</artifactId>
       <version>3.6.1</version>
     </dependency>
+    <dependency>
+      <groupId>com.twitter</groupId>
+      <artifactId>chill_2.11</artifactId>
+      <version>0.9.3</version>
+      <!--            <scope>test</scope>-->
+    </dependency>
   </dependencies>
 
   <build>

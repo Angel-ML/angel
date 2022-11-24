@@ -44,6 +44,9 @@ class CommonFriendsPSModel(val neighborTable: NeighborTableModel) extends Serial
     neighborTable.initLongNeighbor(data)
   }
 
+  def initLongNeighborTable(data: RDD[(Long, Array[Long])], nodes: RDD[Long] = null): Unit = {
+    neighborTable.initLongNeighbor(data, nodes)
+  }
   def getNeighborTable(nodeIds: Array[Int]): Int2ObjectOpenHashMap[Array[Int]] = {
     val neighborsMap = neighborTable.sampleNeighbors(nodeIds, -1)
     neighborsMap
@@ -61,8 +64,10 @@ class CommonFriendsPSModel(val neighborTable: NeighborTableModel) extends Serial
 
 object CommonFriendsPSModel {
 
-  def apply(maxIndex: Long, batchSize: Int, pullBatch: Int, psPartNum: Int): CommonFriendsPSModel = {
-    val param = new Param(maxIndex, batchSize, pullBatch, psPartNum)
+  def apply(maxIndex: Long, batchSize: Int, pullBatch: Int, psPartNum: Int, minIndex: Long = 0L,
+            matrixName: String = "neighborTable", useBalancePartition: Boolean = false, nodeNum: Long = 0L): CommonFriendsPSModel = {
+    val param = new Param(maxIndex, batchSize, pullBatch, psPartNum, nodeNum, minIndex, matrixName=matrixName,
+      useBalancePartition=useBalancePartition)
     val neighborTable = new NeighborTableModel(param)
     new CommonFriendsPSModel(neighborTable)
   }
