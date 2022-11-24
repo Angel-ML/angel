@@ -29,8 +29,8 @@ import java.util.List;
 
 public class GetCloseness extends GetFunc {
 
-  public GetCloseness(int matrixId, long[] nodes, long n) {
-    super(new GetHyperLogLogParam(matrixId, nodes, n, false));
+  public GetCloseness(int matrixId, long[] nodes, long n, boolean isConnected) {
+    super(new GetHyperLogLogParam(matrixId, nodes, n, false, isConnected));
   }
 
   public GetCloseness(GetParam param) {
@@ -50,13 +50,18 @@ public class GetCloseness extends GetFunc {
     long[] nodes = keyPart.getKeys();
 
     long n = param.getN();
+    boolean isConnected = param.isConnected();
     Long2DoubleOpenHashMap closenesses = new Long2DoubleOpenHashMap();
     for (int i = 0; i < nodes.length; i++) {
       HyperLogLogPlusElement hllElem = (HyperLogLogPlusElement) row.get(nodes[i]);
-      if (hllElem.getCloseness() < n - 1) {
-        closenesses.put(nodes[i], 0);
+      if (isConnected) {
+        if (hllElem.getCloseness() < n - 1) {
+          closenesses.put(nodes[i], 0);
+        } else {
+          closenesses.put(nodes[i], (double) n / (double) hllElem.getCloseness());
+        }
       } else {
-        closenesses.put(nodes[i], (double) n / (double) hllElem.getCloseness());
+        closenesses.put(nodes[i], (double) hllElem.getrCloseness() / (double) n);
       }
     }
     return new GetClosenessPartResult(closenesses);
@@ -72,3 +77,4 @@ public class GetCloseness extends GetFunc {
     return new GetClosenessResult(closenesses);
   }
 }
+

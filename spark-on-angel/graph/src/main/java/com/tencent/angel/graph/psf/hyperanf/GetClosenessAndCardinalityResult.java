@@ -22,14 +22,14 @@ import scala.Tuple3;
 
 public class GetClosenessAndCardinalityResult extends GetResult {
 
-  private Long2ObjectOpenHashMap<Tuple3<Double, Long, Long>> results;
+  private Long2ObjectOpenHashMap<Tuple3<Double, Long, Double>> results;
 
   public GetClosenessAndCardinalityResult(
-          Long2ObjectOpenHashMap<Tuple3<Double, Long, Long>> closenesses) {
+      Long2ObjectOpenHashMap<Tuple3<Double, Long, Double>> closenesses) {
     this.results = closenesses;
   }
 
-  public Long2ObjectOpenHashMap<Tuple3<Double, Long, Long>> getResults() {
+  public Long2ObjectOpenHashMap<Tuple3<Double, Long, Double>> getResults() {
     return results;
   }
 }

@@ -30,8 +30,8 @@ import scala.Tuple3;
 
 public class GetClosenessAndCardinality extends GetFunc {
 
-  public GetClosenessAndCardinality(int matrixId, long[] nodes, long n, boolean isDirected) {
-    super(new GetHyperLogLogParam(matrixId, nodes, n, isDirected));
+  public GetClosenessAndCardinality(int matrixId, long[] nodes, long n, boolean isDirected, boolean isConnected) {
+    super(new GetHyperLogLogParam(matrixId, nodes, n, isDirected, isConnected));
   }
 
   public GetClosenessAndCardinality(GetParam param) {
@@ -51,24 +51,28 @@ public class GetClosenessAndCardinality extends GetFunc {
     long[] nodes = keyPart.getKeys();
     long n = param.getN();
     boolean isDirected = param.isDirected();
+    boolean isConnected = param.isConnected();
 
-    Long2ObjectOpenHashMap<Tuple3<Double, Long, Long>> closenesses = new Long2ObjectOpenHashMap<>();
+    Long2ObjectOpenHashMap<Tuple3<Double, Long, Double>> closenesses = new Long2ObjectOpenHashMap<>();
     for (int i = 0; i < nodes.length; i++) {
       HyperLogLogPlusElement hllElem = (HyperLogLogPlusElement) row.get(nodes[i]);
-      if (isDirected) {
+      if (isDirected && isConnected) {
         if (hllElem.getCloseness() < n) {
           closenesses
-                  .put(nodes[i], new Tuple3<>(0d, hllElem.getCardinality(), hllElem.getCloseness()));
+              .put(nodes[i], new Tuple3<>(0d, hllElem.getCardinality(), (double) hllElem.getCloseness()));
         } else {
           closenesses.put(nodes[i], new Tuple3<>(((double) n / (double) hllElem.getCloseness()),
-                  hllElem.getCardinality(),
-                  hllElem.getCloseness()));
+              hllElem.getCardinality(),
+              (double) hllElem.getCloseness()));
         }
+      } else if (isConnected) {
+        closenesses.put(nodes[i], new Tuple3<>(((double) hllElem.getCardinality() / (double) hllElem.getCloseness()),
+            hllElem.getCardinality(),
+            (double) hllElem.getCloseness()));
       } else {
-        closenesses.put(nodes[i],
-                new Tuple3<>(((double) hllElem.getCardinality() / (double) hllElem.getCloseness()),
-                        hllElem.getCardinality(),
-                        hllElem.getCloseness()));
+        closenesses.put(nodes[i], new Tuple3<>((double) hllElem.getrCloseness() / (double) n,
+            hllElem.getCardinality(),
+            (double) hllElem.getrCloseness()));
       }
     }
     return new GetClosenessAndCardinalityPartResult(closenesses);
@@ -76,7 +80,7 @@ public class GetClosenessAndCardinality extends GetFunc {
 
   @Override
   public GetResult merge(List<PartitionGetResult> partResults) {
-    Long2ObjectOpenHashMap<Tuple3<Double, Long, Long>> closenesses = new Long2ObjectOpenHashMap<>();
+    Long2ObjectOpenHashMap<Tuple3<Double, Long, Double>> closenesses = new Long2ObjectOpenHashMap<>();
     for (PartitionGetResult r : partResults) {
       GetClosenessAndCardinalityPartResult rr = (GetClosenessAndCardinalityPartResult) r;
       closenesses.putAll(rr.getClosenesses());

@@ -34,8 +34,8 @@ public class ComputeCloseness extends UpdateFunc {
     super(param);
   }
 
-  public ComputeCloseness(int matrixId, int r) {
-    super(new ComputeClosenessParam(matrixId, r));
+  public ComputeCloseness(int matrixId, int r, boolean isConnected) {
+    super(new ComputeClosenessParam(matrixId, r, isConnected));
   }
 
   public ComputeCloseness() {
@@ -46,14 +46,15 @@ public class ComputeCloseness extends UpdateFunc {
   public void partitionUpdate(PartitionUpdateParam partParam) {
     ComputeClosenessPartParam param = (ComputeClosenessPartParam) partParam;
     ServerLongAnyRow row = (ServerLongAnyRow) psContext.getMatrixStorageManager()
-            .getRow(param.getPartKey(), 0);
+        .getRow(param.getPartKey(), 0);
     int r = param.getR();
+    boolean isConnected = param.getIsConnected();
 
     ObjectIterator<Long2ObjectMap.Entry<IElement>> iter = row.iterator();
     while (iter.hasNext()) {
       HyperLogLogPlusElement hllElem = (HyperLogLogPlusElement) iter.next().getValue();
       if (hllElem.isActive()) {
-        hllElem.updateCloseness(r);
+        hllElem.updateCloseness(r, isConnected);
       }
     }
   }

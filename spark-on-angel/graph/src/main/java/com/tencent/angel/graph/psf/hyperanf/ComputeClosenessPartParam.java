@@ -23,36 +23,45 @@ import io.netty.buffer.ByteBuf;
 public class ComputeClosenessPartParam extends PartitionUpdateParam {
 
   private int r;
+  private boolean isConnected;
 
-  public ComputeClosenessPartParam(int matrixId, PartitionKey pkey, int r) {
+  public ComputeClosenessPartParam(int matrixId, PartitionKey pkey, int r, boolean isConnected) {
     super(matrixId, pkey);
     this.r = r;
+    this.isConnected = isConnected;
   }
 
   public ComputeClosenessPartParam() {
-    this(0, null, 0);
+    this(0, null, 0, true);
   }
 
   public int getR() {
     return r;
   }
 
+  public boolean getIsConnected() {
+    return isConnected;
+  }
+
   @Override
   public void serialize(ByteBuf buf) {
     super.serialize(buf);
     buf.writeInt(r);
+    buf.writeBoolean(isConnected);
   }
 
   @Override
   public void deserialize(ByteBuf buf) {
     super.deserialize(buf);
     r = buf.readInt();
+    isConnected = buf.readBoolean();
   }
 
   @Override
   public int bufferLen() {
     int len = super.bufferLen();
     len += 4;
+    len += 1;
     return len;
   }
 }
