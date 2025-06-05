@@ -20,6 +20,7 @@ package com.tencent.angel.spark.examples.cluster
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.graph.embedding.deepwalk.DeepWalk
+import com.tencent.angel.graph.embedding.deepwalkNoWeight.DeepWalkNoWeight
 import com.tencent.angel.graph.utils.GraphIO
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
