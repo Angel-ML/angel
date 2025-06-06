@@ -1,5 +1,6 @@
 package com.tencent.angel.graph.embedding.deepwalkNoWeight
 
+import com.tencent.angel.graph.psf.neighbors.SampleNeighborsWithCount.NeighborsTableElement
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap
 
 import scala.collection.mutable.ArrayBuffer
