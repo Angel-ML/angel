@@ -49,14 +49,16 @@ public class HashPartitioner implements Partitioner {
   protected Configuration conf;
 
   /**
-   * Partition number per server
+   * Total partition number
    */
-  protected int partNumPerServer;
+  protected int totalPartNum;
 
   /**
    * Part id to ps id map
    */
   protected int[] partId2serverIndex;
+
+  private volatile boolean splitted = false;
 
   @Override
   public void init(MatrixContext mContext, AMContext context) {
@@ -65,52 +67,51 @@ public class HashPartitioner implements Partitioner {
     this.conf = context.getConf();
 
     // Partition number use set
-    int totalPartNum = mContext.getPartitionNum();
+    totalPartNum = mContext.getPartitionNum();
     int psNum = conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
 
     if(totalPartNum > 0) {
       // Use total partition number if set
-      partNumPerServer = Math.max(totalPartNum / psNum, 1);
-      LOG.info("Use set partition number=" + totalPartNum
-          + ", ps number=" + psNum
-          + ", partition per server=" + partNumPerServer
-          + ", total partition number adjust to " + partNumPerServer * psNum);
-      mContext.setPartitionNum(partNumPerServer * psNum);
+      LOG.info("Use set partition number=" + totalPartNum + ", ps number=" + psNum);
+      mContext.setPartitionNum(totalPartNum);
     } else {
       // Use partition number per server
-      partNumPerServer =
-          conf.getInt(AngelConf.ANGEL_MODEL_PARTITIONER_PARTITION_NUM_PERSERVER,
-              AngelConf.DEFAULT_ANGEL_MODEL_PARTITIONER_PARTITION_NUM_PERSERVER);
+      totalPartNum =
+              conf.getInt(AngelConf.ANGEL_MODEL_PARTITIONER_PARTITION_NUM_PERSERVER,
+                      AngelConf.DEFAULT_ANGEL_MODEL_PARTITIONER_PARTITION_NUM_PERSERVER) * psNum;
     }
 
-    if(partNumPerServer <= 0) {
-      throw new AngelException("Partition number per server " + partNumPerServer + " is not valid");
+    if(totalPartNum <= 0) {
+      throw new AngelException("total partition number " + totalPartNum + " is not valid");
     }
 
-    this.partId2serverIndex = new int[psNum * partNumPerServer];
+    this.partId2serverIndex = new int[totalPartNum];
   }
 
   @Override
   public List<PartitionMeta> getPartitions() {
     int psNum = conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
-    List<PartitionMeta> partitions = new ArrayList<>(psNum * partNumPerServer);
+    List<PartitionMeta> partitions = new ArrayList<>(totalPartNum);
     int matrixId = mContext.getMatrixId();
-    for(int psIndex = 0; psIndex < psNum; psIndex++) {
-      for(int partIndex = 0; partIndex < partNumPerServer; partIndex++) {
-        int partId = psIndex * partNumPerServer + partIndex;
-        PartitionMeta partMeta = new PartitionMeta(matrixId, partId,
-            0, mContext.getRowNum(), partId, partId + 1);
-        partitions.add(partMeta);
-        partId2serverIndex[partId] = partId % psNum;
-      }
+    for(int partId = 0; partId < totalPartNum; partId++) {
+      PartitionMeta partMeta = new PartitionMeta(matrixId, partId,
+         0, mContext.getRowNum(), partId, partId + 1);
+      partitions.add(partMeta);
+      partId2serverIndex[partId] = partId % psNum;
     }
 
+    splitted = true;
     return partitions;
   }
 
   @Override
   public int assignPartToServer(int partId) {
-    return partId2serverIndex[partId];
+    if(splitted) {
+      return partId2serverIndex[partId];
+    } else {
+      int serverNum = conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
+      return partId % serverNum;
+    }
   }
 
   @Override
