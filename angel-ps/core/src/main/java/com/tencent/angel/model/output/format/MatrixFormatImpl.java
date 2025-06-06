@@ -62,7 +62,7 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
   private final static Log LOG = LogFactory.getLog(MatrixFormatImpl.class);
   protected final Configuration conf;
   protected final int partNumPerFile;
-  protected final boolean useRange;
+  //protected final boolean useRange;
 
   public MatrixFormatImpl(Configuration conf) {
     this(conf, -1);
@@ -71,8 +71,8 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
   public MatrixFormatImpl(Configuration conf, int partNumPerFile) {
     this.conf = conf;
     this.partNumPerFile = partNumPerFile;
-    this.useRange = "range".equalsIgnoreCase(
-            conf.get(AngelConf.ANGEL_PS_ROUTER_TYPE, AngelConf.DEFAULT_ANGEL_PS_ROUTER_TYPE));
+    //this.useRange = "range".equalsIgnoreCase(
+    //    conf.get(AngelConf.ANGEL_PS_ROUTER_TYPE, AngelConf.DEFAULT_ANGEL_PS_ROUTER_TYPE));
   }
 
   /**
@@ -84,7 +84,7 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
    * @param output output stream
    */
   public abstract void save(ServerPartition part, MatrixPartitionMeta partMeta,
-      PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException;
+                            PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException;
 
   /**
    * Load a matrix partition
@@ -188,9 +188,15 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
       }
 
       Map<Integer, MatrixPartitionMeta> partIdToFileMetaMap = matrixFilesMeta.getPartMetas();
+      int dataPartitionNum = partIdToFileMetaMap.size();
       for (int partId : partitionMaps.keySet()) {
-        partFileMetas.add(partIdToFileMetaMap.get(partId));
-        psMatrixFilesMeta.addPartitionMeta(partId, partIdToFileMetaMap.get(partId));
+        if (partId < dataPartitionNum) {
+          partFileMetas.add(partIdToFileMetaMap.get(partId));
+          psMatrixFilesMeta.addPartitionMeta(partId, partIdToFileMetaMap.get(partId));
+        } else {
+          LOG.error("partitionId(in range: [0, psPartitionNum)) > partitionId in meta file: "
+                  + partId + " > " + (dataPartitionNum - 1));
+        }
       }
     } else {
       Path psMetaFilePath = new Path(matrixFilesPath, ModelFilesConstent.psModelMetaFileName);
@@ -613,9 +619,12 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
       MatrixPartitionMeta partMeta;
       long startCol = 0;
       long endCol = 0;
+
+      boolean useRange = !matrix.getMatrixMeta().isHash();
       if(useRange) {
         startCol = partKey.getStartCol();
         endCol = partKey.getEndCol();
+        LOG.info("Range partition, set startCol = " + startCol + ", endCol = " + endCol);
       }
 
       partMeta =

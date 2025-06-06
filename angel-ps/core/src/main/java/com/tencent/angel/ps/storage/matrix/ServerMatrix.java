@@ -54,6 +54,8 @@ public class ServerMatrix {
 
   private final PSContext context;
 
+  private final MatrixMeta matrixMeta;
+
   /**
    * The partitions in this PS
    */
@@ -67,6 +69,7 @@ public class ServerMatrix {
    */
   public ServerMatrix(MatrixMeta matrixMeta, PSContext context) {
     this.context = context;
+    this.matrixMeta = matrixMeta;
 
     LOG.info(
         "Creating a Server Matrix, id: " + matrixMeta.getId() + ", name: " + matrixMeta.getName());
@@ -176,5 +179,21 @@ public class ServerMatrix {
     for (ServerPartition part : partitionMaps.values()) {
       part.setState(PartitionState.READ_AND_WRITE);
     }
+  }
+
+  public HashMap<Integer, ServerPartition> getPartitionMaps() {
+    return partitionMaps;
+  }
+
+  public int getMatrixId() {
+    return matrixId;
+  }
+
+  public String getMatrixName() {
+    return matrixName;
+  }
+
+  public MatrixMeta getMatrixMeta() {
+    return matrixMeta;
   }
 }
