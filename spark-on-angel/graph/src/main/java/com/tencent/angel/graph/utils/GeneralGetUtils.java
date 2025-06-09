@@ -30,6 +30,7 @@ public class GeneralGetUtils {
     MatrixMeta meta = psContext.getMatrixMetaManager().getMatrixMeta(param.getMatrixId());
 
     try {
+	System.out.println("sssaaaa")
       return new PartGeneralGetResult(meta.getValueClass(), nodeIds, data);
     } catch (ClassNotFoundException e) {
       throw new AngelException("Can not get value class ");
