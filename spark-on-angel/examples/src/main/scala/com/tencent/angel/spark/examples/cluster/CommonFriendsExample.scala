@@ -22,7 +22,8 @@ import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.graph.statistics.commonfriends._
-import com.tencent.angel.graph.statistics.commonfriends.incComFriends.IncComFriends
+import com.tencent.angel.graph.statistics.commonfriends.vertexCut.CommonFriendsV1
+import com.tencent.angel.graph.statistics.commonfriends.incComFriends.v1.IncComFriends
 import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
 import com.tencent.angel.spark.ml.util.SparkUtils
 import org.apache.spark.storage.StorageLevel
@@ -32,12 +33,12 @@ object CommonFriendsExample {
 
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
-    val mode = params.getOrElse("mode", "local")
+    val mode = params.getOrElse("mode", "yarn-cluster")
     val sc = start(mode)
 
     val input = params.getOrElse("input", null)
     val extraInput = params.getOrElse("extraInput", null)
-    val sep = Delimiter.parse(params.getOrElse("sep", Delimiter.TAB))
+    val sep = Delimiter.parse(params.getOrElse("sep", Delimiter.SPACE))
     val output = params.getOrElse("output", null)
 
     var partitionNum = params.getOrElse("partitionNum", "100").toInt
@@ -46,6 +47,7 @@ object CommonFriendsExample {
 
     val batchSize = params.getOrElse("batchSize", "10000").toInt
     val pullBatchSize = params.getOrElse("pullBatchSize", "1000").toInt
+
     val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
     val enableCheck = params.getOrElse("enableCheck", "false").toBoolean
     val bufferSize = params.getOrElse("bufferSize", "1000000").toInt
@@ -60,12 +62,14 @@ object CommonFriendsExample {
     val incEdgesPath = params.getOrElse("incEdgesPath", null)
     if (isIncremented) assert(incEdgesPath != null, s"must set incEdgesPath when isIncremented is true.")
 
-    val maxNodeId = params.getOrElse("maxNodeId", "10000").toLong
+    val maxNodeId = params.getOrElse("maxNodeId", "2147483647").toLong
     val minNodeId = params.getOrElse("minNodeId", "0").toLong
     assert(maxNodeId > minNodeId, s"maxNodeId must be greater than minNodeId.")
 
     // only output edges with commonFriends <= maxComFriendsNum, else output as -1
     val maxComFriendsNum = params.getOrElse("maxComFriendsNum", "2147483647").toInt
+
+    val version = params.getOrElse("version", "edge-cut")
     val numPartitionsFactor = params.getOrElse("numPartitionsFactor", "3").toInt
     val cores = SparkUtils.getNumCores(sc.getConf)
     partitionNum =  if (partitionNum > cores * numPartitionsFactor) partitionNum else cores * numPartitionsFactor
@@ -74,6 +78,7 @@ object CommonFriendsExample {
       .getOrElse(throw new Exception("checkpoint dir not provided"))
     sc.setCheckpointDir(cpDir)
 
+    val approxNumNodes = params.getOrElse("approxNumNodes", "-1").toLong
     start(mode)
     val startTime = System.currentTimeMillis()
 
@@ -90,6 +95,7 @@ object CommonFriendsExample {
         .setPSPartitionNum(psPartitionNum)
         .setMinNodeId(minNodeId)
         .setMaxNodeId(maxNodeId)
+      commonFriends.setNumNodes(approxNumNodes)
 
       val incEdges = GraphIO.load(incEdgesPath, false, srcIndex, dstIndex, sep = sep)
         .select("src", "dst").rdd
@@ -101,24 +107,42 @@ object CommonFriendsExample {
       commonFriends.setOutputPath(output)
       commonFriends.transform(df)
     } else {
-      val commonFriends = new CommonFriends()
-        .setPartitionNum(partitionNum)
-        .setStorageLevel(storageLevel)
-        .setBatchSize(batchSize)
-        .setPullBatchSize(pullBatchSize)
-        .setDebugMode(enableCheck)
-        .setBufferSize(bufferSize)
-        .setIsCompressed(isCompressed)
-        .setPSPartitionNum(psPartitionNum)
-        .setInput(input)
-        .setExtraInputs(Array(extraInput))
-        .setSrcNodeIndex(srcIndex)
-        .setDstNodeIndex(dstIndex)
-        .setCompressIndex(compressIndex)
-        .setDelimiter(sep)
-      commonFriends.setMaxComFriendsNum(maxComFriendsNum)
-      val mapping = commonFriends.transform(df)
-      GraphIO.save(mapping, output)
+      val result =  version match {
+        case "vertex-cut" =>
+          val commonFriends = new CommonFriendsV1()
+            .setPartitionNum(partitionNum)
+            .setStorageLevel(storageLevel)
+            .setBatchSize(batchSize)
+            .setPullBatchSize(pullBatchSize)
+            .setIsCompressed(isCompressed)
+            .setPSPartitionNum(psPartitionNum)
+            .setInput(input)
+            .setExtraInputs(Array(extraInput))
+            .setSrcNodeIndex(srcIndex)
+            .setDstNodeIndex(dstIndex)
+            .setCompressIndex(compressIndex)
+            .setDelimiter(sep)
+          commonFriends.setMaxComFriendsNum(maxComFriendsNum)
+          commonFriends.setNumNodes(approxNumNodes)
+          commonFriends.transform(df)
+        case "edge-cut" =>
+          val commonFriends = new CommonFriends()
+            .setPartitionNum(partitionNum)
+            .setStorageLevel(storageLevel)
+            .setBatchSize(batchSize)
+            .setPullBatchSize(pullBatchSize)
+            .setIsCompressed(isCompressed)
+            .setPSPartitionNum(psPartitionNum)
+            .setInput(input)
+            .setExtraInputs(Array(extraInput))
+            .setSrcNodeIndex(srcIndex)
+            .setDstNodeIndex(dstIndex)
+            .setCompressIndex(compressIndex)
+            .setDelimiter(sep)
+          commonFriends.setMaxComFriendsNum(maxComFriendsNum)
+          commonFriends.transform(df)
+      }
+      GraphIO.save(result, output)
     }
 
     println(s"cost ${System.currentTimeMillis() - startTime} ms")
@@ -142,11 +166,11 @@ object CommonFriendsExample {
       "-XX:+UseG1GC -XX:MaxGCPauseMillis=1000 -XX:G1HeapRegionSize=32M " +
       "-XX:InitiatingHeapOccupancyPercent=60 -XX:ConcGCThreads=4 -XX:ParallelGCThreads=4 "
 
-    println(s"executorJvmOptions = ${executorJvmOptions}")
+    println(s"executorJvmOptions = $executorJvmOptions")
     conf.set("spark.executor.extraJavaOptions", executorJvmOptions)
 
     conf.setMaster(mode)
-    conf.setAppName("commonfriends")
+    conf.setAppName("commonFriends")
     val sc = SparkContext.getOrCreate(conf)
     sc
   }
