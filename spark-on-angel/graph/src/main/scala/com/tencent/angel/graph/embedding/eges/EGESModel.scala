@@ -1,7 +1,6 @@
 package com.tencent.angel.graph.embedding.eges
 
 import java.util.concurrent.TimeUnit
-
 import com.tencent.angel.graph.common.param.ModelContext
 import com.tencent.angel.graph.utils.ModelContextUtils
 import com.tencent.angel.ml.core.optimizer.decayer.{StandardDecay, StepSizeScheduler}
@@ -104,6 +103,86 @@ class EGESModel(numNode: Long,
       psWeightMatrix.asyncPsfUpdate(new EmbeddingModelRandomize(new WeightsRandomizeUpdateParam(psWeightMatrix.id,
         numWeightsSI + 1, seed, 1))).get(1800000, TimeUnit.MILLISECONDS)
       println(s"Weight matrix successfully Randomized, cost ${(System.currentTimeMillis() - beforeRandomize) / 1000.0}s")
+    }
+  }
+
+  def extraInitialize(extraInputRDD: RDD[String], extraOutputRDD: RDD[String], extraWeightSIRDD: RDD[String], params: EGESParam): Unit = {
+    randomInitialize(Random.nextInt())
+    val conf = SparkContext.getOrCreate().getConf
+    val keyValueSep = conf.get("spark.hadoop.angel.line.keyvalue.sep", "colon") match {
+      case "space" => " "
+      case "comma" => ","
+      case "tab" => "\t"
+      case "colon" => ":"
+      case "bar" => "\\|"
+    }
+    val featSep = conf.get("spark.hadoop.angel.line.feature.sep", "space") match {
+      case "space" => " "
+      case "comma" => ","
+      case "tab" => "\t"
+      case "colon" => ":"
+      case "bar" => "\\|"
+    }
+    var beforeInitialize = System.currentTimeMillis()
+    if (extraInputRDD != null) {
+      extraInputRDD.mapPartitions { iterator =>
+        iterator.sliding(5000, 5000)
+          .foreach(batch => extraUpdate(batch.toArray, keyValueSep, featSep, true, true))
+        Iterator.single()
+      }.count()
+    }
+    LogUtils.logTime(s"Model successfully extra Initial embedding, " +
+      s"cost ${(System.currentTimeMillis() - beforeInitialize) / 1000.0}s")
+    if (extraOutputRDD != null) {
+      beforeInitialize = System.currentTimeMillis()
+      extraOutputRDD.mapPartitions { iterator =>
+        iterator.sliding(5000, 5000)
+          .foreach(batch => extraUpdate(batch.toArray, keyValueSep, featSep, true, false))
+        Iterator.single()
+      }.count()
+      LogUtils.logTime(s"Model successfully extra Initial context embedding, " +
+        s"cost ${(System.currentTimeMillis() - beforeInitialize) / 1000.0}s")
+    }
+
+    if (extraWeightSIRDD != null) {
+      beforeInitialize = System.currentTimeMillis()
+      extraWeightSIRDD.mapPartitions { iterator =>
+        iterator.sliding(5000, 5000)
+          .foreach(batch => extraUpdate(batch.toArray, keyValueSep, featSep, false, false))
+        Iterator.single()
+      }.count()
+      LogUtils.logTime(s"Model successfully extra Initial weightSI, " +
+        s"cost ${(System.currentTimeMillis() - beforeInitialize) / 1000.0}s")
+    }
+  }
+
+  def extraUpdate(strings: Array[String], keyValueSep: String, featSep: String, isEmbedding: Boolean, isInput: Boolean): Unit = {
+    val updates = new Int2ObjectOpenHashMap[Array[Float]]()
+    if (keyValueSep.equals(featSep)) {
+      strings.map { line =>
+        val splits = line.split(keyValueSep)
+        val key = splits(0).toInt
+        val value = splits.slice(1, splits.length).map(v => v.toFloat)
+        updates.put(key, value)
+      }
+    } else {
+      strings.map { line =>
+        val splits = line.split(keyValueSep)
+        val key = splits(0).toInt
+        val value = splits(1).split(featSep).map(v => v.toFloat)
+        updates.put(key, value)
+      }
+    }
+    if (isEmbedding) {
+      if (isInput) {
+        psMatrix.psfUpdate(new LINEAdjust(new LINEAdjustParam(matrixId, updates, null,
+          2, true))).get()
+      } else {
+        psMatrix.psfUpdate(new LINEAdjust(new LINEAdjustParam(matrixId, null, updates,
+          2, true))).get()
+      }
+    } else {
+      psWeightMatrix.psfUpdate(new ExtraInitEmbedding(new ExtraInitEmbeddingParam(psWeightMatrix.id, updates))).get()
     }
   }
 
