@@ -6,6 +6,8 @@ import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.ml.util.SparkUtils
 import com.tencent.angel.graph.embedding.eges._
+import com.tencent.angel.graph.utils.GraphIO
+import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkConf
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
@@ -21,7 +23,7 @@ object EGESExample {
     val input = params.getOrElse("input", "")
     val output = params.getOrElse("output", "")
     val matrixOutput = params.getOrElse("matrixOutput", "")
-    val loadPath = params.getOrElse("loadPath", "")
+    val matrixLoadPath = params.getOrElse("matrixLoadPath", "")
     val embeddingDim = params.getOrElse("embeddingDim", "32").toInt
     val numNegSamples = params.getOrElse("numNegSamples", "5").toInt
     val numEpoch = params.getOrElse("numEpoch", "5").toInt
@@ -35,6 +37,8 @@ object EGESExample {
     val weightedSI = params.getOrElse("weightedSI", "true").toBoolean // weight different SIs or not
     val numWeightsSI = params.getOrElse("numWeightsSI", "0").toInt // number of SIs
     val needRemapping = params.getOrElse("needRemapping", "false").toBoolean
+    val mappingPath = params.getOrElse("mappingPath", "")
+    val predictInput = params.getOrElse("predictInput", "")
 
     // val sc = start()
     val ss = startSS(mode)
@@ -49,28 +53,12 @@ object EGESExample {
 
     // load data: srcId + dstId + sideinfoIds, ID remapping
     var start = System.currentTimeMillis()
-    val (data: RDD[Array[Int]], minNodeId, maxNodeId, minId, maxId) = if (needRemapping) {
-      EGESOps.EGESDataProcess(ss, input, output, dataPartitionNum, numWeightsSI)
-    } else {
-      EGESOps.EGESDataProcessWithoutRemap(ss, input, dataPartitionNum, numWeightsSI)
-    }
-    data.persist(StorageLevel.DISK_ONLY)
+    val (newEdgesSI, minNodeId, maxNodeId, minId, maxId) =
+      EGESOps.EGESDataProcess(ss, input, output, mappingPath, dataPartitionNum, numWeightsSI, needRemapping)
+    var end = System.currentTimeMillis()
+    println(s"the data processing time is ${(end - start) / 1000}s.")
 
     PSContext.getOrCreate(ss.sparkContext)
-
-    // newEdgesSI is replicated and remapped neighborTable with side information
-    val newEdgesSI:RDD[(Int, Int, Array[Int])] = data.map{
-      elements =>
-        (elements(0), elements(1), elements.slice(2, elements.length))
-    }
-    newEdgesSI.persist(StorageLevel.DISK_ONLY)
-    val numEdges = newEdgesSI.count()
-    data.unpersist()
-    var end = System.currentTimeMillis()
-
-    println(s"the minNodeId, maxNodeId, minId, maxId and the number of edges are $minNodeId, $maxNodeId, " +
-      s"$minId, $maxId, $numEdges.")
-    println(s"the data processing time is ${(end - start) / 1000}s.")
 
     // model training
     val param = new EGESParam()
@@ -90,8 +78,25 @@ object EGESExample {
       .setNumWeightsSI(numWeightsSI)
       .setWeightedSI(weightedSI)
     val model = new EGESModel(param)
-    if (loadPath.length > 0) {
-      model.load(loadPath)
+
+    var extraInputEmbeddingRDD: RDD[String] = null
+    var extraContextEmbeddingRDD: RDD[String] = null
+    var weightSIRDD: RDD[String] = null
+    if (matrixLoadPath.nonEmpty) {
+      val embeddingPath = matrixLoadPath + "/embedding/embedding"
+      val contextEmbeddingPath = matrixLoadPath + "/contextEmbedding/embedding"
+      val weightSIPath = matrixLoadPath + "/weightSI"
+      val ss = SparkSession.builder().getOrCreate()
+      if (pathIFExists(embeddingPath, ss)) {
+        extraInputEmbeddingRDD = GraphIO.loadString(embeddingPath)
+      }
+      if (pathIFExists(contextEmbeddingPath, ss)) {
+        extraContextEmbeddingRDD = GraphIO.loadString(contextEmbeddingPath)
+      }
+      if (pathIFExists(weightSIPath, ss)) {
+        weightSIRDD = GraphIO.loadString(weightSIPath)
+      }
+      model.extraInitialize(extraInputEmbeddingRDD, extraContextEmbeddingRDD, weightSIRDD, param)
     } else {
       model.randomInitialize(Random.nextInt())
     }
@@ -100,12 +105,19 @@ object EGESExample {
 
     println("start computing and saving aggregateEmbedding.")
     start = System.currentTimeMillis()
-    val nodeSideInfoTab = newEdgesSI.map(e => ((Array[Int](e._1) ++ e._3).mkString(" "), 1)) // remapping edges with side information
+    val predictEdgesSI = if (predictInput.nonEmpty) {
+      val (predEdgesSI, minNodeIdPred, maxNodeIdPred, _, _) =
+        EGESOps.EGESDataProcess(ss, predictInput, "", output, dataPartitionNum, numWeightsSI, needRemapping)
+      param.setMinIndex(minNodeIdPred).setMaxIndex(maxNodeIdPred)
+      predEdgesSI
+    } else newEdgesSI
+
+    val nodeSideInfoTab = predictEdgesSI.map(e => ((Array[Int](e._1) ++ e._3).mkString(" "), 1)) // remapping edges with side information
       .reduceByKey(_ + _).map(e => e._1).map(e => e.stripLineEnd.split(" ").map(v => v.toInt))
-      .map(e => (e(0), 0, e.slice(1, e.length)))
+      .map(e => (e(0), minNodeId, e.slice(1, e.length)))
     nodeSideInfoTab.persist(StorageLevel.DISK_ONLY)
     println(s"the size of nodeSideInfoTab is ${nodeSideInfoTab.count()}.")
-    newEdgesSI.unpersist()
+    predictEdgesSI.unpersist()
     val aggregateEmbedding = model.embeddingAggregate(nodeSideInfoTab, param)
     aggregateEmbedding.persist(StorageLevel.DISK_ONLY)
     println(s"the size of aggregateEmbeddings is ${aggregateEmbedding.count()}.")
@@ -117,6 +129,12 @@ object EGESExample {
     println(s"save aggregateEmbedding successfully, and the cost time is ${(end - start) / 1000}s.")
 
     stopSS()
+  }
+
+  private def pathIFExists(modelPath: String, ss: SparkSession): Boolean = {
+    val path = new Path(modelPath)
+    val fs = path.getFileSystem(ss.sparkContext.hadoopConfiguration)
+    fs.exists(path)
   }
 
   def startSS(mode: String): SparkSession = {
@@ -133,13 +151,9 @@ object EGESExample {
     conf.set("spark.hadoop.io.file.buffer.size", "16000000")
 
     // Add jvm parameters for executors
-    var executorJvmOptions = " -verbose:gc -XX:-PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:<LOG_DIR>/gc.log " +
+    val executorJvmOptions = " -verbose:gc -XX:-PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:<LOG_DIR>/gc.log " +
       "-XX:+UseG1GC -XX:MaxGCPauseMillis=1000 -XX:G1HeapRegionSize=32M " +
       "-XX:InitiatingHeapOccupancyPercent=50 -XX:ConcGCThreads=4 -XX:ParallelGCThreads=4 "
-
-    // -javaagent:metricAgent.jar=useYarn=true for NGCP, which collects metrics
-    if (conf.get("spark.hadoop.angel.metrics.enable", "false").toBoolean)
-      executorJvmOptions += " -javaagent:metricAgent.jar=useYarn=true "
 
     println(s"executorJvmOptions = $executorJvmOptions")
     conf.set("spark.executor.extraJavaOptions", executorJvmOptions)
@@ -152,5 +166,4 @@ object EGESExample {
     PSContext.stop()
     SparkSession.builder().getOrCreate().stop()
   }
-
 }
