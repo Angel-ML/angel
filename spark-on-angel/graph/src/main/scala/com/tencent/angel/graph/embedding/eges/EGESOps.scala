@@ -1,31 +1,45 @@
 package com.tencent.angel.graph.embedding.eges
 
 import java.util.{HashMap => JHashMap, HashSet => JHashSet}
-
 import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.storage.StorageLevel
-
 import scala.collection.mutable.ArrayBuffer
+import java.util.{HashMap => JHashMap}
+import java.util.{HashSet => JHashSet}
+
+import org.apache.spark.SparkContext
 
 object EGESOps {
-  /* load Node Ids and Side Information Ids */
-  def EGESDataProcess(ss: SparkSession, input: String, output: String, dataPartNum: Int, numSideInfo: Int):
-  (RDD[Array[Int]], Int, Int, Int, Int) = {
-    deleteIfExists(output + "/itemMappingTab", ss)
-    deleteIfExists(output + "/sideInfoMappingTab", ss)
 
-    val data: RDD[String] = ss.sparkContext.textFile(input).repartition(dataPartNum)
-      .filter(line => line != null && line.length > 0)
+  def parseData(ss: SparkSession, input: String, dataPartNum: Int): RDD[String] = {
+    ss.sparkContext.textFile(input).repartition(dataPartNum)
+      .filter(line => line != null && line.nonEmpty)
       .map(line => (line, 1)).reduceByKey(_ + _).map(line => line._1)
+  }
+  /* load Node Ids and Side Information Ids */
+  def EGESDataProcessWithRemap(ss: SparkSession, input: String, output: String, mappingPath: String, dataPartNum: Int, numSideInfo: Int):
+  (RDD[Array[Int]], Int, Int, Int, Int) = {
+
+    val data: RDD[String] = parseData(ss, input, dataPartNum)
     data.persist(StorageLevel.DISK_ONLY)
 
+    val mappingData = if (mappingPath.nonEmpty) {
+      val mappingItem = parseData(ss, mappingPath + "/itemMappingTab", dataPartNum)
+      val mappingSideInfo = parseData(ss, mappingPath + "/sideInfoMappingTab", dataPartNum)
+      Option((mappingItem, mappingSideInfo))
+    } else None
+
     // do remapping to the tables
-    val tempNeigh = corpusStringToInt(data)
+    val tempNeigh = corpusStringToInt(data, mappingData)
     val (remapTab, itemMappingTab, sideInfoMappingTab) = (tempNeigh._1, tempNeigh._2, tempNeigh._3)
-    saveMap(itemMappingTab, output + "/itemMappingTab", " ")
-    saveMap(sideInfoMappingTab, output + "/sideInfoMappingTab", " ")
+    if (output.nonEmpty) {
+      deleteIfExists(output + "/itemMappingTab", ss)
+      deleteIfExists(output + "/sideInfoMappingTab", ss)
+      saveMap(itemMappingTab, output + "/itemMappingTab", " ")
+      saveMap(sideInfoMappingTab, output + "/sideInfoMappingTab", " ")
+    }
 
     val remapNeiTab = remapTab.map(line => line.slice(0,2))
     remapNeiTab.persist(StorageLevel.DISK_ONLY)
@@ -43,7 +57,7 @@ object EGESOps {
   (RDD[Array[Int]], Int, Int, Int, Int) = {
     // read input data and preProcess
     val data: RDD[Array[Int]] = ss.sparkContext.textFile(input).repartition(dataPartNum).filter(line =>
-      line != null && line.length > 0).map(line => (line, 1)).reduceByKey(_ + _).map(line => line._1)
+        line != null && line.length > 0).map(line => (line, 1)).reduceByKey(_ + _).map(line => line._1)
       .map(line => line.stripLineEnd.split("[\\s+|,]")).filter(line => line.length == numSideInfo + 2)
       .map(e => e.map(v => v.toInt))
     data.persist(StorageLevel.DISK_ONLY)
@@ -54,6 +68,34 @@ object EGESOps {
     val maxId = data.map(e => e.max).max()
     data.unpersist()
     (data, minNodeId, maxNodeId, minId, maxId)
+  }
+
+  def EGESDataProcess(ss: SparkSession,
+                      input: String,
+                      output: String,
+                      mappingPath: String,
+                      dataPartNum: Int,
+                      numSideInfo: Int,
+                      needRemapping: Boolean): (RDD[(Int, Int, Array[Int])], Int, Int, Int, Int) = {
+    val (data: RDD[Array[Int]], minNodeId, maxNodeId, minId, maxId) = if (needRemapping) {
+      EGESOps.EGESDataProcessWithRemap(ss, input, output, mappingPath, dataPartNum, numSideInfo)
+    } else {
+      EGESOps.EGESDataProcessWithoutRemap(ss, input, dataPartNum, numSideInfo)
+    }
+    data.persist(StorageLevel.DISK_ONLY)
+
+    // newEdgesSI is replicated and remapped neighborTable with side information
+    val newEdgesSI:RDD[(Int, Int, Array[Int])] = data.map{
+      elements =>
+        (elements(0), elements(1), elements.slice(2, elements.length))
+    }
+    newEdgesSI.persist(StorageLevel.DISK_ONLY)
+    val numEdges = newEdgesSI.count()
+    data.unpersist()
+
+    println(s"the minNodeId, maxNodeId, minId, maxId and the number of edges are $minNodeId, $maxNodeId, " +
+      s"$minId, $maxId, $numEdges.")
+    (newEdgesSI, minNodeId, maxNodeId, minId, maxId)
   }
 
   def deleteIfExists(modelPath: String, ss: SparkSession): Unit = {
@@ -101,29 +143,58 @@ object EGESOps {
   def save(scores: RDD[(Int, Array[Float])],
            path: String,
            seq: String = " "): Unit = {
-    scores.map{
-      case line =>
-        var strings = s"${line._1}$seq"
-        for (i <- 0 until line._2.length) {
-          strings = strings ++ s"${line._2(i)}$seq"
-        }
-        strings
-    }.saveAsTextFile(path)
+    val conf = SparkContext.getOrCreate().getConf
+    val keyValueSep = conf.get("spark.hadoop.angel.line.keyvalue.sep", "space") match {
+      case "space" => " "
+      case "comma" => ","
+      case "tab" => "\t"
+      case "colon" => ":"
+      case "bar" => "|"
+    }
+    val featSep = conf.get("spark.hadoop.angel.line.feature.sep", "space") match {
+      case "space" => " "
+      case "comma" => ","
+      case "tab" => "\t"
+      case "colon" => ":"
+      case "bar" => "|"
+    }
+    scores.map(line => line._1 + keyValueSep + line._2.mkString(featSep)).saveAsTextFile(path)
   }
 
-  def corpusStringToInt(data: RDD[String]): (RDD[Array[Int]], RDD[(Int, String)], RDD[(Int, String)]) = {
+  def corpusStringToInt(data: RDD[String],
+                        mappingData: Option[(RDD[String], RDD[String])] = None
+                       ): (RDD[Array[Int]], RDD[(Int, String)], RDD[(Int, String)]) = {
 
     // All distinct strings
-    val strings = data.filter(f => f != null && f.length > 0)
-      .map(f => f.stripLineEnd.split("[\\s+|,]"))
+    val strings = data.map(f => f.stripLineEnd.split("[\\s+|,]"))
 
     val stringsEdge = strings.map(e => e.slice(0,2)).flatMap(e => e).map(e => (e, 1)).reduceByKey(_ + _).map(f => f._1)
     val stringsSideInfo = strings.map(e => e.slice(2,e.length)).flatMap(e => e)
       .map(e => (e, 1)).reduceByKey(_ + _).map(f => f._1)
 
-    val stringsEdgeWithIndex = stringsEdge.zipWithIndex().cache()
-    val maxNodeId = stringsEdgeWithIndex.map(e => e._2).max()
-    val stringsSideInfoWithIndex = stringsSideInfo.zipWithIndex().map(e => (e._1, e._2 + maxNodeId + 1)).cache()
+    val (stringsEdgeWithIndex, stringsSideInfoWithIndex) = if (mappingData.nonEmpty)  {
+      val mappingItem = mappingData.get._1.map(f => f.stripLineEnd.split("[\\s+|,]")).map(p => (p(1), p(0).toLong))
+      val tmp = mappingData.get._2.map(f => f.stripLineEnd.split("[\\s+|,]"))
+      tmp.filter(_.length < 2).foreach(p => println(s"mapping side info invalid data: ${p.mkString("\t")}"))
+      val mappingSideInfo = tmp.filter(_.length == 2).map(p => (p(1), p(0).toLong))
+
+      def reIndex(rdd: RDD[String], mapping: RDD[String], maxId: Long = 0L): RDD[(String, Long)] =
+        rdd.subtract(mapping).zipWithIndex().map(p => (p._1 , p._2 + maxId + 1))
+
+      val oldMaxId = Math.max(mappingItem.map(_._2).max(), mappingSideInfo.map(_._2).max())
+      val subEdge = reIndex(stringsEdge, mappingItem.map(_._1), oldMaxId)
+      val maxNodeId = if (subEdge.isEmpty()) oldMaxId else subEdge.map(_._2).max()
+      val subSideInfo = reIndex(stringsSideInfo, mappingSideInfo.map(_._1), maxNodeId)
+
+      (mappingItem.union(subEdge), mappingSideInfo.union(subSideInfo))
+    } else {
+      val stringsEdge2Index = stringsEdge.zipWithIndex().cache()
+      val maxNodeId = stringsEdge2Index.map(e => e._2).max()
+      (stringsEdge2Index, stringsSideInfo.zipWithIndex().map(e => (e._1, e._2 + maxNodeId + 1)).cache())
+    }
+
+    println(s"recode index, num of node: ${stringsEdgeWithIndex.map(_._2).count()}, " +
+      s"num of side info: ${stringsSideInfoWithIndex.map(_._2).count()}")
 
     def buildRoutingTable(index: Int, iterator: Iterator[String]): Iterator[(String, Int)] = {
       val set = new JHashSet[String]()
@@ -160,31 +231,29 @@ object EGESOps {
       Iterator.single((index, iterator.toArray))
     }
 
-    val ints = data.mapPartitionsWithIndex((partId, iterator) =>
-      attachPartitionId(partId, iterator),
-      true).join(partIndexEdge).map { case (_, (sentences, mapping)) =>
-      val map = new JHashMap[String, Long]()
-      for ((string, index) <- mapping) {
-        map.put(string, index)
-      }
+    val ints = data.mapPartitionsWithIndex((partId, iterator) => attachPartitionId(partId, iterator), true)
+      .join(partIndexEdge).map { case (_, (sentences, mapping)) =>
+        val map = new JHashMap[String, Long]()
+        for ((string, index) <- mapping) {
+          map.put(string, index)
+        }
 
-      sentences.filter(f => f != null && f.length > 0).map { case line =>
-        line.stripLineEnd.split("[\\s+|,]")
-      }.map(e => e.slice(0,2).map(s => map.get(s).toString) ++ e.slice(2,e.length))
-    }.flatMap(f => f).map(e => e.mkString(" "))
+        sentences.filter(f => f != null && f.length > 0).map { case line =>
+          line.stripLineEnd.split("[\\s+|,]")
+        }.map(e => e.slice(0,2).map(s => map.get(s).toString) ++ e.slice(2,e.length))
+      }.flatMap(f => f).map(e => e.mkString(" "))
 
-    val ints2 = ints.mapPartitionsWithIndex((partId, iterator) =>
-      attachPartitionId(partId, iterator),
-      true).join(partIndexSideInfo).map { case (_, (sentences, mapping)) =>
-      val map = new JHashMap[String, Long]()
-      for ((string, index) <- mapping) {
-        map.put(string, index)
-      }
+    val ints2 = ints.mapPartitionsWithIndex((partId, iterator) => attachPartitionId(partId, iterator), true)
+      .join(partIndexSideInfo).map { case (_, (sentences, mapping)) =>
+        val map = new JHashMap[String, Long]()
+        for ((string, index) <- mapping) {
+          map.put(string, index)
+        }
 
-      sentences.filter(f => f != null && f.length > 0).map { case line =>
-        line.stripLineEnd.split("[\\s+|,]")
-      }.map(e => e.slice(0,2).map(s => s.toInt) ++ e.slice(2,e.length).map(s => map.get(s).toInt))
-    }.flatMap(f => f)
+        sentences.filter(f => f != null && f.length > 0).map { case line =>
+          line.stripLineEnd.split("[\\s+|,]")
+        }.map(e => e.slice(0,2).map(s => s.toInt) ++ e.slice(2,e.length).map(s => map.get(s).toInt))
+      }.flatMap(f => f)
 
     (ints2, stringsEdgeWithIndex.map(f => (f._2.toInt, f._1)), stringsSideInfoWithIndex.map(f => (f._2.toInt, f._1)))
   }
