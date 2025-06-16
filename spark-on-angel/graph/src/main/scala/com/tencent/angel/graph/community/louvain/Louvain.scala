@@ -16,8 +16,13 @@
  */
 package com.tencent.angel.graph.community.louvain
 
-import com.tencent.angel.ml.math2.vector.{LongFloatVector, LongLongVector}
+import com.tencent.angel.graph.common.param.ModelContext
+import com.tencent.angel.graph.data.neighbor.NeighborDataOps
+import com.tencent.angel.graph.utils.Stats
+import com.tencent.angel.ml.math2.vector.LongLongVector
 import com.tencent.angel.graph.utils.params._
+import com.tencent.angel.spark.context.PSContext
+import org.apache.spark.SparkContext
 import org.apache.spark.ml.Transformer
 import org.apache.spark.ml.param._
 import org.apache.spark.ml.util.Identifiable
@@ -31,7 +36,7 @@ class Louvain(override val uid: String) extends Transformer
   with HasOutputNodeIdCol with HasOutputCommunityIdCol
   with HasIsWeighted with HasPartitionNum with HasPSPartitionNum
   with HasStorageLevel with HasBatchSize with HasBufferSize
-  with HasDebugMode {
+  with HasDebugMode with HasUseBalancePartition with HasBalancePartitionPercent {
 
   final val numOpt = new IntParam(this, "numOpt", "numOpt")
   final val numFold = new IntParam(this, "numFold", "numFold")
@@ -60,11 +65,11 @@ class Louvain(override val uid: String) extends Transformer
   final def getUseMergeStrategy: Boolean = $(useMergeStrategy)
 
 
-  setDefault(numOpt, 5)
-  setDefault(numFold, 2)
+  setDefault(numOpt, 10)
+  setDefault(numFold, 3)
   setDefault(eps, 0.0)
-  setDefault(preserveRate, 0.0)
-  setDefault(useMergeStrategy, true)
+  setDefault(preserveRate, 1.0)
+  setDefault(useMergeStrategy, false)
 
   def this() = this(Identifiable.randomUID("louvain"))
 
@@ -76,41 +81,37 @@ class Louvain(override val uid: String) extends Transformer
      * sum the weights of multiple edges
      * repartition the edges rdd in partitionNum;persist the rdd in dist
      */
-    val rawEdges: RDD[((Long, Long), Float)] = {
-      if ($(isWeighted)) {
-        dataset.select($(srcNodeIdCol), $(dstNodeIdCol), $(weightCol)).rdd
-          .filter(row => !row.anyNull && row.getLong(0) != row.getLong(1) && row.getFloat(2) != 0.0).map { row =>
-          (row.getLong(0), row.getLong(1), row.getFloat(2))
-        }
-      } else {
-        dataset.select($(srcNodeIdCol), $(dstNodeIdCol)).rdd
-          .filter(row => !row.anyNull && row.getLong(0) != row.getLong(1)).map { row =>
-          (row.getLong(0), row.getLong(1), 1.0f)
-        }
-      }
-    }.map { case (src, dst, wgt) =>
-      if (src < dst) ((src, dst), wgt) else ((dst, src), wgt)
-    }.reduceByKey(_ + _, $(partitionNum))
-      .persist(StorageLevel.DISK_ONLY)
 
-    val nodes = rawEdges.flatMap { case ((src, dst), _) =>
+    val edges = NeighborDataOps.loadEdgesWithWeight(dataset, $(srcNodeIdCol),
+        $(dstNodeIdCol), $(weightCol), $(isWeighted), false, true, true, true)
+      .persist(StorageLevel.DISK_ONLY) // .repartition($(partitionNum))
+
+    val nodes = edges.flatMap { case (src, dst, _) =>
       Iterator(src, dst)
     }.distinct($(partitionNum)).persist(StorageLevel.DISK_ONLY)
-    val maxId = nodes.max()
-    println("maxId is: " + maxId)
-    val edges = rawEdges.map(x => (x._1._1, x._1._2, x._2))
+    val index = edges.flatMap(f => Array(f._1, f._2))
+
+    val (minId, maxId, numEdges) = Stats.summarizeWithWeight(edges)
+    println(s"minId=$minId maxId=$maxId numEdges=$numEdges")
 
     //build the graph with Louvain graph partition
     val graph: RDD[LouvainGraphPartition] = LouvainGraph.edgeTripleRDD2GraphPartitions(edges,
-      storageLevel = $(storageLevel))
+      storageLevel = $(storageLevel), numPartition = Option($(partitionNum)))
 
     // destroys the lineage
     graph.checkpoint()
     graph.foreachPartition(_ => Unit)
+    edges.unpersist()
 
-    rawEdges.unpersist()
+    // Start PS and init the model
+    println("start to run ps")
+    PSContext.getOrCreate(SparkContext.getOrCreate())
 
-    val model = LouvainPSModel(maxId + 1) //create the louvain ps model
+    // Create model
+    val modelContext = new ModelContext($(psPartitionNum), minId, maxId + 1, -1,
+      "louvain", SparkContext.getOrCreate().hadoopConfiguration)
+
+    val model = LouvainPSModel(modelContext, index, $(useBalancePartition), $(balancePartitionPercent))
 
     var louvain = new LouvainGraph(graph, model) //create the louvain object
 

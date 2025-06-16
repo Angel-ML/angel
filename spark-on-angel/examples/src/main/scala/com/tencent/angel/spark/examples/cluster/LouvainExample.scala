@@ -25,32 +25,38 @@ import org.apache.spark.{SparkConf, SparkContext}
 
 object LouvainExample {
   def main(args: Array[String]): Unit = {
-
     val params = ArgsUtil.parse(args)
     val mode = params.getOrElse("mode", "yarn-cluster")
-    val sc = start(mode)
 
     val input = params.getOrElse("input", null)
     val output = params.getOrElse("output", null)
-    val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
-    val partitionNum = params.getOrElse("partitionNum", "100").toInt
-    val psPartitionNum = params.getOrElse("psPartitionNum",
-      sc.getConf.get("spark.ps.instances", "10")).toInt
-    val numFold = params.getOrElse("numFold", "3").toInt
-    val numOpt = params.getOrElse("numOpt", "4").toInt
-    val batchSize = params.getOrElse("batchSize", "10000").toInt
+    val srcIndex = params.getOrElse("src", "0").toInt
+    val dstIndex = params.getOrElse("dst", "1").toInt
+    val weightIndex = params.getOrElse("weightCol", "2").toInt
     val isWeighted = params.getOrElse("isWeighted", "false").toBoolean
-    val srcIndex = params.getOrElse("srcIndex", "0").toInt
-    val dstIndex = params.getOrElse("dstIndex", "1").toInt
-    val weightIndex = params.getOrElse("weightIndex", "2").toInt
+
+    val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
+    val batchSize = params.getOrElse("batchSize", "10000").toInt
+    val psPartitionNum = params.getOrElse("psPartitionNum", "40").toInt
+    val partitionNum = params.getOrElse("partitionNum", "100").toInt
+
+    val numFold = params.getOrElse("numFold", "5").toInt
+    val numOpt = params.getOrElse("numOpt", "10").toInt
     val enableCheck = params.getOrElse("enableCheck", "false").toBoolean
-    val eps = params.getOrElse("eps", "0.0").toDouble
-    val bufferSize = params.getOrElse("bufferSize", "1000000").toInt
+    val eps = params.getOrElse("eps", "0.0001").toFloat
+    val bufferSize = params.getOrElse("bufferSize", "10000").toInt
     val preserveRate = params.getOrElse("preserveRate", "0.1").toFloat
     val useMergeStrategy  = params.getOrElse("useMergeStrategy", "true").toBoolean
+    val useBalancePartition = params.getOrElse("useBalancePartition", "false").toBoolean
+    val balancePartitionPercent = params.getOrElse("balancePartitionPercent", "0.7").toFloat
 
-    val sep = Delimiter.parse(params.getOrElse("sep",Delimiter.SPACE))
+    val sep = params.getOrElse("sep", Delimiter.SPACE) match {
+      case Delimiter.SPACE => Delimiter.SPACE_VAL
+      case Delimiter.COMMA => Delimiter.COMMA_VAL
+      case Delimiter.TAB => Delimiter.TAB_VAL
+    }
 
+    val sc = start(mode)
 
     val cpDir = params.get("cpDir").filter(_.nonEmpty).orElse(GraphIO.defaultCheckpointDir)
       .getOrElse(throw new Exception("checkpoint dir not provided"))
@@ -69,22 +75,24 @@ object LouvainExample {
       .setIsWeighted(isWeighted)
       .setPreserveRate(preserveRate)
       .setUseMergeStrategy(useMergeStrategy)
+      .setUseBalancePartition(useBalancePartition)
+      .setBalancePartitionPercent(balancePartitionPercent)
 
-    val df = GraphIO.load(input, isWeighted = isWeighted,
-      srcIndex = srcIndex, dstIndex = dstIndex,
-      weightIndex = weightIndex, sep = sep)
+    val df = GraphIO.load(input, isWeighted = isWeighted, srcIndex, dstIndex, weightIndex, sep = sep)
+
+    PSContext.getOrCreate(sc)
+
     val mapping = louvain.transform(df)
     GraphIO.save(mapping, output)
+
     stop()
   }
 
   def start(mode: String): SparkContext = {
     val conf = new SparkConf()
     conf.setMaster(mode)
-    conf.setAppName("louvain")
-    val sc = new SparkContext(conf)
-    PSContext.getOrCreate(sc)
-    sc
+    conf.setAppName("Louvain")
+    new SparkContext(conf)
   }
 
   def stop(): Unit = {

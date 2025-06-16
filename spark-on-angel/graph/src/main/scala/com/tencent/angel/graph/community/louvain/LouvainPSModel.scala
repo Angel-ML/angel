@@ -16,19 +16,24 @@
  */
 package com.tencent.angel.graph.community.louvain
 
+import com.tencent.angel.graph.common.param.ModelContext
+import com.tencent.angel.graph.utils.ModelContextUtils
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.storage.LongLongSparseVectorStorage
 import com.tencent.angel.ml.math2.vector.{LongFloatVector, LongLongVector}
 import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.spark.models.PSVector
+import com.tencent.angel.spark.ml.util.LoadBalancePartitioner
+import com.tencent.angel.spark.models.impl.PSVectorImpl
+import com.tencent.angel.spark.models.{PSMatrix, PSVector}
 import com.tencent.angel.spark.util.VectorUtils
+import org.apache.spark.rdd.RDD
 
 import scala.collection.JavaConversions._
 
 class LouvainPSModel(
-                      val node2CommunityPSVector: PSVector,
-                      val community2weightPSVector: PSVector,
-                      val node2CommunityFianlPSVector: PSVector) extends Serializable {
+                         val node2CommunityPSVector: PSVector,
+                         val community2weightPSVector: PSVector,
+                         val node2CommunityFianlPSVector: PSVector) extends Serializable {
 
   private val dim: Long = node2CommunityPSVector.dimension
 
@@ -90,8 +95,8 @@ class LouvainPSModel(
   def getNode2commPairsArr(nodes: Array[Long]): Array[(Long, Long)] = {
     getNode2commMap(nodes).getStorage.asInstanceOf[LongLongSparseVectorStorage]
       .entryIterator().map { entry =>
-      (entry.getLongKey, entry.getLongValue)
-    }.toArray
+        (entry.getLongKey, entry.getLongValue)
+      }.toArray
   }
 
   /**
@@ -169,13 +174,30 @@ object LouvainPSModel {
    * the ps vector of node to community
    * the ps vector of community to corresponding weight
    *
-   * @param dim the ps vector dimensionality
    * @return
    */
-  def apply(dim: Long): LouvainPSModel = {
-    val id2comm = PSVector.sparse(dim, 1, rowType = RowType.T_LONG_SPARSE_LONGKEY)
-    val id2commFianl = PSVector.sparse(dim, 1, rowType = RowType.T_LONG_SPARSE_LONGKEY)
-    val comm2weight = PSVector.dense(dim, 1, rowType = RowType.T_FLOAT_SPARSE_LONGKEY)
+
+  def apply(modelContext: ModelContext, data: RDD[Long],
+            useBalancePartition: Boolean, balancePartitionPercent: Float): LouvainPSModel = {
+    val id2commMatrix = ModelContextUtils.createMatrixContext(modelContext, "id2commMatrix", RowType.T_LONG_SPARSE_LONGKEY, null)
+    val id2commFinalMatrix = ModelContextUtils.createMatrixContext(modelContext, "id2commFinalMatrix", RowType.T_LONG_SPARSE_LONGKEY, null)
+    val comm2weightMatrix = ModelContextUtils.createMatrixContext(modelContext, "comm2weightMatrix", RowType.T_FLOAT_SPARSE_LONGKEY, null)
+
+    if (!modelContext.isUseHashPartition && useBalancePartition) {
+      LoadBalancePartitioner.partition(data, modelContext.getMaxNodeId, modelContext.getPartitionNum, id2commMatrix, balancePartitionPercent)
+      val Parts = id2commMatrix.getParts
+      id2commFinalMatrix.setParts(Parts)
+      comm2weightMatrix.setParts(Parts)
+    }
+
+    val id2commPsMatrix = PSMatrix.matrix(id2commMatrix)
+    val id2commFianlPsMatrix = PSMatrix.matrix(id2commFinalMatrix)
+    val comm2weightPsMatrix = PSMatrix.matrix(comm2weightMatrix)
+
+    val id2comm = new PSVectorImpl(id2commPsMatrix.id, 0, modelContext.getMaxNodeId, id2commMatrix.getRowType)
+    val id2commFianl = new PSVectorImpl(id2commFianlPsMatrix.id, 0, modelContext.getMaxNodeId, id2commFinalMatrix.getRowType)
+    val comm2weight = new PSVectorImpl(comm2weightPsMatrix.id, 0, modelContext.getMaxNodeId, comm2weightMatrix.getRowType)
+
     new LouvainPSModel(id2comm, comm2weight, id2commFianl)
   }
 }
