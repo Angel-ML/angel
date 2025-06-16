@@ -59,7 +59,8 @@ class LouvainGraphPartition(
           } else if (v < u) {
             Iterator.single(((v, u), edgeWeights(j)))
           } else {
-            Iterator.empty
+            //Iterator.empty
+            Iterator.single(((v, u), 0f))
           }
         }
       }
@@ -127,7 +128,7 @@ class LouvainGraphPartition(
           curComm
         }
 
-        if (best != curComm) {
+        if (best != curComm && !curComm.isNaN) {
           updatedNodeBuffer += node
           updatedCommBuffer += best
           val delta = partRelatedNodeWeights(i)
@@ -237,4 +238,3 @@ class LouvainGraphPartition(
   }
 
 }
-
