@@ -14,10 +14,17 @@ case class NeighborTable[ED: ClassTag](
   lazy val numEdges: Int = neighborIds.length
 
   def sorted(): this.type = {
-    val neighbors = neighborIds.zip(tags).zip(attrs).sortBy(_._1._1)
-    neighborIds = neighbors.map(_._1._1)
-    tags = neighbors.map(_._1._2)
-    attrs = neighbors.map(_._2)
+    if (tags != null) {
+      val neighbors = neighborIds.zip(tags).zip(attrs).sortBy(_._1._1)
+      neighborIds = neighbors.map(_._1._1)
+      tags = neighbors.map(_._1._2)
+      attrs = neighbors.map(_._2)
+    } else {
+      val neighbors = neighborIds.zip(attrs).sortBy(_._1)
+      neighborIds = neighbors.map(_._1)
+      attrs = neighbors.map(_._2)
+    }
+
     this
   }
 
