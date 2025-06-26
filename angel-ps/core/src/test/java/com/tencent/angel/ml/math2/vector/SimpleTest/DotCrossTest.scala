@@ -26,7 +26,7 @@ import breeze.numerics.abs
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.Vector
 import org.junit.{BeforeClass, Test}
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 object DotCrossTest {
   val capacity: Int = 1000

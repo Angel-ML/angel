@@ -17,9 +17,9 @@
 package com.tencent.angel.ml.math2.matrix.CooMatrixTest
 
 import com.tencent.angel.ml.math2.MFactory
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class CooMatrixTest extends FunSuite{
+class CooMatrixTest extends AnyFunSuite{
 
   val rowIndices = Array[Int](0, 0, 1, 2, 2, 2)
   val colIndices = Array[Int](0, 2, 2, 0, 1, 2)

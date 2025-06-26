@@ -3,7 +3,7 @@
 
 Spark on Angel的算法实现与纯Spark的实现非常接近，因此大部分的Spark ML算法仅需要修改一小部分代码就能将算法跑到Spark on Angel上。
 
-该版本的Spark on Angel是基于Spark 2.1.0和Scala 2.11.8，因此建议大家在该环境下开发。
+该版本的Spark on Angel是基于Spark 2.1.0和Scala 2.12.15，因此建议大家在该环境下开发。
 
 开发者接触到的类主要有PSContext，PSVectorPool。 目前我们的编程接口以Scala为主，下面我们都将以Scala的编程方式介绍Spark on Angel的编程接口。
 

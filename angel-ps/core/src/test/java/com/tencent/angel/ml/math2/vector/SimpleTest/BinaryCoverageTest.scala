@@ -24,7 +24,7 @@ import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.{IntDummyVector, LongDummyVector, Vector}
 import org.junit.{BeforeClass, Test}
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 //1500,50000;1500,80000
 object BinaryCoverageTest {

@@ -27,12 +27,13 @@
 		<hadoop-version>2.7.3</hadoop-version>
 		<protobuf.version>2.5.0</protobuf.version>
 		<java.version>1.8</java.version>
-		<scala.binary.version>2.11</scala.binary.version>
-		<scala.version>2.11.8</scala.version>
+        <scala.binary.version>2.12</scala.binary.version>
+        <scala.version>2.12.15</scala.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<dist.deps.scope>provided</dist.deps.scope>
-		<scalatest.version>2.2.6</scalatest.version>
+		<scalatest.version>3.2.17</scalatest.version>
+        <scala.maven.plugin.version>3.2.2</scala.maven.plugin.version>
     <main.basedir>${project.basedir}</main.basedir>
 	</properties>
 

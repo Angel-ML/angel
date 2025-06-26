@@ -20,7 +20,6 @@ package com.tencent.angel.spark.context
 
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
-
 import com.tencent.angel.client.AngelContext
 import com.tencent.angel.common.location.Location
 import com.tencent.angel.conf.AngelConf
@@ -35,7 +34,7 @@ import com.tencent.angel.spark.models.{PSMatrix, PSVector}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.util.ShutdownHookManager
-import org.apache.spark.deploy.SparkHadoopUtil
+import org.apache.spark.AngelSparkHadoopUtil
 import org.apache.spark.{SparkConf, SparkEnv, TaskContext}
 
 import scala.collection.JavaConverters._
@@ -280,7 +279,7 @@ object AngelPSContext {
       val angelContext = launchAngel(sparkConf)
       new AngelPSContext(-1, angelContext)
     } else {
-      val taskConf = SparkHadoopUtil.get.newConfiguration(sparkConf)
+      val taskConf = AngelSparkHadoopUtil.getConfiguration(sparkConf)
       println("from executor to connect Angel PS! ")
       val taskContext = TaskContext.get()
       val ip = taskContext.getLocalProperty(MASTER_IP)
@@ -355,7 +354,7 @@ object AngelPSContext {
 
     import com.tencent.angel.conf.AngelConf._
 
-    val hadoopConf = SparkHadoopUtil.get.newConfiguration(conf)
+    val hadoopConf = AngelSparkHadoopUtil.getConfiguration(conf)
 
     // setting running mode, app name, queue and deploy mode
     hadoopConf.set(ANGEL_RUNNING_MODE, "ANGEL_PS")

@@ -27,7 +27,7 @@ import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.vector.{IntDummyVector, LongDummyVector, Vector}
 import org.junit.{Before, BeforeClass, Test}
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 object UnaryLongKeyTest {
   val capacity: Int = 1000
@@ -144,15 +144,15 @@ class UnaryLongKeyTest {
 
   @Test
   def smulTest() {
-    assert(abs(Ufuncs.smul(llist.get(0), 0.5).sum() - sum(sparse1 :* 0.5)) < 1.0)
-    assert(Ufuncs.smul(llist.get(1), 0.5).sum() == sum(sorted1 :* 0.5))
+    assert(abs(Ufuncs.smul(llist.get(0), 0.5).sum() - sum(sparse1 *:* 0.5)) < 1.0)
+    assert(Ufuncs.smul(llist.get(1), 0.5).sum() == sum(sorted1 *:* 0.5))
 
   }
 
   @Test
   def sdivTest() {
-    assert(abs(Ufuncs.sdiv(llist.get(0), 0.5).sum() - sum(sparse1 :/ 0.5)) < 1.0)
-    assert(Ufuncs.sdiv(llist.get(1), 0.5).sum() == sum(sorted1 :/ 0.5))
+    assert(abs(Ufuncs.sdiv(llist.get(0), 0.5).sum() - sum(sparse1 /:/ 0.5)) < 1.0)
+    assert(Ufuncs.sdiv(llist.get(1), 0.5).sum() == sum(sorted1 /:/ 0.5))
 
   }
 

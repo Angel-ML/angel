@@ -331,13 +331,13 @@ class BinaryIntKeyOPTest {
   def Divtest() {
     init()
 
-    println(ilist.get(0).div(ilist.get(0)).sum(), sum(dense1 :/ dense1))
-    println(ilist.get(1).div(ilist.get(1)).sum(), sum(sparse1 :/ sparse1))
-    println(ilist.get(2).div(ilist.get(2)).sum(), sum(sorted1 :/ sorted1))
-    println(ilist.get(3).div(ilist.get(3)).sum(), sum(dense2 :/ dense2))
-    println(ilist.get(4).div(ilist.get(4)).sum(), sum(sparse2 :/ sparse2))
-    println(ilist.get(5).div(ilist.get(5)).sum(), sum(sorted2 :/ sorted2))
-    println(ilist.get(6).div(ilist.get(6)).sum(), sum(dense3 :/ dense3))
+    println(ilist.get(0).div(ilist.get(0)).sum(), sum(dense1 /:/ dense1))
+    println(ilist.get(1).div(ilist.get(1)).sum(), sum(sparse1 /:/ sparse1))
+    println(ilist.get(2).div(ilist.get(2)).sum(), sum(sorted1 /:/ sorted1))
+    println(ilist.get(3).div(ilist.get(3)).sum(), sum(dense2 /:/ dense2))
+    println(ilist.get(4).div(ilist.get(4)).sum(), sum(sparse2 /:/ sparse2))
+    println(ilist.get(5).div(ilist.get(5)).sum(), sum(sorted2 /:/ sorted2))
+    println(ilist.get(6).div(ilist.get(6)).sum(), sum(dense3 /:/ dense3))
 
   }
 
