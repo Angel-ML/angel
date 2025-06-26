@@ -198,8 +198,10 @@ object RangeBounds {
         sketched.foreach { case (idx, n, w, sample) =>
           if (fraction * n > sampleSizePerPartition) {
             imbalancedPartitions += idx
+            Unit
           } else {
             candidates ++= sample
+            Unit
           }
         }
         if (imbalancedPartitions.nonEmpty) {

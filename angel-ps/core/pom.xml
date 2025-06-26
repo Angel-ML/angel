@@ -45,8 +45,8 @@
         </dependency>
         <dependency>
             <groupId>org.scalanlp</groupId>
-            <artifactId>breeze_2.11</artifactId>
-            <version>0.13.1</version>
+            <artifactId>breeze_${scala.binary.version}</artifactId>
+            <version>1.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>

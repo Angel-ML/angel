@@ -26,7 +26,7 @@ import breeze.numerics._
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector._
 import org.junit.{BeforeClass, Test}
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 object ReduceTest {
   val matrixId = 0

@@ -40,7 +40,7 @@ All rights reserved.
 Copyright (c) 2009-2016, Barthelemy Dagenais and individual contributors. 
 All rights reserved.
 
-4. scala  2.11.8
+4. scala  2.12.15
 Copyright (c) 2002-2016 EPFL
 Copyright (c) 2011-2016 Lightbend, Inc.
 All rights reserved.
@@ -115,7 +115,7 @@ Copyright 2010 The Apache Software Foundation
 14. hbase  0.94.27
 Copyright The Apache Software Foundation. All rights reserved.
 
-15. Apache Spark  2.1.0
+15. Apache Spark  3.3.1
 Copyright 2014 and onwards The Apache Software Foundation
 
 

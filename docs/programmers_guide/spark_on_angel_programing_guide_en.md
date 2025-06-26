@@ -2,7 +2,7 @@
 
 We develop Spark-on-Angel to enable the programming of both Spark and Parameter Server. With Spark-on-Angel, you can not only employ the ability of Spark to couple with data cleaning, task scheculing, resource allocating and other distributed abilities from Spark, but also the Parameter Server ability of Angel to tackle high-dimensional models. Moreover, the programming on Spark-on-Angel is straightforward if you are familiar with Spark.
 
-In its current version，Spark on Angel is developed with Spark 2.1.1 and Scala 2.11.8.
+In its current version，Spark on Angel is developed with Spark 3.3.1 and Scala 2.12.15.
 
 
 ## Importing Spark on Angel
