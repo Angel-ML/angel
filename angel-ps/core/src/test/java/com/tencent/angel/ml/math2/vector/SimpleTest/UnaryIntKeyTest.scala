@@ -27,7 +27,7 @@ import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.ufuncs.{TransFuncs, Ufuncs}
 import com.tencent.angel.ml.math2.vector.{IntDummyVector, LongDummyVector, Vector}
 import org.junit.{BeforeClass, Test}
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 object UnaryIntKeyTest {
   val capacity: Int = 1000
@@ -236,9 +236,9 @@ class UnaryIntKeyTest {
       d2(i) = if (d2(i) < 0f) 0.0f else d2(i)
     }
 
-    assert(abs(Ufuncs.softthreshold(ilist.get(0), 1.5).sum() - sum(sin(dense1) :* d1)) < 1.0)
-    assert(abs(Ufuncs.softthreshold(ilist.get(1), 1.5).sum() - sum(sin(sparse1) :* d1)) < 1.0)
-    assert(abs(Ufuncs.softthreshold(ilist.get(2), 1.5).sum() - sum(sin(sorted1) :* d1)) < 1.0)
+    assert(abs(Ufuncs.softthreshold(ilist.get(0), 1.5).sum() - sum(sin(dense1) *:* d1)) < 1.0)
+    assert(abs(Ufuncs.softthreshold(ilist.get(1), 1.5).sum() - sum(sin(sparse1) *:* d1)) < 1.0)
+    assert(abs(Ufuncs.softthreshold(ilist.get(2), 1.5).sum() - sum(sin(sorted1) *:* d1)) < 1.0)
   }
 
   @Test
@@ -277,22 +277,22 @@ class UnaryIntKeyTest {
 
   @Test
   def smulTest() {
-    assert(Ufuncs.smul(ilist.get(0), 0.5).sum() == sum(dense1 :* 0.5))
-    assert(abs(Ufuncs.smul(ilist.get(1), 0.5).sum() - sum(sparse1 :* 0.5)) < 1.0)
-    assert(Ufuncs.smul(ilist.get(2), 0.5).sum() == sum(sorted1 :* 0.5))
-    assert(Ufuncs.smul(ilist.get(6), 5).sum() == sum(dense3 :* 5L))
-    assert(abs(Ufuncs.smul(ilist.get(7), 5).sum() - sum(sparse3 :* 5L)) < 1.0)
-    assert(Ufuncs.smul(ilist.get(8), 5).sum() == sum(sorted3 :* 5L))
-    assert(abs(Ufuncs.smul(ilist.get(9), 5).sum() - sum(dense4 :* 5)) < 1.0)
-    assert(abs(Ufuncs.smul(ilist.get(10), 5).sum() - sum(sparse4 :* 5)) < 1.0)
-    assert(abs(Ufuncs.smul(ilist.get(11), 5).sum() - sum(sorted4 :* 5)) < 1.0)
+    assert(Ufuncs.smul(ilist.get(0), 0.5).sum() == sum(dense1 *:* 0.5))
+    assert(abs(Ufuncs.smul(ilist.get(1), 0.5).sum() - sum(sparse1 *:* 0.5)) < 1.0)
+    assert(Ufuncs.smul(ilist.get(2), 0.5).sum() == sum(sorted1 *:* 0.5))
+    assert(Ufuncs.smul(ilist.get(6), 5).sum() == sum(dense3 *:* 5L))
+    assert(abs(Ufuncs.smul(ilist.get(7), 5).sum() - sum(sparse3 *:* 5L)) < 1.0)
+    assert(Ufuncs.smul(ilist.get(8), 5).sum() == sum(sorted3 *:* 5L))
+    assert(abs(Ufuncs.smul(ilist.get(9), 5).sum() - sum(dense4 *:* 5)) < 1.0)
+    assert(abs(Ufuncs.smul(ilist.get(10), 5).sum() - sum(sparse4 *:* 5)) < 1.0)
+    assert(abs(Ufuncs.smul(ilist.get(11), 5).sum() - sum(sorted4 *:* 5)) < 1.0)
   }
 
   @Test
   def sdivTest() {
-    assert(Ufuncs.sdiv(ilist.get(0), 0.5).sum() == sum(dense1 :/ 0.5))
-    assert(abs(Ufuncs.sdiv(ilist.get(1), 0.5).sum() - sum(sparse1 :/ 0.5)) < 1.0)
-    assert(Ufuncs.sdiv(ilist.get(2), 0.5).sum() == sum(sorted1 :/ 0.5))
+    assert(Ufuncs.sdiv(ilist.get(0), 0.5).sum() == sum(dense1 /:/ 0.5))
+    assert(abs(Ufuncs.sdiv(ilist.get(1), 0.5).sum() - sum(sparse1 /:/ 0.5)) < 1.0)
+    assert(Ufuncs.sdiv(ilist.get(2), 0.5).sum() == sum(sorted1 /:/ 0.5))
 
   }
 

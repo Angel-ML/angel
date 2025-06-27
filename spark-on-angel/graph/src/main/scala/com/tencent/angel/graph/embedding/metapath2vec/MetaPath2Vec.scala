@@ -16,7 +16,7 @@
  */
 package com.tencent.angel.graph.embedding.metapath2vec
 
-import com.carrotsearch.hppc.IntArrayList
+import it.unimi.dsi.fastutil.ints.{Int2ObjectOpenHashMap, IntArrayList}
 import com.tencent.angel.graph.common.param.ModelContext
 import com.tencent.angel.graph.data.neighbor.NeighborDataOps
 import com.tencent.angel.spark.context.PSContext
@@ -31,7 +31,6 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types.{StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import com.tencent.angel.graph.utils.Stats._
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 
 
 class MetaPath2Vec(override val uid: String) extends Transformer
@@ -63,7 +62,7 @@ class MetaPath2Vec(override val uid: String) extends Transformer
         index += 1
         step += 1
       }
-      pathMap_.put(t, thisPath.toArray)
+      pathMap_.put(t, thisPath.toIntArray())
     }
     pathMap = pathMap_
   }
@@ -74,42 +73,42 @@ class MetaPath2Vec(override val uid: String) extends Transformer
   override def transform(dataset: Dataset[_]): DataFrame = {
     val sc = dataset.sparkSession.sparkContext
 
-    val rawEdges = NeighborDataOps.loadEdgesWithWeight(dataset, ${srcNodeIdCol}, ${dstNodeIdCol},
-      ${weightCol}, isWeighted = ${isWeighted})
-      .repartition(${partitionNum})
-      .persist(${storageLevel})
+    val rawEdges = NeighborDataOps.loadEdgesWithWeight(dataset, $(srcNodeIdCol), $(dstNodeIdCol),
+      $(weightCol), isWeighted = $(isWeighted))
+      .repartition($(partitionNum))
+      .persist($(storageLevel))
 
     val (minId, maxId, numEdges) = rawEdges.mapPartitions(summarizeApplyOp1).reduce(summarizeReduceOp)
     println(s"minId=$minId maxId=$maxId numEdges=$numEdges")
 
     // start ps and create ps matrix
     PSContext.getOrCreate(SparkContext.getOrCreate())
-    val nbrModelContext = new ModelContext(${psPartitionNum}, minId, maxId + 1, -1,
+    val nbrModelContext = new ModelContext($(psPartitionNum), minId, maxId + 1, -1,
       "neighbor", sc.hadoopConfiguration)
     var tagModelContext: ModelContext = null
     if (nodeAttr != null)
-      tagModelContext = new ModelContext(${psPartitionNum}, minId, maxId + 1, -1,
+      tagModelContext = new ModelContext($(psPartitionNum), minId, maxId + 1, -1,
         "tag", sc.hadoopConfiguration)
     val model = new MetaPath2VecPSModel(nbrModelContext, tagModelContext)
     model.init()
 
     // push node attr to ps
     if (nodeAttr != null) {
-      val num = nodeAttr.mapPartitions { iter => model.initMsgs(iter.toArray, ${batchSize}) }
+      val num = nodeAttr.mapPartitions { iter => model.initMsgs(iter.toArray, $(batchSize)) }
         .reduce(_ + _)
       println(s"init $num node with type. nnz on ps: ${model.numMsgs()}")
     }
 
     // pull node type from ps and join with edges
     val neighborTable = rawEdges.flatMap(x => Iterator((x._1, (x._2, x._3)), (x._2, (x._1, x._3))))
-      .groupByKey(${partitionNum})
+      .groupByKey($(partitionNum))
       .map(x => (x._1, x._2.toArray.distinct))
     //    neighborTable.unpersist()
 
     if (nodeAttr != null) {
-      neighborTable.foreachPartition{ iter => MetaPath2VecOperator.initNeighborTableWithType(iter, ${batchSize}, model, ${isWeighted}) }
+      neighborTable.foreachPartition{ iter => MetaPath2VecOperator.initNeighborTableWithType(iter, $(batchSize), model, $(isWeighted)) }
     } else {
-      neighborTable.foreachPartition{ iter => MetaPath2VecOperator.initNeighborTable(iter, ${batchSize}, model, ${isWeighted}) }
+      neighborTable.foreachPartition{ iter => MetaPath2VecOperator.initNeighborTable(iter, $(batchSize), model, $(isWeighted)) }
     }
     val before = System.currentTimeMillis()
     model.checkpoint()
@@ -119,7 +118,7 @@ class MetaPath2Vec(override val uid: String) extends Transformer
     val nodes = if (nodeAttr != null)
       neighborTable.map(_._1).mapPartitions { iter => model.getTypes(iter.toArray, typeSet)}
     else neighborTable.map(x => (x._1, 1))
-    nodes.persist(${storageLevel})
+    nodes.persist($(storageLevel))
     println(s"num nodes: ${nodes.count()}")
     neighborTable.unpersist()
     rawEdges.unpersist()
@@ -131,7 +130,7 @@ class MetaPath2Vec(override val uid: String) extends Transformer
         val thisPath = pathMap.get(thisType)
         val startNodes = nodes.filter(_._2 == thisType)
         val thisResult = startNodes.mapPartitionsWithIndex { case (index, iter) =>
-          MetaPath2VecOperator.sample(index, iter, thisPath, model, ${pullBatchSize})
+          MetaPath2VecOperator.sample(index, iter, thisPath, model, $(pullBatchSize))
         }
         // write
         GraphIO.appendSave(dataset.sparkSession.createDataFrame(thisResult, transformSchema(dataset.schema)), output)

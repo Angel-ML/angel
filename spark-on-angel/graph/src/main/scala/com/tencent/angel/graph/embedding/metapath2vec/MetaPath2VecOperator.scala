@@ -1,6 +1,6 @@
 package com.tencent.angel.graph.embedding.metapath2vec
 
-import com.carrotsearch.hppc.IntArrayList
+import it.unimi.dsi.fastutil.ints.IntArrayList
 import com.tencent.angel.graph.model.neighbor.simplewithtype.TypeNeighborElement
 import com.tencent.angel.graph.utils.BatchIter
 import com.tencent.angel.ps.storage.vector.element.IElement
@@ -37,12 +37,12 @@ object MetaPath2VecOperator {
           val alias = new Array[Int](nbrs_.length)
           createTypeNeighbors(indptr, typeList, accept, alias, tags, nbrs_, weights)
           nodeIds(idx) = key
-          data(idx) = new TypeNeighborElement(types.get(key), nbrs_, accept, alias, typeList.toArray, indptr.toArray)
+          data(idx) = new TypeNeighborElement(types.get(key), nbrs_, accept, alias, typeList.toIntArray, indptr.toIntArray)
         } else {
           val (nbrs_, tags) = nbrs.map(x => (x._1, types.get(x._1))).sortWith(_._2 < _._2).unzip
           createTypeNeighbors(indptr, typeList, tags, nbrs_)
           nodeIds(idx) = key
-          data(idx) = new TypeNeighborElement(types.get(key), nbrs_, typeList.toArray, indptr.toArray)
+          data(idx) = new TypeNeighborElement(types.get(key), nbrs_, typeList.toIntArray, indptr.toIntArray)
         }
       }
       val beforePush = System.currentTimeMillis()

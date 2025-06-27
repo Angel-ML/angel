@@ -18,10 +18,11 @@
 
 package com.tencent.angel.spark.ml
 
-import org.scalatest.{BeforeAndAfterAll, FunSuite, Outcome}
+import org.scalatest.{BeforeAndAfterAll, Outcome}
+import org.scalatest.funsuite.AnyFunSuite
 
 
-trait PSFunSuite extends FunSuite with BeforeAndAfterAll {
+trait PSFunSuite extends AnyFunSuite with BeforeAndAfterAll {
 
   final protected override def withFixture(test: NoArgTest): Outcome = {
     val testName = test.text

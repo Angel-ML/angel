@@ -540,10 +540,10 @@ class CompSimpleBinaryIntkeyOPTest {
     println(s"angel comp vs sorted intkey mul:$cost1")
 
 
-    assert(abs(list.get(0).mul(intdummy).sum() - (sum(bdense1 :* doubleintdummy1) + sum(bsparse1 :* doubleintdummy2) + sum(bsorted1 :* doubleintdummy3))) < 1.0)
-    assert(abs(list.get(1).mul(intdummy).sum() - (sum(bdense2 :* floatintdummy1) + sum(bsparse2 :* floatintdummy2) + sum(bsorted2 :* floatintdummy3))) < 1.0)
-    assert(abs(list.get(2).mul(intdummy).sum() - (sum(bdense3 :* longintdummy1) + sum(bsparse3 :* longintdummy2) + sum(bsorted3 :* longintdummy3))) < 1.0)
-    assert(abs(list.get(3).mul(intdummy).sum() - (sum(bdense4 :* intintdummy1) + sum(bsparse4 :* intintdummy2) + sum(bsorted4 :* intintdummy3))) < 1.0)
+    assert(abs(list.get(0).mul(intdummy).sum() - (sum(bdense1 *:* doubleintdummy1) + sum(bsparse1 *:* doubleintdummy2) + sum(bsorted1 *:* doubleintdummy3))) < 1.0)
+    assert(abs(list.get(1).mul(intdummy).sum() - (sum(bdense2 *:* floatintdummy1) + sum(bsparse2 *:* floatintdummy2) + sum(bsorted2 *:* floatintdummy3))) < 1.0)
+    assert(abs(list.get(2).mul(intdummy).sum() - (sum(bdense3 *:* longintdummy1) + sum(bsparse3 *:* longintdummy2) + sum(bsorted3 *:* longintdummy3))) < 1.0)
+    assert(abs(list.get(3).mul(intdummy).sum() - (sum(bdense4 *:* intintdummy1) + sum(bsparse4 *:* intintdummy2) + sum(bsorted4 *:* intintdummy3))) < 1.0)
 
     (0 until 1).foreach { i =>
       (i * 3 until 3).foreach { j =>
