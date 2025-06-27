@@ -27,7 +27,7 @@ import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.vector.Vector
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import org.junit.{BeforeClass, Test}
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 object BlasMatrixBinaryTest {
   val matrixId = 0

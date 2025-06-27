@@ -22,11 +22,10 @@ import com.tencent.angel.client.AngelClient
 import com.tencent.angel.client.local.AngelLocalClient
 import com.tencent.angel.client.yarn.AngelYarnClient
 import org.apache.spark.SparkContext
-import org.apache.spark.deploy.SparkHadoopUtil
 
 object AngelClientFactory {
   def get(sc: SparkContext): AngelClient = {
-    val conf = SparkHadoopUtil.get.newConfiguration(sc.getConf)
+    val conf = sc.hadoopConfiguration
 
     if (sc.isLocal) {
       new AngelLocalClient(conf)

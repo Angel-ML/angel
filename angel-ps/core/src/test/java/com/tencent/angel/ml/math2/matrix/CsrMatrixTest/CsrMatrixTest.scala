@@ -17,9 +17,9 @@
 package com.tencent.angel.ml.math2.matrix.CsrMatrixTest
 
 import com.tencent.angel.ml.math2.MFactory
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class CsrMatrixTest extends FunSuite{
+class CsrMatrixTest extends AnyFunSuite{
   val rowIndices = Array[Int](1, 1, 1, 2)
   val colIndices = Array[Int](2, 0, 1, 2)
   val indptr = Array[Int](0, 0, 3, 4)

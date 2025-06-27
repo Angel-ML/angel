@@ -24,7 +24,7 @@ import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.math2.vector.{CompIntDoubleVector, CompIntFloatVector, CompIntIntVector, CompIntLongVector, CompLongDoubleVector, CompLongFloatVector, CompLongIntVector, CompLongLongVector, IntDummyVector, LongDummyVector, Vector}
 import org.junit.{BeforeClass, Test}
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 object CompDot {
   val capacity: Int = 1500

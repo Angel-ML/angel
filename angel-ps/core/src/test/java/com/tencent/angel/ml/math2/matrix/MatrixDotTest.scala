@@ -23,9 +23,9 @@ import java.util
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
 import com.tencent.angel.ml.math2.{MFactory, VFactory}
 import com.tencent.angel.ml.math2.vector.Vector
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class MatrixDotTest extends FunSuite {
+class MatrixDotTest extends AnyFunSuite {
   val matrixId = 0
   val rowId = 0
   val clock = 0

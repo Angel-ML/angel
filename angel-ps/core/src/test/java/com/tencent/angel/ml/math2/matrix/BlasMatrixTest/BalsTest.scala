@@ -20,9 +20,9 @@ package com.tencent.angel.ml.math2.matrix.BlasMatrixTest
 import com.tencent.angel.ml.math2.MFactory
 import com.tencent.angel.ml.math2.matrix.{BlasDoubleMatrix, BlasFloatMatrix}
 import com.tencent.angel.ml.math2.ufuncs.Ufuncs
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class BalsTest extends FunSuite {
+class BalsTest extends AnyFunSuite {
   val data1 = Array[Double](
     1.3, 2.7, 3.2, 5.1,
     3.0, 8.0, 9.5, 4.7,
