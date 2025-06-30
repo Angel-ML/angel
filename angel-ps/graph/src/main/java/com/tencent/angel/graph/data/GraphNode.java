@@ -19,9 +19,11 @@ package com.tencent.angel.graph.data;
 
 import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.common.StreamSerdeUtils;
+import com.tencent.angel.graph.client.constent.Constent;
 import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.ps.storage.vector.element.IElement;
 import io.netty.buffer.ByteBuf;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -39,6 +41,8 @@ public class GraphNode implements IElement {
     private IntFloatVector[] edgeFeatures; // edges' features
     private float[] weights; // edges' weights
     private float[] labels; // node or edges' labels, for multi-label node classification or edge classification separately
+    private AliasTable aliasTable;// alias table for weighted sampling
+    private Int2ObjectOpenHashMap<long[]> typeNeighbors;
 
     public GraphNode(IntFloatVector feats, long[] neighbors, int[] types, int[] edgeTypes,
                      IntFloatVector[] edgeFeatures, float[] weights, float[] labels) {
@@ -49,6 +53,19 @@ public class GraphNode implements IElement {
         this.edgeFeatures = edgeFeatures;
         this.weights = weights;
         this.labels = labels;
+    }
+
+    public GraphNode(IntFloatVector feats, long[] neighbors, int[] types, int[] edgeTypes,
+                     IntFloatVector[] edgeFeatures, float[] weights, float[] labels, AliasTable aliasTable) {
+        this(feats, neighbors, types, edgeTypes, edgeFeatures, weights, labels);
+        this.aliasTable = aliasTable;
+    }
+
+    public GraphNode(IntFloatVector feats, long[] neighbors, int[] types, int[] edgeTypes,
+                     IntFloatVector[] edgeFeatures, float[] weights, float[] labels, AliasTable aliasTable,
+                     Int2ObjectOpenHashMap<long []> typeNeighbors) {
+        this(feats, neighbors, types, edgeTypes, edgeFeatures, weights, labels, aliasTable);
+        this.typeNeighbors = typeNeighbors;
     }
 
     public GraphNode(IntFloatVector feats, long[] neighbors) {
@@ -117,6 +134,22 @@ public class GraphNode implements IElement {
         this.labels = labels;
     }
 
+    public AliasTable getAliasTable() {
+        return aliasTable;
+    }
+
+    public void setAliasTable(AliasTable aliasTable) {
+        this.aliasTable = aliasTable;
+    }
+
+    public Int2ObjectOpenHashMap<long[]> getTypeNeighbors() {
+        return typeNeighbors;
+    }
+
+    public void setTypeNeighbors(Int2ObjectOpenHashMap<long[]> typeNeighbors) {
+        this.typeNeighbors = typeNeighbors;
+    }
+
     @Override
     public GraphNode deepClone() {
         IntFloatVector cloneFeats = null;
@@ -160,8 +193,13 @@ public class GraphNode implements IElement {
             System.arraycopy(labels, 0, cloneLables, 0, labels.length);
         }
 
+        AliasTable cloneAliasTable = null;
+        if (aliasTable != null) {
+            cloneAliasTable = (AliasTable) aliasTable.deepClone();
+        }
+
         return new GraphNode(cloneFeats, cloneNeighbors, cloneTypes, cloneEdgeTypes,
-                cloneEdgeFeatures, cloneWeights, cloneLables);
+                cloneEdgeFeatures, cloneWeights, cloneLables, cloneAliasTable);
     }
 
     @Override
@@ -211,6 +249,30 @@ public class GraphNode implements IElement {
         } else {
             ByteBufSerdeUtils.serializeInt(output, 0);
         }
+
+        if (aliasTable != null) {
+            ByteBufSerdeUtils.serializeBoolean(output, true);
+            aliasTable.serialize(output);
+        } else {
+            ByteBufSerdeUtils.serializeBoolean(output, false);
+        }
+
+        if (typeNeighbors != null) {
+            ByteBufSerdeUtils.serializeBoolean(output, true);
+            ByteBufSerdeUtils.serializeInt(output, typeNeighbors.size());
+            for (Int2ObjectOpenHashMap.Entry<long[]> entry : typeNeighbors
+                    .int2ObjectEntrySet()) {
+                ByteBufSerdeUtils.serializeInt(output, entry.getIntKey());
+                long[] neighbors = entry.getValue();
+                if (neighbors == null) {
+                    ByteBufSerdeUtils.serializeLongs(output, Constent.emptyLongs);
+                } else {
+                    ByteBufSerdeUtils.serializeLongs(output, neighbors);
+                }
+            }
+        } else {
+            ByteBufSerdeUtils.serializeBoolean(output, false);
+        }
     }
 
     @Override
@@ -247,12 +309,28 @@ public class GraphNode implements IElement {
         if (labelsFlag > 0) {
             weights = ByteBufSerdeUtils.deserializeFloats(input);
         }
+
+        boolean aliasTableFlag = ByteBufSerdeUtils.deserializeBoolean(input);
+        if (aliasTableFlag) {
+            aliasTable = (AliasTable) ByteBufSerdeUtils.deserializeObject(input);
+        }
+
+        boolean typeNeighborsFlag = ByteBufSerdeUtils.deserializeBoolean(input);
+        if (typeNeighborsFlag) {
+            int size = ByteBufSerdeUtils.deserializeInt(input);
+            typeNeighbors = new Int2ObjectOpenHashMap<>(size);
+            for (int i = 0; i < size; i++) {
+                int nodeId = ByteBufSerdeUtils.deserializeInt(input);
+                long[] neighbors = ByteBufSerdeUtils.deserializeLongs(input);
+                typeNeighbors.put(nodeId, neighbors);
+            }
+        }
     }
 
     @Override
     public int bufferLen() {
         // flags len for init value: 7*4
-        int len = 7 * ByteBufSerdeUtils.INT_LENGTH;
+        int len = 7 * ByteBufSerdeUtils.INT_LENGTH + 2 * ByteBufSerdeUtils.BYTE_LENGTH;
         if (feats != null) {
             len += ByteBufSerdeUtils.serializedVectorLen(feats);
         }
@@ -276,6 +354,24 @@ public class GraphNode implements IElement {
         }
         if (labels != null) {
             len += ByteBufSerdeUtils.serializedFloatsLen(labels);
+        }
+
+        if (aliasTable != null) {
+            len += aliasTable.bufferLen();
+        }
+
+        if(typeNeighbors != null) {
+            len += ByteBufSerdeUtils.INT_LENGTH;
+            for (Int2ObjectOpenHashMap.Entry<long[]> entry : typeNeighbors
+                    .int2ObjectEntrySet()) {
+                len += ByteBufSerdeUtils.INT_LENGTH;
+                long[] neighbors = entry.getValue();
+                if (neighbors == null) {
+                    len += ByteBufSerdeUtils.serializedLongsLen(Constent.emptyLongs);
+                } else {
+                    len += ByteBufSerdeUtils.serializedLongsLen(neighbors);
+                }
+            }
         }
         return len;
     }
@@ -327,6 +423,30 @@ public class GraphNode implements IElement {
         } else {
             StreamSerdeUtils.serializeInt(output, 0);
         }
+
+        if (aliasTable != null) {
+            StreamSerdeUtils.serializeBoolean(output, true);
+            aliasTable.serialize(output);
+        } else {
+            StreamSerdeUtils.serializeBoolean(output, false);
+        }
+
+        if (typeNeighbors != null) {
+            StreamSerdeUtils.serializeBoolean(output, true);
+            StreamSerdeUtils.serializeInt(output, typeNeighbors.size());
+            for (Int2ObjectOpenHashMap.Entry<long[]> entry : typeNeighbors
+                    .int2ObjectEntrySet()) {
+                StreamSerdeUtils.serializeInt(output, entry.getIntKey());
+                long[] neighbors = entry.getValue();
+                if (neighbors == null) {
+                    StreamSerdeUtils.serializeLongs(output, Constent.emptyLongs);
+                } else {
+                    StreamSerdeUtils.serializeLongs(output, neighbors);
+                }
+            }
+        } else {
+            StreamSerdeUtils.serializeBoolean(output, false);
+        }
     }
 
     @Override
@@ -362,6 +482,22 @@ public class GraphNode implements IElement {
         int labelsFlag = StreamSerdeUtils.deserializeInt(input);
         if (labelsFlag > 0) {
             weights = StreamSerdeUtils.deserializeFloats(input);
+        }
+
+        boolean aliasTableFlag = StreamSerdeUtils.deserializeBoolean(input);
+        if (aliasTableFlag) {
+            aliasTable = (AliasTable) StreamSerdeUtils.deserializeObject(input);
+        }
+
+        boolean typeNeighborsFlag = StreamSerdeUtils.deserializeBoolean(input);
+        if (typeNeighborsFlag) {
+            int size = StreamSerdeUtils.deserializeInt(input);
+            typeNeighbors = new Int2ObjectOpenHashMap<>(size);
+            for (int i = 0; i < size; i++) {
+                int nodeId = StreamSerdeUtils.deserializeInt(input);
+                long[] neighbors = StreamSerdeUtils.deserializeLongs(input);
+                typeNeighbors.put(nodeId, neighbors);
+            }
         }
     }
 
