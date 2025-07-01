@@ -36,6 +36,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class StreamSerdeUtils {
 
@@ -304,7 +306,7 @@ public class StreamSerdeUtils {
   // =======================================================
   // Float array
   public static void serializeFloats(DataOutputStream out, float[] values, int start, int end)
-      throws IOException {
+          throws IOException {
     if (values == null) {
       serializeInt(out, 0);
     } else {
@@ -825,8 +827,9 @@ public class StreamSerdeUtils {
   public static int serializedIntFloatVectorsLen(IntFloatVector[] values) {
     int start = 0;
     int end = values.length;
-    int len = 0;
+    int len = INT_LENGTH;
     for (int i = start; i < end; i++) {
+      len += INT_LENGTH + LONG_LENGTH;
       len += serializedIntFloatVectorLen(values[i]);
     }
     return len;
@@ -931,8 +934,9 @@ public class StreamSerdeUtils {
   public static int serializedLongFloatVectorsLen(LongFloatVector[] values) {
     int start = 0;
     int end = values.length;
-    int len = 0;
+    int len = INT_LENGTH;
     for (int i = start; i < end; i++) {
+      len += INT_LENGTH + LONG_LENGTH;
       len += serializedLongFloatVectorLen(values[i]);
     }
     return len;
@@ -1036,8 +1040,9 @@ public class StreamSerdeUtils {
   public static int serializedLongIntVectorsLen(LongIntVector[] values) {
     int start = 0;
     int end = values.length;
-    int len = 0;
+    int len = INT_LENGTH;
     for (int i = start; i < end; i++) {
+      len += INT_LENGTH + LONG_LENGTH;
       len += serializedLongIntVectorLen(values[i]);
     }
     return len;
@@ -1151,6 +1156,102 @@ public class StreamSerdeUtils {
       default:
         throw new UnsupportedOperationException("Only support basic type");
     }
+  }
+
+  public static void serializeLongsMap(DataOutputStream out, Map<String, long[]> pairs) throws IOException {
+    if (pairs == null) {
+      serializeInt(out, 0);
+    } else {
+      serializeInt(out, pairs.size());
+      for (Map.Entry<String, long[]> pair: pairs.entrySet()) {
+        serializeBytes(out, pair.getKey().getBytes());
+        serializeLongs(out, pair.getValue());
+      }
+    }
+  }
+
+  public static Map<String, long[]> deserializeLongsMap(DataInputStream in) throws IOException {
+    int len = in.readInt();
+    Map<String, long[]> pairs = new HashMap<>();
+    for (int i = 0; i < len; i++) {
+      String key = new String(deserializeBytes(in));
+      long[] value = deserializeLongs(in);
+      pairs.put(key, value);
+    }
+    return pairs;
+  }
+
+  public static int serializedLongsMapLen(Map<String, long[]> pairs) {
+    int len = INT_LENGTH;
+    for (Map.Entry<String, long[]> pair: pairs.entrySet()) {
+      len += serializedBytesLen(pair.getKey().getBytes());
+      len += serializedLongsLen(pair.getValue());
+    }
+    return len;
+  }
+
+  public static void serializeIntsMap(DataOutputStream out, Map<String, int[]> pairs) throws IOException {
+    if (pairs == null) {
+      serializeInt(out, 0);
+    } else {
+      serializeInt(out, pairs.size());
+      for (Map.Entry<String, int[]> pair: pairs.entrySet()) {
+        serializeBytes(out, pair.getKey().getBytes());
+        serializeInts(out, pair.getValue());
+      }
+    }
+  }
+
+  public static Map<String, int[]> deserializeIntsMap(DataInputStream in) throws IOException {
+    int len = in.readInt();
+    Map<String, int[]> pairs = new HashMap<>();
+    for (int i = 0; i < len; i++) {
+      String key = new String(deserializeBytes(in));
+      int[] value = deserializeInts(in);
+      pairs.put(key, value);
+    }
+    return pairs;
+  }
+
+  public static int serializedIntsMapLen(Map<String, int[]> pairs) {
+    int len = INT_LENGTH;
+    for (Map.Entry<String, int[]> pair: pairs.entrySet()) {
+      len += serializedBytesLen(pair.getKey().getBytes());
+      len += serializedIntsLen(pair.getValue());
+    }
+    return len;
+  }
+
+  public static void serializeFloatsMap(DataOutputStream out, Map<String, float[]> pairs) throws IOException {
+    if (pairs == null) {
+      serializeInt(out, 0);
+    } else {
+      serializeInt(out, pairs.size());
+      for (Map.Entry<String, float[]> pair: pairs.entrySet()) {
+        serializeBytes(out, pair.getKey().getBytes());
+        serializeFloats(out, pair.getValue());
+      }
+    }
+  }
+
+  public static Map<String, float[]> deserializeFloatsMap(DataInputStream in) throws IOException {
+    int len = in.readInt();
+    Map<String, float[]> pairs = new HashMap<>();
+    for (int i = 0; i < len; i++) {
+      String key = new String(deserializeBytes(in));
+      float[] value = deserializeFloats(in);
+      pairs.put(key, value);
+    }
+    return pairs;
+  }
+
+  public static int serializedFloatsMapLen(Map<String, float[]> pairs) {
+    int len = FLOAT_LENGTH;
+    for (Map.Entry<String, float[]> pair: pairs.entrySet()) {
+      len += serializedBytesLen(pair.getKey().getBytes());
+      len += serializedFloatsLen(pair.getValue());
+    }
+    return len;
   }
 
   public static void main(String[] args) {

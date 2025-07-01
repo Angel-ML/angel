@@ -43,6 +43,22 @@ public class GeneralInitParam extends UpdateParam {
     this.features = features;
   }
 
+  public long[] getNodeIds() {
+    return nodeIds;
+  }
+
+  public void setNodeIds(long[] nodeIds) {
+    this.nodeIds = nodeIds;
+  }
+
+  public IElement[] getFeatures() {
+    return features;
+  }
+
+  public void setFeatures(IElement[] features) {
+    this.features = features;
+  }
+
   @Override
   public List<PartitionUpdateParam> split() {
     MatrixMeta meta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);

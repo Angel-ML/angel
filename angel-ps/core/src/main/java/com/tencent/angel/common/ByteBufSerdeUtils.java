@@ -40,6 +40,9 @@ import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
+import org.omg.CORBA.INITIALIZE;
 
 public class ByteBufSerdeUtils {
 
@@ -852,8 +855,9 @@ public class ByteBufSerdeUtils {
   public static int serializedIntFloatVectorsLen(IntFloatVector[] values) {
     int start = 0;
     int end = values.length;
-    int len = 0;
+    int len = INT_LENGTH;
     for (int i = start; i < end; i++) {
+      len += INT_LENGTH + LONG_LENGTH;
       len += serializedIntFloatVectorLen(values[i]);
     }
     return len;
@@ -954,8 +958,9 @@ public class ByteBufSerdeUtils {
   public static int serializedLongFloatVectorsLen(LongFloatVector[] values) {
     int start = 0;
     int end = values.length;
-    int len = 0;
+    int len = INT_LENGTH;
     for (int i = start; i < end; i++) {
+      len += INT_LENGTH + LONG_LENGTH;
       len += serializedLongFloatVectorLen(values[i]);
     }
     return len;
@@ -1056,8 +1061,9 @@ public class ByteBufSerdeUtils {
   public static int serializedLongIntVectorsLen(LongIntVector[] values) {
     int start = 0;
     int end = values.length;
-    int len = 0;
+    int len = INT_LENGTH;
     for (int i = start; i < end; i++) {
+      len += INT_LENGTH + LONG_LENGTH;
       len += serializedLongIntVectorLen(values[i]);
     }
     return len;
@@ -1284,6 +1290,93 @@ public class ByteBufSerdeUtils {
     }
   }
 
+  // ser and deser map<String, long[]>
+  public static void serializeLongsMap(ByteBuf out, Map<String, long[]> pairs) {
+    serializeInt(out, pairs.size());
+    for (Map.Entry<String, long[]> pair: pairs.entrySet()) {
+      serializeBytes(out, pair.getKey().getBytes());
+      serializeLongs(out, pair.getValue());
+    }
+  }
+
+  public static Map<String, long[]> deserializeLongsMap(ByteBuf in) {
+    int size = deserializeInt(in);
+    Map<String, long[]> pairs = new HashMap<>();
+    for (int i = 0; i < size; i++) {
+      String key = new String(deserializeBytes(in));
+      long[] value = deserializeLongs(in);
+      pairs.put(key, value);
+    }
+    return pairs;
+  }
+
+  public static int serializedLongsMapLen(Map<String, long[]> pairs) {
+    int len = INT_LENGTH;
+    for (Map.Entry<String, long[]> pair: pairs.entrySet()) {
+      len += serializedBytesLen(pair.getKey().getBytes());
+      len += serializedLongsLen(pair.getValue());
+    }
+    return len;
+  }
+
+  // ser and deser map<String, int[]>
+  public static void serializeIntsMap(ByteBuf out, Map<String, int[]> pairs) {
+    serializeInt(out, pairs.size());
+    for (Map.Entry<String, int[]> pair: pairs.entrySet()) {
+      serializeBytes(out, pair.getKey().getBytes());
+      serializeInts(out, pair.getValue());
+    }
+  }
+
+  public static Map<String, int[]> deserializeIntsMap(ByteBuf in) {
+    int size = deserializeInt(in);
+    Map<String, int[]> pairs = new HashMap<>();
+    for (int i = 0; i < size; i++) {
+      String key = new String(deserializeBytes(in));
+      int[] value = deserializeInts(in);
+      pairs.put(key, value);
+    }
+    return pairs;
+  }
+
+  public static int serializedIntsMapLen(Map<String, int[]> pairs) {
+    int len = INT_LENGTH;
+    for (Map.Entry<String, int[]> pair: pairs.entrySet()) {
+      len += serializedBytesLen(pair.getKey().getBytes());
+      len += serializedIntsLen(pair.getValue());
+    }
+    return len;
+  }
+
+  // ser and deser map<String, float[]>
+  public static void serializeFloatsMap(ByteBuf out, Map<String, float[]> pairs) {
+    serializeInt(out, pairs.size());
+    for (Map.Entry<String, float[]> pair: pairs.entrySet()) {
+      serializeBytes(out, pair.getKey().getBytes());
+      serializeFloats(out, pair.getValue());
+    }
+  }
+
+  public static Map<String, float[]> deserializeFloatsMap(ByteBuf in) {
+    int size = deserializeInt(in);
+    Map<String, float[]> pairs = new HashMap<>();
+    for (int i = 0; i < size; i++) {
+      String key = new String(deserializeBytes(in));
+      float[] value = deserializeFloats(in);
+      pairs.put(key, value);
+    }
+    return pairs;
+  }
+
+  public static int serializedFloatsMapLen(Map<String, float[]> pairs) {
+    int len = FLOAT_LENGTH;
+    for (Map.Entry<String, float[]> pair: pairs.entrySet()) {
+      len += serializedBytesLen(pair.getKey().getBytes());
+      len += serializedFloatsLen(pair.getValue());
+    }
+    return len;
+  }
+
   public static void main(String[] args) {
     boolean b = true;
     ByteBuf buf = ByteBufUtils.newByteBuf(serializedBooleanLen(b), true);
@@ -1436,4 +1529,33 @@ public class ByteBufSerdeUtils {
   public static int serializedEmptyFloatsLen() {
     return serializedFloatsLen(emptyFloats);
   }
+
+  public static void serializeObjectMap(ByteBuf out, Map<String, IElement> pairs) {
+    serializeInt(out, pairs.size());
+    for (Map.Entry<String, IElement> pair: pairs.entrySet()) {
+      serializeBytes(out, pair.getKey().getBytes());
+      serializeObject(out, pair.getValue());
+    }
+  }
+
+  public static Map<String, IElement> deserializeObjectMap(ByteBuf in) {
+    int size = deserializeInt(in);
+    Map<String, IElement> pairs = new HashMap<>();
+    for (int i = 0; i < size; i++) {
+      String key = new String(deserializeBytes(in));
+      IElement value = (IElement) deserializeObject(in);
+      pairs.put(key, value);
+    }
+    return pairs;
+  }
+
+  public static int serializedObjectMapLen(Map<String, IElement> pairs) {
+    int len = INT_LENGTH;
+    for (Map.Entry<String, IElement> pair: pairs.entrySet()) {
+      len += serializedBytesLen(pair.getKey().getBytes());
+      len += serializedObjectLen(pair.getValue());
+    }
+    return len;
+  }
+
 }
