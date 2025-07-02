@@ -19,12 +19,15 @@ package com.tencent.angel.graph.client.psf.sample;
 
 import com.tencent.angel.graph.client.psf.sample.sampleneighbor.SampleType;
 import com.tencent.angel.graph.data.GraphNode;
+import com.tencent.angel.graph.data.MultiGraphNode;
 import com.tencent.angel.ml.math2.vector.IntFloatVector;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.ps.storage.vector.element.IElement;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import java.util.ArrayList;
 import java.util.Random;
@@ -64,6 +67,86 @@ public class SampleUtils {
             System.arraycopy(nodeNeighbors, 0, sampleNeighbors,
                 nodeNeighbors.length - startPos,
                 count - (nodeNeighbors.length - startPos));
+          }
+        }
+      }
+      nodeId2SampleNeighbors.put(nodeId, sampleNeighbors);
+    }
+    return nodeId2SampleNeighbors;
+  }
+
+  public static Long2ObjectOpenHashMap<long[]> sampleByName(
+          ServerRow row, int count, long[] nodeIds, String name, long seed) {
+    Random r = new Random(seed);
+    Long2ObjectOpenHashMap<long[]> nodeId2SampleNeighbors =
+            new Long2ObjectOpenHashMap<>(nodeIds.length);
+    for (long nodeId : nodeIds) {
+      long[] sampleNeighbors;
+      // Get node neighbor number
+      MultiGraphNode graphNode = (MultiGraphNode) ((ServerLongAnyRow) row).get(nodeId);
+      if (graphNode == null || graphNode.getNeighbors() == null) {
+        sampleNeighbors = new long[0];
+      } else {
+        long[] nodeNeighbors = graphNode.getNeighbors()
+                .getOrDefault(name, new long[0]);
+        if (nodeNeighbors == null || nodeNeighbors.length == 0) {
+          sampleNeighbors = new long[0];
+        } else if (count <= 0) {
+          sampleNeighbors = nodeNeighbors;
+        } else {
+          sampleNeighbors = new long[count];
+          // If the neighbor number > count, just copy a range of neighbors to
+          // the result array, the copy position is random
+          int startPos = Math.abs(r.nextInt()) % nodeNeighbors.length;
+          if (startPos + count <= nodeNeighbors.length) {
+            System.arraycopy(nodeNeighbors, startPos,
+                    sampleNeighbors, 0, count);
+          } else {
+            System.arraycopy(nodeNeighbors, startPos, sampleNeighbors, 0,
+                    nodeNeighbors.length - startPos);
+            System.arraycopy(nodeNeighbors, 0, sampleNeighbors,
+                    nodeNeighbors.length - startPos,
+                    count - (nodeNeighbors.length - startPos));
+          }
+        }
+      }
+      nodeId2SampleNeighbors.put(nodeId, sampleNeighbors);
+    }
+    return nodeId2SampleNeighbors;
+  }
+
+  public static Long2ObjectOpenHashMap<long[]> sampleByType(
+          ServerRow row, int count, long[] nodeIds, SampleType sampleType, int node_or_edge_type, long seed) {
+
+    Random r = new Random(seed);
+    Long2ObjectOpenHashMap<long[]> nodeId2SampleNeighbors =
+            new Long2ObjectOpenHashMap<>(nodeIds.length);
+    for (long nodeId : nodeIds) {
+      long[] sampleNeighbors;
+      GraphNode graphNode = (GraphNode) ((ServerLongAnyRow) row).get(nodeId);
+      if (graphNode == null) {
+        sampleNeighbors = new long[0];
+      } else {
+        Int2ObjectOpenHashMap<long[]> typeNeighbors = graphNode.getTypeNeighbors();
+        long[] nodeNeighbors = new long[0];
+        if (typeNeighbors != null && typeNeighbors.containsKey(node_or_edge_type)) {
+          nodeNeighbors = typeNeighbors.get(node_or_edge_type);
+        }
+        if (nodeNeighbors.length == 0) {
+          sampleNeighbors = new long[0];
+        } else if (count <= 0) {
+          sampleNeighbors = nodeNeighbors;
+        } else {
+          int startPos = 0;
+          int len = nodeNeighbors.length;
+          startPos = r.nextInt(len);
+          sampleNeighbors = randomSampling(nodeNeighbors, count, len, startPos);
+          if (count > len) {
+            LongArrayList sampleNeighborsList = new LongArrayList(sampleNeighbors);
+            for (int i = len; i < count; i++) {
+              sampleNeighborsList.add(sampleNeighbors[i % len]);
+            }
+            sampleNeighbors = sampleNeighborsList.toLongArray();
           }
         }
       }
@@ -377,5 +460,27 @@ public class SampleUtils {
       nodeId2SampleEdgeFeats.put(nodeId, edgeFeats);
     }
     return new Tuple2<>(nodeId2SampleNeighbors, nodeId2SampleEdgeFeats);
+  }
+
+  public static long[] randomSampling(long[] nodeNeighbors, int count, int len, int startPos) {
+    long[] sampleNeighbors;
+    // If the neighbor number > count, just copy a range of neighbors to
+    // the result array, the copy position is random
+    if (count <= 0 || count >= len) {
+      sampleNeighbors = nodeNeighbors;
+    } else {
+      sampleNeighbors = new long[count];
+      if (startPos + count <= len) {
+        System.arraycopy(nodeNeighbors, startPos,
+                sampleNeighbors, 0, count);
+      } else {
+        System.arraycopy(nodeNeighbors, startPos, sampleNeighbors, 0,
+                nodeNeighbors.length - startPos);
+        System.arraycopy(nodeNeighbors, 0, sampleNeighbors,
+                nodeNeighbors.length - startPos,
+                count - (nodeNeighbors.length - startPos));
+      }
+    }
+    return sampleNeighbors;
   }
 }
