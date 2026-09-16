@@ -2,6 +2,8 @@
 
 > SCC(strongly connected components) algorithm is used to calculate the strongly connected components of a graph.
 
+> **Note**: The SCC algorithm implementation is not included in the current open-source release. This document serves as algorithm reference only, and the example command is not runnable for now.
+
 ## 1. Algorithm Introduction
 On a directed graph, SCC algorithm assigns the same label to nodes belonging to the same strongly connected component. We implemented scc algorithm for large-scale networks based on Spark On Angel.
 The ps maintains the node's latest estimation of label and status.
@@ -53,7 +55,7 @@ $SPARK_HOME/bin/spark-submit \
   --num-executors 1 \
   --executor-cores 4 \
   --executor-memory 10g \
-  --class org.apache.spark.angel.examples.graph.SCCExample \
+  --class com.tencent.angel.spark.examples.cluster.SCCExample \
   ../lib/spark-on-angel-examples-3.3.0.jar
   input:$input output:$output sep:tab storageLevel:MEMORY_ONLY useBalancePartition:true \
   partitionNum:4 psPartitionNum:1

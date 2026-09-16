@@ -63,6 +63,6 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.EGESExample \
-  ../lib/spark-on-angel-examples-3.1.0.jar \
+  ../lib/spark-on-angel-examples-3.3.0.jar \
   input:$input output:$output matrixOutput:$matrixOutput weightedSI:true numWeightsSI:3 embeddingDim:32 numNegSamples:5 epochNum:10 stepSize:0.01 decayRate:0.5 batchSize:1000 dataPartitionNum:12 psPartitionNum:10 needRemapping:false
 ```

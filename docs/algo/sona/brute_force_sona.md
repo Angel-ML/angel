@@ -60,7 +60,7 @@ $SPARK_HOME/bin/spark-submit \
   --num-executors 1 \
   --executor-cores 4 \
   --executor-memory 10g \
-  --class org.apache.spark.angel.examples.graph.SwingExample \
+  --class com.tencent.angel.spark.examples.cluster.BruteForceExample \
   ../lib/spark-on-angel-examples-3.3.0.jar
   vectorPath:$vectorPath queryPath:$queryPath outputPath:$outputPath itemSep:colon vecSep:space saveItemSep:tab 、
   storageLevel:MEMORY_ONLY partitionNum:4 psPartitionNum:1 distanceFunction:cosine-distance queryPartitionNum:4
