@@ -53,7 +53,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.CopraExample \
-  ../lib/spark-on-angel-examples-3.3.0.jar
+  ../lib/spark-on-angel-examples-3.4.0.jar
   input:$input output:$output \
   sep:tab storageLevel:MEMORY_ONLY useBalancePartition:true maxIteration：10\
   partitionNum:4 psPartitionNum:1 numMaxCommunities:3 needReplicateEdge:true

@@ -40,8 +40,8 @@ $SPARK_HOME/bin/spark-submit \
   --num-executors 1 \
   --executor-cores 4 \
   --executor-memory 10g \
-  --class org.apache.spark.angel.examples.graph.WeightedHIndexExample \
-  ../lib/spark-on-angel-examples-3.3.0.jar
+  --class com.tencent.angel.spark.examples.cluster.WeightedHIndexExample \
+  ../lib/spark-on-angel-examples-3.4.0.jar
   input:$input output:$output sep:tab storageLevel:MEMORY_ONLY useBalancePartition:true \
   partitionNum:4 psPartitionNum:1
 ```

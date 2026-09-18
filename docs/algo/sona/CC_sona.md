@@ -50,8 +50,8 @@ $SPARK_HOME/bin/spark-submit \
   --num-executors 1 \
   --executor-cores 4 \
   --executor-memory 10g \
-  --class org.apache.spark.angel.examples.graph.CCExample \
-  ../lib/spark-on-angel-examples-3.1.0.jar
+  --class com.tencent.angel.spark.examples.cluster.CCExample \
+  ../lib/spark-on-angel-examples-3.4.0.jar
   input:$input output:$output sep:tab storageLevel:MEMORY_ONLY useBalancePartition:true \
   partitionNum:4 psPartitionNum:1 localLimit:100000000 compressIterNum:3 needReplicaEdge:true
 ```

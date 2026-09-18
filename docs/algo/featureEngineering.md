@@ -33,7 +33,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.DataSamplingExample \
-  ../lib/spark-on-angel-examples-3.3.0.jar \
+  ../lib/spark-on-angel-examples-3.4.0.jar \
   input:$input output:$output sep:tab partitionNum:4 \
   sampleRate:0.8 takeSample:25 \
   
@@ -101,7 +101,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-memory 10g \
   --files ./localPath/FillMissingValueConf.txt \
   --class com.tencent.angel.spark.examples.cluster.FillMissingValueExample \
-  ../lib/spark-on-angel-examples-3.3.0.jar \
+  ../lib/spark-on-angel-examples-3.4.0.jar \
   input:$input output:$output fillStatPath:$fillStatPath sep:tab partitionNum:4 \
   user-files:FillMissingValueConf.txt \
   
@@ -140,7 +140,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.SpliterExample \
-  ../lib/spark-on-angel-examples-3.3.0.jar \
+  ../lib/spark-on-angel-examples-3.4.0.jar \
   input:$input output1:$output1 output2:$output2 sep:tab partitionNum:4 \
   fraction:0.8 \
   
@@ -273,7 +273,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.DummyExample \
   --files ./localPath/featConfPath \
-  ../lib/spark-on-angel-examples-3.3.0.jar \
+  ../lib/spark-on-angel-examples-3.4.0.jar \
   input:$input output:$output sep:tab partitionNum:4 user-files:featConfPath \
   negSampleRate:1 countThreshold:5 \
   
@@ -341,7 +341,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.CorrelationExample \
-  ../lib/spark-on-angel-examples-3.3.0.jar \
+  ../lib/spark-on-angel-examples-3.4.0.jar \
   input:$input output:$output sep:tab partitionNum:4 \
   sampleRate:0.8 newColStr:1-5 oriColStr:7-9 method:pearson \
   
@@ -382,7 +382,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.MutualInformationExample \
-  ../lib/spark-on-angel-examples-3.3.0.jar \
+  ../lib/spark-on-angel-examples-3.4.0.jar \
   input:$input output:$output sep:tab partitionNum:4 \
   sampleRate:0.8 newColStr:1-5 oriColStr:7-9
   
@@ -459,7 +459,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-memory 10g \
   --files ./localPath/DiscreteJson.txt \
   --class com.tencent.angel.spark.examples.cluster.DiscretizeExample \
-  ../lib/spark-on-angel-examples-3.3.0.jar \
+  ../lib/spark-on-angel-examples-3.4.0.jar \
   input:$input output:$output disBoundsPath:$disBoundsPath sep:tab partitionNum:4 \
   sampleRate:1 user-files:DiscreteJson.txt \
   
@@ -511,7 +511,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.InfoComputeExample \
-  ../lib/spark-on-angel-examples-3.3.0.jar \
+  ../lib/spark-on-angel-examples-3.4.0.jar \
   input:$input output:$output sep:tab partitionNum:4 \
   sampleRate:1 labelCol:0 featureCols:1-10 \
   
@@ -560,7 +560,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.RandomizedSVDExample \
-  ../lib/spark-on-angel-examples-3.3.0.jar \
+  ../lib/spark-on-angel-examples-3.4.0.jar \
   input:$input outputS:$outputS outputU:$outputU outputV:$outputV sep:tab partitionNum:4 \
   sampleRate:1 iterationNormalizer:QR numIteration:3 qOverSample:1 K:2 abelCol:0 rCond:1e-9 \
   
@@ -654,7 +654,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-memory 10g \
   --files ./localPath/scaleConf.txt \
   --class com.tencent.angel.spark.examples.cluster.ScalerExample \
-  ../lib/spark-on-angel-examples-3.3.0.jar \
+  ../lib/spark-on-angel-examples-3.4.0.jar \
   input:$input output:$output sep:tab partitionNum:4 \
   sampleRate:1 user-files:scaleConf.txt \
   
@@ -696,7 +696,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.ReindexExample \
-  ../lib/spark-on-angel-examples-3.3.0.jar \
+  ../lib/spark-on-angel-examples-3.4.0.jar \
   input:$input output:$output maps:$maps sep:tab partitionNum:4 \
   srcIndex:0 dstIndex:1 weightIndex:2 isWeighted:false \
   

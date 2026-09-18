@@ -70,8 +70,8 @@ $SPARK_HOME/bin/spark-submit \
   --num-executors 1 \
   --executor-cores 4 \
   --executor-memory 10g \
-  --class org.apache.spark.angel.examples.graph.SwingExample \
-  ../lib/spark-on-angel-examples-3.3.0.jar
+  --class com.tencent.angel.spark.examples.cluster.EgoNetworkExample \
+  ../lib/spark-on-angel-examples-3.4.0.jar
   input:$input output:$output nodePath:$nodePath sep:tab sepInNodePath:space needReplicaEdges:false \
   storageLevel:MEMORY_ONLY partitionNum:4 psPartitionNum:1 batchSize:10000 pullBatchSize:1000
 ```

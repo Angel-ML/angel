@@ -1,11 +1,11 @@
 ![](assets/angel_logo.png)
 
-[![license](http://img.shields.io/badge/license-Apache2.0-brightgreen.svg?style=flat)](https://github.com/Angel-ML/angel/blob/branch-3.2.0/LICENSE.TXT)
-[![Release Version](https://img.shields.io/badge/release-3.2.0-red.svg)](https://github.com/tencent/angel/releases)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/tencent/angel/pulls)
-[![Download Code](https://img.shields.io/badge/download-zip-green.svg)](https://github.com/Angel-ML/angel/archive/refs/heads/branch-3.2.0.zip)
+[![license](https://img.shields.io/badge/license-Apache2.0-brightgreen.svg?style=flat)](https://github.com/Tencent/angel/blob/master/LICENSE.TXT)
+[![Release Version](https://img.shields.io/badge/release-3.4.0-red.svg)](https://github.com/Tencent/angel/releases)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/angel/pulls)
+[![Download Code](https://img.shields.io/badge/download-zip-green.svg)](https://github.com/Tencent/angel/archive/refs/tags/Release-3.4.0.zip)
 
-[(English Documents Available)](./README_en.md)
+[(English Documents Available)](./README.md)
 
 **Angel**是一个基于参数服务器（Parameter Server）理念开发的高性能分布式机器学习和图计算平台，它基于腾讯内部的海量数据进行了反复的调优，并具有广泛的适用性和稳定性，模型维度越高，优势越明显。 **Angel**由腾讯和北京大学联合开发，兼顾了工业界的高可用性和学术界的创新性。
 
