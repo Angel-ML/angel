@@ -69,7 +69,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.HnswExample \
-  ../lib/spark-on-angel-examples-3.3.0.jar
+  ../lib/spark-on-angel-examples-3.4.0.jar
   vectorPath:$vectorPath queryPath:$queryPath outputPath:$outputPath itemSep:colon vecSep:space saveItemSep:tab storageLevel:MEMORY_ONLY \
   partitionNum:4 psPartitionNum:1 distanceFunction:cosine-distance queryPartitionNum:4 ef:40 efConstruction:40 M:16 maxM:16 maxM0:32 mL:1.0
 ```

@@ -59,6 +59,6 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.Node2VecExample \
-  ../lib/spark-on-angel-examples-3.3.0.jar \
+  ../lib/spark-on-angel-examples-3.4.0.jar \
   input:$input output:$output isWeighted:false delimiter:space needReplicaEdge:true epochNum:1 walkLength:20 useTrunc:false truncLength:6000 batchSize:1000 setCheckPoint:true pValue:0.8 qValue:1.2
 ```

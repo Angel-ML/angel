@@ -52,7 +52,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.KCoreExample \
-  ../lib/spark-on-angel-examples-3.3.0.jar
+  ../lib/spark-on-angel-examples-3.4.0.jar
   input:$input output:$output sep:space batchSize:1000 partitionNum:2 psPartitionNum:2 \
   useBalancePartition:false needReplicaEdge:true
 ```

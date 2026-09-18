@@ -1,9 +1,9 @@
 ![](assets/angel_logo.png)
 
 [![license](https://img.shields.io/badge/license-Apache2.0-brightgreen.svg?style=flat)](https://github.com/Tencent/angel/blob/master/LICENSE.TXT)
-[![Release Version](https://img.shields.io/badge/release-3.3.0-red.svg)](https://github.com/Tencent/angel/releases)
+[![Release Version](https://img.shields.io/badge/release-3.4.0-red.svg)](https://github.com/Tencent/angel/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/angel/pulls)
-[![Download Code](https://img.shields.io/badge/download-zip-green.svg)](https://github.com/Tencent/angel/archive/refs/tags/Release-3.3.0.zip)
+[![Download Code](https://img.shields.io/badge/download-zip-green.svg)](https://github.com/Tencent/angel/archive/refs/tags/Release-3.4.0.zip)
 
 [(ZH-CN Version)](./README_CN.md)
 

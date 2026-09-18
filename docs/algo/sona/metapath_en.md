@@ -42,7 +42,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.MetaPath2VecExample \
-  ../lib/spark-on-angel-examples-3.3.0.jar
+  ../lib/spark-on-angel-examples-3.4.0.jar
   input:$input output:$output sep:tab nodeTypePath:$nodeTypePath metaPath:0-1-2-1-0\
   storageLevel:MEMORY_ONLY useBalancePartition:true \
   partitionNum:4 psPartitionNum:1

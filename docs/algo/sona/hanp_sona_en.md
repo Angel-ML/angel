@@ -52,6 +52,6 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.HanpExample \
-  ../lib/spark-on-angel-examples-3.3.0.jar \
+  ../lib/spark-on-angel-examples-3.4.0.jar \
   input:$input output:$output isWeighted:true sep:tab maxIteration:10 preserveRate:0.1 delta:0.1 psPartitionNum:10 partitionNum:12
 ```
