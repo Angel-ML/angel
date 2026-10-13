@@ -1,7 +1,7 @@
 package com.tencent.angel.graph.connectedcomponent.wcc
 
 import com.tencent.angel.graph.utils.collection.OpenHashMap
-import edu.princeton.cs.algs4.UF
+import com.tencent.angel.spark.ml.util.UF
 
 
 object LocalWCC {
