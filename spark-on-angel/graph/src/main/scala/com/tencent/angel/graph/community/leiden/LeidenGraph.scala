@@ -165,12 +165,12 @@ private[leiden] class LeidenGraph(@transient @BeanProperty var graphs: RDD[CSR],
             // T ← {C | C ∈ P, C ⊆ S, E(C, S − C) ≥ γ∥C∥ · (∥S∥ − ∥C∥)}
             val T = group.map { case ((node, _), nbrs) =>
               node2NewComm.get(node) -> (node, nbrs)
-            }.groupBy(_._1).filter { case (_, nbrs) =>
+            }.groupBy(_._1).filter { case (rComm, nbrs) =>
               val (commRNodes, pair) = nbrs.map(_._2).unzip
               // E(C, S − C)
               val edges = pair.flatMap { x => x.filter(y => !commRNodes.contains(y._1)).map(_._2) }.sum
               // γ∥C∥ · (∥S∥ − ∥C∥)}
-              edges >= gamma * newSize * (commSize - newSize)
+              CPM.isWellConnected(edges, gamma, commNewInfo(rComm)._1, commSize)
             }
             //println(s"   T:{${T.map(x => s"${x._1}:[${x._2.map(_._2._1).mkString(", ")}]").mkString(", ")}}")
 
