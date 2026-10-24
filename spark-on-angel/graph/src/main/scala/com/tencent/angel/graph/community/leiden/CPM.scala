@@ -30,4 +30,11 @@ object CPM {
            ): Float = {
     targetEdges - sourceCommEdges - gamma * nodeSize * (nodeSize + targetSize -sourceSize)
   }
+
+  private[leiden] def isWellConnected(edgeWeight: Float,
+                      gamma: Float,
+                      communitySize: Float,
+                      superCommunitySize: Float): Boolean = {
+    edgeWeight >= gamma * communitySize * (superCommunitySize - communitySize)
+  }
 }
