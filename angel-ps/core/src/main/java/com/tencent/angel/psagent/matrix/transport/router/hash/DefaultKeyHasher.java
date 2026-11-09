@@ -15,7 +15,7 @@ public class DefaultKeyHasher extends KeyHash {
 
   @Override
   public int hash(long key) {
-    return Math.abs((int)key);
+    return Math.abs(Long.hashCode(key));
   }
 
   @Override

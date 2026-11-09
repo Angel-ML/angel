@@ -37,6 +37,8 @@ class LDARunner extends MLRunner {
     // Input format
     conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, classOf[BalanceInputFormat].getName)
 
+    conf.set(AngelConf.ANGEL_PS_ROUTER_TYPE, "range")
+
     val numTopics = conf.getInt(LDAModel.TOPIC_NUM, 10)
     val numWorkers = conf.getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER, 10)
     val numServers = conf.getInt(AngelConf.ANGEL_PS_NUMBER, 10)

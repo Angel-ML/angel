@@ -18,11 +18,12 @@
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.graph.statistics.lccUndirected.{GroupLccUndirected, LccUndirected}
-import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
 import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
+import com.tencent.angel.spark.ml.graph.algo.statistics.lccUndirected._
+import com.tencent.angel.spark.ml.graph.utils.{Delimiter, GraphIO}
+import com.tencent.angel.spark.ml.util.DataStatistics
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -57,7 +58,8 @@ object LccUndirectedExample {
     val startTime = System.currentTimeMillis()
     val df = GraphIO.load(input, isWeighted = false, srcIndex = srcIndex, dstIndex = dstIndex, sep = sep)
 //    DataStatistics.calcRDDSize(df, "angel.input.data")
-
+    DataStatistics.setDataPartitionNum(partitionNum)
+    DataStatistics.setPSPartitionNum(psPartitionNum)
     if (userGroupInput == null) {
       val lcc = new LccUndirected()
         .setPartitionNum(partitionNum)
@@ -69,6 +71,7 @@ object LccUndirectedExample {
         .setSrcNodeIndex(srcIndex)
         .setDstNodeIndex(dstIndex)
         .setDelimiter(sep)
+      DataStatistics.setAppName(lcc.getClass.getCanonicalName)
       val mapping = lcc.transform(df)
       GraphIO.save(mapping, output)
     } else {
@@ -82,6 +85,7 @@ object LccUndirectedExample {
         .setSrcNodeIndex(srcIndex)
         .setDstNodeIndex(dstIndex)
         .setDelimiter(sep)
+      DataStatistics.setAppName(lcc.getClass.getCanonicalName)
 
       println(s"userGroupInput is not null, calc lcc by group.")
       val userGroup = GraphIO.load(userGroupInput, isWeighted=false, srcIndex = groupSrcIndex, dstIndex = groupDstIndex, sep=sep)
@@ -111,7 +115,7 @@ object LccUndirectedExample {
     conf.set("spark.hadoop.io.file.buffer.size", "16000000");
 
 //    // Add jvm parameters for executors
-//    val executorJvmOptions = " -Djava.library.path=$JAVA_LIBRARY_PATH:/data/tdwadmin/tdwenv/tdwgaia/lib/native:/data/gaiaadmin/gaiaenv/tdwgaia/lib/native " +
+//    val executorJvmOptions = " -Djava.library.path=$JAVA_LIBRARY_PATH " +
 //      "-verbose:gc -XX:-PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:<LOG_DIR>/gc.log " +
 //      "-XX:+UseG1GC -XX:MaxGCPauseMillis=1000 -XX:G1HeapRegionSize=32M " +
 //      "-XX:InitiatingHeapOccupancyPercent=60 -XX:ConcGCThreads=4 -XX:ParallelGCThreads=4 "

@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# Tencent is pleased to support the open source community by making Angel available.
+#
+# Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+#
+# https://opensource.org/licenses/Apache-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+# ----------------------------------------------------------------------------------------
+# Submit an Angel job in STANDALONE deploy mode.
+#
+# In this mode the Angel ApplicationMaster runs in this JVM, and each Parameter Server /
+# Worker is launched as an independent local JVM process via ProcessBuilder.
+# It does NOT depend on YARN or Spark; only a JDK is required.
+#
+# Required:
+#   JAVA_HOME              path to a JDK 1.8 (or later compatible) installation
+#
+# Optional:
+#   ANGEL_HOME             defaults to the parent dir of this script
+#   ANGEL_LIB              defaults to $ANGEL_HOME/lib   (must contain Angel jars +
+#                                                          hadoop-common/yarn/mapreduce-core)
+#   ANGEL_USER_JAR         extra user jar(s), colon-separated; appended to classpath
+#   ANGEL_JAVA_OPTS        extra JVM options for the client / AM JVM
+#
+# Usage:
+#   angel-standalone-submit \
+#       -Dangel.app.submit.class=com.foo.MySubmitter \
+#       -Dangel.ps.number=2 -Dangel.workergroup.number=2 \
+#       -Dangel.train.data.path=file:///data/train.libsvm \
+#       -Dangel.save.model.path=file:///tmp/angel/model
+# ----------------------------------------------------------------------------------------
+
+export ANGEL_VERSION=2.5.0
+
+if [ -z "${JAVA_HOME}" ]; then
+    echo "JAVA_HOME is not set" >&2
+    exit 1
+fi
+export PATH="${JAVA_HOME}/bin:${PATH}"
+JAVA="${JAVA_HOME}/bin/java"
+
+# Resolve ANGEL_HOME from the location of this script.
+bin=`which $0`
+bin=`dirname "${bin}"`
+bin=`cd "$bin"; pwd`
+export ANGEL_HOME="${ANGEL_HOME:-$bin/../}"
+
+ANGEL_LIB="${ANGEL_LIB:-$ANGEL_HOME/lib}"
+
+if [ ! -d "${ANGEL_LIB}" ]; then
+    echo "ANGEL_LIB directory not found: ${ANGEL_LIB}" >&2
+    echo "Set ANGEL_LIB to the directory containing Angel jars and hadoop-* jars." >&2
+    exit 1
+fi
+
+# Build classpath: all jars under $ANGEL_LIB, plus optional user jars.
+CLASSPATH=""
+for f in "${ANGEL_LIB}"/*.jar; do
+    if [ -z "${CLASSPATH}" ]; then
+        CLASSPATH="${f}"
+    else
+        CLASSPATH="${CLASSPATH}:${f}"
+    fi
+done
+
+if [ -n "${ANGEL_USER_JAR}" ]; then
+    CLASSPATH="${CLASSPATH}:${ANGEL_USER_JAR}"
+fi
+
+# Optional: include user-provided HADOOP_CONF_DIR for filesystem configs
+# (e.g. core-site.xml/hdfs-site.xml). If not set we rely on file:/// defaults.
+if [ -n "${HADOOP_CONF_DIR}" ]; then
+    CLASSPATH="${HADOOP_CONF_DIR}:${CLASSPATH}"
+fi
+
+export CLASSPATH
+
+# Force STANDALONE deploy mode regardless of what users pass on the cmdline.
+DEPLOY_MODE_OPT="-Dangel.deploy.mode=STANDALONE"
+
+# Main class. Defaults to AngelRunJar (the generic AppSubmitter-based entry point). The
+# `angel-cluster-up` script overrides this to com.tencent.angel.utils.AngelPSClusterMain
+# when the user just wants to stand up a PS cluster without an AppSubmitter.
+CLASS="${ANGEL_MAIN_CLASS:-com.tencent.angel.utils.AngelRunJar}"
+
+export PYTHONHASHSEED=0
+exec "${JAVA}" ${ANGEL_JAVA_OPTS} ${CLASS} ${DEPLOY_MODE_OPT} "$@"

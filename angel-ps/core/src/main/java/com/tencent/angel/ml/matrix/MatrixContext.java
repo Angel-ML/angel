@@ -569,11 +569,22 @@ public class MatrixContext implements Serializable {
   }
 
   private void initPartitioner() {
-    if (partitionerClass != null) {
+    if (partitionerClass == null) {
+      partitionerClass = RangePartitioner.class;
       return;
     }
 
-    partitionerClass = RangePartitioner.class;
+    // The default hash partitioner cannot represent the column range of a dense row.
+    // Fall back to range partitioning for dense matrices (check() rejects this combination).
+    // T_ANY_INTKEY_DENSE is also dense: ServerRowFactory only supports it with RANGE routing.
+    if (partitionerClass == HashPartitioner.class
+        && (rowType == RowType.T_DOUBLE_DENSE
+            || rowType == RowType.T_FLOAT_DENSE
+            || rowType == RowType.T_INT_DENSE
+            || rowType == RowType.T_LONG_DENSE
+            || rowType == RowType.T_ANY_INTKEY_DENSE)) {
+      partitionerClass = RangePartitioner.class;
+    }
   }
 
   /**

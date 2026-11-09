@@ -32,6 +32,7 @@ import com.tencent.angel.ml.matrix.psf.get.indexed.{IndexGet, IndexGetParam, Lon
 import com.tencent.angel.ml.matrix.psf.update.base.{UpdateFunc, VoidResult}
 import com.tencent.angel.ml.matrix.psf.update.zero.Zero
 import com.tencent.angel.ml.matrix.psf.update.zero.Zero.ZeroParam
+import com.tencent.angel.ps.storage.partitioner.{ColumnRangePartitioner, HashPartitioner}
 import com.tencent.angel.psagent.matrix.transport.adapter.{GetRowsResult, RowIndex}
 import com.tencent.angel.worker.task.TaskContext
 
@@ -155,6 +156,21 @@ class PSModel(
     matrixCtx.setRowType(rowType)
     this
   }
+
+  /**
+    * Set the matrix row type
+    *
+    * @param rowType row type
+    */
+  def setPartitionerType(partitionerType: String): this.type = {
+    if(partitionerType.equalsIgnoreCase("hash")) {
+      matrixCtx.setPartitionerClass(classOf[HashPartitioner])
+    } else {
+      matrixCtx.setPartitionerClass(classOf[ColumnRangePartitioner])
+    }
+    this
+  }
+
 
   def getRowType(): RowType = matrixCtx.getRowType
 
@@ -282,7 +298,7 @@ class PSModel(
     */
   @throws(classOf[AngelException])
   def increment(deltas: List[Vector]) {
-    import scala.collection.JavaConversions._
+    import scala.collection.convert.ImplicitConversions._
     for (delta <- deltas) increment(delta)
   }
 
@@ -338,21 +354,8 @@ class PSModel(
   @throws(classOf[AngelException])
   def getRows(rowIndex: RowIndex, batchNum: Int): Map[Int, Vector] = {
     val indexToVectorMap = scala.collection.mutable.Map[Int, Vector]()
-    val rows = getRowsFlow(rowIndex, batchNum)
-    try {
-      var finish = false
-      while (!finish) {
-        rows.take() match {
-          case null => finish = true
-          case row => indexToVectorMap += (row.getRowId -> row)
-        }
-      }
-    }
-    catch {
-      case e: Exception => {
-        throw new AngelException(e)
-      }
-    }
+    val rows = getClient.getRows(rowIndex.getRowIds.toIntArray)
+    rows.foreach { row => indexToVectorMap += (row.getRowId -> row) }
     indexToVectorMap
   }
 

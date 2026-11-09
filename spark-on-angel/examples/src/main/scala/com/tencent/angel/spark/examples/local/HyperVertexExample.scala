@@ -1,10 +1,10 @@
 package com.tencent.angel.spark.examples.local
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.graph.statistics.hyperloglog.HyperVertices
-import com.tencent.angel.graph.utils.GraphIO
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
+import com.tencent.angel.spark.ml.graph.algo.statistics.hyperloglog.HyperVertices
+import com.tencent.angel.spark.ml.graph.utils.GraphIO
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
@@ -13,9 +13,9 @@ object HyperVertexExample {
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
     val mode = "local"
-    val input = "data/bc/karate_club_network.txt"
-    val inputV = null
-    val output = "data/output/hyperVertex"
+    val input = "data/bc/edge"
+    val inputV = "data/bc/label"
+    val output = "model/hyper_vertex"
     val partitionNum = 1
     val storageLevel = StorageLevel.MEMORY_ONLY
     val psPartitionNum = 1

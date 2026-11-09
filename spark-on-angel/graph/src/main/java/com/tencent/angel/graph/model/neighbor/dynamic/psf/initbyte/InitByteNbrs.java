@@ -17,7 +17,9 @@
 
 package com.tencent.angel.graph.model.neighbor.dynamic.psf.initbyte;
 
+import com.tencent.angel.common.collections.DynamicLongArray;
 import com.tencent.angel.graph.common.psf.param.LongKeysUpdateParam;
+import com.tencent.angel.graph.model.neighbor.dynamic.DynamicNeighborElement;
 import com.tencent.angel.graph.utils.GraphMatrixUtils;
 import com.tencent.angel.ml.matrix.psf.update.base.GeneralPartUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
@@ -25,6 +27,7 @@ import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
 import com.tencent.angel.ps.storage.vector.element.ByteArrayElement;
 import com.tencent.angel.ps.storage.vector.element.IElement;
+import com.tencent.angel.ps.storage.vector.element.LongArrayElement;
 import com.tencent.angel.psagent.matrix.transport.router.operator.ILongKeyAnyValuePartOp;
 
 /**

@@ -16,28 +16,29 @@
  */
 package com.tencent.angel.spark.examples.cluster
 
-import com.tencent.angel.graph.community.copra.COPRA
-import com.tencent.angel.graph.utils.GraphIO
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import org.apache.spark.storage.StorageLevel
+import com.tencent.angel.spark.ml.graph.algo.communitydetection.copra.COPRA
+import com.tencent.angel.spark.ml.graph.utils.GraphIO
+import com.tencent.angel.spark.ml.util.DataStatistics
 import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.storage.StorageLevel
 
-
+// support balance partition and weighted graph
 object CopraExample {
 
   def main(args: Array[String]): Unit = {
 
     val params = ArgsUtil.parse(args)
-    val mode = params.getOrElse("mode", "local")
+    val mode = params.getOrElse("mode", "yarn-cluster")
 
     val input = params.getOrElse("input", null)
     val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
     val batchSize = params.getOrElse("batchSize", "50").toInt
     val output = params.getOrElse("output", null)
-    val src = params.getOrElse("src", "0").toInt
-    val dst = params.getOrElse("dst", "1").toInt
-    val weightIndex = params.getOrElse("weightIndex", "2").toInt
+    val srcIndex = params.getOrElse("src", "0").toInt
+    val dstIndex = params.getOrElse("dst", "1").toInt
+    val weightIndex = params.getOrElse("weightCol", "2").toInt
     val psPartitionNum = params.getOrElse("psPartitionNum", "1").toInt
     val partitionNum = params.getOrElse("partitionNum", "1").toInt
     val useEdgeBalancePartition = params.getOrElse("useEdgeBalancePartition", "false").toBoolean
@@ -45,6 +46,7 @@ object CopraExample {
     val arrayBoundsPath = params.getOrElse("arrayBoundsPath", null)
     val numMaxCommunities = params.getOrElse("numMaxCommunities", "5").toInt
     val preserveRate = params.getOrElse("preserveRate", "0.1").toFloat
+    val needOutputCommunityProbability = params.getOrElse("needOutputCommunityProbability", "false").toBoolean
 
     val sep = params.getOrElse("sep", "tab") match {
       case "space" => " "
@@ -67,8 +69,15 @@ object CopraExample {
       .setPartitionNum(partitionNum)
       .setIsWeighted(isWeighted)
       .setUseEdgeBalancePartition(useEdgeBalancePartition)
+      .setNeedOutputCommunityProbability(needOutputCommunityProbability)
 
-    val df = GraphIO.load(input, isWeighted = isWeighted, src, dst, weightIndex, sep = sep)
+    val df = GraphIO.load(input, isWeighted = isWeighted, srcIndex, dstIndex, weightIndex, sep = sep)
+
+    //collect app name and data size
+    DataStatistics.setAppName(copra.getClass.getCanonicalName)
+    DataStatistics.calcRDDSize(df, "angel.input.data")
+    DataStatistics.setDataPartitionNum(partitionNum)
+    DataStatistics.setPSPartitionNum(psPartitionNum)
 
     val mapping = copra.transform(df)
 
@@ -78,10 +87,18 @@ object CopraExample {
 
   def start(mode: String): SparkContext = {
     val conf = new SparkConf()
+
+//    if (mode.equals("yarn-cluster")) {
+//      // Add jvm parameters for executors
+//      var executorJvmOptions = conf.get("spark.executor.extraJavaOptions")
+//      executorJvmOptions += "-XX:ConcGCThreads=4 -XX:ParallelGCThreads=4 -Xss4M "
+//      conf.set("spark.executor.extraJavaOptions", executorJvmOptions)
+//      println(s"executorJvmOptions = ${executorJvmOptions}")
+//    }
+
     conf.setMaster(mode)
     conf.setAppName("copra")
     val sc = new SparkContext(conf)
-    sc.setLogLevel("WARN")
     //PSContext.getOrCreate(sc)
     sc
   }

@@ -34,6 +34,7 @@ import com.tencent.angel.master.worker.workergroup.AMWorkerGroup;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.MatrixMetaManager;
 import com.tencent.angel.ml.matrix.RowType;
+import com.tencent.angel.ps.storage.partitioner.RangePartitioner;
 import com.tencent.angel.psagent.PSAgent;
 import com.tencent.angel.psagent.client.MasterClient;
 import com.tencent.angel.psagent.matrix.PSAgentMatrixMetaManager;
@@ -99,12 +100,13 @@ public class TaskManagerTest {
 
       // add matrix
       MatrixContext mMatrix = new MatrixContext();
-      mMatrix.setName("w1");
+      mMatrix.setName("TaskManagerTest_w1");
       mMatrix.setRowNum(1);
       mMatrix.setColNum(100000);
       mMatrix.setMaxRowNumInBlock(1);
       mMatrix.setMaxColNumInBlock(50000);
       mMatrix.setRowType(RowType.T_INT_DENSE);
+      mMatrix.setPartitionerClass(RangePartitioner.class);
       mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
       mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
@@ -112,12 +114,13 @@ public class TaskManagerTest {
       angelClient.addMatrix(mMatrix);
 
       MatrixContext mMatrix2 = new MatrixContext();
-      mMatrix2.setName("w2");
+      mMatrix2.setName("TaskManagerTest_w2");
       mMatrix2.setRowNum(1);
       mMatrix2.setColNum(100000);
       mMatrix2.setMaxRowNumInBlock(1);
       mMatrix2.setMaxColNumInBlock(50000);
       mMatrix2.setRowType(RowType.T_DOUBLE_DENSE);
+      mMatrix2.setPartitionerClass(RangePartitioner.class);
       mMatrix2.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix2.set(MatrixConf.MATRIX_HOGWILD, "false");
       mMatrix2.set(MatrixConf.MATRIX_AVERAGE, "false");
@@ -182,8 +185,8 @@ public class TaskManagerTest {
 
       Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
       PSAgentMatrixMetaManager matrixMetaManager = worker.getPSAgent().getMatrixMetaManager();
-      int w1Id = matrixMetaManager.getMatrixId("w1");
-      int w2Id = matrixMetaManager.getMatrixId("w2");
+      int w1Id = matrixMetaManager.getMatrixId("TaskManagerTest_w1");
+      int w2Id = matrixMetaManager.getMatrixId("TaskManagerTest_w2");
       MasterClient masterClient = worker.getPSAgent().getMasterClient();
       AMTask task0 = taskManager.getTask(task0Id);
       AMTask task1 = taskManager.getTask(task1Id);

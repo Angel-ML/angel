@@ -29,34 +29,34 @@ import com.tencent.angel.psagent.matrix.transport.router.operator.ILongKeyAnyVal
 
 public class AddNeighbors extends UpdateFunc {
 
-    public AddNeighbors(AddNeighborsParam param) {
-        super(param);
-    }
+  public AddNeighbors(AddNeighborsParam param) {
+    super(param);
+  }
 
-    public AddNeighbors() {
-        this(null);
-    }
+  public AddNeighbors() {
+    this(null);
+  }
 
-    @Override
-    public void partitionUpdate(PartitionUpdateParam partParam) {
-        PartAddNeighborsParam updateParam = (PartAddNeighborsParam) partParam;
-        ServerLongAnyRow row = GraphMatrixUtils.getPSLongKeyRow(psContext, updateParam);
-        ILongKeyAnyValuePartOp split = (ILongKeyAnyValuePartOp) updateParam.getKeyValuePart();
-        long[] nodeIds = split.getKeys();
-        IElement[] neighbors = split.getValues();
-        boolean isTaskAttempt = updateParam.getIsAttempt();
-        int tryCount = psContext.getTryCount();
-        boolean isAttempt = isTaskAttempt || tryCount > 1;
+  @Override
+  public void partitionUpdate(PartitionUpdateParam partParam) {
+    PartAddNeighborsParam updateParam = (PartAddNeighborsParam) partParam;
+    ServerLongAnyRow row = GraphMatrixUtils.getPSLongKeyRow(psContext, updateParam);
+    ILongKeyAnyValuePartOp split = (ILongKeyAnyValuePartOp) updateParam.getKeyValuePart();
+    long[] nodeIds = split.getKeys();
+    IElement[] neighbors = split.getValues();
+    boolean isTaskAttempt = updateParam.getIsAttempt();
+    int tryCount = psContext.getTryCount();
+    boolean isAttempt = isTaskAttempt || tryCount > 1;
 
-        int lockTime = psContext.getConf().getInt(AngelConf.ANGEL_PS_MAX_LOCK_WAITTIME_MS, AngelConf.DEFAULT_ANGEL_PS_MAX_LOCK_WAITTIME_MS);
-        row.startWrite(lockTime);
-        try {
-            for(int i = 0; i < nodeIds.length; i++) {
-                DynamicSimpleNeighborElement ele = (DynamicSimpleNeighborElement) row.get(nodeIds[i]);
-                ele.add(((LongArrayElement) neighbors[i]).getData(), isAttempt);
-            }
-        } finally {
-            row.endWrite();
-        }
+    int lockTime = psContext.getConf().getInt(AngelConf.ANGEL_PS_MAX_LOCK_WAITTIME_MS, AngelConf.DEFAULT_ANGEL_PS_MAX_LOCK_WAITTIME_MS);
+    row.startWrite(lockTime);
+    try {
+      for(int i = 0; i < nodeIds.length; i++) {
+        DynamicSimpleNeighborElement ele = (DynamicSimpleNeighborElement) row.get(nodeIds[i]);
+        ele.add(((LongArrayElement) neighbors[i]).getData(), isAttempt);
+      }
+    } finally {
+      row.endWrite();
     }
+  }
 }

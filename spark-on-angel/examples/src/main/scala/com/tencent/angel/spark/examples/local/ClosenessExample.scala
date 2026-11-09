@@ -1,27 +1,44 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
 package com.tencent.angel.spark.examples.local
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.graph.rank.closeness.Closeness
-import com.tencent.angel.graph.utils.GraphIO
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
+import com.tencent.angel.spark.ml.graph.algo.rank.closeness.Closeness
+import com.tencent.angel.spark.ml.graph.utils.GraphIO
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.storage.StorageLevel
 
 object ClosenessExample {
+
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
     val data = params.getOrElse("data", "edge")
     val mode = "local"
     val input = "data/bc/" + data
     val output = "model/hyperanf"
-    val partitionNum = 1
+    val partitionNum = 4
     val storageLevel = StorageLevel.MEMORY_ONLY
     val batchSize = 100
-    val psPartitionNum = 1
+    val psPartitionNum = 2
     val p = params.getOrElse("p", "6").toInt
-    val msgNumBatch = params.getOrElse("msgNumBatch", "8").toInt
-    val verboseSaving = params.getOrElse("verboseSaving", "true").toBoolean
+    val msgNumBatch = params.getOrElse("msgNumBatch", "4").toInt
+    val verboseSaving = params.getOrElse("verboseSaving", "false").toBoolean
     val isDirected = params.getOrElse("isDirected", "true").toBoolean
 
     start(mode)
@@ -56,4 +73,5 @@ object ClosenessExample {
     PSContext.stop()
     SparkContext.getOrCreate().stop()
   }
+
 }

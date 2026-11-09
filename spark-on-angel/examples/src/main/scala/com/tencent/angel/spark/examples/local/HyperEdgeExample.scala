@@ -1,10 +1,10 @@
 package com.tencent.angel.spark.examples.local
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.graph.statistics.hyperloglog.HyperEdges
-import com.tencent.angel.graph.utils.GraphIO
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
+import com.tencent.angel.spark.ml.graph.algo.statistics.hyperloglog.HyperEdges
+import com.tencent.angel.spark.ml.graph.utils.GraphIO
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -12,8 +12,8 @@ object HyperEdgeExample {
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
     val mode = "local"
-    val input = "data/bc/karate_club_network.txt"
-    val output = "data/output/hyperEdge"
+    val input = "data/bc/dEdge"
+    val output = "model/hyper_edge"
     val partitionNum = 1
     val storageLevel = StorageLevel.MEMORY_ONLY
     val psPartitionNum = 1
@@ -25,7 +25,7 @@ object HyperEdgeExample {
     val msgNumBatch = params.getOrElse("msgNumBatch", "1").toInt
     val verboseSaving = params.getOrElse("verboseSaving", "false").toBoolean
     val isDirected = params.getOrElse("isDirected", "true").toBoolean
-    val withEdgeTag = false
+    val withEdgeTag = true
     val sep = " "
     val tags = "1,2"
 

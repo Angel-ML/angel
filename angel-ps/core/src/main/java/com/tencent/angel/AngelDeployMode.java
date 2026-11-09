@@ -20,8 +20,16 @@ package com.tencent.angel;
 
 /**
  * Angel deploy mode.
- * Angel application support LOCAL  or YARN or KUBERNETES
+ *
+ * <ul>
+ *   <li>LOCAL: single JVM, multi-thread PS/Worker (mainly for tests).</li>
+ *   <li>EMBEDDED: AM is embedded in the caller process (e.g. Spark Driver), used by spark-on-angel.</li>
+ *   <li>YARN: launch AM/PS/Worker as YARN containers on a YARN cluster.</li>
+ *   <li>STANDALONE: AM runs in the submitting JVM and PS/Worker run as independent local JVM
+ *       processes started by ProcessBuilder. Does NOT depend on YARN or Spark.</li>
+ *   <li>KUBERNETES: reserved.</li>
+ * </ul>
  */
 public enum AngelDeployMode {
-  LOCAL, YARN, KUBERNETES
+  LOCAL, YARN, EMBEDDED, STANDALONE, KUBERNETES
 }

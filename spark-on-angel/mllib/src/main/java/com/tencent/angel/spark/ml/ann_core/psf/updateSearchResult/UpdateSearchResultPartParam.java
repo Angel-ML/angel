@@ -1,9 +1,15 @@
 package com.tencent.angel.spark.ml.ann_core.psf.updateSearchResult;
 
 import com.tencent.angel.PartitionKey;
+import com.tencent.angel.common.ByteBufSerdeUtils;
+import com.tencent.angel.ml.matrix.psf.get.base.GeneralPartGetParam;
 import com.tencent.angel.ml.matrix.psf.update.base.GeneralPartUpdateParam;
+import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.psagent.matrix.transport.router.KeyValuePart;
+import com.tencent.angel.spark.ml.ann_core.NearestNeighborsIElement;
+import com.tencent.angel.spark.ml.ann_core.NeighborDistance;
 import io.netty.buffer.ByteBuf;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 public class UpdateSearchResultPartParam extends GeneralPartUpdateParam {
     private int dim;

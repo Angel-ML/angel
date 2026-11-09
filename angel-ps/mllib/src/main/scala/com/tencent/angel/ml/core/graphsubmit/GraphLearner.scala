@@ -71,7 +71,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
       // waiting all gradient pushed
 
       // LOG.info("waiting for push barrier ...")
-      PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
+      //PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
       if (decayOnBatch) {
         graph.setLR(ssScheduler.next())
       }
@@ -82,7 +82,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
 
       // waiting all gradient update finished
       // LOG.info("waiting for update barrier ...")
-      PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
+      //PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
       batchCount += 1
 
       LOG.info(s"epoch $epoch batch $batchCount is finished!")
@@ -120,7 +120,7 @@ class GraphLearner(modelClassName: String, ctx: TaskContext) extends MLLearner(c
       model.init(ctx.getTaskId.getIndex)
     }
 
-    PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
+    //PSAgentContext.get().barrier(ctx.getTaskId.getIndex)
 
     val numBatch = SharedConf.numUpdatePerEpoch
     val batchSize: Int = (trainDataSize + numBatch - 1) / numBatch

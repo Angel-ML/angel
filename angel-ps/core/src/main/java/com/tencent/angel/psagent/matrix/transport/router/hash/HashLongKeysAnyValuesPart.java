@@ -89,7 +89,7 @@ public class HashLongKeysAnyValuesPart extends HashKeyValuePart implements ILong
 
   @Override
   public int bufferLen() {
-    return dynamicKeysValues.bufferLen();
+    return super.bufferLen() + dynamicKeysValues.bufferLen();
   }
 
   @Override

@@ -1,0 +1,50 @@
+// Copyright 2020, Tencent Inc.
+// All rights reserved.
+//
+// @author Yi LI <sincereli@tencent.com>
+
+include "stats_param.fbs";
+
+namespace dollar.tensor;
+
+table WeightMessage {
+  weights:[float] (id:0);
+  field:int32 (id:1);
+  positive_count:int64 (id:2);
+  negative_count:int64 (id:3);
+  update_times:int64 (id:4);
+  task_stats:TaskStats (id:5);
+  pweights:PredictWeights (id:6);
+}
+
+table ByteWeightMessage {
+  weights:[byte] (id:0);
+  field:int32 (id:1);
+  positive_count:int64 (id:2);
+  negative_count:int64 (id:3);
+  update_times:int64 (id:4);
+  task_stats:TaskStats (id:5);
+}
+
+union MpqWeightMessage {
+  float_message: WeightMessage,
+  byte_message: ByteWeightMessage,
+}
+
+table ShortWeightMessage {
+  short_weights:[ushort] (id:0);
+  field:int32 (id:1);
+  positive_count:int64 (id:2);
+  negative_count:int64 (id:3);
+  update_times:int64 (id:4);
+  task_stats:TaskStats (id:5);
+}
+
+table PredictWeights {
+  inference_type:int8 (id:0);
+  weights:[ubyte] (id:1);
+  quant_alg:int8 (id:2);
+  quant_value:[int16](id:3);
+
+}
+

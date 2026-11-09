@@ -1,0 +1,75 @@
+// Copyright 2021, Tencent Inc.
+// All rights reserved.
+//
+// @author Boyang Huang <ablehuang@tencent.com>
+
+namespace tair.optimizers;
+
+table AdaDeltaHyperParam {
+  alpha:double (id:0);
+  rho:double (id:1);
+  epsilon:double (id:2);
+  grad_factor:double (id:3);
+  lambda2:double (id:4);
+  forgotten_factor:double (id:5);
+  train_cycle_timestamp:int64 (id:6);
+  reset_threshold:int32 (id:7);
+  w_add_th:double (id:8);
+  w_th:double (id:9);
+}
+
+table FtmlHyperParam {
+  alpha:double (id:0);
+  beta1:double (id:1);
+  beta2:double (id:2);
+  epsilon:double (id:3);
+}
+
+table FtrlHyperParam {
+  alpha:double (id:0);
+  beta:double (id:1);
+  lambda1:double (id:2);
+  lambda2:double (id:3);
+  epsilon:double (id:4);
+  grad_factor:double (id:5);
+}
+
+table SgdHyperParam {
+  learning_rate:double (id:0);
+}
+
+table AdamHyperParam {
+  lr:double (id:0);
+  beta1:double (id:1);
+  beta2:double (id:2);
+  epsilon:double (id:3);
+}
+
+table AdagradHyperParam {
+  lr:double (id:0);
+  init_accum_value:double (id:1);
+  epsilon:double (id:2);
+}
+
+table MpqFtrlHyperParam {
+  alpha:float (id:0);
+  beta:float (id:1);
+  lambda1:float (id:2);
+  lambda2:float (id:3);
+  epsilon:float (id:4);
+  grad_factor:float (id:5);
+
+  count_decay:float (id:6);
+}
+
+// Notice: Once add hyper param type,
+//         remember to add it in union.
+union HyperParamUnion {
+  adadelta:AdaDeltaHyperParam,
+  ftml:FtmlHyperParam,
+  ftrl:FtrlHyperParam,
+  sgd:SgdHyperParam,
+  adam:AdamHyperParam,
+  adagrad:AdagradHyperParam,
+  mpq_ftrl:MpqFtrlHyperParam,
+}

@@ -107,7 +107,34 @@ public class WorkerJVM {
     int mixGcTargetCount = conf.getInt(AngelConf.ANGEL_WORKER_JVM_G1_MIXGC_TARGET_COUNT,
         AngelConf.DEFAULT_ANGEL_WORKER_JVM_G1_MIXGC_TARGET_COUNT);
 
-    int maxUse = workerMemSizeInMB - 512;
+    // G1 STW-pause hardening flags (worker side). See ParameterServerJVM for the production
+    // rationale; the same heap-expansion-induced multi-second STW pauses occur on workers
+    // when their heap ramps up under load.
+    boolean pinHeap = conf.getBoolean(AngelConf.ANGEL_WORKER_JVM_G1_PIN_HEAP_SIZE,
+        AngelConf.DEFAULT_ANGEL_WORKER_JVM_G1_PIN_HEAP_SIZE);
+
+    boolean alwaysPreTouch = conf.getBoolean(AngelConf.ANGEL_WORKER_JVM_G1_ALWAYS_PRE_TOUCH,
+        AngelConf.DEFAULT_ANGEL_WORKER_JVM_G1_ALWAYS_PRE_TOUCH);
+
+    boolean parallelRefProc = conf.getBoolean(AngelConf.ANGEL_WORKER_JVM_G1_PARALLEL_REF_PROC,
+        AngelConf.DEFAULT_ANGEL_WORKER_JVM_G1_PARALLEL_REF_PROC);
+
+    // Carve out non-heap overhead (Metaspace, code cache, thread stacks, native libs,
+    // direct-buffer headroom not pre-reserved by -XX:MaxDirectMemorySize, JVM internals)
+    // BEFORE we hand the rest to the heap + direct buffers. See ANGEL_WORKER_JVM_OVERHEAD_MB
+    // javadoc for the rationale; the historical hard-coded 512 contributed to repeated
+    // "exit 137 / Killed by external signal" events on heavyweight workers.
+    int overheadMB = conf.getInt(AngelConf.ANGEL_WORKER_JVM_OVERHEAD_MB,
+        AngelConf.DEFAULT_ANGEL_WORKER_JVM_OVERHEAD_MB);
+
+    if (overheadMB >= workerMemSizeInMB) {
+      LOG.warn("Worker jvm overhead (" + overheadMB + "MB) >= container memory ("
+          + workerMemSizeInMB + "MB); falling back to 10% of container memory to avoid a"
+          + " non-positive heap.");
+      overheadMB = Math.max(256, workerMemSizeInMB / 10);
+    }
+
+    int maxUse = workerMemSizeInMB - overheadMB;
     int directRegionSize = 0;
     if (isUseDirect) {
       directRegionSize = (int) (maxUse * directFatorUseDirectBuff);
@@ -115,14 +142,21 @@ public class WorkerJVM {
       directRegionSize = (int) (maxUse * directFatorUseHeapBuff);
     }
     int heapMax = maxUse - directRegionSize;
+
+    LOG.info("Worker memory budget: container=" + workerMemSizeInMB + "MB, jvm-overhead="
+        + overheadMB + "MB, direct=" + directRegionSize + "MB, heap=" + heapMax + "MB");
     int youngRegionSize = (int) (heapMax * youngFator);
     int survivorRatio = 4;
 
     String ret;
     if(useG1) {
-      ret = new StringBuilder().append(" -Xmx").append(heapMax).append("M")
-          .append(" -XX:MaxDirectMemorySize=")
-          .append(directRegionSize).append("M")
+      // See ParameterServerJVM for the matching server-side block; same hardening rationale.
+      StringBuilder sb = new StringBuilder()
+          .append(" -Xmx").append(heapMax).append("M");
+      if (pinHeap) {
+        sb.append(" -Xms").append(heapMax).append("M");
+      }
+      sb.append(" -XX:MaxDirectMemorySize=").append(directRegionSize).append("M")
           .append(" -XX:+AggressiveOpts")
           .append(" -XX:+UseLargePages")
           .append(" -XX:+UseG1GC")
@@ -134,8 +168,14 @@ public class WorkerJVM {
           .append(" -XX:G1MixedGCCountTarget=").append(mixGcTargetCount)
           .append(" -XX:ConcGCThreads=").append(concWorkerNum)
           .append(" -XX:ParallelGCThreads=").append(workerNum)
-          .append(" -XX:G1ReservePercent=").append(reservePercent)
-          .append(" -verbose:gc")
+          .append(" -XX:G1ReservePercent=").append(reservePercent);
+      if (alwaysPreTouch) {
+        sb.append(" -XX:+AlwaysPreTouch");
+      }
+      if (parallelRefProc) {
+        sb.append(" -XX:+ParallelRefProcEnabled");
+      }
+      ret = sb.append(" -verbose:gc")
           .append(" -XX:+PrintGCDateStamps").append(" -XX:+PrintGCDetails")
           .append(" -Xloggc:<LOG_DIR>/gc.log").toString();
     } else {
@@ -194,12 +234,24 @@ public class WorkerJVM {
 
   private static String getChildJavaOpts(Configuration jobConf, ApplicationId appid,
     WorkerAttemptId workerAttemptId) {
-    String userOpts = null;
-    userOpts = jobConf.get(AngelConf.ANGEL_WORKER_JAVA_OPTS);
+    String userOpts = jobConf.get(AngelConf.ANGEL_WORKER_JAVA_OPTS);
     if (userOpts == null) {
-      userOpts = generateDefaultJVMParameters(jobConf, appid, workerAttemptId);
+      return generateDefaultJVMParameters(jobConf, appid, workerAttemptId);
     }
 
+    // Symmetric with ParameterServerJVM: when append-mode is on, prepend the auto-generated
+    // defaults so heap sizing, GC selection and GC logging survive even if the user only
+    // wanted to tweak one flag. See AngelConf#ANGEL_WORKER_JAVA_OPTS_APPEND_MODE javadoc.
+    boolean appendMode = jobConf.getBoolean(AngelConf.ANGEL_WORKER_JAVA_OPTS_APPEND_MODE,
+        AngelConf.DEFAULT_ANGEL_WORKER_JAVA_OPTS_APPEND_MODE);
+    if (appendMode) {
+      String defaults = generateDefaultJVMParameters(jobConf, appid, workerAttemptId);
+      LOG.info("Worker java.opts append-mode enabled: defaults + user opts ('" + userOpts + "')");
+      return defaults + " " + userOpts;
+    }
+
+    LOG.info("Worker java.opts override-mode (default): user opts fully replace generated defaults."
+        + " User must specify -Xmx / GC / -Xloggc themselves.");
     return userOpts;
   }
 

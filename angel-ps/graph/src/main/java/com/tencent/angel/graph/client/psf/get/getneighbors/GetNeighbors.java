@@ -19,8 +19,13 @@ package com.tencent.angel.graph.client.psf.get.getneighbors;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.graph.client.psf.get.utils.GetNodeAttrsParam;
 import com.tencent.angel.graph.data.GraphNode;
+import com.tencent.angel.graph.data.Neighbor;
 import com.tencent.angel.graph.utils.GraphMatrixUtils;
-import com.tencent.angel.ml.matrix.psf.get.base.*;
+import com.tencent.angel.ml.matrix.psf.get.base.GeneralPartGetParam;
+import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
+import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
 import com.tencent.angel.psagent.matrix.transport.router.KeyPart;
 import com.tencent.angel.psagent.matrix.transport.router.operator.ILongKeyPartOp;
@@ -53,14 +58,14 @@ public class GetNeighbors extends GetFunc {
         long[] nodeIds = ((ILongKeyPartOp) keyPart).getKeys();
         ServerLongAnyRow row = GraphMatrixUtils.getPSLongKeyRow(psContext, param);
 
-        Long2ObjectOpenHashMap<long[]> nodeIdToNeighbors =
-                new Long2ObjectOpenHashMap<>(nodeIds.length);
+        Long2ObjectOpenHashMap<Neighbor> nodeIdToNeighbors =
+            new Long2ObjectOpenHashMap<>(nodeIds.length);
         for (long nodeId : nodeIds) {
           if (row.get(nodeId) == null) {
             // If node not exist, just skip
             continue;
           }
-          long[] neighbors = ((GraphNode) (row.get(nodeId))).getNeighbors();
+          Neighbor neighbors = ((GraphNode) (row.get(nodeId))).getNeighbors();
           if (neighbors != null) {
             nodeIdToNeighbors.put(nodeId, neighbors);
           }
@@ -77,11 +82,11 @@ public class GetNeighbors extends GetFunc {
 
   @Override
   public GetResult merge(List<PartitionGetResult> partResults) {
-    Long2ObjectOpenHashMap<long[]> nodeIdToNeighbors =
-            new Long2ObjectOpenHashMap<>(((GetNodeAttrsParam) param).getNodeIds().length);
+    Long2ObjectOpenHashMap<Neighbor> nodeIdToNeighbors =
+        new Long2ObjectOpenHashMap<>(((GetNodeAttrsParam) param).getNodeIds().length);
     for (PartitionGetResult partitionGetResult : partResults) {
-      Long2ObjectOpenHashMap<long[]> partNodeIdToNeighbors =
-              ((PartGetNeighborsResult) partitionGetResult).getNodeIdToContents();
+      Long2ObjectOpenHashMap<Neighbor> partNodeIdToNeighbors =
+          ((PartGetNeighborsResult) partitionGetResult).getNodeIdToContents();
       if (partNodeIdToNeighbors != null) {
         nodeIdToNeighbors.putAll(partNodeIdToNeighbors);
       }

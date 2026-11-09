@@ -77,8 +77,8 @@ public class HashPartitioner implements Partitioner {
     } else {
       // Use partition number per server
       totalPartNum =
-              conf.getInt(AngelConf.ANGEL_MODEL_PARTITIONER_PARTITION_NUM_PERSERVER,
-                      AngelConf.DEFAULT_ANGEL_MODEL_PARTITIONER_PARTITION_NUM_PERSERVER) * psNum;
+          conf.getInt(AngelConf.ANGEL_MODEL_PARTITIONER_PARTITION_NUM_PERSERVER,
+              AngelConf.DEFAULT_ANGEL_MODEL_PARTITIONER_PARTITION_NUM_PERSERVER) * psNum;
     }
 
     if(totalPartNum <= 0) {
@@ -95,7 +95,7 @@ public class HashPartitioner implements Partitioner {
     int matrixId = mContext.getMatrixId();
     for(int partId = 0; partId < totalPartNum; partId++) {
       PartitionMeta partMeta = new PartitionMeta(matrixId, partId,
-         0, mContext.getRowNum(), partId, partId + 1);
+        0, mContext.getRowNum(), partId, partId + 1);
       partitions.add(partMeta);
       partId2serverIndex[partId] = partId % psNum;
     }

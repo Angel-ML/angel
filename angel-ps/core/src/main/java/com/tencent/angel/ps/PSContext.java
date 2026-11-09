@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -26,6 +26,7 @@ import com.tencent.angel.ps.client.PSLocationManager;
 import com.tencent.angel.ps.io.PSModelIOExecutor;
 import com.tencent.angel.ps.io.save.SnapshotDumper;
 import com.tencent.angel.ps.meta.PSMatrixMetaManager;
+import com.tencent.angel.ps.metrics.AngelPSMetricsService;
 import com.tencent.angel.ps.server.control.ParameterServerService;
 import com.tencent.angel.ps.server.data.PSFailedReport;
 import com.tencent.angel.ps.server.data.RunningContext;
@@ -90,6 +91,10 @@ public class PSContext {
 
     if (mode.equals(AngelDeployMode.LOCAL.toString())) {
       return AngelDeployMode.LOCAL;
+    } else if (mode.equals(AngelDeployMode.EMBEDDED.toString())) {
+      return AngelDeployMode.EMBEDDED;
+    } else if (mode.equals(AngelDeployMode.STANDALONE.toString())) {
+      return AngelDeployMode.STANDALONE;
     } else {
       return AngelDeployMode.YARN;
     }
@@ -176,6 +181,10 @@ public class PSContext {
     return ps.getSnapshotDumper();
   }
 
+  public AngelPSMetricsService getMetricsService() {
+    return ps.getMetricsService();
+  }
+
   /**
    * Get the replication number for a matrix partition
    *
@@ -208,6 +217,23 @@ public class PSContext {
   public boolean isUseDirectBuffer() {
     return getConf().getBoolean(AngelConf.ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER,
         AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_USEDIRECTBUFFER);
+  }
+
+
+  public boolean getMetricsEnable() {
+    return getConf().getBoolean(AngelConf.ANGEL_METRICS_ENABLE,
+        AngelConf.DEFAULT_ANGEL_METRICS_ENABLE);
+  }
+
+  public String getMetricsTextSep() {
+    return getConf().get(AngelConf.ANGEL_METRICS_DELIMITER,
+        AngelConf.DEFAULT_ANGEL_METRICS_DELIMITER);
+  }
+
+  public int getMetricsReportIntervalMs() {
+    return getConf().getInt(
+        AngelConf.ANGEL_METRICS_PS_LOAD_INTERVAL_PERIOD_MILLISECOND,
+        AngelConf.DEFAULT_ANGEL_METRICS_PS_LOAD_INTERVAL_PERIOD_MILLISECOND);
   }
 
   public void setTryCount(int tryCount) { this.tryCount = tryCount; }

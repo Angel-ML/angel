@@ -25,7 +25,8 @@ object FeatureInfo {
 
   val ENUM_THRESHOLD: Int = 10
 
-  def apply(numFeature: Int, splits: Array[Array[Float]]): FeatureInfo = {
+  def apply(numFeature: Int, splits: Array[Array[Float]], enumThredshold: Int = ENUM_THRESHOLD
+            , counts: Array[Array[Int]] = null): FeatureInfo = {
     require(splits.length == numFeature)
     val isCategorical = new Array[Boolean](numFeature)
     val numBin = new Array[Int](numFeature)
@@ -36,7 +37,7 @@ object FeatureInfo {
         numBin(i) = 0
         defaultBins(i) = -1
       } else {
-        if (splits(i).length <= ENUM_THRESHOLD) {
+        if (splits(i).length <= enumThredshold) {
           isCategorical(i) = true
           numBin(i) = splits(i).length + 1
           defaultBins(i) = splits(i).length
@@ -53,7 +54,7 @@ object FeatureInfo {
     val catCnt = (splits, isCategorical).zipped.count(p => p._1 != null && p._2)
     println(s"Feature info: empty[$empCnt], numerical[$numCnt], categorical[$catCnt]")
 
-    new FeatureInfo(isCategorical, numBin, splits, defaultBins)
+    new FeatureInfo(isCategorical, numBin, splits, defaultBins, counts)
   }
 
   def apply(featTypes: Array[Boolean], splits: Array[Array[Float]]): FeatureInfo = {
@@ -77,18 +78,20 @@ object FeatureInfo {
     val numCnt = (splits, featTypes).zipped.count(p => p._1 != null && !p._2)
     val catCnt = (splits, featTypes).zipped.count(p => p._1 != null && p._2)
     println(s"Feature info: empty[$empCnt], numerical[$numCnt], categorical[$catCnt]")
-    new FeatureInfo(featTypes, numBin, splits, defaultBins)
+    new FeatureInfo(featTypes, numBin, splits, defaultBins, null)
   }
 }
 
 case class FeatureInfo(featTypes: Array[Boolean], numBin: Array[Int],
-                       splits: Array[Array[Float]], defaultBins: Array[Int]) {
+                       splits: Array[Array[Float]], defaultBins: Array[Int], counts: Array[Array[Int]]) {
 
   def isCategorical(fid: Int) = featTypes(fid)
 
   def getNumBin(fid: Int) = numBin(fid)
 
   def getSplits(fid: Int) = splits(fid)
+
+  def getCounts(fid: Int) = counts(fid)
 
   def getDefaultBin(fid: Int) = defaultBins(fid)
 

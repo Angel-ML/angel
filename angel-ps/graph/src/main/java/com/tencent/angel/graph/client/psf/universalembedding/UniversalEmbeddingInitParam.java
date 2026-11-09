@@ -15,57 +15,82 @@ import java.util.List;
  */
 public class UniversalEmbeddingInitParam extends UpdateParam {
 
-    private long[] nodeIds;
+  private long[] nodeIds;
 
-    private int seed;
+  private int seed;
 
-    private int dim;
+  private int dim;
 
-    private int numSlots;
+  private int numSlots;
 
-    private float[] floats;
+  private float[] floats;
 
-    private int [] ints;
+  private int[] ints;
 
-    public UniversalEmbeddingInitParam(int matrixId, long[] nodeIds, int seed, int dim, int numSlots,
-                                       float[] floats, int[] ints) {
-        super(matrixId);
-        this.nodeIds = nodeIds;
-        this.seed =seed;
-        this.dim = dim;
-        this.numSlots = numSlots;
-        this.floats = floats;
-        this.ints = ints;
+  public UniversalEmbeddingInitParam(int matrixId, long[] nodeIds, int seed, int dim, int numSlots,
+      float[] floats, int[] ints) {
+    super(matrixId);
+    this.nodeIds = nodeIds;
+    this.seed = seed;
+    this.dim = dim;
+    this.numSlots = numSlots;
+    this.floats = floats;
+    this.ints = ints;
+  }
+
+  public UniversalEmbeddingInitParam(int matrixId, long[] nodeIds, int dim) {
+    this(matrixId, nodeIds, -1, dim, 1, new float[0], new int[]{dim});
+  }
+
+
+  public UniversalEmbeddingInitParam() {
+    this(-1, null, -1, -1, -1, null, null);
+  }
+
+
+  public long[] getNodeIds() {
+    return nodeIds;
+  }
+
+  public int getSeed() {
+    return seed;
+  }
+
+  public int getDim() {
+    return dim;
+  }
+
+  public int getNumSlots() {
+    return numSlots;
+  }
+
+  public float[] getFloats() {
+    return floats;
+  }
+
+  public int[] getInts() {
+    return ints;
+  }
+
+  @Override
+  public List<PartitionUpdateParam> split() {
+    // Get matrix meta
+    MatrixMeta meta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
+    PartitionKey[] partitions = meta.getPartitionKeys();
+
+    // Split nodeIds
+    KeyPart[] splits = RouterUtils.split(meta, 0, nodeIds);
+    assert partitions.length == splits.length;
+
+    // Generate rpc params
+    List<PartitionUpdateParam> partParams = new ArrayList<>(partitions.length);
+    for (int i = 0; i < partitions.length; i++) {
+      if (splits[i] != null && splits[i].size() > 0) {
+        partParams.add(new PartUniversalEmbeddingInitParam(matrixId, partitions[i], splits[i],
+            seed, dim, numSlots, floats, ints));
+      }
     }
 
-    public UniversalEmbeddingInitParam(int matrixId, long[] nodeIds, int dim) {
-        this(matrixId, nodeIds, -1, dim, 1, new float[0], new int[]{dim});
-    }
-
-
-    public UniversalEmbeddingInitParam() {
-        this(-1, null, -1,-1, -1, null, null);
-    }
-
-    @Override
-    public List<PartitionUpdateParam> split() {
-        // Get matrix meta
-        MatrixMeta meta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
-        PartitionKey[] partitions = meta.getPartitionKeys();
-
-        // Split nodeIds
-        KeyPart[] splits = RouterUtils.split(meta, 0, nodeIds);
-        assert partitions.length == splits.length;
-
-        // Generate rpc params
-        List<PartitionUpdateParam> partParams = new ArrayList<>(partitions.length);
-        for(int i = 0; i < partitions.length; i++) {
-            if(splits[i] != null && splits[i].size() > 0) {
-                partParams.add(new PartUniversalEmbeddingInitParam(matrixId, partitions[i], splits[i],
-                        seed, dim, numSlots, floats, ints));
-            }
-        }
-
-        return partParams;
-    }
+    return partParams;
+  }
 }

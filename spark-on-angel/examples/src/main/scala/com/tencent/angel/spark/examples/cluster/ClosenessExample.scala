@@ -17,10 +17,11 @@
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.graph.rank.closeness.Closeness
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
+import com.tencent.angel.spark.ml.graph.algo.rank.closeness.Closeness
+import com.tencent.angel.spark.ml.graph.utils.GraphIO
+import com.tencent.angel.spark.ml.util.DataStatistics
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -46,8 +47,9 @@ object ClosenessExample {
     val msgNumBatch = params.getOrElse("msgNumBatch", "4").toInt
     val verboseSaving = params.getOrElse("verboseSaving", "true").toBoolean
     val isDirected = params.getOrElse("isDirected", "true").toBoolean
+    val isConnected = params.getOrElse("isConnected", "true").toBoolean
     val percent = params.getOrElse("balancePartitionPercent", "0.7").toFloat
-    val maxIter = params.getOrElse("maxIter", "2").toInt
+    val maxIter = params.getOrElse("maxIter", "5").toInt
 
     val sep = params.getOrElse("sep",  "space") match {
       case "space" => " "
@@ -65,12 +67,19 @@ object ClosenessExample {
       .setMsgNumBatch(msgNumBatch)
       .setVerboseSaving(verboseSaving)
       .setIsDirected(isDirected)
+      .setIsConnected(isConnected)
       .setBalancePartitionPercent(percent)
       .setMaxIter(maxIter)
 
     val df = GraphIO.load(input, isWeighted = isWeight,
       srcIndex = srcIndex, dstIndex = dstIndex,
       weightIndex = weightIndex, sep = sep)
+
+    //collect app name and data size
+    DataStatistics.setAppName(closeness.getClass.getCanonicalName)
+    DataStatistics.calcRDDSize(df, "angel.input.data")
+    DataStatistics.setDataPartitionNum(partitionNum)
+    DataStatistics.setPSPartitionNum(psPartitionNum)
     PSContext.getOrCreate(sc)
 
     val mapping = closeness.transform(df)
@@ -84,7 +93,7 @@ object ClosenessExample {
     conf.setAppName("AngelCloseness")
     conf.set(AngelConf.ANGEL_PSAGENT_UPDATE_SPLIT_ADAPTION_ENABLE, "false")
     val sc = new SparkContext(conf)
-    //    PSContext.getOrCreate(sc)
+//    PSContext.getOrCreate(sc)
     sc
   }
 

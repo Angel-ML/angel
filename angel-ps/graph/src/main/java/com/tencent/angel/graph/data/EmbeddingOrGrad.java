@@ -57,4 +57,8 @@ public class EmbeddingOrGrad implements IElement {
     public float[] getValues() {
         return values;
     }
+
+    public void setValues(float[] values) {
+        this.values = values;
+    }
 }

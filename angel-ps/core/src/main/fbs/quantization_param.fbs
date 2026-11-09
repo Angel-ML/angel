@@ -1,0 +1,15 @@
+// Copyright 2020, Tencent Inc.
+// All rights reserved.
+//
+// @author Scotthou <scotthou@tencent.com>
+
+
+namespace dollar.tensor;
+
+table QuantizationWeight {
+  step_size:float (id:0);
+}
+
+table QuantizationParam {
+  qat_param:int8 (id:0);
+}

@@ -21,11 +21,11 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.graph.statistics.commonfriends._
-import com.tencent.angel.graph.statistics.commonfriends.vertexCut.CommonFriendsV1
-import com.tencent.angel.graph.statistics.commonfriends.incComFriends.v1.IncComFriends
-import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
-import com.tencent.angel.spark.ml.util.SparkUtils
+import com.tencent.angel.spark.ml.graph.algo.statistics.commonfriends.CommonFriends
+import com.tencent.angel.spark.ml.graph.algo.statistics.commonfriends.vertexCut.CommonFriendsV1
+import com.tencent.angel.spark.ml.graph.algo.statistics.commonfriends.incComFriends.v1.IncComFriends
+import com.tencent.angel.spark.ml.graph.utils.{Delimiter, GraphIO}
+import com.tencent.angel.spark.ml.util.{DataStatistics, SparkUtils}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -97,6 +97,9 @@ object CommonFriendsExample {
         .setMaxNodeId(maxNodeId)
       commonFriends.setNumNodes(approxNumNodes)
 
+      //collect app name and data size
+      DataStatistics.setAppName(commonFriends.getClass.getCanonicalName)
+//      DataStatistics.calcRDDSize(df, "angel.input.data")
       val incEdges = GraphIO.load(incEdgesPath, false, srcIndex, dstIndex, sep = sep)
         .select("src", "dst").rdd
         .filter(row => !row.anyNull)
@@ -107,7 +110,7 @@ object CommonFriendsExample {
       commonFriends.setOutputPath(output)
       commonFriends.transform(df)
     } else {
-      val result =  version match {
+     val result =  version match {
         case "vertex-cut" =>
           val commonFriends = new CommonFriendsV1()
             .setPartitionNum(partitionNum)
@@ -124,6 +127,9 @@ object CommonFriendsExample {
             .setDelimiter(sep)
           commonFriends.setMaxComFriendsNum(maxComFriendsNum)
           commonFriends.setNumNodes(approxNumNodes)
+          //collect app name and data size
+          DataStatistics.setAppName(commonFriends.getClass.getCanonicalName)
+          DataStatistics.calcRDDSize(df, "angel.input.data")
           commonFriends.transform(df)
         case "edge-cut" =>
           val commonFriends = new CommonFriends()
@@ -140,6 +146,9 @@ object CommonFriendsExample {
             .setCompressIndex(compressIndex)
             .setDelimiter(sep)
           commonFriends.setMaxComFriendsNum(maxComFriendsNum)
+          //collect app name and data size
+          DataStatistics.setAppName(commonFriends.getClass.getCanonicalName)
+          DataStatistics.calcRDDSize(df, "angel.input.data")
           commonFriends.transform(df)
       }
       GraphIO.save(result, output)
@@ -162,9 +171,12 @@ object CommonFriendsExample {
     conf.set("spark.hadoop.io.file.buffer.size", "16000000");
 
     // Add jvm parameters for executors
-    val executorJvmOptions = "-verbose:gc -XX:-PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:<LOG_DIR>/gc.log " +
-      "-XX:+UseG1GC -XX:MaxGCPauseMillis=1000 -XX:G1HeapRegionSize=32M " +
-      "-XX:InitiatingHeapOccupancyPercent=60 -XX:ConcGCThreads=4 -XX:ParallelGCThreads=4 "
+    val executorJvmOptions = "-Djava.library.path=$JAVA_LIBRARY_PATH " +
+      "-verbose:gc -XX:-PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:<LOG_DIR>/gc.log " +
+      "-XX:MaxPermSize=256m -XX:SurvivorRatio=4 -XX:+UseMembar -XX:+UseConcMarkSweepGC " +
+      "-XX:+CMSParallelRemarkEnabled -XX:+CMSScavengeBeforeRemark -XX:ParallelCMSThreads=4 " +
+      "-XX:+UseCMSCompactAtFullCollection -XX:+CMSClassUnloadingEnabled " +
+      "-XX:CMSInitiatingOccupancyFraction=50 -XX:+UseCompressedOops"
 
     println(s"executorJvmOptions = $executorJvmOptions")
     conf.set("spark.executor.extraJavaOptions", executorJvmOptions)

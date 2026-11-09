@@ -1,5 +1,7 @@
 package com.tencent.angel.graph.model.neighbor.dynamicsimple
 
+import java.util.concurrent.TimeUnit
+
 import com.tencent.angel.graph.common.param.ModelContext
 import com.tencent.angel.graph.common.psf.param.{LongKeysGetParam, LongKeysUpdateParam}
 import com.tencent.angel.graph.common.psf.result.GetFloatsResult
@@ -12,8 +14,8 @@ import com.tencent.angel.spark.models.PSMatrix
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
+
 import scala.collection.mutable.ArrayBuffer
-import java.util.concurrent.TimeUnit
 
 class DynamicSimpleNeighborTableModel(modelContex: ModelContext) extends CommonOps with Serializable {
 
@@ -152,7 +154,7 @@ class DynamicSimpleNeighborTableModel(modelContex: ModelContext) extends CommonO
     // push to ps
     startTime = System.currentTimeMillis()
     neighborMatrix.psfUpdate(new InitAlias(new LongKeysUpdateParam(neighborMatrix.id, nodeIds, alias)))
-      .get(1800000, TimeUnit.MILLISECONDS)
+        .get(1800000, TimeUnit.MILLISECONDS)
     val pushTime = System.currentTimeMillis() - startTime
 
     println(s"create and push ${nodeIds.length} nodes alias, cost ${System.currentTimeMillis()-start} ms, " +

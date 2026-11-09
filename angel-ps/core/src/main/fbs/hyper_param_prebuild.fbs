@@ -1,0 +1,37 @@
+// Copyright 2021, Tencent Inc.
+// All rights reserved.
+//
+// @author Boyang Huang <ablehuang@tencent.com>
+
+include "hyper_param.fbs";
+include "init_param.fbs";
+include "quantization_param.fbs";
+
+//namespace tair.optimizers;
+namespace dollar.tensor;
+
+// union wrapper, to avoid hidden field issue:
+// https://google.github.io/flatbuffers/flatbuffers_guide_writing_schema.html
+// https://github.com/google/flatbuffers/issues/6245
+// DO NOT add any more fields in this wrapper.
+// Instead, add it in table HyperParamPrebuild.
+table InitialParam {
+  param:InitParamUnion;
+}
+
+// union wrapper, to avoid hidden field issue:
+// https://google.github.io/flatbuffers/flatbuffers_guide_writing_schema.html
+// https://github.com/google/flatbuffers/issues/6245
+// DO NOT add any more fields in this wrapper.
+// Instead, add it to table HyperParamPrebuild.
+table HyperParam {
+  param:HyperParamUnion;
+}
+
+table HyperParamPrebuild {
+  init_param:InitialParam (id:0);
+  hyper_param:HyperParam (id:1);
+  group_set:short (id:2);
+  half_commun:int8 (id:3);
+  quant_params:QuantizationParam (id:4);
+}

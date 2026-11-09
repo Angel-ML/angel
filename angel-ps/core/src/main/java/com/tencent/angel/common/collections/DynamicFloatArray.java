@@ -60,9 +60,7 @@ public class DynamicFloatArray extends DynamicArray {
       }
 
       // Last batch
-      for (int i = 0; i < currentBatchPos; i++) {
-        System.arraycopy(currentBatch, 0, data, offset, currentBatchPos);
-      }
+      System.arraycopy(currentBatch, 0, data, offset, currentBatchPos);
     }
     return data;
   }
@@ -89,11 +87,12 @@ public class DynamicFloatArray extends DynamicArray {
   @Override
   public void deserialize(ByteBuf in) {
     data = ByteBufSerdeUtils.deserializeFloats(in);
+    deserializedSize = data.length;
   }
 
   @Override
   public int bufferLen() {
     int elemNum = size();
-    return ByteBufSerdeUtils.INT_LENGTH + elemNum * ByteBufSerdeUtils.DOUBLE_LENGTH;
+    return ByteBufSerdeUtils.INT_LENGTH + elemNum * ByteBufSerdeUtils.FLOAT_LENGTH;
   }
 }

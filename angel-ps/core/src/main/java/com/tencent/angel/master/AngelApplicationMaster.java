@@ -20,9 +20,9 @@ package com.tencent.angel.master;
 
 import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.RunningMode;
+import com.tencent.angel.common.location.Location;
 import com.tencent.angel.common.location.LocationManager;
 import com.tencent.angel.conf.AngelConf;
-import com.tencent.angel.kubernetesmanager.scheduler.KubernetesClusterManager;
 import com.tencent.angel.master.app.*;
 import com.tencent.angel.master.client.ClientManager;
 import com.tencent.angel.master.data.DataSpliter;
@@ -35,6 +35,7 @@ import com.tencent.angel.master.deploy.local.LocalContainerAllocator;
 import com.tencent.angel.master.deploy.local.LocalContainerLauncher;
 import com.tencent.angel.master.deploy.yarn.YarnContainerAllocator;
 import com.tencent.angel.master.deploy.yarn.YarnContainerLauncher;
+import com.tencent.angel.master.deploy.DeployUtils;
 import com.tencent.angel.master.matrix.committer.AMModelLoader;
 import com.tencent.angel.master.matrix.committer.AMModelSaver;
 import com.tencent.angel.master.matrixmeta.AMMatrixMetaManager;
@@ -60,6 +61,8 @@ import com.tencent.angel.master.worker.worker.AMWorkerEventType;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroupEvent;
 import com.tencent.angel.master.worker.workergroup.AMWorkerGroupEventType;
 import com.tencent.angel.plugin.AngelServiceLoader;
+import com.tencent.angel.master.deploy.ContainerAllocatorFactory;
+import com.tencent.angel.master.deploy.ContainerLauncherFactory;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.webapp.AngelWebApp;
@@ -367,10 +370,6 @@ public class AngelApplicationMaster extends CompositeService {
       return conf;
     }
 
-    @Override public KubernetesClusterManager getK8sClusterManager() {
-      return null;
-    }
-
     @Override public WebApp getWebApp() {
       return webApp;
     }
@@ -465,12 +464,7 @@ public class AngelApplicationMaster extends CompositeService {
     }
 
     @Override public AngelDeployMode getDeployMode() {
-      String mode = conf.get(AngelConf.ANGEL_DEPLOY_MODE, AngelConf.DEFAULT_ANGEL_DEPLOY_MODE);
-      if (mode.equals(AngelDeployMode.LOCAL.toString())) {
-        return AngelDeployMode.LOCAL;
-      } else {
-        return AngelDeployMode.YARN;
-      }
+      return DeployUtils.getDeployMode(conf);
     }
   }
 
@@ -717,13 +711,9 @@ public class AngelApplicationMaster extends CompositeService {
     // init container allocator
     AngelDeployMode deployMode = appContext.getDeployMode();
     LOG.info("deploy mode=" + deployMode);
-    if (deployMode == AngelDeployMode.LOCAL) {
-      containerAllocator = new LocalContainerAllocator(appContext);
-      containerLauncher = new LocalContainerLauncher(appContext);
-    } else {
-      containerAllocator = new YarnContainerAllocator(appContext);
-      containerLauncher = new YarnContainerLauncher(appContext);
-    }
+    containerAllocator = ContainerAllocatorFactory.create(deployMode, appContext);
+    containerLauncher = ContainerLauncherFactory.create(deployMode, appContext);
+
     addIfService(containerAllocator);
     dispatcher.register(ContainerAllocatorEventType.class, containerAllocator);
     LOG.info("build containerAllocator success");
@@ -907,6 +897,17 @@ public class AngelApplicationMaster extends CompositeService {
   }
 
   private void recoverTaskState() throws IOException {
+    // STANDALONE deploys never persist task state across master restarts (the cluster
+    // bootstrap brings everything down on master exit, and there is no YARN/RM to
+    // chain attempts). Skip the load attempt unconditionally so we do not surface a
+    // scary "find task meta file failed" ERROR for a directory that, by design,
+    // does not exist on first launch.
+    AngelDeployMode deployMode = appContext.getDeployMode();
+    if (deployMode == AngelDeployMode.STANDALONE) {
+      taskManager = new AMTaskManager();
+      return;
+    }
+
     // load task information from app state storage first if attempt index great than 1(the master
     // is not the first retry)
     if (appAttemptId.getAttemptId() > 1) {
@@ -1048,10 +1049,10 @@ public class AngelApplicationMaster extends CompositeService {
   }
 
 
-  static class AngelAppMasterShutdownHook implements Runnable {
+  public static class AngelAppMasterShutdownHook implements Runnable {
     AngelApplicationMaster appMaster;
 
-    AngelAppMasterShutdownHook(AngelApplicationMaster appMaster) {
+    public AngelAppMasterShutdownHook(AngelApplicationMaster appMaster) {
       this.appMaster = appMaster;
     }
 
@@ -1061,5 +1062,18 @@ public class AngelApplicationMaster extends CompositeService {
       appMaster.getAppContext().getApp().forceState(AppState.KILLED);
       appMaster.shutDownJob();
     }
+  }
+
+  public Location getMasterLocation() {
+    return locationManager.getMasterLocation();
+  }
+
+  /**
+   * Test hook: returns the container launcher in use. Integration tests use this to
+   * observe the lifecycle of spawned PS / Worker child processes (e.g. counting alive
+   * children for the STANDALONE master-loss kill path).
+   */
+  public ContainerLauncher getContainerLauncher() {
+    return containerLauncher;
   }
 }

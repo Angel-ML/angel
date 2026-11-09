@@ -280,23 +280,18 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
 
       // reqeuest resource:send a resource request to the resource allocator
       AngelDeployMode deployMode = attempt.getContext().getDeployMode();
-      if (deployMode == AngelDeployMode.KUBERNETES) {
-        attempt.context.getEventHandler()
-                .handle(new WorkerAttemptEvent(WorkerAttemptEventType.CONTAINER_ASSIGN, attempt.getId()));
+      ContainerAllocatorEvent allocatorEvent = null;
+
+      if (deployMode == AngelDeployMode.LOCAL || deployMode == AngelDeployMode.STANDALONE) {
+        allocatorEvent = new LocalContainerAllocatorEvent(ContainerAllocatorEventType.CONTAINER_REQ,
+          attempt.getId());
+
       } else {
-        ContainerAllocatorEvent allocatorEvent = null;
-
-        if (deployMode == AngelDeployMode.LOCAL) {
-          allocatorEvent = new LocalContainerAllocatorEvent(ContainerAllocatorEventType.CONTAINER_REQ,
-                  attempt.getId());
-
-        } else {
-          allocatorEvent = new YarnContainerRequestEvent(attempt.getId(),
-                  attempt.getContext().getWorkerManager().getWorkerResource(),
-                  attempt.getContext().getWorkerManager().getWorkerPriority(), hosts);
-        }
-        attempt.getContext().getEventHandler().handle(allocatorEvent);
+        allocatorEvent = new YarnContainerRequestEvent(attempt.getId(),
+          attempt.getContext().getWorkerManager().getWorkerResource(),
+          attempt.getContext().getWorkerManager().getWorkerPriority(), hosts);
       }
+      attempt.getContext().getEventHandler().handle(allocatorEvent);
     }
   }
 
@@ -306,34 +301,30 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
 
     @SuppressWarnings("unchecked") @Override
     public void transition(WorkerAttempt attempt, WorkerAttemptEvent event) {
+      WorkerAttemptContainerAssignedEvent assignedEvent =
+        (WorkerAttemptContainerAssignedEvent) event;
+      WorkerAttemptId attemptId = attempt.getId();
+      attempt.container = assignedEvent.getContainer();
+
       // once the resource is applied, build and send the launch request to the container launcher
       AngelDeployMode deployMode = attempt.getContext().getDeployMode();
-      if (deployMode == AngelDeployMode.KUBERNETES) {
-        attempt.context.getEventHandler()
-                .handle(new WorkerAttemptEvent(WorkerAttemptEventType.CONTAINER_LAUNCHED, attempt.getId()));
+      ContainerLauncherEvent launchEvent = null;
+
+      if (deployMode == AngelDeployMode.LOCAL || deployMode == AngelDeployMode.STANDALONE) {
+        launchEvent =
+          new LocalContainerLauncherEvent(ContainerLauncherEventType.CONTAINER_REMOTE_LAUNCH,
+            attempt.getId());
       } else {
-        WorkerAttemptContainerAssignedEvent assignedEvent =
-                (WorkerAttemptContainerAssignedEvent) event;
-        WorkerAttemptId attemptId = attempt.getId();
-        attempt.container = assignedEvent.getContainer();
-        ContainerLauncherEvent launchEvent = null;
+        ContainerLaunchContext launchContext = ContainerContextUtils.createContainerLaunchContext(
+          attempt.getContext().getContainerAllocator().getApplicationACLs(),
+          attempt.getContext().getConf(), attemptId, 0, attempt.getContext().getApplicationId(),
+          attempt.getContext().getMasterService(), attempt.getContext().getCredentials());
 
-        if (deployMode == AngelDeployMode.LOCAL) {
-          launchEvent =
-                  new LocalContainerLauncherEvent(ContainerLauncherEventType.CONTAINER_REMOTE_LAUNCH,
-                          attempt.getId());
-        } else {
-          ContainerLaunchContext launchContext = ContainerContextUtils.createContainerLaunchContext(
-                  attempt.getContext().getContainerAllocator().getApplicationACLs(),
-                  attempt.getContext().getConf(), attemptId, 0, attempt.getContext().getApplicationId(),
-                  attempt.getContext().getMasterService(), attempt.getContext().getCredentials());
-
-          launchEvent =
-                  new ContainerRemoteLaunchEvent(attemptId, launchContext, assignedEvent.getContainer());
-        }
-
-        attempt.getContext().getEventHandler().handle(launchEvent);
+        launchEvent =
+          new ContainerRemoteLaunchEvent(attemptId, launchContext, assignedEvent.getContainer());
       }
+
+      attempt.getContext().getEventHandler().handle(launchEvent);
     }
   }
 
@@ -483,22 +474,17 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
 
   @SuppressWarnings("unchecked") private void cleanContainer() {
     AngelDeployMode deployMode = context.getDeployMode();
-    if (deployMode == AngelDeployMode.KUBERNETES) {
-      LOG.info("Now in cleanContainer.");
-      //todo
-    } else {
-      ContainerLauncherEvent launchEvent = null;
+    ContainerLauncherEvent launchEvent = null;
 
-      if (deployMode == AngelDeployMode.LOCAL) {
-        launchEvent =
-                new LocalContainerLauncherEvent(ContainerLauncherEventType.CONTAINER_REMOTE_CLEANUP, id);
-      } else {
-        launchEvent = new YarnContainerLauncherEvent(id, container.getId(),
-                StringInterner.weakIntern(container.getNodeId().toString()), container.getContainerToken(),
-                ContainerLauncherEventType.CONTAINER_REMOTE_CLEANUP);
-      }
-      context.getEventHandler().handle(launchEvent);
+    if (deployMode == AngelDeployMode.LOCAL || deployMode == AngelDeployMode.STANDALONE) {
+      launchEvent =
+        new LocalContainerLauncherEvent(ContainerLauncherEventType.CONTAINER_REMOTE_CLEANUP, id);
+    } else {
+      launchEvent = new YarnContainerLauncherEvent(id, container.getId(),
+        StringInterner.weakIntern(container.getNodeId().toString()), container.getContainerToken(),
+        ContainerLauncherEventType.CONTAINER_REMOTE_CLEANUP);
     }
+    context.getEventHandler().handle(launchEvent);
   }
 
   @SuppressWarnings("unchecked") private void deallocContainer() {
@@ -506,7 +492,7 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
     AngelDeployMode deployMode = context.getDeployMode();
     ContainerAllocatorEvent allocatorEvent = null;
 
-    if (deployMode == AngelDeployMode.LOCAL) {
+    if (deployMode == AngelDeployMode.LOCAL || deployMode == AngelDeployMode.STANDALONE) {
       allocatorEvent =
         new LocalContainerAllocatorEvent(ContainerAllocatorEventType.CONTAINER_DEALLOCATE, id);
     } else {

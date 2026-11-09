@@ -18,8 +18,8 @@ package com.tencent.angel.spark.examples.local
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.graph.rank.kcore.KCore
-import com.tencent.angel.graph.utils.GraphIO
+import com.tencent.angel.spark.ml.graph.algo.rank.kcore.KCore
+import com.tencent.angel.spark.ml.graph.utils.GraphIO
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -28,9 +28,10 @@ object KCoreExample {
   def main(args: Array[String]): Unit = {
     val mode = "local"
     val input = "data/bc/edge"
-    val output = "model/kcore/edge"
+    val output = "model/kcore5/edge"
     val partitionNum = 3
     val storageLevel = StorageLevel.MEMORY_ONLY
+    val batchSize = 100
     val psPartitionNum = 2
 
     start(mode)
@@ -38,7 +39,6 @@ object KCoreExample {
       .setPartitionNum(partitionNum)
       .setStorageLevel(storageLevel)
       .setPSPartitionNum(psPartitionNum)
-      .setExecMode("full")
 
     val df = GraphIO.load(input, isWeighted = false)
     val mapping = kCore.transform(df)
@@ -49,7 +49,7 @@ object KCoreExample {
   def start(mode: String = "local"): Unit = {
     val conf = new SparkConf()
     conf.setMaster(mode)
-    conf.setAppName("kcore")
+    conf.setAppName("k-core")
     conf.set(AngelConf.ANGEL_PSAGENT_UPDATE_SPLIT_ADAPTION_ENABLE, "false")
     val sc = new SparkContext(conf)
     sc.setLogLevel("WARN")

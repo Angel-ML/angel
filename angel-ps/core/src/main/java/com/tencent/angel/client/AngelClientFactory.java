@@ -19,19 +19,18 @@
 package com.tencent.angel.client;
 
 import java.util.HashMap;
-import java.util.Iterator;
-
 import com.tencent.angel.api.python.PythonUtils;
-import com.tencent.angel.client.kubernetes.AngelKubernetesClient;
+import com.tencent.angel.client.embedded.AngelEmbeddedClient;
+import com.tencent.angel.client.standalone.AngelStandaloneClient;
 import org.apache.hadoop.conf.Configuration;
 
+import com.tencent.angel.master.deploy.DeployUtils;
 import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.client.local.AngelLocalClient;
 import com.tencent.angel.client.yarn.AngelYarnClient;
-import com.tencent.angel.conf.AngelConf;
 
 /**
- * Angel client factory, it support two types client now: LOCAL and YARN
+ * Angel client factory, supports LOCAL, YARN, EMBEDDED and STANDALONE modes.
  */
 public class AngelClientFactory {
 
@@ -52,14 +51,18 @@ public class AngelClientFactory {
   }
 
   public AngelClient doGet(Configuration conf) {
-    String mode = conf.get(AngelConf.ANGEL_DEPLOY_MODE, AngelConf.DEFAULT_ANGEL_DEPLOY_MODE);
-
-    if (mode.equals(AngelDeployMode.LOCAL.toString())) {
-      return new AngelLocalClient(conf);
-    } else if(mode.equals(AngelDeployMode.KUBERNETES.toString())) {
-      return new AngelKubernetesClient(conf);
-    } else {
-      return new AngelYarnClient(conf);
+    AngelDeployMode mode = DeployUtils.getDeployMode(conf);
+    switch (mode) {
+      case LOCAL:
+        return new AngelLocalClient(conf);
+      case EMBEDDED:
+        return new AngelEmbeddedClient(conf);
+      case STANDALONE:
+        return new AngelStandaloneClient(conf);
+      case YARN:
+        return new AngelYarnClient(conf);
+      default:
+        throw new UnsupportedOperationException();
     }
   }
 }

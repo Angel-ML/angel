@@ -92,6 +92,11 @@ public class GetRowHashTest {
   }
 
   @Before public void setup() throws Exception {
+
+    String com = "";
+    String[] splits = com.split(".");
+    System.out.println("Split length is " + splits.length + ", 0 element is " + splits[0]);
+
     // set basic configuration keys
     Configuration conf = new Configuration();
     conf.setBoolean("mapred.mapper.new-api", true);

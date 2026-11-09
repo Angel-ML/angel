@@ -48,6 +48,43 @@ import java.util.Arrays;
 
 public class RangeRouterUtils {
 
+  /**
+   * Whether the partition holds the given row. A negative row id means "row agnostic".
+   */
+  private static boolean containsRow(PartitionKey part, int rowId) {
+    return rowId < 0 || (rowId >= part.getStartRow() && rowId < part.getEndRow());
+  }
+
+  /**
+   * Indices (into matrixParts) of the partitions that hold the given row, ordered by start
+   * column. When a matrix is split by rows as well as columns, keys of one row must only be routed
+   * to the partitions of that row.
+   */
+  static int[] partsOfRow(PartitionKey[] matrixParts, int rowId) {
+    int num = 0;
+    for (PartitionKey part : matrixParts) {
+      if (containsRow(part, rowId)) {
+        num++;
+      }
+    }
+
+    Integer[] indices = new Integer[num];
+    int index = 0;
+    for (int i = 0; i < matrixParts.length; i++) {
+      if (containsRow(matrixParts[i], rowId)) {
+        indices[index++] = i;
+      }
+    }
+    Arrays.sort(indices, (a, b) -> Long.compare(matrixParts[a].getStartCol(),
+        matrixParts[b].getStartCol()));
+
+    int[] result = new int[num];
+    for (int i = 0; i < num; i++) {
+      result[i] = indices[i];
+    }
+    return result;
+  }
+
   /////////////////////////////////////////////////////////////////////////////////////////
   // keys split: range split only support int/long key
   /////////////////////////////////////////////////////////////////////////////////////////
@@ -72,17 +109,18 @@ public class RangeRouterUtils {
     KeyPart[] dataParts = new KeyPart[matrixParts.length];
 
     int keyIndex = 0;
+    int[] rowParts = partsOfRow(matrixParts, rowId);
     int partIndex = 0;
-    while (keyIndex < keys.length || partIndex < matrixParts.length) {
+    while (keyIndex < keys.length || partIndex < rowParts.length) {
       int length = 0;
-      long endOffset = matrixParts[partIndex].getEndCol();
+      long endOffset = matrixParts[rowParts[partIndex]].getEndCol();
       while (keyIndex < keys.length && keys[keyIndex] < endOffset) {
         keyIndex++;
         length++;
       }
 
       if (length != 0) {
-        dataParts[partIndex] = new RangeViewIntKeysPart(rowId, keys, keyIndex - length, keyIndex);
+        dataParts[rowParts[partIndex]] = new RangeViewIntKeysPart(rowId, keys, keyIndex - length, keyIndex);
       }
       partIndex++;
     }
@@ -105,17 +143,18 @@ public class RangeRouterUtils {
     KeyPart[] dataParts = new KeyPart[matrixParts.length];
 
     int keyIndex = 0;
+    int[] rowParts = partsOfRow(matrixParts, rowId);
     int partIndex = 0;
-    while (keyIndex < keys.length || partIndex < matrixParts.length) {
+    while (keyIndex < keys.length || partIndex < rowParts.length) {
       int length = 0;
-      long endOffset = matrixParts[partIndex].getEndCol();
+      long endOffset = matrixParts[rowParts[partIndex]].getEndCol();
       while (keyIndex < keys.length && keys[keyIndex] < endOffset) {
         keyIndex++;
         length++;
       }
 
       if (length != 0) {
-        dataParts[partIndex] = new RangeViewLongKeysPart(rowId, keys, keyIndex - length, keyIndex);
+        dataParts[rowParts[partIndex]] = new RangeViewLongKeysPart(rowId, keys, keyIndex - length, keyIndex);
       }
       partIndex++;
     }
@@ -166,17 +205,18 @@ public class RangeRouterUtils {
     KeyValuePart[] dataParts = new KeyValuePart[matrixParts.length];
 
     int keyIndex = 0;
+    int[] rowParts = partsOfRow(matrixParts, rowId);
     int partIndex = 0;
-    while (keyIndex < keys.length || partIndex < matrixParts.length) {
+    while (keyIndex < keys.length || partIndex < rowParts.length) {
       int length = 0;
-      long endOffset = matrixParts[partIndex].getEndCol();
+      long endOffset = matrixParts[rowParts[partIndex]].getEndCol();
       while (keyIndex < keys.length && keys[keyIndex] < endOffset) {
         keyIndex++;
         length++;
       }
 
       if (length != 0) {
-        dataParts[partIndex] = new RangeViewIntKeysFloatValuesPart(rowId, keys, values,
+        dataParts[rowParts[partIndex]] = new RangeViewIntKeysFloatValuesPart(rowId, keys, values,
             keyIndex - length, keyIndex);
       }
       partIndex++;
@@ -201,16 +241,17 @@ public class RangeRouterUtils {
     KeyValuePart[] dataParts = new KeyValuePart[matrixParts.length];
 
     int keyIndex = 0;
+    int[] rowParts = partsOfRow(matrixParts, rowId);
     int partIndex = 0;
-    while (keyIndex < keys.length || partIndex < matrixParts.length) {
+    while (keyIndex < keys.length || partIndex < rowParts.length) {
       int length = 0;
-      long endOffset = matrixParts[partIndex].getEndCol();
+      long endOffset = matrixParts[rowParts[partIndex]].getEndCol();
       while (keyIndex < keys.length && keys[keyIndex] < endOffset) {
         keyIndex++;
         length++;
       }
 
-      dataParts[partIndex] = new RangeViewIntKeysDoubleValuesPart(rowId, keys, values,
+      dataParts[rowParts[partIndex]] = new RangeViewIntKeysDoubleValuesPart(rowId, keys, values,
           keyIndex - length, keyIndex);
       partIndex++;
     }
@@ -234,16 +275,17 @@ public class RangeRouterUtils {
     KeyValuePart[] dataParts = new KeyValuePart[matrixParts.length];
 
     int keyIndex = 0;
+    int[] rowParts = partsOfRow(matrixParts, rowId);
     int partIndex = 0;
-    while (keyIndex < keys.length || partIndex < matrixParts.length) {
+    while (keyIndex < keys.length || partIndex < rowParts.length) {
       int length = 0;
-      long endOffset = matrixParts[partIndex].getEndCol();
+      long endOffset = matrixParts[rowParts[partIndex]].getEndCol();
       while (keyIndex < keys.length && keys[keyIndex] < endOffset) {
         keyIndex++;
         length++;
       }
 
-      dataParts[partIndex] = new RangeViewIntKeysIntValuesPart(rowId, keys, values,
+      dataParts[rowParts[partIndex]] = new RangeViewIntKeysIntValuesPart(rowId, keys, values,
           keyIndex - length, keyIndex);
       partIndex++;
     }
@@ -267,16 +309,17 @@ public class RangeRouterUtils {
     KeyValuePart[] dataParts = new KeyValuePart[matrixParts.length];
 
     int keyIndex = 0;
+    int[] rowParts = partsOfRow(matrixParts, rowId);
     int partIndex = 0;
-    while (keyIndex < keys.length || partIndex < matrixParts.length) {
+    while (keyIndex < keys.length || partIndex < rowParts.length) {
       int length = 0;
-      long endOffset = matrixParts[partIndex].getEndCol();
+      long endOffset = matrixParts[rowParts[partIndex]].getEndCol();
       while (keyIndex < keys.length && keys[keyIndex] < endOffset) {
         keyIndex++;
         length++;
       }
 
-      dataParts[partIndex] = new RangeViewIntKeysLongValuesPart(rowId, keys, values,
+      dataParts[rowParts[partIndex]] = new RangeViewIntKeysLongValuesPart(rowId, keys, values,
           keyIndex - length, keyIndex);
       partIndex++;
     }
@@ -300,16 +343,17 @@ public class RangeRouterUtils {
     KeyValuePart[] dataParts = new KeyValuePart[matrixParts.length];
 
     int keyIndex = 0;
+    int[] rowParts = partsOfRow(matrixParts, rowId);
     int partIndex = 0;
-    while (keyIndex < keys.length || partIndex < matrixParts.length) {
+    while (keyIndex < keys.length || partIndex < rowParts.length) {
       int length = 0;
-      long endOffset = matrixParts[partIndex].getEndCol();
+      long endOffset = matrixParts[rowParts[partIndex]].getEndCol();
       while (keyIndex < keys.length && keys[keyIndex] < endOffset) {
         keyIndex++;
         length++;
       }
 
-      dataParts[partIndex] = new RangeViewIntKeysAnyValuesPart(rowId, keys, values,
+      dataParts[rowParts[partIndex]] = new RangeViewIntKeysAnyValuesPart(rowId, keys, values,
           keyIndex - length, keyIndex);
       partIndex++;
     }
@@ -338,17 +382,18 @@ public class RangeRouterUtils {
     KeyValuePart[] dataParts = new KeyValuePart[matrixParts.length];
 
     int keyIndex = 0;
+    int[] rowParts = partsOfRow(matrixParts, rowId);
     int partIndex = 0;
-    while (keyIndex < keys.length || partIndex < matrixParts.length) {
+    while (keyIndex < keys.length || partIndex < rowParts.length) {
       int length = 0;
-      long endOffset = matrixParts[partIndex].getEndCol();
+      long endOffset = matrixParts[rowParts[partIndex]].getEndCol();
       while (keyIndex < keys.length && keys[keyIndex] < endOffset) {
         keyIndex++;
         length++;
       }
 
       if (length != 0) {
-        dataParts[partIndex] = new RangeViewLongKeysFloatValuesPart(rowId, keys, values,
+        dataParts[rowParts[partIndex]] = new RangeViewLongKeysFloatValuesPart(rowId, keys, values,
             keyIndex - length, keyIndex);
       }
       partIndex++;
@@ -374,16 +419,17 @@ public class RangeRouterUtils {
     KeyValuePart[] dataParts = new KeyValuePart[matrixParts.length];
 
     int keyIndex = 0;
+    int[] rowParts = partsOfRow(matrixParts, rowId);
     int partIndex = 0;
-    while (keyIndex < keys.length || partIndex < matrixParts.length) {
+    while (keyIndex < keys.length || partIndex < rowParts.length) {
       int length = 0;
-      long endOffset = matrixParts[partIndex].getEndCol();
+      long endOffset = matrixParts[rowParts[partIndex]].getEndCol();
       while (keyIndex < keys.length && keys[keyIndex] < endOffset) {
         keyIndex++;
         length++;
       }
 
-      dataParts[partIndex] = new RangeViewLongKeysDoubleValuesPart(rowId, keys, values,
+      dataParts[rowParts[partIndex]] = new RangeViewLongKeysDoubleValuesPart(rowId, keys, values,
           keyIndex - length, keyIndex);
       partIndex++;
     }
@@ -409,16 +455,17 @@ public class RangeRouterUtils {
     KeyValuePart[] dataParts = new KeyValuePart[matrixParts.length];
 
     int keyIndex = 0;
+    int[] rowParts = partsOfRow(matrixParts, rowId);
     int partIndex = 0;
-    while (keyIndex < keys.length || partIndex < matrixParts.length) {
+    while (keyIndex < keys.length || partIndex < rowParts.length) {
       int length = 0;
-      long endOffset = matrixParts[partIndex].getEndCol();
+      long endOffset = matrixParts[rowParts[partIndex]].getEndCol();
       while (keyIndex < keys.length && keys[keyIndex] < endOffset) {
         keyIndex++;
         length++;
       }
 
-      dataParts[partIndex] = new RangeViewLongKeysIntValuesPart(rowId, keys, values,
+      dataParts[rowParts[partIndex]] = new RangeViewLongKeysIntValuesPart(rowId, keys, values,
           keyIndex - length, keyIndex);
       partIndex++;
     }
@@ -443,16 +490,17 @@ public class RangeRouterUtils {
     KeyValuePart[] dataParts = new KeyValuePart[matrixParts.length];
 
     int keyIndex = 0;
+    int[] rowParts = partsOfRow(matrixParts, rowId);
     int partIndex = 0;
-    while (keyIndex < keys.length || partIndex < matrixParts.length) {
+    while (keyIndex < keys.length || partIndex < rowParts.length) {
       int length = 0;
-      long endOffset = matrixParts[partIndex].getEndCol();
+      long endOffset = matrixParts[rowParts[partIndex]].getEndCol();
       while (keyIndex < keys.length && keys[keyIndex] < endOffset) {
         keyIndex++;
         length++;
       }
 
-      dataParts[partIndex] = new RangeViewLongKeysLongValuesPart(rowId, keys, values,
+      dataParts[rowParts[partIndex]] = new RangeViewLongKeysLongValuesPart(rowId, keys, values,
           keyIndex - length, keyIndex);
       partIndex++;
     }
@@ -477,16 +525,17 @@ public class RangeRouterUtils {
     KeyValuePart[] dataParts = new KeyValuePart[matrixParts.length];
 
     int keyIndex = 0;
+    int[] rowParts = partsOfRow(matrixParts, rowId);
     int partIndex = 0;
-    while (keyIndex < keys.length || partIndex < matrixParts.length) {
+    while (keyIndex < keys.length || partIndex < rowParts.length) {
       int length = 0;
-      long endOffset = matrixParts[partIndex].getEndCol();
+      long endOffset = matrixParts[rowParts[partIndex]].getEndCol();
       while (keyIndex < keys.length && keys[keyIndex] < endOffset) {
         keyIndex++;
         length++;
       }
 
-      dataParts[partIndex] = new RangeViewLongKeysAnyValuesPart(rowId, keys, values,
+      dataParts[rowParts[partIndex]] = new RangeViewLongKeysAnyValuesPart(rowId, keys, values,
           keyIndex - length, keyIndex);
       partIndex++;
     }
@@ -540,6 +589,9 @@ public class RangeRouterUtils {
     KeyValuePart[] dataParts = new KeyValuePart[matrixParts.length];
 
     for (int i = 0; i < matrixParts.length; i++) {
+      if (!containsRow(matrixParts[i], rowId)) {
+        continue;
+      }
       dataParts[i] = new RangeViewDoubleValuesPart(rowId, values,
           (int) matrixParts[i].getStartCol(), (int) matrixParts[i].getEndCol());
     }
@@ -559,6 +611,9 @@ public class RangeRouterUtils {
     KeyValuePart[] dataParts = new KeyValuePart[matrixParts.length];
 
     for (int i = 0; i < matrixParts.length; i++) {
+      if (!containsRow(matrixParts[i], rowId)) {
+        continue;
+      }
       dataParts[i] = new RangeViewFloatValuesPart(rowId, values,
           (int) matrixParts[i].getStartCol(), (int) matrixParts[i].getEndCol());
     }
@@ -578,6 +633,9 @@ public class RangeRouterUtils {
     KeyValuePart[] dataParts = new KeyValuePart[matrixParts.length];
 
     for (int i = 0; i < matrixParts.length; i++) {
+      if (!containsRow(matrixParts[i], rowId)) {
+        continue;
+      }
       dataParts[i] = new RangeViewIntValuesPart(rowId, values,
           (int) matrixParts[i].getStartCol(), (int) matrixParts[i].getEndCol());
     }
@@ -597,6 +655,9 @@ public class RangeRouterUtils {
     KeyValuePart[] dataParts = new KeyValuePart[matrixParts.length];
 
     for (int i = 0; i < matrixParts.length; i++) {
+      if (!containsRow(matrixParts[i], rowId)) {
+        continue;
+      }
       dataParts[i] = new RangeViewLongValuesPart(rowId, values,
           (int) matrixParts[i].getStartCol(), (int) matrixParts[i].getEndCol());
     }
@@ -616,6 +677,9 @@ public class RangeRouterUtils {
     KeyValuePart[] dataParts = new KeyValuePart[matrixParts.length];
 
     for (int i = 0; i < matrixParts.length; i++) {
+      if (!containsRow(matrixParts[i], rowId)) {
+        continue;
+      }
       dataParts[i] = new RangeViewAnyValuesPart(rowId, values,
           (int) matrixParts[i].getStartCol(), (int) matrixParts[i].getEndCol());
     }

@@ -16,18 +16,19 @@
  */
 package com.tencent.angel.graph.client.psf.get.getneighbors;
 
+import com.tencent.angel.graph.data.Neighbor;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 public class GetNeighborsResult extends GetResult {
 
-  private final Long2ObjectOpenHashMap<long[]> nodeIdToContents;
+  private final Long2ObjectOpenHashMap<Neighbor> nodeIdToContents;
 
-  public GetNeighborsResult(Long2ObjectOpenHashMap<long[]> nodeIdToContents) {
+  public GetNeighborsResult(Long2ObjectOpenHashMap<Neighbor> nodeIdToContents) {
     this.nodeIdToContents = nodeIdToContents;
   }
 
-  public Long2ObjectOpenHashMap<long[]> getNodeIdToContents() {
+  public Long2ObjectOpenHashMap<Neighbor> getNodeIdToContents() {
     return nodeIdToContents;
   }
 }

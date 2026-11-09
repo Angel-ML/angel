@@ -41,12 +41,23 @@ object DataLoader {
     instances.toArray
   }
 
-  def loadLibsvmDP(input: String, dim: Int)(implicit sc: SparkContext): RDD[Instance] = {
-    sc.textFile(input)
-      .map(_.trim)
-      .filter(_.nonEmpty)
-      .filter(!_.startsWith("#"))
-      .map(line => parseLibsvm(line, dim))
+  def loadLibsvmDP(input: String, dim: Int, dataType: String = "sparse")(implicit sc: SparkContext): RDD[Instance] = {
+    dataType match {
+      case "dense" => {
+        sc.textFile(input)
+          .map(_.trim)
+          .filter(_.nonEmpty)
+          .filter(!_.startsWith("#"))
+          .map(line => parseDense(line, dim))
+      }
+      case "sparse" => {
+        sc.textFile(input)
+          .map(_.trim)
+          .filter(_.nonEmpty)
+          .filter(!_.startsWith("#"))
+          .map(line => parseLibsvm(line, dim))
+      }
+    }
   }
 
   def loadLibsvmFP2(input: String, dim: Int, numPartition: Int, partitioner: Partitioner = null)
@@ -175,4 +186,18 @@ object DataLoader {
     Instance(y, Vectors.sparse(dim, indices, values))
   }
 
+  def parseDense(line: String, dim: Int): Instance = {
+    val splits = line.split("\\s+|,").map(_.trim)
+    val y = splits(0).toDouble
+
+    val indices = new Array[Int](splits.length - 1)
+    val values = new Array[Double](splits.length - 1)
+    for (i <- 1 until splits.length) {
+      val kv = splits(i)
+      indices(i - 1) = i
+      values(i - 1) = kv.toDouble
+    }
+
+    Instance(y, Vectors.sparse(dim, indices,values).toDense)
+  }
 }

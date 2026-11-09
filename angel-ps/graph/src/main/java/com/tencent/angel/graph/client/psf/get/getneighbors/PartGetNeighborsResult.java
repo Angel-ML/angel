@@ -17,6 +17,10 @@
 package com.tencent.angel.graph.client.psf.get.getneighbors;
 
 import com.tencent.angel.common.ByteBufSerdeUtils;
+import com.tencent.angel.graph.data.IntNeighbor;
+import com.tencent.angel.graph.data.LongNeighbor;
+import com.tencent.angel.graph.data.Neighbor;
+import com.tencent.angel.graph.data.NeighborStorageType;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
@@ -24,9 +28,9 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 public class PartGetNeighborsResult extends PartitionGetResult {
 
   private int partId;
-  private Long2ObjectOpenHashMap<long[]> nodeIdToContents;
+  private Long2ObjectOpenHashMap<Neighbor> nodeIdToContents;
 
-  public PartGetNeighborsResult(int partId, Long2ObjectOpenHashMap<long[]> nodeIdToContents) {
+  public PartGetNeighborsResult(int partId, Long2ObjectOpenHashMap<Neighbor> nodeIdToContents) {
     this.partId = partId;
     this.nodeIdToContents = nodeIdToContents;
   }
@@ -39,7 +43,7 @@ public class PartGetNeighborsResult extends PartitionGetResult {
     return partId;
   }
 
-  public Long2ObjectOpenHashMap<long[]> getNodeIdToContents() {
+  public Long2ObjectOpenHashMap<Neighbor> getNodeIdToContents() {
     return nodeIdToContents;
   }
 
@@ -47,9 +51,10 @@ public class PartGetNeighborsResult extends PartitionGetResult {
   public void serialize(ByteBuf output) {
     ByteBufSerdeUtils.serializeInt(output, partId);
     ByteBufSerdeUtils.serializeInt(output, nodeIdToContents.size());
-    for (Long2ObjectOpenHashMap.Entry<long[]> entry : nodeIdToContents.long2ObjectEntrySet()) {
+    for (Long2ObjectOpenHashMap.Entry<Neighbor> entry : nodeIdToContents.long2ObjectEntrySet()) {
       ByteBufSerdeUtils.serializeLong(output, entry.getLongKey());
-      ByteBufSerdeUtils.serializeLongs(output, entry.getValue());
+      ByteBufSerdeUtils.serializeByte(output, entry.getValue().getStorageType().getIndex());
+      entry.getValue().serialize(output);
     }
   }
 
@@ -59,17 +64,26 @@ public class PartGetNeighborsResult extends PartitionGetResult {
     int size = ByteBufSerdeUtils.deserializeInt(input);
     nodeIdToContents = new Long2ObjectOpenHashMap<>(size);
     for (int i = 0; i < size; i++) {
-      nodeIdToContents.put(ByteBufSerdeUtils.deserializeLong(input),
-          ByteBufSerdeUtils.deserializeLongs(input));
+      long key = ByteBufSerdeUtils.deserializeLong(input);
+      NeighborStorageType storageType = NeighborStorageType
+          .valueOf(ByteBufSerdeUtils.deserializeByte(input));
+      Neighbor neighbor;
+      if (storageType == NeighborStorageType.LONGARRAY) {
+        neighbor = new LongNeighbor();
+      } else {
+        neighbor = new IntNeighbor();
+      }
+      neighbor.deserialize(input);
+      nodeIdToContents.put(key, neighbor);
     }
   }
 
   @Override
   public int bufferLen() {
     int len = 2 * ByteBufSerdeUtils.INT_LENGTH;
-    for (Long2ObjectOpenHashMap.Entry<long[]> entry : nodeIdToContents.long2ObjectEntrySet()) {
-      len += ByteBufSerdeUtils.LONG_LENGTH;
-      len += ByteBufSerdeUtils.serializedLongsLen(entry.getValue());
+    for (Long2ObjectOpenHashMap.Entry<Neighbor> entry : nodeIdToContents.long2ObjectEntrySet()) {
+      len += ByteBufSerdeUtils.LONG_LENGTH + ByteBufSerdeUtils.BYTE_LENGTH;
+      len += entry.getValue().bufferLen();
     }
     return len;
   }

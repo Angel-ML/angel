@@ -3,10 +3,14 @@ package com.tencent.angel.spark.ml.ann_core.psf.updateSearchResult;
 import com.tencent.angel.graph.utils.GraphMatrixUtils;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
+import com.tencent.angel.ps.storage.partition.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
 import com.tencent.angel.ps.storage.vector.element.IElement;
 import com.tencent.angel.psagent.matrix.transport.router.operator.ILongKeyAnyValuePartOp;
-import com.tencent.angel.graph.data.NearestNeighborsIElement;
+import com.tencent.angel.spark.ml.ann_core.NearestNeighborsIElement;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 public class UpdateSearchResult extends UpdateFunc {
     public UpdateSearchResult(int matrixId, long[] nodes, NearestNeighborsIElement[] updates, int topK) {
@@ -46,5 +50,9 @@ public class UpdateSearchResult extends UpdateFunc {
         } finally {
             row.endWrite();
         }
+        long endTime = System.currentTimeMillis();
+        //System.out.print("merge and set in partitionUpdate cost: ");
+        //System.out.print(endTime - startTime);
+        //System.out.println(" ms");
     }
 }

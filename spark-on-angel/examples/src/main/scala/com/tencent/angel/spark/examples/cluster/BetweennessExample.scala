@@ -1,10 +1,27 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.graph.rank.linerank.LineRank
-import com.tencent.angel.graph.utils.GraphIO
+import com.tencent.angel.spark.ml.graph.algo.rank.linerank.LineRank
+import com.tencent.angel.spark.ml.graph.utils.GraphIO
+import com.tencent.angel.spark.ml.util.DataStatistics
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -56,6 +73,12 @@ object BetweennessExample {
       srcIndex = srcIndex, dstIndex = dstIndex,
       weightIndex = weightIndex, sep = sep)
 
+    //collect app name and data size
+    DataStatistics.setAppName(betweenness.getClass.getCanonicalName)
+    DataStatistics.calcRDDSize(df, "angel.input.data")
+    DataStatistics.setDataPartitionNum(partitionNum)
+    DataStatistics.setPSPartitionNum(psPartitionNum)
+
     val mapping = betweenness.transform(df)
     GraphIO.save(mapping, output)
     stop()
@@ -67,6 +90,7 @@ object BetweennessExample {
     conf.setAppName("Angel Betweenness")
     conf.set(AngelConf.ANGEL_PSAGENT_UPDATE_SPLIT_ADAPTION_ENABLE, "false")
     val sc = new SparkContext(conf)
+//    PSContext.getOrCreate(sc)
     sc
   }
 

@@ -33,6 +33,10 @@ public class RangeViewIntKeysAnyValuesPart extends RangeKeyValuePart implements
     this(-1, null, null, -1, -1);
   }
 
+  public int getStartPos() { return startPos; }
+
+  public int getEndPos() { return endPos; }
+
   @Override
   public int[] getKeys() {
     return keys;

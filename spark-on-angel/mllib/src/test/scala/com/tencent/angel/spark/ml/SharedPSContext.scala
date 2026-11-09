@@ -51,9 +51,11 @@ trait SharedPSContext extends BeforeAndAfterAll with BeforeAndAfterEach {
       .set("spark.ps.tmp.path", "file:///tmp/stage")
       .set("spark.ps.out.path", "file:///tmp/output")
       .set("spark.ps.model.path", "file:///tmp/model")
-      .set("spark.ps.instances", "1")
+      .set("spark.ps.instances", "2")
       .set("spark.ps.cores", "1")
-      .set("spark.ps.out.tmp.path.prefix", "/tmp")
+      .set("spark.ps.out.tmp.path.prefix", "/E://temp")
+      .set("angel.userrequest.log.mode", "detail")
+      .set("angel.rpc.log.mode", "detail")
 
     // Spark setup
     val builder = SparkSession.builder()

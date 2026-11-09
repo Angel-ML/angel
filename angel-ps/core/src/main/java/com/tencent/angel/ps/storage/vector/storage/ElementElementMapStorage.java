@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.ps.storage.vector.storage;
 
 import com.tencent.angel.ps.storage.vector.element.IElement;
@@ -26,19 +27,29 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Map.Entry;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class ElementElementMapStorage extends ElementElementStorage {
 
+  private static final Log LOG = LogFactory.getLog(ElementElementMapStorage.class);
+
   private Object2ObjectOpenHashMap<IElement, IElement> data;
 
+  /**
+   * Last successfully-computed dataSize, used as a fallback when {@link #dataSize()} races
+   * with a concurrent PSF writer. See {@link LongElementMapStorage#dataSize()} for context.
+   */
+  private volatile long lastDataSize = 0L;
+
   public ElementElementMapStorage(
-          Class<? extends IElement> objectClass, int len, long indexOffset) {
+      Class<? extends IElement> objectClass, int len, long indexOffset) {
     this(objectClass, new Object2ObjectOpenHashMap<>(len), indexOffset);
   }
 
   public ElementElementMapStorage(
-          Class<? extends IElement> objectClass, Object2ObjectOpenHashMap<IElement, IElement> data,
-          long indexOffset) {
+      Class<? extends IElement> objectClass, Object2ObjectOpenHashMap<IElement, IElement> data,
+      long indexOffset) {
     super(objectClass, indexOffset);
     this.data = data;
   }
@@ -97,9 +108,9 @@ public class ElementElementMapStorage extends ElementElementStorage {
   @Override
   public ElementElementMapStorage deepClone() {
     Object2ObjectOpenHashMap<IElement, IElement> clonedData = new Object2ObjectOpenHashMap(
-            data.size());
-    ObjectIterator<Object2ObjectMap.Entry<IElement, IElement>> iter = clonedData
-            .object2ObjectEntrySet().fastIterator();
+        data.size());
+    ObjectIterator<Object2ObjectMap.Entry<IElement, IElement>> iter = data
+        .object2ObjectEntrySet().fastIterator();
     while (iter.hasNext()) {
       Object2ObjectMap.Entry<IElement, IElement> entry = iter.next();
       clonedData.put(entry.getKey(), (IElement) entry.getValue().deepClone());
@@ -219,15 +230,27 @@ public class ElementElementMapStorage extends ElementElementStorage {
   public long dataSize() {
     long dataLen = super.bufferLen() + 4;
 
-    if (data != null) {
-      // Element data
-      for (Entry<IElement, IElement> entry : data.entrySet()) {
-        if (entry != null && entry.getKey() != null && entry.getValue() != null)
-          dataLen += (entry.getKey().bufferLen() + entry.getValue().bufferLen());
-      }
+    if (data == null) {
+      return dataLen;
     }
 
-    return dataLen;
+    // Concurrent rehash race – see LongElementMapStorage#dataSize() for the full
+    // rationale. heartbeat-driven metric path must not throw.
+    try {
+      for (Entry<IElement, IElement> entry : data.entrySet()) {
+        if (entry != null && entry.getKey() != null && entry.getValue() != null) {
+          dataLen += (entry.getKey().bufferLen() + entry.getValue().bufferLen());
+        }
+      }
+      lastDataSize = dataLen;
+      return dataLen;
+    } catch (RuntimeException e) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("dataSize() raced with a concurrent writer on the underlying"
+            + " Object2ObjectOpenHashMap; returning last successful value " + lastDataSize, e);
+      }
+      return lastDataSize > 0 ? lastDataSize : dataLen;
+    }
   }
 
   public Object2ObjectOpenHashMap<IElement, IElement> getData() {
@@ -235,7 +258,7 @@ public class ElementElementMapStorage extends ElementElementStorage {
   }
 
   public void setData(
-          Object2ObjectOpenHashMap<IElement, IElement> data) {
+      Object2ObjectOpenHashMap<IElement, IElement> data) {
     this.data = data;
   }
 }

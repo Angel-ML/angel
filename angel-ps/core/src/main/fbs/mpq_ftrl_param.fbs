@@ -1,0 +1,54 @@
+// Copyright 2020, Tencent Inc.
+// All rights reserved.
+//
+// @author Yi LI <sincereli@tencent.com>
+
+include "ftrl_param.fbs";
+include "grad_message.fbs";
+include "stats_param.fbs";
+
+namespace tair.optimizers.mpq_ftrl;
+
+table HyperParam {
+  alpha:float (id:0);
+  beta:float (id:1);
+  lambda1:float (id:2);
+  lambda2:float (id:3);
+  epsilon:float (id:4);
+  grad_factor:float (id:5);
+
+  count_decay:float = 1.0 (id:6);
+}
+
+table FloatWeightParams {
+  z:[float] (id:0);
+  n:[float] (id:1);
+  g:[float] (id:2);
+}
+
+table ByteWeightParams {
+  z:[byte] (id:0);
+  n:[byte] (id:1);
+  g:[byte] (id:2);
+}
+
+union MpqWeightParams {
+  double_params: ftrl.WeightParams,
+  float_params: FloatWeightParams,
+  byte_params: ByteWeightParams,
+}
+
+table MpqFtrlGradMessage {
+  hyper_param:HyperParam;
+  mpq_grad_message:MpqGradMessage;
+}
+
+table MpqFtrlWeightParams {
+  mpq_weight_params:MpqWeightParams;
+  field:int32;
+  positive_count:int64;
+  negative_count:int64;
+  update_times:int64;
+  hyper_param:HyperParam;
+  task_stats:TaskStats;
+}

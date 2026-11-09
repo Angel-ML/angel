@@ -1,0 +1,667 @@
+#!/usr/bin/env bash
+# Tencent is pleased to support the open source community by making Angel available.
+#
+# Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+#
+# https://opensource.org/licenses/Apache-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+# ----------------------------------------------------------------------------------------
+# One-shot launcher for an Angel STANDALONE distributed cluster (PS-only).
+#
+# Usage:
+#   angel-cluster-up <ip1,ip2,ip3,...> [extra angel-standalone-submit args...]
+#
+# Convention for the IP list:
+#   - The 1st IP is treated as the MASTER (this node MUST be the one running this script).
+#   - The 2..N IPs are used as PS hosts.
+#
+# This script brings up a PS-only cluster (running mode = ANGEL_PS); no Worker processes
+# are launched. Use this when the parameter servers are driven by an external client /
+# application (e.g. Spark, custom training drivers) over Angel's RPC.
+#
+# Required env:
+#   JAVA_HOME              local JDK
+#
+# Optional env:
+#   ANGEL_HOME             defaults to the parent directory of this script
+#   ANGEL_LIB              defaults to $ANGEL_HOME/lib (jars on the LOCAL submitter machine)
+#   ANGEL_REMOTE_LIB       remote classpath glob, e.g. /opt/angel/lib/*
+#                          REQUIRED when at least one PS host is non-local.
+#                          Falls back to "$ANGEL_LIB/*" if unset.
+#   ANGEL_SSH_USER         ssh user for remote hosts; default = $USER
+#   ANGEL_SSH_PORT         ssh port; default = 22
+#   ANGEL_SSH_OPTS         extra ssh / scp options, e.g. "-i /path/key -o StrictHostKeyChecking=no"
+#   ANGEL_REMOTE_JAVA      java path on remote hosts; default = "java" (must be on PATH)
+#   ANGEL_REMOTE_WORKDIR   remote work dir for job.xml; default = /tmp/angel/<appId>
+#   ANGEL_REMOTE_LOG_DIR   remote stdout/stderr dir; default = /tmp/angel-standalone-logs
+#   ANGEL_PS_OPTS          JVM opts for PS, e.g. "-Xmx8g"
+#
+# Optional flags (parsed BEFORE the IP list):
+#   --ps-per-host <n>                Allow up to <n> PS attempts per host (default 1).
+#   --log-file <path>                Write all stdout/stderr to <path> (overrides
+#                                    $ANGEL_CLUSTER_LOG_FILE / default location).
+#   --log-dir <dir>                  Directory for the auto-named log file. Default:
+#                                    $ANGEL_LOG_DIR -> $ANGEL_HOME/logs.
+#   --no-tee                         Only write to the log file; do NOT mirror to console.
+#                                    (Useful when running detached. The script will print
+#                                    the master address line and the log file path to the
+#                                    original stdout before redirection.)
+#   --detach, -d                     Fork the master into the background and return the
+#                                    shell prompt as soon as the master has finished
+#                                    starting (i.e. the state machine reached RUNNING
+#                                    and `<ip>:<port>` was published to the master
+#                                    location file). stdin is closed, stdout and stderr
+#                                    keep going to the log file (so this implies
+#                                    --no-tee). If readiness is not reached within
+#                                    --ready-timeout, the JVM is left running and the
+#                                    script returns a non-zero exit code with a hint to
+#                                    inspect the log file.
+#   --ready-timeout <sec>            Seconds to wait for the detached master to become
+#                                    ready before giving up. Default 120.
+#   --pid-file <path>                Where to write the master JVM's PID once it is up.
+#                                    Useful with --detach so you can later run
+#                                    `kill $(cat <pid-file>)` to stop it.
+#
+#   Per-role log configuration. The MASTER runs in this JVM, so its log4j config /
+#   level are injected via $ANGEL_JAVA_OPTS. The PS / Worker children pick up the
+#   matching -Dangel.standalone.<role>.log.* settings handled by the launcher.
+#   --master-log4j <file>            log4j (1.x or 2.x) config file for the master JVM.
+#                                    Injected as -Dlog4j.configuration=file:<file> and
+#                                    -Dlog4j.configurationFile=<file>.
+#   --master-log-level <LEVEL>       Convenience root-logger level for the master JVM,
+#                                    exposed as -Dangel.master.log.level=<LEVEL> for
+#                                    log4j configs that reference it.
+#   --master-log-dir <dir>           Hint directory for log4j FileAppenders to write
+#                                    into; exposed as -Dangel.log.dir=<dir>. The actual
+#                                    stdout/stderr of the master still goes to the file
+#                                    selected by --log-file / --log-dir above.
+#   --ps-log4j <file>                Same as -Dangel.standalone.ps.log4j.file=<file>.
+#                                    NOTE: <file> must exist on the *PS host* (remote
+#                                    launches resolve the path on the target machine).
+#   --ps-log-level <LEVEL>           Same as -Dangel.standalone.ps.log.level=<LEVEL>.
+#   --ps-log-dir <dir>               Same as -Dangel.standalone.ps.log.dir=<dir>. Used
+#                                    as the directory the PS child writes stdout/stderr
+#                                    to (resolved on the target host).
+#   --worker-log4j <file>            Same as -Dangel.standalone.worker.log4j.file=<file>.
+#   --worker-log-level <LEVEL>       Same as -Dangel.standalone.worker.log.level=<LEVEL>.
+#   --worker-log-dir <dir>           Same as -Dangel.standalone.worker.log.dir=<dir>.
+#
+#   --master-location-file <path>    After the cluster is up, write the master
+#                                    "<ip>:<port>" address to <path> (atomic replace).
+#                                    Equivalent to -Dangel.master.location.file=<path> /
+#                                    $ANGEL_MASTER_LOCATION_FILE. External engines can
+#                                    poll/watch this file to discover the master without
+#                                    parsing stdout.
+#   --master-location-dir <dir>      Same as --master-location-file <dir>/angel-master.address.
+#                                    Useful when multiple clusters share a well-known
+#                                    discovery directory.
+#
+#   External-PS mode. When you want to bring up just the master and start each PS by
+#   hand (e.g. with `bin/angel-ps-launch` on a different machine), use:
+#   --external-ps                    Set angel.standalone.ps.external=true. The master
+#                                    skips spawning PS child JVMs and instead waits for
+#                                    externally-started PSes to register via the normal
+#                                    psRegister RPC. The PS-IP list on the command line
+#                                    becomes optional in this mode (see usage below);
+#                                    only the master IP is required, and ssh probing
+#                                    is automatically skipped.
+#   --ps-manifest <file>             Path the master writes the launch manifest to (one
+#                                    line per PSAttempt the master is waiting for).
+#                                    Equivalent to -Dangel.standalone.ps.manifest.file.
+#   --job-conf-dir <dir>             Directory under which the master writes the runtime
+#                                    job.xml (consumed by every PS / Worker child via
+#                                    classpath). Set this to a path on a SHARED filesystem
+#                                    (NFS / CephFS / JuiceFS / ...) so that PSes started
+#                                    by hand on other machines can read the same file
+#                                    via `angel-ps-launch --job-conf <dir>/job.xml`.
+#                                    Equivalent to -Dangel.standalone.job.conf.dir.
+#                                    A user-provided directory is NEVER deleted on
+#                                    shutdown (the master treats it as managed by you).
+#   --                               End of cluster-up flags; remaining args go to submit.
+#
+# Examples:
+#   # 1 master + 3 PS hosts, PS-only:
+#   angel-cluster-up 10.0.0.1,10.0.0.2,10.0.0.3,10.0.0.4 \
+#       -Dangel.app.submit.class=com.foo.MySubmitter \
+#       -Dangel.save.model.path=hdfs:///tmp/angel/model
+#
+#   # Run 2 PS JVMs per host (total 4 PSes on 2 hosts):
+#   angel-cluster-up --ps-per-host 2 10.0.0.1,10.0.0.2,10.0.0.3 \
+#       -Dangel.save.model.path=hdfs:///tmp/angel/model
+#
+#   # Advanced: use the host-list "*N" multiplier directly for asymmetric layouts
+#   # (3 PS JVMs on the first box, 1 on the second). Pass the full spec through
+#   # -Dangel.standalone.ps.hosts and let the script compute --ps-per-host=1.
+#   angel-cluster-up --ps-per-host 1 10.0.0.1,10.0.0.2,10.0.0.3 \
+#       -Dangel.standalone.ps.hosts='10.0.0.2*3,10.0.0.3' \
+#       -Dangel.ps.number=4 -Dangel.save.model.path=...
+# ----------------------------------------------------------------------------------------
+
+set -euo pipefail
+
+PROG=$(basename "$0")
+
+die() { echo "[$PROG] $*" >&2; exit 1; }
+log() { echo "[$PROG] $*"; }
+
+# ----- arg parsing ----------------------------------------------------------------------------
+PS_PER_HOST=1
+LOG_FILE_OPT=""
+LOG_DIR_OPT=""
+NO_TEE=0
+DETACH=0
+PID_FILE_OPT=""
+READY_TIMEOUT=120
+MASTER_LOG4J=""
+MASTER_LOG_LEVEL=""
+MASTER_LOG_DIR=""
+PS_LOG4J=""
+PS_LOG_LEVEL=""
+PS_LOG_DIR=""
+WORKER_LOG4J=""
+WORKER_LOG_LEVEL=""
+WORKER_LOG_DIR=""
+MASTER_LOCATION_FILE_OPT=""
+MASTER_LOCATION_DIR_OPT=""
+EXTERNAL_PS=0
+PS_MANIFEST_OPT=""
+JOB_CONF_DIR_OPT=""
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --ps-per-host)
+            [ $# -ge 2 ] || die "--ps-per-host requires a value"
+            PS_PER_HOST="$2"; shift 2 ;;
+        --log-file)
+            [ $# -ge 2 ] || die "--log-file requires a value"
+            LOG_FILE_OPT="$2"; shift 2 ;;
+        --log-dir)
+            [ $# -ge 2 ] || die "--log-dir requires a value"
+            LOG_DIR_OPT="$2"; shift 2 ;;
+        --no-tee)
+            NO_TEE=1; shift ;;
+        --detach|-d)
+            DETACH=1; NO_TEE=1; shift ;;
+        --ready-timeout)
+            [ $# -ge 2 ] || die "--ready-timeout requires a value"
+            READY_TIMEOUT="$2"; shift 2 ;;
+        --pid-file)
+            [ $# -ge 2 ] || die "--pid-file requires a value"
+            PID_FILE_OPT="$2"; shift 2 ;;
+        --master-log4j)
+            [ $# -ge 2 ] || die "--master-log4j requires a value"
+            MASTER_LOG4J="$2"; shift 2 ;;
+        --master-log-level)
+            [ $# -ge 2 ] || die "--master-log-level requires a value"
+            MASTER_LOG_LEVEL="$2"; shift 2 ;;
+        --master-log-dir)
+            [ $# -ge 2 ] || die "--master-log-dir requires a value"
+            MASTER_LOG_DIR="$2"; shift 2 ;;
+        --ps-log4j)
+            [ $# -ge 2 ] || die "--ps-log4j requires a value"
+            PS_LOG4J="$2"; shift 2 ;;
+        --ps-log-level)
+            [ $# -ge 2 ] || die "--ps-log-level requires a value"
+            PS_LOG_LEVEL="$2"; shift 2 ;;
+        --ps-log-dir)
+            [ $# -ge 2 ] || die "--ps-log-dir requires a value"
+            PS_LOG_DIR="$2"; shift 2 ;;
+        --worker-log4j)
+            [ $# -ge 2 ] || die "--worker-log4j requires a value"
+            WORKER_LOG4J="$2"; shift 2 ;;
+        --worker-log-level)
+            [ $# -ge 2 ] || die "--worker-log-level requires a value"
+            WORKER_LOG_LEVEL="$2"; shift 2 ;;
+        --worker-log-dir)
+            [ $# -ge 2 ] || die "--worker-log-dir requires a value"
+            WORKER_LOG_DIR="$2"; shift 2 ;;
+        --master-location-file)
+            [ $# -ge 2 ] || die "--master-location-file requires a value"
+            MASTER_LOCATION_FILE_OPT="$2"; shift 2 ;;
+        --master-location-dir)
+            [ $# -ge 2 ] || die "--master-location-dir requires a value"
+            MASTER_LOCATION_DIR_OPT="$2"; shift 2 ;;
+        --external-ps)
+            EXTERNAL_PS=1; shift ;;
+        --ps-manifest)
+            [ $# -ge 2 ] || die "--ps-manifest requires a value"
+            PS_MANIFEST_OPT="$2"; shift 2 ;;
+        --job-conf-dir)
+            [ $# -ge 2 ] || die "--job-conf-dir requires a value"
+            JOB_CONF_DIR_OPT="$2"; shift 2 ;;
+        --)
+            shift; break ;;
+        --help|-h)
+            sed -n '2,140p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -*)
+            # Unknown flag: assume it's a Java -D option meant for submit; stop parsing.
+            break ;;
+        *)
+            break ;;
+    esac
+done
+
+[ $# -ge 1 ] || die "missing IP list. usage: $PROG <ip1,ip2,...> [submit args...]"
+
+IP_CSV="$1"; shift
+# Collect remaining args into SUBMIT_EXTRA. Declare explicitly so that "set -u" does
+# not complain when the caller passes no extra args (in bash <=4.3 an empty `("$@")`
+# assignment leaves the variable unset).
+declare -a SUBMIT_EXTRA=()
+if [ $# -gt 0 ]; then
+    SUBMIT_EXTRA=("$@")
+fi
+
+# Validate IP list and split into MASTER_IP + PS_IPS.
+# In external-PS mode the PS list is optional: the master never spawns PSes itself, so
+# it doesn't need ssh targets. The first (and possibly only) entry is still the master.
+IFS=',' read -r -a IP_ARRAY <<< "$IP_CSV"
+if [ "$EXTERNAL_PS" = "1" ]; then
+    [ ${#IP_ARRAY[@]} -ge 1 ] \
+        || die "IP list must contain at least 1 entry (the master), got: $IP_CSV"
+else
+    [ ${#IP_ARRAY[@]} -ge 2 ] \
+        || die "IP list must contain at least 2 entries (1 master + >=1 PS), got: $IP_CSV"
+fi
+
+MASTER_IP="${IP_ARRAY[0]}"
+PS_IPS=()
+for (( i=1; i<${#IP_ARRAY[@]}; i++ )); do
+    PS_IPS+=("${IP_ARRAY[$i]}")
+done
+
+trim() { echo "$1" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'; }
+MASTER_IP=$(trim "$MASTER_IP")
+[ -n "$MASTER_IP" ] || die "master ip (1st entry) is empty"
+for ip in "${PS_IPS[@]}"; do
+    [ -n "$(trim "$ip")" ] || die "PS ip list contains an empty entry"
+done
+
+PS_HOSTS_CSV=$(IFS=','; echo "${PS_IPS[*]}")
+if [ "$EXTERNAL_PS" = "1" ]; then
+    # In external mode the PS count must come from -Dangel.ps.number passed by the user
+    # (or it defaults to 1 inside Angel). We still record whatever was on the CLI, but
+    # do NOT translate it into angel.standalone.ps.hosts because no spawning happens.
+    PS_COUNT=${#PS_IPS[@]}
+else
+    PS_COUNT=$(( ${#PS_IPS[@]} * PS_PER_HOST ))
+fi
+
+# When PS_PER_HOST > 1, rewrite the hosts CSV into "ip*N" multiplier form so that
+# StandaloneHostPool assigns exactly PS_PER_HOST PS JVMs per machine instead of
+# relying on round-robin wrapping around the list.
+PS_POOL_CSV="$PS_HOSTS_CSV"
+if [ "$EXTERNAL_PS" != "1" ] && [ "$PS_PER_HOST" -gt 1 ]; then
+    PS_POOL_ENTRIES=()
+    for ip in "${PS_IPS[@]}"; do
+        PS_POOL_ENTRIES+=("$(trim "$ip")*${PS_PER_HOST}")
+    done
+    PS_POOL_CSV=$(IFS=','; echo "${PS_POOL_ENTRIES[*]}")
+fi
+
+# ----- Resolve ANGEL_HOME ---------------------------------------------------------------------
+[ -n "${JAVA_HOME:-}" ] || die "JAVA_HOME is not set"
+
+bin_dir=$(cd "$(dirname "$0")"; pwd)
+export ANGEL_HOME="${ANGEL_HOME:-$(cd "$bin_dir/.."; pwd)}"
+ANGEL_LIB="${ANGEL_LIB:-$ANGEL_HOME/lib}"
+[ -d "$ANGEL_LIB" ] || die "ANGEL_LIB directory not found: $ANGEL_LIB"
+
+REMOTE_LIB="${ANGEL_REMOTE_LIB:-$ANGEL_LIB/*}"
+
+SSH_USER="${ANGEL_SSH_USER:-$USER}"
+SSH_PORT="${ANGEL_SSH_PORT:-22}"
+SSH_OPTS="${ANGEL_SSH_OPTS:-}"
+REMOTE_JAVA="${ANGEL_REMOTE_JAVA:-java}"
+
+# ----- Resolve LOG_FILE -----------------------------------------------------------------------
+# Precedence:
+#   1. --log-file <path>
+#   2. $ANGEL_CLUSTER_LOG_FILE
+#   3. <log-dir>/angel-cluster-<yyyymmdd-hhmmss>-<pid>.log
+# where <log-dir> is, in turn:
+#   --log-dir | $ANGEL_LOG_DIR | $ANGEL_HOME/logs
+LOG_DIR="${LOG_DIR_OPT:-${ANGEL_LOG_DIR:-$ANGEL_HOME/logs}}"
+if [ -n "$LOG_FILE_OPT" ]; then
+    LOG_FILE="$LOG_FILE_OPT"
+elif [ -n "${ANGEL_CLUSTER_LOG_FILE:-}" ]; then
+    LOG_FILE="$ANGEL_CLUSTER_LOG_FILE"
+else
+    mkdir -p "$LOG_DIR" || die "failed to create log dir: $LOG_DIR"
+    LOG_FILE="$LOG_DIR/angel-cluster-$(date +%Y%m%d-%H%M%S)-$$.log"
+fi
+# Make sure the parent directory exists for an explicit --log-file too.
+LOG_PARENT=$(dirname "$LOG_FILE")
+mkdir -p "$LOG_PARENT" || die "failed to create log dir: $LOG_PARENT"
+
+# Tell the user where stdout/stderr will end up before we redirect them, otherwise the
+# information would only appear inside the log file the user is asking about.
+echo "[$PROG] Logging to: $LOG_FILE"
+if [ "$DETACH" = "1" ]; then
+    # In --detach mode we do NOT redirect the parent shell's stdout/stderr; the parent
+    # only needs to print the "Cluster started" banner and exit. The actual JVM is
+    # started further down via `nohup ... &` and its file descriptors are wired up at
+    # that point.
+    echo "[$PROG] (--detach) master will run in the background; this script will return"
+    echo "[$PROG]            as soon as the JVM is launched. Use --pid-file +"
+    echo "[$PROG]            --master-location-file to interact with it later."
+elif [ "$NO_TEE" = "1" ]; then
+    echo "[$PROG] (--no-tee) console output will be silenced after this line."
+    # Append so re-runs against the same path do not clobber prior history.
+    exec >>"$LOG_FILE" 2>&1
+else
+    # Mirror stdout AND stderr to both the log file (append) and the original tty.
+    # `tee -a` returns 0; `pipefail` would normally swallow the pipeline's tail status,
+    # but since `exec | tee` replaces this shell, propagation is fine.
+    exec > >(tee -a "$LOG_FILE") 2> >(tee -a "$LOG_FILE" >&2)
+fi
+log "log file: $LOG_FILE"
+
+REMOTE_WORKDIR_OPT=""
+if [ -n "${ANGEL_REMOTE_WORKDIR:-}" ]; then
+    REMOTE_WORKDIR_OPT="-Dangel.standalone.remote.workdir=${ANGEL_REMOTE_WORKDIR}"
+fi
+REMOTE_LOG_DIR_OPT=""
+if [ -n "${ANGEL_REMOTE_LOG_DIR:-}" ]; then
+    REMOTE_LOG_DIR_OPT="-Dangel.standalone.remote.log.dir=${ANGEL_REMOTE_LOG_DIR}"
+fi
+PS_OPTS_OPT=""
+if [ -n "${ANGEL_PS_OPTS:-}" ]; then
+    PS_OPTS_OPT="-Dangel.ps.java.opts=${ANGEL_PS_OPTS}"
+fi
+
+# ----- Master JVM log opts (this process) -----------------------------------------------------
+# The master runs in this JVM, so we inject the log4j knobs into ANGEL_JAVA_OPTS, which
+# angel-standalone-submit forwards to `java`. We set BOTH log4j 1.x and 2.x property
+# names so the master picks up the right one regardless of which binding wins on the
+# classpath.
+MASTER_JVM_LOG_OPTS=""
+if [ -n "$MASTER_LOG4J" ]; then
+    MASTER_JVM_LOG_OPTS="$MASTER_JVM_LOG_OPTS -Dlog4j.configuration=file:${MASTER_LOG4J}"
+    MASTER_JVM_LOG_OPTS="$MASTER_JVM_LOG_OPTS -Dlog4j.configurationFile=${MASTER_LOG4J}"
+fi
+if [ -n "$MASTER_LOG_LEVEL" ]; then
+    MASTER_JVM_LOG_OPTS="$MASTER_JVM_LOG_OPTS -Dangel.master.log.level=${MASTER_LOG_LEVEL}"
+fi
+if [ -n "$MASTER_LOG_DIR" ]; then
+    # Most log4j FileAppender configs reference ${angel.log.dir}; expose it here so the
+    # same knob controls both the launcher-managed PS/Worker dirs and the master's
+    # appender output dir.
+    mkdir -p "$MASTER_LOG_DIR" || die "failed to create master log dir: $MASTER_LOG_DIR"
+    MASTER_JVM_LOG_OPTS="$MASTER_JVM_LOG_OPTS -Dangel.log.dir=${MASTER_LOG_DIR}"
+fi
+# Append (do NOT overwrite) any pre-existing ANGEL_JAVA_OPTS so users can still set
+# -Xmx / -Xms / -agentlib:... via env.
+if [ -n "$MASTER_JVM_LOG_OPTS" ]; then
+    export ANGEL_JAVA_OPTS="${ANGEL_JAVA_OPTS:-}${MASTER_JVM_LOG_OPTS}"
+fi
+
+# ----- Pretty banner --------------------------------------------------------------------------
+log "========================================================================"
+log " Bringing up Angel STANDALONE cluster (PS-only)"
+log "   master         : $MASTER_IP"
+if [ "$EXTERNAL_PS" = "1" ]; then
+    log "   external PS    : YES (master will not spawn any PS; start them with"
+    log "                    bin/angel-ps-launch on each host)"
+fi
+log "   PS hosts       : $PS_HOSTS_CSV  (count=${PS_COUNT}, per-host=${PS_PER_HOST})"
+log "   PS host pool   : $PS_POOL_CSV"
+log "   running mode   : ANGEL_PS  (no Worker processes)"
+log "   ssh            : ${SSH_USER}@<host>:${SSH_PORT}  opts='${SSH_OPTS}'"
+log "   remote java    : $REMOTE_JAVA"
+log "   remote cp      : $REMOTE_LIB"
+log "   ANGEL_HOME     : $ANGEL_HOME"
+log "   ANGEL_LIB      : $ANGEL_LIB"
+log "   log file       : $LOG_FILE"
+log "                    (tail -f '$LOG_FILE' from another terminal to follow)"
+if [ "$DETACH" = "1" ]; then
+    log "   mode           : DETACHED (script returns once the master reports READY,"
+    log "                    or after --ready-timeout=${READY_TIMEOUT}s)"
+fi
+if [ -n "$MASTER_LOG4J$MASTER_LOG_LEVEL$MASTER_LOG_DIR" ]; then
+    log "   master log4j   : ${MASTER_LOG4J:-<unset>}"
+    log "   master level   : ${MASTER_LOG_LEVEL:-<unset>}"
+    log "   master log.dir : ${MASTER_LOG_DIR:-<unset>}"
+fi
+if [ -n "$PS_LOG4J$PS_LOG_LEVEL$PS_LOG_DIR" ]; then
+    log "   ps log4j       : ${PS_LOG4J:-<unset>}"
+    log "   ps level       : ${PS_LOG_LEVEL:-<unset>}"
+    log "   ps log.dir     : ${PS_LOG_DIR:-<unset>}"
+fi
+if [ -n "$WORKER_LOG4J$WORKER_LOG_LEVEL$WORKER_LOG_DIR" ]; then
+    log "   worker log4j   : ${WORKER_LOG4J:-<unset>}"
+    log "   worker level   : ${WORKER_LOG_LEVEL:-<unset>}"
+    log "   worker log.dir : ${WORKER_LOG_DIR:-<unset>}"
+fi
+log "========================================================================"
+
+# ----- Optional reachability probe ------------------------------------------------------------
+probe_ssh() {
+    local host="$1"
+    # shellcheck disable=SC2086
+    if ssh -p "$SSH_PORT" $SSH_OPTS \
+            -o BatchMode=yes -o ConnectTimeout=5 \
+            "${SSH_USER}@${host}" "true" >/dev/null 2>&1 ; then
+        log "  ssh OK     -> $host"
+    else
+        die "ssh probe FAILED for ${SSH_USER}@${host}:${SSH_PORT}. Set up passwordless ssh first."
+    fi
+}
+
+if [ "$EXTERNAL_PS" = "1" ]; then
+    log "External-PS mode: skipping ssh probe (no PS will be spawned by the master)."
+elif [ "${ANGEL_SKIP_SSH_PROBE:-0}" != "1" ]; then
+    log "Probing ssh connectivity to PS hosts ..."
+    declare -A SEEN
+    for h in "${PS_IPS[@]}"; do
+        h_trim=$(trim "$h")
+        if [ "$h_trim" = "$MASTER_IP" ] || [ "$h_trim" = "127.0.0.1" ] \
+                || [ "$h_trim" = "localhost" ]; then
+            continue
+        fi
+        if [ -n "${SEEN[$h_trim]:-}" ]; then continue; fi
+        SEEN[$h_trim]=1
+        probe_ssh "$h_trim"
+    done
+fi
+
+# ----- Compose the submit command -------------------------------------------------------------
+SUBMIT="${bin_dir}/angel-standalone-submit"
+[ -x "$SUBMIT" ] || die "missing/non-executable $SUBMIT"
+
+CLUSTER_OPTS=(
+    "-Dangel.am.host=${MASTER_IP}"
+    "-Dangel.running.mode=ANGEL_PS"
+    "-Dangel.workergroup.number=0"
+)
+if [ "$EXTERNAL_PS" = "1" ]; then
+    # External-PS mode: master will not spawn anything; do NOT set
+    # angel.standalone.{,ps.}hosts (a non-empty value would only confuse the host pool).
+    # The user is expected to pass -Dangel.ps.number=N explicitly; if they didn't and
+    # they listed PS placeholder IPs on the CLI, mirror that count.
+    CLUSTER_OPTS+=("-Dangel.standalone.ps.external=true")
+    if [ "$PS_COUNT" -gt 0 ]; then
+        CLUSTER_OPTS+=("-Dangel.ps.number=${PS_COUNT}")
+    fi
+else
+    CLUSTER_OPTS+=(
+        "-Dangel.standalone.hosts=${PS_POOL_CSV}"
+        "-Dangel.standalone.ps.hosts=${PS_POOL_CSV}"
+        "-Dangel.ps.number=${PS_COUNT}"
+        "-Dangel.standalone.ssh.user=${SSH_USER}"
+        "-Dangel.standalone.ssh.port=${SSH_PORT}"
+        "-Dangel.standalone.remote.java=${REMOTE_JAVA}"
+        "-Dangel.standalone.remote.classpath=${REMOTE_LIB}"
+    )
+    if [ -n "$SSH_OPTS" ]; then
+        CLUSTER_OPTS+=("-Dangel.standalone.ssh.opts=${SSH_OPTS}")
+    fi
+fi
+[ -n "$REMOTE_WORKDIR_OPT" ] && CLUSTER_OPTS+=("$REMOTE_WORKDIR_OPT")
+[ -n "$REMOTE_LOG_DIR_OPT"  ] && CLUSTER_OPTS+=("$REMOTE_LOG_DIR_OPT")
+[ -n "$PS_OPTS_OPT"         ] && CLUSTER_OPTS+=("$PS_OPTS_OPT")
+
+# Per-role log knobs picked up by StandaloneContainerLauncher to inject
+# -Dlog4j.configuration / -Dlog4j.configurationFile / -Dangel.<role>.log.level into
+# the spawned PS / Worker JVMs, and to choose the directory their stdout/stderr
+# redirect targets live in.
+[ -n "$PS_LOG4J"        ] && CLUSTER_OPTS+=("-Dangel.standalone.ps.log4j.file=${PS_LOG4J}")
+[ -n "$PS_LOG_LEVEL"    ] && CLUSTER_OPTS+=("-Dangel.standalone.ps.log.level=${PS_LOG_LEVEL}")
+[ -n "$PS_LOG_DIR"      ] && CLUSTER_OPTS+=("-Dangel.standalone.ps.log.dir=${PS_LOG_DIR}")
+[ -n "$WORKER_LOG4J"    ] && CLUSTER_OPTS+=("-Dangel.standalone.worker.log4j.file=${WORKER_LOG4J}")
+[ -n "$WORKER_LOG_LEVEL"] && CLUSTER_OPTS+=("-Dangel.standalone.worker.log.level=${WORKER_LOG_LEVEL}")
+[ -n "$WORKER_LOG_DIR"  ] && CLUSTER_OPTS+=("-Dangel.standalone.worker.log.dir=${WORKER_LOG_DIR}")
+
+log "Submitting via: $SUBMIT"
+log "Cluster opts: ${CLUSTER_OPTS[*]}"
+
+# Use AngelPSClusterMain so the user does NOT need to implement an AppSubmitter.
+# This process will print "ANGEL_MASTER=<ip>:<port>" to stdout once the cluster is up,
+# and then block until it receives SIGINT/SIGTERM. External computing engines should
+# parse that line (or read $ANGEL_MASTER_LOCATION_FILE if set) to discover the master.
+export ANGEL_MAIN_CLASS="${ANGEL_MAIN_CLASS:-com.tencent.angel.utils.AngelPSClusterMain}"
+
+# ----- Resolve master location file -----------------------------------------------------------
+# Precedence:
+#   1. --master-location-file <path>
+#   2. --master-location-dir  <dir>     -> <dir>/angel-master.address
+#   3. $ANGEL_MASTER_LOCATION_FILE      (legacy env var)
+#   4. --detach implies <log-file>.addr (so the script has a readiness signal to wait on)
+# AngelPSClusterMain will write "<ip>:<port>\n" atomically to this path right after the
+# master state machine reaches RUNNING.
+MASTER_LOCATION_FILE=""
+if [ -n "$MASTER_LOCATION_FILE_OPT" ]; then
+    MASTER_LOCATION_FILE="$MASTER_LOCATION_FILE_OPT"
+elif [ -n "$MASTER_LOCATION_DIR_OPT" ]; then
+    mkdir -p "$MASTER_LOCATION_DIR_OPT" \
+        || die "failed to create master location dir: $MASTER_LOCATION_DIR_OPT"
+    MASTER_LOCATION_FILE="${MASTER_LOCATION_DIR_OPT%/}/angel-master.address"
+elif [ -n "${ANGEL_MASTER_LOCATION_FILE:-}" ]; then
+    MASTER_LOCATION_FILE="$ANGEL_MASTER_LOCATION_FILE"
+elif [ "$DETACH" = "1" ]; then
+    # Detach mode needs a readiness signal; pick a sensible default so the user does
+    # not have to remember to combine --detach with --master-location-file.
+    MASTER_LOCATION_FILE="${LOG_FILE%.log}.addr"
+fi
+if [ -n "$MASTER_LOCATION_FILE" ]; then
+    # Make sure the parent directory exists so the Java side does not have to mkdir
+    # something it might not have permission for.
+    MASTER_LOC_PARENT=$(dirname "$MASTER_LOCATION_FILE")
+    mkdir -p "$MASTER_LOC_PARENT" \
+        || die "failed to create master location parent dir: $MASTER_LOC_PARENT"
+    # Remove any stale address file from a previous run so the readiness wait below
+    # does not immediately succeed against an old value.
+    rm -f "$MASTER_LOCATION_FILE" 2>/dev/null || true
+    CLUSTER_OPTS+=("-Dangel.master.location.file=${MASTER_LOCATION_FILE}")
+    log "Master address will be written to: $MASTER_LOCATION_FILE"
+fi
+
+# ----- Resolve external-PS launch manifest (only meaningful with --external-ps) ---------------
+if [ "$EXTERNAL_PS" = "1" ]; then
+    if [ -z "$PS_MANIFEST_OPT" ]; then
+        # Default location next to the cluster log so operators always have something to
+        # read, even if they forgot to pass --ps-manifest.
+        PS_MANIFEST_OPT="${LOG_DIR%/}/angel-ps-manifest.txt"
+    fi
+    PS_MANIFEST_PARENT=$(dirname "$PS_MANIFEST_OPT")
+    mkdir -p "$PS_MANIFEST_PARENT" \
+        || die "failed to create PS manifest parent dir: $PS_MANIFEST_PARENT"
+    CLUSTER_OPTS+=("-Dangel.standalone.ps.manifest.file=${PS_MANIFEST_OPT}")
+    log "External-PS launch manifest will be written to: $PS_MANIFEST_OPT"
+fi
+
+# ----- Resolve shared job.xml dir (any deploy flavor) -----------------------------------------
+# Useful when the master needs to make job.xml visible to other machines (e.g. external
+# PS hosts reading from a shared filesystem). The Java side will skip its own
+# delete-on-shutdown logic for this directory.
+if [ -n "$JOB_CONF_DIR_OPT" ]; then
+    mkdir -p "$JOB_CONF_DIR_OPT" \
+        || die "failed to create job conf dir: $JOB_CONF_DIR_OPT"
+    CLUSTER_OPTS+=("-Dangel.standalone.job.conf.dir=${JOB_CONF_DIR_OPT}")
+    log "Master will write job.xml under: $JOB_CONF_DIR_OPT"
+fi
+
+if [ "$DETACH" = "1" ]; then
+    # Resolve PID file location:
+    #   1. --pid-file <path>
+    #   2. <log-dir>/angel-cluster-<pid>.pid (sibling of the log file)
+    if [ -n "$PID_FILE_OPT" ]; then
+        PID_FILE="$PID_FILE_OPT"
+    else
+        PID_FILE="${LOG_FILE%.log}.pid"
+    fi
+    PID_PARENT=$(dirname "$PID_FILE")
+    mkdir -p "$PID_PARENT" || die "failed to create pid file dir: $PID_PARENT"
+
+    # Detach via setsid (preferred) or nohup as a fallback. We close stdin so this
+    # script returns immediately even if the parent shell is interactive; stdout and
+    # stderr are appended to the log file. Because angel-standalone-submit ends in
+    # `exec java ...`, the PID we capture *is* the master JVM PID.
+    if command -v setsid >/dev/null 2>&1; then
+        setsid "$SUBMIT" "${CLUSTER_OPTS[@]}" \
+            ${SUBMIT_EXTRA[@]+"${SUBMIT_EXTRA[@]}"} \
+            </dev/null >>"$LOG_FILE" 2>&1 &
+    else
+        nohup "$SUBMIT" "${CLUSTER_OPTS[@]}" \
+            ${SUBMIT_EXTRA[@]+"${SUBMIT_EXTRA[@]}"} \
+            </dev/null >>"$LOG_FILE" 2>&1 &
+    fi
+    BG_PID=$!
+    # Detach from the job table so closing the terminal does not send SIGHUP. `disown`
+    # without args targets the most recently backgrounded job, which is exactly the
+    # one we just spawned. Some /bin/sh implementations do not have `disown`; fall
+    # back to a no-op there (the `setsid` / `nohup` wrappers above already make the
+    # child SIGHUP-immune in that case).
+    disown 2>/dev/null || true
+
+    echo "$BG_PID" > "$PID_FILE"
+    log "Master JVM forked (pid=$BG_PID, pid-file=$PID_FILE)."
+    log "Waiting up to ${READY_TIMEOUT}s for the master to become ready ..."
+    log "  readiness signal : $MASTER_LOCATION_FILE"
+    log "  log file         : $LOG_FILE"
+
+    # Poll until either:
+    #  - the master writes its <ip>:<port> to the location file (readiness), OR
+    #  - the JVM dies (no point waiting any longer), OR
+    #  - we hit the timeout.
+    deadline=$(( $(date +%s) + READY_TIMEOUT ))
+    while :; do
+        if [ -s "$MASTER_LOCATION_FILE" ]; then
+            MASTER_ADDR=$(head -n1 "$MASTER_LOCATION_FILE" | tr -d '[:space:]')
+            if [ -n "$MASTER_ADDR" ]; then
+                log "Master is READY at $MASTER_ADDR"
+                log "  pid file        : $PID_FILE"
+                log "  master location : $MASTER_LOCATION_FILE"
+                log "  log file        : $LOG_FILE  (tail -f to follow)"
+                log "To stop the cluster:  kill \$(cat '$PID_FILE')"
+                exit 0
+            fi
+        fi
+        if ! kill -0 "$BG_PID" 2>/dev/null; then
+            # JVM exited before becoming ready: surface the tail of the log so the user
+            # has something actionable. We do NOT remove $PID_FILE; an operator may
+            # want to grep for it post-mortem.
+            log "ERROR: master JVM (pid $BG_PID) exited before becoming ready."
+            log "Last 30 log lines from $LOG_FILE :"
+            tail -n 30 "$LOG_FILE" 2>/dev/null | sed "s/^/[$PROG][log] /" >&2 || true
+            exit 1
+        fi
+        if [ "$(date +%s)" -ge "$deadline" ]; then
+            log "ERROR: master did not become ready within ${READY_TIMEOUT}s."
+            log "  The JVM (pid $BG_PID) is still running; inspect $LOG_FILE for progress."
+            log "  To stop it:           kill \$(cat '$PID_FILE')"
+            log "  To extend the wait:   --ready-timeout <bigger-value>"
+            exit 2
+        fi
+        sleep 1
+    done
+fi
+
+exec "$SUBMIT" "${CLUSTER_OPTS[@]}" ${SUBMIT_EXTRA[@]+"${SUBMIT_EXTRA[@]}"}

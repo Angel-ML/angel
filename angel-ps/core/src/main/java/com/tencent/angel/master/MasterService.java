@@ -20,11 +20,8 @@ package com.tencent.angel.master;
 
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
-import com.tencent.angel.AngelDeployMode;
-import com.tencent.angel.RunningMode;
 import com.tencent.angel.common.location.Location;
 import com.tencent.angel.common.location.LocationManager;
-import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ipc.MLRPC;
 import com.tencent.angel.ipc.RpcServer;
 import com.tencent.angel.master.app.AMContext;
@@ -41,6 +38,7 @@ import com.tencent.angel.master.ps.attempt.PSAttemptEvent;
 import com.tencent.angel.master.ps.attempt.PSAttemptEventType;
 import com.tencent.angel.master.ps.attempt.PSAttemptRegisterEvent;
 import com.tencent.angel.master.ps.attempt.PSAttemptStateUpdateEvent;
+import com.tencent.angel.master.ps.ps.AMParameterServer;
 import com.tencent.angel.master.task.AMTask;
 import com.tencent.angel.master.task.AMTaskManager;
 import com.tencent.angel.master.worker.attempt.WorkerAttempt;
@@ -139,6 +137,8 @@ import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskClock
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskClockResponse;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskIterationRequest;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskIterationResponse;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.AssignIndexRequest;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.AssignIndexResponse;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.GetCheckpointsRequest;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.GetCheckpointsResponse;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.GetExecuteUnitDescRequest;
@@ -161,6 +161,8 @@ import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSDoneRequest;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSDoneResponse;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSErrorRequest;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSErrorResponse;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSGetAttemptIndexRequest;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSGetAttemptIndexResponse;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSRegisterRequest;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSRegisterResponse;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSReportRequest;
@@ -216,6 +218,12 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 public class MasterService extends AbstractService implements MasterProtocol {
 
   private static final Log LOG = LogFactory.getLog(MasterService.class);
+
+  /**
+   * How many different ports we try when the rpc bind loses a port race
+   */
+  private static final int MAX_BIND_TRY = 10;
+
   private final AMContext context;
   /**
    * RPC server
@@ -414,26 +422,62 @@ public class MasterService extends AbstractService implements MasterProtocol {
     super.serviceStart();
   }
 
-  @Override protected void serviceInit(Configuration conf) throws Exception {
-    String ip;
-    int servicePort;
-    if(conf.get(AngelConf.ANGEL_DEPLOY_MODE, AngelConf.DEFAULT_ANGEL_DEPLOY_MODE).equals("KUBERNETES")) {
-      ip = conf.get(AngelConf.ANGEL_KUBERNETES_MASTER_POD_IP);
-      servicePort = conf.getInt(AngelConf.ANGEL_KUBERNETES_MASTER_PORT,
-              AngelConf.DEFAULT_ANGEL_KUBERNETES_MASTER_PORT);
-    } else {
+  @Override
+  protected void serviceInit(Configuration conf) throws Exception {
+    // Allow callers to pin the master rpc bind address explicitly. This is essential for
+    // STANDALONE distributed deployments (and for any host whose /etc/hosts maps the
+    // hostname to 127.0.0.1) where remote PS/Worker processes would otherwise be told to
+    // connect to a loopback address.
+    String ip = conf.get("angel.am.host");
+    if (ip == null || ip.trim().isEmpty()) {
       ip = NetUtils.getRealLocalIP();
-      //choose a unused port
-      servicePort = NetUtils.chooseAListenPort(conf);
+    } else {
+      ip = ip.trim();
     }
-    LOG.info("listen ip:" + ip + ", port:" + servicePort);
 
-    location = new Location(ip, servicePort);
-    //start RPC server
-    this.rpcServer = MLRPC
-            .getServer(MasterService.class, this, new Class<?>[] {MasterProtocol.class}, ip, servicePort,
-                    conf);
-    rpcServer.openServer();
+    // Reserve the port with a real listening socket and release it only right before the rpc
+    // bind: several Angel processes draw from the same random port range, so a plain
+    // "test-bind then close then bind later" check loses the race and dies with
+    // "Address already in use".
+    Throwable lastError = null;
+    for (int i = 1; i <= MAX_BIND_TRY; i++) {
+      NetUtils.PortReservation reservation = NetUtils.reserveListenPortPair(conf);
+      int servicePort = reservation.getPort();
+      reservation.close();
+      try {
+        LOG.info("listen ip:" + ip + ", port:" + servicePort);
+        this.rpcServer = MLRPC
+            .getServer(MasterService.class, this, new Class<?>[]{MasterProtocol.class}, ip,
+                servicePort, conf);
+        rpcServer.openServer();
+        location = new Location(ip, servicePort);
+        lastError = null;
+        break;
+      } catch (Throwable x) {
+        if (rpcServer != null) {
+          try {
+            rpcServer.stop();
+          } catch (Throwable ignore) {
+            // best effort
+          }
+          rpcServer = null;
+        }
+        lastError = x;
+        if (!NetUtils.isAddressInUse(x)) {
+          break;
+        }
+        LOG.warn("Bind master service on " + ip + ":" + servicePort + " failed (attempt " + i
+            + "/" + MAX_BIND_TRY + "), choose another port", x);
+      }
+    }
+
+    if (lastError != null) {
+      if (lastError instanceof Exception) {
+        throw (Exception) lastError;
+      }
+      throw new IOException("Start master service failed", lastError);
+    }
+
     super.serviceInit(conf);
   }
 
@@ -828,6 +872,28 @@ public class MasterService extends AbstractService implements MasterProtocol {
       builder.addSaveResults(ProtobufUtil.convert(result));
     }
     return builder.build();
+  }
+
+
+  @Override
+  public PSGetAttemptIndexResponse psGetAttemptIndex(RpcController controller,
+                                                     PSGetAttemptIndexRequest request) throws ServiceException {
+    PSGetAttemptIndexResponse.Builder resBuilder = PSGetAttemptIndexResponse.newBuilder();
+    ParameterServerId psId = ProtobufUtil.convertToId(request.getPsId());
+    AMParameterServer amParameterServer = context.getParameterServerManager()
+        .getParameterServer(psId);
+
+    int attemptIndex = amParameterServer.getRunningAttemptId().getIndex();
+    resBuilder.setAttemptIndex(attemptIndex);
+    return resBuilder.build();
+  }
+
+  @Override
+  public AssignIndexResponse assignIndex(RpcController controller, AssignIndexRequest request) throws ServiceException {
+    AssignIndexResponse.Builder resBuilder = AssignIndexResponse.newBuilder();
+    int psIndex = context.getParameterServerManager().assignIndex();
+    resBuilder.setIndex(psIndex);
+    return resBuilder.build();
   }
 
   /**
@@ -1265,21 +1331,11 @@ public class MasterService extends AbstractService implements MasterProtocol {
    * @param controller rpc controller of protobuf
    * @param request start request
    */
-  @Override public StartResponse start(RpcController controller, StartRequest request)
-          throws ServiceException {
+  @Override
+  public StartResponse start(RpcController controller, StartRequest request)
+      throws ServiceException {
     LOG.info("start to calculation");
     context.getApp().startExecute();
-    if (context.getDeployMode() == AngelDeployMode.KUBERNETES && context.getRunningMode() == RunningMode.ANGEL_PS_WORKER) {
-      int workerNum = context.getConf().getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER,
-              AngelConf.DEFAULT_ANGEL_WORKERGROUP_NUMBER);
-      while (context.getWorkerManager().getRegisterWorkerNumber() < workerNum) {
-        LOG.debug("waiting for worker register in monitor...");
-      }
-      LOG.info("Now scheduler and lanuch worker pod.");
-      Configuration workerConf = new Configuration(context.getConf());
-      workerConf.set(AngelConf.ANGEL_KUBERNETES_EXECUTOR_ROLE, "worker");
-      context.getK8sClusterManager().scheduler(workerConf);
-    }
     return StartResponse.newBuilder().build();
   }
 

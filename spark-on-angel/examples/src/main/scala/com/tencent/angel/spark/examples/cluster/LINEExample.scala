@@ -15,98 +15,115 @@
  *
  */
 
+
 package com.tencent.angel.spark.examples.cluster
 
+import scala.util.Random
+import org.apache.spark.rdd.RDD
+import org.apache.spark.storage.StorageLevel
+import org.apache.spark.{SparkConf, SparkContext}
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.graph.embedding.line.LINE
-import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
-import com.tencent.angel.spark.ml.util.SparkUtils
-import org.apache.spark.sql.DataFrame
-import org.apache.spark.{SparkConf, SparkContext}
+import com.tencent.angel.spark.ml.graph.algo.embedding.line.LINEModel
+import com.tencent.angel.spark.ml.feature.{Features, SubSampling}
+import com.tencent.angel.spark.ml.graph.algo.embedding.Param
+import com.tencent.angel.spark.ml.util.{DataStatistics, SparkUtils}
 
 object LINEExample {
+
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
-    val input = params.getOrElse("input", "")
+
+    val conf = new SparkConf().setAppName("LINE")
+    // Respect the master given by spark-submit unless "mode" is passed explicitly
+    params.get("mode").foreach(mode => conf.setMaster(mode))
+    conf.set(AngelConf.ANGEL_PS_PARTITION_SOURCE_CLASS, classOf[PartitionSourceArray].getName)
+    conf.set(AngelConf.ANGEL_PS_BACKUP_MATRICES, "")
+    val sc = new SparkContext(conf)
+
+//    PSContext.getOrCreate(sc)
+
+    val input = params.getOrElse("input", null)
     val output = params.getOrElse("output", "")
-    val extraInputEmbeddingPath = params.getOrElse("extraInputEmbeddingPath", "")
-    val extraContextEmbeddingPath = params.getOrElse("extraContextEmbeddingPath", "")
     val embeddingDim = params.getOrElse("embedding", "10").toInt
     val numNegSamples = params.getOrElse("negative", "5").toInt
     val numEpoch = params.getOrElse("epoch", "10").toInt
+
     val stepSize = params.getOrElse("stepSize", "0.1").toFloat
     val batchSize = params.getOrElse("batchSize", "10000").toInt
-    val psPartitionNum = params.getOrElse("psPartitionNum", "10").toInt
-    val dataPartitionNum = params.getOrElse("dataPartitionNum", "100").toInt
-    val withRemapping = params.getOrElse("remapping", "false").toBoolean
+    val numPartitions = params.getOrElse("numParts", "10").toInt
+    val withSubSample = params.getOrElse("subSample", "true").toBoolean
+    val withRemapping = params.getOrElse("remapping", "true").toBoolean
     val order = params.get("order").fold(2)(_.toInt)
-    val saveModelInterval = params.getOrElse("saveModelInterval", "5").toInt
-    val checkpointInterval = params.getOrElse("checkpointInterval", "5").toInt
-    val saveContextEmbedding = params.getOrElse("saveContextEmbedding", "false").toBoolean
-    val isWeight = params.getOrElse("isWeight", "false").toBoolean
-    val sep = Delimiter.parse(params.getOrElse("sep",Delimiter.SPACE))
+    val checkpointInterval = params.getOrElse("interval", "10").toInt
 
 
-    val sc = start()
-    val numCores = SparkUtils.getNumCores(sc.getConf)
+    val numCores = SparkUtils.getNumCores(conf)
+
     // The number of partition is more than the cores. We do this to achieve dynamic load balance.
-    var numDataPartitions = (numCores * 3.25).toInt
-    if (dataPartitionNum > numDataPartitions) {
-      numDataPartitions = dataPartitionNum
+    val numDataPartitions = (numCores * 6.25).toInt
+    println(s"numDataPartitions=$numDataPartitions")
+
+    val data = sc.textFile(input)
+    data.persist(StorageLevel.DISK_ONLY)
+
+    //collect app name and data size
+    DataStatistics.setAppName("com.tencent.angel.spark.ml.graph.algo.embedding.line.LINEModel")
+    DataStatistics.calcRDDSize(data, "angel.input.data")
+    DataStatistics.setDataPartitionNum(numDataPartitions)
+    PSContext.getOrCreate(sc)
+
+    var corpus: RDD[Array[Int]] = null
+
+    if (withRemapping) {
+      val temp = Features.corpusStringToInt(data)
+      corpus = temp._1
+      temp._2.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "/mapping")
+    } else {
+      corpus = Features.corpusStringToIntWithoutRemapping(data)
     }
 
-    val line = new LINE()
-      .setEmbedding(embeddingDim)
-      .setNegative(numNegSamples)
-      .setStepSize(stepSize)
-      .setOrder(order)
-      .setEpochNum(numEpoch)
+    val(maxNodeId, docs) = if (withSubSample) {
+      corpus.persist(StorageLevel.DISK_ONLY)
+      val subsampleTmp = SubSampling.sampling(corpus)
+      (subsampleTmp._1, subsampleTmp._2.repartition(numDataPartitions))
+    } else {
+      val tmp = corpus.repartition(numDataPartitions)
+      (tmp.map(_.max).max().toLong + 1, tmp)
+    }
+    val edges = docs.map{
+      arr =>
+        (arr(0), arr(1))
+    }
+
+    edges.persist(StorageLevel.DISK_ONLY)
+
+    val numEdge = edges.count()
+    println(s"numEdge=$numEdge maxNodeId=$maxNodeId")
+
+    corpus.unpersist()
+    data.unpersist()
+
+    val param = new Param()
+      .setLearningRate(stepSize)
+      .setEmbeddingDim(embeddingDim)
       .setBatchSize(batchSize)
-      .setPartitionNum(numDataPartitions)
-      .setPSPartitionNum(psPartitionNum)
-      .setIsWeighted(isWeight)
-      .setRemapping(withRemapping)
-      .setSaveModelInterval(saveModelInterval)
-      .setCheckpointInterval(checkpointInterval)
-      .setOutput(output)
-      .setSaveContextEmbedding(saveContextEmbedding)
-      .setExtraInputEmbeddingPath(extraInputEmbeddingPath)
-      .setExtraContextEmbeddingPath(extraContextEmbeddingPath)
+      .setSeed(Random.nextInt())
+      .setNumPSPart(Some(numPartitions))
+      .setNumEpoch(numEpoch)
+      .setNegSample(numNegSamples)
+      .setMaxIndex(maxNodeId)
+      .setNumRowDataSet(numEdge)
+      .setOrder(order)
+      .setModelCPInterval(checkpointInterval)
 
-    val edges: DataFrame = GraphIO.loadStringEdge(input, isWeight, sep = sep)
-    line.transform(edges)
-    line.save(output, numEpoch, saveContextEmbedding)
-    stop()
-  }
+    val model = new LINEModel(param)
+    model.train(edges, param, output + "/embedding")
+    model.save(output + "/embedding", numEpoch)
 
-  def start(): SparkContext = {
-    val conf = new SparkConf()
-
-    // Set specific parameters for LINE
-    conf.set(AngelConf.ANGEL_PS_PARTITION_SOURCE_CLASS, classOf[PartitionSourceArray].getName)
-    // Close the automatic checkpoint
-    conf.set("spark.hadoop." + AngelConf.ANGEL_PS_BACKUP_AUTO_ENABLE, "false")
-    conf.set("spark.hadoop." + AngelConf.ANGEL_PS_JVM_USE_PARALLEL_GC, "true")
-    conf.set("spark.hadoop." + AngelConf.ANGEL_PS_JVM_PARALLEL_GC_USE_ADAPTIVE_SIZE, "false")
-    conf.set("io.file.buffer.size", "16000000")
-    conf.set("spark.hadoop.io.file.buffer.size", "16000000")
-
-    // Add jvm parameters for executors
-    val executorJvmOptions = " -verbose:gc -XX:-PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:<LOG_DIR>/gc.log " +
-      "-XX:+UseG1GC -XX:MaxGCPauseMillis=1000 -XX:G1HeapRegionSize=32M " +
-      "-XX:InitiatingHeapOccupancyPercent=50 -XX:ConcGCThreads=4 -XX:ParallelGCThreads=4 "
-    println(s"executorJvmOptions = $executorJvmOptions")
-    conf.set("spark.executor.extraJavaOptions", executorJvmOptions)
-    conf.setAppName("LINE")
-    val sc = new SparkContext(conf)
-    sc
-  }
-
-  def stop(): Unit = {
     PSContext.stop()
-    SparkContext.getOrCreate().stop()
+    sc.stop()
   }
 }

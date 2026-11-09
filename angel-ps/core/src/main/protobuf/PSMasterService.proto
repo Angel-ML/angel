@@ -59,6 +59,14 @@ message PartReportProto {
   required int32 status = 2;
 }
 
+message PSGetAttemptIndexRequest {
+  required PSIdProto psId = 1;
+}
+
+message PSGetAttemptIndexResponse {
+  required int32 attemptIndex = 1;
+}
+
 enum PSCommandProto {
   PSCOMMAND_OK = 1;
   PSCOMMAND_RESYNC = 2;
@@ -244,6 +252,14 @@ message GetCheckpointsResponse {
   repeated SaveResultProto saveResults = 1;
 }
 
+message AssignIndexRequest {
+
+}
+
+message AssignIndexResponse {
+  required int32 index = 1;
+}
+
 service PSMasterService {
   rpc psRegister(PSRegisterRequest) returns (PSRegisterResponse);
   rpc psReport(PSReportRequest) returns (PSReportResponse);
@@ -262,4 +278,6 @@ service PSMasterService {
   rpc loadStart(LoadStartRequest) returns (LoadStartResponse);
   rpc getSaveResults(GetSaveResultsRequest) returns (GetSaveResultsResponse);
   rpc getCheckpointResults(GetCheckpointsRequest) returns (GetCheckpointsResponse);
+  rpc psGetAttemptIndex(PSGetAttemptIndexRequest) returns (PSGetAttemptIndexResponse);
+  rpc assignIndex(AssignIndexRequest) returns (AssignIndexResponse);
 }

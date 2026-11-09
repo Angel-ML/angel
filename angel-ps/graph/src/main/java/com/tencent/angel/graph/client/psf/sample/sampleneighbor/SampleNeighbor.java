@@ -1,23 +1,8 @@
-/*
- * Tencent is pleased to support the open source community by making Angel available.
- *
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- *
- * https://opensource.org/licenses/Apache-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- *
- */
-
 package com.tencent.angel.graph.client.psf.sample.sampleneighbor;
 
 import com.tencent.angel.graph.client.psf.sample.SampleUtils;
+import com.tencent.angel.graph.data.Neighbor;
+import com.tencent.angel.graph.data.NeighborStorageType;
 import com.tencent.angel.graph.utils.GraphMatrixUtils;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
@@ -51,17 +36,29 @@ public class SampleNeighbor extends GetFunc {
     ILongKeyPartOp split = (ILongKeyPartOp) sampleParam.getIndicesPart();
     long[] nodeIds = split.getKeys();
 
-    Long2ObjectOpenHashMap<long[]> nodeId2SampleNeighbors =
-        SampleUtils.sampleByCount(row, sampleParam.getCount(),
-            nodeIds, System.currentTimeMillis());
+    Long2ObjectOpenHashMap<Neighbor> nodeId2SampleNeighbors = null;
+    SampleMethod method = sampleParam.getMethod();
+    NeighborStorageType storageType = sampleParam.getStorageType();
+    switch (method) {
+      case RANDOM:
+        nodeId2SampleNeighbors = SampleUtils.sampleByCount(row, sampleParam.getCount(),
+            nodeIds, storageType, System.currentTimeMillis());
+        break;
+      case ALIASTABLE:
+      case SIMPLEREJECT:
+        nodeId2SampleNeighbors = SampleUtils.sampleByWeight(row, sampleParam.getCount(),
+            nodeIds, method, storageType, System.currentTimeMillis());
+        break;
+
+    }
 
     return new PartSampleNeighborResult(sampleParam.getPartKey().getPartitionId(),
-        nodeId2SampleNeighbors);
+        nodeId2SampleNeighbors, storageType);
   }
 
   @Override
   public GetResult merge(List<PartitionGetResult> partResults) {
-    Long2ObjectOpenHashMap<long[]> nodeIdToSampleNeighbors =
+    Long2ObjectOpenHashMap<Neighbor> nodeIdToSampleNeighbors =
         new Long2ObjectOpenHashMap<>(((SampleNeighborParam) param).getNodeIds().length);
 
     for (PartitionGetResult partResult : partResults) {
@@ -69,7 +66,7 @@ public class SampleNeighbor extends GetFunc {
       PartSampleNeighborResult partSampleResult = (PartSampleNeighborResult) partResult;
 
       // Neighbors
-      Long2ObjectOpenHashMap<long[]> partNodeIdToSampleNeighbors = partSampleResult
+      Long2ObjectOpenHashMap<Neighbor> partNodeIdToSampleNeighbors = partSampleResult
           .getNodeIdToSampleNeighbors();
       if (partNodeIdToSampleNeighbors != null) {
         nodeIdToSampleNeighbors.putAll(partNodeIdToSampleNeighbors);

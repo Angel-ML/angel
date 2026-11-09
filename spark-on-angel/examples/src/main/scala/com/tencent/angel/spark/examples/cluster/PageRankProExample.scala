@@ -16,14 +16,18 @@
  */
 package com.tencent.angel.spark.examples.cluster
 
-import com.tencent.angel.graph.rank.pagerank.pagerankpro.PageRankPro
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.graph.utils.GraphIO
+import com.tencent.angel.spark.ml.graph.algo.rank.pagerank.pagerankpro.PageRankPro
+import com.tencent.angel.spark.ml.graph.utils.GraphIO
+import com.tencent.angel.spark.ml.util.DataStatistics
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
+// a risk propagation by pageRank
+
 object PageRankProExample {
+
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
     val mode = params.getOrElse("mode", "yarn-cluster")
@@ -37,7 +41,6 @@ object PageRankProExample {
     val psPartitionNum = params.getOrElse("psPartitionNum",
       sc.getConf.get("spark.ps.instances", "1")).toInt
     val tol = params.getOrElse("tol", "0.01").toFloat
-    val initRank = params.getOrElse("initRank", "0.0").toFloat
     val resetProp = params.getOrElse("resetProp", "0.15").toFloat
     val isWeight = params.getOrElse("isWeight", "false").toBoolean
     val srcIndex = params.getOrElse("srcIndex", "0").toInt
@@ -61,6 +64,12 @@ object PageRankProExample {
       srcIndex = srcIndex, dstIndex = dstIndex,
       weightIndex = weightIndex, sep = sep)
 
+    //collect app name and data size
+    val name = "PageRankPro"
+    DataStatistics.setAppName(name)
+    DataStatistics.calcRDDSize(edges, "angel.input.data")
+    DataStatistics.setDataPartitionNum(partitionNum)
+    DataStatistics.setPSPartitionNum(psPartitionNum)
 
     val label_pos = GraphIO.loadBiGraph(labelPosInput, isWeighted = false, sep = sep)
       .select("src", "dst").rdd
@@ -72,14 +81,13 @@ object PageRankProExample {
       .setStorageLevel(storageLevel)
       .setPSPartitionNum(psPartitionNum)
       .setTol(tol)
-      .setInitRank(initRank)
       .setResetProb(resetProp)
       .setIsWeighted(isWeight)
       .setUseBalancePartition(useBalancePartition)
       .setNumBatch(numBatch)
       .setMaxIteration(maxIteration)
       .setNeedReplicaEdge(replicateEdges)
-      .setBatchSize(batchSize)
+        .setBatchSize(batchSize)
 
     pagerank.setPosLabelRDD(label_pos)
     pagerank.setEqualPropagation(equalPropagation)
@@ -91,9 +99,18 @@ object PageRankProExample {
 
   def start(mode: String): SparkContext = {
     val conf = new SparkConf()
+
+    // Add jvm parameters for executors
+//    var executorJvmOptions = conf.get("spark.executor.extraJavaOptions")
+    //executorJvmOptions += " -XX:+UseG1GC -XX:MaxGCPauseMillis=1000 -XX:G1HeapRegionSize=32M " +
+    //  "-XX:InitiatingHeapOccupancyPercent=50 -XX:ConcGCThreads=4 -XX:ParallelGCThreads=4 "
+    //conf.set("spark.executor.extraJavaOptions", executorJvmOptions)
+//    println(s"executorJvmOptions = ${executorJvmOptions}")
+
     conf.setMaster(mode)
-    conf.setAppName("PageRankPro")
+    conf.setAppName("PageRank")
     val sc = new SparkContext(conf)
+    //PSContext.getOrCreate(sc)
     sc
   }
 
@@ -101,4 +118,5 @@ object PageRankProExample {
     PSContext.stop()
     SparkContext.getOrCreate().stop()
   }
+
 }

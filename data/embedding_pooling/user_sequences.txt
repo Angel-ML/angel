@@ -1,0 +1,3 @@
+u1	itemA:0.5 itemB:0.5
+u2	itemB:1.0
+u3	itemA:0.2 itemC:0.8

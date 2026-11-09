@@ -26,6 +26,7 @@ import com.tencent.angel.master.deploy.ContainerAllocatorEvent;
 import com.tencent.angel.master.deploy.ContainerAllocatorEventType;
 import com.tencent.angel.master.deploy.ContainerLauncherEvent;
 import com.tencent.angel.master.deploy.ContainerLauncherEventType;
+import com.tencent.angel.master.deploy.DeployEventUtils;
 import com.tencent.angel.master.deploy.local.LocalContainerAllocatorEvent;
 import com.tencent.angel.master.deploy.local.LocalContainerLauncherEvent;
 import com.tencent.angel.master.deploy.yarn.ContainerRemoteLaunchEvent;
@@ -277,72 +278,32 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
   }
 
   static class RequestContainerTransition
-          implements SingleArcTransition<PSAttempt, PSAttemptEvent> {
+    implements SingleArcTransition<PSAttempt, PSAttemptEvent> {
     @SuppressWarnings("unchecked") @Override
     public void transition(PSAttempt psAttempt, PSAttemptEvent event) {
       LOG.info("allocate ps server attempt resource, ps attempt id = " + psAttempt.getId());
+
       // reqeuest resource:send a resource request to the resource allocator
       AngelDeployMode deployMode = psAttempt.getContext().getDeployMode();
-      if (deployMode == AngelDeployMode.KUBERNETES) {
-        psAttempt.getContext().getEventHandler()
-                .handle(new PSAttemptEvent(PSAttemptEventType.PA_CONTAINER_ASSIGNED, psAttempt.getId()));
-      } else {
-        ContainerAllocatorEvent allocatorEvent = null;
-
-        if (deployMode == AngelDeployMode.LOCAL) {
-          allocatorEvent = new LocalContainerAllocatorEvent(ContainerAllocatorEventType.CONTAINER_REQ,
-                  psAttempt.getId());
-
-        } else {
-          if (psAttempt.getExpectedIp() != null) {
-            allocatorEvent = new YarnContainerRequestEvent(psAttempt.getId(),
-                    psAttempt.getContext().getParameterServerManager().getPsResource(),
-                    psAttempt.getContext().getParameterServerManager().getPriority(),
-                    new String[] {psAttempt.getExpectedIp()});
-          } else {
-            allocatorEvent = new YarnContainerRequestEvent(psAttempt.getId(),
-                    psAttempt.getContext().getParameterServerManager().getPsResource(),
-                    psAttempt.getContext().getParameterServerManager().getPriority());
-          }
-        }
-
-        psAttempt.getContext().getEventHandler().handle(allocatorEvent);
-      }
+      ContainerAllocatorEvent allocatorEvent = DeployEventUtils
+          .createContainerAllocatorEvent(deployMode, psAttempt);
+      psAttempt.getContext().getEventHandler().handle(allocatorEvent);
     }
   }
 
 
   private static class ContainerAssignedTransition
-          implements SingleArcTransition<PSAttempt, PSAttemptEvent> {
+    implements SingleArcTransition<PSAttempt, PSAttemptEvent> {
     @SuppressWarnings({"unchecked"}) @Override
     public void transition(final PSAttempt psAttempt, PSAttemptEvent event) {
+      PSAttemptContainerAssignedEvent assignedEvent = (PSAttemptContainerAssignedEvent) event;
+      psAttempt.container = assignedEvent.getContainer();
+
+      // Once the resource is applied, build and send the launch request to the container launcher
       AngelDeployMode deployMode = psAttempt.getContext().getDeployMode();
-      if (deployMode == AngelDeployMode.KUBERNETES) {
-        psAttempt.getContext().getEventHandler()
-                .handle(new PSAttemptEvent(PSAttemptEventType.PA_CONTAINER_LAUNCHED, psAttempt.getId()));
-      } else {
-        PSAttemptContainerAssignedEvent assignedEvent = (PSAttemptContainerAssignedEvent) event;
-        PSAttemptId psAttemptId = psAttempt.getId();
-        psAttempt.container = assignedEvent.getContainer();
-
-        // Once the resource is applied, build and send the launch request to the container launcher
-        ContainerLauncherEvent launchEvent = null;
-        if (deployMode == AngelDeployMode.LOCAL) {
-          launchEvent =
-                  new LocalContainerLauncherEvent(ContainerLauncherEventType.CONTAINER_REMOTE_LAUNCH,
-                          psAttempt.getId());
-        } else {
-          ContainerLaunchContext launchContext = ContainerContextUtils.createContainerLaunchContext(
-                  psAttempt.getContext().getContainerAllocator().getApplicationACLs(),
-                  psAttempt.getContext().getConf(), psAttemptId, psAttempt.getContext().getApplicationId(),
-                  psAttempt.getContext().getMasterService(), psAttempt.getContext().getCredentials());
-
-          launchEvent =
-                  new ContainerRemoteLaunchEvent(psAttemptId, launchContext, assignedEvent.getContainer());
-        }
-
-        psAttempt.getContext().getEventHandler().handle(launchEvent);
-      }
+      ContainerLauncherEvent launchEvent = DeployEventUtils
+          .createContainerLaunchEvent(deployMode, psAttempt);
+      psAttempt.getContext().getEventHandler().handle(launchEvent);
     }
   }
 
@@ -356,17 +317,7 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
       // deallocator the resource of the ps attempt:send a resource deallocator request to the
       // resource allocator
       AngelDeployMode deployMode = psAttempt.getContext().getDeployMode();
-      ContainerAllocatorEvent allocatorEvent = null;
-      if (deployMode == AngelDeployMode.LOCAL) {
-        allocatorEvent =
-          new LocalContainerAllocatorEvent(ContainerAllocatorEventType.CONTAINER_DEALLOCATE,
-            psAttempt.getId());
-
-      } else {
-        allocatorEvent = new YarnContainerAllocatorEvent(psAttempt.getId(),
-          ContainerAllocatorEventType.CONTAINER_DEALLOCATE,
-          psAttempt.context.getParameterServerManager().getPriority());
-      }
+      ContainerAllocatorEvent allocatorEvent = DeployEventUtils.createContainerDeAllocatorEvent(deployMode, psAttempt);
       psAttempt.getContext().getEventHandler().handle(allocatorEvent);
     }
   }
@@ -448,22 +399,18 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
 
       // release container:send a release request to container launcher
       AngelDeployMode deployMode = psAttempt.getContext().getDeployMode();
-      if (deployMode == AngelDeployMode.KUBERNETES) {
-
+      ContainerLauncherEvent launchEvent = null;
+      if (deployMode == AngelDeployMode.LOCAL || deployMode == AngelDeployMode.STANDALONE) {
+        launchEvent =
+          new LocalContainerLauncherEvent(ContainerLauncherEventType.CONTAINER_REMOTE_CLEANUP,
+            psAttempt.attemptId);
       } else {
-        ContainerLauncherEvent launchEvent = null;
-        if (deployMode == AngelDeployMode.LOCAL) {
-          launchEvent =
-                  new LocalContainerLauncherEvent(ContainerLauncherEventType.CONTAINER_REMOTE_CLEANUP,
-                          psAttempt.attemptId);
-        } else {
-          launchEvent = new YarnContainerLauncherEvent(psAttempt.getId(), psAttempt.container.getId(),
-                  StringInterner.weakIntern(psAttempt.container.getNodeId().toString()),
-                  psAttempt.container.getContainerToken(),
-                  ContainerLauncherEventType.CONTAINER_REMOTE_CLEANUP);
-        }
-        psAttempt.getContext().getEventHandler().handle(launchEvent);
+        launchEvent = new YarnContainerLauncherEvent(psAttempt.getId(), psAttempt.container.getId(),
+          StringInterner.weakIntern(psAttempt.container.getNodeId().toString()),
+          psAttempt.container.getContainerToken(),
+          ContainerLauncherEventType.CONTAINER_REMOTE_CLEANUP);
       }
+      psAttempt.getContext().getEventHandler().handle(launchEvent);
     }
   }
 
@@ -472,8 +419,29 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
     implements SingleArcTransition<PSAttempt, PSAttemptEvent> {
     @Override public void transition(PSAttempt psAttempt, PSAttemptEvent event) {
       PSAttemptDiagnosticsUpdateEvent diagEvent = (PSAttemptDiagnosticsUpdateEvent) event;
-      LOG.info("Diagnostics report from " + psAttempt.getId() + ": " + diagEvent.getDiagnostics());
-      psAttempt.addDiagnostic(diagEvent.getDiagnostics());
+      String diag = diagEvent.getDiagnostics();
+      LOG.info("Diagnostics report from " + psAttempt.getId() + ": " + diag);
+
+      // Surface the YARN-side container-OOM signal explicitly. The "exit 137 / Killed by
+      // external signal" pattern is the canonical fingerprint of NodeManager SIGKILLing a
+      // PS for exceeding its container memory quota — which on the *client* side appears
+      // only as a flurry of "Connection reset by peer" with no PS-side stack trace, and
+      // which has historically been mis-diagnosed as a network problem. Promoting it to
+      // ERROR here puts the truth in the AM log next to the network noise so anyone
+      // bisecting failures sees them on the same screen.
+      if (diag != null
+          && (diag.contains("Exit code is 137") || diag.contains("exit code 137"))
+          && (diag.contains("Killed by external signal")
+              || diag.contains("killed on request"))) {
+        LOG.error("PS " + psAttempt.getId()
+            + " was SIGKILLed by YARN (exit 137). This is almost always a container memory"
+            + " overrun: total RSS exceeded the negotiated container size. Consider"
+            + " increasing angel.ps.memory.gb, raising angel.ps.jvm.overhead.mb, or"
+            + " lowering -Xmx via reducing angel.ps.jvm.direct.factor.use.heap.buff /"
+            + " use.direct.buff. See AngelConf.ANGEL_PS_JVM_OVERHEAD_MB javadoc.");
+      }
+
+      psAttempt.addDiagnostic(diag);
     }
   }
 

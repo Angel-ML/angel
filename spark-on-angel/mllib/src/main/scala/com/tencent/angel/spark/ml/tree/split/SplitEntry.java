@@ -25,6 +25,7 @@ public abstract class SplitEntry implements Serializable {
 
   protected int fid;
   protected float gain;
+  private float splitValue;
 
   public SplitEntry() {
     this(-1, 0.0f);
@@ -33,6 +34,12 @@ public abstract class SplitEntry implements Serializable {
   public SplitEntry(int fid, float gain) {
     this.fid = fid;
     this.gain = gain;
+  }
+
+  public SplitEntry(int fid, float gain, float splitValue) {
+    this.fid = fid;
+    this.gain = gain;
+    this.splitValue = splitValue;
   }
 
   public boolean isEmpty() {
@@ -47,6 +54,10 @@ public abstract class SplitEntry implements Serializable {
 
   public boolean needReplace(float newGain) {
     return gain < newGain;
+  }
+
+  public boolean needReplace(int newGain) {
+    return newGain >= 0;
   }
 
   public boolean needReplace(@NotNull SplitEntry e) {
@@ -90,6 +101,14 @@ public abstract class SplitEntry implements Serializable {
 
   public void setGain(float gain) {
     this.gain = gain;
+  }
+
+  public float getSplitValue() {
+    return splitValue;
+  }
+
+  public void setSplitValue(float splitValue) {
+    this.splitValue = splitValue;
   }
 
   public abstract SplitType splitType();

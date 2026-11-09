@@ -1,0 +1,14 @@
+// Copyright 2022, Tencent Inc.
+// All rights reserved.
+//
+// @author Difei Zeng <diamondzeng@tencent.com>
+
+namespace tair.optimizers.common;
+
+table CommonWeightParams {
+  v:[double] (id:0);
+}
+
+table CommonGradMessage {
+  g:[float] (id:0);
+}

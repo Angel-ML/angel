@@ -381,14 +381,68 @@ public class HdfsUtil {
   }
 
   public static Path generateTmpDirectory(Configuration conf, String appId, Path outputPath) {
-    URI uri = outputPath.toUri();
-    String path =
-      (uri.getScheme() != null ? uri.getScheme() : "hdfs") + "://" + (uri.getHost() != null ?
-        uri.getHost() :
-        "") + (uri.getPort() > 0 ? (":" + uri.getPort()) : "");
     String user = conf.get(AngelConf.USER_NAME, "");
-    String tmpDir = conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH_PREFIX, "/tmp/" + user);
-    String finalTmpDirForApp = path + tmpDir + "/" + appId + "_" + UUID.randomUUID().toString();
+    String tmpDir = conf.get(AngelConf.ANGEL_JOB_TMP_OUTPUT_PATH_PREFIX, "/tmp/angel/" + user);
+    String basename = appId + "_" + UUID.randomUUID().toString();
+
+    // Build the authority prefix <scheme>://<host>[:<port>] from the output path. This
+    // used to blindly default scheme="hdfs" and allow an empty host, which produced
+    // "hdfs://" -> Path normalizes that to "hdfs:/..." -> DistributedFileSystem.initialize
+    // rejects it with "Incomplete HDFS URI, no host". We now fall back through a chain
+    // that is guaranteed to yield a fully-qualified URI before resorting to the broken
+    // host-less form.
+    URI uri = outputPath.toUri();
+    String scheme = uri.getScheme();
+    String host = uri.getHost();
+    int port = uri.getPort();
+
+    // Fallback 1: inherit authority from the configured default FS (fs.defaultFS /
+    // fs.default.name). This covers the common case where the user passes
+    // "hdfs:///some/path" expecting the cluster's default nameservice to be picked up.
+    if (host == null || host.isEmpty()) {
+      try {
+        URI defaultUri = FileSystem.getDefaultUri(conf);
+        if (defaultUri != null) {
+          if (scheme == null || scheme.isEmpty()) {
+            scheme = defaultUri.getScheme();
+          }
+          if (scheme != null && scheme.equals(defaultUri.getScheme())) {
+            host = defaultUri.getHost();
+            if (port <= 0) {
+              port = defaultUri.getPort();
+            }
+          }
+        }
+      } catch (Throwable t) {
+        LOG.warn("failed to consult fs.defaultFS while resolving tmp directory authority: "
+            + t.getMessage());
+      }
+    }
+
+    // Fallback 2: still no authority. Instead of emitting an invalid "hdfs://" URI,
+    // place the tmp dir next to the output path itself (same scheme+authority as
+    // outputPath, even when outputPath's authority is also null). For local-FS paths
+    // this is fine (an absolute "/tmp/..." path with scheme "file" needs no host); for
+    // dfs schemes the caller will see a clearer error on the subsequent getFileSystem().
+    if (scheme == null || scheme.isEmpty() || "file".equals(scheme)
+        || host == null || host.isEmpty()) {
+      Path parent = new Path(tmpDir);
+      Path finalTmp = new Path(parent, basename);
+      // Re-qualify against outputPath so local-FS users keep their scheme. Best-effort:
+      // if outputPath itself is rooted we use its FS URI as the base.
+      try {
+        FileSystem outFs = outputPath.getFileSystem(conf);
+        finalTmp = finalTmp.makeQualified(outFs.getUri(), new Path("/"));
+      } catch (Throwable t) {
+        // fall through with the un-qualified path; the caller's getFileSystem() will
+        // then surface the real configuration problem.
+      }
+      LOG.info("tmp output dir is " + finalTmp);
+      return finalTmp;
+    }
+
+    String authority = scheme + "://" + host + (port > 0 ? (":" + port) : "");
+    String finalTmpDirForApp = authority + tmpDir + "/" + basename;
     LOG.info("tmp output dir is " + finalTmpDirForApp);
     return new Path(finalTmpDirForApp);
   }

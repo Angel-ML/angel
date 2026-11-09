@@ -1,0 +1,22 @@
+{
+    "feature": [
+      {
+        "id": "2",
+        "discreteType": "equFre",
+        "numBin": "3"
+      },
+      {
+  "id": "1",
+        "discreteType": "equVal",
+        "numBin": "3",
+  "min": "0",
+  "max": "100"
+       },
+       {
+        "id": "5",
+        "discreteType": "equVal",
+        "numBin": "2",
+  "min":"-1"
+      }
+    ]
+}

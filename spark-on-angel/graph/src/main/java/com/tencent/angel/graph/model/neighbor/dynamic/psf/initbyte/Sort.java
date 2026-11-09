@@ -18,6 +18,7 @@
 package com.tencent.angel.graph.model.neighbor.dynamic.psf.initbyte;
 
 import com.tencent.angel.PartitionKey;
+import com.tencent.angel.graph.model.neighbor.dynamic.DynamicNeighborElement;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
@@ -62,7 +63,7 @@ public class Sort extends UpdateFunc {
       int size = partList.size();
       List<PartitionUpdateParam> partParamList = new ArrayList<PartitionUpdateParam>(size);
       for (int i = 0; i < size; i++) {
-        partParamList.add(new SortPartitionParam(matrixId, partList.get(i), updateClock));
+        partParamList.add(new Sort.SortPartitionParam(matrixId, partList.get(i), updateClock));
       }
 
       return partParamList;

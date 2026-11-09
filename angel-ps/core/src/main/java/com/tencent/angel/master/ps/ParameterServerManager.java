@@ -18,9 +18,9 @@
 
 package com.tencent.angel.master.ps;
 
-import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.common.location.Location;
 import com.tencent.angel.conf.AngelConf;
+import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.app.AppEvent;
 import com.tencent.angel.master.app.AppEventType;
@@ -47,8 +47,8 @@ import org.apache.hadoop.yarn.factory.providers.RecordFactoryProvider;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Parameter server manager, it managers a group of
@@ -61,6 +61,14 @@ public class ParameterServerManager extends AbstractService
 
   private static final Log LOG = LogFactory.getLog(ParameterServerManager.class);
   private final AMContext context;
+
+  /** PS attempt id queue for the Kubernetes executor allocator. */
+  private final java.util.concurrent.LinkedBlockingDeque<PSAttemptId> psAttemptIdBlockingQueue =
+      new java.util.concurrent.LinkedBlockingDeque<>();
+
+  public java.util.concurrent.LinkedBlockingDeque<PSAttemptId> getPsAttemptIdBlockingQueue() {
+    return psAttemptIdBlockingQueue;
+  }
 
   /**
    * parameter server number
@@ -118,11 +126,6 @@ public class ParameterServerManager extends AbstractService
   private final ConcurrentHashMap<PSAttemptId, Long> psLastHeartbeatTS = new ConcurrentHashMap<>();
 
   /**
-   * parameter server attempt id queue for kubernetes allocator
-   */
-  private final LinkedBlockingDeque<PSAttemptId> psAttemptIdBlockingQueue = new LinkedBlockingDeque<>();
-
-  /**
    * parameter server heartbeat timeout value in millisecond
    */
   private final long psTimeOutMS;
@@ -130,6 +133,8 @@ public class ParameterServerManager extends AbstractService
   private final boolean useMiniBatch;
   private final int miniBatchSize;
   private final int requestIntervalMS;
+
+  private final AtomicInteger idGenerator = new AtomicInteger(0);
 
 
   public ParameterServerManager(AMContext context,
@@ -210,6 +215,14 @@ public class ParameterServerManager extends AbstractService
     }
   }
 
+  public int assignIndex() {
+    int index =  idGenerator.getAndIncrement();
+    if (index >= psNumber) {
+      throw new AngelException(String.format("Assign ps index %d >= ps number %d", index, psNumber));
+    }
+    return index;
+  }
+
   /**
    * Start all PS
    */
@@ -254,15 +267,6 @@ public class ParameterServerManager extends AbstractService
    */
   public Map<ParameterServerId, AMParameterServer> getParameterServerMap() {
     return psMap;
-  }
-
-  /**
-   * parameter server attempt id queue
-   * @return LinkedBlockingDeque<PSAttemptId>
-   */
-
-  public LinkedBlockingDeque<PSAttemptId> getPsAttemptIdBlockingQueue() {
-    return psAttemptIdBlockingQueue;
   }
 
   @Override public void handle(ParameterServerManagerEvent event) {
@@ -419,9 +423,6 @@ public class ParameterServerManager extends AbstractService
   public void register(PSAttemptId psAttemptId) {
     LOG.info("PS " + psAttemptId + " is registered in monitor!");
     psLastHeartbeatTS.put(psAttemptId, System.currentTimeMillis());
-    if (context.getDeployMode() == AngelDeployMode.KUBERNETES) {
-      psAttemptIdBlockingQueue.add(psAttemptId);
-    }
   }
 
   /**
