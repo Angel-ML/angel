@@ -18,6 +18,7 @@
 package com.tencent.angel.graph.client.psf.sample.sampleneighbor;
 
 import com.tencent.angel.PartitionKey;
+import com.tencent.angel.graph.data.NeighborStorageType;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
@@ -42,14 +43,29 @@ public class SampleNeighborParam extends GetParam {
    */
   protected final int count;
 
-  public SampleNeighborParam(int matrixId, long[] nodeIds, int count) {
+  /**
+   * Sample method, such as: random, aliasTable, simpleReject
+   */
+  protected final SampleMethod method;
+
+  protected NeighborStorageType storageType;
+
+  public SampleNeighborParam(int matrixId, long[] nodeIds, int count,
+      NeighborStorageType storageType) {
+    this(matrixId, nodeIds, count, SampleMethod.RANDOM, storageType);
+  }
+
+  public SampleNeighborParam(int matrixId, long[] nodeIds, int count, SampleMethod method,
+      NeighborStorageType storageType) {
     super(matrixId);
     this.nodeIds = nodeIds;
     this.count = count;
+    this.method = method;
+    this.storageType = storageType;
   }
 
   public SampleNeighborParam() {
-    this(-1, null, -1);
+    this(-1, null, -1, SampleMethod.RANDOM, NeighborStorageType.LONGARRAY);
   }
 
   public long[] getNodeIds() {
@@ -58,6 +74,18 @@ public class SampleNeighborParam extends GetParam {
 
   public int getCount() {
     return count;
+  }
+
+  public SampleMethod getMethod() {
+    return method;
+  }
+
+  public NeighborStorageType getStorageType() {
+    return storageType;
+  }
+
+  public void setStorageType(NeighborStorageType storageType) {
+    this.storageType = storageType;
   }
 
   @Override
@@ -72,9 +100,11 @@ public class SampleNeighborParam extends GetParam {
 
     // Generate rpc params
     List<PartitionGetParam> partParams = new ArrayList<>(partitions.length);
-    for(int i = 0; i < partitions.length; i++) {
-      if(splits[i] != null && splits[i].size() > 0) {
-        partParams.add(new PartSampleNeighborParam(matrixId, partitions[i], splits[i], count));
+    for (int i = 0; i < partitions.length; i++) {
+      if (splits[i] != null && splits[i].size() > 0) {
+        partParams.add(
+            new PartSampleNeighborParam(matrixId, partitions[i], splits[i], count, method,
+                storageType));
       }
     }
 

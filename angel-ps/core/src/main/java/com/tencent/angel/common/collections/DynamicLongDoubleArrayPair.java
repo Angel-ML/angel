@@ -83,7 +83,7 @@ public class DynamicLongDoubleArrayPair extends DynamicArray {
       }
 
       // Last batch
-      System.arraycopy(currentBatch.keys, 0, keys, index, currentBatch.keys.length);
+      System.arraycopy(currentBatch.keys, 0, keys, index, currentBatchPos);
     }
     return keys;
   }
@@ -100,7 +100,7 @@ public class DynamicLongDoubleArrayPair extends DynamicArray {
       }
 
       // Last batch
-      System.arraycopy(currentBatch.values, 0, values, index, currentBatch.values.length);
+      System.arraycopy(currentBatch.values, 0, values, index, currentBatchPos);
     }
     return values;
   }
@@ -130,6 +130,7 @@ public class DynamicLongDoubleArrayPair extends DynamicArray {
   @Override
   public void deserialize(ByteBuf in) {
     int len = ByteBufSerdeUtils.deserializeInt(in);
+    deserializedSize = len;
     keys = new long[len];
     values = new double[len];
     for (int i = 0; i < len; i++) {

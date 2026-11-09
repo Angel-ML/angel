@@ -182,7 +182,7 @@ class BaseFuncTest {
       }
     }
 
-    import scala.collection.JavaConversions._
+    import scala.collection.convert.ImplicitConversions._
     for (v <- list) {
       println(s"size:${v.asInstanceOf[Vector].getSize}, ${v.size()}")
       println(v.getType)
@@ -280,7 +280,7 @@ class BaseFuncTest {
       }
     }
 
-    import scala.collection.JavaConversions._
+    import scala.collection.convert.ImplicitConversions._
     for (v <- list) {
       println(v.getType)
       println(s"${sum(v.getStorage.oneLikeDense().getValues)}, ${sum(v.getStorage.oneLikeSparse().getValues)},${sum(v.getStorage.oneLikeSorted().getValues)}")
@@ -377,7 +377,7 @@ class BaseFuncTest {
       }
     }
 
-    import scala.collection.JavaConversions._
+    import scala.collection.convert.ImplicitConversions._
     for (v <- list) {
       println(v.getType)
       println(s"${sum(v.getStorage.oneLikeDense().getValues)}, ${sum(v.getStorage.oneLikeSparse().getValues)},${sum(v.getStorage.oneLikeSorted().getValues)}")
@@ -472,7 +472,7 @@ class BaseFuncTest {
       }
     }
 
-    import scala.collection.JavaConversions._
+    import scala.collection.convert.ImplicitConversions._
     for (v <- list) {
       println(v.getType)
       println(s"${sum(v.getStorage.oneLikeDense().getValues)}, ${sum(v.getStorage.oneLikeSparse().getValues)},${sum(v.getStorage.oneLikeSorted().getValues)}")
@@ -543,7 +543,7 @@ class BaseFuncTest {
 
     val size = intValues.length
 
-    import scala.collection.JavaConversions._
+    import scala.collection.convert.ImplicitConversions._
     for (v <- list) {
       println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       assert(v.numZeros == dim - size)
@@ -587,7 +587,7 @@ class BaseFuncTest {
 
     val size = longValues.length
 
-    import scala.collection.JavaConversions._
+    import scala.collection.convert.ImplicitConversions._
     for (v <- list) {
       println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
       assert(v.numZeros == dim - size)
@@ -649,7 +649,7 @@ class BaseFuncTest {
       }
     }
 
-    import scala.collection.JavaConversions._
+    import scala.collection.convert.ImplicitConversions._
     for (v <- list) {
       println(v.getType)
       println(s"${sum(v.getStorage.oneLikeSparse().getValues)},${sum(v.getStorage.oneLikeSorted().getValues)}")
@@ -739,7 +739,7 @@ class BaseFuncTest {
       }
     }
 
-    import scala.collection.JavaConversions._
+    import scala.collection.convert.ImplicitConversions._
     for (v <- list) {
       println(v.getType)
       println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
@@ -825,7 +825,7 @@ class BaseFuncTest {
       }
     }
 
-    import scala.collection.JavaConversions._
+    import scala.collection.convert.ImplicitConversions._
     for (v <- list) {
       println(v.getType)
       println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")
@@ -911,7 +911,7 @@ class BaseFuncTest {
       }
     }
 
-    import scala.collection.JavaConversions._
+    import scala.collection.convert.ImplicitConversions._
     for (v <- list) {
       println(v.getType)
       println(s"angel result: ${v.numZeros()}, ${v.getDim}, ${v.size()}")

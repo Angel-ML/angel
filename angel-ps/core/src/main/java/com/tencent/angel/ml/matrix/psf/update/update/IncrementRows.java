@@ -71,4 +71,18 @@ public class IncrementRows extends UpdateFunc {
         .getRow(rowId);
     return ServerRowUtils.getVector(psRow);
   }
+
+  /**
+   * Get the row for the server matrix
+   *
+   * @param matrixId matrix id
+   * @param rowId row id
+   * @param part partition
+   * @return ServerRow object
+   */
+  protected ServerRow getRow(int matrixId, int rowId, PartitionKey part) {
+    ServerMatrix matrix = psContext.getMatrixStorageManager().getMatrix(matrixId);
+    return ((RowBasedPartition) matrix.getPartition(part.getPartitionId()))
+        .getRow(rowId);
+  }
 }

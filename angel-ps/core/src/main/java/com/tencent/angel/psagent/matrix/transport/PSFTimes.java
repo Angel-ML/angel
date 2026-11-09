@@ -18,6 +18,7 @@ public class PSFTimes {
   public long retSendTime;
   public long retHandleScheTime;
   public long retDeserializeTime;
+  public long bufferLen;
 
   @Override
   public String toString() {
@@ -39,6 +40,7 @@ public class PSFTimes {
         ", retSendTime=" + retSendTime +
         ", retHandleScheTime=" + retHandleScheTime +
         ", retDeserializeTime=" + retDeserializeTime +
+        ", bufferLen=" + bufferLen +
         ", mergeConter=" + mergeConter +
         '}';
   }
@@ -62,6 +64,7 @@ public class PSFTimes {
     this.retSendTime += psfTimes.retSendTime;
     this.retHandleScheTime += psfTimes.retHandleScheTime;
     this.retDeserializeTime += psfTimes.retDeserializeTime;
+    this.bufferLen += psfTimes.bufferLen;
 
     mergeConter++;
   }

@@ -20,7 +20,7 @@ package com.tencent.angel.ml.matrix.psf.update
 
 import java.util
 
-import scala.collection.JavaConversions._
+import scala.collection.convert.ImplicitConversions._
 import io.netty.buffer.ByteBuf
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.ml.matrix.psf.update.Reset.{ZeroParam, ZeroPartitionParam}

@@ -18,10 +18,11 @@
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.graph.community.egonetwork.{EgoNetwork, EgoNetworkV2}
-import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
+import com.tencent.angel.spark.ml.graph.algo.communitydetection.egonetwork.{EgoNetwork, EgoNetworkV2}
+import com.tencent.angel.spark.ml.graph.utils.{Delimiter, GraphIO}
+import com.tencent.angel.spark.ml.util.DataStatistics
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
@@ -42,11 +43,15 @@ object EgoNetworkExample {
     val batchSize = params.getOrElse("batchSize", "10000").toInt
     val pullBatchSize = params.getOrElse("pullBatchSize", "1000").toInt
     val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
+    val srcIndex = params.getOrElse("srcIndex", "0").toInt
+    val dstIndex = params.getOrElse("dstIndex", "1").toInt
     val cpDir = params.get("cpDir").filter(_.nonEmpty).orElse(GraphIO.defaultCheckpointDir)
       .getOrElse(throw new Exception("checkpoint dir not provided"))
     val nodePath = params.getOrElse("nodePath", null)
+    val nodeIndex = params.getOrElse("nodeIndex", "0").toInt
     val sepInNodePath = Delimiter.parse(params.getOrElse("sepInNodePath", Delimiter.SPACE))
     sc.setCheckpointDir(cpDir)
+    val useBalancePartition = params.getOrElse("useBalancePartition", "false").toBoolean
 
     // param "needReplicaEdges" is specialized for v2,
     // as for v1, a replicate process is automatically proceeded while reading edges.
@@ -60,16 +65,17 @@ object EgoNetworkExample {
     start(mode)
     val startTime = System.currentTimeMillis()
 
-    val df = GraphIO.load(input, isWeighted = false, sep = sep)
+    val df = GraphIO.load(input, isWeighted = false,
+      srcIndex = srcIndex, dstIndex = dstIndex, sep = sep)
     var nodeForEgo: RDD[Long] = null
     if (nodePath != null) {
-      val nodeForEgoDf = GraphIO.loadNode(nodePath, sep = sepInNodePath)
+      val nodeForEgoDf = GraphIO.loadNode(nodePath, nodeIndex, sepInNodePath)
       nodeForEgo = nodeForEgoDf.select("node").rdd
         .filter(row => !row.anyNull)
         .map { row => row.getLong(0) }
     }
 
-    if (version == "v1") {
+    val mapping = if (version == "v1") {
       // output nodes' ego, will replicate the input edges automatically
       val ego = new EgoNetwork()
         .setPartitionNum(partitionNum)
@@ -78,6 +84,7 @@ object EgoNetworkExample {
         .setPullBatchSize(pullBatchSize)
         .setPSPartitionNum(psPartitionNum)
         .setExtraInputs(Array(nodePath))
+        .setUseBalancePartition(useBalancePartition)
       if (nodePath != null) ego.setNodeForEgo(nodeForEgo)
       val out = ego.transform(df)
       GraphIO.save(out, output)
@@ -90,11 +97,18 @@ object EgoNetworkExample {
         .setPullBatchSize(pullBatchSize)
         .setPSPartitionNum(psPartitionNum)
         .setExtraInputs(Array(nodePath))
+        .setUseBalancePartition(useBalancePartition)
         .setNeedReplicaEdge(needReplicaEdges)
       if (nodePath != null) ego.setNodeForEgo(nodeForEgo)
       val out = ego.transform(df)
       out.write.mode("overwrite").parquet(output)
     }
+
+    //collect app name and data size
+//    DataStatistics.setAppName(ego.getClass.getCanonicalName)
+//    DataStatistics.calcRDDSize(df, "angel.input.data")
+    DataStatistics.setDataPartitionNum(partitionNum)
+    DataStatistics.setPSPartitionNum(psPartitionNum)
 
     println(s"cost ${System.currentTimeMillis() - startTime} ms")
     stop()

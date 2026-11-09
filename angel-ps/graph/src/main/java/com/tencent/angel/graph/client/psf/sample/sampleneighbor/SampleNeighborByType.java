@@ -1,6 +1,7 @@
 package com.tencent.angel.graph.client.psf.sample.sampleneighbor;
 
 import com.tencent.angel.graph.client.psf.sample.SampleUtils;
+import com.tencent.angel.graph.data.Neighbor;
 import com.tencent.angel.graph.utils.GraphMatrixUtils;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
@@ -9,7 +10,6 @@ import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
 import com.tencent.angel.psagent.matrix.transport.router.operator.ILongKeyPartOp;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-
 import java.util.List;
 
 public class SampleNeighborByType extends GetFunc {
@@ -38,11 +38,12 @@ public class SampleNeighborByType extends GetFunc {
     switch (sampleType) {
       case NODE:
       case EDGE: {
-        Long2ObjectOpenHashMap<long[]> nodeId2SampleNeighbors = SampleUtils
+        Long2ObjectOpenHashMap<Neighbor> nodeId2SampleNeighbors = SampleUtils
             .sampleByType(row, sampleParam.getCount(),
-                nodeIds, sampleType, sampleParam.getNode_or_edge_type(), System.currentTimeMillis());
+                nodeIds, sampleType, sampleParam.getNode_or_edge_type(),
+                sampleParam.getMethod(), sampleParam.getStorageType(), System.currentTimeMillis());
         return new PartSampleNeighborResultByType(sampleParam.getPartKey().getPartitionId(),
-            nodeId2SampleNeighbors);
+            nodeId2SampleNeighbors, sampleParam.getStorageType());
       }
 
       default: {
@@ -53,7 +54,7 @@ public class SampleNeighborByType extends GetFunc {
 
   @Override
   public GetResult merge(List<PartitionGetResult> partResults) {
-    Long2ObjectOpenHashMap<long[]> nodeIdToSampleNeighbors =
+    Long2ObjectOpenHashMap<Neighbor> nodeIdToSampleNeighbors =
         new Long2ObjectOpenHashMap<>(((SampleNeighborParam) param).getNodeIds().length);
 
     for (PartitionGetResult partResult : partResults) {
@@ -61,7 +62,7 @@ public class SampleNeighborByType extends GetFunc {
       PartSampleNeighborResultByType partSampleResult = (PartSampleNeighborResultByType) partResult;
 
       // Neighbors
-      Long2ObjectOpenHashMap<long[]> partNodeIdToSampleNeighbors = partSampleResult
+      Long2ObjectOpenHashMap<Neighbor> partNodeIdToSampleNeighbors = partSampleResult
           .getNodeIdToSampleNeighbors();
       if (partNodeIdToSampleNeighbors != null) {
         nodeIdToSampleNeighbors.putAll(partNodeIdToSampleNeighbors);

@@ -201,7 +201,7 @@ public class ContainerContextUtils {
   @SuppressWarnings("deprecation")
   public static ContainerLaunchContext createContainerLaunchContext(
     Map<ApplicationAccessType, String> applicationACLs, Configuration conf, PSAttemptId psAttemptId,
-    final ApplicationId appid, MasterService masterService, Credentials credentials) {
+    final ApplicationId appid, MasterService masterService, Credentials credentials, ContainerId containerId) {
 
     synchronized (commonContainerSpecLock) {
       if (commonContainerSpec == null) {
@@ -223,7 +223,7 @@ public class ContainerContextUtils {
     ParameterServerJVM.setVMEnv(myEnv, conf);
 
     // Set up the launch command
-    List<String> commands = ParameterServerJVM.getVMCommand(conf, appid, psAttemptId);
+    List<String> commands = ParameterServerJVM.getVMCommand(conf, appid, psAttemptId, containerId);
 
     // Duplicate the ByteBuffers for access by multiple containers.
     Map<String, ByteBuffer> myServiceData = new HashMap<String, ByteBuffer>();

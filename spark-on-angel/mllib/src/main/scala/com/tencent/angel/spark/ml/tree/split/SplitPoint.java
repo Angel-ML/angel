@@ -37,9 +37,17 @@ public class SplitPoint extends SplitEntry {
     return x < fvalue ? 0 : 1;
   }
 
+  public int flowToLessOrEqual(float x) {
+    return x <= fvalue ? 0 : 1;
+  }
+
   @Override
   public int flowTo(Vector x) {
     return x.apply(fid) < fvalue ? 0 : 1;
+  }
+
+  public double distance(Vector x) {
+    return Math.abs(x.apply(fid) - fvalue);
   }
 
   @Override

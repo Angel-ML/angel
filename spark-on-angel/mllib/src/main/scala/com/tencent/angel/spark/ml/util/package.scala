@@ -115,11 +115,6 @@ package object util {
       StructField(DFStruct.FEATURE, new VectorUDT(), false) ::
       Nil)
 
-  val ONE_HOT_INSTANCE_ST = StructType(
-    StructField(DFStruct.LABEL, StringType, false) ::
-      StructField(DFStruct.FEATURE, ArrayType(LongType, containsNull = false), false) ::
-      Nil)
-
   val LIBSVM_ST_ML = StructType(
     StructField(DFStruct.LABEL, DoubleType, false) ::
       StructField(DFStruct.FEATURE, MLVectorType, false) ::
@@ -129,4 +124,25 @@ package object util {
     StructField(DFStruct.ID, StringType, false) ::
       StructField(DFStruct.FEATURE, MLVectorType, false) ::
       Nil)
+
+  val ONE_HOT_INSTANCE_ST = StructType(
+    StructField(DFStruct.LABEL, StringType, false) ::
+      StructField(DFStruct.FEATURE, ArrayType(LongType, containsNull = false), false) ::
+      Nil)
+
+  val ONE_HOT_INSTANCE_ST_INT = StructType(
+    StructField(DFStruct.LABEL, StringType, false) ::
+      StructField(DFStruct.FEATURE, ArrayType(IntegerType, containsNull = false), false) ::
+      Nil)
+
+  val LABELED_ST_ARRAY_DOUBLE = StructType(
+    StructField(DFStruct.LABEL, DoubleType, false) ::
+      StructField(DFStruct.FEATURE, ArrayType(DoubleType, containsNull = false), false) ::
+      Nil)
+
+  val LABELED_PREDICT_ST_ARRAY_DOUBLE = StructType(
+    StructField(DFStruct.ID, StringType, false) ::
+      StructField(DFStruct.FEATURE, ArrayType(DoubleType, containsNull = false), false) ::
+      Nil)
+
 }

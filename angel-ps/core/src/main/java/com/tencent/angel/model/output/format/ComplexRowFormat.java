@@ -105,7 +105,7 @@ public abstract class ComplexRowFormat extends RowBasedFormat {
     }
   }
 
-  private void load(ServerLongAnyRow row, MatrixPartitionMeta partMeta,
+  public void load(ServerLongAnyRow row, MatrixPartitionMeta partMeta,
       PSMatrixLoadContext loadContext, DataInputStream input) throws IOException {
     RowPartitionMeta rowMeta = partMeta.getRowMeta(row.getRowId());
     int elemNum = rowMeta.getElementNum();
@@ -174,7 +174,7 @@ public abstract class ComplexRowFormat extends RowBasedFormat {
     }
   }
 
-  private void save(ServerRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta partMeta, DataOutputStream output)
+  public void save(ServerRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta partMeta, DataOutputStream output)
       throws IOException {
     if(saveContext.cloneFirst()) {
       row = (ServerRow) row.adaptiveClone();
@@ -193,19 +193,13 @@ public abstract class ComplexRowFormat extends RowBasedFormat {
     }
   }
 
-  public void save(long key, IElement value, DataOutputStream output) throws IOException {
+  public abstract void save(long key, IElement value, DataOutputStream output) throws IOException;
 
-  }
+  public abstract void save(String key, IElement value, DataOutputStream output) throws IOException;
 
-  public void save(String key, IElement value, DataOutputStream output) throws IOException {
+  public abstract void save(IElement key, IElement value, DataOutputStream output) throws IOException;
 
-  }
-
-  public void save(IElement key, IElement value, DataOutputStream output) throws IOException {
-
-  }
-
-  private void save(ServerLongAnyRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta partMeta, DataOutputStream output)
+  public void save(ServerLongAnyRow row, PSMatrixSaveContext saveContext, MatrixPartitionMeta partMeta, DataOutputStream output)
       throws IOException {
     LongElementStorage storage = row.getStorage();
     ObjectIterator<Long2ObjectMap.Entry<IElement>> iter = storage

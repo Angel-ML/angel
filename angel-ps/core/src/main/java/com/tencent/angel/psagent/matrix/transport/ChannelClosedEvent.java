@@ -30,13 +30,29 @@ public class ChannelClosedEvent extends DispatcherEvent {
   private final Channel channel;
 
   /**
+   * Best-effort close reason for diagnostics.
+   */
+  private final String reason;
+
+  /**
    * Create a ChannelClosedEvent.
    *
    * @param channel the channel need to be closed
    */
   public ChannelClosedEvent(Channel channel) {
+    this(channel, "unknown");
+  }
+
+  /**
+   * Create a ChannelClosedEvent.
+   *
+   * @param channel the channel need to be closed
+   * @param reason close reason for diagnostics
+   */
+  public ChannelClosedEvent(Channel channel, String reason) {
     super(EventType.CHANNEL_CLOSED);
     this.channel = channel;
+    this.reason = reason == null ? "unknown" : reason;
   }
 
   /**
@@ -47,4 +63,12 @@ public class ChannelClosedEvent extends DispatcherEvent {
   public Channel getChannel() {
     return channel;
   }
+
+  /**
+   * Get channel close reason.
+   */
+  public String getReason() {
+    return reason;
+  }
 }
+

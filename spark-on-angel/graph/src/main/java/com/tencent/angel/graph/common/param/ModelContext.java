@@ -7,9 +7,14 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 
 public class ModelContext implements Serializable {
+
+  private static final Log LOG = LogFactory.getLog(ModelContext.class);
+
   private final int partitionNum;
   private final long minNodeId;
   private final long maxNodeId;
@@ -17,8 +22,13 @@ public class ModelContext implements Serializable {
   private final String modelName;
   private final Properties conf;
 
-  public ModelContext(int partitionNum, long minNodeId, long maxNodeId, long nodeNum, String modelName,
+  public ModelContext(int partitionNum, long minNodeId, long maxNodeId, long nodeNum,
       Configuration hadoopConf) {
+    this(partitionNum, minNodeId, maxNodeId, nodeNum, "", hadoopConf);
+  }
+
+  public ModelContext(int partitionNum, long minNodeId, long maxNodeId, long nodeNum,
+      String modelName, Configuration hadoopConf) {
     this.partitionNum = partitionNum;
     this.minNodeId = minNodeId;
     this.maxNodeId = maxNodeId;
@@ -26,10 +36,12 @@ public class ModelContext implements Serializable {
     this.modelName = modelName;
     this.conf = new Properties();
     Iterator<Entry<String, String>> iter = hadoopConf.iterator();
-    while(iter.hasNext()) {
+    while (iter.hasNext()) {
       Entry<String, String> kv = iter.next();
       conf.setProperty(kv.getKey(), kv.getValue());
     }
+
+    LOG.info("Create model context success, details :" + toString());
   }
 
   public int getPartitionNum() {
@@ -70,7 +82,7 @@ public class ModelContext implements Serializable {
 
   private boolean getBoolean(String key, boolean defaultValue) {
     String value = conf.getProperty(key);
-    if(key == null) {
+    if (key == null) {
       return defaultValue;
     }
 
@@ -79,7 +91,7 @@ public class ModelContext implements Serializable {
 
   private int getInt(String key, int defaultValue) {
     String value = conf.getProperty(key);
-    if(key == null) {
+    if (key == null) {
       return defaultValue;
     }
 
@@ -106,7 +118,7 @@ public class ModelContext implements Serializable {
   public Configuration getHadoopConf() {
     Configuration hadoopConf = new Configuration();
     Set<String> keyNames = conf.stringPropertyNames();
-    for(String keyName : keyNames) {
+    for (String keyName : keyNames) {
       hadoopConf.set(keyName, conf.getProperty(keyName));
     }
     return hadoopConf;
@@ -118,5 +130,18 @@ public class ModelContext implements Serializable {
 
   public Properties getConf() {
     return conf;
+  }
+
+  @Override
+  public String toString() {
+    return "ModelContext{" +
+        "partitionNum=" + partitionNum +
+        ", minNodeId=" + minNodeId +
+        ", maxNodeId=" + maxNodeId +
+        ", nodeNum=" + nodeNum +
+        ", modelName='" + modelName + '\'' +
+        ", router type=" + conf
+        .getProperty(AngelConf.ANGEL_PS_ROUTER_TYPE, AngelConf.DEFAULT_ANGEL_PS_ROUTER_TYPE) +
+        '}';
   }
 }

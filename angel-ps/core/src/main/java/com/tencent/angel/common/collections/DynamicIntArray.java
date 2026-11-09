@@ -61,9 +61,7 @@ public class DynamicIntArray extends DynamicArray {
       }
 
       // Last batch
-      for (int i = 0; i < currentBatchPos; i++) {
-        System.arraycopy(currentBatch, 0, data, offset, currentBatchPos);
-      }
+      System.arraycopy(currentBatch, 0, data, offset, currentBatchPos);
     }
     return data;
   }
@@ -89,11 +87,13 @@ public class DynamicIntArray extends DynamicArray {
   @Override
   public void deserialize(ByteBuf in) {
     data = ByteBufSerdeUtils.deserializeInts(in);
+    deserializedSize = data.length;
   }
 
   @Override
   public int bufferLen() {
-    return ByteBufSerdeUtils.serializedIntLen(0) * (batchSize * currentBatchIndex
+    return ByteBufSerdeUtils.INT_LENGTH
+        + ByteBufSerdeUtils.serializedIntLen(0) * (batchSize * currentBatchIndex
         + currentBatchPos);
   }
 }

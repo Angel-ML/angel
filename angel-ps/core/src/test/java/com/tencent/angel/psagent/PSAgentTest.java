@@ -118,7 +118,7 @@ public class PSAgentTest {
 
       // add matrix
       MatrixContext mMatrix = new MatrixContext();
-      mMatrix.setName("w1");
+      mMatrix.setName("PSAgentTest_w1");
       mMatrix.setRowNum(1);
       mMatrix.setColNum(100000);
       mMatrix.setMaxRowNumInBlock(1);
@@ -132,7 +132,7 @@ public class PSAgentTest {
       angelClient.addMatrix(mMatrix);
 
       MatrixContext mMatrix2 = new MatrixContext();
-      mMatrix2.setName("w2");
+      mMatrix2.setName("PSAgentTest_w2");
       mMatrix2.setRowNum(1);
       mMatrix2.setColNum(100000);
       mMatrix2.setMaxRowNumInBlock(1);
@@ -175,8 +175,8 @@ public class PSAgentTest {
       Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
 
       PSAgentMatrixMetaManager matrixMetaManager = worker.getPSAgent().getMatrixMetaManager();
-      int w1Id = matrixMetaManager.getMatrixId("w1");
-      int w2Id = matrixMetaManager.getMatrixId("w2");
+      int w1Id = matrixMetaManager.getMatrixId("PSAgentTest_w1");
+      int w2Id = matrixMetaManager.getMatrixId("PSAgentTest_w2");
 
       MasterClient masterClient = worker.getPSAgent().getMasterClient();
       assertTrue(masterClient != null);
@@ -334,12 +334,12 @@ public class PSAgentTest {
       assertEquals(matrixMetaManager.getMatrixMetas().size(), 2);
 
       // test all matrix names
-      assertNotNull(matrixMetaManager.getMatrixMeta("w1"));
-      assertNotNull(matrixMetaManager.getMatrixMeta("w2"));
+      assertNotNull(matrixMetaManager.getMatrixMeta("PSAgentTest_w1"));
+      assertNotNull(matrixMetaManager.getMatrixMeta("PSAgentTest_w2"));
 
       // test matrix attribute
-      int matrixId1 = matrixMetaManager.getMatrixId("w1");
-      int matrixId2 = matrixMetaManager.getMatrixId("w2");
+      int matrixId1 = matrixMetaManager.getMatrixId("PSAgentTest_w1");
+      int matrixId2 = matrixMetaManager.getMatrixId("PSAgentTest_w2");
       String hogwildAttr =
         matrixMetaManager.getMatrixMeta(matrixId1).getAttribute(MatrixConf.MATRIX_HOGWILD, "true");
       assertEquals(hogwildAttr, "true");
@@ -349,16 +349,16 @@ public class PSAgentTest {
 
       int matrix1Id =
         LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager()
-          .getMatrix("w1").getId();
+          .getMatrix("PSAgentTest_w1").getId();
       int matrix2Id =
         LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager()
-          .getMatrix("w2").getId();
+          .getMatrix("PSAgentTest_w2").getId();
 
       // test matrix meta
       MatrixMeta matrixMetaById = matrixMetaManager.getMatrixMeta(matrix1Id);
-      MatrixMeta matrixMetaByName = matrixMetaManager.getMatrixMeta("w1");
+      MatrixMeta matrixMetaByName = matrixMetaManager.getMatrixMeta("PSAgentTest_w1");
       assertEquals(matrixMetaById, matrixMetaByName);
-      assertEquals(matrixMetaById.getName(), "w1");
+      assertEquals(matrixMetaById.getName(), "PSAgentTest_w1");
       assertEquals(matrixMetaById.getRowNum(), 1);
       assertEquals(matrixMetaById.getColNum(), 100000);
       assertEquals(matrixMetaById.getRowType(), RowType.T_DOUBLE_DENSE);
@@ -402,10 +402,10 @@ public class PSAgentTest {
 
       int matrix1Id =
         LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager()
-          .getMatrix("w1").getId();
+          .getMatrix("PSAgentTest_w1").getId();
       int matrix2Id =
         LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMatrixMetaManager()
-          .getMatrix("w2").getId();
+          .getMatrix("PSAgentTest_w2").getId();
 
       // test partitions
       List<PartitionKey> partition1Keys = matrixPartitionRouter.getPartitions(matrix1Id);

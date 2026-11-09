@@ -44,6 +44,7 @@ public class StreamSerdeUtils {
   public static final int BOOLEN_LENGTH = 1;
   public static final int BYTE_LENGTH = 1;
   public static final int CHAR_LENGTH = 2;
+  public static final int SHORT_LENGTH = 2;
   public static final int INT_LENGTH = 4;
   public static final int LONG_LENGTH = 8;
   public static final int FLOAT_LENGTH = 4;
@@ -89,6 +90,20 @@ public class StreamSerdeUtils {
 
   public static int serializedCharLen(char value) {
     return CHAR_LENGTH;
+  }
+
+  // =======================================================
+  // Short
+  public static void serializeShort(DataOutputStream out, short value) throws IOException {
+    out.writeShort(value);
+  }
+
+  public static short deserializeShort(DataInputStream in) throws IOException {
+    return in.readShort();
+  }
+
+  public static int serializedShortLen(short value) {
+    return SHORT_LENGTH;
   }
 
   // =======================================================
@@ -218,6 +233,52 @@ public class StreamSerdeUtils {
   }
 
   // =======================================================
+  // Short array
+  public static void serializeShorts(DataOutputStream out, short[] values, int start, int end)
+          throws IOException {
+    if (values == null) {
+      serializeInt(out, 0);
+    } else {
+      if (start < 0 || end > values.length || start > end) {
+        throw new IllegalArgumentException("Invalid start or end parameters");
+      }
+      serializeInt(out, end - start);
+      for (int i = start; i < end; i++) {
+        serializeShort(out, values[i]);
+      }
+    }
+  }
+
+  public static void serializeShorts(DataOutputStream out, short[] values) throws IOException {
+    if(values == null) {
+      serializeInt(out, 0);
+    } else {
+      serializeShorts(out, values, 0, values.length);
+    }
+  }
+
+  public static short[] deserializeShorts(DataInputStream in) throws IOException {
+    int len = in.readInt();
+    short[] values = new short[len];
+    for (int i = 0; i < len; i++) {
+      values[i] = deserializeShort(in);
+    }
+    return values;
+  }
+
+  public static int serializedShortsLen(short[] values, int start, int end) {
+    return INT_LENGTH + (end - start) * SHORT_LENGTH;
+  }
+
+  public static int serializedShortsLen(short[] values) {
+    if (values == null) {
+      return INT_LENGTH;
+    } else {
+      return serializedShortsLen(values, 0, values.length);
+    }
+  }
+
+  // =======================================================
   // Int array
   public static void serializeInts(DataOutputStream out, int[] values, int start, int end)
       throws IOException {
@@ -306,7 +367,7 @@ public class StreamSerdeUtils {
   // =======================================================
   // Float array
   public static void serializeFloats(DataOutputStream out, float[] values, int start, int end)
-          throws IOException {
+      throws IOException {
     if (values == null) {
       serializeInt(out, 0);
     } else {

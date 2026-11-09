@@ -18,9 +18,10 @@ package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.graph.rank.pagerank.edgecut.{PageRank => EdgeCutPageRank}
-import com.tencent.angel.graph.rank.pagerank.vertexcut.{PageRank => VertexCutPageRank}
-import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
+import com.tencent.angel.spark.ml.graph.algo.rank.pagerank.edgecut.{PageRank => PageRank3}
+import com.tencent.angel.spark.ml.graph.algo.rank.pagerank.vertexcut.{PageRank => PageRank4}
+import com.tencent.angel.spark.ml.graph.utils.GraphIO
+import com.tencent.angel.spark.ml.util.DataStatistics
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
@@ -33,9 +34,9 @@ object PageRankExample {
     val sc = start(mode)
 
     val input = params.getOrElse("input", "")
-    val partitionNum = params.getOrElse("dataPartitionNum", "100").toInt
+    val partitionNum = params.getOrElse("partitionNum", "100").toInt
     val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
-    val output = params.getOrElse("output", "")
+    val output = params.getOrElse("output", null)
     val psPartitionNum = params.getOrElse("psPartitionNum",
       sc.getConf.get("spark.ps.instances", "10")).toInt
     val tol = params.getOrElse("tol", "0.01").toFloat
@@ -49,6 +50,7 @@ object PageRankExample {
     val version = params.getOrElse("version", "edge-cut")
     val numBatch = params.getOrElse("numBatch", "1").toInt
     val batchSize = params.getOrElse("batchSize", "1000").toInt
+    val useComputeRankTwo = params.getOrElse("useComputeRankTwo", "false").toBoolean
 
     val sep = params.getOrElse("sep", "space") match {
       case "space" => " "
@@ -61,13 +63,22 @@ object PageRankExample {
       srcIndex = srcIndex, dstIndex = dstIndex,
       weightIndex = weightIndex, sep = sep)
 
+    //collect app name and data size
+    val name = if (version == "edge-cut")
+      "com.tencent.angel.spark.ml.graph.algo.rank.pagerank.edgecut.PageRank"
+    else "com.tencent.angel.spark.ml.graph.algo.rank.pagerank.vertexcut.PageRank"
+    DataStatistics.setAppName(name)
+    DataStatistics.calcRDDSize(edges, "angel.input.data")
+    DataStatistics.setDataPartitionNum(partitionNum)
+    DataStatistics.setPSPartitionNum(psPartitionNum)
+
     val ranks = version match {
       case "edge-cut" => edgeCutPageRank(edges, partitionNum, psPartitionNum,
         storageLevel, tol, resetProp, isWeight,
-        useBalancePartition, balancePartitionPercent, numBatch, batchSize)
+        useBalancePartition, balancePartitionPercent, numBatch, batchSize, useComputeRankTwo)
       case "vertex-cut" => vertexCutPageRank(edges, partitionNum, psPartitionNum,
         storageLevel, tol, resetProp, isWeight,
-        useBalancePartition, balancePartitionPercent, numBatch, batchSize)
+        useBalancePartition, balancePartitionPercent, numBatch, batchSize, useComputeRankTwo)
     }
 
     GraphIO.save(ranks, output)
@@ -79,8 +90,9 @@ object PageRankExample {
                         storageLevel: StorageLevel,
                         tol: Float, resetProb: Float, isWeighted: Boolean,
                         useBalancePartition: Boolean,
-                        balancePartitionPercent: Float, numBatch: Int,  batchSize: Int): DataFrame = {
-    val pageRank = new VertexCutPageRank()
+                        balancePartitionPercent: Float, numBatch: Int, batchSize: Int,
+                        useComputeRankTwo: Boolean): DataFrame = {
+    val pagerank = new PageRank4()
       .setPartitionNum(partitionNum)
       .setStorageLevel(storageLevel)
       .setPSPartitionNum(psPartitionNum)
@@ -91,7 +103,8 @@ object PageRankExample {
       .setBalancePartitionPercent(balancePartitionPercent)
       .setNumBatch(numBatch)
       .setBatchSize(batchSize)
-    pageRank.transform(edges)
+    pagerank.setUseComputeRankTwo(useComputeRankTwo)
+    pagerank.transform(edges)
   }
 
   def edgeCutPageRank(edges: DataFrame, partitionNum: Int,
@@ -99,8 +112,9 @@ object PageRankExample {
                       storageLevel: StorageLevel,
                       tol: Float, resetProb: Float, isWeighted: Boolean,
                       useBalancePartition: Boolean,
-                      balancePartitionPercent: Float, numBatch: Int, batchSize: Int): DataFrame = {
-    val pageRank = new EdgeCutPageRank()
+                      balancePartitionPercent: Float, numBatch: Int, batchSize: Int,
+                      useComputeRankTwo: Boolean): DataFrame = {
+    val pagerank = new PageRank3()
       .setPartitionNum(partitionNum)
       .setStorageLevel(storageLevel)
       .setPSPartitionNum(psPartitionNum)
@@ -111,14 +125,25 @@ object PageRankExample {
       .setBalancePartitionPercent(balancePartitionPercent)
       .setNumBatch(numBatch)
       .setBatchSize(batchSize)
-    pageRank.transform(edges)
+    pagerank.setUseComputeRankTwo(useComputeRankTwo)
+    pagerank.transform(edges)
   }
+
 
   def start(mode: String): SparkContext = {
     val conf = new SparkConf()
+
+    // Add jvm parameters for executors
+    var executorJvmOptions = conf.get("spark.executor.extraJavaOptions")
+    //executorJvmOptions += " -XX:+UseG1GC -XX:MaxGCPauseMillis=1000 -XX:G1HeapRegionSize=32M " +
+    //  "-XX:InitiatingHeapOccupancyPercent=50 -XX:ConcGCThreads=4 -XX:ParallelGCThreads=4 "
+    //conf.set("spark.executor.extraJavaOptions", executorJvmOptions)
+    println(s"executorJvmOptions = ${executorJvmOptions}")
+
     conf.setMaster(mode)
     conf.setAppName("PageRank")
     val sc = new SparkContext(conf)
+    //PSContext.getOrCreate(sc)
     sc
   }
 

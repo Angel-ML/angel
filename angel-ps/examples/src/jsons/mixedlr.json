@@ -1,0 +1,42 @@
+{
+  "default_optimizer": {
+    "type": "momentum",
+    "momentum": 0.9,
+    "reg2": 0.01
+  },
+  "layers": [
+    {
+      "name": "sigmoid",
+      "type": "simpleinputlayer",
+      "outputdim": 10,
+      "transfunc": "sigmoid"
+    },
+    {
+      "name": "softmax",
+      "type": "simpleinputlayer",
+      "outputdim": 10,
+      "transfunc": "softmax"
+    },
+    {
+      "name": "dotpooling",
+      "type": "dotpooling",
+      "outputdim": 1,
+      "inputlayers": [
+        "sigmoid",
+        "softmax"
+      ]
+    },
+    {
+      "name": "simplelosslayer",
+      "type": "simplelosslayer",
+      "lossfunc": "CrossEntropyLoss",
+      "inputlayer": "dotpooling"
+    }
+  ],
+  "data": {
+    "format": "dummy",
+    "indexrange": 148,
+    "numfield": 13,
+    "validateratio": 0.1
+  }
+}

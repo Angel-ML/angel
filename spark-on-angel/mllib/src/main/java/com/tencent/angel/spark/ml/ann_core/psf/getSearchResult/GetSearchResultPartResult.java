@@ -1,7 +1,7 @@
 package com.tencent.angel.spark.ml.ann_core.psf.getSearchResult;
 
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
-import com.tencent.angel.graph.data.NeighborDistance;
+import com.tencent.angel.spark.ml.ann_core.NeighborDistance;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;

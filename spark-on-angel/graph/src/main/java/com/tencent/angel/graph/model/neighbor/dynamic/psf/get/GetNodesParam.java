@@ -18,9 +18,14 @@ package com.tencent.angel.graph.model.neighbor.dynamic.psf.get;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.matrix.MatrixMeta;
+import com.tencent.angel.ml.matrix.psf.get.base.GeneralPartGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.psagent.PSAgentContext;
+import com.tencent.angel.psagent.matrix.transport.router.KeyPart;
+import com.tencent.angel.psagent.matrix.transport.router.RouterUtils;
+import com.tencent.angel.psagent.matrix.transport.router.hash.HashLongKeysPart;
+import com.tencent.angel.psagent.matrix.transport.router.range.RangeViewLongKeysPart;
 
 import java.util.ArrayList;
 import java.util.List;

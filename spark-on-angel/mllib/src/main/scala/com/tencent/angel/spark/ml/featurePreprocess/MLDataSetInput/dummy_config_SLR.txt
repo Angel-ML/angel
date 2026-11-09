@@ -1,0 +1,40 @@
+{
+  "fields": [
+    {
+      "name": "target",
+      "index": "4"
+    },
+    {
+      "name": "f0",
+      "index": "0"
+    },
+    {
+      "name": "f1",
+      "index": "1"
+    },
+    {
+      "name": "f2",
+      "index": "2"
+    },
+    {
+      "name": "f3",
+      "index": "3"
+    }
+  ],
+  "feature_cross": {
+    "id_features": [
+      {
+        "name": "f0"
+      },
+      {
+        "name": "f1"
+      },
+      {
+        "name": "f2"
+      },
+      {
+        "name": "f3"
+      }
+    ]
+  }
+}

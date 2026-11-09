@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.ps;
 
 import com.google.protobuf.ServiceException;
@@ -24,6 +25,7 @@ import com.tencent.angel.common.AngelEnvironment;
 import com.tencent.angel.common.location.Location;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.matrix.committer.SaveResult;
+import com.tencent.angel.ps.metrics.AngelPSAdsMetricsService;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.PartitionMeta;
 import com.tencent.angel.model.PSMatricesLoadContext;
@@ -47,29 +49,37 @@ import com.tencent.angel.ps.io.load.SnapshotRecover;
 import com.tencent.angel.ps.io.save.PSModelSaver;
 import com.tencent.angel.ps.io.save.SnapshotDumper;
 import com.tencent.angel.ps.meta.PSMatrixMetaManager;
+import com.tencent.angel.ps.metrics.AngelPSMetricsService;
 import com.tencent.angel.ps.server.control.ParameterServerService;
 import com.tencent.angel.ps.server.data.MatrixTransportServer;
 import com.tencent.angel.ps.server.data.PSFailedReport;
 import com.tencent.angel.ps.server.data.RunningContext;
 import com.tencent.angel.ps.server.data.WorkerPool;
+import com.tencent.angel.ps.server.data.profiling.MatrixTransportServerMetrics;
 import com.tencent.angel.ps.storage.MatrixStorageManager;
 import com.tencent.angel.ps.storage.matrix.ServerMatrix;
 import com.tencent.angel.ps.storage.partition.ServerPartition;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.UnknownHostException;
+
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.util.ShutdownHookManager;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 
@@ -80,6 +90,7 @@ import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 public class ParameterServer {
 
   private static final Log LOG = LogFactory.getLog(ParameterServer.class);
+  public static final int SHUTDOWN_HOOK_PRIORITY = 30;
 
   /**
    * PS context
@@ -183,12 +194,40 @@ public class ParameterServer {
 
   private volatile RunningContext runningContext;
 
+  private volatile AngelPSMetricsService metricsService;
+
   private final PSFailedReport psFailedReport;
+
+  private volatile AngelPSAdsMetricsService adsMetricsService;
 
   private static final AtomicInteger runningWorkerGroupNum = new AtomicInteger(0);
   private static final AtomicInteger runningWorkerNum = new AtomicInteger(0);
   private static final AtomicInteger runningTaskNum = new AtomicInteger(0);
   private static final AtomicInteger heartbeatCount = new AtomicInteger(0);
+
+  /**
+   * Port-check interval in heartbeat thread, defaulting to 30 * default heartbeat interval.
+   */
+  private volatile long portCheckIntervalMs =
+      30L * AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_INTERVAL_MS;
+
+  /**
+   * Last successful attempt timestamp of the best-effort heartbeat port check.
+   */
+  private final AtomicLong lastPortCheckTs = new AtomicLong(0L);
+
+  /**
+   * Interval of the RPC-queue backlog log emitted from the heartbeat thread. Kept much
+   * shorter than the port check (backlog changes fast and is the thing one watches while a
+   * job looks stuck), but still throttled so a 1s heartbeat does not spam the log.
+   */
+  private volatile long rpcQueueLogIntervalMs =
+      3L * AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_INTERVAL_MS;
+
+  /**
+   * Last emit timestamp of the heartbeat RPC-queue log.
+   */
+  private final AtomicLong lastRpcQueueLogTs = new AtomicLong(0L);
 
   public static int getRunningWorkerGroupNum() {
     return runningWorkerGroupNum.get();
@@ -224,7 +263,7 @@ public class ParameterServer {
    * @param conf the conf
    */
   public ParameterServer(int serverIndex, int attemptIndex, String appMasterHost, int appMasterPort,
-                         Configuration conf) {
+      Configuration conf) {
     this.attemptId = new PSAttemptId(new ParameterServerId(serverIndex), attemptIndex);
     this.attemptIdProto = ProtobufUtil.convertToIdProto(attemptId);
     this.attemptIndex = attemptIndex;
@@ -316,6 +355,16 @@ public class ParameterServer {
         runningContext = null;
       }
 
+      if (metricsService != null) {
+        metricsService.stop();
+        metricsService = null;
+      }
+
+      if (adsMetricsService != null) {
+        adsMetricsService.stop();
+        adsMetricsService = null;
+      }
+
       AngelServiceLoader.stopService();
       exit(exitCode);
     }
@@ -323,12 +372,14 @@ public class ParameterServer {
 
   private void exit(int code) {
     AngelDeployMode deployMode = context.getDeployMode();
-    if (deployMode == AngelDeployMode.YARN) {
+    if (deployMode == AngelDeployMode.YARN || deployMode == AngelDeployMode.STANDALONE) {
       System.exit(code);
     }
   }
 
   public static void main(String[] argv) {
+    AngelPSShutdownHook hook = null;
+
     LOG.info("Starting Parameter Server");
     int serverIndex = Integer.valueOf(System.getenv(AngelEnvironment.PARAMETERSERVER_ID.name()));
     String appMasterHost = System.getenv(AngelEnvironment.LISTEN_ADDR.name());
@@ -340,27 +391,31 @@ public class ParameterServer {
     conf.addResource(AngelConf.ANGEL_JOB_CONF_FILE);
 
     conf.setInt("io.file.buffer.size", conf.getInt(AngelConf.ANGEL_PS_IO_FILE_BUFFER_SIZE,
-            AngelConf.DEFAULT_ANGEL_PS_IO_FILE_BUFFER_SIZE));
+        AngelConf.DEFAULT_ANGEL_PS_IO_FILE_BUFFER_SIZE));
 
     String user = System.getenv(ApplicationConstants.Environment.USER.name());
     UserGroupInformation.setConfiguration(conf);
 
     String runningMode =
-            conf.get(AngelConf.ANGEL_RUNNING_MODE, AngelConf.DEFAULT_ANGEL_RUNNING_MODE);
+        conf.get(AngelConf.ANGEL_RUNNING_MODE, AngelConf.DEFAULT_ANGEL_RUNNING_MODE);
     if (runningMode.equals(RunningMode.ANGEL_PS_WORKER.toString())) {
       LOG.debug("AngelEnvironment.TASK_NUMBER.name()=" + AngelEnvironment.TASK_NUMBER.name());
       conf.set(AngelConf.ANGEL_TASK_ACTUAL_NUM, System.getenv(AngelEnvironment.TASK_NUMBER.name()));
     }
 
     final ParameterServer psServer =
-            new ParameterServer(serverIndex, attemptIndex, appMasterHost, appMasterPort, conf);
+        new ParameterServer(serverIndex, attemptIndex, appMasterHost, appMasterPort, conf);
 
     try {
       Credentials credentials = UserGroupInformation.getCurrentUser().getCredentials();
       UserGroupInformation psUGI = UserGroupInformation
-              .createRemoteUser(System.getenv(ApplicationConstants.Environment.USER.toString()));
+          .createRemoteUser(System.getenv(ApplicationConstants.Environment.USER.toString()));
       // Add tokens to new user so that it may execute its task correctly.
       psUGI.addCredentials(credentials);
+
+      // add a shutdown hook
+      hook = new AngelPSShutdownHook(psServer);
+      ShutdownHookManager.get().addShutdownHook(hook, SHUTDOWN_HOOK_PRIORITY);
 
       psUGI.doAs(new PrivilegedExceptionAction<Object>() {
         @Override
@@ -437,19 +492,19 @@ public class ParameterServer {
   public void initialize() throws IOException, InstantiationException, IllegalAccessException {
     LOG.info("Initialize a parameter server");
     ServerRow.maxLockWaitTimeMs = conf.getInt(AngelConf.ANGEL_PS_MAX_LOCK_WAITTIME_MS,
-            AngelConf.DEFAULT_ANGEL_PS_MAX_LOCK_WAITTIME_MS);
+        AngelConf.DEFAULT_ANGEL_PS_MAX_LOCK_WAITTIME_MS);
 
     ServerRow.useAdaptiveKey = conf.getBoolean(AngelConf.ANGEL_PS_USE_ADAPTIVE_KEY_ENABLE,
-            AngelConf.DEFAULT_ANGEL_PS_USE_ADAPTIVE_KEY_ENABLE);
+        AngelConf.DEFAULT_ANGEL_PS_USE_ADAPTIVE_KEY_ENABLE);
 
     ServerRow.useAdaptiveStorage = conf.getBoolean(AngelConf.ANGEL_PS_USE_ADAPTIVE_STORAGE_ENABLE,
-            AngelConf.DEFAULT_ANGEL_PS_USE_ADAPTIVE_STORAGE_ENABLE);
+        AngelConf.DEFAULT_ANGEL_PS_USE_ADAPTIVE_STORAGE_ENABLE);
 
     ServerRow.sparseToDenseFactor = conf.getFloat(AngelConf.ANGEL_PS_SPARSE_TO_DENSE_FACTOR,
-            AngelConf.DEFAULT_ANGEL_PS_SPARSE_TO_DENSE_FACTOR);
+        AngelConf.DEFAULT_ANGEL_PS_SPARSE_TO_DENSE_FACTOR);
 
     dataCollectionInterval = conf.getInt(AngelConf.ANGEL_PS_HEARTBEAT_DATA_COLLECTION_INTERVAL,
-            AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_DATA_COLLECTION_INTERVAL);
+        AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_DATA_COLLECTION_INTERVAL);
 
     locationManager = new PSLocationManager(context);
     locationManager.setMasterLocation(masterLocation);
@@ -470,18 +525,52 @@ public class ParameterServer {
     psServerService = new ParameterServerService(context);
     psServerService.start();
     matrixTransportServer = new MatrixTransportServer(getPort() + 1, context);
+    // The data port has been held since the control port was chosen; the transport server
+    // releases the reservation right before it binds (see MatrixTransportServer#start).
+    matrixTransportServer.setPortReservation(psServerService.getPortReservation());
 
     saver = new PSModelSaver(context);
     loader = new PSModelLoader(context);
 
     snapshotDumper = new SnapshotDumper(context);
+
+    metricsService = new AngelPSMetricsService(context);
+
+    // The PS resource metrics reporter needs a user supplied backend implementation,
+    // so only construct it when explicitly enabled.
+    if (conf.getBoolean(AngelConf.ANGEL_METRICS_ADS_ENABLE,
+        AngelConf.DEFAULT_ANGEL_METRICS_ADS_ENABLE)) {
+      adsMetricsService = new AngelPSAdsMetricsService(context);
+    } else {
+      LOG.info(AngelConf.ANGEL_METRICS_ADS_ENABLE
+          + " is false, skip AngelPSAdsMetricsService initialization.");
+    }
   }
 
   private void startHeartbeat() {
     final int heartbeatInterval = conf.getInt(AngelConf.ANGEL_PS_HEARTBEAT_INTERVAL_MS,
-            AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_INTERVAL_MS);
-    LOG.info("Starting HeartbeatThread, interval is " + heartbeatInterval + " ms");
+        AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_INTERVAL_MS);
+    portCheckIntervalMs = Math.max(heartbeatInterval, heartbeatInterval * 30L);
+    rpcQueueLogIntervalMs = Math.max(heartbeatInterval, heartbeatInterval * 3L);
+    // Only STANDALONE PSes monitor consecutive heartbeat failures and self-exit on
+    // master loss: under YARN the RM restarts the AM, and under LOCAL/EMBEDDED the PS
+    // shares the JVM with the AM so this code path is moot.
+    final boolean monitorMasterLoss =
+        context.getDeployMode() == AngelDeployMode.STANDALONE;
+    final int maxConsecutiveFailures = conf.getInt(
+        AngelConf.ANGEL_PS_HEARTBEAT_FAILURE_TOLERATE_COUNT,
+        AngelConf.DEFAULT_ANGEL_PS_HEARTBEAT_FAILURE_TOLERATE_COUNT);
+    LOG.info("Starting HeartbeatThread, interval is " + heartbeatInterval + " ms"
+        + ", port-check interval is " + portCheckIntervalMs + " ms"
+        + ", rpc-queue log interval is " + rpcQueueLogIntervalMs + " ms"
+        + (monitorMasterLoss
+            ? ", master-loss tolerate count = " + maxConsecutiveFailures
+            : ""));
     heartbeatThread = new Thread(() -> {
+      // Number of consecutive heartbeat() invocations that have raised an exception.
+      // Reset to zero on every successful heartbeat. Used (in STANDALONE only) to
+      // self-exit when the master has been unreachable for too long.
+      int consecutiveFailures = 0;
       while (!stopped.get() && !Thread.currentThread().isInterrupted()) {
         try {
           Thread.sleep(heartbeatInterval);
@@ -495,12 +584,34 @@ public class ParameterServer {
         try {
           if (!stopped.get()) {
             heartbeat();
+            consecutiveFailures = 0;
           }
         } catch (YarnRuntimeException e) {
           LOG.error("Error communicating with AM: " + e.getMessage(), e);
           return;
         } catch (Exception e) {
           LOG.error("ERROR IN CONTACTING RM. ", e);
+          if (monitorMasterLoss && maxConsecutiveFailures > 0) {
+            consecutiveFailures++;
+            if (consecutiveFailures >= maxConsecutiveFailures) {
+              // The master appears to be gone. In STANDALONE there is no external
+              // supervisor to bring it back, so leaving the PS as an orphan would only
+              // hold the listening port and matrix memory hostage. Self-exit so the
+              // operator can bring up a clean cluster again.
+              LOG.fatal("PS heartbeat to master failed " + consecutiveFailures
+                  + " times in a row (>= " + maxConsecutiveFailures
+                  + "). Treating master as lost; STANDALONE PS will exit now.");
+              // Spawn the shutdown on a separate thread: ParameterServer.stop() joins
+              // this very heartbeat thread, which would deadlock if invoked inline.
+              final int failedCount = consecutiveFailures;
+              Thread killer = new Thread(() ->
+                  failed("master lost: " + failedCount + " consecutive heartbeat failures"),
+                  "ps-master-loss-killer");
+              killer.setDaemon(true);
+              killer.start();
+              return;
+            }
+          }
         }
       }
     });
@@ -529,8 +640,8 @@ public class ParameterServer {
       if (context.getPartReplication() > 1) {
         for (PartitionMeta part : matrix.getPartitionMetas().values()) {
           partBuilder.setPartId(part.getPartId()).setStatus(
-                  context.getMatrixStorageManager().getPart(matrix.getId(), part.getPartId()).getState()
-                          .getNumber());
+              context.getMatrixStorageManager().getPart(matrix.getId(), part.getPartId()).getState()
+                  .getNumber());
           matrixBuilder.addPartReports(partBuilder.build());
         }
       }
@@ -541,17 +652,20 @@ public class ParameterServer {
   }
 
   private void heartbeat() throws Exception {
+    checkPortsInHeartbeat();
+    logRpcQueueInHeartbeat();
+
     PSReportRequest.Builder builder = PSReportRequest.newBuilder();
     builder.setPsAttemptId(attemptIdProto);
 
-
     if (heartbeatCount.incrementAndGet() % dataCollectionInterval == 0) {
+
       //calculate data size of all partitions of ps
-      Map<Integer,ServerMatrix> serverMatrixMap = matrixStorageManager.getMatrices();
+      Map<Integer, ServerMatrix> serverMatrixMap = matrixStorageManager.getMatrices();
       long dataSize = 0;
-      for(ServerMatrix serverMatrix : serverMatrixMap.values()) {
+      for (ServerMatrix serverMatrix : serverMatrixMap.values()) {
         Map<Integer, ServerPartition> partitions = serverMatrix.getPartitions();
-        for (ServerPartition partition: partitions.values()) {
+        for (ServerPartition partition : partitions.values()) {
           dataSize += partition.dataSize();
         }
       }
@@ -563,18 +677,18 @@ public class ParameterServer {
 
       // totalRPC
       pairBuilder.setKey("totalRPC");
-      pairBuilder.setValue(WorkerPool.total.toString());
+      pairBuilder.setValue(String.format("%d", runningContext.getTotalRPCCounter()));
       builder.addMetrics(pairBuilder.build());
 
       // request size
       pairBuilder.setKey("requestSize");
       pairBuilder.setValue(
-              String.format("%.2f", WorkerPool.requestSize.longValue() * 1.0 / 1024/ 1024));
+          String.format("%.2f", runningContext.getRequestDataSize() * 1.0 / 1024 / 1024));
       builder.addMetrics(pairBuilder.build());
 
       // data size
       pairBuilder.setKey("dataSize");
-      pairBuilder.setValue(String.format("%.2f", dataSize * 1.0 / 1024/ 1024));
+      pairBuilder.setValue(String.format("%.2f", dataSize * 1.0 / 1024 / 1024));
       builder.addMetrics(pairBuilder.build());
     }
     builder.addAllMatrixReports(buildMatrixReports());
@@ -611,12 +725,88 @@ public class ParameterServer {
       loader.load(ProtobufUtil.convert(ret.getNeedLoadMatrices()));
     }
     syncMatrices(ret.getNeedCreateMatricesList(), ret.getNeedReleaseMatrixIdsList(),
-            ret.getNeedRecoverPartsList());
+        ret.getNeedRecoverPartsList());
+  }
+
+  /**
+   * Lightweight local liveness probes for PS control/data ports.
+   *
+   * <p>Best-effort diagnostics only: any failure is logged but MUST NOT fail heartbeat,
+   * because heartbeat is the channel used to report status to master.</p>
+   */
+  private void checkPortsInHeartbeat() {
+    long now = System.currentTimeMillis();
+    long lastTs = lastPortCheckTs.get();
+    if (lastTs > 0 && now - lastTs < portCheckIntervalMs) {
+      return;
+    }
+    if (!lastPortCheckTs.compareAndSet(lastTs, now)) {
+      return;
+    }
+
+    final int timeoutMs = 1000;
+    final String host;
+    final int controlPort;
+    try {
+      host = getHostAddress();
+      controlPort = getPort();
+    } catch (Throwable e) {
+      LOG.info("[PS-HEARTBEAT][PORT-CHECK] resolve host/control port failed", e);
+      return;
+    }
+
+    checkOnePortInHeartbeat("control", host, controlPort, timeoutMs);
+    checkOnePortInHeartbeat("data", host, controlPort + 1, timeoutMs);
+  }
+
+  private void checkOnePortInHeartbeat(String portType, String host, int port, int timeoutMs) {
+    try (Socket socket = new Socket()) {
+      socket.connect(new InetSocketAddress(host, port), timeoutMs);
+      LOG.info("[PS-HEARTBEAT][PORT-CHECK] " + portType + " ok, host=" + host
+          + ", port=" + port + ", timeoutMs=" + timeoutMs);
+    } catch (Throwable e) {
+      LOG.info("[PS-HEARTBEAT][PORT-CHECK] " + portType + " failed, host=" + host
+          + ", port=" + port + ", timeoutMs=" + timeoutMs, e);
+    }
+  }
+
+  /**
+   * Log the RPC dispatch backlog from the heartbeat thread.
+   *
+   * <p>The detailed per-window queue statistics live in {@code [PS-RPC-METRICS]}, which is
+   * off unless {@code angel.matrixtransfer.server.metrics.enable} is set. Backlog is
+   * exactly what one needs when a job "hangs", so a compact version is emitted here as
+   * well - the heartbeat thread always runs, and this costs a couple of queue size() calls.
+   *
+   * <p>Best-effort diagnostics only: never allowed to fail the heartbeat.
+   */
+  private void logRpcQueueInHeartbeat() {
+    try {
+      long now = System.currentTimeMillis();
+      long lastTs = lastRpcQueueLogTs.get();
+      if (lastTs > 0 && now - lastTs < rpcQueueLogIntervalMs) {
+        return;
+      }
+      if (!lastRpcQueueLogTs.compareAndSet(lastTs, now)) {
+        return;
+      }
+
+      LOG.info("[PS-HEARTBEAT][RPC-QUEUE] "
+          + MatrixTransportServerMetrics.getInstance().buildQueueSnapshot()
+          + " state=" + runningContext.getState()
+          + " runningRpc=" + runningContext.getTotalRunningRPCCounter()
+          + " totalRpc=" + runningContext.getTotalRPCCounter()
+          + String.format(" requestData=%.2fMB",
+              runningContext.getRequestDataSize() * 1.0 / 1024 / 1024));
+    } catch (Throwable e) {
+      LOG.info("[PS-HEARTBEAT][RPC-QUEUE] collect rpc queue info failed", e);
+    }
   }
 
   private void syncMatrices(List<MLProtos.MatrixMetaProto> needCreateMatrices,
-                            List<Integer> needReleaseMatrices, List<RecoverPartKeyProto> needRecoverParts)
-          throws Exception {
+
+      List<Integer> needReleaseMatrices, List<RecoverPartKeyProto> needRecoverParts)
+      throws Exception {
     if (!needCreateMatrices.isEmpty()) {
       createMatrices(ProtobufUtil.convertToMatricesMeta(needCreateMatrices));
     }
@@ -647,7 +837,23 @@ public class ParameterServer {
         Path inputPath = null;
         try {
           inputPath = recover.getSnapshotPath(matrixMetas.get(i).getId());
+        } catch (com.tencent.angel.ps.io.load.CorruptedSnapshotException cse) {
+          // PHANTOM-SNAPSHOT case: epoch dirs exist but all are empty. Do NOT swallow
+          // this the way we swallow generic IOException below — falling through to the
+          // master-checkpoint / save-result / InitFunc chain would silently bring up
+          // the matrix empty, which for algorithms that load already-trained data is
+          // worse than a failed attempt. Rethrow to kill this attempt; the user sees
+          // a clear "snapshot corrupted, inspect <hdfs path>" error and can clean up.
+          //
+          // Behaviour-wise this matches the legacy bug (attempt fails on load), just
+          // with a much clearer diagnostic emitted at the recover stage instead of
+          // bubbling up from the partition loader several frames deeper.
+          throw cse;
         } catch (IOException e) {
+          // Generic HDFS / I/O error during the recover probe — keep the historical
+          // behaviour of "log and fall through to master checkpoints" so transient NN
+          // hiccups don't kill an attempt that could legitimately recover via the
+          // master-side bookkeeping.
           LOG.error("Get snapshot path failed, ", e);
         }
 
@@ -660,16 +866,16 @@ public class ParameterServer {
             } else {
               inputPath = new Path(saveResults.get(saveResults.size() - 1).getMatrixPath());
               LOG.info(
-                      "There is " + saveResults.size() + " checkpoint results for matrix + "
-                              + matrixMetas
-                              .get(i).getName()
-                              + " we choose the latest result in dir " + saveResults
-                              .get(saveResults.size() - 1).getMatrixPath());
+                  "There is " + saveResults.size() + " checkpoint results for matrix + "
+                      + matrixMetas
+                      .get(i).getName()
+                      + " we choose the latest result in dir " + saveResults
+                      .get(saveResults.size() - 1).getMatrixPath());
             }
           } catch (ServiceException e) {
             LOG.error(
-                    "Get checkpoint results for matrix " + matrixMetas.get(i).getName() + " failed ",
-                    e);
+                "Get checkpoint results for matrix " + matrixMetas.get(i).getName() + " failed ",
+                e);
           }
         }
 
@@ -682,31 +888,62 @@ public class ParameterServer {
             } else {
               inputPath = new Path(saveResults.get(saveResults.size() - 1).getMatrixPath());
               LOG.info(
-                      "There is " + saveResults.size() + " old save results for matrix + " + matrixMetas
-                              .get(i).getName()
-                              + " we choose the latest result in dir " + saveResults
-                              .get(saveResults.size() - 1).getMatrixPath());
+                  "There is " + saveResults.size() + " old save results for matrix + " + matrixMetas
+                      .get(i).getName()
+                      + " we choose the latest result in dir " + saveResults
+                      .get(saveResults.size() - 1).getMatrixPath());
             }
           } catch (ServiceException e) {
             LOG.error("Get save results for matrix " + matrixMetas.get(i).getName() + " failed ",
-                    e);
+                e);
+          }
+        }
+
+        if (inputPath != null) {
+          // Belt-and-suspenders: SnapshotRecover.getSnapshotPath already filters out
+          // empty / phantom snapshot directories. We re-verify here only as a guard
+          // against TOCTOU between the recover stat and the loader stat (e.g. an
+          // operator manually deleting the path between the two calls).
+          //
+          // If the resolved path has actually disappeared by load time, we FAIL the
+          // attempt rather than fall through to InitFunc — the user explicitly asked
+          // to recover from a saved location, and silently bringing the matrix up
+          // empty would risk wiping out trained data (embeddings, GNN weights, etc.).
+          // For algorithms that genuinely want "no saved state → init from scratch"
+          // the recover stage returns null up front and we never reach this check.
+          try {
+            FileSystem checkFs = inputPath.getFileSystem(context.getConf());
+            if (!checkFs.exists(inputPath)) {
+              String msg = "Resolved load path " + inputPath
+                  + " for matrix " + matrixMetas.get(i).getName()
+                  + " no longer exists at load time (TOCTOU between recover and load)."
+                  + " Refusing to fall back to InitFunc / empty matrix to avoid"
+                  + " silently zeroing out saved data. Inspect the HDFS state and re-run.";
+              LOG.error(msg);
+              throw new IOException(msg);
+            }
+          } catch (IOException e) {
+            // Re-throw anything we caught — including our own "path disappeared"
+            // IOException — to abort the attempt. A transient HDFS hiccup is rare
+            // enough that we'd rather fail loudly than risk a silent demotion.
+            throw e;
           }
         }
 
         if (inputPath != null) {
           LOG.info("Load matrix " + matrixMetas.get(i).getName() + " from " + inputPath.toString());
           matrixLoadContexts.add(new PSMatrixLoadContext(matrixMetas.get(i).getId(),
-                  inputPath.toString(),
-                  new ArrayList<>(matrixMetas.get(i).getPartitionMetas().keySet()),
-                  SnapshotFormat.class.getName()));
+              inputPath.toString(),
+              new ArrayList<>(matrixMetas.get(i).getPartitionMetas().keySet()),
+              SnapshotFormat.class.getName()));
         } else {
           // Just init it again
           if (matrixMetas.get(i).getInitFunc() != null) {
             LOG.info("Matrix " + matrixMetas.get(i) + " has a init function " + matrixMetas.get(i)
-                    .getInitFunc().getClass().getName() + ", use this function to reinit the matrix");
+                .getInitFunc().getClass().getName() + ", use this function to reinit the matrix");
             long startTs = System.currentTimeMillis();
             matrixMetas.get(i).getInitFunc()
-                    .init(context.getMatrixStorageManager().getMatrix(matrixMetas.get(i).getId()));
+                .init(context.getMatrixStorageManager().getMatrix(matrixMetas.get(i).getId()));
             LOG.info("Reinit the matrix use time " + (System.currentTimeMillis() - startTs));
           }
         }
@@ -735,6 +972,32 @@ public class ParameterServer {
    * @throws IOException the io exception
    */
   public void start() throws Exception {
+    int rpcWorkerPoolSize = conf.getInt(
+        AngelConf.ANGEL_MATRIXTRANSFER_SERVER_WORKER_POOL_SIZE,
+        AngelConf.DEFAULT_ANGEL_MATRIXTRANSFER_SERVER_WORKER_POOL_SIZE);
+    int nettyServerEventGroupThreads = conf.getInt(
+        AngelConf.ANGEL_NETTY_MATRIXTRANSFER_SERVER_EVENTGROUP_THREADNUM,
+        AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_SERVER_EVENTGROUP_THREADNUM);
+    int nettyClientEventGroupThreads = conf.getInt(
+        AngelConf.ANGEL_NETTY_MATRIXTRANSFER_CLIENT_EVENTGROUP_THREADNUM,
+        AngelConf.DEFAULT_ANGEL_NETTY_MATRIXTRANSFER_CLIENT_EVENTGROUP_THREADNUM);
+    int matrixDiskIoThreads = conf.getInt(
+        AngelConf.ANGEL_PS_MATRIX_DISKIO_WORKER_POOL_SIZE,
+        AngelConf.DEFAULT_ANGEL_PS_MATRIX_DISKIO_WORKER_POOL_SIZE);
+    LOG.info("[PS-THREAD-POOL] startup summary: rpcWorkerPoolSize=" + rpcWorkerPoolSize
+        + ", nettyServerEventGroupThreads=" + nettyServerEventGroupThreads
+        + ", nettyClientEventGroupThreads=" + nettyClientEventGroupThreads
+        + ", matrixDiskIoThreads=" + matrixDiskIoThreads);
+
+    // Init and start metrics reporter
+    metricsService.init();
+
+    metricsService.start();
+
+    if (adsMetricsService != null) {
+      adsMetricsService.start();
+    }
+
     if (snapshotDumper != null) {
       snapshotDumper.start();
     }
@@ -752,7 +1015,7 @@ public class ParameterServer {
 
     if (getAttemptIndex() > 0) {
       LOG.info("PS " + getServerId() + " running attempt " + getAttemptIndex()
-              + " load matrices from snapshot if need");
+          + " load matrices from snapshot if need");
       List<MatrixMeta> matrixMetas = master.getMatricesMeta();
       if (!matrixMetas.isEmpty()) {
         createMatrices(matrixMetas);
@@ -882,5 +1145,26 @@ public class ParameterServer {
    */
   public RunningContext getRunningContext() {
     return runningContext;
+  }
+
+  public AngelPSMetricsService getMetricsService() {
+    return metricsService;
+  }
+
+  public PSContext getContext() {
+    return context;
+  }
+
+  static class AngelPSShutdownHook implements Runnable {
+    ParameterServer ps;
+
+    AngelPSShutdownHook(ParameterServer ps) {
+      this.ps = ps;
+    }
+
+    public void run() {
+      LOG.info("PS received a signal. stop the ps");
+      ps.stop(0);
+    }
   }
 }

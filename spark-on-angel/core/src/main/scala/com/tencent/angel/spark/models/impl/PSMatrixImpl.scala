@@ -16,7 +16,7 @@
  */
 package com.tencent.angel.spark.models.impl
 
-import java.util.concurrent.Future
+import java.util.concurrent.{Future, TimeUnit, TimeoutException}
 
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math2.matrix.Matrix
@@ -193,11 +193,42 @@ class PSMatrixImpl(
   }
 
   def psfUpdate(func: UpdateFunc): Future[VoidResult] = {
-    matrixClient.asyncUpdate(func)
+    val fut = asyncPsfUpdate(func)
+    wrapWithTimeout(fut)
   }
 
+  private def wrapWithTimeout[T](fut: Future[T]): Future[T] = new Future[T] {
+    override def get(): T = {
+      try {
+        fut.get(PSF_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+      } catch {
+        case _: TimeoutException =>
+          throw new RuntimeException(
+            s"PSF update timeout after ${PSF_TIMEOUT_MS}ms (matrixId=$id). " +
+            s"Failing this task to trigger Spark retry. " +
+            s"Tune via -Dangel.psf.timeout.ms=<ms>.")
+      }
+    }
+    override def get(timeout: Long, unit: TimeUnit): T = fut.get(timeout, unit)
+    override def isDone(): Boolean = fut.isDone()
+    override def isCancelled: Boolean = fut.isCancelled
+    override def cancel(mayInterruptIfRunning: Boolean): Boolean = fut.cancel(mayInterruptIfRunning)
+  }
+
+  private val PSF_TIMEOUT_MS: Long =
+    java.lang.Long.getLong("angel.psf.timeout.ms", 5L * 60L * 1000L)
+
   def psfGet(func: GetFunc): GetResult = {
-    matrixClient.get(func)
+    val fut = asyncPsfGet(func)
+    try {
+      fut.get(PSF_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+    } catch {
+      case _: TimeoutException =>
+        throw new RuntimeException(
+          s"PSF get timeout after ${PSF_TIMEOUT_MS}ms (func=${func.getClass.getSimpleName}, " +
+          s"matrixId=$id). Failing this task to trigger Spark retry. " +
+          s"Tune via -Dangel.psf.timeout.ms=<ms>.")
+    }
   }
 
   /**

@@ -1,0 +1,9 @@
+
+include "quantization_param.fbs";
+
+namespace dollar.tensor;
+
+table TrainingMessage {
+  mixed_flag:int8 (id:0);
+  quant_message:QuantizationWeight (id:1);
+}

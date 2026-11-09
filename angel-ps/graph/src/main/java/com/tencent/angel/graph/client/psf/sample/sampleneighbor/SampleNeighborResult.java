@@ -17,6 +17,7 @@
 
 package com.tencent.angel.graph.client.psf.sample.sampleneighbor;
 
+import com.tencent.angel.graph.data.Neighbor;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
@@ -25,9 +26,9 @@ public class SampleNeighborResult extends GetResult {
   /**
    * Node id to neighbors map
    */
-  public Long2ObjectOpenHashMap<long[]> nodeIdToSampleNeighbors;
+  public Long2ObjectOpenHashMap<Neighbor> nodeIdToSampleNeighbors;
 
-  SampleNeighborResult(Long2ObjectOpenHashMap<long[]> nodeIdToSampleNeighbors) {
+  public SampleNeighborResult(Long2ObjectOpenHashMap<Neighbor> nodeIdToSampleNeighbors) {
     this.nodeIdToSampleNeighbors = nodeIdToSampleNeighbors;
   }
 
@@ -35,12 +36,12 @@ public class SampleNeighborResult extends GetResult {
     this(null);
   }
 
-  public Long2ObjectOpenHashMap<long[]> getNodeIdToSampleNeighbors() {
+  public Long2ObjectOpenHashMap<Neighbor> getNodeIdToSampleNeighbors() {
     return nodeIdToSampleNeighbors;
   }
 
   public void setNodeIdToSampleNeighbors(
-      Long2ObjectOpenHashMap<long[]> nodeIdToSampleNeighbors) {
+      Long2ObjectOpenHashMap<Neighbor> nodeIdToSampleNeighbors) {
     this.nodeIdToSampleNeighbors = nodeIdToSampleNeighbors;
   }
 }

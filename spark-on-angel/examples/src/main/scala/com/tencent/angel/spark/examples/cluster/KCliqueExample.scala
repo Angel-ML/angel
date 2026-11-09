@@ -1,11 +1,12 @@
 package com.tencent.angel.spark.examples.cluster
 
-import com.tencent.angel.graph.kclique.KClique
-import com.tencent.angel.graph.utils.GraphIO
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import org.apache.spark.storage.StorageLevel
+import com.tencent.angel.spark.ml.graph.algo.cliques.kclique.KClique
+import com.tencent.angel.spark.ml.graph.utils.GraphIO
+import com.tencent.angel.spark.ml.util.DataStatistics
 import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.storage.StorageLevel
 
 object KCliqueExample {
   def main(args: Array[String]): Unit = {
@@ -48,6 +49,12 @@ object KCliqueExample {
 
     val df = GraphIO.load(input, isWeighted = false, srcIndex, dstIndex, sep = sep)
 
+    //collect app name and data size
+    DataStatistics.setAppName(kcl.getClass.getCanonicalName)
+    DataStatistics.calcRDDSize(df, "angel.input.data")
+    DataStatistics.setDataPartitionNum(partitionNum)
+    DataStatistics.setPSPartitionNum(psPartitionNum)
+
     val mapping = kcl.transform(df)
     GraphIO.save(mapping, output)
     stop()
@@ -61,11 +68,12 @@ object KCliqueExample {
     executorJvmOptions += " -XX:ConcGCThreads=4 -XX:ParallelGCThreads=4 -Xss4M "
     conf.set("spark.executor.extraJavaOptions", executorJvmOptions)
     println(s"executorJvmOptions = ${executorJvmOptions}")
-    conf.set("spark.hadoop.angel.ps.router.type", "range")
     
     conf.setMaster(mode)
     conf.setAppName("K-Clique")
-    new SparkContext(conf)
+    val sc = new SparkContext(conf)
+    //PSContext.getOrCreate(sc)
+    sc
   }
   
   def stop(): Unit = {

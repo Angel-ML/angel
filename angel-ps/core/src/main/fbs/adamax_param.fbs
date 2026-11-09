@@ -1,0 +1,39 @@
+// Copyright 2021, Tencent Inc.
+// All rights reserved.
+//
+// @author liangyuzhuo <liangyuzhuo@tencent.com>
+
+include "grad_message.fbs";
+include "training_message.fbs";
+
+namespace dollar.tensor.adamax;
+
+table HyperParam {
+  lr:double (id:0);
+  beta1:double (id:1);
+  beta2:double (id:2);
+  epsilon:double (id:3);
+}
+
+table WeightParams {
+  w:[ubyte] (id:0);
+  m:[ubyte] (id:1);
+  v:[ubyte] (id:2);
+}
+
+table AdamaxGradMessage {
+  hyper_param:HyperParam (id:0);
+  grad_message:GradMessage (id:1);
+  training_message:TrainingMessage (id:2);
+  init_flag:int8 (id:3);
+}
+
+table AdamaxWeightParams {
+  weight_params:WeightParams (id:0);
+  field:int32 (id:1);
+  positive_count:int64 (id:2);
+  negative_count:int64 (id:3);
+  update_times:int64 (id:4);
+  hyper_param:HyperParam (id:5);
+  training_message:TrainingMessage (id:6);
+}

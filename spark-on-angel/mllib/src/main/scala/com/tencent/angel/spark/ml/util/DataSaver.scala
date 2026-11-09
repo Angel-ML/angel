@@ -1,10 +1,12 @@
 package com.tencent.angel.spark.ml.util
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{DataFrame, SaveMode}
 
 import org.apache.spark.mllib.linalg.Vector
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row}
-
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.Row
 import scala.collection.mutable.ArrayBuffer
+import org.apache.spark.rdd.RDD
 
 object DataSaver {
 
@@ -12,12 +14,12 @@ object DataSaver {
   private val HEADER = "header"
 
 
-  def save(df: DataFrame, path: String, sep: String): Unit = {
+  def save(df: DataFrame, path: String,sep:String): Unit = {
 
     val rdd = df.rdd.map(row2Array)
     if (path.startsWith(HDFS_PREFIX) || df.sqlContext.sparkContext.isLocal) {
       // hdfs or local path
-      HDFSUtils.save(rdd, path, sep)
+      HDFSUtils.save(rdd, path,sep)
     } else {
       throw new Exception(s"Wrong path: $path")
     }
@@ -32,9 +34,7 @@ object DataSaver {
       } else if (row.get(i) == null) {
         result += "null"
       } else {
-        val item = row.get(i) match {
-          case x: java.lang.Object => x.toString
-        }
+        val item = row.get(i) match {case x: java.lang.Object => x.toString}
         result += item
       }
     }
@@ -47,9 +47,13 @@ object DataSaver {
    * @param dataRdd
    * @param path
    */
-  def save(dataRdd: RDD[Array[String]], path: String, sep: String) {
-    // hdfs or local path
-    HDFSUtils.save(dataRdd, path, sep)
+  def save(dataRdd: RDD[Array[String]], path: String, sep:String) {
+    ; {
+      // hdfs or local path
+      HDFSUtils.save(dataRdd, path, sep)
+    
+}
   }
+
 
 }

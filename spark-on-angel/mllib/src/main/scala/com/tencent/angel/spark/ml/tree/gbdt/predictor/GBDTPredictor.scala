@@ -48,7 +48,7 @@ class GBDTPredictor extends Serializable {
 
   def predict(implicit sc: SparkContext, predictPath: String, outputPath: String): Unit = {
     println(s"Predicting dataset: $predictPath")
-    val instances: RDD[Instance] = DataLoader.loadLibsvmDP(predictPath, forest.head.getParam.numFeature).cache()
+    val instances: RDD[Instance] = DataLoader.loadLibsvmDP(predictPath, forest.head.getParam.numFeature).persist(forest.head.getParam.storageLevel)
     //val labels = instances.map(_.label.toFloat).collect()
     val preds = predict(this, instances)
     instances.unpersist()

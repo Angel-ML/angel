@@ -16,19 +16,19 @@
  */
 package com.tencent.angel.graph.client.psf.get.getedgefeats;
 
-import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.graph.data.Feature;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 public class GetEdgeFeatsResult extends GetResult {
 
-  private final Long2ObjectOpenHashMap<IntFloatVector[]> nodeIdToContents;
+  private final Long2ObjectOpenHashMap<Feature[]> nodeIdToContents;
 
-  public GetEdgeFeatsResult(Long2ObjectOpenHashMap<IntFloatVector[]> nodeIdToContents) {
+  public GetEdgeFeatsResult(Long2ObjectOpenHashMap<Feature[]> nodeIdToContents) {
     this.nodeIdToContents = nodeIdToContents;
   }
 
-  public Long2ObjectOpenHashMap<IntFloatVector[]> getNodeIdToContents() {
+  public Long2ObjectOpenHashMap<Feature[]> getNodeIdToContents() {
     return nodeIdToContents;
   }
 }

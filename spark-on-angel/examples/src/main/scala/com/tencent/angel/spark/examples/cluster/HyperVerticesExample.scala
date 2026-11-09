@@ -1,10 +1,11 @@
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.graph.statistics.hyperloglog.HyperVertices
-import com.tencent.angel.graph.utils.GraphIO
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
+import com.tencent.angel.spark.ml.graph.algo.statistics.hyperloglog._
+import com.tencent.angel.spark.ml.graph.utils.GraphIO
+import com.tencent.angel.spark.ml.util.DataStatistics
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
@@ -82,7 +83,11 @@ object HyperVerticesExample {
     } else {
       null.asInstanceOf[Set[String]]
     }
-
+    //collect app name and data size
+    DataStatistics.setAppName(hyperVertices.getClass.getCanonicalName)
+    DataStatistics.calcRDDSize(df, "angel.input.data")
+    DataStatistics.setDataPartitionNum(partitionNum)
+    DataStatistics.setPSPartitionNum(psPartitionNum)
     PSContext.getOrCreate(sc)
 
     var startTime = System.currentTimeMillis()

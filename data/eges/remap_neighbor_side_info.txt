@@ -1,0 +1,4 @@
+n0 n1 s0 s1
+n1 n2 s1 s2
+n2 n3 s2 s0
+n3 n0 s0 s1

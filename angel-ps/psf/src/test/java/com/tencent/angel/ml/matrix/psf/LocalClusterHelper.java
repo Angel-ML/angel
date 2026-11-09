@@ -27,6 +27,8 @@ import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner;
+import com.tencent.angel.ps.storage.partitioner.RangePartitioner;
 import com.tencent.angel.worker.WorkerAttemptId;
 import com.tencent.angel.worker.WorkerGroupId;
 import com.tencent.angel.worker.WorkerId;
@@ -75,12 +77,13 @@ public class LocalClusterHelper {
 
     // add matrix
     MatrixContext mMatrix = new MatrixContext();
-    mMatrix.setName("w1");
+    mMatrix.setName("LocalClusterHelper_w1");
     mMatrix.setRowNum(10);
     mMatrix.setColNum(1000);
     mMatrix.setMaxRowNumInBlock(10);
     mMatrix.setMaxColNumInBlock(500);
     mMatrix.setRowType(RowType.T_INT_DENSE);
+    mMatrix.setPartitionerClass(RangePartitioner.class);
     mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
     mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
     mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
@@ -88,11 +91,12 @@ public class LocalClusterHelper {
     angelClient.addMatrix(mMatrix);
 
     MatrixContext mMatrix2 = new MatrixContext();
-    mMatrix2.setName("w2");
+    mMatrix2.setName("LocalClusterHelper_w2");
     mMatrix2.setRowNum(10);
     mMatrix2.setColNum(100);
     mMatrix2.setMaxRowNumInBlock(5);
     mMatrix2.setMaxColNumInBlock(50);
+    mMatrix2.setPartitionerClass(ColumnRangePartitioner.class);
     mMatrix2.setRowType(RowType.T_DOUBLE_DENSE);
     mMatrix2.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
     mMatrix2.set(MatrixConf.MATRIX_HOGWILD, "false");

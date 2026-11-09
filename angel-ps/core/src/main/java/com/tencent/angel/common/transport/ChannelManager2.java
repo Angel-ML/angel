@@ -51,6 +51,17 @@ public class ChannelManager2 {
    */
   private volatile Thread checker;
 
+  /**
+   * Background pool check interval in milliseconds. Default 30s. The checker walks every
+   * {@link ChannelPool2} and (1) replaces channels whose underlying netty {@link
+   * io.netty.channel.Channel} is no longer active/open, and (2) closes channels that have
+   * been idle beyond {@link ChannelPoolParam#maxIdleTimeMs}. Without this thread, dead
+   * long-lived TCP sessions (reaped by middleboxes while the application is silent) are only
+   * discovered on the very request that next happens to draw them, which manifests as the
+   * "channel ... is not active" error storm at the application layer.
+   */
+  private long checkIntervalMs = 30_000L;
+
   private final AtomicBoolean stopped = new AtomicBoolean(false);
 
 
@@ -97,28 +108,56 @@ public class ChannelManager2 {
   }
 
   /**
-   * Init and start channel manager
+   * Configure the background pool check interval. Must be called before {@link #initAndStart()}.
+   */
+  public void setCheckIntervalMs(long checkIntervalMs) {
+    if (checkIntervalMs > 0) {
+      this.checkIntervalMs = checkIntervalMs;
+    }
+  }
+
+  /**
+   * Init and start channel manager. The background checker is now started by default — it is
+   * the only mechanism that proactively evicts and re-creates dead long-lived channels (see
+   * {@link ChannelPool2#check()}); historically it was constructed but never started, which is
+   * a primary contributor to the "channel ... is not active" storms seen in production.
    */
   public void initAndStart() {
+    final long intervalMs = checkIntervalMs;
+    if (LOG.isInfoEnabled()) {
+      LOG.info("[CHANNEL-MANAGER][START] intervalMs=" + intervalMs
+          + ", maxActive=" + poolParam.maxActive
+          + ", minActive=" + poolParam.minActive
+          + ", maxIdleTimeMs=" + poolParam.maxIdleTimeMs
+          + ", getChannelTimeoutMs=" + poolParam.getChannelTimeoutMs);
+    }
     checker = new Thread(new Runnable() {
+
       @Override public void run() {
         while (!stopped.get() && !Thread.interrupted()) {
           try {
-            Thread.sleep(30000);
+            Thread.sleep(intervalMs);
+          } catch (InterruptedException e) {
+            if (stopped.get()) {
+              return;
+            }
+            LOG.warn("pools checker is interrupted, continue");
+            continue;
+          }
+          try {
             for (ChannelPool2 pool : locToChannelPoolMap.values()) {
               pool.check();
             }
-          } catch (InterruptedException e) {
-            if (!stopped.get()) {
-              LOG.error("pools checker is interrupted ", e);
-            }
+          } catch (Throwable t) {
+            LOG.warn("pools checker iteration failed, will retry next tick", t);
           }
         }
       }
     });
 
     checker.setName("pools-checker");
-    //checker.start();
+    checker.setDaemon(true);
+    checker.start();
   }
 
   /**
@@ -160,15 +199,21 @@ public class ChannelManager2 {
   public NettyChannel getChannel(Location loc, long timeoutMs) {
     ChannelPool2 pool = locToChannelPoolMap.get(loc);
     if (pool == null) {
-      pool = locToChannelPoolMap.putIfAbsent(loc, new ChannelPool2(bootstrap, loc, poolParam));
+      ChannelPool2 newPool = new ChannelPool2(bootstrap, loc, poolParam);
+      pool = locToChannelPoolMap.putIfAbsent(loc, newPool);
       if (pool == null) {
-        pool = locToChannelPoolMap.get(loc);
+        pool = newPool;
+        if (LOG.isInfoEnabled()) {
+          LOG.info("[CHANNEL-MANAGER][POOL-CREATE] loc=" + loc
+              + ", timeoutMs=" + timeoutMs
+              + ", totalPools=" + locToChannelPoolMap.size());
+        }
       }
     }
 
-    NettyChannel channel = pool.getChannel(timeoutMs);
-    return channel;
+    return pool.getChannel(timeoutMs);
   }
+
 
   /**
    * Release the channel
@@ -190,17 +235,48 @@ public class ChannelManager2 {
   public void removeChannels(Location loc) {
     ChannelPool2 pool = locToChannelPoolMap.remove(loc);
     if (pool != null) {
+      if (LOG.isInfoEnabled()) {
+        LOG.info("[CHANNEL-MANAGER][POOL-REMOVE] loc=" + loc
+            + ", totalPoolsAfterRemove=" + locToChannelPoolMap.size());
+      }
       pool.removeChannels();
+    } else if (LOG.isDebugEnabled()) {
+      LOG.debug("[CHANNEL-MANAGER][POOL-REMOVE-SKIP] loc=" + loc + " not found");
     }
   }
+
+
+  /**
+   * Evict a single dead channel from its pool. Used by callers that observed the channel to be
+   * inactive on borrow — eviction is done synchronously so the next borrow on the same pool
+   * cannot re-pick the same dead entry. The pool will lazily re-init if it ends up empty.
+   */
+  public void removeChannel(NettyChannel channel) {
+    if (channel == null) {
+      return;
+    }
+    ChannelPool2 pool = locToChannelPoolMap.get(channel.getLoc());
+    if (pool != null) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("[CHANNEL-MANAGER][CHANNEL-EVICT] loc=" + channel.getLoc()
+            + ", channel=" + channel);
+      }
+      pool.removeChannel(channel);
+    }
+  }
+
 
   /**
    * Close all channel pools
    */
   public void clear() {
+    int poolNum = locToChannelPoolMap.size();
     for (ChannelPool2 pool : locToChannelPoolMap.values()) {
       pool.removeChannels();
     }
     locToChannelPoolMap.clear();
+    if (LOG.isInfoEnabled()) {
+      LOG.info("[CHANNEL-MANAGER][CLEAR] removedPools=" + poolNum);
+    }
   }
 }

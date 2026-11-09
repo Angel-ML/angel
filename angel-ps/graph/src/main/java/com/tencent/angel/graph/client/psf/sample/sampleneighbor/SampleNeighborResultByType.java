@@ -1,10 +1,11 @@
 package com.tencent.angel.graph.client.psf.sample.sampleneighbor;
 
+import com.tencent.angel.graph.data.Neighbor;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 public class SampleNeighborResultByType extends SampleNeighborResult {
 
-  SampleNeighborResultByType(Long2ObjectOpenHashMap<long[]> nodeIdToSampleNeighbors) {
+  SampleNeighborResultByType(Long2ObjectOpenHashMap<Neighbor> nodeIdToSampleNeighbors) {
     super(nodeIdToSampleNeighbors);
   }
 

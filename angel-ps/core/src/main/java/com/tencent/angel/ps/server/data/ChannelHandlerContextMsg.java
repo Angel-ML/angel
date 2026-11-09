@@ -17,11 +17,13 @@
 
 package com.tencent.angel.ps.server.data;
 
+import com.tencent.angel.ps.server.data.profiling.ServerTimes;
 import com.tencent.angel.ps.server.data.request.RequestHeader;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
 public class ChannelHandlerContextMsg {
+
   /**
    * Request header
    */
@@ -36,11 +38,14 @@ public class ChannelHandlerContextMsg {
    * Channel context
    */
   private final ChannelHandlerContext ctx;
+  private final ServerTimes serverTimes;
 
-  public ChannelHandlerContextMsg(RequestHeader header, ByteBuf message, ChannelHandlerContext ctx) {
+  public ChannelHandlerContextMsg(RequestHeader header, ByteBuf message, ChannelHandlerContext ctx,
+      ServerTimes serverTimes) {
     this.header = header;
     this.message = message;
     this.ctx = ctx;
+    this.serverTimes = serverTimes;
   }
 
   public ByteBuf getMessage() {
@@ -53,5 +58,9 @@ public class ChannelHandlerContextMsg {
 
   public RequestHeader getHeader() {
     return header;
+  }
+
+  public ServerTimes getServerTimes() {
+    return serverTimes;
   }
 }

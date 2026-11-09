@@ -34,6 +34,7 @@ import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetJobRepo
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetJobReportResponse;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.JobStateProto;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskIterationRequest;
+import com.tencent.angel.ps.storage.partitioner.RangePartitioner;
 import com.tencent.angel.worker.task.TaskId;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -90,12 +91,13 @@ public class AppTest {
 
       // add matrix
       MatrixContext mMatrix = new MatrixContext();
-      mMatrix.setName("w1");
+      mMatrix.setName("AppTest_w1");
       mMatrix.setRowNum(1);
       mMatrix.setColNum(100000);
       mMatrix.setMaxRowNumInBlock(1);
       mMatrix.setMaxColNumInBlock(50000);
       mMatrix.setRowType(RowType.T_INT_DENSE);
+      mMatrix.setPartitionerClass(RangePartitioner.class);
       mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
       mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");

@@ -1,24 +1,9 @@
-/*
- * Tencent is pleased to support the open source community by making Angel available.
- *
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- *
- * https://opensource.org/licenses/Apache-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- *
- */
-
 package com.tencent.angel.graph.client.psf.sample.sampleneighbor;
 
 import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.graph.client.constent.Constent;
+import com.tencent.angel.graph.data.Neighbor;
+import com.tencent.angel.graph.data.NeighborStorageType;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
@@ -39,9 +24,10 @@ public class PartSampleNeighborResultWithType extends PartSampleNeighborResult {
 
 
   public PartSampleNeighborResultWithType(int partId,
-      Long2ObjectOpenHashMap<long[]> nodeIdToSampleNeighbors,
-      Long2ObjectOpenHashMap<int[]> nodeIdToType, SampleType sampleType) {
-    super(partId, nodeIdToSampleNeighbors);
+      Long2ObjectOpenHashMap<Neighbor> nodeIdToSampleNeighbors,
+      Long2ObjectOpenHashMap<int[]> nodeIdToType, SampleType sampleType,
+      NeighborStorageType storageType) {
+    super(partId, nodeIdToSampleNeighbors, storageType);
     if (sampleType == SampleType.NODE) {
       this.nodeIdToSampleNeighborsType = nodeIdToType;
     } else if (sampleType == SampleType.EDGE) {
@@ -49,26 +35,17 @@ public class PartSampleNeighborResultWithType extends PartSampleNeighborResult {
     }
   }
 
-
   public PartSampleNeighborResultWithType(int partId,
-      Long2ObjectOpenHashMap<long[]> nodeIdToSampleNeighbors,
+      Long2ObjectOpenHashMap<Neighbor> nodeIdToSampleNeighbors,
       Long2ObjectOpenHashMap<int[]> nodeIdToSampleNeighborsType,
-      Long2ObjectOpenHashMap<int[]> nodeIdToSampleEdgeType) {
-    super(partId, nodeIdToSampleNeighbors);
+      Long2ObjectOpenHashMap<int[]> nodeIdToSampleEdgeType, NeighborStorageType storageType) {
+    super(partId, nodeIdToSampleNeighbors, storageType);
     this.nodeIdToSampleNeighborsType = nodeIdToSampleNeighborsType;
     this.nodeIdToSampleEdgeType = nodeIdToSampleEdgeType;
   }
 
   public PartSampleNeighborResultWithType() {
-    this(-1, null, null, SampleType.SIMPLE);
-  }
-
-  public Long2ObjectOpenHashMap<long[]> getNodeIdToSampleNeighbors() {
-    return nodeIdToSampleNeighbors;
-  }
-
-  public void setNodeIdToSampleNeighbors(Long2ObjectOpenHashMap<long[]> nodeIdToSampleNeighbors) {
-    this.nodeIdToSampleNeighbors = nodeIdToSampleNeighbors;
+    this(-1, null, null, SampleType.SIMPLE, NeighborStorageType.LONGARRAY);
   }
 
   public Long2ObjectOpenHashMap<int[]> getNodeIdToSampleNeighborsType() {
@@ -95,18 +72,7 @@ public class PartSampleNeighborResultWithType extends PartSampleNeighborResult {
 
   @Override
   public void serialize(ByteBuf output) {
-    ByteBufSerdeUtils.serializeInt(output, partId);
-    ByteBufSerdeUtils.serializeInt(output, nodeIdToSampleNeighbors.size());
-    for (Long2ObjectOpenHashMap.Entry<long[]> entry : nodeIdToSampleNeighbors
-        .long2ObjectEntrySet()) {
-      ByteBufSerdeUtils.serializeLong(output, entry.getLongKey());
-      long[] sampleNeighbors = entry.getValue();
-      if (sampleNeighbors == null) {
-        ByteBufSerdeUtils.serializeLongs(output, Constent.emptyLongs);
-      } else {
-        ByteBufSerdeUtils.serializeLongs(output, sampleNeighbors);
-      }
-    }
+    super.serialize(output);
 
     if (nodeIdToSampleNeighborsType != null) {
       ByteBufSerdeUtils.serializeInt(output, nodeIdToSampleNeighborsType.size());
@@ -144,14 +110,7 @@ public class PartSampleNeighborResultWithType extends PartSampleNeighborResult {
 
   @Override
   public void deserialize(ByteBuf input) {
-    partId = ByteBufSerdeUtils.deserializeInt(input);
-    int size = ByteBufSerdeUtils.deserializeInt(input);
-    nodeIdToSampleNeighbors = new Long2ObjectOpenHashMap<>(size);
-    for (int i = 0; i < size; i++) {
-      long nodeId = ByteBufSerdeUtils.deserializeLong(input);
-      long[] sampleNeighbors = ByteBufSerdeUtils.deserializeLongs(input);
-      nodeIdToSampleNeighbors.put(nodeId, sampleNeighbors);
-    }
+    super.deserialize(input);
 
     int nodeTypeSize = ByteBufSerdeUtils.deserializeInt(input);
     if (nodeTypeSize > 0) {
@@ -177,17 +136,7 @@ public class PartSampleNeighborResultWithType extends PartSampleNeighborResult {
 
   @Override
   public int bufferLen() {
-    int len = 2 * ByteBufSerdeUtils.INT_LENGTH;
-    for (Long2ObjectOpenHashMap.Entry<long[]> entry : nodeIdToSampleNeighbors
-        .long2ObjectEntrySet()) {
-      len += ByteBufSerdeUtils.LONG_LENGTH;
-      long[] sampleNeighbors = entry.getValue();
-      if (sampleNeighbors == null) {
-        len += ByteBufSerdeUtils.serializedLongsLen(Constent.emptyLongs);
-      } else {
-        len += ByteBufSerdeUtils.serializedLongsLen(sampleNeighbors);
-      }
-    }
+    int len = super.bufferLen();
 
     len += ByteBufSerdeUtils.INT_LENGTH;
     if (nodeIdToSampleNeighborsType != null) {

@@ -14,19 +14,23 @@ import java.util.List;
 
 public class SampleParam extends LongKeysGetParam {
   private final int sampleType;
+  private final boolean sampleByType;
 
-  public SampleParam(int matrixId, long[] nodeIds, int sampleType) {
+  public SampleParam(int matrixId, long[] nodeIds, int sampleType, boolean sampleByType) {
     super(matrixId, nodeIds);
     this.sampleType = sampleType;
+    this.sampleByType = sampleByType;
   }
 
   public SampleParam() {
-    this(-1, null, -1);
+    this(-1, null, -1, true);
   }
 
   public int getSampleType() {
     return sampleType;
   }
+
+  public boolean getSampleByType() { return sampleByType; }
 
   @Override
   public List<PartitionGetParam> split() {
@@ -42,7 +46,7 @@ public class SampleParam extends LongKeysGetParam {
     assert parts.length == nodeIdsParts.length;
     for (int i = 0; i < parts.length; i++) {
       if (nodeIdsParts[i] != null && nodeIdsParts[i].size() > 0) {
-        partParams.add(new PartSampleParam(matrixId, parts[i], nodeIdsParts[i], sampleType));
+        partParams.add(new PartSampleParam(matrixId, parts[i], nodeIdsParts[i], sampleType, sampleByType));
       }
     }
 

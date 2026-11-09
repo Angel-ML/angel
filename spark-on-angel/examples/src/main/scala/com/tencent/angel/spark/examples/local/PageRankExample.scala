@@ -1,18 +1,36 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
 package com.tencent.angel.spark.examples.local
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.graph.rank.pagerank.vertexcut.PageRank
-import com.tencent.angel.graph.utils.GraphIO
 import com.tencent.angel.spark.context.PSContext
-import org.apache.spark.{SparkConf, SparkContext}
+import com.tencent.angel.spark.ml.graph.algo.rank.pagerank.vertexcut.PageRank
+import com.tencent.angel.spark.ml.graph.utils.GraphIO
 import org.apache.spark.storage.StorageLevel
+import org.apache.spark.{SparkConf, SparkContext}
 
 object PageRankExample {
+
   def main(args: Array[String]): Unit = {
     val input = "data/bc/edge"
-    val output = "model/pagerank"
+    val output = "model/angel/flickr"
     val partitionNum = 3
     val storageLevel = StorageLevel.MEMORY_ONLY
+    val batchSize = 100
     val psPartitionNum = 2
 
     start()
@@ -37,11 +55,12 @@ object PageRankExample {
     val sc = new SparkContext(conf)
     sc.setLogLevel("ERROR")
     sc.setCheckpointDir("cp")
-    PSContext.getOrCreate(sc)
+    //    PSContext.getOrCreate(sc)
   }
 
   def stop(): Unit = {
     PSContext.stop()
     SparkContext.getOrCreate().stop()
   }
+
 }

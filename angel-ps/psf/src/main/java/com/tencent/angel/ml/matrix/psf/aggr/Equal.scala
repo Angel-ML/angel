@@ -20,7 +20,7 @@ package com.tencent.angel.ml.matrix.psf.aggr
 
 ;
 
-import scala.collection.JavaConversions._
+import scala.collection.convert.ImplicitConversions._
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math2.storage.{IntDoubleDenseVectorStorage, IntFloatDenseVectorStorage, IntIntDenseVectorStorage, IntLongDenseVectorStorage}
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.{BinaryAggrFunc, ScalarAggrResult, ScalarPartitionAggrResult}

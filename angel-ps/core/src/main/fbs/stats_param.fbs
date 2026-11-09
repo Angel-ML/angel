@@ -1,0 +1,13 @@
+// Copyright 2022, Tencent Inc.
+// All rights reserved.
+//
+// @author Yi LI <sincereli@tencent.com>
+
+namespace dollar.tensor;
+
+table TaskStats {
+  num_tasks:int32 (id:0);
+  positive_count:[int64] (id:1);
+  negative_count:[int64] (id:2);
+  update_times:[int64] (id:3);
+}

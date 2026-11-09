@@ -108,16 +108,33 @@ public class TypeNeighborElement implements IElement {
     this.selfType = selfType;
   }
 
-  public long[] Sample(int sampleType, Random random, long key, int count) {
-    if (accept == null)
-      return sample(sampleType, random, key, count);
-    else
-      return sampleWithAlias(sampleType, random, key, count);
+  public long sample(int sampleType, Random random, long key) {
+    if (type == null) {
+      int value = random.nextInt(data.length);
+      return data[value];
+    } else {
+      int idx = ArrayUtils.indexOf(type, sampleType);
+      if (idx < 0) {
+        return key; // no given sampleType neighbors, return the key itself
+      } else {
+        int min = indptr[idx];
+        int max = indptr[idx + 1];
+        int value = random.nextInt(max) % (max - min) + min;
+        return data[value];
+      }
+    }
   }
 
-  private long[] sample(int sampleType, Random random, long key, int count) {
+  public long[] Sample(boolean sampleByType, int sampleType, Random random, long key, int count) {
+    if (accept == null)
+      return sample(sampleByType, sampleType, random, key, count);
+    else
+      return sampleWithAlias(sampleByType, sampleType, random, key, count);
+  }
+
+  private long[] sample(boolean sampleByType, int sampleType, Random random, long key, int count) {
     long[] re = new long[count];
-    if (type == null) {
+    if (type == null || !sampleByType) {
       for (int i = 0; i < count; i ++) {
         re[i] = sample(0, data.length, random);
       }
@@ -136,9 +153,9 @@ public class TypeNeighborElement implements IElement {
     return re;
   }
 
-  private long[] sampleWithAlias(int sampleType, Random random, long key, int count) {
+  private long[] sampleWithAlias(boolean sampleByType, int sampleType, Random random, long key, int count) {
     long[] re = new long[count];
-    if (type == null) {
+    if (type == null || !sampleByType) {
       for (int i = 0; i < count; i ++) {
         re[i] = sampleWithAlias(0, data.length, random);
       }

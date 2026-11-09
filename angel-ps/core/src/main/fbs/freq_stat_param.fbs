@@ -1,0 +1,10 @@
+// Copyright 2021, Tencent Inc.
+// All rights reserved.
+//
+// @author Yi LI <sincereli@tencent.com>
+
+namespace tair.optimizers.freq_stat;
+
+table FreqStatParams {
+  feature_frequency:int32 (id:0);
+}

@@ -1,0 +1,25 @@
+// Copyright 2021, Tencent Inc.
+// All rights reserved.
+//
+// @author Boyang Huang <ablehuang@tencent.com>
+
+namespace tair.optimizers;
+
+table GaussInitParam {
+  mean:float (id:0);
+  variance:float (id:1);
+  dimensions:[uint32] (id:2);
+}
+
+table UniformInitParam {
+  lower_bound:float (id:0);
+  upper_bound:float (id:1);
+  dimensions:[uint32] (id:2);
+}
+
+// Notice: Once add init param type,
+//         remember to add it in union.
+union InitParamUnion {
+  gauss:GaussInitParam,
+  uniform:UniformInitParam
+}

@@ -23,7 +23,6 @@ public class GeneralGet extends GetFunc {
   }
 
   public GeneralGet() { this(null); }
-
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam partParam) {
     return GeneralGetUtils.partitionGet(psContext, partParam);

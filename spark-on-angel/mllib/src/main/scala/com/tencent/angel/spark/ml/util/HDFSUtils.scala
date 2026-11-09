@@ -3,7 +3,9 @@ package com.tencent.angel.spark.ml.util
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.linalg.{Vectors => MLVectors}
+import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.{StructField, _}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
@@ -44,6 +46,61 @@ object HDFSUtils {
   }
 
 
+  def readOneHotData(sc: SparkContext,
+                     input: String,
+                     partitionNum: Int,
+                     sampleRate: Double,
+                     maxIndex: Int,
+                     sep: String): DataFrame = {
+    /**
+     * one-hot sparse data format
+     *
+     * labeled data
+     * 1,22,307,123
+     * 0,323,333,723
+     *
+     * unlabeled data
+     * id1,23,34,243
+     * id2,33,221,233
+     *
+     */
+    val inputSep = sep
+    val instances = sc.textFile(input)
+      .flatMap { line =>
+        val items = line.split(inputSep)
+        if (items.length < 2) {
+          println(s"record length < 2, line: $line")
+          Iterator.empty
+        } else {
+          val label = items.head
+          val feature = items.tail.map(_.toInt)
+          if (maxIndex > 0) {
+            //println(feature.mkString(","))
+            Iterator.single(Row(label, feature.filter(x => x <= maxIndex)))
+          } else {
+            //println(feature.mkString(","))
+            Iterator.single(Row(label, feature))
+          }
+
+        }
+      }.repartition(partitionNum)
+      .sample(withReplacement = false, fraction = sampleRate)
+    val ss = SparkSession.builder().getOrCreate()
+    ss.createDataFrame(instances, ONE_HOT_INSTANCE_ST_INT)
+  }
+
+
+  def readByLine(sc: SparkContext, path: String, partitionNum: Int, sampleRate: Double): DataFrame = {
+    val inputRDD = sc.textFile(path, partitionNum)
+      .sample(withReplacement = false, fraction = sampleRate)
+      .repartition(partitionNum)
+
+    val stField = StructField(columnNamePrefix + 0, StringType, nullable = false)
+    val ss = SparkSession.builder().getOrCreate()
+    val result = ss.createDataFrame(inputRDD.map(line => Row(line)), StructType(Array(stField)))
+    result
+  }
+
   /**
    * read dense data from hdfs;the value can be null
    *
@@ -81,15 +138,14 @@ object HDFSUtils {
   }
 
 
-  def readByLine(sc: SparkContext, path: String, partitionNum: Int, sampleRate: Double): DataFrame = {
-    val inputRDD = sc.textFile(path, partitionNum)
-      .sample(withReplacement = false, fraction = sampleRate)
-      .repartition(partitionNum)
-
-    val stField = StructField(columnNamePrefix + 0, StringType, nullable = false)
-    val ss = SparkSession.builder().getOrCreate()
-    val result = ss.createDataFrame(inputRDD.map(line => Row(line)), StructType(Array(stField)))
-    result
+  def isSparse(sc: SparkContext, path: String, sep: String): Boolean = {
+    val items = sc.textFile(path).first()
+    for (item <- items.split(sep)) {
+      if (item.matches("\\d+\\:.*")) {
+        return true
+      }
+    }
+    false
   }
 
 
@@ -136,16 +192,60 @@ object HDFSUtils {
     }
   }
 
-  def save(dataRDD: RDD[Array[String]], path: String, sep: String): Unit = {
-    val outputPath = new Path(path)
-    val sc = dataRDD.context
-    val conf = sc.hadoopConfiguration
 
-    val fs = outputPath.getFileSystem(conf)
-    if (fs.exists(outputPath)) {
-      fs.delete(outputPath, true)
+  /**
+   * read libsvm data from hdfs.
+   *
+   */
+  def readLibsvmDataToDense(sc: SparkContext,
+                            path: String,
+                            partitionNum: Int,
+                            sampleRate: Double,
+                            dim: Int,
+                            label: Int,
+                            sep: String): DataFrame = {
+    val parseRDD = sc.textFile(path)
+      .sample(withReplacement = false, fraction = sampleRate)
+      .repartition(partitionNum)
+      .map(line => line.trim)
+      .filter(_.nonEmpty)
+      .map(line => parseLine(sep, line)).cache
+
+    val d = if (dim > 0) {
+      dim
+    } else {
+      parseRDD.map(record => record._2.lastOption.getOrElse(0))
+        .reduce(math.max) + 1
     }
-    dataRDD.map(_.mkString(sep)).saveAsTextFile(path)
+
+    val outputRDD = parseRDD.map { case (label_, indices, values) =>
+      Row(label_, Vectors.sparse(d, indices, values).toDense.toArray)
+    }
+
+    // label == -1 means DataLoader loads unlabeled data
+
+    val ss = SparkSession.builder().getOrCreate()
+    val fields = ArrayBuffer[String]()
+    for (i <- 0 until d) {
+      val name = columnNamePrefix + i
+      fields += name
+    }
+
+    // Create a SQL-like expression using the array
+    val sqlExpr = fields.zipWithIndex.map { case (alias, idx) => col(DFStruct.FEATURE).getItem(idx).as(alias) }
+
+    val outputRDF = if (label != -1) {
+      val labeledRDD = outputRDD.map { row =>
+        Row(row(0).toString.toDouble, row(1))
+      }
+      sqlExpr.insert(0, col("label"))
+      ss.createDataFrame(labeledRDD, LABELED_ST_ARRAY_DOUBLE)
+    } else {
+      sqlExpr.insert(0, col("id"))
+      ss.createDataFrame(outputRDD, LABELED_PREDICT_ST_ARRAY_DOUBLE)
+    }
+
+    outputRDF.select(sqlExpr: _*)
   }
 
 
@@ -177,14 +277,31 @@ object HDFSUtils {
   }
 
 
-  def isSparse(sc: SparkContext, path: String, sep: String): Boolean = {
-    val items = sc.textFile(path).first()
-    for (item <- items.split(sep)) {
-      if (item.matches("\\d+\\:.*")) {
-        return true
-      }
+  def save(dataRDD: RDD[Array[String]], path: String, sep: String): Unit = {
+    val outputPath = new Path(path)
+    val sc = dataRDD.context
+    val conf = sc.hadoopConfiguration
+
+    val fs = outputPath.getFileSystem(conf)
+    if (fs.exists(outputPath)) {
+      fs.delete(outputPath, true)
     }
-    false
+    dataRDD.map(_.mkString(sep)).saveAsTextFile(path)
   }
+
+  def save(df: DataFrame, path: String, sep: String, withHeader: Boolean = true): Unit = {
+    val outputPath = new Path(path)
+    val sc = SparkContext.getOrCreate()
+    val conf = sc.hadoopConfiguration
+
+    val fs = outputPath.getFileSystem(conf)
+    if (fs.exists(outputPath)) {
+      fs.delete(outputPath, true)
+    }
+    df.write.option("header", withHeader)
+      .option("delimiter", sep)
+      .csv(path)
+  }
+
 
 }

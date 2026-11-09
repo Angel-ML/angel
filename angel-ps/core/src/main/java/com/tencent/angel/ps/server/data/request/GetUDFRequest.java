@@ -19,6 +19,7 @@
 package com.tencent.angel.ps.server.data.request;
 
 import com.tencent.angel.common.ByteBufSerdeUtils;
+import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
@@ -40,22 +41,25 @@ public class GetUDFRequest extends RequestData {
    */
   private PartitionGetParam partParam;
 
+  private transient GetParam param;
+
   /**
    * Create a new GetUDFRequest.
    *
    * @param getFuncClass  udf class name
    * @param partParam     partition parameter of the udf
    */
-  public GetUDFRequest(String getFuncClass, PartitionGetParam partParam) {
+  public GetUDFRequest(String getFuncClass, PartitionGetParam partParam, GetParam param) {
     this.getFuncClass = getFuncClass;
     this.partParam = partParam;
+    this.param = param;
   }
 
   /**
    * Create a new GetUDFRequest.
    */
   public GetUDFRequest() {
-    this(null, null);
+    this(null, null, null);
   }
 
   @Override public void serialize(ByteBuf buf) {
@@ -100,5 +104,21 @@ public class GetUDFRequest extends RequestData {
         "getFuncClass='" + getFuncClass + '\'' +
         ", partParam=" + partParam +
         '}';
+  }
+
+  public void setGetFuncClass(String getFuncClass) {
+    this.getFuncClass = getFuncClass;
+  }
+
+  public void setPartParam(PartitionGetParam partParam) {
+    this.partParam = partParam;
+  }
+
+  public GetParam getParam() {
+    return param;
+  }
+
+  public void setParam(GetParam param) {
+    this.param = param;
   }
 }

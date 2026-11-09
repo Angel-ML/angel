@@ -1,0 +1,45 @@
+// Copyright 2020, Tencent Inc.
+// All rights reserved.
+//
+// @author Yi LI <sincereli@tencent.com>
+
+include "grad_message.fbs";
+include "training_message.fbs";
+
+namespace dollar.tensor.ftrl;
+
+table HyperParam {
+  alpha:double (id:0);
+  beta:double (id:1);
+  lambda1:double (id:2);
+  lambda2:double (id:3);
+  epsilon:double (id:4);
+  grad_factor:double (id:5);
+  init_accum_value:double (id:6);
+  lr_power:double = -0.5 (id:7);
+  l2_shrinkage:double = 0.0 (id:8);
+}
+
+table WeightParams {
+  z:[ubyte] (id:0);
+  n:[ubyte] (id:1);
+  g:[ubyte] (id:2);
+  w:[ubyte] (id:3);
+}
+
+table FtrlGradMessage {
+  hyper_param:HyperParam (id:0);
+  grad_message:GradMessage (id:1);
+  training_message:TrainingMessage (id:2);
+  init_flag:int8 (id:3);
+}
+
+table FtrlWeightParams {
+  weight_params:WeightParams (id:0);
+  field:int32 (id:1);
+  positive_count:int64 (id:2);
+  negative_count:int64 (id:3);
+  update_times:int64 (id:4);
+  hyper_param:HyperParam (id:5);
+  training_message:TrainingMessage(id:6);
+}

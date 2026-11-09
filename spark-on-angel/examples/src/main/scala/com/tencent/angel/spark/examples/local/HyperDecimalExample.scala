@@ -1,10 +1,10 @@
 package com.tencent.angel.spark.examples.local
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.graph.statistics.hyperloglog.HyperDecimal
-import com.tencent.angel.graph.utils.GraphIO
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
+import com.tencent.angel.spark.ml.graph.algo.statistics.hyperloglog.HyperDecimal
+import com.tencent.angel.spark.ml.graph.utils.GraphIO
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -13,10 +13,10 @@ object HyperDecimalExample {
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
     val mode = "local"
-    val input = "data/bc/HLL_test_data.txt"
+    val input = "data/bc/edge"
     val partitionNum = 1
     val storageLevel = StorageLevel.MEMORY_ONLY
-    val output = "data/output/results"
+    val output = "model/hyper_decimal"
     val psPartitionNum = 1
     val srcIndex = 0
     val dstIndex = 1
@@ -32,7 +32,7 @@ object HyperDecimalExample {
     val isDirected = false
     val isInDegree = true
     val percent = 0.7f
-    val sep = "\t"
+    val sep = " "
 
     start(mode)
     val hyperDecimal = new HyperDecimal()

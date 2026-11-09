@@ -1,5 +1,6 @@
 package com.tencent.angel.psagent.matrix.transport.response;
 
+import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.matrix.psf.update.base.VoidResult;
 import com.tencent.angel.ps.server.data.request.Request;
 import com.tencent.angel.ps.server.data.response.Response;
@@ -15,6 +16,7 @@ import io.netty.buffer.ByteBuf;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 public class UpdateUDFHandler extends Handler {
 
@@ -50,7 +52,8 @@ public class UpdateUDFHandler extends Handler {
     if(success) {
       finalResult.set(new VoidResult(com.tencent.angel.psagent.matrix.ResponseType.SUCCESS));
     } else {
-      finalResult.set(new VoidResult(com.tencent.angel.psagent.matrix.ResponseType.FAILED, detail));
+      //finalResult.set(new VoidResult(com.tencent.angel.psagent.matrix.ResponseType.FAILED, detail));
+      finalResult.setExecuteException(new ExecutionException(detail, new AngelException(detail)));
     }
   }
 }

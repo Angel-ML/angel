@@ -19,8 +19,9 @@ package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.graph.statistics.triangle.TriangleCountingUndirected
-import com.tencent.angel.graph.utils.{Delimiter, GraphIO}
+import com.tencent.angel.spark.ml.graph.algo.statistics.triangle.TriangleCountingUndirected
+import com.tencent.angel.spark.ml.graph.utils.{Delimiter, GraphIO}
+import com.tencent.angel.spark.ml.util.DataStatistics
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -32,15 +33,26 @@ object TriangleCountUndirectedExample {
     val sc = start(mode)
 
     val input = params.getOrElse("input", null)
-    val sep = Delimiter.parse(params.getOrElse("sep", Delimiter.TAB))
+    val sep = Delimiter.parse(params.getOrElse("sep", Delimiter.SPACE))
     val output = params.getOrElse("output", null)
-    val partitionNum = params.getOrElse("partitionNum", "1000").toInt
+
+    val partitionNum = params.getOrElse("partitionNum", "100").toInt
     val psPartitionNum = params.getOrElse("psPartitionNum",
-      sc.getConf.get("spark.ps.instances", "100")).toInt
+      sc.getConf.get("spark.ps.instances", "10")).toInt
+
     val batchSize = params.getOrElse("batchSize", "10000").toInt
     val pullBatchSize = params.getOrElse("pullBatchSize", "1000").toInt
+
     val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
-    val computeLCC = params.getOrElse("computeLCC", "false").toBoolean
+    val enableCheck = params.getOrElse("enableCheck", "false").toBoolean
+    val bufferSize = params.getOrElse("bufferSize", "1000000").toInt
+
+    val srcIndex = params.getOrElse("srcIndex", "0").toInt
+    val dstIndex = params.getOrElse("dstIndex", "1").toInt
+
+    val cpDir = params.get("cpDir").filter(_.nonEmpty).orElse(GraphIO.defaultCheckpointDir)
+      .getOrElse(throw new Exception("checkpoint dir not provided"))
+    sc.setCheckpointDir(cpDir)
 
     start(mode)
     val startTime = System.currentTimeMillis()
@@ -49,11 +61,23 @@ object TriangleCountUndirectedExample {
       .setStorageLevel(storageLevel)
       .setBatchSize(batchSize)
       .setPullBatchSize(pullBatchSize)
+      .setDebugMode(enableCheck)
+      .setBufferSize(bufferSize)
       .setPSPartitionNum(psPartitionNum)
-      .setComputeLcc(computeLCC)
+      .setInput(input)
+      .setSrcNodeIndex(srcIndex)
+      .setDstNodeIndex(dstIndex)
+      .setDelimiter(sep)
 
 
-    val df = GraphIO.load(input, isWeighted = false, sep = sep)
+    val df = GraphIO.load(input, isWeighted = false,srcIndex = srcIndex, dstIndex = dstIndex, sep = sep)
+
+    //collect app name and data size
+    DataStatistics.setAppName(triangleCount.getClass.getCanonicalName)
+    DataStatistics.calcRDDSize(df, "angel.input.data")
+    DataStatistics.setDataPartitionNum(partitionNum)
+    DataStatistics.setPSPartitionNum(psPartitionNum)
+
     val mapping = triangleCount.transform(df)
     GraphIO.save(mapping, output)
 
@@ -64,7 +88,7 @@ object TriangleCountUndirectedExample {
   def start(mode: String): SparkContext = {
     val conf = new SparkConf()
     conf.setMaster(mode)
-    conf.setAppName("triangleCounting_undirected")
+    conf.setAppName("trianglecount_undirected")
     val sc = SparkContext.getOrCreate(conf)
     sc
   }

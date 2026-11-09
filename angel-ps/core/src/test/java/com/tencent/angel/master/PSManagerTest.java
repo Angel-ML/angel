@@ -49,6 +49,7 @@ import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.ParameterServer;
 import com.tencent.angel.ps.meta.PSMatrixMetaManager;
 import com.tencent.angel.ps.storage.matrix.ServerMatrix;
+import com.tencent.angel.ps.storage.partitioner.RangePartitioner;
 import com.tencent.angel.psagent.matrix.MatrixClient;
 import com.tencent.angel.psagent.task.TaskContext;
 import com.tencent.angel.worker.Worker;
@@ -119,24 +120,26 @@ public class PSManagerTest {
 
       // add matrix
       MatrixContext mMatrix = new MatrixContext();
-      mMatrix.setName("w1");
+      mMatrix.setName("PSManagerTest_w1");
       mMatrix.setRowNum(1);
       mMatrix.setColNum(100000);
       mMatrix.setMaxRowNumInBlock(1);
       mMatrix.setMaxColNumInBlock(50000);
       mMatrix.setRowType(RowType.T_INT_DENSE);
+      mMatrix.setPartitionerClass(RangePartitioner.class);
       mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
       mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
       angelClient.addMatrix(mMatrix);
 
       MatrixContext mMatrix2 = new MatrixContext();
-      mMatrix2.setName("w2");
+      mMatrix2.setName("PSManagerTest_w2");
       mMatrix2.setRowNum(1);
       mMatrix2.setColNum(100000);
       mMatrix2.setMaxRowNumInBlock(1);
       mMatrix2.setMaxColNumInBlock(50000);
       mMatrix2.setRowType(RowType.T_DOUBLE_DENSE);
+      mMatrix2.setPartitionerClass(RangePartitioner.class);
       mMatrix2.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix2.set(MatrixConf.MATRIX_HOGWILD, "false");
       mMatrix2.set(MatrixConf.MATRIX_AVERAGE, "false");
@@ -239,8 +242,8 @@ public class PSManagerTest {
       PSAttempt psAttempt0 = amPs.getPSAttempt(psAttempt0Id);
       ParameterServer ps = LocalClusterContext.get().getPS(psAttempt0Id).getPS();
       Worker worker = LocalClusterContext.get().getWorker(worker0Attempt0Id).getWorker();
-      int w1Id = angelAppMaster.getAppContext().getMatrixMetaManager().getMatrix("w1").getId();
-      int w2Id = angelAppMaster.getAppContext().getMatrixMetaManager().getMatrix("w2").getId();
+      int w1Id = angelAppMaster.getAppContext().getMatrixMetaManager().getMatrix("PSManagerTest_w1").getId();
+      int w2Id = angelAppMaster.getAppContext().getMatrixMetaManager().getMatrix("PSManagerTest_w2").getId();
 
       Location masterLoc =
         LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMasterService()
@@ -314,8 +317,8 @@ public class PSManagerTest {
 
       checkMatrixInfo(ps, w1Id, w2Id, w1Clock, w2Clock);
 
-      MatrixClient w1Task0Client = worker.getPSAgent().getMatrixClient("w1", 0);
-      MatrixClient w1Task1Client = worker.getPSAgent().getMatrixClient("w1", 1);
+      MatrixClient w1Task0Client = worker.getPSAgent().getMatrixClient("PSManagerTest_w1", 0);
+      MatrixClient w1Task1Client = worker.getPSAgent().getMatrixClient("PSManagerTest_w1", 1);
 
       int matrixW1Id = w1Task0Client.getMatrixId();
 

@@ -16,19 +16,23 @@
  */
 package com.tencent.angel.graph.client.psf.get.getnodefeats;
 
-import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.graph.data.Feature;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 public class GetNodeFeatsResult extends GetResult {
 
-  private final Long2ObjectOpenHashMap<IntFloatVector> nodeIdToFeats;
+  private final Long2ObjectOpenHashMap<Feature> nodeIdToFeats;
 
-  public GetNodeFeatsResult(Long2ObjectOpenHashMap<IntFloatVector> nodeIdToFeats) {
+  public GetNodeFeatsResult(Long2ObjectOpenHashMap<Feature> nodeIdToFeats) {
     this.nodeIdToFeats = nodeIdToFeats;
   }
 
-  public Long2ObjectOpenHashMap<IntFloatVector> getnodeIdToFeats() {
+  public GetNodeFeatsResult() {
+    this(null);
+  }
+
+  public Long2ObjectOpenHashMap<Feature> getnodeIdToFeats() {
     return nodeIdToFeats;
   }
 }

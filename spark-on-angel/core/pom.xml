@@ -34,4 +34,25 @@
         <main.basedir>${project.parent.parent.basedir}</main.basedir>
     </properties>
 
+
+    <!-- Spark 3.3.1 needs jackson-core 2.13.x; a transitive 2.7.7 made
+         MetricsServlet fail to initialize during ScalaTest runs. -->
+    <dependencies>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.13.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.13.4.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>2.13.4</version>
+        </dependency>
+    </dependencies>
+
 </project>

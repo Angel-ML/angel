@@ -25,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 
 import javax.net.SocketFactory;
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
@@ -107,11 +108,146 @@ public class NetUtils {
     return ret;
   }
 
+  /**
+   * Best-effort resolution of a routable local IPv4 address.
+   *
+   * <p>We first try {@link InetAddress#getLocalHost()}; many hosts, however, have
+   * {@code /etc/hosts} entries that resolve the hostname to {@code 127.0.0.1}, in which
+   * case that method returns a loopback address that is useless for cluster-facing
+   * advertisement (e.g. PS &rarr; Master registration, Master RPC bind). When the primary
+   * lookup yields a loopback / wildcard / link-local / site-local address we fall back to
+   * scanning all {@code UP}, non-loopback, non-virtual interfaces and return the first
+   * non-loopback, non-link-local, non-wildcard IPv4 address we find. Returns the
+   * loopback address as a last resort (preserving the pre-existing behaviour) so the
+   * throws-spec does not change.
+   */
   public static String getRealLocalIP() throws UnknownHostException {
+    InetAddress primary = null;
+    try {
+      primary = InetAddress.getLocalHost();
+      if (!isUnusableForAdvertise(primary) && primary instanceof Inet4Address) {
+        return primary.getHostAddress();
+      }
+    } catch (UnknownHostException ignore) {
+      // Fall through to the interface-scan path.
+    }
+
+    String scanned = scanRoutableIpv4();
+    if (scanned != null) {
+      return scanned;
+    }
+
+    // Nothing better found: return whatever getLocalHost() gave us, or re-throw.
+    if (primary != null) {
+      return primary.getHostAddress();
+    }
     return InetAddress.getLocalHost().getHostAddress();
   }
 
+  /**
+   * Enumerate network interfaces and return the first non-loopback, non-link-local,
+   * non-wildcard IPv4 address on an {@code UP} non-virtual interface, or {@code null}
+   * if none can be determined.
+   */
+  public static String scanRoutableIpv4() {
+    try {
+      java.util.Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
+      while (nics != null && nics.hasMoreElements()) {
+        NetworkInterface nic = nics.nextElement();
+        try {
+          if (!nic.isUp() || nic.isLoopback() || nic.isVirtual()) {
+            continue;
+          }
+        } catch (SocketException ignore) {
+          continue;
+        }
+        java.util.Enumeration<InetAddress> addrs = nic.getInetAddresses();
+        while (addrs.hasMoreElements()) {
+          InetAddress a = addrs.nextElement();
+          if (isUnusableForAdvertise(a)) {
+            continue;
+          }
+          if (a instanceof Inet4Address) {
+            return a.getHostAddress();
+          }
+        }
+      }
+    } catch (Throwable t) {
+      LOG.warn("scanRoutableIpv4() failed: " + t.getMessage());
+    }
+    return null;
+  }
+
+  private static boolean isUnusableForAdvertise(InetAddress a) {
+    return a.isLoopbackAddress() || a.isLinkLocalAddress()
+        || a.isAnyLocalAddress() || a.isMulticastAddress();
+  }
+
   public static int chooseAListenPort(Configuration conf) throws IOException {
+    PortReservation reservation = reserveListenPortPair(conf);
+    // Historical behaviour: the caller only gets an int, so the reservation is dropped
+    // immediately. Prefer #reserveListenPortPair when the caller can hold the reservation
+    // until the real bind (see ParameterServerService / MatrixTransportServer).
+    reservation.close();
+    return reservation.getPort();
+  }
+
+  /**
+   * Reserve a listen port pair ({@code port} and {@code port + 1}) by actually holding two
+   * listening sockets on them.
+   *
+   * <p>Angel used to "choose" a port with {@link #isPortAvailable(int)}, i.e. test-bind then
+   * immediately close, and only bind the real server later. That check-then-bind gap is a
+   * race: several Angel processes on the same host draw from the same random port range, so
+   * another process could grab the very port we just validated, and the real bind then dies
+   * with {@code java.net.BindException: Address already in use}. The gap is especially wide
+   * for the PS data port, which is {@code control port + 1} by protocol and is not bound
+   * until {@code MatrixTransportServer#start()} - many seconds after selection.
+   *
+   * <p>Holding the sockets makes the reservation exclusive (SO_REUSEADDR is explicitly
+   * disabled, so no other socket - wildcard or specific-address - can bind the same port
+   * while we keep ours open). The caller releases each half right before the real server
+   * binds it, shrinking the race window to microseconds.
+   *
+   * @return a held reservation, never null
+   * @throws IOException if no free port pair could be found
+   */
+  public static PortReservation reserveListenPortPair(Configuration conf) throws IOException {
+    int[] portRange = parsePortRange(conf);
+    int startPort = portRange[0];
+    int endPort = portRange[1];
+
+    int maxTryTime = 100;
+    Random r = new Random();
+
+    for (int i = 0; i < maxTryTime; i++) {
+      int port = Math.abs(r.nextInt()) % (endPort - startPort) + startPort;
+      if (port + 1 > endPort) {
+        continue;
+      }
+
+      ServerSocket controlHolder = holdPort(port);
+      if (controlHolder == null) {
+        LOG.error("workerservice:port " + port + " is not available, try agine");
+        continue;
+      }
+
+      ServerSocket dataHolder = holdPort(port + 1);
+      if (dataHolder == null) {
+        closeQuietly(controlHolder);
+        LOG.error("workerservice:port " + (port + 1) + " is not available, try agine");
+        continue;
+      }
+
+      return new PortReservation(port, controlHolder, dataHolder);
+    }
+
+    throw new IOException(
+      "can not find a avaliable port for workerservice in range [" + startPort + "," + endPort
+        + "]");
+  }
+
+  private static int[] parsePortRange(Configuration conf) {
     String portRangeStr =
       conf.get(AngelConf.ANGEL_LISTEN_PORT_RANGE, AngelConf.DEFAULT_ANGEL_LISTEN_PORT_RANGE);
 
@@ -136,21 +272,106 @@ public class NetUtils {
       endPort = Integer.valueOf(portRangeArray[1]);
     }
 
-    int maxTryTime = 100;
-    Random r = new Random();
-    int port = -1;
+    return new int[] {startPort, endPort};
+  }
 
-    for (int i = 0; i < maxTryTime; i++) {
-      port = Math.abs(r.nextInt()) % (endPort - startPort) + startPort;
-      if (isPortAvailable(port)) {
-        return port;
+  /**
+   * Exclusively hold {@code port} on the wildcard address, or return null if it is taken.
+   */
+  private static ServerSocket holdPort(int port) {
+    ServerSocket socket = null;
+    try {
+      socket = new ServerSocket();
+      // Exclusive: on Linux a wildcard and a specific-address socket may share a port only
+      // when BOTH set SO_REUSEADDR, so disabling it here guarantees nobody else can bind.
+      socket.setReuseAddress(false);
+      socket.bind(new InetSocketAddress("0.0.0.0", port), 1);
+      return socket;
+    } catch (Exception e) {
+      closeQuietly(socket);
+      return null;
+    }
+  }
+
+  private static void closeQuietly(ServerSocket socket) {
+    if (socket != null) {
+      try {
+        socket.close();
+      } catch (Exception e) {
+        LOG.warn("close reserved socket failed: " + e.getMessage());
       }
+    }
+  }
 
-      LOG.error("workerservice:port " + port + " is not available, try agine");
+  /**
+   * Does this throwable (or any of its causes) mean "the address is already in use"?
+   * Used to decide whether picking another port / retrying the bind can help.
+   */
+  public static boolean isAddressInUse(Throwable t) {
+    Throwable cur = t;
+    int depth = 0;
+    while (cur != null && depth++ < 16) {
+      if (cur instanceof BindException) {
+        return true;
+      }
+      cur = cur.getCause();
+    }
+    return false;
+  }
+
+  /**
+   * An exclusive reservation of {@code port} and {@code port + 1}, held by two real
+   * listening sockets. Release each half right before the corresponding server binds it.
+   */
+  public static final class PortReservation implements Closeable {
+
+    private final int port;
+    private ServerSocket controlHolder;
+    private ServerSocket dataHolder;
+
+    private PortReservation(int port,ServerSocket controlHolder, ServerSocket dataHolder) {
+      this.port = port;
+      this.controlHolder = controlHolder;
+      this.dataHolder = dataHolder;
     }
 
-    throw new IOException("can not find a avaliable port for workerservice");
+    /**
+     * @return the reserved port, used by the control (rpc) server
+     */
+    public int getPort() {
+      return port;
+    }
+
+    /**
+     * @return the reserved {@code port + 1}, used by the PS matrix-transport (data) server
+     */
+    public int getDataPort() {
+      return port + 1;
+    }
+
+    /**
+     * Release the hold on {@link #getPort()}, to be called right before the real bind.
+     */
+    public synchronized void releaseControlPort() {
+      closeQuietly(controlHolder);
+      controlHolder = null;
+    }
+
+    /**
+     * Release the hold on {@link #getDataPort()}, to be called right before the real bind.
+     */
+    public synchronized void releaseDataPort() {
+      closeQuietly(dataHolder);
+      dataHolder = null;
+    }
+
+    @Override
+    public synchronized void close() {
+      releaseControlPort();
+      releaseDataPort();
+    }
   }
+
 
   public static void testBindPort(String host, int port) throws IOException {
     Socket s = new Socket();

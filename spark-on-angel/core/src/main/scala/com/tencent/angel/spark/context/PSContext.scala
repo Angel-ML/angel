@@ -26,6 +26,9 @@ import scala.collection.Map
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.model.{ModelLoadContext, ModelSaveContext}
 import com.tencent.angel.spark.models.PSVector
+import org.apache.commons.logging.{Log, LogFactory}
+
+import java.util.concurrent.atomic.AtomicBoolean
 
 
 abstract class PSContext {
@@ -68,22 +71,32 @@ abstract class PSContext {
   def load(ctx: ModelLoadContext)
 
   def recover(checkpointId: Int, ctx: ModelLoadContext)
+
+  def waitPS()
 }
 
 object PSContext {
+  val LOG: Log = LogFactory.getLog(classOf[PSContext])
   private var _instance: PSContext = _
   private var failCause: Exception = _
+  var cost: Long = _
+  val stopped: AtomicBoolean = new AtomicBoolean(false)
 
   def getOrCreate(sc: SparkContext): PSContext = {
+    cost = System.currentTimeMillis()
     _instance = instance()
+    cost = System.currentTimeMillis() - cost
+    println(s"wait ps start cost: ${cost} ms")
 
     if (_instance == null) {
       throw new Exception(s"init PSContext failed, $failCause")
     }
+    stopped.set(false)
 
     _instance.conf.foreach {
       case (key, value) => sc.setLocalProperty(key, value)
     }
+
     _instance
   }
 
@@ -97,8 +110,18 @@ object PSContext {
           } catch {
             case e: Exception =>
               _instance = null
+              // Surface the real cause in BOTH the executor stderr (printStackTrace)
+              // AND the AngelException message itself, so it shows up in the driver
+              // log too. Otherwise the only thing the driver sees is the canned
+              // "init AngelPSContext fail, please check logs of master of angel"
+              // which forces a manual SSH into the worker pod to diagnose. Wrapping
+              // the real exception as `cause` also preserves the full stack for any
+              // log4j appender that knows how to render Throwable.getCause.
+              LOG.error("init AngelPSContext failed", e)
               e.printStackTrace()
-              throw new AngelException("init AngelPSContext fail, please check logs of master of angel")
+              val msg = s"init AngelPSContext fail (root cause: ${e.getClass.getSimpleName}: ${e.getMessage}). " +
+                "See executor stderr / Angel master log for the full stack trace."
+              throw new AngelException(msg, e)
           }
         }
       }
@@ -106,14 +129,39 @@ object PSContext {
     _instance
   }
 
+  def waitPS(sc: SparkContext): Unit = {
+    if (_instance == null) {
+      throw new Exception(s"init PSContext failed, $failCause")
+    } else {
+      try {
+        _instance.waitPS()
+        _instance.conf.foreach {
+          case (key, value) => sc.setLocalProperty(key, value)
+        }
+      } catch {
+        case e: Exception =>
+          _instance = null
+          e.printStackTrace()
+          throw new AngelException("init AngelPSContext fail, please check logs of master of angel")
+      }
+    }
+  }
+
   /**
     * Clean up PSContext.
     */
   def stop(): Unit = {
-    PSContext._instance.stop()
-    PSContext._instance = null
-
-    AngelPSContext.stopAngel()
+    if (stopped.compareAndSet(false, true)) {
+      LOG.info("Start to stop ps")
+      try {
+        if (PSContext._instance != null) {
+          PSContext._instance.stop()
+        }
+      } finally {
+        PSContext._instance = null
+        AngelPSContext.stopAngel()
+      }
+    }
   }
 
   private def isLocalMode(conf: SparkConf): Boolean = {

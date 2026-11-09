@@ -89,7 +89,7 @@ public class HashIntKeysAnyValuesPart extends HashKeyValuePart implements IIntKe
 
   @Override
   public int bufferLen() {
-    return dynamicKeysValues.bufferLen();
+    return super.bufferLen() + dynamicKeysValues.bufferLen();
   }
 
 

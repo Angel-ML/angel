@@ -1,17 +1,34 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
-import com.tencent.angel.spark.ml.util.SparkUtils
-import com.tencent.angel.graph.embedding.eges._
-import com.tencent.angel.graph.utils.GraphIO
+import com.tencent.angel.spark.ml.util.{DataStatistics, SparkUtils}
+import com.tencent.angel.spark.ml.graph.algo.embedding.eges._
+import com.tencent.angel.spark.ml.graph.utils.GraphIO
 import org.apache.hadoop.fs.Path
-import org.apache.spark.SparkConf
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.storage.StorageLevel
+import org.apache.spark.SparkConf
 
 import scala.util.Random
 
@@ -37,8 +54,6 @@ object EGESExample {
     val weightedSI = params.getOrElse("weightedSI", "true").toBoolean // weight different SIs or not
     val numWeightsSI = params.getOrElse("numWeightsSI", "0").toInt // number of SIs
     val needRemapping = params.getOrElse("needRemapping", "false").toBoolean
-    val mappingPath = params.getOrElse("mappingPath", "")
-    val predictInput = params.getOrElse("predictInput", "")
 
     // val sc = start()
     val ss = startSS(mode)
@@ -53,12 +68,32 @@ object EGESExample {
 
     // load data: srcId + dstId + sideinfoIds, ID remapping
     var start = System.currentTimeMillis()
-    val (newEdgesSI, minNodeId, maxNodeId, minId, maxId) =
-      EGESOps.EGESDataProcess(ss, input, output, mappingPath, dataPartitionNum, numWeightsSI, needRemapping)
-    var end = System.currentTimeMillis()
-    println(s"the data processing time is ${(end - start) / 1000}s.")
+    val (data: RDD[Array[Int]], minNodeId, maxNodeId, minId, maxId) = if (needRemapping) {
+      EGESOps.EGESDataProcess(ss, input, output, dataPartitionNum, numWeightsSI)
+    } else {
+      EGESOps.EGESDataProcessWithoutRemap(ss, input, dataPartitionNum, numWeightsSI)
+    }
 
+    data.persist(StorageLevel.DISK_ONLY)
+
+    //collect app name and data size
+    DataStatistics.setAppName("com.tencent.angel.spark.ml.graph.algo.embedding.eges.EGESModel")
+    DataStatistics.calcRDDSize(data.map(_.toString), "angel.input.data")
     PSContext.getOrCreate(ss.sparkContext)
+
+    // newEdgesSI is replicated and remapped neighborTable with side information
+    val newEdgesSI:RDD[(Int, Int, Array[Int])] = data.map{
+      elements =>
+        (elements(0), elements(1), elements.slice(2, elements.length))
+    }
+    newEdgesSI.persist(StorageLevel.DISK_ONLY)
+    val numEdges = newEdgesSI.count()
+    data.unpersist()
+    var end = System.currentTimeMillis()
+
+    println(s"the minNodeId, maxNodeId, minId, maxId and the number of edges are $minNodeId, $maxNodeId, " +
+      s"$minId, $maxId, $numEdges.")
+    println(s"the data processing time is ${(end - start) / 1000}s.")
 
     // model training
     val param = new EGESParam()
@@ -88,13 +123,13 @@ object EGESExample {
       val weightSIPath = matrixLoadPath + "/weightSI"
       val ss = SparkSession.builder().getOrCreate()
       if (pathIFExists(embeddingPath, ss)) {
-        extraInputEmbeddingRDD = GraphIO.loadString(embeddingPath)
+        extraInputEmbeddingRDD = GraphIO.loadString(embeddingPath , 0)
       }
       if (pathIFExists(contextEmbeddingPath, ss)) {
-        extraContextEmbeddingRDD = GraphIO.loadString(contextEmbeddingPath)
+        extraContextEmbeddingRDD = GraphIO.loadString(contextEmbeddingPath, 0)
       }
       if (pathIFExists(weightSIPath, ss)) {
-        weightSIRDD = GraphIO.loadString(weightSIPath)
+        weightSIRDD = GraphIO.loadString(weightSIPath, 0)
       }
       model.extraInitialize(extraInputEmbeddingRDD, extraContextEmbeddingRDD, weightSIRDD, param)
     } else {
@@ -105,19 +140,12 @@ object EGESExample {
 
     println("start computing and saving aggregateEmbedding.")
     start = System.currentTimeMillis()
-    val predictEdgesSI = if (predictInput.nonEmpty) {
-      val (predEdgesSI, minNodeIdPred, maxNodeIdPred, _, _) =
-        EGESOps.EGESDataProcess(ss, predictInput, "", output, dataPartitionNum, numWeightsSI, needRemapping)
-      param.setMinIndex(minNodeIdPred).setMaxIndex(maxNodeIdPred)
-      predEdgesSI
-    } else newEdgesSI
-
-    val nodeSideInfoTab = predictEdgesSI.map(e => ((Array[Int](e._1) ++ e._3).mkString(" "), 1)) // remapping edges with side information
+    val nodeSideInfoTab = newEdgesSI.map(e => ((Array[Int](e._1) ++ e._3).mkString(" "), 1)) // remapping edges with side information
       .reduceByKey(_ + _).map(e => e._1).map(e => e.stripLineEnd.split(" ").map(v => v.toInt))
       .map(e => (e(0), minNodeId, e.slice(1, e.length)))
     nodeSideInfoTab.persist(StorageLevel.DISK_ONLY)
     println(s"the size of nodeSideInfoTab is ${nodeSideInfoTab.count()}.")
-    predictEdgesSI.unpersist()
+    newEdgesSI.unpersist()
     val aggregateEmbedding = model.embeddingAggregate(nodeSideInfoTab, param)
     aggregateEmbedding.persist(StorageLevel.DISK_ONLY)
     println(s"the size of aggregateEmbeddings is ${aggregateEmbedding.count()}.")
@@ -166,4 +194,5 @@ object EGESExample {
     PSContext.stop()
     SparkSession.builder().getOrCreate().stop()
   }
+
 }

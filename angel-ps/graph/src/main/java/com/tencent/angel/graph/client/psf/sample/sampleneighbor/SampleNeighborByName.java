@@ -1,6 +1,7 @@
 package com.tencent.angel.graph.client.psf.sample.sampleneighbor;
 
 import com.tencent.angel.graph.client.psf.sample.SampleUtils;
+import com.tencent.angel.graph.data.Neighbor;
 import com.tencent.angel.graph.utils.GraphMatrixUtils;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
@@ -27,11 +28,12 @@ public class SampleNeighborByName extends SampleNeighbor {
     long[] nodeIds = split.getKeys();
     String name = sampleParam.getName();
 
-    Long2ObjectOpenHashMap<long[]> nodeId2SampleNeighbors =
+    Long2ObjectOpenHashMap<Neighbor> nodeId2SampleNeighbors =
         SampleUtils.sampleByName(row, sampleParam.getCount(),
-            nodeIds, name, System.currentTimeMillis());
+            nodeIds, name, sampleParam.getMethod(), sampleParam.getStorageType(),
+            System.currentTimeMillis());
 
     return new PartSampleNeighborResult(sampleParam.getPartKey().getPartitionId(),
-        nodeId2SampleNeighbors);
+        nodeId2SampleNeighbors, sampleParam.getStorageType());
   }
 }

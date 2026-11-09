@@ -83,7 +83,9 @@ public class PSModelIOExecutor {
    */
   public void load(PSMatricesLoadContext loadContext, int parallel) throws IOException {
     LOG.info("start to load matrices :" + loadContext);
+    LOG.info("[PS-THREAD-POOL] matrix-io load workerThreads=" + parallel);
     Vector<String> errorLogs = new Vector<>();
+
 
     // Create and start workers
     IOExecutors workers = createIOExecutors(parallel);
@@ -131,7 +133,9 @@ public class PSModelIOExecutor {
    */
   public void save(PSMatricesSaveContext saveContext, int parallel) throws IOException {
     LOG.info("start to save matrices :" + saveContext);
+    LOG.info("[PS-THREAD-POOL] matrix-io save workerThreads=" + parallel);
     Vector<String> errorLogs = new Vector<>();
+
 
     // Create and start workers
     IOExecutors workers = createIOExecutors(parallel);

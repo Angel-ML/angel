@@ -1,23 +1,7 @@
-/*
- * Tencent is pleased to support the open source community by making Angel available.
- *
- * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- *
- * https://opensource.org/licenses/Apache-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- *
- */
-
 package com.tencent.angel.graph.client.psf.sample.sampleneighbor;
 
 import com.tencent.angel.graph.client.psf.sample.SampleUtils;
+import com.tencent.angel.graph.data.Neighbor;
 import com.tencent.angel.graph.utils.GraphMatrixUtils;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
@@ -57,22 +41,26 @@ public class SampleNeighborWithType extends GetFunc {
     switch (sampleType) {
       case NODE:
       case EDGE: {
-        Tuple2<Long2ObjectOpenHashMap<long[]>, Long2ObjectOpenHashMap<int[]>> nodeId2SampleNeighbors = SampleUtils
+        Tuple2<Long2ObjectOpenHashMap<Neighbor>, Long2ObjectOpenHashMap<int[]>> nodeId2SampleNeighbors = SampleUtils
             .sampleWithType(row, sampleParam.getCount(),
-                nodeIds, sampleType, System.currentTimeMillis());
+                nodeIds, sampleType, sampleParam.getMethod(), sampleParam.getStorageType(),
+                System.currentTimeMillis());
 
         return new PartSampleNeighborResultWithType(sampleParam.getPartKey().getPartitionId(),
-            nodeId2SampleNeighbors._1, nodeId2SampleNeighbors._2, sampleType);
+            nodeId2SampleNeighbors._1, nodeId2SampleNeighbors._2, sampleType,
+            sampleParam.getStorageType());
       }
 
       case NODE_AND_EDGE: {
-        Tuple3<Long2ObjectOpenHashMap<long[]>, Long2ObjectOpenHashMap<int[]>,
+        Tuple3<Long2ObjectOpenHashMap<Neighbor>, Long2ObjectOpenHashMap<int[]>,
             Long2ObjectOpenHashMap<int[]>> nodeId2SampleNeighbors = SampleUtils
             .sampleWithBothType(row,
-                sampleParam.getCount(), nodeIds, System.currentTimeMillis());
+                sampleParam.getCount(), nodeIds, sampleParam.getMethod(),
+                sampleParam.getStorageType(), System.currentTimeMillis());
 
         return new PartSampleNeighborResultWithType(sampleParam.getPartKey().getPartitionId(),
-            nodeId2SampleNeighbors._1(), nodeId2SampleNeighbors._2(), nodeId2SampleNeighbors._3());
+            nodeId2SampleNeighbors._1(), nodeId2SampleNeighbors._2(), nodeId2SampleNeighbors._3(),
+            sampleParam.getStorageType());
       }
 
       default: {
@@ -85,7 +73,7 @@ public class SampleNeighborWithType extends GetFunc {
   public GetResult merge(List<PartitionGetResult> partResults) {
     SampleType sampleType = ((SampleNeighborWithTypeParam) param).getSampleType();
 
-    Long2ObjectOpenHashMap<long[]> nodeIdToSampleNeighbors =
+    Long2ObjectOpenHashMap<Neighbor> nodeIdToSampleNeighbors =
         new Long2ObjectOpenHashMap<>(((SampleNeighborParam) param).getNodeIds().length);
     Long2ObjectOpenHashMap<int[]> nodeIdToSampleNeighborType =
         new Long2ObjectOpenHashMap<>(((SampleNeighborParam) param).getNodeIds().length);
@@ -97,7 +85,7 @@ public class SampleNeighborWithType extends GetFunc {
       PartSampleNeighborResultWithType partSampleResult = (PartSampleNeighborResultWithType) partResult;
 
       // Neighbors
-      Long2ObjectOpenHashMap<long[]> partNodeIdToSampleNeighbors = partSampleResult
+      Long2ObjectOpenHashMap<Neighbor> partNodeIdToSampleNeighbors = partSampleResult
           .getNodeIdToSampleNeighbors();
       if (partNodeIdToSampleNeighbors != null) {
         nodeIdToSampleNeighbors.putAll(partNodeIdToSampleNeighbors);

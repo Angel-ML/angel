@@ -1,0 +1,52 @@
+package com.tencent.angel.spark.ml.graph.algo.cliques.kclique;
+
+
+import com.tencent.angel.graph.client.initneighbor2.InitNeighborParam;
+import com.tencent.angel.graph.client.initneighbor2.PartInitNeighborParam;
+import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
+import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
+import com.tencent.angel.ps.storage.matrix.ServerMatrix;
+import com.tencent.angel.ps.storage.partition.RowBasedPartition;
+import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
+import com.tencent.angel.ps.storage.vector.element.LongArrayElement;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+
+/**
+ * Init node neighbors for long type node id
+ */
+public class LongObjectUF1 extends UpdateFunc {
+
+    /**
+     * Create a new UpdateParam
+     */
+    public LongObjectUF1(InitNeighborParam param) {
+        super(param);
+    }
+
+    public LongObjectUF1() {
+        this(null);
+    }
+
+    @Override
+    public void partitionUpdate(PartitionUpdateParam partParam) {
+        PartInitNeighborParam param = (PartInitNeighborParam) partParam;
+        ServerMatrix matrix = psContext.getMatrixStorageManager().getMatrix(partParam.getMatrixId());
+        RowBasedPartition part = (RowBasedPartition) matrix
+                .getPartition(partParam.getPartKey().getPartitionId());
+        ServerLongAnyRow row = (ServerLongAnyRow) part.getRow(1);
+
+        ObjectIterator<Long2ObjectMap.Entry<long[]>> iter = param
+                .getNodeIdToNeighborIndices().long2ObjectEntrySet().iterator();
+
+        row.startWrite();
+        try {
+            while (iter.hasNext()) {
+                Long2ObjectMap.Entry<long[]> entry = iter.next();
+                row.set(entry.getLongKey(), new LongArrayElement(entry.getValue()));
+            }
+        } finally {
+            row.endWrite();
+        }
+    }
+}

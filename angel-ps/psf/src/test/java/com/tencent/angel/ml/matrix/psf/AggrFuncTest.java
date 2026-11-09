@@ -49,7 +49,7 @@ public class AggrFuncTest {
 
   @BeforeClass public static void setup() throws Exception {
     LocalClusterHelper.setup();
-    w2Client = MatrixClientFactory.get("w2", 0);
+    w2Client = MatrixClientFactory.get("LocalClusterHelper_w2", 0);
     // row 0 is a random uniform
     w2Client.update(new RandomUniform(w2Client.getMatrixId(), 0, 0.0, 1.0));
     // row 1 is a random normal

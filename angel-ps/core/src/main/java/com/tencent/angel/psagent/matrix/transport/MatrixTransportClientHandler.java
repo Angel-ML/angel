@@ -23,16 +23,21 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.util.AttributeKey;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.util.concurrent.LinkedBlockingQueue;
+
 
 /**
  * The netty client handler for ps rpc client.
  */
 public class MatrixTransportClientHandler extends ChannelInboundHandlerAdapter {
   private static final Log LOG = LogFactory.getLog(MatrixTransportClientHandler.class);
+  private static final AttributeKey<String> CLOSE_REASON =
+      AttributeKey.valueOf("ps.client.close.reason");
+
 
   /**
    * Transport client
@@ -60,13 +65,18 @@ public class MatrixTransportClientHandler extends ChannelInboundHandlerAdapter {
   }
 
   @Override public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-    notifyChannelClosed(ctx.channel());
+    String reason = ctx.channel().attr(CLOSE_REASON).get();
+    if (reason == null) {
+      reason = "peer-or-network-close";
+    }
+    notifyChannelClosed(ctx.channel(), reason);
     super.channelInactive(ctx);
   }
 
-  private void notifyChannelClosed(Channel ch) throws InterruptedException {
-    dispatchMessageQueue.put(new ChannelClosedEvent(ch));
+  private void notifyChannelClosed(Channel ch, String reason) throws InterruptedException {
+    dispatchMessageQueue.put(new ChannelClosedEvent(ch, reason));
   }
+
 
   @Override public void channelRead(ChannelHandlerContext ctx, Object msg) {
     if (LOG.isDebugEnabled()) {
@@ -75,16 +85,19 @@ public class MatrixTransportClientHandler extends ChannelInboundHandlerAdapter {
       ((ByteBuf) msg).resetReaderIndex();
     }
 
-    client.handleResponse(msg);
+    client.handleResponse(new SerializedMsgWithTime((ByteBuf) msg));
   }
 
   @Override public void exceptionCaught(ChannelHandlerContext ctx, Throwable x) {
-    LOG.info("exceptin happened ", x);
+    LOG.warn("exception happened on " + ctx.channel(), x);
     String errorMsg = StringUtils.stringifyException(x);
     if (x instanceof OutOfMemoryError || (errorMsg.contains("MemoryError"))) {
       rpcContext.oom();
     } else {
+      ctx.channel().attr(CLOSE_REASON)
+          .set("client-exception-close:" + x.getClass().getSimpleName());
       ctx.close();
     }
   }
+
 }

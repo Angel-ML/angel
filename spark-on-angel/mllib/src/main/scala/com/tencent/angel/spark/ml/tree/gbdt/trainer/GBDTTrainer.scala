@@ -205,7 +205,7 @@ object GBDTTrainer {
         splits(newFid) = featureInfo.getSplits(fid)
         defaultBins(newFid) = featureInfo.getDefaultBin(fid)
     }
-    FeatureInfo(featTypes, numBin, splits, defaultBins)
+    FeatureInfo(featTypes, numBin, splits, defaultBins, null)
   }
 }
 
@@ -238,7 +238,7 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
     val trainDP = fromTextFile(trainInput, numFeature, numWorker)
       .coalesce(numWorker)
       .mapPartitions(iterator => Iterator(Dataset[Int, Float](iterator.toSeq)))
-      .persist()
+      .persist(param.storageLevel)
     val numTrain = trainDP.map(_.size).collect().sum
     println(s"Load data cost ${System.currentTimeMillis() - loadStart} ms")
 
@@ -381,7 +381,7 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
         val partIds = columnGroups.map(_._1)
         require(partIds.distinct.length == partIds.length)
         Iterator(Dataset[Short, Byte](columnGroups.sortBy(_._1).map(_._2)))
-      }).cache()
+      }).persist(param.storageLevel)
     require(trainFP.map(_.size).collect().forall(_ == numTrain))
     println(s"Repartitioning cost ${System.currentTimeMillis() - repartStart} ms")
     trainDP.unpersist() // persist FP and unpersist DP to save memory
@@ -407,7 +407,7 @@ class GBDTTrainer(param: GBDTParam) extends Serializable {
         val wrapper = FPGBDTTrainerWrapper(workerId, worker)
         Iterator(wrapper)
       }
-    ).cache()
+    ).persist(param.storageLevel)
     workers.foreach(worker =>
       println(s"Worker[${worker.workerId}] initialization done"))
     val numValid = workers.map(_.validLabels.length).collect().sum

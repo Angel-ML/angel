@@ -1,0 +1,357 @@
+#!/usr/bin/env bash
+# Tencent is pleased to support the open source community by making Angel available.
+#
+# Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+#
+# https://opensource.org/licenses/Apache-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+# ----------------------------------------------------------------------------------------
+# Manually start one Angel STANDALONE Parameter Server JVM and have it phone home to a
+# pre-existing master that was started with `angel.standalone.ps.external=true`
+# (typically via `angel-cluster-up --external-ps ...`).
+#
+# Two invocation styles:
+#
+#   A) Manifest-driven (recommended). The master, when running in external-PS mode,
+#      writes a manifest file listing every (serverIndex, attemptIndex) pair it is
+#      waiting for. Pass the path of that manifest plus the serverIndex to claim:
+#
+#        angel-ps-launch --manifest /shared/angel/manifest.txt --ps-id 0
+#
+#      The script reads master=<ip:port>, jobConf=<path>, appId=<id> from the manifest.
+#
+#   B) Fully-explicit (advanced). Pass everything on the command line:
+#
+#        angel-ps-launch \
+#            --master 10.0.0.1:21321 \
+#            --ps-id 0 \
+#            --attempt-id 0 \
+#            --job-conf /opt/angel/conf/job.xml
+#
+# Required env (same as angel-standalone-submit):
+#   JAVA_HOME              local JDK
+#
+# Optional env / flags:
+#   ANGEL_HOME                       defaults to the parent dir of this script
+#   ANGEL_LIB                        defaults to $ANGEL_HOME/lib
+#   ANGEL_USER_JAR                   colon-separated extra jars
+#   ANGEL_JAVA_OPTS                  extra JVM options (e.g. "-Xmx8g")
+#   ANGEL_LOG_DIR                    default log directory; falls back to $ANGEL_HOME/logs
+#   ANGEL_PS_LISTEN_HOST             routable IP this PS advertises to the master.
+#                                    If unset Angel falls back to NetUtils.getRealLocalIP()
+#                                    which scans the network interfaces.
+#   ANGEL_PS_LOG4J                   log4j config file for this PS JVM (1.x or 2.x).
+#   ANGEL_PS_LOG_LEVEL               root-logger level (e.g. INFO/DEBUG/WARN).
+#
+#   --task-number <n>                Value to advertise as TASK_NUMBER env (default 1).
+#                                    Only meaningful when running mode is ANGEL_PS_WORKER;
+#                                    in pure ANGEL_PS clusters it is ignored.
+#
+#   --detach, -d                     Fork the PS JVM into the background and return the
+#                                    shell prompt as soon as the PS finishes registering
+#                                    with the master. stdin is closed; stdout and stderr
+#                                    keep going to the log file.
+#   --ready-timeout <sec>            Seconds to wait for a detached PS to register
+#                                    before giving up. The JVM is left running on
+#                                    timeout. Default 60.
+#   --pid-file <path>                Where to write the PS JVM's PID. Default
+#                                    <log-dir>/angel-ps-<ps-id>-<timestamp>-<pid>.pid.
+#   --log-file <path>                Where to direct PS stdout/stderr. Default
+#                                    <log-dir>/angel-ps-<ps-id>-<timestamp>-<pid>.log.
+#                                    In foreground mode (no --detach) output is also
+#                                    mirrored to the console.
+#   --no-tee                         Foreground mode only: do not mirror to the console;
+#                                    write to the log file only.
+# ----------------------------------------------------------------------------------------
+
+set -euo pipefail
+
+PROG=$(basename "$0")
+
+die() { echo "[$PROG] $*" >&2; exit 1; }
+log() { echo "[$PROG] $*"; }
+
+# ----- arg parsing ----------------------------------------------------------------------------
+MANIFEST=""
+MASTER=""
+PS_ID=""
+ATTEMPT_ID=""
+JOB_CONF=""
+TASK_NUMBER=1
+DETACH=0
+READY_TIMEOUT=60
+PID_FILE_OPT=""
+LOG_FILE_OPT=""
+NO_TEE=0
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --manifest)    [ $# -ge 2 ] || die "--manifest requires a value"
+                       MANIFEST="$2"; shift 2 ;;
+        --master)      [ $# -ge 2 ] || die "--master requires a value"
+                       MASTER="$2"; shift 2 ;;
+        --ps-id)       [ $# -ge 2 ] || die "--ps-id requires a value"
+                       PS_ID="$2"; shift 2 ;;
+        --attempt-id)  [ $# -ge 2 ] || die "--attempt-id requires a value"
+                       ATTEMPT_ID="$2"; shift 2 ;;
+        --job-conf)    [ $# -ge 2 ] || die "--job-conf requires a value"
+                       JOB_CONF="$2"; shift 2 ;;
+        --task-number) [ $# -ge 2 ] || die "--task-number requires a value"
+                       TASK_NUMBER="$2"; shift 2 ;;
+        --detach|-d)
+            DETACH=1; shift ;;
+        --ready-timeout)
+            [ $# -ge 2 ] || die "--ready-timeout requires a value"
+            READY_TIMEOUT="$2"; shift 2 ;;
+        --pid-file)
+            [ $# -ge 2 ] || die "--pid-file requires a value"
+            PID_FILE_OPT="$2"; shift 2 ;;
+        --log-file)
+            [ $# -ge 2 ] || die "--log-file requires a value"
+            LOG_FILE_OPT="$2"; shift 2 ;;
+        --no-tee)
+            NO_TEE=1; shift ;;
+        --help|-h)
+            sed -n '2,75p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        *)
+            die "unknown argument: $1 (try --help)" ;;
+    esac
+done
+
+# ----- resolve configuration from manifest ----------------------------------------------------
+# A manifest line looks like one of:
+#   master=<ip:port>
+#   appId=<id>
+#   jobConf=<path>
+#   psNumber=<n>
+#   ps <serverIndex> <attemptIndex>
+# We tolerate comments (#...) and blank lines.
+if [ -n "$MANIFEST" ]; then
+    [ -f "$MANIFEST" ] || die "manifest not found: $MANIFEST"
+    [ -n "$PS_ID" ] || die "--ps-id is required when using --manifest"
+
+    while IFS= read -r raw_line; do
+        line="${raw_line%%#*}"
+        line="${line## }"; line="${line%% }"
+        [ -z "$line" ] && continue
+        case "$line" in
+            master=*)   [ -z "$MASTER"   ] && MASTER="${line#master=}"   ;;
+            jobConf=*)  [ -z "$JOB_CONF" ] && JOB_CONF="${line#jobConf=}" ;;
+            "ps "*)
+                # ps <serverIndex> <attemptIndex>
+                # shellcheck disable=SC2086
+                set -- $line
+                if [ "$#" -ge 3 ] && [ "$2" = "$PS_ID" ]; then
+                    if [ -z "$ATTEMPT_ID" ]; then
+                        ATTEMPT_ID="$3"
+                    fi
+                fi
+                ;;
+        esac
+    done < "$MANIFEST"
+fi
+
+[ -n "$MASTER" ]     || die "master ip:port not specified (use --master or --manifest)"
+[ -n "$PS_ID" ]      || die "--ps-id is required"
+[ -n "$ATTEMPT_ID" ] || ATTEMPT_ID=0
+[ -n "$JOB_CONF" ]   || die "job.xml path not specified (use --job-conf or --manifest)"
+[ -f "$JOB_CONF" ]   || die "job.xml not found: $JOB_CONF"
+
+case "$MASTER" in
+    *:*) MASTER_IP="${MASTER%:*}"; MASTER_PORT="${MASTER##*:}" ;;
+    *)   die "--master must be in form ip:port, got: $MASTER" ;;
+esac
+[ -n "$MASTER_IP" ]   || die "master ip is empty in '$MASTER'"
+[ -n "$MASTER_PORT" ] || die "master port is empty in '$MASTER'"
+
+# ----- resolve ANGEL_HOME / classpath ---------------------------------------------------------
+[ -n "${JAVA_HOME:-}" ] || die "JAVA_HOME is not set"
+JAVA="$JAVA_HOME/bin/java"
+[ -x "$JAVA" ] || die "java not executable: $JAVA"
+
+bin_dir=$(cd "$(dirname "$0")"; pwd)
+export ANGEL_HOME="${ANGEL_HOME:-$(cd "$bin_dir/.."; pwd)}"
+ANGEL_LIB="${ANGEL_LIB:-$ANGEL_HOME/lib}"
+[ -d "$ANGEL_LIB" ] || die "ANGEL_LIB not found: $ANGEL_LIB"
+
+# Build classpath: dir holding job.xml first (so Configuration.addResource() picks it up),
+# then ANGEL_LIB jars, then optional user jars / HADOOP_CONF_DIR.
+JOB_CONF_DIR=$(dirname "$JOB_CONF")
+CLASSPATH="$JOB_CONF_DIR"
+for f in "$ANGEL_LIB"/*.jar; do
+    CLASSPATH="$CLASSPATH:$f"
+done
+if [ -n "${ANGEL_USER_JAR:-}" ]; then
+    CLASSPATH="$CLASSPATH:$ANGEL_USER_JAR"
+fi
+if [ -n "${HADOOP_CONF_DIR:-}" ]; then
+    CLASSPATH="$HADOOP_CONF_DIR:$CLASSPATH"
+fi
+export CLASSPATH
+
+# Make sure StandalonePSMain finds the file under exactly the canonical name on the cp.
+# Most setups deploy job.xml under that name already; if the user passed a differently
+# named file we drop a sibling symlink (best-effort, no-op when names match).
+canonical="$JOB_CONF_DIR/job.xml"
+if [ "$JOB_CONF" != "$canonical" ] && [ ! -e "$canonical" ]; then
+    ln -s "$JOB_CONF" "$canonical" 2>/dev/null || cp "$JOB_CONF" "$canonical"
+fi
+
+# ----- compose JVM opts -----------------------------------------------------------------------
+JVM_LOG_OPTS=""
+if [ -n "${ANGEL_PS_LOG4J:-}" ]; then
+    # Accept both log4j 1.x and 2.x system properties.
+    JVM_LOG_OPTS="$JVM_LOG_OPTS -Dlog4j.configuration=file:${ANGEL_PS_LOG4J}"
+    JVM_LOG_OPTS="$JVM_LOG_OPTS -Dlog4j.configurationFile=${ANGEL_PS_LOG4J}"
+fi
+if [ -n "${ANGEL_PS_LOG_LEVEL:-}" ]; then
+    JVM_LOG_OPTS="$JVM_LOG_OPTS -Dangel.ps.log.level=${ANGEL_PS_LOG_LEVEL}"
+fi
+
+# ----- env vars expected by StandalonePSMain --------------------------------------------------
+export PARAMETERSERVER_ID="$PS_ID"
+export PS_ATTEMPT_ID="$ATTEMPT_ID"
+export LISTEN_ADDR="$MASTER_IP"
+export LISTEN_PORT="$MASTER_PORT"
+export TASK_NUMBER="$TASK_NUMBER"
+if [ -n "${ANGEL_PS_LISTEN_HOST:-}" ]; then
+    export PS_LISTEN_ADDR="$ANGEL_PS_LISTEN_HOST"
+fi
+
+# ----- resolve log / pid file paths -----------------------------------------------------------
+LOG_DIR="${ANGEL_LOG_DIR:-$ANGEL_HOME/logs}"
+mkdir -p "$LOG_DIR" || die "failed to create log dir: $LOG_DIR"
+
+DEFAULT_BASENAME="angel-ps-${PS_ID}-$(date +%Y%m%d-%H%M%S)-$$"
+if [ -n "$LOG_FILE_OPT" ]; then
+    LOG_FILE="$LOG_FILE_OPT"
+else
+    LOG_FILE="$LOG_DIR/${DEFAULT_BASENAME}.log"
+fi
+if [ -n "$PID_FILE_OPT" ]; then
+    PID_FILE="$PID_FILE_OPT"
+else
+    PID_FILE="$LOG_DIR/${DEFAULT_BASENAME}.pid"
+fi
+mkdir -p "$(dirname "$LOG_FILE")" || die "failed to create log dir for $LOG_FILE"
+mkdir -p "$(dirname "$PID_FILE")" || die "failed to create pid dir for $PID_FILE"
+
+# ----- banner ---------------------------------------------------------------------------------
+log "Starting external Angel PS:"
+log "  master      : $MASTER"
+log "  ps-id       : $PS_ID"
+log "  attempt-id  : $ATTEMPT_ID"
+log "  job.xml     : $JOB_CONF"
+log "  ANGEL_HOME  : $ANGEL_HOME"
+log "  log file    : $LOG_FILE"
+log "  pid file    : $PID_FILE"
+[ -n "${PS_LISTEN_ADDR:-}" ] && log "  PS listen IP: $PS_LISTEN_ADDR"
+if [ "$DETACH" = "1" ]; then
+    log "  mode        : DETACHED (script returns once PS registered, or after"
+    log "                --ready-timeout=${READY_TIMEOUT}s)"
+fi
+
+# Standardised log marker emitted by ParameterServer.register() right after a successful
+# psRegister RPC. We grep for this string both in foreground tail and in detached wait.
+READY_MARKER="Register to AppMaster successfully"
+# Failure markers we surface to the user before waiting hits its timeout. Any of these
+# implies the PS will exit shortly; bailing out fast lets the operator react instead of
+# waiting --ready-timeout seconds.
+FAILURE_MARKERS=(
+    "ps register to AppMaster failed"
+    "Start standalone PS failed"
+    "doesn't exists"
+)
+
+# ============================================================================================
+# Foreground mode (default): preserve the original behaviour as closely as possible.
+# We DO NOT use `exec` anymore because we want stdout/stderr tee'd to the log file too.
+# ============================================================================================
+if [ "$DETACH" = "0" ]; then
+    if [ "$NO_TEE" = "1" ]; then
+        "$JAVA" ${ANGEL_JAVA_OPTS:-} ${JVM_LOG_OPTS} \
+            -Dangel.deploy.mode=STANDALONE \
+            com.tencent.angel.ps.StandalonePSMain \
+            >>"$LOG_FILE" 2>&1 &
+    else
+        "$JAVA" ${ANGEL_JAVA_OPTS:-} ${JVM_LOG_OPTS} \
+            -Dangel.deploy.mode=STANDALONE \
+            com.tencent.angel.ps.StandalonePSMain \
+            > >(tee -a "$LOG_FILE") 2> >(tee -a "$LOG_FILE" >&2) &
+    fi
+    FG_PID=$!
+    echo "$FG_PID" > "$PID_FILE"
+    # Forward SIGINT/SIGTERM to the child so Ctrl-C in the foreground still tears it down.
+    trap 'kill -TERM "$FG_PID" 2>/dev/null || true; wait "$FG_PID" 2>/dev/null || true; exit 130' INT TERM
+    wait "$FG_PID"
+    exit $?
+fi
+
+# ============================================================================================
+# Detached mode: setsid + nohup the JVM, poll the log for the readiness marker, then exit.
+# ============================================================================================
+if command -v setsid >/dev/null 2>&1; then
+    setsid "$JAVA" ${ANGEL_JAVA_OPTS:-} ${JVM_LOG_OPTS} \
+        -Dangel.deploy.mode=STANDALONE \
+        com.tencent.angel.ps.StandalonePSMain \
+        </dev/null >>"$LOG_FILE" 2>&1 &
+else
+    nohup "$JAVA" ${ANGEL_JAVA_OPTS:-} ${JVM_LOG_OPTS} \
+        -Dangel.deploy.mode=STANDALONE \
+        com.tencent.angel.ps.StandalonePSMain \
+        </dev/null >>"$LOG_FILE" 2>&1 &
+fi
+BG_PID=$!
+disown 2>/dev/null || true
+echo "$BG_PID" > "$PID_FILE"
+
+log "PS JVM forked (pid=$BG_PID, pid-file=$PID_FILE)."
+log "Waiting up to ${READY_TIMEOUT}s for ps$PS_ID to register with $MASTER ..."
+
+deadline=$(( $(date +%s) + READY_TIMEOUT ))
+while :; do
+    if [ -s "$LOG_FILE" ]; then
+        if grep -q -F "$READY_MARKER" "$LOG_FILE" 2>/dev/null; then
+            log "PS $PS_ID is READY (registered with master at $MASTER)."
+            log "  pid file        : $PID_FILE"
+            log "  log file        : $LOG_FILE  (tail -f to follow)"
+            log "To stop this PS:    kill \$(cat '$PID_FILE')"
+            exit 0
+        fi
+        for marker in "${FAILURE_MARKERS[@]}"; do
+            if grep -q -F "$marker" "$LOG_FILE" 2>/dev/null; then
+                log "ERROR: PS $PS_ID failed during startup (matched: '$marker')."
+                log "Last 30 log lines from $LOG_FILE :"
+                tail -n 30 "$LOG_FILE" 2>/dev/null \
+                    | sed "s/^/[$PROG][log] /" >&2 || true
+                # Best-effort cleanup: the JVM will usually exit on its own, but make
+                # sure we don't leave a zombie behind on failures it cannot self-detect.
+                kill -TERM "$BG_PID" 2>/dev/null || true
+                exit 1
+            fi
+        done
+    fi
+    if ! kill -0 "$BG_PID" 2>/dev/null; then
+        log "ERROR: PS JVM (pid $BG_PID) exited before becoming ready."
+        log "Last 30 log lines from $LOG_FILE :"
+        tail -n 30 "$LOG_FILE" 2>/dev/null \
+            | sed "s/^/[$PROG][log] /" >&2 || true
+        exit 1
+    fi
+    if [ "$(date +%s)" -ge "$deadline" ]; then
+        log "ERROR: PS $PS_ID did not register within ${READY_TIMEOUT}s."
+        log "  The JVM (pid $BG_PID) is still running; inspect $LOG_FILE for progress."
+        log "  To stop it:           kill \$(cat '$PID_FILE')"
+        log "  To extend the wait:   --ready-timeout <bigger-value>"
+        exit 2
+    fi
+    sleep 1
+done

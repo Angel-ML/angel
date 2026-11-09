@@ -17,16 +17,14 @@
 
 package com.tencent.angel.spark.examples.basic
 
-import com.tencent.angel.conf.AngelConf
 import org.apache.spark.ml.linalg.{Vector => MLVector}
 import org.apache.spark.sql.{Row, SparkSession}
+
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
 import com.tencent.angel.spark.models.PSVector
 import com.tencent.angel.ml.math2.vector.IntDoubleVector
-import com.tencent.angel.ml.matrix.RowType
-import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner
 import com.tencent.angel.spark.util.VectorUtils
 
 object LR {
@@ -35,9 +33,11 @@ object LR {
     val params = ArgsUtil.parse(args)
     val ITERATIONS = params.getOrElse("numIter", "5").toInt
     val input = params.getOrElse("input", "data/a9a/a9a_123d_train.libsvm")
+    val mode = params.getOrElse("mode", "yarn-cluster")
     val lr = params.getOrElse("lr", "0.1").toDouble
 
     val ss = SparkSession.builder()
+      .master(mode)
       .appName("LRExample").getOrCreate()
     val sc = ss.sparkContext
     val psc = PSContext.getOrCreate(sc)
@@ -48,8 +48,7 @@ object LR {
     val trainData = data.rdd.map { case Row(label: Double, v: MLVector) =>
       (VFactory.sparseDoubleVector(numFeatures, v.toSparse.indices, v.toSparse.values), label)
     }.cache()
-    val psW = PSVector.dense(numFeatures, 20,
-      RowType.T_DOUBLE_DENSE, Map(AngelConf.Angel_PS_PARTITION_CLASS -> classOf[ColumnRangePartitioner].getCanonicalName)) // weights
+    val psW = PSVector.dense(numFeatures) // weights
     val psG = PSVector.duplicate(psW) // gradients of weights
 
     println("Initial psW: " + psW.dimension)

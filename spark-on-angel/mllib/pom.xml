@@ -71,6 +71,32 @@
           <version>${project.version}</version>
           <scope>compile</scope>
       </dependency>
+    <dependency>
+      <groupId>com.tencent.angel</groupId>
+      <artifactId>spark-on-angel-graph</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jpmml</groupId>
+      <artifactId>jpmml-sparkml</artifactId>
+      <version>1.5.3</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>edu.princeton.cs</groupId>
+      <artifactId>algs4</artifactId>
+      <version>1.0.3</version>
+    </dependency>
+    <dependency>
+      <groupId>org.ansj</groupId>
+      <artifactId>ansj_seg</artifactId>
+      <version>5.0.2</version>
+    </dependency>
   </dependencies>
 
   <build>

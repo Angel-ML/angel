@@ -2,8 +2,8 @@ package com.tencent.angel.graph.client.psf.init.initneighbors;
 
 import com.tencent.angel.graph.client.psf.init.GeneralInitByNameParam;
 import com.tencent.angel.graph.client.psf.update.GeneralPartUpdateByNameParam;
-import com.tencent.angel.graph.data.LongNeighbor;
 import com.tencent.angel.graph.data.MultiGraphNode;
+import com.tencent.angel.graph.data.Neighbor;
 import com.tencent.angel.graph.utils.GraphMatrixUtils;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateFunc;
@@ -45,7 +45,7 @@ public class InitNeighborByName extends UpdateFunc {
           graphNode = new MultiGraphNode();
           row.set(nodeIds[i], graphNode);
         }
-        graphNode.setNeighbors(name, ((LongNeighbor) neighbors[i]).getNodeIds());
+        graphNode.setNeighbors(name, (Neighbor) neighbors[i]);
       }
     } finally {
       row.endWrite();

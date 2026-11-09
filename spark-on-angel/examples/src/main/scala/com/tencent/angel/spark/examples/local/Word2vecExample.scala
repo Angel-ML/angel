@@ -22,7 +22,7 @@ import com.tencent.angel.ps.storage.matrix.PartitionSourceArray
 
 import scala.util.Random
 import com.tencent.angel.spark.context.PSContext
-import com.tencent.angel.graph.embedding.word2vec.{Word2VecModel, Word2VecParam}
+import com.tencent.angel.spark.ml.graph.algo.embedding.word2vec.{Word2VecModel, Word2VecParam}
 import com.tencent.angel.spark.ml.feature.Features
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -30,7 +30,7 @@ object Word2vecExample {
 
   def main(args: Array[String]): Unit = {
     val conf = new SparkConf()
-    conf.setMaster("local[2]")
+    conf.setMaster("local[1]")
     conf.setAppName("Word2vec example")
     conf.set("spark.ps.model", "LOCAL")
     conf.set("spark.ps.jars", "")
@@ -43,8 +43,8 @@ object Word2vecExample {
     sc.setLogLevel("ERROR")
     PSContext.getOrCreate(sc)
 
-    val input = "data/text8/text8.split.head"
-    val output = "file:///tmp/word2vec"
+    val input = "data/bc/edge"
+    val output = "model/word2vec"
 
     val data = sc.textFile(input)
     data.cache()
@@ -60,36 +60,34 @@ object Word2vecExample {
 
     val numDocs = docs.count()
     val maxWordId = docs.map(_.max).max().toLong + 1
-    val minWordId = docs.map(_.min).min().toLong
     val numTokens = docs.map(_.length).sum().toLong
     val maxLength = docs.map(_.length).max()
 
-    println(s"numDocs=$numDocs minWordId=$minWordId maxWordId=$maxWordId numTokens=$numTokens")
+    println(s"numDocs=$numDocs maxWordId=$maxWordId numTokens=$numTokens")
     PSContext.getOrCreate(sc)
 
     val param = new Word2VecParam()
       .setLearningRate(0.1f)
       .setDecayRate(0.5f)
       .setEmbeddingDim(32)
-      .setBatchSize(20)
-      .setWindowSize(5)
+      .setBatchSize(50)
+      .setWindowSize(10)
       .setNumPSPart(Some(10))
       .setSeed(Random.nextInt())
-      .setNumEpoch(2)
+      .setNumEpoch(5)
       .setNegSample(5)
       .setMaxIndex(maxWordId)
-      .setMinIndex(minWordId)
       .setNumRowDataSet(numDocs)
       .setMaxLength(maxLength)
-      .setSaveContextEmbedding(false)
-      .setExtraInputEmbeddingPath("")
-      .setExtraContextEmbeddingPath("")
-      .setLogStep(5)
+      .setModelPath(output)
+      .setLogStep(1000)
 
     val model = new Word2VecModel(param)
+    // Embeddings must be created on PS before training, otherwise the PS side
+    // LINEGetEmbedding finds no node and fails with NPE.
     model.randomInitialize(Random.nextInt())
     model.train(docs, param)
-    model.save(output, 5, false)
+    model.save(output, false)
     denseToString.foreach(rdd => rdd.map(f => s"${f._1}:${f._2}").saveAsTextFile(output + "/mapping"))
     PSContext.stop()
     sc.stop()

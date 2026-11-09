@@ -62,6 +62,25 @@ public class DynamicStringArray extends DynamicArray {
     return data;
   }
 
+  // Wire format must match ByteBufSerdeUtils.serializeUTF8s/deserializeUTF8s:
+  // [int size] then for each element [boolean notNull][utf8 bytes if notNull].
+  private static void serializeElement(ByteBuf out, String value) {
+    if (value != null) {
+      ByteBufSerdeUtils.serializeBoolean(out, true);
+      ByteBufSerdeUtils.serializeUTF8(out, value);
+    } else {
+      ByteBufSerdeUtils.serializeBoolean(out, false);
+    }
+  }
+
+  private static int elementLen(String value) {
+    int len = ByteBufSerdeUtils.BOOLEN_LENGTH;
+    if (value != null) {
+      len += ByteBufSerdeUtils.serializedUTF8Len(value);
+    }
+    return len;
+  }
+
   @Override
   public void serialize(ByteBuf out) {
     ByteBufSerdeUtils.serializeInt(out, size());
@@ -70,19 +89,20 @@ public class DynamicStringArray extends DynamicArray {
     for (int i = 0; i < currentBatchIndex; i++) {
       String[] batch = batchs.get(i);
       for (int j = 0; j < batch.length; j++) {
-        ByteBufSerdeUtils.serializeUTF8(out, batch[j]);
+        serializeElement(out, batch[j]);
       }
     }
 
     // Last batch
     for (int i = 0; i < currentBatchPos; i++) {
-      ByteBufSerdeUtils.serializeUTF8(out, currentBatch[i]);
+      serializeElement(out, currentBatch[i]);
     }
   }
 
   @Override
   public void deserialize(ByteBuf in) {
     data = ByteBufSerdeUtils.deserializeUTF8s(in);
+    deserializedSize = data.length;
   }
 
   @Override
@@ -92,13 +112,13 @@ public class DynamicStringArray extends DynamicArray {
     for (int i = 0; i < currentBatchIndex; i++) {
       String[] batch = batchs.get(i);
       for (int j = 0; j < batch.length; j++) {
-        len += ByteBufSerdeUtils.serializedUTF8Len(batch[j]);
+        len += elementLen(batch[j]);
       }
     }
 
     // Last batch
     for (int i = 0; i < currentBatchPos; i++) {
-      len += ByteBufSerdeUtils.serializedUTF8Len(currentBatch[i]);
+      len += elementLen(currentBatch[i]);
     }
     return len;
   }

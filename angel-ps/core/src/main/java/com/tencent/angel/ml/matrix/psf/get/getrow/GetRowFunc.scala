@@ -24,7 +24,7 @@ import com.tencent.angel.ml.matrix.psf.get.base._
 import com.tencent.angel.psagent.matrix.ResponseType
 import com.tencent.angel.psagent.matrix.transport.adapter.RowSplitCombineUtils
 
-import scala.collection.JavaConversions._
+import scala.collection.convert.ImplicitConversions._
 
 /**
   * Get a matrix row function implements by the get udf.

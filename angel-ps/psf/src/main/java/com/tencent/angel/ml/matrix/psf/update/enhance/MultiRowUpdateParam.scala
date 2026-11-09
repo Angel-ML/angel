@@ -85,7 +85,7 @@ class MultiRowUpdateParam(matrixId: Int, val rowIds: Array[Int], val values: Arr
     val partList = PSAgentContext.get.getMatrixMetaManager.getPartitions(matrixId)
     val size = partList.size
     val partParams = new util.ArrayList[PartitionUpdateParam](size)
-    import scala.collection.JavaConversions._
+    import scala.collection.convert.ImplicitConversions._
     for (part <- partList) {
       partParams.add(new MultiRowUpdateParam.MultiRowPartitionUpdateParam(matrixId, part, rowIds, values))
     }

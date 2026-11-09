@@ -35,6 +35,7 @@ import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.ParameterServer;
 import com.tencent.angel.ps.storage.MatrixStorageManager;
 import com.tencent.angel.ps.storage.matrix.ServerMatrix;
+import com.tencent.angel.ps.storage.partitioner.RangePartitioner;
 import com.tencent.angel.worker.task.TaskContext;
 import com.tencent.angel.protobuf.ProtobufUtil;
 import com.tencent.angel.protobuf.generated.MLProtos.MatrixClock;
@@ -109,12 +110,13 @@ public class MasterRecoverTest {
 
       // add matrix
       MatrixContext mMatrix = new MatrixContext();
-      mMatrix.setName("w1");
+      mMatrix.setName("MasterRecoverTest_w1");
       mMatrix.setRowNum(1);
       mMatrix.setColNum(100000);
       mMatrix.setMaxRowNumInBlock(1);
       mMatrix.setMaxColNumInBlock(50000);
       mMatrix.setRowType(RowType.T_INT_DENSE);
+      mMatrix.setPartitionerClass(RangePartitioner.class);
       mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
       mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
@@ -122,12 +124,13 @@ public class MasterRecoverTest {
       angelClient.addMatrix(mMatrix);
 
       MatrixContext mMatrix2 = new MatrixContext();
-      mMatrix2.setName("w2");
+      mMatrix2.setName("MasterRecoverTest_w2");
       mMatrix2.setRowNum(1);
       mMatrix2.setColNum(100000);
       mMatrix2.setMaxRowNumInBlock(1);
       mMatrix2.setMaxColNumInBlock(50000);
       mMatrix2.setRowType(RowType.T_DOUBLE_DENSE);
+      mMatrix2.setPartitionerClass(RangePartitioner.class);
       mMatrix2.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix2.set(MatrixConf.MATRIX_HOGWILD, "false");
       mMatrix2.set(MatrixConf.MATRIX_AVERAGE, "false");
@@ -165,8 +168,8 @@ public class MasterRecoverTest {
 
       ParameterServerManager psManager = angelAppMaster.getAppContext().getParameterServerManager();
       ParameterServer ps = LocalClusterContext.get().getPS(psAttempt0Id).getPS();
-      int w1Id = angelAppMaster.getAppContext().getMatrixMetaManager().getMatrix("w1").getId();
-      int w2Id = angelAppMaster.getAppContext().getMatrixMetaManager().getMatrix("w2").getId();
+      int w1Id = angelAppMaster.getAppContext().getMatrixMetaManager().getMatrix("MasterRecoverTest_w1").getId();
+      int w2Id = angelAppMaster.getAppContext().getMatrixMetaManager().getMatrix("MasterRecoverTest_w2").getId();
 
       Location masterLoc =
         LocalClusterContext.get().getMaster().getAppMaster().getAppContext().getMasterService()

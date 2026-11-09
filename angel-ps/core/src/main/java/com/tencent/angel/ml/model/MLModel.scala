@@ -27,7 +27,7 @@ import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 
-import scala.collection.JavaConversions._
+import scala.collection.convert.ImplicitConversions._
 
 /**
   * Model for a Algorithm. One MLModel is composed by one or multi PSModel, each one can be referred directly with Model name

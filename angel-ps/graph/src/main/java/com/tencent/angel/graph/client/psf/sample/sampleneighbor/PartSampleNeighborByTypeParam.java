@@ -2,6 +2,7 @@ package com.tencent.angel.graph.client.psf.sample.sampleneighbor;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.common.ByteBufSerdeUtils;
+import com.tencent.angel.graph.data.NeighborStorageType;
 import com.tencent.angel.psagent.matrix.transport.router.KeyPart;
 import io.netty.buffer.ByteBuf;
 
@@ -14,14 +15,16 @@ public class PartSampleNeighborByTypeParam extends PartSampleNeighborParam {
   private int node_or_edge_type;
 
   public PartSampleNeighborByTypeParam(int matrixId, PartitionKey part, KeyPart indicesPart,
-      int count, SampleType sampleType, int node_or_edge_type) {
-    super(matrixId, part, indicesPart, count);
+      int count, SampleType sampleType, int node_or_edge_type, SampleMethod method,
+      NeighborStorageType storageType) {
+    super(matrixId, part, indicesPart, count, method, storageType);
     this.sampleType = sampleType;
     this.node_or_edge_type = node_or_edge_type;
   }
 
   public PartSampleNeighborByTypeParam() {
-    this(-1, null, null, -1, SampleType.SIMPLE, -1);
+    this(-1, null, null, -1, SampleType.SIMPLE, -1, SampleMethod.RANDOM,
+        NeighborStorageType.LONGARRAY);
   }
 
   @Override

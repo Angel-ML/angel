@@ -94,7 +94,7 @@ class DynamicNeighborModel(modelContex: ModelContext) extends CommonOps with Ser
 
   def getNeighbors(nodeIds: Array[Long]): Long2ObjectOpenHashMap[Array[Long]] = {
     neighborMatrix.asyncPsfGet(new GetNeighbor(
-      new LongKeysGetParam(neighborMatrix.id, nodeIds))).get(600000, TimeUnit.MILLISECONDS).asInstanceOf[GetLongsResult].getData
+          new LongKeysGetParam(neighborMatrix.id, nodeIds))).get(600000, TimeUnit.MILLISECONDS).asInstanceOf[GetLongsResult].getData
 
   }
 

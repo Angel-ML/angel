@@ -18,8 +18,9 @@
 package com.tencent.angel.graph.client.psf.init.initedgefeats;
 
 import com.tencent.angel.graph.client.psf.init.GeneralInitParam;
+import com.tencent.angel.graph.data.EdgeFeats;
+import com.tencent.angel.graph.data.Feature;
 import com.tencent.angel.graph.data.GraphNode;
-import com.tencent.angel.graph.data.LongEdgeFeats;
 import com.tencent.angel.graph.utils.GraphMatrixUtils;
 import com.tencent.angel.ml.matrix.psf.update.base.GeneralPartUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
@@ -56,14 +57,15 @@ public class InitEdgeFeats extends UpdateFunc {
 
     row.startWrite();
     try {
-      for(int i = 0; i < nodeIds.length; i++) {
+      for (int i = 0; i < nodeIds.length; i++) {
         GraphNode graphNode = (GraphNode) row.get(nodeIds[i]);
         if (graphNode == null) {
           graphNode = new GraphNode();
           row.set(nodeIds[i], graphNode);
         }
-        graphNode.setNeighbors(((LongEdgeFeats) edgeFeatures[i]).getNodeIds());
-        graphNode.setEdgeFeatures(((LongEdgeFeats) edgeFeatures[i]).getFeats());
+        graphNode.setNeighbors(((EdgeFeats) edgeFeatures[i]).getNeighbors());
+        Feature[] feats = ((EdgeFeats) edgeFeatures[i]).getFeats();
+        graphNode.setEdgeFeatures(feats);
       }
     } finally {
       row.endWrite();

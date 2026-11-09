@@ -1,16 +1,21 @@
 package com.tencent.angel.spark.ml.ann_core.psf.updateVectors;
 
 import com.tencent.angel.PartitionKey;
+import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.psf.update.base.GeneralPartUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.psagent.PSAgentContext;
+import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplitUtils;
+import com.tencent.angel.psagent.matrix.transport.router.KeyPart;
 import com.tencent.angel.psagent.matrix.transport.router.KeyValuePart;
 import com.tencent.angel.psagent.matrix.transport.router.RouterUtils;
 import com.tencent.angel.spark.ml.ann_core.ANNVector;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class UpdateVectorsParam extends UpdateParam {

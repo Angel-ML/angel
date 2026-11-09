@@ -18,7 +18,6 @@
 
 package com.tencent.angel.master.worker;
 
-import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.master.app.AMContext;
 import com.tencent.angel.master.app.AppEvent;
@@ -50,7 +49,6 @@ import org.apache.hadoop.yarn.factory.providers.RecordFactoryProvider;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -63,6 +61,14 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
   private static final Log LOG = LogFactory.getLog(WorkerManager.class);
 
   private final AMContext context;
+
+  /** Worker attempt id queue for the Kubernetes executor allocator. */
+  private final java.util.concurrent.LinkedBlockingDeque<WorkerAttemptId> workerAttemptIdBlockingQueue =
+      new java.util.concurrent.LinkedBlockingDeque<>();
+
+  public java.util.concurrent.LinkedBlockingDeque<WorkerAttemptId> getWorkerAttemptIdBlockingQueue() {
+    return workerAttemptIdBlockingQueue;
+  }
 
   /**
    * the amount of resources requested for each worker
@@ -145,13 +151,6 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
    */
   private final ConcurrentHashMap<WorkerAttemptId, Long> workerLastHeartbeatTS =
     new ConcurrentHashMap<>();
-
-  /**
-   * worker attempt id queue for kubernetes allocator
-   */
-  private final LinkedBlockingDeque<WorkerAttemptId> workerAttemptIdBlockingQueue =
-          new LinkedBlockingDeque<>();
-
   /**
    * worker timeout value in millisecond
    */
@@ -450,15 +449,6 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
     }
   }
 
-    /**
-     * worker attempt id queue
-     * @return LinkedBlockingDeque<WorkerAttemptId>
-     */
-
-    public LinkedBlockingDeque<WorkerAttemptId> getWorkerAttemptIdBlockingQueue() {
-        return workerAttemptIdBlockingQueue;
-    }
-
   /**
    * get actual total task number
    *
@@ -496,20 +486,6 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
     try {
       readLock.lock();
       return workersMap.size();
-    } finally {
-      readLock.unlock();
-    }
-  }
-
-  /**
-   * get worker number
-   *
-   * @return int worker number
-   */
-  public int getRegisterWorkerNumber() {
-    try {
-      readLock.lock();
-      return workerLastHeartbeatTS.size();
     } finally {
       readLock.unlock();
     }
@@ -658,11 +634,8 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
    * @param workerAttemptId worker attempt id
    */
   public void register(WorkerAttemptId workerAttemptId) {
-      LOG.info(workerAttemptId + " is registered in monitor!");
-      workerLastHeartbeatTS.put(workerAttemptId, System.currentTimeMillis());
-      if (context.getDeployMode() == AngelDeployMode.KUBERNETES) {
-          workerAttemptIdBlockingQueue.add(workerAttemptId);
-      }
+    LOG.info(workerAttemptId + " is registered in monitor!");
+    workerLastHeartbeatTS.put(workerAttemptId, System.currentTimeMillis());
   }
 
   /**

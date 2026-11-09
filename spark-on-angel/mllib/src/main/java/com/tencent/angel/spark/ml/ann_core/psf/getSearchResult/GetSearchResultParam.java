@@ -1,15 +1,18 @@
 package com.tencent.angel.spark.ml.ann_core.psf.getSearchResult;
 
 import com.tencent.angel.PartitionKey;
+import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.matrix.MatrixMeta;
 import com.tencent.angel.ml.matrix.psf.get.base.GeneralPartGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.GetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.psagent.PSAgentContext;
+import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplitUtils;
 import com.tencent.angel.psagent.matrix.transport.router.KeyPart;
 import com.tencent.angel.psagent.matrix.transport.router.RouterUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class GetSearchResultParam extends GetParam {

@@ -20,13 +20,14 @@ package com.tencent.angel.ps.storage.vector.element;
 
 import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.common.StreamSerdeUtils;
+import com.twitter.chill.ScalaKryoInstantiator;
 import io.netty.buffer.ByteBuf;
+import org.apache.commons.lang.ArrayUtils;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
-import org.apache.commons.lang.ArrayUtils;
-import com.twitter.chill.ScalaKryoInstantiator;
 
 /**
  * The complex object that contains a integer array,, it can be stored in PS
@@ -102,4 +103,3 @@ public class ByteArrayElement implements IElement {
     return bufferLen();
   }
 }
-

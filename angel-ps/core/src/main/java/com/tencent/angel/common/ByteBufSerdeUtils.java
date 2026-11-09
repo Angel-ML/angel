@@ -16,8 +16,9 @@ import com.tencent.angel.ml.math2.vector.LongFloatVector;
 import com.tencent.angel.ml.math2.vector.LongIntVector;
 import com.tencent.angel.ml.math2.vector.Vector;
 import com.tencent.angel.ml.matrix.RowType;
-import com.tencent.angel.ps.server.data.request.KeyType;
-import com.tencent.angel.ps.server.data.request.ValueType;
+import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
+import com.tencent.angel.ps.server.data.request.*;
+import com.tencent.angel.ps.server.data.response.Response;
 import com.tencent.angel.ps.storage.vector.ServerRow;
 import com.tencent.angel.ps.storage.vector.ServerRowFactory;
 import com.tencent.angel.ps.storage.vector.element.IElement;
@@ -40,15 +41,18 @@ import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Constructor;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import org.omg.CORBA.INITIALIZE;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ByteBufSerdeUtils {
 
   public static final int BOOLEN_LENGTH = 1;
   public static final int BYTE_LENGTH = 1;
   public static final int CHAR_LENGTH = 2;
+  public static final int SHORT_LENGTH = 2;
   public static final int INT_LENGTH = 4;
   public static final int LONG_LENGTH = 8;
   public static final int FLOAT_LENGTH = 4;
@@ -57,10 +61,25 @@ public class ByteBufSerdeUtils {
   public static final boolean[] emptyBooleans = new boolean[0];
   public static final byte[] emptyBytes = new byte[0];
   public static final char[] emptyChars = new char[0];
+  public static final short[] emptyShorts = new short[0];
   public static final int[] emptyInts = new int[0];
   public static final long[] emptyLongs = new long[0];
   public static final float[] emptyFloats = new float[0];
   public static final double[] emptyDoubles = new double[0];
+
+  /**
+   * Cache no-arg constructors for reflection-heavy serde paths (PSF request/response payload).
+   */
+  private static final ConcurrentHashMap<String, Constructor<?>> NO_ARG_CTOR_CACHE =
+      new ConcurrentHashMap<>();
+
+  /**
+   * Small bounded UTF-8 cache for high-frequency short strings (class names, method names).
+   */
+  private static final ConcurrentHashMap<String, byte[]> UTF8_BYTES_CACHE =
+      new ConcurrentHashMap<>();
+  private static final int UTF8_BYTES_CACHE_MAX_SIZE = 4096;
+  private static final int UTF8_BYTES_CACHE_MAX_VALUE_LEN = 256;
 
   // =======================================================
   // Boolean
@@ -102,6 +121,20 @@ public class ByteBufSerdeUtils {
 
   public static int serializedCharLen(char value) {
     return CHAR_LENGTH;
+  }
+
+  // =======================================================
+  // Short
+  public static void serializeShort(ByteBuf out, short value) {
+    out.writeShort(value);
+  }
+
+  public static short deserializeShort(ByteBuf in) {
+    return in.readShort();
+  }
+
+  public static int serializedShortLen(short value) {
+    return SHORT_LENGTH;
   }
 
   // =======================================================
@@ -150,7 +183,7 @@ public class ByteBufSerdeUtils {
   // String
   public static void serializeUTF8(ByteBuf out, String value) {
     try {
-      byte[] strBytes = value.getBytes("UTF-8");
+      byte[] strBytes = utf8Bytes(value);
       serializeBytes(out, strBytes);
     } catch (UnsupportedEncodingException e) {
       throw new RuntimeException(
@@ -169,12 +202,45 @@ public class ByteBufSerdeUtils {
 
   public static int serializedUTF8Len(String value) {
     try {
-      return serializedBytesLen(value.getBytes("UTF-8"));
+      return serializedBytesLen(utf8Bytes(value));
     } catch (UnsupportedEncodingException e) {
       throw new RuntimeException(
           "Calculate length of " + value + " failed, details = " + StringUtils
               .stringifyException(e));
     }
+  }
+
+  private static byte[] utf8Bytes(String value) throws UnsupportedEncodingException {
+    byte[] cached = UTF8_BYTES_CACHE.get(value);
+    if (cached != null) {
+      return cached;
+    }
+
+    byte[] encoded = value.getBytes(StandardCharsets.UTF_8.name());
+    if (encoded.length <= UTF8_BYTES_CACHE_MAX_VALUE_LEN
+        && UTF8_BYTES_CACHE.size() < UTF8_BYTES_CACHE_MAX_SIZE) {
+      byte[] raced = UTF8_BYTES_CACHE.putIfAbsent(value, encoded);
+      return raced != null ? raced : encoded;
+    }
+    return encoded;
+  }
+
+  private static Constructor<?> noArgConstructor(String className) throws Exception {
+    Constructor<?> cached = NO_ARG_CTOR_CACHE.get(className);
+    if (cached != null) {
+      return cached;
+    }
+
+    Class<?> clazz = Class.forName(className);
+    Constructor<?> created = clazz.getDeclaredConstructor();
+    created.setAccessible(true);
+    Constructor<?> raced = NO_ARG_CTOR_CACHE.putIfAbsent(className, created);
+    return raced != null ? raced : created;
+  }
+
+  private static <T> T newInstance(String className, Class<T> expectedClass) throws Exception {
+    Object obj = noArgConstructor(className).newInstance();
+    return expectedClass.cast(obj);
   }
 
   // =======================================================
@@ -232,6 +298,60 @@ public class ByteBufSerdeUtils {
       return serializedBytesLen(values, 0, values.length);
     }
   }
+
+  // =======================================================
+  // Short array
+  public static void serializeShorts(ByteBuf out, short[] values, int start, int end) {
+    if (out == null) {
+      throw new IllegalArgumentException("ByteBuf out cannot be null");
+    }
+
+    if(values == null) {
+      serializeInt(out, 0);
+    } else {
+      if (start < 0 || end > values.length || start > end) {
+        throw new IllegalArgumentException("Invalid range: start=" + start + ", end=" + end + ", values.length=" + values.length);
+      }
+      serializeInt(out, end - start);
+      for (int i = start; i < end; i++) {
+        serializeShort(out, values[i]);
+      }
+    }
+  }
+
+  public static void serializeShorts(ByteBuf out, short[] values) {
+    if(values == null) {
+      serializeInt(out, 0);
+    } else {
+      serializeShorts(out, values, 0, values.length);
+    }
+  }
+
+  public static short[] deserializeShorts(ByteBuf in) {
+    int len = in.readInt();
+    short[] values = new short[len];
+    for (int i = 0; i < len; i++) {
+      values[i] = deserializeShort(in);
+    }
+    return values;
+  }
+
+  public static int serializedShortsLen(short[] values, int start, int end) {
+    if(values == null) {
+      return INT_LENGTH;
+    } else {
+      return INT_LENGTH + (end - start) * SHORT_LENGTH;
+    }
+  }
+
+  public static int serializedShortsLen(short[] values) {
+    if(values == null) {
+      return INT_LENGTH;
+    } else {
+      return serializedShortsLen(values, 0, values.length);
+    }
+  }
+
 
   // =======================================================
   // Int array
@@ -1093,13 +1213,38 @@ public class ByteBufSerdeUtils {
   public static Serialize deserializeObject(ByteBuf in) {
     String className = deserializeUTF8(in);
     try {
-      Serialize obj = (Serialize) Class.forName(className).newInstance();
+      Serialize obj = newInstance(className, Serialize.class);
       obj.deserialize(in);
       return obj;
     } catch (Throwable e) {
       throw new RuntimeException("Can not init class " + className, e);
     }
   }
+
+  public static Response deserializeResponse(ByteBuf in, RequestData requestData) {
+    String className = deserializeUTF8(in);
+    try {
+      Response obj = newInstance(className, Response.class);
+      obj.setRequestData(requestData);
+      obj.deserialize(in);
+      return obj;
+    } catch (Throwable e) {
+      throw new RuntimeException("Can not init class " + className, e);
+    }
+  }
+
+  public static Serialize deserializeObjectForPartPSFResult(ByteBuf in, GetUDFRequest requestData) {
+    String className = deserializeUTF8(in);
+    try {
+      PartitionGetResult obj = newInstance(className, PartitionGetResult.class);
+      obj.setParam(requestData.getParam());
+      obj.deserialize(in);
+      return obj;
+    } catch (Throwable e) {
+      throw new RuntimeException("Can not init class " + className, e);
+    }
+  }
+
 
   public static int serializedObjectLen(Serialize obj) {
     return serializedUTF8Len(obj.getClass().getName()) + obj.bufferLen();
@@ -1143,12 +1288,11 @@ public class ByteBufSerdeUtils {
     if (size > 0) {
       String className = deserializeUTF8(in);
       try {
-        Class objClass = Class.forName(className);
         IElement[] objs = new IElement[size];
         for (int i = 0; i < size; i++) {
           boolean notNull = deserializeBoolean(in);
           if (notNull) {
-            objs[i] = (IElement) objClass.newInstance();
+            objs[i] = newInstance(className, IElement.class);
             objs[i].deserialize(in);
           }
         }

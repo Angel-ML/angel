@@ -1,11 +1,7 @@
 package com.tencent.angel.spark.ml.ann_core.psf.getVectors;
 
 import com.tencent.angel.graph.utils.GraphMatrixUtils;
-import com.tencent.angel.ml.matrix.psf.get.base.GeneralPartGetParam;
-import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
-import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
-import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
-import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
+import com.tencent.angel.ml.matrix.psf.get.base.*;
 import com.tencent.angel.ps.storage.vector.ServerLongAnyRow;
 import com.tencent.angel.psagent.matrix.transport.router.KeyPart;
 import com.tencent.angel.psagent.matrix.transport.router.operator.ILongKeyPartOp;

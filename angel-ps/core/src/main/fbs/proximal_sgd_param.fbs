@@ -1,0 +1,36 @@
+// Copyright 2022, Tencent Inc.
+// All rights reserved.
+//
+// @author liangyuzhuo <liangyuzhuo@tencent.com>
+
+include "grad_message.fbs";
+include "training_message.fbs";
+
+namespace dollar.tensor.proximalsgd;
+
+table HyperParam {
+  lr:double (id:0);
+  lambda1:double (id:1);
+  lambda2:double (id:2);
+}
+
+table WeightParams {
+  w:[ubyte] (id:0);
+}
+
+table ProximalSgdGradMessage {
+  hyper_param:HyperParam (id:0);
+  grad_message:GradMessage (id:1);
+  training_message:TrainingMessage (id:2);
+  init_flag:int8 (id:3);
+}
+
+table ProximalSgdWeightParams {
+  weight_params:WeightParams (id:0);
+  field:int32 (id:1);
+  positive_count:int64 (id:2);
+  negative_count:int64 (id:3);
+  update_times:int64 (id:4);
+  hyper_param:HyperParam (id:5);
+  training_message:TrainingMessage (id:6);
+}

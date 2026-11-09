@@ -18,7 +18,7 @@
 
 package com.tencent.angel.spark.models.impl
 
-import java.util.concurrent.Future
+import java.util.concurrent.{Future, TimeUnit, TimeoutException}
 
 import org.apache.spark.SparkException
 
@@ -73,16 +73,45 @@ class PSVectorImpl(val poolId: Int, val id: Int, val dimension: Long, val rowTyp
     this
   }
 
+  private val PSF_TIMEOUT_MS: Long =
+    java.lang.Long.getLong("angel.psf.timeout.ms", 5L * 60L * 1000L)
+
   override def psfGet(func: GetFunc): GetResult = {
     assertValid()
-    val result = vectorPoolClient.get(func)
+    val fut = asyncPsfGet(func)
+    val result = try {
+      fut.get(PSF_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+    } catch {
+      case _: TimeoutException =>
+        throw new RuntimeException(
+          s"PSF get timeout after ${PSF_TIMEOUT_MS}ms (func=${func.getClass.getSimpleName}, " +
+          s"poolId=$poolId, id=$id). Failing this task to trigger Spark retry. " +
+          s"Tune via -Dangel.psf.timeout.ms=<ms>.")
+    }
     assertSuccess(result)
     result
   }
 
   override def psfUpdate(func: UpdateFunc): Future[VoidResult] = {
     assertValid()
-    vectorPoolClient.asyncUpdate(func)
+    val fut = vectorPoolClient.asyncUpdate(func)
+    new Future[VoidResult] {
+      override def get(): VoidResult = {
+        try {
+          fut.get(PSF_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+        } catch {
+          case _: TimeoutException =>
+            throw new RuntimeException(
+              s"PSF update timeout after ${PSF_TIMEOUT_MS}ms (poolId=$poolId, id=$id). " +
+              s"Failing this task to trigger Spark retry. " +
+              s"Tune via -Dangel.psf.timeout.ms=<ms>.")
+        }
+      }
+      override def get(timeout: Long, unit: TimeUnit): VoidResult = fut.get(timeout, unit)
+      override def isDone(): Boolean = fut.isDone()
+      override def isCancelled: Boolean = fut.isCancelled
+      override def cancel(mayInterruptIfRunning: Boolean): Boolean = fut.cancel(mayInterruptIfRunning)
+    }
   }
 
   private[spark] def assertSuccess(result: Result): Unit = {

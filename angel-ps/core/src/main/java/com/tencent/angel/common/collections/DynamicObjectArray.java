@@ -52,7 +52,7 @@ public class DynamicObjectArray extends DynamicArray {
       int index = 0;
       data = new IElement[size()];
       // [0, currentBatchIndex - 1] batchs
-      for (int i = 0; i < currentBatchIndex - 1; i++) {
+      for (int i = 0; i < currentBatchIndex; i++) {
         IElement[] batch = batchs.get(i);
         for (int j = 0; j < batch.length; j++) {
           data[index++] = batch[j];
@@ -112,6 +112,7 @@ public class DynamicObjectArray extends DynamicArray {
   @Override
   public void deserialize(ByteBuf in) {
     data = ByteBufSerdeUtils.deserializeObjects(in);
+    deserializedSize = data.length;
   }
 
   @Override

@@ -17,10 +17,11 @@
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.graph.rank.weightedHIndex.WeightedHIndex
-import com.tencent.angel.graph.utils.GraphIO
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
+import com.tencent.angel.spark.ml.graph.algo.rank.weightedHIndex.WeightedHIndex
+import com.tencent.angel.spark.ml.graph.utils.GraphIO
+import com.tencent.angel.spark.ml.util.DataStatistics
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -31,7 +32,7 @@ object WeightedHIndexExample {
     val params = ArgsUtil.parse(args)
     val mode = params.getOrElse("mode", "yarn-cluster")
     val input = params.getOrElse("input", null)
-    val output = params.getOrElse("output", null)
+    val output = params.getOrElse("output",null)
     val partitionNum = params.getOrElse("partitionNum","1").toInt
     val srcIndex = params.getOrElse("src", "0").toInt
     val dstIndex = params.getOrElse("dst", "1").toInt
@@ -40,7 +41,7 @@ object WeightedHIndexExample {
     val sc = start(mode)
     val psPartitionNum = params.getOrElse("psPartitionNum",
       sc.getConf.get("spark.ps.instances", "1")).toInt
-    val isWeighted = params.getOrElse("isWeighted", "false").toBoolean
+    val isWeighted = params.getOrElse("isWeighted", "true").toBoolean
     val batchSize = params.getOrElse("batchSize", "10000").toInt
     val pullBatchSize = params.getOrElse("pullBatchSize", "1000").toInt
     val cpDir = params.getOrElse("cpDir", GraphIO.defaultCheckpointDir.getOrElse(throw new Exception("checkpoint dir not provided")))
@@ -60,6 +61,13 @@ object WeightedHIndexExample {
       .setPullBatchSize(pullBatchSize)
 
     val df = GraphIO.load(input, isWeighted = isWeighted, srcIndex, dstIndex, weightIndex, sep = sep)
+
+    //collect app name and data size
+    DataStatistics.setAppName(whindex.getClass.getCanonicalName)
+    DataStatistics.calcRDDSize(df, "angel.input.data")
+    DataStatistics.setDataPartitionNum(partitionNum)
+    DataStatistics.setPSPartitionNum(psPartitionNum)
+
     val mapping = whindex.transform(df)
     GraphIO.save(mapping, output)
     stop()

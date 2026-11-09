@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
-import java.net.InetAddress;
 
 
 /**
@@ -44,6 +43,12 @@ import java.net.InetAddress;
 public class WorkerService implements WorkerProtocol {
 
   private static final Log LOG = LogFactory.getLog(WorkerService.class);
+
+  /**
+   * How many different ports we try when the rpc bind loses a port race
+   */
+  private static final int MAX_BIND_TRY = 10;
+
   private RpcServer rpcServer;
   private volatile Location location;
 
@@ -56,14 +61,56 @@ public class WorkerService implements WorkerProtocol {
   }
 
   public void start() throws IOException {
-    int workerServerPort = NetUtils.chooseAListenPort(WorkerContext.get().getConf());
-    String workerServerHost = InetAddress.getLocalHost().getHostAddress();
-    location = new Location(workerServerHost, workerServerPort);
-    rpcServer = MLRPC
-      .getServer(WorkerService.class, this, new Class<?>[] {WorkerProtocol.class}, workerServerHost,
-        workerServerPort, WorkerContext.get().getConf());
-    LOG.info("Starting workerserver service at " + workerServerHost + ":" + workerServerPort);
-    rpcServer.openServer();
+    // Prefer an explicitly configured host (set via angel.worker.listen.host in the
+    // job conf, typically injected by StandaloneContainerLauncher). Falls back to
+    // NetUtils.getRealLocalIP() which itself scans interfaces when
+    // InetAddress.getLocalHost() returns a loopback due to /etc/hosts misconfig.
+    String workerServerHost = WorkerContext.get().getConf().get(
+        com.tencent.angel.conf.AngelConf.ANGEL_WORKER_LISTEN_HOST);
+    if (workerServerHost == null || workerServerHost.isEmpty()) {
+      workerServerHost = NetUtils.getRealLocalIP();
+    }
+
+    // Reserve the port with a real listening socket and release it only right before the rpc
+    // bind, otherwise another Angel process drawing from the same random port range can grab
+    // it in between and the bind dies with "Address already in use".
+    Throwable lastError = null;
+    for (int i = 1; i <= MAX_BIND_TRY; i++) {
+      NetUtils.PortReservation reservation =
+          NetUtils.reserveListenPortPair(WorkerContext.get().getConf());
+      int workerServerPort = reservation.getPort();
+      reservation.close();
+      try {
+        rpcServer = MLRPC
+          .getServer(WorkerService.class, this, new Class<?>[] {WorkerProtocol.class},
+            workerServerHost, workerServerPort, WorkerContext.get().getConf());
+        location = new Location(workerServerHost, workerServerPort);
+        LOG.info("Starting workerserver service at " + workerServerHost + ":" + workerServerPort);
+        rpcServer.openServer();
+        return;
+      } catch (Throwable x) {
+        if (rpcServer != null) {
+          try {
+            rpcServer.stop();
+          } catch (Throwable ignore) {
+            // best effort
+          }
+          rpcServer = null;
+        }
+        lastError = x;
+        if (!NetUtils.isAddressInUse(x)) {
+          break;
+        }
+        LOG.warn("Bind workerserver service on " + workerServerHost + ":" + workerServerPort
+          + " failed (attempt " + i + "/" + MAX_BIND_TRY + "), choose another port", x);
+      }
+    }
+
+    if (lastError instanceof IOException) {
+      throw (IOException) lastError;
+    }
+    throw new IOException(
+        "Start workerserver service failed after " + MAX_BIND_TRY + " attempts", lastError);
   }
 
   public void stop() {

@@ -20,6 +20,7 @@ package com.tencent.angel.spark.ml.tree.param;
 import com.tencent.angel.spark.ml.tree.objective.loss.MultiStrategy;
 import java.util.Arrays;
 import com.tencent.angel.spark.ml.tree.util.Maths;
+import org.apache.spark.storage.StorageLevel;
 
 public class GBDTParam extends RegTParam {
 
@@ -27,6 +28,7 @@ public class GBDTParam extends RegTParam {
   public int numClass; // number of classes/labels
   public int numTree;  // number of trees
   public int numThread;  // parallelism
+  public StorageLevel storageLevel; // persist level
 
   public boolean histSubtraction;
   public boolean lighterChildFirst;
@@ -238,6 +240,7 @@ public class GBDTParam extends RegTParam {
     sb.append(String.format("|numClass = %d\n", numClass));
     sb.append(String.format("|numTree = %d\n", numTree));
     sb.append(String.format("|numThread = %d\n", numThread));
+    sb.append(String.format("|storageLevel = %s\n", storageLevel));
     sb.append(String.format("|fullHessian = %s\n", fullHessian));
     sb.append(String.format("|minChildWeight = %f\n", minChildWeight));
     sb.append(String.format("|minNodeInstance = %d\n", minNodeInstance));

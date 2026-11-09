@@ -1,0 +1,12 @@
+{
+    "feature": [
+      {
+        "id": "0",
+        "fillMethod": "count"
+      },
+       {
+        "id": "1-2",
+        "missingValue": "888"
+      }
+    ]
+}

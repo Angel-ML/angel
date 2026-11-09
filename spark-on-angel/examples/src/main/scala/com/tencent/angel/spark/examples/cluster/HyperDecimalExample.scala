@@ -1,10 +1,11 @@
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.graph.statistics.hyperloglog.HyperDecimal
-import com.tencent.angel.graph.utils.GraphIO
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
+import com.tencent.angel.spark.ml.graph.utils.GraphIO
+import com.tencent.angel.spark.ml.util.DataStatistics
+import com.tencent.angel.spark.ml.graph.algo.statistics.hyperloglog.HyperDecimal
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -66,7 +67,9 @@ object HyperDecimalExample {
     } else {
       null.asInstanceOf[Set[String]]
     }
-
+    //collect app name and data size
+    DataStatistics.setAppName(hyperDecimal.getClass.getCanonicalName)
+    DataStatistics.calcRDDSize(df, "angel.input.data")
     PSContext.getOrCreate(sc)
 
     var startTime = System.currentTimeMillis()

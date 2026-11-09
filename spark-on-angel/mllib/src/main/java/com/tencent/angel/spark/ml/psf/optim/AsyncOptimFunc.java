@@ -21,7 +21,6 @@ import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.update.IncrementRows;
 import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplit;
-
 import java.util.List;
 
 public abstract class AsyncOptimFunc extends IncrementRows {
@@ -43,10 +42,10 @@ public abstract class AsyncOptimFunc extends IncrementRows {
     int offset = ints[0];
     int slots = ints[1];
     Vector[] vectors = new Vector[slots];
-    for (RowUpdateSplit update: updates) {
+    for (RowUpdateSplit update : updates) {
       for (int i = 0; i < slots; i++) {
         vectors[i] = getVector(param.getMatrixId(), update.getRowId() + offset * i,
-          param.getPartKey());
+            param.getPartKey());
       }
 
       update(vectors, update.getVector(), doubles, ints);

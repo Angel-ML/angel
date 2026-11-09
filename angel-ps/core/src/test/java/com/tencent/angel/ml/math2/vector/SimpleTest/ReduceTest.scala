@@ -1348,7 +1348,7 @@ class ReduceTest {
     val std = Math.sqrt(avg - avg * avg)
     val size = intValues.length
 
-    import scala.collection.JavaConversions._
+    import scala.collection.convert.ImplicitConversions._
     for (v <- list) {
       println(s"angel result:${v.sum()}, ${v.std()}, ${v.average()}, ${v.numZeros()}, ${v.norm()}, ${v.getDim}, ${v.size}")
       println(s"breeze result:${sum1}, ${std}, ${avg}, ${norm}, ${dim}")
@@ -1375,7 +1375,7 @@ class ReduceTest {
     val std = Math.sqrt(avg - avg * avg)
     val size = longValues.length
 
-    import scala.collection.JavaConversions._
+    import scala.collection.convert.ImplicitConversions._
     for (v <- list) {
       println(s"angel result:${v.sum()}, ${v.std()}, ${v.average()}, ${v.numZeros()}, ${v.norm()}, ${v.getDim}, ${v.size}")
       println(s"breeze result:${sum1}, ${std}, ${avg}, ${norm}, ${dim}")

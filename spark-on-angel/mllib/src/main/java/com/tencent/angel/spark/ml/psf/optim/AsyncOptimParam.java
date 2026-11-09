@@ -22,7 +22,6 @@ import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.update.IncrementRowsParam;
 import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplit;
 import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplitUtils;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +45,7 @@ public class AsyncOptimParam extends IncrementRowsParam {
     for (int i = 0; i < updates.length; i++) {
       if (updates[i] != null) {
         mergeRowUpdateSplits(RowUpdateSplitUtils.split(updates[i],
-          getParts(matrixId, updates[i].getRowId())), partToSplits);
+            getParts(matrixId, updates[i].getRowId())), partToSplits);
       }
     }
 
@@ -55,10 +54,12 @@ public class AsyncOptimParam extends IncrementRowsParam {
 
     // generate part update splits
     List<PartitionUpdateParam> partParams = new ArrayList<>(partToSplits.size());
-    for (Map.Entry<PartitionKey, List<RowUpdateSplit>> partEntry: partToSplits.entrySet()) {
+    for (Map.Entry<PartitionKey, List<RowUpdateSplit>> partEntry : partToSplits.entrySet()) {
       // set split context: partition key, use int key for long key vector or net
       adapt(partEntry.getKey(), partEntry.getValue());
-      partParams.add(new PartAsyncOptimParam(matrixId, partEntry.getKey(), partEntry.getValue(), doubles, ints));
+      partParams.add(
+          new PartAsyncOptimParam(matrixId, partEntry.getKey(), partEntry.getValue(), doubles,
+              ints));
     }
 
     return partParams;

@@ -42,7 +42,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
@@ -169,8 +168,27 @@ public class MasterClient {
     PSRegisterRequest.Builder regBuilder = PSRegisterRequest.newBuilder();
     regBuilder.setPsAttemptId(ProtobufUtil.convertToIdProto(context.getPSAttemptId()));
     try {
-      Location location =
-        new Location(InetAddress.getLocalHost().getHostAddress(), context.getPsService().getPort());
+      // Use whatever the PS RPC server is actually bound to. ParameterServerService
+      // resolves this via angel.ps.listen.host -> NetUtils.getRealLocalIP() -> interface
+      // scan, so hosts whose /etc/hosts maps the hostname to 127.0.0.1 still end up
+      // advertising a routable IP to the master.
+      String host = context.getPsService().getHostAddress();
+      if (host == null || host.isEmpty() || isLoopback(host)) {
+        String scanned = com.tencent.angel.utils.NetUtils.scanRoutableIpv4();
+        if (scanned != null) {
+          LOG.warn("PS RPC server is bound to " + host
+              + " which is not routable from other nodes; advertising scanned IP "
+              + scanned + " to the master instead. Set -D"
+              + com.tencent.angel.conf.AngelConf.ANGEL_PS_LISTEN_HOST + "=<ip> to fix.");
+          host = scanned;
+        } else {
+          LOG.error("PS RPC server is bound to " + host
+              + " and no routable IP could be auto-detected; the master will receive "
+              + "an unreachable address. Set -D"
+              + com.tencent.angel.conf.AngelConf.ANGEL_PS_LISTEN_HOST + "=<ip>.");
+        }
+      }
+      Location location = new Location(host, context.getPsService().getPort());
       regBuilder.setLocation(ProtobufUtil.convertLocation(location));
     } catch (UnknownHostException eop) {
       LOG.error("UnknownHostException: " + eop);
@@ -178,6 +196,11 @@ public class MasterClient {
     }
 
     masterProxy.psRegister(null, regBuilder.build());
+  }
+
+  private static boolean isLoopback(String host) {
+    return host != null && (host.equals("127.0.0.1") || host.equals("::1")
+        || host.startsWith("127.") || host.equalsIgnoreCase("localhost"));
   }
 
   /**

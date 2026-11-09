@@ -8,7 +8,6 @@ import com.tencent.angel.ps.storage.vector.element.IElement;
 import com.tencent.angel.psagent.PSAgentContext;
 import com.tencent.angel.psagent.matrix.transport.router.KeyValuePart;
 import com.tencent.angel.psagent.matrix.transport.router.RouterUtils;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +29,7 @@ public class GeneralInitByNameParam extends GeneralInitParam {
     MatrixMeta meta = PSAgentContext.get().getMatrixMetaManager().getMatrixMeta(matrixId);
     PartitionKey[] parts = meta.getPartitionKeys();
 
-    KeyValuePart[] splits = RouterUtils.split(meta, 0, getNodeIds(), getFeatures());
+    KeyValuePart[] splits = RouterUtils.split(meta, 0, nodeIds, features);
     assert parts.length == splits.length;
 
     List<PartitionUpdateParam> partParams = new ArrayList<>(parts.length);

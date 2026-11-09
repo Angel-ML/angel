@@ -18,7 +18,6 @@
 
 package com.tencent.angel.master.app;
 
-import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.protobuf.generated.ClientMasterServiceProtos.GetJobReportResponse;
@@ -28,7 +27,6 @@ import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.utils.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.yarn.event.EventHandler;
@@ -127,7 +125,6 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
   }
 
   private static final AppSuccessTransition APP_SUCCESS_TRANSITION = new AppSuccessTransition();
-  private static final AppExecuteSuccessTransition APP_EXECUTE_SUCCESS_TRANSITION = new AppExecuteSuccessTransition();
   private static final AppKilledTransition APP_KILLED_TRANSITION = new AppKilledTransition();
   private static final AppFailedTransition APP_FAILED_TRANSITION = new AppFailedTransition();
 
@@ -144,14 +141,13 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
           .addTransition(AppState.INITED, AppState.KILLED, AppEventType.KILL, APP_KILLED_TRANSITION)
           .addTransition(AppState.INITED, AppState.FAILED, AppEventType.INTERNAL_ERROR,
               APP_FAILED_TRANSITION)
+
           .addTransition(AppState.PREPARE_WORKERS, AppState.RUNNING,
               AppEventType.ALL_WORKERS_LAUNCHED)
           .addTransition(AppState.PREPARE_WORKERS, AppState.KILLED, AppEventType.KILL, APP_KILLED_TRANSITION)
           .addTransition(AppState.PREPARE_WORKERS, AppState.FAILED, AppEventType.INTERNAL_ERROR,
               APP_FAILED_TRANSITION)
 
-          .addTransition(AppState.RUNNING, AppState.EXECUTE_SUCCESSED, AppEventType.EXECUTE_SUCESS,
-              APP_EXECUTE_SUCCESS_TRANSITION)
           .addTransition(AppState.RUNNING, AppState.EXECUTE_SUCCESSED, AppEventType.EXECUTE_SUCESS)
           .addTransition(AppState.RUNNING, AppState.KILLED, AppEventType.KILL,
               APP_KILLED_TRANSITION)
@@ -212,12 +208,34 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
       @SuppressWarnings("unchecked")
       @Override
       public void run() {
+        // Sleep between checks so we do not burn a CPU core spinning on getInternalState(),
+        // and — more importantly — so we do not flood the dispatcher with thousands of
+        // duplicate InternalErrorEvent messages in the brief window between firing the
+        // first one and the App actually transitioning out of the offending state.
+        final long checkIntervalMs = 1000L;
+        // Each (state, ts) pair is reported at most once. Without this guard, between
+        // the moment the timeout fires and the moment the dispatcher processes the
+        // INTERNAL_ERROR event (which is asynchronous, the App must take a write lock),
+        // every iteration here keeps re-firing because stateToTsMap still contains the
+        // same expired entry.
+        AppState lastFiredState = null;
+        Long lastFiredTs = null;
         while (!stopped.get() && !Thread.interrupted()) {
+          try {
+            Thread.sleep(checkIntervalMs);
+          } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            return;
+          }
           AppState state = getInternalState();
           try {
             readLock.lock();
-            if (stateToTsMap.containsKey(state)
-                && context.getClock().getTime() - stateToTsMap.get(state) >= stateTimeOutMs) {
+            Long enteredTs = stateToTsMap.get(state);
+            if (enteredTs != null
+                && context.getClock().getTime() - enteredTs >= stateTimeOutMs
+                && (state != lastFiredState || !enteredTs.equals(lastFiredTs))) {
+              lastFiredState = state;
+              lastFiredTs = enteredTs;
               if (state.equals(AppState.NEW)) {
                 context.getEventHandler().handle(new InternalErrorEvent(context.getApplicationId(),
                         "lack of resources: memory or vCores are not enough for the request by ps"));
@@ -514,16 +532,6 @@ public class App extends AbstractService implements EventHandler<AppEvent> {
         app.context.getWorkerManager().startAllWorker();
       } else {
         app.context.getEventHandler().handle(new AppEvent(AppEventType.ALL_WORKERS_LAUNCHED));
-      }
-    }
-  }
-
-  public static class AppExecuteSuccessTransition implements SingleArcTransition<App, AppEvent> {
-
-    @SuppressWarnings("unchecked") @Override public void transition(App app, AppEvent event) {
-      if (app.context.getRunningMode() == RunningMode.ANGEL_PS_WORKER && app.context.getDeployMode() == AngelDeployMode.KUBERNETES) {
-        LOG.info("Now stop worker scheduler.");
-        app.context.getK8sClusterManager().stop("worker");
       }
     }
   }

@@ -108,7 +108,7 @@ public class ComplexMatrixTest {
 
       // add matrix
       MatrixContext mMatrix = new MatrixContext();
-      mMatrix.setName("w1");
+      mMatrix.setName("ComplexMatrixTest_w1");
       mMatrix.setRowNum(1);
       mMatrix.setColNum(nodeNum);
       mMatrix.setMaxRowNumInBlock(1);
@@ -118,7 +118,7 @@ public class ComplexMatrixTest {
       angelClient.addMatrix(mMatrix);
 
       MatrixContext mMatrix2 = new MatrixContext();
-      mMatrix2.setName("w2");
+      mMatrix2.setName("ComplexMatrixTest_w2");
       mMatrix2.setRowNum(1);
       mMatrix2.setColNum(nodeNum);
       mMatrix2.setMaxRowNumInBlock(1);

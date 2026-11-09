@@ -35,7 +35,9 @@ public class VelocityUtils {
   private static VelocityEngine ve;
   private static String[] itypes = new String[]{"Int", "Long"};
   private static String[] dtypes = new String[]{"Double", "Float", "Long", "Int"};
-  private static String basePath = "F:\\git.code.oa.com\\angel\\angel-ps\\core\\src\\main\\java";
+  // Output root of the generated sources; override with -Dangel.velocity.basePath=<dir>.
+  private static String basePath = System.getProperty("angel.velocity.basePath",
+      "target" + File.separator + "velocity-generated");
 
   @BeforeClass
   public static void init() {
@@ -69,7 +71,10 @@ public class VelocityUtils {
   }
 
   private String getPath(String packageName) {
-    return String.format("%s\\%s\\", basePath, packageName.replace(".", "\\"));
+    String dir = basePath + File.separator + packageName.replace(".", File.separator)
+        + File.separator;
+    new File(dir).mkdirs();
+    return dir;
   }
 
   @Test

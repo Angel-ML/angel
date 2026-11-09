@@ -20,6 +20,7 @@ package com.tencent.angel.ps.server.data.response;
 
 import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
+import com.tencent.angel.ps.server.data.request.GetUDFRequest;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -73,11 +74,11 @@ public class GetUDFResponse extends ResponseData {
   }
 
   @Override public void deserialize(ByteBuf buf) {
-    partResult = (PartitionGetResult) ByteBufSerdeUtils.deserializeObject(buf);
+    partResult = (PartitionGetResult) ByteBufSerdeUtils.deserializeObjectForPartPSFResult(buf, (GetUDFRequest) requestData);
   }
 
   @Override public int bufferLen() {
-    return partResult.bufferLen();
+    return ByteBufSerdeUtils.serializedObjectLen(partResult);
   }
 
   @Override public String toString() {

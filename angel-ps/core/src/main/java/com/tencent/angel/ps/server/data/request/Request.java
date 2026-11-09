@@ -21,6 +21,7 @@ package com.tencent.angel.ps.server.data.request;
 import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.common.Serialize;
 import com.tencent.angel.ps.server.data.TransportMethod;
+import com.tencent.angel.ps.server.data.profiling.RPCTimes;
 import io.netty.buffer.ByteBuf;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -46,6 +47,8 @@ public class Request implements Serialize {
    */
   private transient RequestContext context;
 
+  public volatile RPCTimes rpcTimes = new RPCTimes();
+
   /**
    * serialized request data
    */
@@ -61,6 +64,10 @@ public class Request implements Serialize {
     this.header = header;
     this.data = data;
     this.context = context;
+  }
+
+  public Request() {
+    this(null, null, null);
   }
 
   public Request(RequestHeader header, RequestData data) {

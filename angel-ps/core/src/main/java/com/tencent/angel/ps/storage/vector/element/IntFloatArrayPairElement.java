@@ -28,66 +28,66 @@ import java.io.IOException;
 
 public class IntFloatArrayPairElement implements IElement {
 
-    private int[] data;
-    private float[] weights;
+  private int[] data;
+  private float[] weights;
 
-    public IntFloatArrayPairElement(int[] data, float[] weights) {
-        this.data = data;
-        this.weights = weights;
-    }
+  public IntFloatArrayPairElement(int[] data, float[] weights) {
+    this.data = data;
+    this.weights = weights;
+  }
 
-    public IntFloatArrayPairElement() {
-        this(null, null);
-    }
+  public IntFloatArrayPairElement() {
+    this(null, null);
+  }
 
-    public int[] getData() { return data; }
+  public int[] getData() { return data; }
 
-    public float[] getWeights() { return weights; }
+  public float[] getWeights() { return weights; }
 
-    public void setData(int[] data) {
-        this.data = data;
-    }
+  public void setData(int[] data) {
+    this.data = data;
+  }
 
-    @Override
-    public IntFloatArrayPairElement deepClone() {
-        int[] newData = new int[data.length];
-        float[] newWeights = new float[weights.length];
-        System.arraycopy(data, 0, newData, 0, data.length);
-        System.arraycopy(weights, 0, newWeights, 0, weights.length);
-        return new IntFloatArrayPairElement(newData, newWeights);
-    }
+  @Override
+  public IntFloatArrayPairElement deepClone() {
+    int[] newData = new int[data.length];
+    float[] newWeights = new float[weights.length];
+    System.arraycopy(data, 0, newData, 0, data.length);
+    System.arraycopy(weights, 0, newWeights, 0, weights.length);
+    return new IntFloatArrayPairElement(newData, newWeights);
+  }
 
-    @Override
-    public void serialize(ByteBuf output) {
-        ByteBufSerdeUtils.serializeInts(output, data);
-        ByteBufSerdeUtils.serializeFloats(output, weights);
-    }
+  @Override
+  public void serialize(ByteBuf output) {
+    ByteBufSerdeUtils.serializeInts(output, data);
+    ByteBufSerdeUtils.serializeFloats(output, weights);
+  }
 
-    @Override
-    public void deserialize(ByteBuf input) {
-        data = ByteBufSerdeUtils.deserializeInts(input);
-        weights = ByteBufSerdeUtils.deserializeFloats(input);
-    }
+  @Override
+  public void deserialize(ByteBuf input) {
+    data = ByteBufSerdeUtils.deserializeInts(input);
+    weights = ByteBufSerdeUtils.deserializeFloats(input);
+  }
 
-    @Override
-    public int bufferLen() {
-        return ByteBufSerdeUtils.serializedIntsLen(data) + ByteBufSerdeUtils.serializedFloatsLen(weights);
-    }
+  @Override
+  public int bufferLen() {
+    return ByteBufSerdeUtils.serializedIntsLen(data) + ByteBufSerdeUtils.serializedFloatsLen(weights);
+  }
 
-    @Override
-    public void serialize(DataOutputStream output) throws IOException {
-        StreamSerdeUtils.serializeInts(output, data);
-        StreamSerdeUtils.serializeFloats(output, weights);
-    }
+  @Override
+  public void serialize(DataOutputStream output) throws IOException {
+    StreamSerdeUtils.serializeInts(output, data);
+    StreamSerdeUtils.serializeFloats(output, weights);
+  }
 
-    @Override
-    public void deserialize(DataInputStream input) throws IOException {
-        data = StreamSerdeUtils.deserializeInts(input);
-        weights = StreamSerdeUtils.deserializeFloats(input);
-    }
+  @Override
+  public void deserialize(DataInputStream input) throws IOException {
+    data = StreamSerdeUtils.deserializeInts(input);
+    weights = StreamSerdeUtils.deserializeFloats(input);
+  }
 
-    @Override
-    public int dataLen() {
-        return bufferLen();
-    }
+  @Override
+  public int dataLen() {
+    return bufferLen();
+  }
 }

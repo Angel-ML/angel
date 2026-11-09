@@ -36,16 +36,10 @@ import com.tencent.angel.utils.StringUtils;
 import it.unimi.dsi.fastutil.ints.Int2LongMap;
 import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
+import java.io.*;
+import java.util.*;
 import java.util.concurrent.RecursiveAction;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -84,7 +78,7 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
    * @param output output stream
    */
   public abstract void save(ServerPartition part, MatrixPartitionMeta partMeta,
-                            PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException;
+      PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException;
 
   /**
    * Load a matrix partition
@@ -616,6 +610,7 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
       streamPos = out.getPos();
       partition = matrix.getPartition(partIds.get(i));
       PartitionKey partKey = partition.getPartitionKey();
+
       MatrixPartitionMeta partMeta;
       long startCol = 0;
       long endCol = 0;
@@ -639,6 +634,40 @@ public abstract class MatrixFormatImpl implements MatrixFormat {
     }
     out.flush();
     out.close();
+    long fLen = fs.getLength(tmpDestFile);
+    boolean checkFlag = conf.getBoolean(AngelConf.ANGEL_EMBEDDING_MODEL_WITH_CHECK_FILE,
+            AngelConf.DEFAULT_ANGEL_EMBEDDING_MODEL_WITH_CHECK_FILE);
+
+    if (fLen > 0 && checkFlag) {
+      Path outCheckFile = new Path(matrixPath, ModelFilesUtils.fileName(partIds.get(startPos)) + "_check");
+      Path tmpOutCheckFile = HdfsUtil.toTmpPath(outCheckFile);
+
+      if(fs.exists(tmpOutCheckFile)) {
+        fs.delete(tmpOutCheckFile, true);
+      }
+
+      FSDataOutputStream outCheck = fs.create(tmpOutCheckFile, true, conf.getInt(
+              AngelConf.ANGEL_PS_IO_FILE_BUFFER_SIZE,
+              AngelConf.DEFAULT_ANGEL_PS_IO_FILE_BUFFER_SIZE));
+
+      FSDataInputStream in = fs.open(tmpDestFile);
+      long inPos = in.getPos();
+      String md5 = DigestUtils.md5Hex(in);
+      in.seek(inPos);
+      BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+      int num = 0;
+      while (reader.readLine() != null) num += 1;
+      in.close();
+      reader.close();
+
+      String metricRes = "{\"file_length\":" + fLen + ",\"file_kvs\":" + num
+          + ",\"md5\":\"" + md5 + "\"}";
+      outCheck.write(metricRes.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+      outCheck.flush();
+      outCheck.close();
+      HdfsUtil.rename(tmpOutCheckFile, outCheckFile, fs);
+    }
+
     HdfsUtil.rename(tmpDestFile, destFile, fs);
   }
 

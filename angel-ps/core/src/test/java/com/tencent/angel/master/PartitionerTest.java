@@ -24,12 +24,16 @@ import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner;
 import com.tencent.angel.ps.storage.partitioner.RangePartitioner;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
+import org.apache.hadoop.yarn.api.records.impl.pb.ApplicationAttemptIdPBImpl;
+import org.apache.hadoop.yarn.api.records.impl.pb.ContainerIdPBImpl;
 import org.junit.Test;
 
 public class PartitionerTest {
   @Test public void testModelLongPartitioner() throws Exception {
     MatrixContext mMatrix = new MatrixContext();
-    mMatrix.setName("w1");
+    mMatrix.setName("PartitionerTest_w1");
     mMatrix.setRowNum(10);
     mMatrix.setColNum(-1);
     mMatrix.setValidIndexNum(100000000);
@@ -37,7 +41,16 @@ public class PartitionerTest {
     Configuration conf = new Configuration();
     conf.setInt(AngelConf.ANGEL_PS_NUMBER, 1);
     ColumnRangePartitioner partitioner = new ColumnRangePartitioner();
-    //partitioner.init(mMatrix, conf);
+    AngelApplicationMaster m = new AngelApplicationMaster(conf,
+            "testModelLongPartitioner",
+            new ApplicationAttemptIdPBImpl(),
+            new ContainerIdPBImpl(),
+            "127.0.0.1",
+            8081,
+            8082,
+            1,
+            new Credentials());
+    partitioner.init(mMatrix, m.new RunningAppContext(conf));
     partitioner.getPartitions();
   }
 }
