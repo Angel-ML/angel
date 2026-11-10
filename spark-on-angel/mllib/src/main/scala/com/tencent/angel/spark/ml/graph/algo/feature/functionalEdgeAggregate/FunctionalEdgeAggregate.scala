@@ -48,8 +48,17 @@ class FunctionalEdgeAggregate(override val uid: String) extends Transformer
 
     // assume weight on edges are same with different directions--undirected
     // todo directed graph aggregate
-    var graph = edges.flatMap { case (srcId, dstId, weight) => Iterator((srcId, (dstId, weight)), (dstId, (srcId, weight))) }
+    val adj = edges.flatMap { case (srcId, dstId, weight) => Iterator((srcId, (dstId, weight)), (dstId, (srcId, weight))) }
       .groupByKey($(partitionNum))
+      .mapValues(_.toArray.distinct)
+    adj.persist($(storageLevel))
+    val degrees = adj.mapValues(_.length)
+    // attach global neighbor degree to every edge so partitions need no cross-partition lookup
+    val adjWithDegree = adj.flatMap { case (node, ns) => ns.iterator.map { case (n, w) => (n, (node, w)) } }
+      .join(degrees, $(partitionNum))
+      .map { case (n, ((node, w), nDeg)) => (node, (n, w, nDeg)) }
+      .groupByKey($(partitionNum))
+    var graph = adjWithDegree
       .mapPartitionsWithIndex((index, adjTable) => Iterator(FunctionalEdgeAggregateGraphPartition.apply(index, adjTable)))
     graph.persist($(storageLevel))
     graph.foreachPartition(_ => Unit)

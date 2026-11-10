@@ -22,7 +22,7 @@ object NeighborTabJoinSideInfoTab {
     val ss = startSS(mode)
     EGESOps.deleteIfExists(output, ss)
 
-    val walkPaths = ss.sparkContext.textFile(input1).repartition(dataPartitionNum)
+    val walkPaths = ss.sparkContext.textFile(input1, dataPartitionNum).repartition(dataPartitionNum)
       .filter(line => line != null && line.length > 0)
       .map(line => line.stripLineEnd.split("[\\s+|,]"))
       .map(e => e.map(ele => ele.toInt))
@@ -36,7 +36,7 @@ object NeighborTabJoinSideInfoTab {
     neighborTab.persist(StorageLevel.MEMORY_AND_DISK)
     println(s"the size of neighborTab is ${neighborTab.count()}.")
 
-    val sideInfoTab = ss.sparkContext.textFile(input2).repartition(dataPartitionNum).distinct()
+    val sideInfoTab = ss.sparkContext.textFile(input2, dataPartitionNum).repartition(dataPartitionNum).distinct()
       .filter(line => line != null && line.length > 0)
       .map(line => line.stripLineEnd.split("[\\s+|,]"))
       .map(e => e.map(ele => ele.toInt))

@@ -57,7 +57,7 @@ object DataUtils {
       StructField("item", StringType, nullable = false),
       StructField("vector", StringType, nullable = false)))
 
-    val inputRDD = sc.textFile(path).map(line => line.trim.split(itemSep))
+    val inputRDD = sc.textFile(path, partNum).map(line => line.trim.split(itemSep))
     val ss = SparkSession.builder().getOrCreate()
     val result = ss.createDataFrame(inputRDD.map(line => Row.fromSeq(line)), StructType(schema))
     result
@@ -70,7 +70,7 @@ object DataUtils {
       StructField("vector", StringType, nullable = false),
       StructField("clusterID", StringType, nullable = false)))
 
-    val inputRDD = sc.textFile(path).map(line => line.trim.split(itemSep)).repartition(partNum)
+    val inputRDD = sc.textFile(path, partNum).map(line => line.trim.split(itemSep)).repartition(partNum)
     val ss = SparkSession.builder().getOrCreate()
     val result = ss.createDataFrame(inputRDD.map(line => Row.fromSeq(line)), StructType(schema))
     result

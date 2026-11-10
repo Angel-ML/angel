@@ -42,7 +42,7 @@ object EGESRemapping {
     EGESOps.deleteIfExists(output + "/remapNeighborTab", ss)
     EGESOps.deleteIfExists(output + "/remapNodeSideInfoTab", ss)
 
-    val data: RDD[String] = ss.sparkContext.textFile(input).repartition(dataPartNum)
+    val data: RDD[String] = ss.sparkContext.textFile(input, dataPartNum).repartition(dataPartNum)
       .filter(line => line != null && line.length > 0)
       .map(line => (line, 1)).reduceByKey(_ + _).map(line => line._1)
     data.persist(StorageLevel.DISK_ONLY)

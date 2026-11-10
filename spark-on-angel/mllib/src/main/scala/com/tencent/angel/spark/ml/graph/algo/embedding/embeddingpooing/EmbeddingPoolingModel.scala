@@ -41,7 +41,7 @@ class EmbeddingPoolingModel(numNode: Int,
   // Create one ps matrix to hold the embeddings
   val mc: MatrixContext = new MatrixContext(matrixName, 1, numNode)
   mc.setMaxRowNumInBlock(1)
-  mc.setMaxColNumInBlock(numNode / numPsParts)
+  mc.setMaxColNumInBlock(math.max(1, (numNode + numPsParts - 1) / numPsParts))
   mc.setRowType(RowType.T_ANY_INTKEY_DENSE)
   mc.setValueType(classOf[EmbeddingNode])
   mc.setInitFunc(new EmbeddingInitFunc(embeddingDim))

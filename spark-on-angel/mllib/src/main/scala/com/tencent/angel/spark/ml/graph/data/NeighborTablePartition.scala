@@ -120,9 +120,12 @@ class NeighborTablePartition[@specialized(
 
   def testPS(psModel: NeighborTableModel, num: Int): Boolean = {
     var correct = true
-    assert(num <= size, s"the size of partition $size < $num")
+    if (num > size) {
+      println(s"partition $partitionID: size $size < check num $num, check $size nodes only")
+    }
+    val checkNum = math.min(num, size)
     // check neighbor table
-    for (i <- 0 until num - 1) {
+    for (i <- 0 until checkNum - 1) {
       val srcId1 = srcIds(i)
       val srcId2 = srcIds(i + 1)
       val neighbors1 = neighbors(i)

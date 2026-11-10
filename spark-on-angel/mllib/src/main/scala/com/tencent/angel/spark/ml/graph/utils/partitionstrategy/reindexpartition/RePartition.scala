@@ -127,7 +127,9 @@ class RePartition(override val uid: String) extends Transformer
 
     }
 
-    val retRDD = SparkContext.getOrCreate().parallelize(arrayBounds.toSeq, 1).map(r => Row.fromSeq(Seq[Any](r)))
+    val retRDD = SparkContext.getOrCreate()
+      .parallelize(arrayBounds.toSeq, math.max(1, math.min($(partitionNum), arrayBounds.length)))
+      .map(r => Row.fromSeq(Seq[Any](r)))
     dataset.sparkSession.createDataFrame(retRDD, transformSchema(dataset.schema))
   }
 

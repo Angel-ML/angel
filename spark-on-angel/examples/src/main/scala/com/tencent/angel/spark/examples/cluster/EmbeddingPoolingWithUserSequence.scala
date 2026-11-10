@@ -67,8 +67,8 @@ object EmbeddingPoolingWithUserSequence {
     }
     println(s"numDataPartitions=$numExecutorDataPartitions")
 
-    val embeddingsRDD = GraphIO.loadString(embeddingInput)
-    val sequencesRDD = GraphIO.loadString(sequenceInput).repartition(numExecutorDataPartitions)
+    val embeddingsRDD = GraphIO.loadString(embeddingInput, 0, numExecutorDataPartitions)
+    val sequencesRDD = GraphIO.loadString(sequenceInput, 0, numExecutorDataPartitions).repartition(numExecutorDataPartitions)
     var embeddings: RDD[(Int, Array[Float])] = null
     var maxID = 0
     var sequences: RDD[(String, Array[Int], Array[Float])] = null

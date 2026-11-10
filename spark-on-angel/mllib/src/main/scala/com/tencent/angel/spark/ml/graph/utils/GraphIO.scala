@@ -156,12 +156,9 @@ object GraphIO {
 }
   }
 
-  def loadString(input: String, index: Int = 0): RDD[String] = {
-    val ss = SparkSession.builder().getOrCreate()
-    ; {
-      ss.sparkContext.textFile(input)
-    
-}
+  def loadString(input: String, index: Int = 0, minPartitions: Int = -1): RDD[String] = {
+    val sc = SparkSession.builder().getOrCreate().sparkContext
+    sc.textFile(input, if (minPartitions > 0) minPartitions else sc.defaultMinPartitions)
   }
 
   def loadStringWeight(input: String, isWeighted: Boolean,
