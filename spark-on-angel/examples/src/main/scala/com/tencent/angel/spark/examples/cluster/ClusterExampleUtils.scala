@@ -85,15 +85,18 @@ object ClusterExampleUtils {
    * Load edges with string node ids, as required by the embedding models that remap node ids
    * themselves (LINE v2/v3, BGE). The result has columns "src", "dst" (StringType) and, if
    * weighted, "weight" (FloatType). Blank lines and lines starting with "#" are skipped.
+   * If numPartitions > 0 the input is read into at least that many partitions.
    */
   def loadStringEdges(input: String, sep: String, isWeighted: Boolean, srcIndex: Int = 0,
-      dstIndex: Int = 1, weightIndex: Int = 2): DataFrame = {
+      dstIndex: Int = 1, weightIndex: Int = 2, numPartitions: Int = -1): DataFrame = {
     val ss = SparkSession.builder().getOrCreate()
     val splitter = if (sep == " ") "\\s+" else Pattern.quote(sep)
     val maxIndex = if (isWeighted) math.max(math.max(srcIndex, dstIndex), weightIndex)
     else math.max(srcIndex, dstIndex)
 
-    val rows = ss.sparkContext.textFile(input)
+    val sc = ss.sparkContext
+    val rows = sc.textFile(input,
+        if (numPartitions > 0) numPartitions else sc.defaultMinPartitions)
       .map(_.trim)
       .filter(line => line.nonEmpty && !line.startsWith("#"))
       .map(_.split(splitter))

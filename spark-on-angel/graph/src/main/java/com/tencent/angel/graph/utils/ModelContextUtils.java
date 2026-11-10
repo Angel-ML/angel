@@ -50,8 +50,9 @@ public class ModelContextUtils {
       mc.setPartitionerClass(ColumnRangePartitioner.class);
       if (context.getPartitionNum() > 0) {
         mc.setMaxRowNumInBlock(rowNum);
-        mc.setMaxColNumInBlock(
-            (context.getMaxNodeId() - context.getMinNodeId()) / context.getPartitionNum());
+        mc.setMaxColNumInBlock(Math.max(1L,
+            (context.getMaxNodeId() - context.getMinNodeId() + context.getPartitionNum() - 1)
+                / context.getPartitionNum()));
       }
     }
 
@@ -80,8 +81,9 @@ public class ModelContextUtils {
       mc.setPartitionerClass(ColumnRangePartitioner.class);
       if (context.getPartitionNum() > 0) {
         mc.setMaxRowNumInBlock(1);
-        mc.setMaxColNumInBlock(
-            (context.getMaxNodeId() - context.getMinNodeId()) / context.getPartitionNum());
+        mc.setMaxColNumInBlock(Math.max(1L,
+            (context.getMaxNodeId() - context.getMinNodeId() + context.getPartitionNum() - 1)
+                / context.getPartitionNum()));
       }
     }
 
@@ -128,8 +130,9 @@ public class ModelContextUtils {
       mc.setPartitionerClass(ColumnRangePartitioner.class);
       if (context.getPartitionNum() > 0) {
         mc.setMaxRowNumInBlock(1);
-        mc.setMaxColNumInBlock(
-            (context.getMaxNodeId() - context.getMinNodeId()) / context.getPartitionNum());
+        mc.setMaxColNumInBlock(Math.max(1L,
+            (context.getMaxNodeId() - context.getMinNodeId() + context.getPartitionNum() - 1)
+                / context.getPartitionNum()));
       }
     }
 

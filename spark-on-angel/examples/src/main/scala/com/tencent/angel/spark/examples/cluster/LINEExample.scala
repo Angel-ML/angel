@@ -63,10 +63,12 @@ object LINEExample {
     val numCores = SparkUtils.getNumCores(conf)
 
     // The number of partition is more than the cores. We do this to achieve dynamic load balance.
-    val numDataPartitions = (numCores * 6.25).toInt
+    // "partitionNum" overrides the core based default.
+    val numDataPartitions = params.get("partitionNum").map(_.toInt)
+      .getOrElse((numCores * 6.25).toInt)
     println(s"numDataPartitions=$numDataPartitions")
 
-    val data = sc.textFile(input)
+    val data = sc.textFile(input, numDataPartitions)
     data.persist(StorageLevel.DISK_ONLY)
 
     //collect app name and data size
@@ -87,7 +89,7 @@ object LINEExample {
 
     val(maxNodeId, docs) = if (withSubSample) {
       corpus.persist(StorageLevel.DISK_ONLY)
-      val subsampleTmp = SubSampling.sampling(corpus)
+      val subsampleTmp = SubSampling.sampling(corpus, numPartitions)
       (subsampleTmp._1, subsampleTmp._2.repartition(numDataPartitions))
     } else {
       val tmp = corpus.repartition(numDataPartitions)

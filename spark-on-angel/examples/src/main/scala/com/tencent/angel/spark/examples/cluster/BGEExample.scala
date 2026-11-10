@@ -81,7 +81,7 @@ object BGEExample {
     val df = loadStringEdges(input, sep, isWeighted,
       params.getOrElse("srcIndex", "0").toInt,
       params.getOrElse("dstIndex", "1").toInt,
-      params.getOrElse("weightIndex", "2").toInt)
+      params.getOrElse("weightIndex", "2").toInt, numPartitions = partitionNum)
 
     DataStatistics.setAppName(bge.getClass.getCanonicalName)
     DataStatistics.calcRDDSize(df, "angel.input.data")

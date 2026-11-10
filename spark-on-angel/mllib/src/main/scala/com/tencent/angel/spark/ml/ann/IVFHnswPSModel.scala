@@ -27,6 +27,8 @@ class IVFHnswPSModel(val queryVecMatrix: PSMatrix,
   }
 
   def initQueries(queries: Array[(Long, Array[(Long, Array[Float])])]): Unit = {
+    // An empty data partition would produce a PSF without any split, which PS rejects
+    if (queries.isEmpty) return
     val nodes = queries.map(_._1)
     val updates = queries.map(a => new IVFHnswVector(a._2.map(_._1), a._2.map(_._2)))
 
@@ -36,6 +38,7 @@ class IVFHnswPSModel(val queryVecMatrix: PSMatrix,
   }
 
   def updateSearchResult(res: Array[(Long, Array[(Long, Float)])], topK: Int): Unit = {
+    if (res.isEmpty) return
     val nodes = res.map(_._1)
     val updates = res.map(a => new NearestNeighborsIElement(a._2.map(t => new NeighborDistance(t._1, t._2))))
     val psFunc = new UpdateSearchResult(new UpdateSearchResultParam(searchResMatrix.id, nodes, updates, topK))
@@ -43,6 +46,7 @@ class IVFHnswPSModel(val queryVecMatrix: PSMatrix,
   }
 
   def updateSearchResultInCluster(res: Array[(Long, Array[(Long, Float)])], topK: Int): Unit = {
+    if (res.isEmpty) return
     val nodes = res.map(_._1)
     val updates = res.map(a => new NearestNeighborsIElement(a._2.map(t => new NeighborDistance(t._1, t._2))))
     val psFunc = new UpdateSearchResult(new UpdateSearchResultParam(resMatrixFinal.id, nodes, updates, topK))
@@ -52,18 +56,21 @@ class IVFHnswPSModel(val queryVecMatrix: PSMatrix,
 
 
   def getQueries(qId: Array[Long]): Long2ObjectOpenHashMap[Tuple2[Array[Long], Array[Array[Float]]]] = {
+    if (qId.isEmpty) return new Long2ObjectOpenHashMap[Tuple2[Array[Long], Array[Array[Float]]]]()
     val psFunc = new GetIVFHnswVectors(new GetIVFHnswVectorsParam(queryVecMatrix.id, qId))
     val ret = queryVecMatrix.asyncPsfGet(psFunc).get().asInstanceOf[GetIVFHnswVectorsResult]
     ret.getVector
   }
 
   def getNearestNeighbors(qId: Array[Long], topK: Int): Long2ObjectOpenHashMap[Array[NeighborDistance]] = {
+    if (qId.isEmpty) return new Long2ObjectOpenHashMap[Array[NeighborDistance]]()
     val psFunc = new GetSearchResult(new GetSearchResultParam(resMatrixFinal.id, qId))
     val ret = searchResMatrix.asyncPsfGet(psFunc).get().asInstanceOf[GetSearchResultResult]
     ret.getResKeysDis
   }
 
   def getNearestClusters(qId: Array[Long], topK: Int): Long2ObjectOpenHashMap[Array[NeighborDistance]] = {
+    if (qId.isEmpty) return new Long2ObjectOpenHashMap[Array[NeighborDistance]]()
     val psFunc = new GetSearchResult(new GetSearchResultParam(searchResMatrix.id, qId))
     val ret = searchResMatrix.asyncPsfGet(psFunc).get().asInstanceOf[GetSearchResultResult]
     ret.getResKeysDis

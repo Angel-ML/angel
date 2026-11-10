@@ -121,7 +121,10 @@ abstract class NEModel(numNode: Int,
   }
 
   private def slicedSavingRDDBuilder(ss: SparkSession, partDim: Int): RDD[(Int, Int)] = {
-    val numExecutor = getAvailableExecutorNum(ss)
+    // Use at least spark.default.parallelism partitions (when set) so that saving is not
+    // limited to the number of executors.
+    val minPartitions = ss.sparkContext.getConf.getInt("spark.default.parallelism", 1)
+    val numExecutor = math.max(getAvailableExecutorNum(ss), minPartitions)
     val numNodePerPartition = math.max(1, math.min(100000, (numNode - 1) / numExecutor + 1))
     val sliceBatchSize = math.min(1000000 / partDim, numNodePerPartition)
     val slices = (Array.range(0, numNode, sliceBatchSize) ++ Array(numNode))

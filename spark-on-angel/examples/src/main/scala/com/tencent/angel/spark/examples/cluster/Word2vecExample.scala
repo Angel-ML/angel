@@ -92,7 +92,7 @@ object Word2vecExample {
     }
     println(s"dataPartitionNum=$numDataPartitions")
 
-    val data = GraphIO.loadString(input, colIndex).repartition(numDataPartitions)
+    val data = GraphIO.loadString(input, colIndex, numDataPartitions).repartition(numDataPartitions)
     var denseToString: Option[RDD[(Int, String)]] = None
 
     val mapsInput = if (mapsInputPath.nonEmpty) {

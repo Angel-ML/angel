@@ -90,6 +90,17 @@ public class RangePartitioner implements Partitioner {
 
     LOG.info("start to split matrix " + mContext);
 
+    // A block size of 0 (e.g. colNum / partitionNum with colNum < partitionNum) would never
+    // advance the split loops below and hang the master, so use the smallest valid block.
+    if (blockRow == 0) {
+      LOG.warn("maxRowNumInBlock of matrix " + mContext.getName() + " is 0, use 1 instead");
+      blockRow = 1;
+    }
+    if (blockCol == 0) {
+      LOG.warn("maxColNumInBlock of matrix " + mContext.getName() + " is 0, use 1 instead");
+      blockCol = 1;
+    }
+
     double range = col;
     // if col == -1, we use the start/end index to calculate range,
     // we use double to store the range value since two long minus might exceed the

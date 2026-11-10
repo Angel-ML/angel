@@ -56,9 +56,9 @@ object DocVecClusterExample {
     }
     println(s"dataPartitionNum=$numDataPartitions")
 
-    val data = GraphIO.loadString(inputDoc, colIndex).repartition(numDataPartitions)
+    val data = GraphIO.loadString(inputDoc, colIndex, numDataPartitions).repartition(numDataPartitions)
     val corpus: RDD[(String, Array[Int])] = if (inputMap.length > 0) {
-      val mapData = GraphIO.loadString(inputMap, colIndex).repartition(numDataPartitions)
+      val mapData = GraphIO.loadString(inputMap, colIndex, numDataPartitions).repartition(numDataPartitions)
       val stringsWithIndex = mapData.filter(line => line.split(":").length > 1).map{line =>
         val splits = line.split(":")
         (splits(1), splits(0).toInt)
@@ -81,7 +81,7 @@ object DocVecClusterExample {
     trainRDD.persist(StorageLevel.fromString(storageLevel))
     corpus.unpersist()
 
-    val inputDictRDD: RDD[String] = GraphIO.loadString(inputDict, colIndex)
+    val inputDictRDD: RDD[String] = GraphIO.loadString(inputDict, colIndex, numDataPartitions)
     val (maxWordId, minWordId) = Word2VecUtils.getMinMaxID(inputDictRDD)
     println(s"minWordId=$minWordId maxWordId=${maxWordId + 1}")
 
