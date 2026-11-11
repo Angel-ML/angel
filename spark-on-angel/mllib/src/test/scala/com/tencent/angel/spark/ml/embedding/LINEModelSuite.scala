@@ -26,8 +26,8 @@ import com.tencent.angel.spark.ml.graph.algo.embedding.Param
 import com.tencent.angel.spark.ml.{PSFunSuite, SharedPSContext}
 
 class LINEModelSuite extends PSFunSuite with SharedPSContext {
-  val input = "../../data/bc/edge"
-  val output = "file:///E://model/"
+  val input = testDataPath("bc/edge")
+  val output = testOutputPath("line")
   val numPartition = 1
   val lr = 0.025f
   val dim = 4
@@ -87,6 +87,8 @@ class LINEModelSuite extends PSFunSuite with SharedPSContext {
       line.split(" ")(1).split("=").last.toFloat
     }
 
+    assert(loss.size == numEpoch, s"Expected $numEpoch epoch losses, got ${loss.size}")
+    assert(loss.forall(v => !v.isNaN && !v.isInfinity))
     for (i <- 0 until numEpoch - 1) {
       assert(loss(i + 1) < loss(i), s"loss increase: ${loss.mkString("->")}")
     }
@@ -114,6 +116,8 @@ class LINEModelSuite extends PSFunSuite with SharedPSContext {
       line.split(" ")(1).split("=").last.toFloat
     }
 
+    assert(loss.size == numEpoch, s"Expected $numEpoch epoch losses, got ${loss.size}")
+    assert(loss.forall(v => !v.isNaN && !v.isInfinity))
     for (i <- 0 until numEpoch - 1) {
       assert(loss(i + 1) < loss(i), s"loss increase: ${loss.mkString("->")}")
     }

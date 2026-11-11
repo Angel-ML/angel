@@ -60,6 +60,7 @@ class NeighborTableModel(@BeanProperty val param: Param) extends Serializable {
     mc.setRowType(RowType.T_INT_SPARSE)
     // Use CSR format to storage the neighbor table
     mc.setPartitionClass(classOf[CSRPartition])
+    mc.setPartitionerClass(classOf[com.tencent.angel.ps.storage.partitioner.RangePartitioner])
     psMatrix = PSMatrix.matrix(mc)
 
     data.mapPartitions { iter => {

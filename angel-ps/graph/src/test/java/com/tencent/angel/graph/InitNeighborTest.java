@@ -125,9 +125,11 @@ public class InitNeighborTest {
 
     // use local deploy mode and dummy dataspliter
     conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
+    conf.set(AngelConf.ANGEL_PS_ROUTER_TYPE, "range");
     conf.setBoolean(AngelConf.ANGEL_AM_USE_DUMMY_DATASPLITER, true);
     conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
-    conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, "file:///F:\\test\\model_1");
+    conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH,
+        LOCAL_FS + TMP_PATH + "/init-neighbor-" + System.nanoTime());
     conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, LOCAL_FS + TMP_PATH + "/in");
     conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 
@@ -149,6 +151,7 @@ public class InitNeighborTest {
     MatrixContext siMat = new MatrixContext();
     siMat.setName(SPARSE_INT_MAT);
     siMat.setRowType(RowType.T_INT_SPARSE);
+    siMat.setPartitionerClass(com.tencent.angel.ps.storage.partitioner.RangePartitioner.class);
     siMat.setRowNum(1);
     siMat.setColNum(10000);
     siMat.setPartitionClass(CSRPartition.class);
@@ -186,6 +189,20 @@ public class InitNeighborTest {
 
     // Init node neighbors
     Int2ObjectOpenHashMap<int[]> nodeIdToNeighbors = new Int2ObjectOpenHashMap<>();
+
+    if (!new InitNeighborParam(matrixId, nodeIdToNeighbors).split().isEmpty()) {
+      throw new AssertionError("Empty updates must not create partition parameters");
+    }
+    nodeIdToNeighbors.put(10000, new int[]{1});
+    try {
+      new InitNeighborParam(matrixId, nodeIdToNeighbors).split();
+      throw new AssertionError("Out-of-range node ids must be rejected");
+    } catch (AngelException expected) {
+      if (!expected.getMessage().contains("outside the range partitions")) {
+        throw expected;
+      }
+    }
+    nodeIdToNeighbors.clear();
 
     nodeIdToNeighbors.put(1, new int[]{2, 3});
     nodeIdToNeighbors.put(2, new int[]{4});
@@ -225,7 +242,10 @@ public class InitNeighborTest {
           "node id = " + entry.getIntKey() + ", neighbors = " + Arrays.toString(entry.getValue()));
     }
 
-    client.checkpoint(0);
+    com.tencent.angel.model.ModelSaveContext snapshot = new com.tencent.angel.model.ModelSaveContext();
+    snapshot.addMatrix(new com.tencent.angel.model.MatrixSaveContext(SPARSE_INT_MAT,
+        com.tencent.angel.model.output.format.SnapshotFormat.class.getName()));
+    angelClient.checkpoint(0, snapshot);
 
     ps.stop(-1);
     PSErrorRequest request = PSErrorRequest.newBuilder()
@@ -234,9 +254,17 @@ public class InitNeighborTest {
     master.psError(null, request);
 
     Thread.sleep(10000);
+    angelClient.waitForAllPS(1);
+    com.tencent.angel.model.ModelLoadContext restore = new com.tencent.angel.model.ModelLoadContext();
+    restore.addMatrix(new com.tencent.angel.model.MatrixLoadContext(SPARSE_INT_MAT));
+    angelClient.recover(0, restore);
 
     result = ((SampleNeighborResult) (client
         .get(new SampleNeighbor(param)))).getNodeIdToNeighbors();
+    int[] restored = result.get(1);
+    Arrays.sort(restored);
+    org.junit.Assert.assertArrayEquals(new int[]{2, 3, 4, 5, 6}, restored);
+    org.junit.Assert.assertArrayEquals(new int[]{3, 4}, result.get(8));
     iter = result
         .int2ObjectEntrySet().fastIterator();
 

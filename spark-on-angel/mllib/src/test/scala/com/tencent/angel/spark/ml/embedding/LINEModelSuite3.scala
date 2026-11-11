@@ -29,10 +29,10 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 class LINEModelSuite3 extends PSFunSuite with SharedPSContext {
-  val input = "../../data/bc/edge_weight"
-  val output = "file:///E://model_new/"
+  val input = testDataPath("clickrate/edgeweighted")
+  val output = testOutputPath("line3")
   val oldOutput = null//"file:///E:\\temp\\application_1565577700269_-1030306181_2e9fbfff-8f3c-41f4-b015-59490ef6daf5\\snapshot\\2"
-  val tmpPath = "file:///E://temp"
+  val tmpPath = testOutputPath("line3-tmp")
   val numPartition = 1
   val lr = 0.025f
   val dim = 32

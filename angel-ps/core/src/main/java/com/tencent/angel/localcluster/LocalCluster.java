@@ -79,6 +79,7 @@ public class LocalCluster {
    */
   public void stop() {
     LOG.info("stop the cluster " + id);
+    localRM.stop();
     Map<WorkerAttemptId, LocalWorker> localWorkers = LocalClusterContext.get().getIdToWorkerMap();
     for (LocalWorker localWorker : localWorkers.values()) {
       localWorker.exit();
@@ -93,8 +94,6 @@ public class LocalCluster {
     if (master != null) {
       master.exit();
     }
-
-    localRM.stop();
 
     try {
       Thread.sleep(2000);

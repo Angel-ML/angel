@@ -94,8 +94,9 @@ public class LocalResourceManager {
           }
         } catch (InterruptedException e) {
           LOG.warn("event handler is interrupted");
-        } catch (IOException | InvalidParameterException e) {
+        } catch (Exception | LinkageError e) {
           LOG.error("handle event " + event + " failed.", e);
+          LocalClusterContext.get().setStartupFailure(e);
         }
       }
     }
@@ -175,10 +176,13 @@ public class LocalResourceManager {
    */
   public void stop() {
     stopped.set(true);
+    if (handler == null) {
+      return;
+    }
     handler.interrupt();
 
     try {
-      handler.join();
+      if (handler != Thread.currentThread()) handler.join();
     } catch (InterruptedException ie) {
       LOG.warn("InterruptedException while stopping", ie);
     }

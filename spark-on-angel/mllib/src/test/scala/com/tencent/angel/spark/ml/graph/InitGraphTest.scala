@@ -28,6 +28,7 @@ import scala.util.Random
   * A simple example of neighbor table
   */
 class InitGraphTest extends PSFunSuite with SharedPSContext {
+  conf.set("spark.hadoop.angel.ps.router.type", "range")
   val input = "../../data/bc/edge"
   val output = "model/"
   val numPartition = 4

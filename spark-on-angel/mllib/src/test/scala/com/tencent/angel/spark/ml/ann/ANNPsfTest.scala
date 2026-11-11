@@ -13,7 +13,7 @@ import scala.util.Random
 
 class ANNPsfTest extends PSFunSuite with SharedPSContext {
   
-  var dataPath: String = "E:/project/angel/data/embeddingData/embTest"
+  val dataPath: String = testDataPath("ann/vectors.txt")
   var dataset: DataFrame = _
   var psModel: ANNPSModel = _
   var data: RDD[(Long, Array[Float])] = _
@@ -58,6 +58,7 @@ class ANNPsfTest extends PSFunSuite with SharedPSContext {
     
     data.collect().foreach{ dt =>
       assert(vecs.containsKey(dt._1), "not all vecs are pushed onto ps")
+      assert(dt._2.length == vecs.get(dt._1).length)
       dt._2.zip(vecs.get(dt._1)).foreach{ pair =>
         assert(pair._1 == pair._2, s"changes in value of vecs on ps")
       }
@@ -68,8 +69,9 @@ class ANNPsfTest extends PSFunSuite with SharedPSContext {
   }
   
   test("search result PSF") {
+    val nodeIds = index.collect().sorted
     val sample = new ArrayBuffer[(Long, Array[(Long, Float)])]()
-    for (i <- 0 until 200) {
+    for (i <- nodeIds) {
       val tres = new ArrayBuffer[(Long, Float)]()
       for (j <- 0 until 20) {
         tres += ((Random.nextInt(1000).toLong, (2 * j + 1).toFloat))
@@ -79,16 +81,18 @@ class ANNPsfTest extends PSFunSuite with SharedPSContext {
     
     psModel.updateSearchResult(sample.toArray, 10)
     
-    val pulled = psModel.getNearestNeighbors((0 until 200).map(_.toLong).toArray, 20)
-    for (i <- 0 until 200) {
-      for (pair <- sample(i)._2.zip(pulled.get(i.toLong))) {
+    val pulled = psModel.getNearestNeighbors(nodeIds, 20)
+    for ((i, expected) <- sample) {
+      assert(pulled.containsKey(i))
+      assert(pulled.get(i).length == expected.length)
+      for (pair <- expected.zip(pulled.get(i))) {
         assert(pair._1._1 == pair._2.getNeighbor && pair._1._2 == pair._2.getDistance,
           s"push res to ps changes the value, error")
       }
     }
   
     val sample2 = new ArrayBuffer[(Long, Array[(Long, Float)])]()
-    for (i <- 0 until 200) {
+    for (i <- nodeIds) {
       val tres = new ArrayBuffer[(Long, Float)]()
       for (j <- 0 until 20) {
         tres += ((Random.nextInt(1000).toLong, (2 * j).toFloat))
@@ -98,9 +102,12 @@ class ANNPsfTest extends PSFunSuite with SharedPSContext {
     
     psModel.updateSearchResult(sample2.toArray, 10)
   
-    val pulled2 = psModel.getNearestNeighbors((0 until 200).map(_.toLong).toArray, 20)
-    for (i <- 0 until 200) {
-      println(s"$i::${pulled2.get(i.toLong).map(t => s"${t.getNeighbor}:${t.getDistance}").mkString(" ")}")
+    val pulled2 = psModel.getNearestNeighbors(nodeIds, 10)
+    for (i <- nodeIds) {
+      assert(pulled2.containsKey(i))
+      val distances = pulled2.get(i).map(_.getDistance)
+      assert(distances.length == 10)
+      assert(distances.sameElements((0 until 10).map(_.toFloat)))
     }
     
   }

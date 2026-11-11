@@ -41,6 +41,7 @@ public class LocalClusterContext {
    * local master
    */
   private volatile LocalMaster master;
+  private volatile Throwable startupFailure;
 
   /**
    * worker attempt id to local worker map
@@ -283,7 +284,16 @@ public class LocalClusterContext {
   /**
    * Clear all modules information
    */
+  public Throwable getStartupFailure() {
+    return startupFailure;
+  }
+
+  public void setStartupFailure(Throwable failure) {
+    startupFailure = failure;
+  }
+
   public void clear() {
+    startupFailure = null;
     master = null;
     idToWorkerMap.clear();
     idToPSMap.clear();

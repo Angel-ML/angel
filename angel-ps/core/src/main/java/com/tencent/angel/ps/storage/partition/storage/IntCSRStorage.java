@@ -18,6 +18,9 @@
 package com.tencent.angel.ps.storage.partition.storage;
 
 import io.netty.buffer.ByteBuf;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -67,6 +70,22 @@ public class IntCSRStorage extends CSRStorage {
     long dataLen = super.bufferLen() + 4;
     if (values != null) dataLen += values.length * 4;
     return dataLen;
+  }
+
+  @Override
+  public void serialize(DataOutputStream output) throws IOException {
+    super.serialize(output);
+    output.writeInt(values == null ? 0 : values.length);
+    if (values != null) {
+      for (int value : values) output.writeInt(value);
+    }
+  }
+
+  @Override
+  public void deserialize(DataInputStream input) throws IOException {
+    super.deserialize(input);
+    values = new int[input.readInt()];
+    for (int i = 0; i < values.length; i++) values[i] = input.readInt();
   }
 
   public int[] getValues() {

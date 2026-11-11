@@ -30,6 +30,7 @@ import com.tencent.angel.model.MatrixLoadContext;
 import com.tencent.angel.model.PSMatrixLoadContext;
 import com.tencent.angel.model.PSMatrixSaveContext;
 import com.tencent.angel.ps.storage.matrix.PartitionState;
+import com.tencent.angel.ps.storage.partition.CSRPartition;
 import com.tencent.angel.ps.storage.partition.RowBasedPartition;
 import com.tencent.angel.ps.storage.partition.ServerPartition;
 import com.tencent.angel.ps.storage.partition.UserDefinePartition;
@@ -88,8 +89,12 @@ public class SnapshotFormat extends MatrixFormatImpl {
       save((RowBasedPartition) part, partMeta, saveContext, output);
     } else if(part instanceof UserDefinePartition) {
       save((UserDefinePartition) part, partMeta, saveContext, output);
+    } else if (part instanceof CSRPartition) {
+      synchronized (part.getStorage()) {
+        part.getStorage().serialize(output);
+      }
     } else {
-      LOG.warn("Unsupport partition type!! Write snapshot failed");
+      throw new IOException("Unsupported snapshot partition type: " + part.getClass().getName());
     }
   }
 
@@ -105,8 +110,12 @@ public class SnapshotFormat extends MatrixFormatImpl {
       load((RowBasedPartition) part, partMeta, loadContext, input);
     } else if(part instanceof UserDefinePartition) {
       load((UserDefinePartition) part, partMeta, loadContext, input);
+    } else if (part instanceof CSRPartition) {
+      synchronized (part.getStorage()) {
+        part.getStorage().deserialize(input);
+      }
     } else {
-      LOG.warn("Unsupport partition type!! Load snapshot failed");
+      throw new IOException("Unsupported snapshot partition type: " + part.getClass().getName());
     }
   }
 

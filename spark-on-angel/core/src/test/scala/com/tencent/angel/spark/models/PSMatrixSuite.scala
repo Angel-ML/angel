@@ -139,7 +139,7 @@ class PSMatrixSuite extends PSFunSuite with SharedPSContext {
     for (i <- 0 until rows) {
       for (j <- 0 until cols) {
         if (i == j) assert(localMatrix4.get(i, j) == 1.0f)
-        else assert(localMatrix3.get(i, j) == 2 * initRandomMatrix.get(i, j))
+        else assert(localMatrix4.get(i, j) == 2 * initRandomMatrix.get(i, j))
       }
     }
   }

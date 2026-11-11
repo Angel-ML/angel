@@ -123,9 +123,11 @@ public class InitNeighborTest2 {
 
     // use local deploy mode and dummy dataspliter
     conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
+    conf.set(AngelConf.ANGEL_PS_ROUTER_TYPE, "range");
     conf.setBoolean(AngelConf.ANGEL_AM_USE_DUMMY_DATASPLITER, true);
     conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
-    conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, "file:///F:\\test\\model_1");
+    conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH,
+        LOCAL_FS + TMP_PATH + "/init-neighbor2-" + System.nanoTime());
     conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, LOCAL_FS + TMP_PATH + "/in");
     conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 
@@ -147,6 +149,7 @@ public class InitNeighborTest2 {
     MatrixContext siMat = new MatrixContext();
     siMat.setName(SPARSE_INT_MAT);
     siMat.setRowType(RowType.T_ANY_LONGKEY_SPARSE);
+    siMat.setPartitionerClass(com.tencent.angel.ps.storage.partitioner.RangePartitioner.class);
     siMat.setRowNum(1);
     siMat.setValidIndexNum(100);
     siMat.setColNum(10000000000L);
@@ -230,7 +233,10 @@ public class InitNeighborTest2 {
           "node id = " + entry.getLongKey() + ", neighbors = " + Arrays.toString(entry.getValue()));
     }
 
-    client.checkpoint(0).get();
+    com.tencent.angel.model.ModelSaveContext snapshot = new com.tencent.angel.model.ModelSaveContext();
+    snapshot.addMatrix(new com.tencent.angel.model.MatrixSaveContext(SPARSE_INT_MAT,
+        com.tencent.angel.model.output.format.SnapshotFormat.class.getName()));
+    angelClient.checkpoint(0, snapshot);
 
     ps.stop(-1);
     PSErrorRequest request = PSErrorRequest.newBuilder()
@@ -239,10 +245,16 @@ public class InitNeighborTest2 {
     master.psError(null, request);
 
     Thread.sleep(10000);
+    angelClient.waitForAllPS(1);
+    com.tencent.angel.model.ModelLoadContext restore = new com.tencent.angel.model.ModelLoadContext();
+    restore.addMatrix(new com.tencent.angel.model.MatrixLoadContext(SPARSE_INT_MAT));
+    angelClient.recover(0, restore);
 
     param = new SampleNeighborParam(matrixId, nodeIds, -1);
     result = ((SampleNeighborResult) (client
         .get(new SampleNeighbor(param)))).getNodeIdToNeighbors();
+    org.junit.Assert.assertArrayEquals(new long[]{2, 3, 4, 5, 6}, result.get(1));
+    org.junit.Assert.assertArrayEquals(new long[]{3, 4}, result.get(8));
     iter = result
         .long2ObjectEntrySet().fastIterator();
 
