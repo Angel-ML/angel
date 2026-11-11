@@ -16,7 +16,7 @@ object HoltWintersCluster {
   def main(args: Array[String]): Unit = {
 
     val params = ArgsUtil.parse(args)
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val input = params.getOrElse("input", null)
     val partitionNum = params.getOrElse("partitionNum", "10").toInt
     val sampleRate = params.getOrElse("sampleRate", "1.0").toDouble

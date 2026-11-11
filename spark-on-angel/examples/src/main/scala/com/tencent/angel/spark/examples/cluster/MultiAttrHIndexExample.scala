@@ -33,7 +33,7 @@ object MultiAttrHIndexExample {
 
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val input = params.getOrElse("input", null)
     val output = params.getOrElse("output",null)
     val partitionNum = params.getOrElse("partitionNum","1").toInt

@@ -170,7 +170,7 @@ object SparseLogisticRegressionCluster {
 
     val params = coreArgsUtil.parse(args)
 
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val input = params.getOrElse("input", null)
     val sampleRate = params.getOrElse("sampleRate", "1.0").toDouble
     val partitionNum = params.getOrElse("partitionNum", "4").toInt

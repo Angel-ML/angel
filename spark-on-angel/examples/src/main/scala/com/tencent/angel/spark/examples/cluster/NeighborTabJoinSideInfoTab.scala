@@ -11,7 +11,7 @@ object NeighborTabJoinSideInfoTab {
   def main(args: Array[String]): Unit = {
     //实现临接表与side information表join功能
     val params = ArgsUtil.parse(args)
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val input1 = params.getOrElse("input1", "")
     val input2 = params.getOrElse("input2", "")
     val output = params.getOrElse("output", "")

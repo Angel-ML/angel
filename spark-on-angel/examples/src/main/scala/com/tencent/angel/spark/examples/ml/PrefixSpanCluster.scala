@@ -16,7 +16,7 @@ object PrefixSpanCluster {
   def main(args: Array[String]) {
     LogUtils.logTime("PrefixSpan start...")
     val params = coreArgsUtil.parse(args)
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val input = params.getOrElse("input", null)
     val output = params.getOrElse(ParamKeys.OUTPUT, null)
     val partitionNum = params.getOrElse("partitionNum", "4").toInt

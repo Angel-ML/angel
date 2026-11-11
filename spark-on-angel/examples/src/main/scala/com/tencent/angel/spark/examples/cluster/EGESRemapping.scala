@@ -13,7 +13,7 @@ object EGESRemapping {
   def main(args: Array[String]): Unit = {
     //需要存储的文件：NodeRemapping Table, SideInfoRemapping Table, Remapped Neighbor Table
     val params = ArgsUtil.parse(args)
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val input = params.getOrElse("input", "") // the path of neighbor table with side information
     val output = params.getOrElse("output", "") //
     val dataPartitionNum = params.getOrElse("dataPartitionNum", "100").toInt

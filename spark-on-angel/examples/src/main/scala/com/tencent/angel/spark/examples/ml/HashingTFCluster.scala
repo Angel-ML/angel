@@ -27,7 +27,7 @@ object HashingTFCluster {
 
     val params = ArgsUtil.parse(args)
 
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val input = params.getOrElse("input", null)
     val outputTf = params.getOrElse("outputTf", null)
     val outputDic = params.getOrElse("outputDic", null)

@@ -13,7 +13,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 object HyperEdgesExample {
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val input = params.getOrElse("input", "")
     val partitionNum = params.getOrElse("partitionNum", "100").toInt
     val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))

@@ -16,7 +16,7 @@ object ReindexCluster {
     val output = params.getOrElse("output", null)
     val maps = params.getOrElse("maps", null)
 
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val isWeighted = params.getOrElse("isWeighted", "false").toBoolean
     val srcIndex = params.getOrElse("srcIndex", "0").toInt
     val dstIndex = params.getOrElse("dstIndex", "1").toInt

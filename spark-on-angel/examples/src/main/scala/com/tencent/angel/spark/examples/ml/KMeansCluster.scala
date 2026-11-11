@@ -14,7 +14,7 @@ import com.tencent.angel.spark.ml.core.{ArgsUtil => coreArgsUtil}
  *
  * 参数说明:
  *
- * mode          "local" or yarn-cluster
+ * mode          "local" or yarn
  * input         input file
  * featureCols      表示需要计算的特征所在列，例如“1-10,12,15”，其说明取特征在表中的第1到第10列，第12列以及第15列，从0开始计数
  * partitionNum   partition数目
@@ -37,7 +37,7 @@ object KMeansCluster extends {
     LogUtils.logTime("KMeans clustering start...")
     val params = coreArgsUtil.parse(args)
 
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val input = params.getOrElse("input", null)
     val featureCols = params.getOrElse("featureCols", null)
     val sampleRate = params.getOrElse("sampleRate", "1.0").toDouble

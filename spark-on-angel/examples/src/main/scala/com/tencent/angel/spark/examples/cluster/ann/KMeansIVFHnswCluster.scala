@@ -18,7 +18,7 @@ object KMeansIVFHnswCluster {
 
     val params = coreArgsUtil.parse(args)
 
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val input = params.getOrElse("input", null)
     val outputCenter = params.getOrElse("outputCenter", null)
     val outputLevel2 = params.getOrElse("outputLevel2", null)

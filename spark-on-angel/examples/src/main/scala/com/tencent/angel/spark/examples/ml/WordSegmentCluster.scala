@@ -25,7 +25,7 @@ object WordSegmentCluster {
 
     val params = coreArgsUtil.parse(args)
 
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val input = params.getOrElse("input", null)
     val textCol = params.getOrElse("textCol", "0").toInt
     val partitionNum = params.getOrElse(ParamKeys.PARTITION_NUM, "10").toInt

@@ -14,7 +14,7 @@ object RegressionEvaluatorCluster {
     LogUtils.logTime(s"Start ${this.getClass.getSimpleName} Processing...")
     val params = ArgsUtil.parse(args)
 
-    val mode = params.getOrElse(ParamKeys.MODE, "yarn-cluster")
+    val mode = params.getOrElse(ParamKeys.MODE, "yarn")
     val input = params.getOrElse(ParamKeys.INPUT, null)
 
     val labelCol = params.getOrElse(ParamKeys.LABEL_COL, MAX_INT_STR).toInt

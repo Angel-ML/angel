@@ -12,7 +12,7 @@ import org.apache.spark.{SparkConf, SparkContext}
  *
  * 参数说明:
  *
- * mode          "local" or yarn-cluster
+ * mode          "local" or yarn
  * input         input file
  * featureCols      表示需要计算的特征所在列，例如“1-10,12,15”，其说明取特征在表中的第1到第10列，第12列以及第15列，从0开始计数
  * partitionNum   partition数目

@@ -11,7 +11,7 @@ object SpliterCluster {
   def main(args: Array[String]): Unit = {
 
     val params = coreArgsUtil.parse(args)
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val input = params.getOrElse("input", null)
     val partitionNum = params.getOrElse("partitionNum", "10").toInt
     val output1 = params.getOrElse("output1", null)

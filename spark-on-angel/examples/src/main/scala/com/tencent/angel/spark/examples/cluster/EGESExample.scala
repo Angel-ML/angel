@@ -36,7 +36,7 @@ object EGESExample {
 
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val input = params.getOrElse("input", "")
     val output = params.getOrElse("output", "")
     val matrixOutput = params.getOrElse("matrixOutput", "")

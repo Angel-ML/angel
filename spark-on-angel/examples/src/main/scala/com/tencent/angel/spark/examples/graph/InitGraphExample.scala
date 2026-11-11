@@ -42,7 +42,7 @@ object InitGraphExample {
 
     println(s"input=${input} initBatchSize=${initBatchSize} psPartNum=${psPartNum} dataPartNum=${dataPartNum}")
 
-    val conf = new SparkConf().setMaster("yarn-cluster")
+    val conf = new SparkConf().setMaster("yarn")
     val sc = new SparkContext(conf)
     PSContext.getOrCreate(sc)
 
