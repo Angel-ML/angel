@@ -21,26 +21,31 @@ class HyperANFPSModel(matrix: PSMatrix) extends Serializable {
   }
 
   def init(nodes: Array[Long], nodeTags: Array[Int], p: Int, sp: Int, seed: Long): Unit = {
+    if (nodes == null || nodes.isEmpty) return
     val func = new InitHyperVertex(matrix.id, p, sp, nodes, nodeTags, seed)
     matrix.psfUpdate(func).get()
   }
 
   def initEdge(nodes: Array[Long], p: Int, sp: Int, seed: Long): Unit = {
+    if (nodes == null || nodes.isEmpty) return
     val func = new InitHyperEdge(matrix.id, nodes, p, sp, seed)
     matrix.psfUpdate(func).get()
   }
 
   def getReadCounter(nodes: Array[Long]): Long2ObjectOpenHashMap[HyperLogLogPlus] = {
+    if (nodes == null || nodes.isEmpty) return new Long2ObjectOpenHashMap[HyperLogLogPlus]()
     val func = new GetReadCounter(matrix.id, nodes)
     matrix.psfGet(func).asInstanceOf[GetHyperLogLogResult].getResults
   }
 
   def getWriteCounter(nodes: Array[Long]): Long2ObjectOpenHashMap[(HyperLogLogPlus, java.lang.Long)] = {
+    if (nodes == null || nodes.isEmpty) return new Long2ObjectOpenHashMap[(HyperLogLogPlus, java.lang.Long)]()
     val func = new GetWriteCounter(matrix.id, nodes)
     matrix.psfGet(func).asInstanceOf[GetWriteCounterResult].getResults
   }
 
   def sendMsgs(updates: Long2ObjectOpenHashMap[HyperLogLogPlus], p: Int, sp: Int, seed: Long): Unit = {
+    if (updates == null || updates.isEmpty) return
     val func = new UpdateWriteCounter(matrix.id, updates, p, sp, seed)
     matrix.psfUpdate(func).get()
   }

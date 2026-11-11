@@ -77,7 +77,7 @@ object SSHopLayoutLocalExample {
     val conf = new SparkConf()
     
     // Add jvm parameters for executors
-    var executorJvmOptions = conf.get("spark.executor.extraJavaOptions")
+    var executorJvmOptions = conf.get("spark.executor.extraJavaOptions", "")
     executorJvmOptions += " -XX:ConcGCThreads=4 -XX:ParallelGCThreads=4 -Xss4M "
     conf.set("spark.executor.extraJavaOptions", executorJvmOptions)
     println(s"executorJvmOptions = ${executorJvmOptions}")

@@ -35,7 +35,7 @@ class MultiAttrHIndexPSModel(val batchSize: Int, val attributes: PSMatrix,
   def initAttributes(attrs: RDD[(Long, Array[Float])]): Long = {
     attrs.mapPartitions { iter => {
       iter.sliding(batchSize, batchSize).map(pairs => initAttrs(pairs)) }
-    }.reduce(_ + _)
+    }.fold(0L)(_ + _)
   }
 
   def initAttrs(pairs: Seq[(Long, Array[Float])]): Long = {

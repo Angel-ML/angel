@@ -25,7 +25,7 @@ import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.VFactory
 import com.tencent.angel.ml.matrix.RowType
 
-abstract class DataParser(val splitter: String) {
+abstract class DataParser(val splitter: String) extends Serializable {
   def parse(value: String): LabeledData
 
   protected def processLabel(value: String, hasLabel: Boolean, isTraining: Boolean,

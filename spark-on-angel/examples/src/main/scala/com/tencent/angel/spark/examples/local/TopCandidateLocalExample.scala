@@ -125,6 +125,8 @@ object TopCandidateLocalExample {
     conf.setMaster(mode)
     conf.setAppName("topCandidates")
     conf.set(AngelConf.ANGEL_PSAGENT_UPDATE_SPLIT_ADAPTION_ENABLE, "false")
+    // node attribute PSFs (GetNodeAttrs) only support range partitioning
+    conf.set("spark.hadoop." + AngelConf.ANGEL_PS_ROUTER_TYPE, "range")
     val sc = new SparkContext(conf)
     //    sc.setLogLevel("WARN")
     //    sc.setCheckpointDir("cp")
