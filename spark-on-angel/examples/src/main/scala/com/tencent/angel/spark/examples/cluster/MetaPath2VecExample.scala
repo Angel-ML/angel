@@ -28,7 +28,7 @@ object MetaPath2VecExample {
   def main(args: Array[String]): Unit = {
 
     val params = ArgsUtil.parse(args)
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val sc = start(mode)
 
     val input = params.getOrElse("input", null)

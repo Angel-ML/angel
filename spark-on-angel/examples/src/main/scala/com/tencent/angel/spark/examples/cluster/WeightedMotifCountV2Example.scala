@@ -12,7 +12,7 @@ object WeightedMotifCountV2Example {
 
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
-    val mode = params.getOrElse("mode","yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val input = params.getOrElse("input", null)
     val userGroupInput = params.getOrElse("userGroupInput", null)
     val output = params.getOrElse("output", null)

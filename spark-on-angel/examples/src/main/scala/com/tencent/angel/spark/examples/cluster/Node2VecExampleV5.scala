@@ -24,7 +24,7 @@ object Node2VecExampleV5 {
       case "comma" => ","
       case "tab" => "\t"
     }
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val isWeighted = params.getOrElse("isWeighted", "false").toBoolean
     val walkLength = params.getOrElse("walkLength", "30").toInt
     val pValue = params.getOrElse("pValue", "0.8").toDouble

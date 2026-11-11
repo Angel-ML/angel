@@ -27,7 +27,7 @@ object TFIDFCluster {
   def main(args: Array[String]) {
 
     val params = ArgsUtil.parse(args)
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val input = params.getOrElse("input", null)
     val outputTfIdf = params.getOrElse("outputTfIdf", null)
     val outputDic = params.getOrElse("outputDic", null)

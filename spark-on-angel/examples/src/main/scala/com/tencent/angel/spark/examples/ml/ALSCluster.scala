@@ -23,7 +23,7 @@ import com.tencent.angel.spark.ml.core.{ArgsUtil => coreArgsUtil}
  * maxIter        最大迭代次数
  *
  * -----system parameter-----
- * mode          local or yarn-cluster
+ * mode          local or yarn
  * actionType    train/predict
  * modelPath     model HDFS path. train阶段, 模型保存到该路径, predict阶段, 从该路径load模型
  * testSet       testSet path for evaluate trained model. if null, then skip test step
@@ -36,7 +36,7 @@ object ALSCluster {
     LogUtils.logTime(s"Start Angel ALS Processing...")
     val params = coreArgsUtil.parse(args)
 
-    val mode = params.getOrElse(ParamKeys.MODE, "yarn-cluster")
+    val mode = params.getOrElse(ParamKeys.MODE, "yarn")
     val input = params.getOrElse(ParamKeys.INPUT, null)
     val userCol = params.getOrElse("userCol", "0").toInt
     val itemCol = params.getOrElse("itemCol", "1").toInt

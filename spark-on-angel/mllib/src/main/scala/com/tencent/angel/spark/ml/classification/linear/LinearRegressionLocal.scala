@@ -178,7 +178,7 @@ class LinearRegressionLocal extends Learner {
  * maxIter       最大迭代次数
  *
  * ----system paramater-----
- * mode          local or yarn-cluster
+ * mode          local or yarn
  * actionType    train/predict
  * modelPath     model HDFS path. train阶段, 模型保存到该路径, predict阶段, 从该路径load模型
  * testSet       testSet path for evaluate trained model. if null, then skip test step

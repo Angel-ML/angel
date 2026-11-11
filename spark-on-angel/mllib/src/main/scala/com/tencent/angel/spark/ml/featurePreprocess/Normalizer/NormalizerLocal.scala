@@ -9,7 +9,7 @@ import org.apache.spark.ml.feature.{Normalizer => MLNorm}
  *
  * 参数说明:
  *
- * mode         local or yarn-cluster
+ * mode         local or yarn
  * input         input file
  * inputType     文件类型 (HDFS/local)
  * beginCol      特征起始列 (从 0 开始计数, 包含当前列)

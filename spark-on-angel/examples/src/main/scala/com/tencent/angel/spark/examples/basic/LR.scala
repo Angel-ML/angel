@@ -33,7 +33,7 @@ object LR {
     val params = ArgsUtil.parse(args)
     val ITERATIONS = params.getOrElse("numIter", "5").toInt
     val input = params.getOrElse("input", "data/a9a/a9a_123d_train.libsvm")
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val lr = params.getOrElse("lr", "0.1").toDouble
 
     val ss = SparkSession.builder()

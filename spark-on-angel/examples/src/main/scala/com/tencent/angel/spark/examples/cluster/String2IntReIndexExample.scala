@@ -30,7 +30,7 @@ object String2IntReIndexExample {
 
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val sc = start(mode)
 
     val rawInput = params.getOrElse("rawInput", null)

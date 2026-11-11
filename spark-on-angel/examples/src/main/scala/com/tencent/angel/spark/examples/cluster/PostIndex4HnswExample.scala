@@ -13,7 +13,7 @@ object PostIndex4HnswExample {
     val output = params.getOrElse("output", null)
     val mapsInputPath = params.getOrElse("mapsInputPath", null)
     val isOldFirst = params.getOrElse("isOldFirst", "false").toBoolean
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val srcIndex = params.getOrElse("srcIndex", "0").toInt
     val dstIndex = params.getOrElse("dstIndex", "1").toInt
     val dataPartitionNum = params.getOrElse("partitionNum", "100").toInt

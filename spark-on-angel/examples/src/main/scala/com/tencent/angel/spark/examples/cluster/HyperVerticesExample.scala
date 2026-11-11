@@ -14,7 +14,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 object HyperVerticesExample {
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val input = params.getOrElse("input", "")
     val inputV = params.getOrElse("inputV", "")
     val partitionNum = params.getOrElse("partitionNum", "100").toInt
