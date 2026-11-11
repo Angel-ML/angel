@@ -9,6 +9,7 @@ import com.tencent.angel.spark.ml.tree.gbdt.trainer.GBDTTrainer
 import com.tencent.angel.spark.ml.tree.param.GBDTParam
 import com.tencent.angel.spark.ml.tree.util.Maths
 import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.storage.StorageLevel
 
 object GBDTExample {
 
@@ -51,6 +52,7 @@ object GBDTExample {
     param.numFeature = params.getOrElse(MLConf.ML_FEATURE_INDEX_RANGE, "127").toInt + 1
     SharedConf.get().setInt(MLConf.ML_NUM_CLASS, param.numClass)
     SharedConf.get().setInt(MLConf.ML_FEATURE_INDEX_RANGE, param.numFeature)
+    param.storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY").toUpperCase)
 
     // loss and metric
     param.lossFunc = params.getOrElse(MLConf.ML_GBDT_LOSS_FUNCTION, "binary:logistic")
