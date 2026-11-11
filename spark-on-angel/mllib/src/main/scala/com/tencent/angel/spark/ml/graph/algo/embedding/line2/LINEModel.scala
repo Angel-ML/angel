@@ -92,11 +92,11 @@ class LINEModel(dataset: Dataset[_], embeddingDim: Int, negativeNum: Int, stepSi
     // Create matrix and init PS model
     LogUtils.logTime("Create matrices in PS")
     var extraInputEmbeddingRDD: RDD[String] = null
-    if (extraInputEmbeddingPath.length > 0) {
+    if (Option(extraInputEmbeddingPath).exists(_.nonEmpty)) {
       extraInputEmbeddingRDD = newEdges.sparkContext.textFile(extraInputEmbeddingPath)
     }
     var extraOutputEmbeddingRDD: RDD[String] = null
-    if (extraOutputEmbeddingPath.length > 0) {
+    if (Option(extraOutputEmbeddingPath).exists(_.nonEmpty)) {
       extraOutputEmbeddingRDD = newEdges.sparkContext.textFile(extraOutputEmbeddingPath)
     }
 
@@ -623,11 +623,11 @@ class LINEWithWightModel(dataset: Dataset[_], embeddingDim: Int, negativeNum: In
     // Create matrix and init PS model
     LogUtils.logTime("Create matrices in PS")
     var extraInputEmbeddingRDD: RDD[String] = null
-    if (extraInputEmbeddingPath.length > 0) {
+    if (Option(extraInputEmbeddingPath).exists(_.nonEmpty)) {
       extraInputEmbeddingRDD = newEdges.sparkContext.textFile(extraInputEmbeddingPath)
     }
     var extraOutputEmbeddingRDD: RDD[String] = null
-    if (extraOutputEmbeddingPath.length > 0) {
+    if (Option(extraOutputEmbeddingPath).exists(_.nonEmpty)) {
       extraOutputEmbeddingRDD = newEdges.sparkContext.textFile(extraOutputEmbeddingPath)
     }
 

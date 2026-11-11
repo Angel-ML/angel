@@ -18,6 +18,8 @@
 
 package com.tencent.angel.spark.ml
 
+import java.nio.file.{Files, Path, Paths}
+import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
@@ -41,6 +43,24 @@ trait SharedPSContext extends BeforeAndAfterAll with BeforeAndAfterEach {
 
   var conf = new SparkConf(false)
 
+  @transient protected lazy val testDirectory: Path =
+    Files.createTempDirectory(getClass.getSimpleName + "-")
+
+  protected def testOutputPath(name: String): String =
+    testDirectory.resolve(name).toUri.toString
+
+  protected def testDataPath(relative: String): String = {
+    var root = Paths.get(System.getProperty("user.dir")).toAbsolutePath
+    while (root != null && !(Files.isDirectory(root.resolve("spark-on-angel")) &&
+      Files.isDirectory(root.resolve("angel-ps")))) {
+      root = root.getParent
+    }
+    require(root != null, "Cannot locate the Angel repository root")
+    val path = root.resolve("data").resolve(relative)
+    require(Files.isRegularFile(path), s"Missing test data: $path")
+    path.toUri.toString
+  }
+
   override def beforeAll() {
     super.beforeAll()
 
@@ -48,12 +68,13 @@ trait SharedPSContext extends BeforeAndAfterAll with BeforeAndAfterEach {
     val psConf = new SparkConf()
       .set("spark.ps.mode", "LOCAL")
       .set("spark.ps.jars", "None")
-      .set("spark.ps.tmp.path", "file:///tmp/stage")
-      .set("spark.ps.out.path", "file:///tmp/output")
-      .set("spark.ps.model.path", "file:///tmp/model")
+      .set("spark.ps.tmp.path", testOutputPath("stage"))
+      .set("spark.ps.out.path", testOutputPath("output"))
+      .set("spark.ps.model.path", testOutputPath("model"))
+      .set("spark.hadoop.fs.defaultFS", "file:///")
       .set("spark.ps.instances", "2")
       .set("spark.ps.cores", "1")
-      .set("spark.ps.out.tmp.path.prefix", "/E://temp")
+      .set("spark.ps.out.tmp.path.prefix", testDirectory.resolve("ps-tmp").toString)
       .set("angel.userrequest.log.mode", "detail")
       .set("angel.rpc.log.mode", "detail")
 
@@ -73,11 +94,14 @@ trait SharedPSContext extends BeforeAndAfterAll with BeforeAndAfterEach {
 
   override def afterAll() {
     try {
-      PSContext.stop()
-      _spark.stop()
-      _spark = null
+      try PSContext.stop()
+      finally {
+        if (_spark != null) _spark.stop()
+        _spark = null
+      }
     } finally {
-      super.afterAll()
+      try FileUtils.deleteDirectory(testDirectory.toFile)
+      finally super.afterAll()
     }
   }
 

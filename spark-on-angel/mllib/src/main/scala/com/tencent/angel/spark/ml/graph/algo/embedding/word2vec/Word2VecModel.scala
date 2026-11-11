@@ -186,6 +186,8 @@ class Word2VecModel(params: Word2VecParam) extends Serializable {
 
   def train(corpus: RDD[(Int, Int)], arrayBoundsFromPS: Array[Int], cols: Int, kernel: Int): Unit = ???
 
+  def logTime(message: String): Unit = println(message)
+
   def train(corpus: RDD[Array[Int]], params: Word2VecParam): Unit = {
     var learningRate = params.learningRate
     val startTs = System.currentTimeMillis()
@@ -202,7 +204,7 @@ class Word2VecModel(params: Word2VecParam) extends Serializable {
       }.reduce((f1, f2) => (f1._1 + f2._1, f1._2 + f2._2))
       //learningRate = ssScheduler.next().toFloat
       val epochTime = System.currentTimeMillis() - epochStartTime
-      println(s"epoch=$epoch lr=$learningRate loss=${lossSum / size} time=${epochTime.toFloat / 1000}s")
+      logTime(s"epoch=$epoch lr=$learningRate loss=${lossSum / size} time=${epochTime.toFloat / 1000}s")
       learningRate = Math.max(params.learningRate*0.0001f, ssScheduler.next().toFloat)
       checkpointAndSaveIfNeed(epoch, params)
     }

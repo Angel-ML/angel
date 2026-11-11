@@ -264,6 +264,68 @@
 			<properties>
 				<dist.deps.scope>compile</dist.deps.scope>
 			</properties>
+			<dependencyManagement>
+				<dependencies>
+					<dependency>
+						<groupId>org.apache.spark</groupId>
+						<artifactId>spark-core_${scala.binary.version}</artifactId>
+						<version>${spark.version}</version>
+						<exclusions>
+							<exclusion>
+								<groupId>org.apache.hadoop</groupId>
+								<artifactId>hadoop-client-api</artifactId>
+							</exclusion>
+							<exclusion>
+								<groupId>org.apache.hadoop</groupId>
+								<artifactId>hadoop-client-runtime</artifactId>
+							</exclusion>
+						</exclusions>
+					</dependency>
+					<dependency>
+						<groupId>org.apache.spark</groupId>
+						<artifactId>spark-core_${scala.binary.version}</artifactId>
+						<version>${spark.version}</version>
+						<type>test-jar</type>
+						<exclusions>
+							<exclusion>
+								<groupId>org.apache.hadoop</groupId>
+								<artifactId>hadoop-client-api</artifactId>
+							</exclusion>
+							<exclusion>
+								<groupId>org.apache.hadoop</groupId>
+								<artifactId>hadoop-client-runtime</artifactId>
+							</exclusion>
+						</exclusions>
+					</dependency>
+					<dependency>
+						<groupId>org.apache.spark</groupId>
+						<artifactId>spark-streaming-kafka-0-10_${scala.binary.version}</artifactId>
+						<version>${spark.version}</version>
+						<exclusions>
+							<exclusion>
+								<groupId>org.apache.hadoop</groupId>
+								<artifactId>hadoop-client-api</artifactId>
+							</exclusion>
+							<exclusion>
+								<groupId>org.apache.hadoop</groupId>
+								<artifactId>hadoop-client-runtime</artifactId>
+							</exclusion>
+						</exclusions>
+					</dependency>
+				</dependencies>
+			</dependencyManagement>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.scalatest</groupId>
+						<artifactId>scalatest-maven-plugin</artifactId>
+						<configuration>
+							<forkMode>once</forkMode>
+							<argLine>-ea -Xmx4g -Xss4m -XX:ReservedCodeCacheSize=512m</argLine>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
 		</profile>
 	</profiles>
 </project>

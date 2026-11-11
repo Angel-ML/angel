@@ -460,7 +460,19 @@ public class RouterUtils {
    * @return partition key to key partition map
    */
   public static CompStreamKeyValuePart[] splitStream(MatrixMeta matrixMeta, Matrix matrix) {
-    return null;
+    if (matrix == null) {
+      throw new IllegalArgumentException("Matrix update must not be null");
+    }
+    Vector[] rows = new Vector[matrix.getNumRows()];
+    for (int rowId = 0; rowId < rows.length; rowId++) {
+      Vector row = matrix.getRow(rowId);
+      if (row == null) {
+        throw new IllegalArgumentException("Matrix update has no vector for row " + rowId);
+      }
+      rows[rowId] = row.copy();
+      rows[rowId].setRowId(rowId);
+    }
+    return splitStream(matrixMeta, rows);
   }
 
   /**

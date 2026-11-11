@@ -28,8 +28,8 @@ import scala.util.Random
 
 class Word2VecModelSuite extends PSFunSuite with SharedPSContext {
 
-  val input = "../../data/text8/text8.split.head"
-  val output = "model/"
+  val input = testDataPath("text8/text8.split.head")
+  val output = testOutputPath("word2vec")
   val stepSize = 0.1f
   val decayRate = 0.5f
   val embeddingDim = 32
@@ -86,20 +86,23 @@ class Word2VecModelSuite extends PSFunSuite with SharedPSContext {
       val messages = new ArrayBuffer[String]()
 
       // mock logs
-      def logTime(msg: String): Unit = {
+      override def logTime(msg: String): Unit = {
         if (null != messages) {
           messages.append(msg)
         }
         println(msg)
       }
     }
+    model.randomInitialize(42)
     model.train(docs, param)
     model.save(output, 0, false)
 
     // extract loss
     val loss = model.messages.filter(_.contains("loss=")).map { line =>
-      line.split(" ")(1).split("=").last.toFloat
+      line.split(" ").find(_.startsWith("loss=")).get.stripPrefix("loss=").toFloat
     }
+    assert(loss.size == numEpoch, s"Expected $numEpoch epoch losses, got ${loss.size}")
+    assert(loss.forall(v => !v.isNaN && !v.isInfinity))
 
     for (i <- 0 until numEpoch - 1) {
       assert(loss(i + 1) < loss(i), s"loss increase: ${loss.mkString("->")}")
