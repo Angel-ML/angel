@@ -96,7 +96,9 @@ class GraphRunner extends MLRunner {
       client.runTask(classOf[GraphPredictTask])
       client.waitForCompletion()
     } catch {
-      case x:Exception => LOG.error("predict failed ", x)
+      case x: Exception =>
+        LOG.error("predict failed ", x)
+        throw x
     } finally {
       client.stop(0)
     }

@@ -400,7 +400,8 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
       // release container:send a release request to container launcher
       AngelDeployMode deployMode = psAttempt.getContext().getDeployMode();
       ContainerLauncherEvent launchEvent = null;
-      if (deployMode == AngelDeployMode.LOCAL || deployMode == AngelDeployMode.STANDALONE) {
+      if (deployMode == AngelDeployMode.LOCAL || deployMode == AngelDeployMode.STANDALONE
+          || deployMode == AngelDeployMode.KUBERNETES) {
         launchEvent =
           new LocalContainerLauncherEvent(ContainerLauncherEventType.CONTAINER_REMOTE_CLEANUP,
             psAttempt.attemptId);

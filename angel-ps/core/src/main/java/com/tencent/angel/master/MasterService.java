@@ -428,7 +428,12 @@ public class MasterService extends AbstractService implements MasterProtocol {
     // STANDALONE distributed deployments (and for any host whose /etc/hosts maps the
     // hostname to 127.0.0.1) where remote PS/Worker processes would otherwise be told to
     // connect to a loopback address.
-    String ip = conf.get("angel.am.host");
+    boolean kubernetes = context.getDeployMode() == com.tencent.angel.AngelDeployMode.KUBERNETES;
+    String ip = conf.get(kubernetes
+        ? com.tencent.angel.conf.AngelConf.ANGEL_KUBERNETES_MASTER_POD_IP : "angel.am.host");
+    if (kubernetes && (ip == null || ip.trim().isEmpty())) {
+      throw new IOException("Missing Kubernetes master pod IP");
+    }
     if (ip == null || ip.trim().isEmpty()) {
       ip = NetUtils.getRealLocalIP();
     } else {
@@ -441,9 +446,15 @@ public class MasterService extends AbstractService implements MasterProtocol {
     // "Address already in use".
     Throwable lastError = null;
     for (int i = 1; i <= MAX_BIND_TRY; i++) {
-      NetUtils.PortReservation reservation = NetUtils.reserveListenPortPair(conf);
-      int servicePort = reservation.getPort();
-      reservation.close();
+      int servicePort;
+      if (kubernetes) {
+        servicePort = conf.getInt(com.tencent.angel.conf.AngelConf.ANGEL_KUBERNETES_MASTER_PORT,
+            com.tencent.angel.conf.AngelConf.DEFAULT_ANGEL_KUBERNETES_MASTER_PORT);
+      } else {
+        NetUtils.PortReservation reservation = NetUtils.reserveListenPortPair(conf);
+        servicePort = reservation.getPort();
+        reservation.close();
+      }
       try {
         LOG.info("listen ip:" + ip + ", port:" + servicePort);
         this.rpcServer = MLRPC
@@ -463,7 +474,7 @@ public class MasterService extends AbstractService implements MasterProtocol {
           rpcServer = null;
         }
         lastError = x;
-        if (!NetUtils.isAddressInUse(x)) {
+        if (kubernetes || !NetUtils.isAddressInUse(x)) {
           break;
         }
         LOG.warn("Bind master service on " + ip + ":" + servicePort + " failed (attempt " + i

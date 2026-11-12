@@ -636,6 +636,9 @@ public class WorkerManager implements EventHandler<WorkerManagerEvent> {
   public void register(WorkerAttemptId workerAttemptId) {
     LOG.info(workerAttemptId + " is registered in monitor!");
     workerLastHeartbeatTS.put(workerAttemptId, System.currentTimeMillis());
+    if (context.getDeployMode() == com.tencent.angel.AngelDeployMode.KUBERNETES) {
+      workerAttemptIdBlockingQueue.add(workerAttemptId);
+    }
   }
 
   /**

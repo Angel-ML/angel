@@ -423,6 +423,9 @@ public class ParameterServerManager extends AbstractService
   public void register(PSAttemptId psAttemptId) {
     LOG.info("PS " + psAttemptId + " is registered in monitor!");
     psLastHeartbeatTS.put(psAttemptId, System.currentTimeMillis());
+    if (context.getDeployMode() == com.tencent.angel.AngelDeployMode.KUBERNETES) {
+      psAttemptIdBlockingQueue.add(psAttemptId);
+    }
   }
 
   /**

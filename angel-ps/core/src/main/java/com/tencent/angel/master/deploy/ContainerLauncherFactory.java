@@ -21,8 +21,7 @@ public class ContainerLauncherFactory {
       case STANDALONE:
         return new StandaloneContainerLauncher(context);
       case KUBERNETES:
-        // TODO:
-        throw new UnsupportedOperationException();
+        return new com.tencent.angel.master.deploy.kubernetes.KubernetesContainerLauncher(context);
 
       default:
         throw new UnsupportedOperationException("Unsupport deploy mode " + mode);

@@ -68,6 +68,12 @@
         </fileSet>
 
         <fileSet>
+            <directory>${project.basedir}/../angel-ps/core/src/main/java/com/tencent/angel/kubernetesmanager/scripts</directory>
+            <outputDirectory>kubernetes</outputDirectory>
+            <fileMode>0755</fileMode>
+            <directoryMode>0755</directoryMode>
+        </fileSet>
+        <fileSet>
             <directory>${project.basedir}/../data</directory>
             <outputDirectory>data</outputDirectory>
             <fileMode>0755</fileMode>

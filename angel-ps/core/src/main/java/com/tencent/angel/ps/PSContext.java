@@ -95,6 +95,8 @@ public class PSContext {
       return AngelDeployMode.EMBEDDED;
     } else if (mode.equals(AngelDeployMode.STANDALONE.toString())) {
       return AngelDeployMode.STANDALONE;
+    } else if (mode.equals(AngelDeployMode.KUBERNETES.toString())) {
+      return AngelDeployMode.KUBERNETES;
     } else {
       return AngelDeployMode.YARN;
     }

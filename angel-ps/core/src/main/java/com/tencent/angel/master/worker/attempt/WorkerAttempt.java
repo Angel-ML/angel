@@ -282,7 +282,8 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
       AngelDeployMode deployMode = attempt.getContext().getDeployMode();
       ContainerAllocatorEvent allocatorEvent = null;
 
-      if (deployMode == AngelDeployMode.LOCAL || deployMode == AngelDeployMode.STANDALONE) {
+      if (deployMode == AngelDeployMode.LOCAL || deployMode == AngelDeployMode.STANDALONE
+          || deployMode == AngelDeployMode.KUBERNETES) {
         allocatorEvent = new LocalContainerAllocatorEvent(ContainerAllocatorEventType.CONTAINER_REQ,
           attempt.getId());
 
@@ -310,7 +311,8 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
       AngelDeployMode deployMode = attempt.getContext().getDeployMode();
       ContainerLauncherEvent launchEvent = null;
 
-      if (deployMode == AngelDeployMode.LOCAL || deployMode == AngelDeployMode.STANDALONE) {
+      if (deployMode == AngelDeployMode.LOCAL || deployMode == AngelDeployMode.STANDALONE
+          || deployMode == AngelDeployMode.KUBERNETES) {
         launchEvent =
           new LocalContainerLauncherEvent(ContainerLauncherEventType.CONTAINER_REMOTE_LAUNCH,
             attempt.getId());
@@ -476,7 +478,8 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
     AngelDeployMode deployMode = context.getDeployMode();
     ContainerLauncherEvent launchEvent = null;
 
-    if (deployMode == AngelDeployMode.LOCAL || deployMode == AngelDeployMode.STANDALONE) {
+    if (deployMode == AngelDeployMode.LOCAL || deployMode == AngelDeployMode.STANDALONE
+          || deployMode == AngelDeployMode.KUBERNETES) {
       launchEvent =
         new LocalContainerLauncherEvent(ContainerLauncherEventType.CONTAINER_REMOTE_CLEANUP, id);
     } else {
@@ -492,7 +495,8 @@ public class WorkerAttempt implements EventHandler<WorkerAttemptEvent> {
     AngelDeployMode deployMode = context.getDeployMode();
     ContainerAllocatorEvent allocatorEvent = null;
 
-    if (deployMode == AngelDeployMode.LOCAL || deployMode == AngelDeployMode.STANDALONE) {
+    if (deployMode == AngelDeployMode.LOCAL || deployMode == AngelDeployMode.STANDALONE
+          || deployMode == AngelDeployMode.KUBERNETES) {
       allocatorEvent =
         new LocalContainerAllocatorEvent(ContainerAllocatorEventType.CONTAINER_DEALLOCATE, id);
     } else {

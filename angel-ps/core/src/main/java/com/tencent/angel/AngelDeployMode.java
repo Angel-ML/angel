@@ -27,7 +27,7 @@ package com.tencent.angel;
  *   <li>YARN: launch AM/PS/Worker as YARN containers on a YARN cluster.</li>
  *   <li>STANDALONE: AM runs in the submitting JVM and PS/Worker run as independent local JVM
  *       processes started by ProcessBuilder. Does NOT depend on YARN or Spark.</li>
- *   <li>KUBERNETES: reserved.</li>
+ *   <li>KUBERNETES: launch Master/PS/Worker pods using the Kubernetes API.</li>
  * </ul>
  */
 public enum AngelDeployMode {
