@@ -1,7 +1,7 @@
 FROM openjdk:8-alpine
 
-ARG angel_dist_path=./angel-3.1.0
-ARG entrypoint_path=./entrypoint.sh
+ARG angel_dist_path=.
+ARG entrypoint_path=kubernetes/entrypoint.sh
 
 RUN set -ex && \
     apk upgrade --no-cache && \

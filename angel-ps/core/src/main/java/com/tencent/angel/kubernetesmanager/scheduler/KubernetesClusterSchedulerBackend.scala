@@ -48,6 +48,14 @@ private[angel] class KubernetesClusterSchedulerBackend(
     pollEvents.start(appId)
   }
 
+  def deleteAttempt(executorId: Int, attemptId: Int): Unit = {
+    val prefix = conf.get(AngelConf.ANGEL_KUBERNETES_EXECUTOR_POD_NAME_PREFIX)
+    require(prefix != null && prefix.nonEmpty, "Missing Kubernetes executor pod name prefix")
+    kubernetesClient.pods()
+      .withName(s"$prefix-$executorRole-attempt-$executorId-$attemptId")
+      .delete()
+  }
+
   def stop(): Unit = {
 
     tryLogNonFatalError(snapshotsStore.stop())

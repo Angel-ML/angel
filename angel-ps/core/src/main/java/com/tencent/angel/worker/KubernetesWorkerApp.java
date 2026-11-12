@@ -23,6 +23,8 @@ public class KubernetesWorkerApp {
     // get configuration from envs
     Configuration conf = new Configuration();
     ConfUtils.addResourceProperties(conf, Constants.ANGEL_CONF_PATH());
+    conf.set(AngelConf.ANGEL_DEPLOY_MODE, "KUBERNETES");
+    org.apache.hadoop.security.UserGroupInformation.setConfiguration(conf);
 
     long clusterTimestamp = Long
         .parseLong(conf.get(AngelConf.ANGEL_KUBERNETES_APP_CLUSTERTIMESTAMP));

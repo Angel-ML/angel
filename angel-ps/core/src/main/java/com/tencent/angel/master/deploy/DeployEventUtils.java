@@ -19,6 +19,7 @@ public class DeployEventUtils {
       AngelDeployMode deployMode, PSAttempt psAttempt) {
     switch (deployMode) {
       case LOCAL:
+      case KUBERNETES:
       case STANDALONE: {
         return new LocalContainerAllocatorEvent(ContainerAllocatorEventType.CONTAINER_REQ,
             psAttempt.getId());
@@ -42,10 +43,7 @@ public class DeployEventUtils {
         }
       }
 
-      case KUBERNETES: {
-        // TODO:
-        throw new UnsupportedOperationException();
-      }
+
 
       default: {
         throw new UnsupportedOperationException();
@@ -57,6 +55,7 @@ public class DeployEventUtils {
       AngelDeployMode deployMode, PSAttempt psAttempt) {
     switch (deployMode) {
       case LOCAL:
+      case KUBERNETES:
       case STANDALONE: {
         return
             new LocalContainerAllocatorEvent(ContainerAllocatorEventType.CONTAINER_DEALLOCATE,
@@ -74,10 +73,7 @@ public class DeployEventUtils {
             psAttempt.getContext().getParameterServerManager().getPriority());
       }
 
-      case KUBERNETES: {
-        // TODO:
-        throw new UnsupportedOperationException();
-      }
+
 
       default: {
         throw new UnsupportedOperationException();
@@ -90,6 +86,7 @@ public class DeployEventUtils {
       AngelDeployMode deployMode, PSAttempt psAttempt) {
     switch (deployMode) {
       case LOCAL:
+      case KUBERNETES:
       case STANDALONE: {
         return
             new LocalContainerLauncherEvent(ContainerLauncherEventType.CONTAINER_REMOTE_LAUNCH,

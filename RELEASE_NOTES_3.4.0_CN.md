@@ -63,7 +63,8 @@ Angel 3.4.0 是一个以**图计算能力扩充、部署方式扩展和稳定性
 
 - **图算法迁移**：原 `spark-on-angel-graph` 中的算法层整体迁到 `spark-on-angel-mllib`。包名由 `com.tencent.angel.graph.<类别>.<算法>` 改为 `com.tencent.angel.spark.ml.graph.algo.<类别>.<算法>`，其中 `community` 改名为 `communitydetection`，`kclique` 移到 `cliques/kclique`。`spark-on-angel-graph` 只保留底层 PS 模型与公共工具。
 - **依赖方向反转**：`spark-on-angel-graph` 不再依赖 `spark-on-angel-mllib`，改为 `spark-on-angel-mllib` 依赖 `spark-on-angel-graph`。使用图算法时需依赖 `spark-on-angel-mllib`。
-- **移除**：Leiden、MotifCounting（由 WeightedMotifCount V2/V3 替代）；KUBERNETES 部署模式暂不可用；`ml.util.Utils` 中的 `iteratorBatch`、`runOnTimer` 等工具方法已删除。
+- **移除**：Leiden、MotifCounting（由 WeightedMotifCount V2/V3 替代）；`ml.util.Utils` 中的 `iteratorBatch`、`runOnTimer` 等工具方法已删除。
+- **Kubernetes 恢复**：接回 Master/PS/Worker Pod 提交、调度、attempt 重试及清理链路，发布包包含镜像 Dockerfile 和 entrypoint。已在单节点 kind/Kubernetes 1.31 实测：两个 PS 的矩阵读写与保存加载、Worker 梯度任务、PS Pod 删除后重建及模型恢复、应用资源清理。修复 API URL 省略端口导致的旧 Fabric8 WebSocket Origin 错误，以及镜像 Hadoop 2/3 classpath 混载。算法端到端实测包含原生 LR 训练/保存/加载/两种 batch 预测，以及真实 Spark Kubernetes Driver/两个 Executor 的 PageRank Attach 和 Driver 直启 PS。增加 `angel.kubernetes.client.classpath` 隔离 Spark/Angel 的 Fabric8 版本，修复 Worker 晚任务类和预测末批参数加载。多节点、全算法、远程镜像仓库及安全 Hadoop 场景未验证。
 - **默认值变化**：PS 默认 `-Xms=-Xmx` 并开启 AlwaysPreTouch；JVM 非堆余量由 512MB 提高到 1024MB；失败重试退避上限改为 5 秒。
 - **示例参数调整**：部分示例参数改名，例如 COPRA 的 `weightIndex` 改为 `weightCol`，PageRank 的 `dataPartitionNum` 改为 `partitionNum`。
 - **依赖升级**：PS 与 SONA 使用的 Netty 由 `netty-all-4.1.42` 换为 4.1.74 分模块 jar；`stream` 升级到 2.9.6；jackson 固定为 2.13.4，以匹配 Spark 3.3。

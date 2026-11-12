@@ -30,7 +30,7 @@ import com.tencent.angel.client.local.AngelLocalClient;
 import com.tencent.angel.client.yarn.AngelYarnClient;
 
 /**
- * Angel client factory, supports LOCAL, YARN, EMBEDDED and STANDALONE modes.
+ * Angel client factory, supports LOCAL, YARN, EMBEDDED, STANDALONE and KUBERNETES modes.
  */
 public class AngelClientFactory {
 
@@ -61,6 +61,8 @@ public class AngelClientFactory {
         return new AngelStandaloneClient(conf);
       case YARN:
         return new AngelYarnClient(conf);
+      case KUBERNETES:
+        return new com.tencent.angel.client.kubernetes.AngelKubernetesClient(conf);
       default:
         throw new UnsupportedOperationException();
     }

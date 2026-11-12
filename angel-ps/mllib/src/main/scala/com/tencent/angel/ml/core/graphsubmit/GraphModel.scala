@@ -125,10 +125,14 @@ class GraphModel(conf: Configuration, _ctx: TaskContext = null)
       val leftData = new Array[LabeledData](left)
       Array.copy(batchData, 0, leftData, 0, left)
       graph.feedData(leftData)
-      graph.getTrainable.foreach {
-        case layer: Embedding =>
-          layer.pullParams(1)
-        case _ =>
+      if (!pullFlag) {
+        graph.pullParams(1)
+      } else {
+        graph.getTrainable.foreach {
+          case layer: Embedding => layer.pullParams(1)
+          case layer: SimpleInputLayer => layer.pullParams(1)
+          case _ =>
+        }
       }
 
       val attached = graph.placeHolder.getAttached

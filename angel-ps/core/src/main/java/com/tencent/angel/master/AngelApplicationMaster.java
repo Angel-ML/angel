@@ -567,7 +567,7 @@ public class AngelApplicationMaster extends CompositeService {
 
   private void exit(int code) {
     AngelDeployMode deployMode = appContext.getDeployMode();
-    if (deployMode == AngelDeployMode.YARN) {
+    if (deployMode == AngelDeployMode.YARN || deployMode == AngelDeployMode.KUBERNETES) {
       System.exit(code);
     }
   }

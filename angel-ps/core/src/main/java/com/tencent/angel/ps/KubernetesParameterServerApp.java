@@ -26,6 +26,8 @@ public class KubernetesParameterServerApp {
 
     Configuration conf = new Configuration();
     ConfUtils.addResourceProperties(conf, Constants.ANGEL_CONF_PATH());
+    conf.set(AngelConf.ANGEL_DEPLOY_MODE, "KUBERNETES");
+    org.apache.hadoop.security.UserGroupInformation.setConfiguration(conf);
     String runningMode =
         conf.get(AngelConf.ANGEL_RUNNING_MODE, AngelConf.DEFAULT_ANGEL_RUNNING_MODE);
     if (runningMode.equals(RunningMode.ANGEL_PS_WORKER.toString())) {

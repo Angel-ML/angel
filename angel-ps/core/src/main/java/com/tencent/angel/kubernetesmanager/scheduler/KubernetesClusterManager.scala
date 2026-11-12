@@ -14,7 +14,7 @@ private[angel] class KubernetesClusterManager(context: AMContext) {
     val (authConfPrefix,
       apiServerUri,
       defaultServiceAccountToken,
-      defaultServiceAccountCaCrt) = (conf.get(AngelConf.ANGEL_KUBERNETES_KUBERNETES_AUTH_CLIENT_MODE_PREFIX),
+      defaultServiceAccountCaCrt) = (AngelConf.ANGEL_KUBERNETES_KUBERNETES_AUTH_CLIENT_MODE_PREFIX,
       conf.get(AngelConf.ANGEL_KUBERNETES_MASTER),
       None,
       None)
@@ -92,12 +92,14 @@ private[angel] class KubernetesClusterManager(context: AMContext) {
     executorRole.equals("ps")
   }
 
+  def deleteAttempt(executorRole: String, executorId: Int, attemptId: Int): Unit = {
+    val backend = if (executorRole == "ps") psSchedulerBackend else workerSchedulerBackend
+    if (backend != null) backend.deleteAttempt(executorId, attemptId)
+  }
+
   def stop(executorRole: String): Unit = {
-    if (executorRole.equals("ps")) {
-      psSchedulerBackend.stop()
-    } else {
-      workerSchedulerBackend.stop()
-    }
+    val backend = if (executorRole == "ps") psSchedulerBackend else workerSchedulerBackend
+    if (backend != null) backend.stop()
   }
 }
 

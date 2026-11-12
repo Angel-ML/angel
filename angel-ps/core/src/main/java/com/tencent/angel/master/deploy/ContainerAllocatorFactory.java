@@ -21,8 +21,7 @@ public class ContainerAllocatorFactory {
       case STANDALONE:
         return new StandaloneContainerAllocator(context);
       case KUBERNETES:
-        // TODO:
-        throw new UnsupportedOperationException();
+        return new com.tencent.angel.master.deploy.kubernetes.KubernetesContainerAllocator(context);
 
       default:
         throw new UnsupportedOperationException("Unsupport deploy mode " + mode);
