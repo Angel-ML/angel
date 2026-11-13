@@ -3437,18 +3437,30 @@ public class MatrixTransportClient implements MatrixTransportInterface {
         request.rpcTimes.clientTimes.recvResponseStart = msgWithTime.ts;
         request.rpcTimes.clientTimes.deserializeResponseStart = System.currentTimeMillis();
 
-        // TODO: for LDA, will be remove future
         FutureResult subResult = requestToResultMap.get(request);
-        if(request.getType() == TransportMethod.GET_PSF && subResult != null) {
-          GetUDFResponse getUDFResponse = new GetUDFResponse();
-          getUDFResponse.deserialize(msgWithTime.msg);
-          subResult.set(getUDFResponse.getPartResult());
-        }
-
-        if(request.getType() == TransportMethod.UPDATE_PSF && subResult != null) {
-          UpdateUDFResponse updateUDFResponse = new UpdateUDFResponse();
-          updateUDFResponse.deserialize(msgWithTime.msg);
-          subResult.set(new VoidResult(com.tencent.angel.psagent.matrix.ResponseType.SUCCESS));
+        if (subResult != null && (request.getType() == TransportMethod.GET_PSF
+            || request.getType() == TransportMethod.UPDATE_PSF)) {
+          handleServerState(request, header.state);
+          switch (header.getResponseType()) {
+            case SUCCESS:
+              requestToResultMap.remove(request);
+              subResult.set(request.getType() == TransportMethod.GET_PSF
+                  ? ((GetUDFResponse) response.getData()).getPartResult()
+                  : new VoidResult(com.tencent.angel.psagent.matrix.ResponseType.SUCCESS));
+              requestSuccessOn(request, seqId);
+              break;
+            case OOM:
+            case SERVER_IS_BUSY:
+            case SERIALIZE_RESPONSE_FAILED:
+            case SERVER_NOT_READY:
+              requestFailedOn(request, seqId, header.getResponseType(), header.detail);
+              break;
+            default:
+              subResult.setExecuteException(new ExecutionException(
+                  new AngelException("PSF request failed: " + header.getResponseType() + ": " + header.detail)));
+              releaseInflightForFatalOn(request, seqId, header.detail);
+          }
+          return;
         }
 
         int userRequestId = request.getUserRequestId();

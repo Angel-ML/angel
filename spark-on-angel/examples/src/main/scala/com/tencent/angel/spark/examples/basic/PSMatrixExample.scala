@@ -24,14 +24,13 @@ import org.apache.spark.{SparkConf, SparkContext}
 
 object PSMatrixExample {
 
-  def start(): Unit = {
+  def start(args: Array[String] = Array.empty[String]): Unit = {
+    val params = com.tencent.angel.spark.ml.core.ArgsUtil.parse(args)
     val conf = new SparkConf()
-    conf.setMaster("local[1]")
-    conf.setAppName("PSVector Examples")
-    conf.set("spark.ps.model", "LOCAL")
-    conf.set("spark.ps.jars", "")
-    conf.set("spark.ps.instances", "1")
-    conf.set("spark.ps.cores", "1")
+    conf.setMaster(params.getOrElse("mode", conf.get("spark.master", "local[1]")))
+    conf.setAppName("PSMatrix Examples")
+    conf.setIfMissing("spark.ps.instances", "1")
+    conf.setIfMissing("spark.ps.cores", "1")
 
     val sc = new SparkContext(conf)
     sc.setLogLevel("ERROR")
@@ -45,7 +44,7 @@ object PSMatrixExample {
 
   def main(args: Array[String]): Unit = {
 
-    start()
+    start(args)
 
     // randomly initialize a dense PSMatrix (5x10)
     val dense = PSMatrix.rand(5, 10)
@@ -59,11 +58,15 @@ object PSMatrixExample {
     val update = VFactory.sparseDoubleVector(10, Array(0, 1), Array(1.0, 1.0))
     dense.update(0, update)
 
-    println(dense.pull(0, Array(0, 1)).sum())
+    val updatedSum = dense.pull(0, Array(0, 1)).sum()
+    require(math.abs(updatedSum - 2.0) < 1e-8, "PS matrix update failed")
+    println(updatedSum)
 
     // reset the first row
     dense.reset(0)
-    println(dense.pull(0).sum())
+    val resetSum = dense.pull(0).sum()
+    require(math.abs(resetSum) < 1e-8, "PS matrix reset failed")
+    println(resetSum)
 
     stop()
   }

@@ -42,7 +42,9 @@ object InitGraphExample {
 
     println(s"input=${input} initBatchSize=${initBatchSize} psPartNum=${psPartNum} dataPartNum=${dataPartNum}")
 
-    val conf = new SparkConf().setMaster("yarn")
+    require(initBatchSize > 0 && psPartNum > 0 && dataPartNum > 0 && batchItemNum > 0 && processNum > 0 && maxNodeId >= 0, "Invalid graph dimensions or batch size")
+    val conf = new SparkConf()
+    conf.setMaster(params.getOrElse("mode", conf.get("spark.master", "yarn")))
     val sc = new SparkContext(conf)
     PSContext.getOrCreate(sc)
 
@@ -70,5 +72,7 @@ object InitGraphExample {
 
     neighborTable.sampleNeighborsTest(batchItemNum, processNum, sampleCount)
     neighborTable.sampleNeighborsTest(data, batchItemNum, processNum, sampleCount)
+    PSContext.stop()
+    sc.stop()
   }
 }

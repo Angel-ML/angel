@@ -120,9 +120,8 @@ class LogisticRegressionLocal extends Learner {
 
     val pipelineModel = pipeline.fit(trainingDFtable)
     println("success fit......")
-    val pmml = new PMMLBuilder(trainingDFtable.schema, pipelineModel).build()
-
     if (PMMLmodelPath != "" && PMMLmodelPath != null) {
+      val pmml = new PMMLBuilder(trainingDFtable.schema, pipelineModel).build()
       /*
       val fis: FileOutputStream = new FileOutputStream(PMMLmodelPath)
       val fout: StreamResult = new StreamResult(fis)

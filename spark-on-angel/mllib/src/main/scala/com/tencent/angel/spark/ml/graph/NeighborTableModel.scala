@@ -156,6 +156,7 @@ class NeighborTableModel(@BeanProperty val param: Param) extends Serializable {
   }
 
   def sampleLongNeighbors(nodeIds: Array[Long], count: Int): Long2ObjectOpenHashMap[Array[Long]] = {
+    if (nodeIds.isEmpty) return new Long2ObjectOpenHashMap[Array[Long]]()
     psMatrix.psfGet(new GetByteNeighbor(new LongKeysGetParam(psMatrix.id, nodeIds)))
       .asInstanceOf[GetLongsResult].getData
   }

@@ -40,10 +40,8 @@ public class StorageSwitch {
         return (Storage) m.invoke(target, (int) capacity);
       }
     } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-      e.printStackTrace();
+      throw new IllegalStateException("Cannot allocate " + method + " for " + target.getClass().getName(), e);
     }
-
-    return null;
   }
 
   private static Storage emptyStorage(Storage target, StorageMethod method) {
@@ -51,14 +49,12 @@ public class StorageSwitch {
       Method m = target.getClass().getDeclaredMethod(method.toString());
       return (Storage) m.invoke(target);
     } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-      e.printStackTrace();
+      throw new IllegalStateException("Cannot allocate " + method + " for " + target.getClass().getName(), e);
     }
-
-    return null;
   }
 
   private static long allocSize(long v1Size, long v2Size, long dim) {
-    if (v1Size + v2Size > dim) {
+    if (dim >= 0 && v1Size + v2Size > dim) {
       return dim;
     } else {
       return v1Size + v2Size;
@@ -66,6 +62,11 @@ public class StorageSwitch {
   }
 
   private static Storage union(Vector v1, Vector v2, Binary op) {
+    if (v1.dim() < 0 && !v1.isDense() && !v2.isDense()) {
+      return emptyStorage(v1.getStorage(), v1.isSorted() && op.isKeepStorage()
+          ? StorageMethod.emptySorted : StorageMethod.emptySparse,
+          Math.max(1, v1.getSize() + v2.getSize()));
+    }
     if (v1.isDense()) {
       // KeepStorage is guaranteed
       if (op.isInplace()) {

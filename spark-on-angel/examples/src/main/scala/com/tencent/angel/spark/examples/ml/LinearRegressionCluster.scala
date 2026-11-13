@@ -107,9 +107,8 @@ class LinearRegressionCluster extends Learner {
 
     val pipelineModel = pipeline.fit(trainingDFtable)
     println("success fit......")
-    val pmml = new PMMLBuilder(trainingDFtable.schema, pipelineModel).build()
-
     if (PMMLmodelPath != "" && PMMLmodelPath != null) {
+      val pmml = new PMMLBuilder(trainingDFtable.schema, pipelineModel).build()
       val baos = new ByteArrayOutputStream()
       MetroJAXBUtil.marshalPMML(pmml, baos)
       val ss = trainingDFtable.sparkSession

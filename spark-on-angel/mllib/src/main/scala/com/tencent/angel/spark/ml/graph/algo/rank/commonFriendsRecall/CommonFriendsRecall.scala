@@ -64,6 +64,11 @@ class CommonFriendsRecall(override val uid: String) extends Transformer
     println(s"----- stats of the two-way following relationships -----")
     println(s"minId: $minId, maxId: $maxId, numNodes: $numNodes, numEdges: $numEdges")
     println(s"minOutDegree: $minOutDegree, maxOutDegree: $maxOutDegree")
+    if (numNodes == 0) {
+      edges.unpersist()
+      return dataset.sparkSession.createDataFrame(
+        dataset.sparkSession.sparkContext.emptyRDD[Row], transformSchema(dataset.schema))
+    }
 
     // start ps and push neighborTable to ps
     println(s"----- start ps -----")
