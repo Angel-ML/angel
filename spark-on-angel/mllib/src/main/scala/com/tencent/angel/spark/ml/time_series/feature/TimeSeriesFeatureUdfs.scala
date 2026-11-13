@@ -4,7 +4,7 @@ import org.apache.spark.ml.linalg.{Vector, Vectors}
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions._
 
-trait TimeSeriesFeatureUdfs {
+private[time_series] object TimeSeriesFeatureFunctions extends Serializable {
 
   private[time_series] def isNullable(v: Vector, len: Int): Boolean = {
     v.size < len
@@ -371,4 +371,32 @@ trait TimeSeriesFeatureUdfs {
   val binnedEntropy: UserDefinedFunction = udf(getBinnedEntropy)
 
   val c3: UserDefinedFunction = udf(getC3)
+}
+
+trait TimeSeriesFeatureUdfs {
+  def maximum: UserDefinedFunction = TimeSeriesFeatureFunctions.maximum
+  def minimum: UserDefinedFunction = TimeSeriesFeatureFunctions.minimum
+  def mean: UserDefinedFunction = TimeSeriesFeatureFunctions.mean
+  def variance: UserDefinedFunction = TimeSeriesFeatureFunctions.variance
+  def std: UserDefinedFunction = TimeSeriesFeatureFunctions.std
+  def skewness: UserDefinedFunction = TimeSeriesFeatureFunctions.skewness
+  def kurtosis: UserDefinedFunction = TimeSeriesFeatureFunctions.kurtosis
+  def median: UserDefinedFunction = TimeSeriesFeatureFunctions.median
+  def range: UserDefinedFunction = TimeSeriesFeatureFunctions.range
+  def sumOfSquare: UserDefinedFunction = TimeSeriesFeatureFunctions.sumOfSquare
+  def meanChange: UserDefinedFunction = TimeSeriesFeatureFunctions.meanChange
+  def countAboveMean: UserDefinedFunction = TimeSeriesFeatureFunctions.countAboveMean
+  def countBelowMean: UserDefinedFunction = TimeSeriesFeatureFunctions.countBelowMean
+  def firstLocationOfMaximum: UserDefinedFunction = TimeSeriesFeatureFunctions.firstLocationOfMaximum
+  def lastLocationOfMaximum: UserDefinedFunction = TimeSeriesFeatureFunctions.lastLocationOfMaximum
+  def firstLocationOfMinimum: UserDefinedFunction = TimeSeriesFeatureFunctions.firstLocationOfMinimum
+  def lastLocationOfMinimum: UserDefinedFunction = TimeSeriesFeatureFunctions.lastLocationOfMinimum
+  def hasDuplicate: UserDefinedFunction = TimeSeriesFeatureFunctions.hasDuplicate
+  def hasDuplicateMaximum: UserDefinedFunction = TimeSeriesFeatureFunctions.hasDuplicateMaximum
+  def hasDuplicateMinimum: UserDefinedFunction = TimeSeriesFeatureFunctions.hasDuplicateMinimum
+  def longestStrikeAboveMean: UserDefinedFunction = TimeSeriesFeatureFunctions.longestStrikeAboveMean
+  def longestStrikeBelowMean: UserDefinedFunction = TimeSeriesFeatureFunctions.longestStrikeBelowMean
+  def ratioOfReoccurringValuesToAllValues: UserDefinedFunction = TimeSeriesFeatureFunctions.ratioOfReoccurringValuesToAllValues
+  def binnedEntropy: UserDefinedFunction = TimeSeriesFeatureFunctions.binnedEntropy
+  def c3: UserDefinedFunction = TimeSeriesFeatureFunctions.c3
 }

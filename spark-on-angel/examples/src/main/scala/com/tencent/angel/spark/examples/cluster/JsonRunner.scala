@@ -49,6 +49,7 @@ object JsonRunner {
       conf.set(AngelConf.ANGEL_LOAD_MODEL_PATH, modelPath)
 
     val sc   = new SparkContext(conf)
+    try {
     val parser = DataParser(SharedConf.get())
 
     // start PS
@@ -65,6 +66,10 @@ object JsonRunner {
 
       case MLConf.ANGEL_ML_PREDICT =>
           learner.predict(input, output, modelPath, dim, model)
+    }
+    } finally {
+      try PSContext.stop()
+      finally sc.stop()
     }
   }
 

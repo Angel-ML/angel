@@ -170,7 +170,7 @@ object GraphModelTest {
     val sc = new SparkContext(conf)
     sc.setLogLevel("WARN")
     //    sc.setCheckpointDir("cp")
-    //    PSContext.getOrCreate(sc)
+    PSContext.getOrCreate(sc)
     sc
   }
 

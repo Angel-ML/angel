@@ -40,7 +40,14 @@ class NeighborTable(param: Param) extends Serializable {
 
   def initNeighbor(data: RDD[(Int, Int)], param: Param) = {
     // Neighbor table : a (1, maxIndex + 1) dimension matrix
-    val mc: MatrixContext = new MatrixContext(neighborTableName, 1, param.maxIndex + 1)
+    require(param.psPartNum > 0 && param.maxIndex >= 0 && param.initBatchSize > 0, "Invalid neighbor table dimensions or batch size")
+    val columns = param.maxIndex.toLong + 1L
+    val mc: MatrixContext = new MatrixContext(neighborTableName, 1, columns)
+    mc.setPartitionerClass(classOf[com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner])
+    mc.setIndexStart(0L)
+    mc.setIndexEnd(columns)
+    mc.setMaxRowNumInBlock(1)
+    mc.setMaxColNumInBlock(math.max(1L, (columns + param.psPartNum - 1L) / param.psPartNum))
     mc.setRowType(RowType.T_INT_SPARSE)
     // Use CSR format to storage the neighbor table
     mc.setPartitionClass(classOf[CSRPartition])

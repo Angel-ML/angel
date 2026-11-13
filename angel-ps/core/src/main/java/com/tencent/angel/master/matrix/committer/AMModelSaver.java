@@ -211,13 +211,11 @@ public class AMModelSaver extends AbstractService {
           } finally {
             lock.unlock();
           }
-        }
-
-        try {
-          Thread.sleep(100);
-        } catch (InterruptedException e) {
-          if (!stopped.get()) {
-            LOG.error("model save dispatcher is interrupt ", e);
+          try {
+            Thread.sleep(100);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            break;
           }
         }
       }

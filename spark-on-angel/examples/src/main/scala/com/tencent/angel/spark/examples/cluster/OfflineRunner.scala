@@ -70,6 +70,7 @@ object OfflineRunner {
     }
 
     val sc   = new SparkContext(conf)
+    try {
 
     // start PS
     PSContext.getOrCreate(sc)
@@ -81,6 +82,10 @@ object OfflineRunner {
     actionType match {
       case MLConf.ANGEL_ML_TRAIN => learner.train(input, output, modelPath, dim, model)
       case MLConf.ANGEL_ML_PREDICT => learner.predict(input, predictPath, output, dim, model)
+    }
+    } finally {
+      try PSContext.stop()
+      finally sc.stop()
     }
   }
 }

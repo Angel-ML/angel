@@ -83,7 +83,7 @@
     <dependency>
       <groupId>org.json4s</groupId>
       <artifactId>json4s-jackson_${scala.binary.version}</artifactId>
-      <version>3.6.12</version>
+      <version>3.7.0-M11</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
