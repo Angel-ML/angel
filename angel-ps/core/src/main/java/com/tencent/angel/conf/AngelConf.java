@@ -2563,6 +2563,53 @@ public class AngelConf extends Configuration {
     }
   }
 
+  // //////////////////////////////
+  // Model path and RPC hardening
+  // //////////////////////////////
+
+  /**
+   * Comma separated roots that model save/load paths must stay inside. Empty by default so
+   * existing jobs keep their freedom to choose an output path; multi-tenant deployments should
+   * set this to the job output/model roots.
+   */
+  public static final String ANGEL_MODEL_PATH_ALLOWED_ROOTS =
+      ANGEL_PREFIX + "model.path.allowed.roots";
+
+  /**
+   * Refuse the recursive deletion of an existing directory that is not an Angel model directory
+   * when a save request overwrites it.
+   */
+  public static final String ANGEL_MODEL_SAFE_OVERWRITE =
+      ANGEL_PREFIX + "model.safe.overwrite.enabled";
+  public static final boolean DEFAULT_ANGEL_MODEL_SAFE_OVERWRITE = true;
+
+  /** Verify the job ownership marker before loading a model directory. */
+  public static final String ANGEL_MODEL_OWNER_CHECK =
+      ANGEL_PREFIX + "model.owner.check.enabled";
+  public static final boolean DEFAULT_ANGEL_MODEL_OWNER_CHECK = true;
+
+  /** Extra fully qualified model format classes accepted by ModelFilesUtils.initFormat. */
+  public static final String ANGEL_MODEL_FORMAT_ALLOWED_CLASSES =
+      ANGEL_PREFIX + "model.format.allowed.classes";
+
+  /** Extra fully qualified protocol interfaces accepted by the Netty RPC server. */
+  public static final String ANGEL_RPC_ALLOWED_PROTOCOLS =
+      ANGEL_PREFIX + "rpc.allowed.protocols";
+
+  /** Reject a psRegister that tries to replace an already registered PS location. */
+  public static final String ANGEL_PS_REGISTER_STRICT =
+      ANGEL_PREFIX + "ps.register.strict.enabled";
+  public static final boolean DEFAULT_ANGEL_PS_REGISTER_STRICT = true;
+
+  /**
+   * Reject psRegister when the caller address differs from the advertised location. Disabled by
+   * default because NAT/proxy based deployments may legitimately diverge; enable it when the
+   * Master is reachable from untrusted networks.
+   */
+  public static final String ANGEL_PS_REGISTER_SOURCE_CHECK =
+      ANGEL_PREFIX + "ps.register.source.check.enabled";
+  public static final boolean DEFAULT_ANGEL_PS_REGISTER_SOURCE_CHECK = false;
+
   public class ANGEL_MODEL_PARTITIONER_DEFAULT_PARTITION_SIZE {
 
   }

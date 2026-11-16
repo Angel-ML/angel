@@ -966,7 +966,10 @@ public class AMModelSaver extends AbstractService {
   }
 
   private void finalCommit(Path tmpCombinePath, Path outputPath, FileSystem fs) throws IOException {
+    com.tencent.angel.security.ModelPathGuard.ensureSafeOverwrite(fs, outputPath);
     HdfsUtil.rename(tmpCombinePath, outputPath, fs);
+    com.tencent.angel.security.ModelPathGuard
+        .writeOwnership(fs, outputPath, context.getConf());
     LOG.info("final commit from " + tmpCombinePath + " to " + outputPath);
   }
 }
