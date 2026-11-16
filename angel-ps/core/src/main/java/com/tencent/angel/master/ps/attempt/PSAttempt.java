@@ -355,6 +355,11 @@ public class PSAttempt implements EventHandler<PSAttemptEvent> {
     @Override public void transition(PSAttempt psAttempt, PSAttemptEvent event) {
       // parse ps attempt location and put it to location manager
       PSAttemptRegisterEvent registerEvent = (PSAttemptRegisterEvent) event;
+      if (psAttempt.location != null && !psAttempt.location.equals(registerEvent.getLocation())) {
+        LOG.warn("ignore conflicting PS registration for " + psAttempt.attemptId
+            + ": current=" + psAttempt.location + ", requested=" + registerEvent.getLocation());
+        return;
+      }
       psAttempt.location = registerEvent.getLocation();
       LOG.info(psAttempt.attemptId + " is registering, location: " + psAttempt.location);
       psAttempt.getContext().getLocationManager()

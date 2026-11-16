@@ -124,6 +124,23 @@ public class ParameterServerManager extends AbstractService
    * parameter server attempt id to last heartbeat timestamp map
    */
   private final ConcurrentHashMap<PSAttemptId, Long> psLastHeartbeatTS = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<PSAttemptId, Location> registeredLocations =
+      new ConcurrentHashMap<>();
+
+  /**
+   * Accept the first registration of a PS attempt and idempotent heartbeat re-registrations
+   * from the same location, but refuse any attempt to replace an already advertised location.
+   */
+  public boolean acceptRegistration(PSAttemptId psAttemptId, Location location) {
+    Location previous = registeredLocations.putIfAbsent(psAttemptId, location);
+    if (previous == null
+        || !com.tencent.angel.security.PsRegistrationGuard.conflicts(previous, location)) {
+      return true;
+    }
+    LOG.warn("reject conflicting PS registration for " + psAttemptId + ": registered="
+        + previous + ", requested=" + location);
+    return false;
+  }
 
   /**
    * parameter server heartbeat timeout value in millisecond
@@ -436,6 +453,7 @@ public class ParameterServerManager extends AbstractService
   public void unRegister(PSAttemptId psAttemptId) {
     LOG.info("PS " + psAttemptId + " is finished,  delete it in monitor!");
     psLastHeartbeatTS.remove(psAttemptId);
+    registeredLocations.remove(psAttemptId);
   }
 
   /**

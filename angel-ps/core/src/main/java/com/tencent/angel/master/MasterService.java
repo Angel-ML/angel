@@ -407,14 +407,35 @@ public class MasterService extends AbstractService implements MasterProtocol {
       LOG.info(psAttemptId + " doesn't exists!");
       resBuilder.setPsCommand(PSCommandProto.PSCOMMAND_SHUTDOWN);
     } else {
+      Location location =
+          new Location(request.getLocation().getIp(), request.getLocation().getPort());
+      if (!isAllowedPSRegistration(psAttemptId, location)) {
+        LOG.warn("reject psRegister for " + psAttemptId + " from "
+            + com.tencent.angel.ipc.NettyServer.getRemoteAddress() + " advertising " + location);
+        resBuilder.setPsCommand(PSCommandProto.PSCOMMAND_SHUTDOWN);
+        LOG.info(psAttemptId + " register finished!");
+        return resBuilder.build();
+      }
       context.getParameterServerManager().alive(psAttemptId);
-      context.getEventHandler().handle(new PSAttemptRegisterEvent(psAttemptId,
-          new Location(request.getLocation().getIp(), request.getLocation().getPort())));
+      context.getEventHandler().handle(new PSAttemptRegisterEvent(psAttemptId, location));
       LOG.info(psAttemptId + " is registered now!");
       resBuilder.setPsCommand(PSCommandProto.PSCOMMAND_OK);
     }
     LOG.info(psAttemptId + " register finished!");
     return resBuilder.build();
+  }
+
+  private boolean isAllowedPSRegistration(PSAttemptId psAttemptId, Location location) {
+    Configuration conf = context.getConf();
+    if (conf.getBoolean(com.tencent.angel.conf.AngelConf.ANGEL_PS_REGISTER_STRICT,
+        com.tencent.angel.conf.AngelConf.DEFAULT_ANGEL_PS_REGISTER_STRICT)
+        && !context.getParameterServerManager().acceptRegistration(psAttemptId, location)) {
+      return false;
+    }
+    return com.tencent.angel.security.PsRegistrationGuard.sourceMatches(
+        com.tencent.angel.ipc.NettyServer.getRemoteAddress(), location,
+        conf.getBoolean(com.tencent.angel.conf.AngelConf.ANGEL_PS_REGISTER_SOURCE_CHECK,
+            com.tencent.angel.conf.AngelConf.DEFAULT_ANGEL_PS_REGISTER_SOURCE_CHECK));
   }
 
   @Override
@@ -1364,6 +1385,13 @@ public class MasterService extends AbstractService implements MasterProtocol {
       SaveRequest request) throws ServiceException {
     ModelSaveContextProto saveContextProto = request.getSaveContext();
     ModelSaveContext saveContext = ProtobufUtil.convert(saveContextProto);
+    try {
+      saveContext.setSavePath(com.tencent.angel.security.ModelPathGuard
+          .validate(context.getConf(), saveContext.getSavePath(), "save").toString());
+    } catch (IOException e) {
+      LOG.warn("reject model save request", e);
+      throw new ServiceException("invalid model save path: " + e.getMessage());
+    }
     List<MatrixSaveContext> needSaveMatrices = saveContext.getMatricesContext();
     int size = needSaveMatrices.size();
     for (int i = 0; i < size; i++) {
@@ -1394,6 +1422,13 @@ public class MasterService extends AbstractService implements MasterProtocol {
 
     ModelLoadContextProto loadContextProto = request.getLoadContext();
     ModelLoadContext loadContext = ProtobufUtil.convert(loadContextProto);
+    try {
+      loadContext.setLoadPath(com.tencent.angel.security.ModelPathGuard
+          .validate(context.getConf(), loadContext.getLoadPath(), "load").toString());
+    } catch (IOException e) {
+      LOG.warn("reject model load request", e);
+      throw new ServiceException("invalid model load path: " + e.getMessage());
+    }
     List<MatrixLoadContext> needLoadMatrices = loadContext.getMatricesContext();
     int size = needLoadMatrices.size();
     for (int i = 0; i < size; i++) {
