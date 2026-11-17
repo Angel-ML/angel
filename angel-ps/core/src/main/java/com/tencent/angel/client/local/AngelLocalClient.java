@@ -62,6 +62,7 @@ public class AngelLocalClient extends AngelClient {
 
   private void initLocalClusterContext() {
     LocalClusterContext localClusterContext = LocalClusterContext.get();
+    localClusterContext.setStartupFailure(null);
     localClusterContext.setConf(conf);
     localClusterContext.setLocalHost("localhost");
     localClusterContext.setPort(9999);
@@ -73,8 +74,12 @@ public class AngelLocalClient extends AngelClient {
     int tryTime = 0;
     TConnection connection = TConnectionManager.getConnection(conf);
     while (tryTime < maxWaitSeconds) {
+      Throwable failure = LocalClusterContext.get().getStartupFailure();
+      if (failure != null) {
+        throw new AngelException("Local master startup failed", failure);
+      }
       LocalMaster localMaster = LocalClusterContext.get().getMaster();
-      if (localMaster == null
+      if (localMaster == null || !localMaster.isInitialized()
         || localMaster.getAppMaster().getAppContext().getMasterService() == null) {
         Thread.sleep(1000);
         tryTime++;
@@ -92,12 +97,13 @@ public class AngelLocalClient extends AngelClient {
         LOG.info("start to create rpc client to am");
         master = connection.getMasterService(masterLocation.getIp(), masterLocation.getPort());
         startHeartbeat();
-        break;
+        return;
       } catch (ServiceException e) {
         Thread.sleep(1000);
         tryTime++;
       }
     }
+    throw new AngelException("Timed out waiting for local master after " + maxWaitSeconds + " seconds");
   }
 
   @Override public void close() throws AngelException {
@@ -133,11 +139,17 @@ public class AngelLocalClient extends AngelClient {
 
       cluster = new LocalCluster(conf, appId);
       cluster.start();
-      updateMaster(Integer.MAX_VALUE);
+      updateMaster(conf.getInt("angel.local.master.startup.timeout.seconds", 60));
       waitForAllPS(conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER));
       LOG.info("start ps success");
     } catch (Exception x) {
       LOG.error("start application failed.", x);
+      try {
+        close();
+      } catch (Exception cleanupFailure) {
+        x.addSuppressed(cleanupFailure);
+      }
+      if (x instanceof InterruptedException) Thread.currentThread().interrupt();
       throw new AngelException(x);
     }
   }

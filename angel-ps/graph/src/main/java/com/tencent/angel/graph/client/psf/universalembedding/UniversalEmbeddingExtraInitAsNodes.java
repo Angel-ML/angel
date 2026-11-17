@@ -13,47 +13,48 @@ import com.tencent.angel.psagent.matrix.transport.router.operator.ILongKeyAnyVal
  * A PS function to initialize the universal embedding matrix on PS with extra embeddings
  */
 public class UniversalEmbeddingExtraInitAsNodes extends UpdateFunc {
-    /**
-     * Create a new UpdateParam
-     */
-    public UniversalEmbeddingExtraInitAsNodes(UniversalEmbeddingExtraInitParam param) {
-        super(param);
-    }
 
-    public UniversalEmbeddingExtraInitAsNodes() {
-        this(null);
-    }
+  /**
+   * Create a new UpdateParam
+   */
+  public UniversalEmbeddingExtraInitAsNodes(UniversalEmbeddingExtraInitParam param) {
+    super(param);
+  }
 
-    @Override
-    public void partitionUpdate(PartitionUpdateParam partParam) {
-        PartUniversalEmbeddingExtraInitParam param = (PartUniversalEmbeddingExtraInitParam) partParam;
-        ServerLongAnyRow row = GraphMatrixUtils.getPSLongKeyRow(psContext, param);
-        ILongKeyAnyValuePartOp keyValuePart = (ILongKeyAnyValuePartOp) param.getKeyValuePart();
-        int dim = param.getDim();
-        int numSlots = param.getNumSlots();
-        long[] nodeIds = keyValuePart.getKeys();
-        IElement[] embeddings = keyValuePart.getValues();
-        row.startWrite();
-        try {
-            for (int i = 0; i < nodeIds.length; i++) {
-                UniversalEmbeddingNode embeddingNode = (UniversalEmbeddingNode) row.get(nodeIds[i]);
-                if (embeddingNode == null) {
-                    if (numSlots <= 1) {
-                        embeddingNode = new UniversalEmbeddingNode(((EmbeddingOrGrad)embeddings[i])
-                                .getValues());
-                    } else {
-                        float[] slotsValues = new float[dim * (numSlots - 1)];
-                        embeddingNode = new UniversalEmbeddingNode(((EmbeddingOrGrad)embeddings[i])
-                                .getValues(), slotsValues, numSlots);
-                    }
-                    row.set(nodeIds[i], embeddingNode);
-                } else {
-                    embeddingNode.setEmbeddings(((EmbeddingOrGrad)embeddings[i])
-                            .getValues());
-                }
-            }
-        } finally {
-            row.endWrite();
+  public UniversalEmbeddingExtraInitAsNodes() {
+    this(null);
+  }
+
+  @Override
+  public void partitionUpdate(PartitionUpdateParam partParam) {
+    PartUniversalEmbeddingExtraInitParam param = (PartUniversalEmbeddingExtraInitParam) partParam;
+    ServerLongAnyRow row = GraphMatrixUtils.getPSLongKeyRow(psContext, param);
+    ILongKeyAnyValuePartOp keyValuePart = (ILongKeyAnyValuePartOp) param.getKeyValuePart();
+    int dim = param.getDim();
+    int numSlots = param.getNumSlots();
+    long[] nodeIds = keyValuePart.getKeys();
+    IElement[] embeddings = keyValuePart.getValues();
+    row.startWrite();
+    try {
+      for (int i = 0; i < nodeIds.length; i++) {
+        UniversalEmbeddingNode embeddingNode = (UniversalEmbeddingNode) row.get(nodeIds[i]);
+        if (embeddingNode == null) {
+          if (numSlots <= 1) {
+            embeddingNode = new UniversalEmbeddingNode(((EmbeddingOrGrad) embeddings[i])
+                .getValues());
+          } else {
+            float[] slotsValues = new float[dim * (numSlots - 1)];
+            embeddingNode = new UniversalEmbeddingNode(((EmbeddingOrGrad) embeddings[i])
+                .getValues(), slotsValues, numSlots);
+          }
+          row.set(nodeIds[i], embeddingNode);
+        } else {
+          embeddingNode.setEmbeddings(((EmbeddingOrGrad) embeddings[i])
+              .getValues());
         }
+      }
+    } finally {
+      row.endWrite();
     }
+  }
 }

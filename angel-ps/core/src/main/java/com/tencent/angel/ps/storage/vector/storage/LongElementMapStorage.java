@@ -1,3 +1,4 @@
+
 /*
  * Tencent is pleased to support the open source community by making Angel available.
  *
@@ -15,6 +16,7 @@
  *
  */
 
+
 package com.tencent.angel.ps.storage.vector.storage;
 
 import com.tencent.angel.ps.storage.vector.element.IElement;
@@ -26,19 +28,30 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Map.Entry;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class LongElementMapStorage extends LongElementStorage {
+
+  private static final Log LOG = LogFactory.getLog(LongElementMapStorage.class);
 
   private Long2ObjectOpenHashMap<IElement> data;
   private volatile long[] keys;
 
+  /**
+   * Last successfully-computed dataSize, used as a fallback when {@link #dataSize()} races
+   * with a concurrent PSF writer. Heartbeat is a metric path, not a correctness gate, so a
+   * single losing race must not turn into a master heartbeat miss.
+   */
+  private volatile long lastDataSize = 0L;
+
   public LongElementMapStorage(
-          Class<? extends IElement> objectClass, int len, long indexOffset) {
+      Class<? extends IElement> objectClass, int len, long indexOffset) {
     this(objectClass, new Long2ObjectOpenHashMap(len), indexOffset);
   }
 
   public LongElementMapStorage(
-          Class<? extends IElement> objectClass, Long2ObjectOpenHashMap<IElement> data, long indexOffset) {
+      Class<? extends IElement> objectClass, Long2ObjectOpenHashMap<IElement> data, long indexOffset) {
     super(objectClass, indexOffset);
     this.data = data;
   }
@@ -102,9 +115,9 @@ public class LongElementMapStorage extends LongElementStorage {
 
   @Override
   public LongElementMapStorage deepClone() {
-    Long2ObjectOpenHashMap<IElement> clonedData = new Long2ObjectOpenHashMap(data.size());
-    ObjectIterator<Long2ObjectMap.Entry<IElement>> iter = clonedData
-            .long2ObjectEntrySet().fastIterator();
+    Long2ObjectOpenHashMap<IElement> clonedData = new Long2ObjectOpenHashMap<>(data.size());
+    ObjectIterator<Long2ObjectMap.Entry<IElement>> iter = data
+        .long2ObjectEntrySet().fastIterator();
     while(iter.hasNext()) {
       Long2ObjectMap.Entry<IElement> entry = iter.next();
       clonedData.put(entry.getLongKey(), (IElement) entry.getValue().deepClone());
@@ -146,7 +159,7 @@ public class LongElementMapStorage extends LongElementStorage {
 
     // Element data
     int writeNum = 0;
-    for (Entry<Long, IElement> entry : data.entrySet()) {
+    for (Entry<Long, IElement> entry : data.long2ObjectEntrySet()) {
       buf.writeLong(entry.getKey());
       entry.getValue().serialize(buf);
       writeNum++;
@@ -176,7 +189,7 @@ public class LongElementMapStorage extends LongElementStorage {
     int dataLen = 0;
 
     // Element data
-    for (Entry<Long, IElement> entry : data.entrySet()) {
+    for (Entry<Long, IElement> entry : data.long2ObjectEntrySet()) {
       dataLen += (8 + entry.getValue().bufferLen());
     }
     return super.bufferLen() + 4 + dataLen;
@@ -190,7 +203,7 @@ public class LongElementMapStorage extends LongElementStorage {
 
     // Element data
     int writeNum = 0;
-    for (Entry<Long, IElement> entry : data.entrySet()) {
+    for (Entry<Long, IElement> entry : data.long2ObjectEntrySet()) {
       output.writeLong(entry.getKey());
       entry.getValue().serialize(output);
       writeNum++;
@@ -222,14 +235,34 @@ public class LongElementMapStorage extends LongElementStorage {
   public long dataSize() {
     long dataLen = super.bufferLen() + 4;
 
-    if (data != null) {
-      // Element data
-      for (Entry<Long, IElement> entry : data.entrySet()) {
-        if (entry != null && entry.getValue() != null)
-          dataLen += (8 + entry.getValue().bufferLen());
-      }
+    if (data == null) {
+      return dataLen;
     }
 
-    return dataLen;
+    // The PSF write path (e.g. SampleWithTagSamples / addNeighbors) puts into the same
+    // fastutil Long2ObjectOpenHashMap that we are about to scan here; that map is NOT
+    // thread-safe and we deliberately avoid synchronising the hot write path. A
+    // concurrent put that triggers a rehash can leave entrySet().iterator() observing
+    // a transient null slot and throw NullPointerException out of MapIterator.nextEntry.
+    //
+    // dataSize() is called from ParameterServer.heartbeat() purely for reporting; a
+    // racing scan must NOT propagate as a heartbeat exception (which is logged as
+    // "ERROR IN CONTACTING RM" and counts toward master-loss detection in STANDALONE).
+    // Fall back to the most recently-completed snapshot value instead.
+    try {
+      for (Entry<Long, IElement> entry : data.entrySet()) {
+        if (entry != null && entry.getValue() != null) {
+          dataLen += (8 + entry.getValue().bufferLen());
+        }
+      }
+      lastDataSize = dataLen;
+      return dataLen;
+    } catch (RuntimeException e) {
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("dataSize() raced with a concurrent writer on the underlying"
+            + " Long2ObjectOpenHashMap; returning last successful value " + lastDataSize, e);
+      }
+      return lastDataSize > 0 ? lastDataSize : dataLen;
+    }
   }
 }

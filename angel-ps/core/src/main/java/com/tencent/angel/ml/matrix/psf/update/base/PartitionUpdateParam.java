@@ -29,6 +29,7 @@ public abstract class PartitionUpdateParam implements Serialize {
   private int matrixId;
   private PartitionKey partKey;
   private boolean updateClock;
+  protected volatile transient UpdateParam param;
 
   /**
    * Creates a new partition parameter.
@@ -109,5 +110,25 @@ public abstract class PartitionUpdateParam implements Serialize {
 
   @Override public int bufferLen() {
     return 4 + 1 + ((partKey != null) ? partKey.bufferLen() : 0);
+  }
+
+  public void setMatrixId(int matrixId) {
+    this.matrixId = matrixId;
+  }
+
+  public void setPartKey(PartitionKey partKey) {
+    this.partKey = partKey;
+  }
+
+  public void setUpdateClock(boolean updateClock) {
+    this.updateClock = updateClock;
+  }
+
+  public UpdateParam getParam() {
+    return param;
+  }
+
+  public void setParam(UpdateParam param) {
+    this.param = param;
   }
 }

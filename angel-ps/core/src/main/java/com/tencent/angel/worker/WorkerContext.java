@@ -224,6 +224,12 @@ public class WorkerContext {
 
     if (mode.equals(AngelDeployMode.LOCAL.toString())) {
       return AngelDeployMode.LOCAL;
+    } else if (mode.equals(AngelDeployMode.EMBEDDED.toString())) {
+      return AngelDeployMode.EMBEDDED;
+    } else if (mode.equals(AngelDeployMode.STANDALONE.toString())) {
+      return AngelDeployMode.STANDALONE;
+    } else if (mode.equals(AngelDeployMode.KUBERNETES.toString())) {
+      return AngelDeployMode.KUBERNETES;
     } else {
       return AngelDeployMode.YARN;
     }

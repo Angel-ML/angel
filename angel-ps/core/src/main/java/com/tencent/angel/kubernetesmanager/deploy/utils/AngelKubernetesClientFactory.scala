@@ -5,9 +5,7 @@ import java.io.File
 import com.google.common.base.Charsets
 import com.google.common.io.Files
 import com.tencent.angel.conf.AngelConf
-import io.fabric8.kubernetes.client.utils.HttpClientUtils
 import io.fabric8.kubernetes.client.{ConfigBuilder, DefaultKubernetesClient, KubernetesClient}
-import okhttp3.Dispatcher
 import org.apache.hadoop.conf.Configuration
 
 private[angel] object AngelKubernetesClientFactory {
@@ -34,10 +32,9 @@ private[angel] object AngelKubernetesClientFactory {
       .orElse(defaultServiceAccountCaCert.map(_.getAbsolutePath))
     val clientKeyFile = Option(angelConf.get(s"$kubernetesAuthConfPrefix." + AngelConf.CLIENT_KEY_FILE_CONF_SUFFIX))
     val clientCertFile = Option(angelConf.get(s"$kubernetesAuthConfPrefix." + AngelConf.CLIENT_CERT_FILE_CONF_SUFFIX))
-    val dispatcher = new Dispatcher(ThreadUtils.newDaemonCachedThreadPool("kubernetes-dispatcher"))
     val config = new ConfigBuilder()
       .withApiVersion("v1")
-      .withMasterUrl(master)
+      .withMasterUrl(normalizeMasterUrl(master))
       .withWebsocketPingInterval(0)
       .withOption(oauthTokenValue) {
         (token, configBuilder) => configBuilder.withOauthToken(token)
@@ -53,11 +50,16 @@ private[angel] object AngelKubernetesClientFactory {
     }.withOption(namespace) {
       (ns, configBuilder) => configBuilder.withNamespace(ns)
     }.build()
-    val baseHttpClient = HttpClientUtils.createHttpClient(config)
-    val httpClientWithCustomDispatcher = baseHttpClient.newBuilder()
-      .dispatcher(dispatcher)
-      .build()
-    new DefaultKubernetesClient(httpClientWithCustomDispatcher, config)
+    new DefaultKubernetesClient(config)
+  }
+
+  private[angel] def normalizeMasterUrl(master: String): String = {
+    val uri = new java.net.URI(master)
+    require(uri.getScheme == "https" || uri.getScheme == "http", "Kubernetes API URL must use HTTP or HTTPS")
+    require(uri.getHost != null, "Kubernetes API URL must specify a host")
+    if (uri.getPort >= 0) master
+    else new java.net.URI(uri.getScheme, uri.getUserInfo, uri.getHost,
+      if (uri.getScheme == "https") 443 else 80, uri.getPath, uri.getQuery, uri.getFragment).toString
   }
 
   private implicit class OptionConfigurableConfigBuilder(val configBuilder: ConfigBuilder)

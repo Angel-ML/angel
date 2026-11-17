@@ -18,8 +18,8 @@
 
 package com.tencent.angel.spark.ml
 
-import org.scalatest.{BeforeAndAfterAll, Outcome}
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.{BeforeAndAfterAll, Outcome}
 
 
 trait PSFunSuite extends AnyFunSuite with BeforeAndAfterAll {

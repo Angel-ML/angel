@@ -1,17 +1,18 @@
 package com.tencent.angel.spark.examples.local
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.graph.embedding.deepwalk.DeepWalk
-import com.tencent.angel.graph.utils.GraphIO
 import com.tencent.angel.spark.context.PSContext
+import com.tencent.angel.spark.ml.graph.algo.embedding.deepwalkNoWeight.DeepWalkNoWeight
+import com.tencent.angel.spark.ml.graph.algo.embedding.deepwalkWithWeight.DeepWalk
+import com.tencent.angel.spark.ml.graph.utils.GraphIO
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
 object DeepWalkExample {
   def main(args: Array[String]): Unit = {
-    val input = "data/bc/karate_club_network.txt"
+    val input = "data/graph/karate_club_network.txt"
     val storageLevel = StorageLevel.fromString("MEMORY_ONLY")
-    val batchSize = 10
+    val batchSize = 100000
     val output = "data/output/output1"
     val srcIndex = 0
     val dstIndex = 1
@@ -20,31 +21,54 @@ object DeepWalkExample {
     val partitionNum = 1
     val useEdgeBalancePartition = false
     val isWeighted = false
-    val needReplicateEdge =true
+    val needReplicateEdge = true
+    val numWalks = 3
 
     val sep = " "
     val walkLength = 10
 
-
     start()
 
-    val deepwalk = new DeepWalk()
-      .setStorageLevel(storageLevel)
-      .setPSPartitionNum(psPartitionNum)
-      .setSrcNodeIdCol("src")
-      .setDstNodeIdCol("dst")
-      .setWeightCol("weight")
-      .setBatchSize(batchSize)
-      .setWalkLength(walkLength)
-      .setPartitionNum(partitionNum)
-      .setIsWeighted(isWeighted)
-      .setNeedReplicaEdge(needReplicateEdge)
-      .setUseEdgeBalancePartition(useEdgeBalancePartition)
-      .setEpochNum(2)
+    if (isWeighted) {
+      val deepwalk = new DeepWalk()
+        .setStorageLevel(storageLevel)
+        .setPSPartitionNum(psPartitionNum)
+        .setSrcNodeIdCol("src")
+        .setDstNodeIdCol("dst")
+        .setWeightCol("weight")
+        .setBatchSize(batchSize)
+        .setWalkLength(walkLength)
+        .setPartitionNum(partitionNum)
+        .setIsWeighted(isWeighted)
+        .setNeedReplicaEdge(needReplicateEdge)
+        .setUseEdgeBalancePartition(useEdgeBalancePartition)
+        .setEpochNum(numWalks)
 
-    deepwalk.setOutputDir(output)
-    val df = GraphIO.load(input, isWeighted = isWeighted, srcIndex, dstIndex, weightIndex, sep = sep)
-    val mapping = deepwalk.transform(df)
+
+      deepwalk.setOutputDir(output)
+      val df = GraphIO.load(input, isWeighted = isWeighted, srcIndex, dstIndex, weightIndex, sep = sep)
+      val mapping = deepwalk.transform(df)
+
+    }
+    else {
+      val deepwalk = new DeepWalkNoWeight()
+        .setStorageLevel(storageLevel)
+        .setPSPartitionNum(psPartitionNum)
+        .setSrcNodeIdCol("src")
+        .setDstNodeIdCol("dst")
+        .setBatchSize(batchSize)
+        .setWalkLength(walkLength)
+        .setPartitionNum(partitionNum)
+        .setNeedReplicaEdge(needReplicateEdge)
+        .setUseEdgeBalancePartition(useEdgeBalancePartition)
+        .setEpochNum(numWalks)
+
+
+      deepwalk.setOutputDir(output)
+      val df = GraphIO.load(input, isWeighted = isWeighted, srcIndex, dstIndex, weightIndex, sep = sep)
+      val mapping = deepwalk.transform(df)
+
+    }
 
     stop()
   }
@@ -56,7 +80,7 @@ object DeepWalkExample {
     conf.set(AngelConf.ANGEL_PSAGENT_UPDATE_SPLIT_ADAPTION_ENABLE, "false")
     val sc = new SparkContext(conf)
     sc.setLogLevel("ERROR")
-    sc.setCheckpointDir("data/cp")
+    sc.setCheckpointDir("cp")
     //PSContext.getOrCreate(sc)
   }
 

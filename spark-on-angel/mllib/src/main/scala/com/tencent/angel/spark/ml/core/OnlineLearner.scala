@@ -37,20 +37,27 @@ class OnlineLearner {
     val bModel = SparkContext.getOrCreate().broadcast(model)
     var numBatches = 0
     stream.foreachRDD { data =>
-      numBatches += 1
-      val (lossSum, batchSize) = data.mapPartitions { iter =>
-        PSContext.instance()
-        val model = bModel.value
-        val samples = iter.toArray
-        model.forward(0, samples)
-        val loss = model.getLoss()
-        model.backward()
-        Iterator.single((loss, samples.length))
-      }.reduce((f1, f2) => (f1._1 + f2._1, f1._2 + f2._2))
+      // streaming sources emit empty micro-batches when no new data arrives; skip them
+      if (!data.isEmpty()) {
+        numBatches += 1
+        val (lossSum, batchSize) = data.mapPartitions { iter =>
+          if (!iter.hasNext) {
+            Iterator.empty
+          } else {
+            PSContext.instance()
+            val model = bModel.value
+            val samples = iter.toArray
+            model.forward(0, samples)
+            val loss = model.getLoss()
+            model.backward()
+            Iterator.single((loss, samples.length))
+          }
+        }.reduce((f1, f2) => (f1._1 + f2._1, f1._2 + f2._2))
 
-      model.update(numBatches, batchSize)
+        model.update(numBatches, batchSize)
 
-      LOG.error(s"batch[$numBatches] trainLoss=${lossSum / numTasks} batchSize=$batchSize")
+        LOG.error(s"batch[$numBatches] trainLoss=${lossSum / numTasks} batchSize=$batchSize")
+      }
     }
   }
 

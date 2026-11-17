@@ -23,36 +23,45 @@ import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.conf.MatrixConf;
 import com.tencent.angel.exception.InvalidParameterException;
 import com.tencent.angel.master.app.AMContext;
-import com.tencent.angel.ml.matrix.*;
-import com.tencent.angel.model.output.format.ModelFilesConstent;
+import com.tencent.angel.ml.matrix.MatrixContext;
+import com.tencent.angel.ml.matrix.MatrixMeta;
+import com.tencent.angel.ml.matrix.MatrixMetaManager;
+import com.tencent.angel.ml.matrix.MatrixReport;
+import com.tencent.angel.ml.matrix.PartContext;
+import com.tencent.angel.ml.matrix.PartReport;
+import com.tencent.angel.ml.matrix.PartitionMeta;
 import com.tencent.angel.model.output.format.MatrixFilesMeta;
 import com.tencent.angel.model.output.format.MatrixPartitionMeta;
+import com.tencent.angel.model.output.format.ModelFilesConstent;
 import com.tencent.angel.protobuf.ProtobufUtil;
-import com.tencent.angel.protobuf.generated.MLProtos;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.ha.RecoverPartKey;
 import com.tencent.angel.ps.server.data.PSLocation;
 import com.tencent.angel.ps.storage.matrix.PartitionState;
 import com.tencent.angel.ps.storage.partitioner.Partitioner;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 
 /**
  * Matrix meta manager in angel application master. it contains all matrices meta and partitions for
@@ -494,7 +503,8 @@ public class AMMatrixMetaManager {
         return;
       }
 
-      //if a matrix exists on parameter server but not exist on master, we should notify the parameter server to remove this matrix
+      //if a matrix exists on parameter server but not exist on master, we should notify
+      // the parameter server to remove this matrix
       for (int matrixId : matrixIdInPSSet) {
         LOG.debug("matrix in ps " + matrixId);
         if (!matrixIdToPSMetaMap.containsKey(matrixId)) {

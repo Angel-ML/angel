@@ -101,7 +101,7 @@ public class DenseServerRowsStorage extends ServerRowsStorage {
       @Override
       public Map.Entry<Integer, ServerRow> next() {
         Map.Entry<Integer, ServerRow> entry = new AbstractMap.SimpleEntry(currIndex + rowIdOffset,
-                data[currIndex]);
+            data[currIndex]);
         currIndex++;
         return entry;
       }

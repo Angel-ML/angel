@@ -26,7 +26,15 @@ public enum AngelEnvironment {
   WORKERGROUP_NUMBER("WORKERGROUP_NUMBER"), TASK_NUMBER("TASK_NUMBER"), INIT_MIN_CLOCK(
     "INIT_MIN_CLOCK"), PSAGENT_ID("PSAGENT_ID"), PSAGENT_ATTEMPT_ID(
     "PSAGENT_ATTEMPT_ID"), WORKER_ATTEMPT_ID("WORKER_ATTEMPT_ID"), ANGEL_USER_TASK(
-    "ANGEL_USER_TASK");
+    "ANGEL_USER_TASK"),
+
+  /**
+   * Routable IP of the machine running the PS / Worker child process, as known by the
+   * launcher (i.e. the ssh target host). Used by the child JVM to advertise itself to
+   * the master, bypassing unreliable {@code InetAddress.getLocalHost()} resolution on
+   * hosts whose {@code /etc/hosts} maps the hostname to a loopback address.
+   */
+  PS_LISTEN_ADDR("PS_LISTEN_ADDR"), WORKER_LISTEN_ADDR("WORKER_LISTEN_ADDR");
 
   private final String variable;
 

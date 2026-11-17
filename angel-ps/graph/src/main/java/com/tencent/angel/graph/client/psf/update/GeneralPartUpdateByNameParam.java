@@ -14,7 +14,7 @@ public class GeneralPartUpdateByNameParam extends GeneralPartUpdateParam {
   private String name;
 
   public GeneralPartUpdateByNameParam(int matrixId, PartitionKey partKey, KeyValuePart keyValuePart,
-                                      String name) {
+      String name) {
     super(matrixId, partKey, keyValuePart);
     this.name = name;
   }

@@ -21,6 +21,9 @@ import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ps.server.data.request.UpdateOp;
 import com.tencent.angel.ps.storage.partition.op.ICSRStorageOp;
 import io.netty.buffer.ByteBuf;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 /**
  * Base class of CSR Storage
@@ -106,6 +109,26 @@ public abstract class CSRStorage extends ServerPartitionStorage implements ICSRS
     if (rowOffsets != null) dataLen +=  rowOffsets.length * 4;
     if (columnIndices != null) dataLen += columnIndices.length * 4;
     return dataLen;
+  }
+
+  @Override
+  public void serialize(DataOutputStream output) throws IOException {
+    super.serialize(output);
+    int[] offsets = rowOffsets == null ? new int[0] : rowOffsets;
+    int[] columns = columnIndices == null ? new int[0] : columnIndices;
+    output.writeInt(offsets.length);
+    for (int value : offsets) output.writeInt(value);
+    output.writeInt(columns.length);
+    for (int value : columns) output.writeInt(value);
+  }
+
+  @Override
+  public void deserialize(DataInputStream input) throws IOException {
+    super.deserialize(input);
+    rowOffsets = new int[input.readInt()];
+    for (int i = 0; i < rowOffsets.length; i++) rowOffsets[i] = input.readInt();
+    columnIndices = new int[input.readInt()];
+    for (int i = 0; i < columnIndices.length; i++) columnIndices[i] = input.readInt();
   }
 
   public int[] getRowOffsets() {

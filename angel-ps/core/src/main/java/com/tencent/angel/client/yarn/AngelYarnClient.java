@@ -253,8 +253,18 @@ public class AngelYarnClient extends AngelClient {
     if (libjars != null) {
       FileSystem.mkdirs(jtFs, libjarsDir, angelSysPerms);
       String[] libjarsArr = libjars.split(",");
+
+      String sparkStagingDirStr = conf.get(AngelConf.ANGEL_APP_SPARK_STAGING_DIR);
+      Path sparkStagingDir = sparkStagingDirStr != null ? new Path(sparkStagingDirStr) : null;
+      LOG.info("Spark staging dir from config: " + sparkStagingDir);
       for (String tmpjars : libjarsArr) {
         Path tmp = new Path(tmpjars);
+        URI tmpURI = tmp.toUri();
+        String scheme = tmpURI.getScheme();
+        if (scheme == null && sparkStagingDir != null) {
+          tmp = new Path(sparkStagingDir, tmp.getName());
+          LOG.info("Bare filename resolved to Spark staging path: " + tmp);
+        }
         Path newPath = copyRemoteFiles(libjarsDir, tmp, conf, i);
         DistributedCache.addFileToClassPath(new Path(newPath.toUri().getPath()), conf);
       }
@@ -410,6 +420,23 @@ public class AngelYarnClient extends AngelClient {
     String angelAppMasterUserOptions = conf.get(AngelConf.ANGEL_AM_JAVA_OPTS);
     if (angelAppMasterUserOptions == null) {
       angelAppMasterUserOptions = masterJVMOptions(conf);
+    } else {
+      // When the user opted in to append-mode, prepend the auto-generated defaults so that
+      // -Xmx/-Xms (driven by angel.am.memory.gb), GC logging and other framework defaults
+      // are preserved. The user-supplied opts come last, which lets the JVM's "last flag
+      // wins" rule make user overrides authoritative for any specific knob they care about.
+      // See AngelConf#ANGEL_AM_JAVA_OPTS_APPEND_MODE javadoc.
+      boolean appendMode = conf.getBoolean(AngelConf.ANGEL_AM_JAVA_OPTS_APPEND_MODE,
+          AngelConf.DEFAULT_ANGEL_AM_JAVA_OPTS_APPEND_MODE);
+      if (appendMode) {
+        String defaults = masterJVMOptions(conf);
+        LOG.info("AM java.opts append-mode enabled: defaults + user opts ('"
+            + angelAppMasterUserOptions + "')");
+        angelAppMasterUserOptions = defaults + " " + angelAppMasterUserOptions;
+      } else {
+        LOG.info("AM java.opts override-mode (default): user opts fully replace generated"
+            + " defaults. User must specify -Xmx / -Xloggc themselves.");
+      }
     }
 
     vargs.add(angelAppMasterUserOptions);

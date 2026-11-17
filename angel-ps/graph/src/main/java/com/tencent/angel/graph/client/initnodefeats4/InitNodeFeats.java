@@ -49,12 +49,9 @@ public class InitNodeFeats extends UpdateFunc {
     try {
       for (int i = 0; i < nodeIds.length; i++) {
         Node node = (Node) row.get(nodeIds[i]);
-        if (node == null) {
-          node = new Node();
-          row.set(nodeIds[i], node);
+        if (node != null) {
+          node.setFeats(feats[i]);
         }
-
-        node.setFeats(feats[i]);
       }
     } finally {
       row.endWrite();

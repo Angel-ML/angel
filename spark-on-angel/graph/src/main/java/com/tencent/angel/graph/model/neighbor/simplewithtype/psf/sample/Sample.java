@@ -53,6 +53,7 @@ public class Sample extends GetFunc {
     PartSampleParam param = (PartSampleParam) partParam;
     KeyPart keyPart = param.getIndicesPart();
     int sampleType = param.getSampleType();
+    boolean sampleByType = param.getSampleByType();
 
     long[] nodeIds = ((ILongKeyPartOp) keyPart).getKeys();
     Long2IntOpenHashMap nodeIdToSizes = new Long2IntOpenHashMap(nodeIds.length);
@@ -71,7 +72,7 @@ public class Sample extends GetFunc {
       Entry entry = iter.next();
       distinctNodeIds[index] = entry.getLongKey();
       TypeNeighborElement element = (TypeNeighborElement) row.get(distinctNodeIds[index]);
-      samples[index] = element.Sample(sampleType, r, distinctNodeIds[index], entry.getIntValue());
+      samples[index] = element.Sample(sampleByType, sampleType, r, distinctNodeIds[index], entry.getIntValue());
       index++;
     }
 

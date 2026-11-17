@@ -13,9 +13,9 @@ import java.io.IOException;
  */
 public class UniversalEmbeddingNode implements IElement {
 
-    private float[] embeddings;
-    private float[] slotsValues;
-    private int numSlots;
+    public float[] embeddings;
+    public float[] slotsValues;
+    public int numSlots;
 
     public UniversalEmbeddingNode(float[] embeddings, float[] slotsValues, int numSlots) {
         this.embeddings = embeddings;
@@ -57,12 +57,29 @@ public class UniversalEmbeddingNode implements IElement {
 
     @Override
     public Object deepClone() {
-        float[] cloneEmbeddings = new float[embeddings.length];
-        System.arraycopy(embeddings, 0, cloneEmbeddings, 0, embeddings.length);
-        float[] cloneSlotsValues = new float[slotsValues.length];
-        System.arraycopy(slotsValues, 0, cloneSlotsValues, 0, slotsValues.length);
+        // Both arrays are optional everywhere else in this class: the no-arg and
+        // the single-arg constructors leave slotsValues (and possibly embeddings)
+        // null, serialize/deserialize/bufferLen all guard them with a presence
+        // flag, and the standard init path stores a slot-less node whenever
+        // numSlots <= 1 (see UniversalEmbeddingWithFieldInitAsNodes). Cloning
+        // must therefore tolerate null instead of dereferencing blindly.
+        return new UniversalEmbeddingNode(copyFloats(embeddings), copyFloats(slotsValues), numSlots);
+    }
 
-        return new UniversalEmbeddingNode(cloneEmbeddings, cloneSlotsValues, numSlots);
+    /**
+     * Null-preserving array copy.
+     *
+     * A null array must stay null in the clone: turning it into an empty array
+     * would make the clone serialize differently from the original (presence
+     * flag 1 + length 0 instead of flag 0) and change bufferLen accordingly.
+     */
+    private static float[] copyFloats(float[] src) {
+        if (src == null) {
+            return null;
+        }
+        float[] dst = new float[src.length];
+        System.arraycopy(src, 0, dst, 0, src.length);
+        return dst;
     }
 
     @Override

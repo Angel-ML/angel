@@ -17,62 +17,79 @@
 package com.tencent.angel.graph.client.psf.get.getnodefeats;
 
 import com.tencent.angel.common.ByteBufSerdeUtils;
-import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.graph.data.*;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
+import com.tencent.angel.ps.storage.vector.element.ByteArrayElement;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 public class PartGetNodeFeatsResult extends PartitionGetResult {
 
   private int partId;
-  private Long2ObjectOpenHashMap<IntFloatVector> nodeIdTofeats;
+  private Long2ObjectOpenHashMap<ByteArrayElement> nodeId2Feats;
+  private FeatureKeyType keyType;
 
-  public PartGetNodeFeatsResult(int partId, Long2ObjectOpenHashMap<IntFloatVector> nodeIdTofeats) {
+  public PartGetNodeFeatsResult(int partId, Long2ObjectOpenHashMap<ByteArrayElement> nodeIdTofeats, FeatureKeyType keyType) {
     this.partId = partId;
-    this.nodeIdTofeats = nodeIdTofeats;
+    this.nodeId2Feats = nodeIdTofeats;
+    this.keyType = keyType;
   }
 
   public PartGetNodeFeatsResult() {
-    this(-1, null);
+    this(-1, null, FeatureKeyType.INT);
   }
 
   public int getPartId() {
     return partId;
   }
 
-  public Long2ObjectOpenHashMap<IntFloatVector> getNodeIdTofeats() {
-    return nodeIdTofeats;
+  public FeatureKeyType getKeyType() {
+    return keyType;
+  }
+
+  public Long2ObjectOpenHashMap<ByteArrayElement> getNodeIdToFeats() {
+    return nodeId2Feats;
   }
 
   @Override
   public void serialize(ByteBuf output) {
     ByteBufSerdeUtils.serializeInt(output, partId);
-    ByteBufSerdeUtils.serializeInt(output, nodeIdTofeats.size());
-    for (Long2ObjectOpenHashMap.Entry<IntFloatVector> entry : nodeIdTofeats.long2ObjectEntrySet()) {
+    ByteBufSerdeUtils.serializeInt(output, nodeId2Feats.size());
+    for (Long2ObjectOpenHashMap.Entry<ByteArrayElement> entry : nodeId2Feats.long2ObjectEntrySet()) {
       ByteBufSerdeUtils.serializeLong(output, entry.getLongKey());
-      ByteBufSerdeUtils.serializeVector(output, entry.getValue());
+      entry.getValue().serialize(output);
     }
+    ByteBufSerdeUtils.serializeByte(output, keyType.getIndex());
   }
 
   @Override
   public void deserialize(ByteBuf input) {
     partId = ByteBufSerdeUtils.deserializeInt(input);
     int size = ByteBufSerdeUtils.deserializeInt(input);
-    nodeIdTofeats = new Long2ObjectOpenHashMap<>(size);
-    for (int i = 0; i < size; i++) {
-      long nodeId = ByteBufSerdeUtils.deserializeLong(input);
-      IntFloatVector nodeFeats = (IntFloatVector) ByteBufSerdeUtils.deserializeVector(input);
-      nodeIdTofeats.put(nodeId, nodeFeats);
+    nodeId2Feats = new Long2ObjectOpenHashMap<>(size);
+    try {
+      for (int i = 0; i < size; i++) {
+        long nodeId = ByteBufSerdeUtils.deserializeLong(input);
+        ByteArrayElement nodeFeats = new ByteArrayElement();
+        nodeFeats.deserialize(input);
+
+        nodeId2Feats.put(nodeId, nodeFeats);
+      }
+      keyType = FeatureKeyType.valueOf(ByteBufSerdeUtils.deserializeByte(input));
+    } catch (Exception e) {
+      throw new AngelException("Failed to deserialize node features for node id: " + e.getMessage(), e);
     }
   }
 
   @Override
   public int bufferLen() {
     int len = 2 * ByteBufSerdeUtils.INT_LENGTH;
-    for (Long2ObjectOpenHashMap.Entry<IntFloatVector> entry : nodeIdTofeats.long2ObjectEntrySet()) {
+    for (Long2ObjectOpenHashMap.Entry<ByteArrayElement> entry : nodeId2Feats.long2ObjectEntrySet()) {
       len += ByteBufSerdeUtils.LONG_LENGTH;
-      len += ByteBufSerdeUtils.serializedVectorLen(entry.getValue());
+      len += entry.getValue().bufferLen();
     }
+    len += ByteBufSerdeUtils.BYTE_LENGTH;
     return len;
   }
 }

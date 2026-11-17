@@ -7,6 +7,11 @@ import io.fabric8.kubernetes.client.KubernetesClient
 import org.apache.hadoop.conf.Configuration
 import com.tencent.angel.kubernetesmanager.deploy.config.{Constants, KubernetesConf}
 import com.tencent.angel.conf.AngelConf
+import com.tencent.angel.common.Id
+import com.tencent.angel.ps.PSAttemptId
+import com.tencent.angel.worker.WorkerAttemptId
+import com.tencent.angel.master.ps.attempt.{PSAttemptEvent, PSAttemptEventType}
+import com.tencent.angel.master.worker.attempt.{WorkerAttemptEvent, WorkerAttemptEventType}
 import org.apache.commons.logging.{Log, LogFactory}
 
 import scala.collection.mutable
@@ -48,6 +53,28 @@ private[angel] class AngelExecutorPodsAllocator(
   // Executor IDs that have been requested from Kubernetes but have not been detected in any
   // snapshot yet. Mapped to the timestamp when they were created.
   private val newlyCreatedExecutors = mutable.Map.empty[Long, Long]
+  private val pendingAttempts = mutable.Map.empty[Long, Id]
+
+  private def isAttemptActive(id: Id): Boolean = id match {
+    case ps: PSAttemptId => KubernetesClusterManager.getContext().getParameterServerManager.isAlive(ps)
+    case worker: WorkerAttemptId => KubernetesClusterManager.getContext().getWorkerManager.isAlive(worker)
+    case _ => false
+  }
+
+  private def failAttempt(id: Id): Unit = {
+    if (isAttemptActive(id)) {
+      val handler = KubernetesClusterManager.getContext().getEventHandler
+      id match {
+        case ps: PSAttemptId =>
+          handler.asInstanceOf[org.apache.hadoop.yarn.event.EventHandler[PSAttemptEvent]]
+            .handle(new PSAttemptEvent(PSAttemptEventType.PA_FAILMSG, ps))
+        case worker: WorkerAttemptId =>
+          handler.asInstanceOf[org.apache.hadoop.yarn.event.EventHandler[WorkerAttemptEvent]]
+            .handle(new WorkerAttemptEvent(WorkerAttemptEventType.ERROR, worker))
+        case _ =>
+      }
+    }
+  }
 
   def start(applicationId: String): Unit = {
     snapshotsStore.addSubscriber(podAllocationDelay) {
@@ -59,6 +86,7 @@ private[angel] class AngelExecutorPodsAllocator(
 
   private def onNewSnapshots(applicationId: String, snapshots: Seq[AngelExecutorPodsSnapshot]): Unit = {
     newlyCreatedExecutors --= snapshots.flatMap(_.executorPods.keys)
+    pendingAttempts --= snapshots.flatMap(_.executorPods.keys)
     // For all executors we've created against the API but have not seen in a snapshot
     // yet - check the current time. If the current time has exceeded some threshold,
     // assume that the pod was either never created (the API server never properly
@@ -75,6 +103,10 @@ private[angel] class AngelExecutorPodsAllocator(
         try {
           kubernetesClient
             .pods()
+            .withLabel(Constants.ANGEL_APP_ID_LABEL, applicationId)
+            .withLabel(Constants.ANGEL_ROLE_LABEL,
+              conf.get(AngelConf.ANGEL_KUBERNETES_EXECUTOR_ROLE,
+                AngelConf.DEFAULT_ANGEL_KUBERNETES_EXECUTOR_ROLE))
             .withLabel(Constants.ANGEL_EXECUTOR_ID_LABEL, execId.toString)
             .delete()
         } catch {
@@ -82,6 +114,7 @@ private[angel] class AngelExecutorPodsAllocator(
             println(s"Uncaught exception in thread ${Thread.currentThread().getName}", t)
         }
         newlyCreatedExecutors -= execId
+        pendingAttempts.remove(execId).foreach(failAttempt)
       } else {
         LOG.debug(s"Executor with id $execId was not found in the Kubernetes cluster since it" +
           s" was created ${currentTime - timeCreated} milliseconds ago.")
@@ -115,10 +148,12 @@ private[angel] class AngelExecutorPodsAllocator(
         LOG.info(s"Going to request $numExecutorsToAllocate executors from Kubernetes.")
         loop.breakable {
           for ( _ <- 0 until numExecutorsToAllocate) {
+            var attempt: Id = null
             if (executorRole.equals("ps")) {
               val pSAttemptId = KubernetesClusterManager.getContext()
                 .getParameterServerManager.getPsAttemptIdBlockingQueue.poll()
               if (pSAttemptId != null) {
+                attempt = pSAttemptId
                 conf.set(Constants.ANGEL_EXECUTOR_ID, pSAttemptId.getPsId.getIndex.toString)
                 conf.set(Constants.ANGEL_EXECUTOR_ATTEMPT_ID, pSAttemptId.getIndex.toString)
               } else {
@@ -129,6 +164,10 @@ private[angel] class AngelExecutorPodsAllocator(
               val workerAttemptId = KubernetesClusterManager.getContext()
                 .getWorkerManager.getWorkerAttemptIdBlockingQueue.poll()
               if (workerAttemptId != null) {
+                attempt = workerAttemptId
+                conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS,
+                  KubernetesClusterManager.getContext().getConf.get(
+                    AngelConf.ANGEL_TASK_USER_TASKCLASS, AngelConf.DEFAULT_ANGEL_TASK_USER_TASKCLASS))
                 conf.set(Constants.ANGEL_EXECUTOR_ID, workerAttemptId.getWorkerId.getWorkerGroupId.getIndex.toString)
                 conf.set(Constants.ANGEL_EXECUTOR_ATTEMPT_ID, workerAttemptId.getIndex.toString)
               } else {
@@ -136,6 +175,8 @@ private[angel] class AngelExecutorPodsAllocator(
                 loop.break
               }
             }
+            if (isAttemptActive(attempt)) {
+            try {
             val newExecutorId = EXECUTOR_ID_COUNTER.incrementAndGet()
             val executorConf = KubernetesConf.createExecutorConf(
               conf,
@@ -161,8 +202,19 @@ private[angel] class AngelExecutorPodsAllocator(
               .endSpec()
               .build()
             kubernetesClient.pods().create(podWithAttachedContainer)
-            newlyCreatedExecutors(newExecutorId) = System.currentTimeMillis()
-            LOG.debug(s"Requested executor with id $newExecutorId from Kubernetes.")
+            if (isAttemptActive(attempt)) {
+              newlyCreatedExecutors(newExecutorId) = System.currentTimeMillis()
+              pendingAttempts(newExecutorId) = attempt
+              LOG.debug(s"Requested executor with id $newExecutorId from Kubernetes.")
+            } else {
+              kubernetesClient.pods().withName(podWithAttachedContainer.getMetadata.getName).delete()
+            }
+            } catch {
+              case NonFatal(failure) =>
+                LOG.error(s"Failed to create Kubernetes pod for $attempt", failure)
+                failAttempt(attempt)
+            }
+            }
           }
         }
       } else if (currentRunningExecutors >= currentTotalExpectedExecutors) {

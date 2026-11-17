@@ -20,11 +20,8 @@ package com.tencent.angel.master;
 
 import com.google.protobuf.RpcController;
 import com.google.protobuf.ServiceException;
-import com.tencent.angel.AngelDeployMode;
-import com.tencent.angel.RunningMode;
 import com.tencent.angel.common.location.Location;
 import com.tencent.angel.common.location.LocationManager;
-import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.ipc.MLRPC;
 import com.tencent.angel.ipc.RpcServer;
 import com.tencent.angel.master.app.AMContext;
@@ -41,6 +38,7 @@ import com.tencent.angel.master.ps.attempt.PSAttemptEvent;
 import com.tencent.angel.master.ps.attempt.PSAttemptEventType;
 import com.tencent.angel.master.ps.attempt.PSAttemptRegisterEvent;
 import com.tencent.angel.master.ps.attempt.PSAttemptStateUpdateEvent;
+import com.tencent.angel.master.ps.ps.AMParameterServer;
 import com.tencent.angel.master.task.AMTask;
 import com.tencent.angel.master.task.AMTaskManager;
 import com.tencent.angel.master.worker.attempt.WorkerAttempt;
@@ -139,6 +137,8 @@ import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskClock
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskClockResponse;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskIterationRequest;
 import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos.TaskIterationResponse;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.AssignIndexRequest;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.AssignIndexResponse;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.GetCheckpointsRequest;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.GetCheckpointsResponse;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.GetExecuteUnitDescRequest;
@@ -161,6 +161,8 @@ import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSDoneRequest;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSDoneResponse;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSErrorRequest;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSErrorResponse;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSGetAttemptIndexRequest;
+import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSGetAttemptIndexResponse;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSRegisterRequest;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSRegisterResponse;
 import com.tencent.angel.protobuf.generated.PSMasterServiceProtos.PSReportRequest;
@@ -216,6 +218,12 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 public class MasterService extends AbstractService implements MasterProtocol {
 
   private static final Log LOG = LogFactory.getLog(MasterService.class);
+
+  /**
+   * How many different ports we try when the rpc bind loses a port race
+   */
+  private static final int MAX_BIND_TRY = 10;
+
   private final AMContext context;
   /**
    * RPC server
@@ -399,9 +407,17 @@ public class MasterService extends AbstractService implements MasterProtocol {
       LOG.info(psAttemptId + " doesn't exists!");
       resBuilder.setPsCommand(PSCommandProto.PSCOMMAND_SHUTDOWN);
     } else {
+      Location location =
+          new Location(request.getLocation().getIp(), request.getLocation().getPort());
+      if (!isAllowedPSRegistration(psAttemptId, location)) {
+        LOG.warn("reject psRegister for " + psAttemptId + " from "
+            + com.tencent.angel.ipc.NettyServer.getRemoteAddress() + " advertising " + location);
+        resBuilder.setPsCommand(PSCommandProto.PSCOMMAND_SHUTDOWN);
+        LOG.info(psAttemptId + " register finished!");
+        return resBuilder.build();
+      }
       context.getParameterServerManager().alive(psAttemptId);
-      context.getEventHandler().handle(new PSAttemptRegisterEvent(psAttemptId,
-          new Location(request.getLocation().getIp(), request.getLocation().getPort())));
+      context.getEventHandler().handle(new PSAttemptRegisterEvent(psAttemptId, location));
       LOG.info(psAttemptId + " is registered now!");
       resBuilder.setPsCommand(PSCommandProto.PSCOMMAND_OK);
     }
@@ -409,31 +425,91 @@ public class MasterService extends AbstractService implements MasterProtocol {
     return resBuilder.build();
   }
 
+  private boolean isAllowedPSRegistration(PSAttemptId psAttemptId, Location location) {
+    Configuration conf = context.getConf();
+    if (conf.getBoolean(com.tencent.angel.conf.AngelConf.ANGEL_PS_REGISTER_STRICT,
+        com.tencent.angel.conf.AngelConf.DEFAULT_ANGEL_PS_REGISTER_STRICT)
+        && !context.getParameterServerManager().acceptRegistration(psAttemptId, location)) {
+      return false;
+    }
+    return com.tencent.angel.security.PsRegistrationGuard.sourceMatches(
+        com.tencent.angel.ipc.NettyServer.getRemoteAddress(), location,
+        conf.getBoolean(com.tencent.angel.conf.AngelConf.ANGEL_PS_REGISTER_SOURCE_CHECK,
+            com.tencent.angel.conf.AngelConf.DEFAULT_ANGEL_PS_REGISTER_SOURCE_CHECK));
+  }
+
   @Override
   protected void serviceStart() throws Exception {
     super.serviceStart();
   }
 
-  @Override protected void serviceInit(Configuration conf) throws Exception {
-    String ip;
-    int servicePort;
-    if(conf.get(AngelConf.ANGEL_DEPLOY_MODE, AngelConf.DEFAULT_ANGEL_DEPLOY_MODE).equals("KUBERNETES")) {
-      ip = conf.get(AngelConf.ANGEL_KUBERNETES_MASTER_POD_IP);
-      servicePort = conf.getInt(AngelConf.ANGEL_KUBERNETES_MASTER_PORT,
-              AngelConf.DEFAULT_ANGEL_KUBERNETES_MASTER_PORT);
-    } else {
-      ip = NetUtils.getRealLocalIP();
-      //choose a unused port
-      servicePort = NetUtils.chooseAListenPort(conf);
+  @Override
+  protected void serviceInit(Configuration conf) throws Exception {
+    // Allow callers to pin the master rpc bind address explicitly. This is essential for
+    // STANDALONE distributed deployments (and for any host whose /etc/hosts maps the
+    // hostname to 127.0.0.1) where remote PS/Worker processes would otherwise be told to
+    // connect to a loopback address.
+    boolean kubernetes = context.getDeployMode() == com.tencent.angel.AngelDeployMode.KUBERNETES;
+    String ip = conf.get(kubernetes
+        ? com.tencent.angel.conf.AngelConf.ANGEL_KUBERNETES_MASTER_POD_IP : "angel.am.host");
+    if (kubernetes && (ip == null || ip.trim().isEmpty())) {
+      throw new IOException("Missing Kubernetes master pod IP");
     }
-    LOG.info("listen ip:" + ip + ", port:" + servicePort);
+    if (ip == null || ip.trim().isEmpty()) {
+      ip = NetUtils.getRealLocalIP();
+    } else {
+      ip = ip.trim();
+    }
 
-    location = new Location(ip, servicePort);
-    //start RPC server
-    this.rpcServer = MLRPC
-            .getServer(MasterService.class, this, new Class<?>[] {MasterProtocol.class}, ip, servicePort,
-                    conf);
-    rpcServer.openServer();
+    // Reserve the port with a real listening socket and release it only right before the rpc
+    // bind: several Angel processes draw from the same random port range, so a plain
+    // "test-bind then close then bind later" check loses the race and dies with
+    // "Address already in use".
+    Throwable lastError = null;
+    for (int i = 1; i <= MAX_BIND_TRY; i++) {
+      int servicePort;
+      if (kubernetes) {
+        servicePort = conf.getInt(com.tencent.angel.conf.AngelConf.ANGEL_KUBERNETES_MASTER_PORT,
+            com.tencent.angel.conf.AngelConf.DEFAULT_ANGEL_KUBERNETES_MASTER_PORT);
+      } else {
+        NetUtils.PortReservation reservation = NetUtils.reserveListenPortPair(conf);
+        servicePort = reservation.getPort();
+        reservation.close();
+      }
+      try {
+        LOG.info("listen ip:" + ip + ", port:" + servicePort);
+        this.rpcServer = MLRPC
+            .getServer(MasterService.class, this, new Class<?>[]{MasterProtocol.class}, ip,
+                servicePort, conf);
+        rpcServer.openServer();
+        location = new Location(ip, servicePort);
+        lastError = null;
+        break;
+      } catch (Throwable x) {
+        if (rpcServer != null) {
+          try {
+            rpcServer.stop();
+          } catch (Throwable ignore) {
+            // best effort
+          }
+          rpcServer = null;
+        }
+        lastError = x;
+        if (kubernetes || !NetUtils.isAddressInUse(x)) {
+          break;
+        }
+        LOG.warn("Bind master service on " + ip + ":" + servicePort + " failed (attempt " + i
+            + "/" + MAX_BIND_TRY + "), choose another port", x);
+      }
+    }
+
+    if (lastError != null) {
+      if (lastError instanceof Exception) {
+        throw (Exception) lastError;
+      }
+      throw new IOException("Start master service failed", lastError);
+    }
+
     super.serviceInit(conf);
   }
 
@@ -828,6 +904,28 @@ public class MasterService extends AbstractService implements MasterProtocol {
       builder.addSaveResults(ProtobufUtil.convert(result));
     }
     return builder.build();
+  }
+
+
+  @Override
+  public PSGetAttemptIndexResponse psGetAttemptIndex(RpcController controller,
+                                                     PSGetAttemptIndexRequest request) throws ServiceException {
+    PSGetAttemptIndexResponse.Builder resBuilder = PSGetAttemptIndexResponse.newBuilder();
+    ParameterServerId psId = ProtobufUtil.convertToId(request.getPsId());
+    AMParameterServer amParameterServer = context.getParameterServerManager()
+        .getParameterServer(psId);
+
+    int attemptIndex = amParameterServer.getRunningAttemptId().getIndex();
+    resBuilder.setAttemptIndex(attemptIndex);
+    return resBuilder.build();
+  }
+
+  @Override
+  public AssignIndexResponse assignIndex(RpcController controller, AssignIndexRequest request) throws ServiceException {
+    AssignIndexResponse.Builder resBuilder = AssignIndexResponse.newBuilder();
+    int psIndex = context.getParameterServerManager().assignIndex();
+    resBuilder.setIndex(psIndex);
+    return resBuilder.build();
   }
 
   /**
@@ -1265,21 +1363,11 @@ public class MasterService extends AbstractService implements MasterProtocol {
    * @param controller rpc controller of protobuf
    * @param request start request
    */
-  @Override public StartResponse start(RpcController controller, StartRequest request)
-          throws ServiceException {
+  @Override
+  public StartResponse start(RpcController controller, StartRequest request)
+      throws ServiceException {
     LOG.info("start to calculation");
     context.getApp().startExecute();
-    if (context.getDeployMode() == AngelDeployMode.KUBERNETES && context.getRunningMode() == RunningMode.ANGEL_PS_WORKER) {
-      int workerNum = context.getConf().getInt(AngelConf.ANGEL_WORKERGROUP_NUMBER,
-              AngelConf.DEFAULT_ANGEL_WORKERGROUP_NUMBER);
-      while (context.getWorkerManager().getRegisterWorkerNumber() < workerNum) {
-        LOG.debug("waiting for worker register in monitor...");
-      }
-      LOG.info("Now scheduler and lanuch worker pod.");
-      Configuration workerConf = new Configuration(context.getConf());
-      workerConf.set(AngelConf.ANGEL_KUBERNETES_EXECUTOR_ROLE, "worker");
-      context.getK8sClusterManager().scheduler(workerConf);
-    }
     return StartResponse.newBuilder().build();
   }
 
@@ -1297,6 +1385,13 @@ public class MasterService extends AbstractService implements MasterProtocol {
       SaveRequest request) throws ServiceException {
     ModelSaveContextProto saveContextProto = request.getSaveContext();
     ModelSaveContext saveContext = ProtobufUtil.convert(saveContextProto);
+    try {
+      saveContext.setSavePath(com.tencent.angel.security.ModelPathGuard
+          .validate(context.getConf(), saveContext.getSavePath(), "save").toString());
+    } catch (IOException e) {
+      LOG.warn("reject model save request", e);
+      throw new ServiceException("invalid model save path: " + e.getMessage());
+    }
     List<MatrixSaveContext> needSaveMatrices = saveContext.getMatricesContext();
     int size = needSaveMatrices.size();
     for (int i = 0; i < size; i++) {
@@ -1327,6 +1422,13 @@ public class MasterService extends AbstractService implements MasterProtocol {
 
     ModelLoadContextProto loadContextProto = request.getLoadContext();
     ModelLoadContext loadContext = ProtobufUtil.convert(loadContextProto);
+    try {
+      loadContext.setLoadPath(com.tencent.angel.security.ModelPathGuard
+          .validate(context.getConf(), loadContext.getLoadPath(), "load").toString());
+    } catch (IOException e) {
+      LOG.warn("reject model load request", e);
+      throw new ServiceException("invalid model load path: " + e.getMessage());
+    }
     List<MatrixLoadContext> needLoadMatrices = loadContext.getMatricesContext();
     int size = needLoadMatrices.size();
     for (int i = 0; i < size; i++) {

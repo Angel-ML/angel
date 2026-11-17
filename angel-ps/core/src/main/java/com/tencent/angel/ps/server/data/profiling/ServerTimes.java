@@ -15,6 +15,25 @@ public class ServerTimes implements Serialize {
   public volatile long waitChannelStart = 0;
   public volatile long sendResponseStart = 0;
 
+  /**
+   * {@code System.nanoTime()} at the moment netty handed us the request bytes.
+   *
+   * <p>PS-local only: deliberately NOT serialized (the wire format of this class is parsed
+   * by the client, adding a field would break compatibility), and nanoTime values are
+   * meaningless across processes anyway. Used together with the nanoTime taken at the
+   * beginning of {@code WorkerPool#handle} to measure how long the request waited in the
+   * RPCWorker queue, at nanosecond resolution ({@link #receive} / {@link #handleStart} are
+   * millis and truncate most queue waits to 0).
+   */
+  public volatile long receiveNanos = 0;
+
+  /**
+   * PS-local only (not serialized): true when the request was dispatched to a worker
+   * queue, false when it was handled inline on the netty IO thread (sync path), so the
+   * queue-wait statistics can separate "actually queued" from "never queued".
+   */
+  public volatile boolean queued = false;
+
   private volatile int writerStartPos = 0;
 
   @Override
@@ -59,11 +78,11 @@ public class ServerTimes implements Serialize {
 
   public void update(ByteBuf result) {
     result.setLong(writerStartPos, receive);
-    result.setLong(writerStartPos + 8, handleStart);
-    result.setLong(writerStartPos + 8 * 2, deserializeRequestStart);
-    result.setLong(writerStartPos + 8 * 3, partExeStart);
-    result.setLong(writerStartPos + 8 * 4, allocateResponseBufStart);
-    result.setLong(writerStartPos + 8 * 5, serilizeResponseStart);
+    //result.setLong(writerStartPos + 8, handleStart);
+    //result.setLong(writerStartPos + 8 * 2, deserializeRequestStart);
+    //result.setLong(writerStartPos + 8 * 3, partExeStart);
+    //result.setLong(writerStartPos + 8 * 4, allocateResponseBufStart);
+    //result.setLong(writerStartPos + 8 * 5, serilizeResponseStart);
     result.setLong(writerStartPos + 8 * 6, serilizeResponseOver);
     result.setLong(writerStartPos + 8 * 7, waitChannelStart);
     result.setLong(writerStartPos + 8 * 8, sendResponseStart);

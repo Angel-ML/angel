@@ -129,9 +129,18 @@ public class PartCSRResult extends PartitionGetResult {
 
   @Override public void deserialize(ByteBuf buf) {
     this.len = buf.readInt();
-    this.buf = buf.duplicate();
-    this.buf.retain();
-    //    LOG.info(buf.refCnt());
+    if (len < 0) throw new AngelException("Negative CSR row count");
+    ByteBuf cursor = buf.duplicate();
+    int initialReadable = cursor.readableBytes();
+    for (int i = 0; i < len; i++) {
+      int type = cursor.readUnsignedByte();
+      int count = cursor.readInt();
+      if (count < 0 || (type != 0 && type != 1)) throw new AngelException("Invalid CSR row envelope");
+      long bytes = (long) count * (type == 0 ? 4 : 8);
+      if (bytes > cursor.readableBytes()) throw new AngelException("Truncated CSR row payload");
+      cursor.skipBytes((int) bytes);
+    }
+    this.buf = buf.readSlice(initialReadable - cursor.readableBytes()).retain();
     this.readerIdx = 0;
   }
 

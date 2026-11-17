@@ -17,8 +17,6 @@
 
 package com.tencent.angel.ps.server.data;
 
-import java.util.Objects;
-
 class MatrixPartition {
 
   private final int matrixId;
@@ -44,7 +42,10 @@ class MatrixPartition {
 
   @Override
   public int hashCode() {
-    return Objects.hash(getMatrixId(), getPartitionId());
+    int result = 17;
+    result = 31 * result + matrixId;
+    result = 31 * result + partitionId;
+    return result;
   }
 
   public int getMatrixId() {

@@ -90,7 +90,7 @@ public class IndexGetRowHashTest {
 
   int feaNum = 1000;
   int nnz = 100;
-  int modelSize = 100;
+  int modelSize = 100000;
   int partNum = 5;
 
   static {
@@ -328,7 +328,6 @@ public class IndexGetRowHashTest {
 
     Worker worker = LocalClusterContext.get().getWorker(workerAttempt0Id).getWorker();
     MatrixClient client1 = worker.getPSAgent().getMatrixClient(SPARSE_INT_LONG_MAT, 0);
-    int matrixW1Id = client1.getMatrixId();
 
     long[] index = genLongIndexs(feaNum, nnz);
 
@@ -337,10 +336,7 @@ public class IndexGetRowHashTest {
       deltaVec.set(index[i], (int) index[i]);
     deltaVec.setRowId(0);
 
-    client1.increment(deltaVec);
-    client1.clock().get();
-
-    LongIndexGet func = new LongIndexGet(new LongIndexGetParam(matrixW1Id, 0, index));
+    client1.update(deltaVec);
 
     LongIntVector row = (LongIntVector) client1.get(0, index);
     for (long id : index) {

@@ -1,10 +1,11 @@
 package com.tencent.angel.spark.examples.cluster
 
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.graph.statistics.hyperloglog.HyperEdges
-import com.tencent.angel.graph.utils.GraphIO
 import com.tencent.angel.spark.context.PSContext
 import com.tencent.angel.spark.ml.core.ArgsUtil
+import com.tencent.angel.spark.ml.graph.algo.statistics.hyperloglog._
+import com.tencent.angel.spark.ml.graph.utils.GraphIO
+import com.tencent.angel.spark.ml.util.DataStatistics
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -12,7 +13,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 object HyperEdgesExample {
   def main(args: Array[String]): Unit = {
     val params = ArgsUtil.parse(args)
-    val mode = params.getOrElse("mode", "yarn-cluster")
+    val mode = params.getOrElse("mode", "yarn")
     val input = params.getOrElse("input", "")
     val partitionNum = params.getOrElse("partitionNum", "100").toInt
     val storageLevel = StorageLevel.fromString(params.getOrElse("storageLevel", "MEMORY_ONLY"))
@@ -68,7 +69,10 @@ object HyperEdgesExample {
       null.asInstanceOf[Set[String]]
     }
     //collect app name and data size
-
+    DataStatistics.setAppName(hyperEdges.getClass.getCanonicalName)
+    DataStatistics.calcRDDSize(df, "angel.input.data")
+    DataStatistics.setDataPartitionNum(partitionNum)
+    DataStatistics.setPSPartitionNum(psPartitionNum)
     PSContext.getOrCreate(sc)
 
     var startTime = System.currentTimeMillis()

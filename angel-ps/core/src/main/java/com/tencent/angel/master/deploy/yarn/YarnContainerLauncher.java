@@ -31,6 +31,9 @@ import com.tencent.angel.master.ps.attempt.PSAttemptEventType;
 import com.tencent.angel.master.worker.attempt.WorkerAttemptDiagnosticsUpdateEvent;
 import com.tencent.angel.master.worker.attempt.WorkerAttemptEvent;
 import com.tencent.angel.master.worker.attempt.WorkerAttemptEventType;
+import com.tencent.angel.metrics.AngelMetricsReporter;
+import com.tencent.angel.metrics.AngelPSMetrics;
+import com.tencent.angel.metrics.MetricsUtils;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.worker.WorkerAttemptId;
 import org.apache.commons.logging.Log;
@@ -69,6 +72,10 @@ public class YarnContainerLauncher extends ContainerLauncher {
   private final AtomicBoolean stopped;
   private ContainerManagementProtocolProxy cmProxy;
 
+  private volatile AngelMetricsReporter reporter;
+  private final ConcurrentHashMap<ContainerId, AngelPSMetrics> psMetrics;
+  private boolean metricEnable;
+
   private Container getContainer(YarnContainerLauncherEvent event) {
     ContainerId id = event.getContainerId();
     Container c = containers.get(id);
@@ -77,6 +84,16 @@ public class YarnContainerLauncher extends ContainerLauncher {
       Container old = containers.putIfAbsent(id, c);
       if (old != null) {
         c = old;
+      }
+      if (metricEnable) {
+        AngelPSMetrics metric = createAngelMetricsPS(c.containerId.toString());
+        psMetrics.putIfAbsent(c.containerId, metric);
+
+        String tid = context.getConf().get(AngelConf.ANGEL_METRICS_TID_ANGEL_PS,
+            AngelConf.DEFAULT_ANGEL_METRICS_TID_ANGEL_PS);
+        String sep = context.getConf()
+            .get(AngelConf.ANGEL_METRICS_DELIMITER, AngelConf.DEFAULT_ANGEL_METRICS_DELIMITER);
+        getOrCreateReporter().asyncSend(metric.generateTextMessage(sep), context.getConf(), tid);
       }
     }
     return c;
@@ -93,6 +110,19 @@ public class YarnContainerLauncher extends ContainerLauncher {
     PREP, FAILED, RUNNING, DONE, KILLED_BEFORE_LAUNCH
   }
 
+  private AngelMetricsReporter getOrCreateReporter() {
+    if (reporter == null) {
+      String reporterName = context.getConf()
+          .get(AngelConf.ANGEL_METRICS_REPORTER, AngelConf.DEFAULT_ANGEL_METRICS_REPORTER);
+      reporter = MetricsUtils.getOrCreateReporter(reporterName);
+    }
+    return reporter;
+  }
+
+  private AngelPSMetrics createAngelMetricsPS(String containerId) {
+    AngelPSMetrics metric = new AngelPSMetrics(context.getApplicationId().toString(), containerId);
+    return metric;
+  }
 
   private class Container {
     private ContainerState state;
@@ -197,6 +227,17 @@ public class YarnContainerLauncher extends ContainerLauncher {
       } else if (!isCompletelyDone()) {
         LOG.info("KILLING " + taskId);
 
+        if (metricEnable) {
+          String tid  = context.getConf().get(AngelConf.ANGEL_METRICS_TID_ANGEL_PS,
+              AngelConf.DEFAULT_ANGEL_METRICS_TID_ANGEL_PS);
+          String sep = context.getConf()
+              .get(AngelConf.ANGEL_METRICS_DELIMITER, AngelConf.DEFAULT_ANGEL_METRICS_DELIMITER);
+
+          AngelPSMetrics metric = psMetrics.remove(this.containerId);
+          metric.setEndTime(System.currentTimeMillis());
+          getOrCreateReporter().asyncSend(metric.generateTextMessage(sep), context.getConf(), tid);
+        }
+
         ContainerManagementProtocolProxyData proxy = null;
         try {
           proxy = getCMProxy(this.containerMgrAddress, this.containerId);
@@ -232,6 +273,9 @@ public class YarnContainerLauncher extends ContainerLauncher {
     this.stopped = new AtomicBoolean(false);
     this.containers = new ConcurrentHashMap<ContainerId, Container>();
     this.eventQueue = new LinkedBlockingQueue<ContainerLauncherEvent>();
+    this.psMetrics = new ConcurrentHashMap<ContainerId, AngelPSMetrics>();
+    this.metricEnable = context.getConf()
+        .getBoolean(AngelConf.ANGEL_METRICS_ENABLE, AngelConf.DEFAULT_ANGEL_METRICS_ENABLE);
   }
 
   @Override protected void serviceInit(Configuration conf) throws Exception {

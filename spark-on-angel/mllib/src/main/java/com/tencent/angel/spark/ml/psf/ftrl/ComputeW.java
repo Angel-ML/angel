@@ -32,11 +32,13 @@ public class ComputeW extends MultiRowUpdateFunc {
     super(matrixId, rowIds, values);
   }
 
-  public ComputeW(int matrixId, double alpha, double beta, double lambda1, double lambda2, double offset) {
+  public ComputeW(int matrixId, double alpha, double beta, double lambda1, double lambda2,
+      double offset) {
     this(matrixId, new int[]{0, 1, 2}, new double[][]{{alpha, beta, lambda1, lambda2}, {offset}});
   }
 
-  public ComputeW() {}
+  public ComputeW() {
+  }
 
   @Override
   public void partitionUpdate(PartitionUpdateParam partParam) {
@@ -45,18 +47,19 @@ public class ComputeW extends MultiRowUpdateFunc {
       int[] rowIds = param.getRowIds();
       double[][] values = param.getValues();
       double alpha = values[0][0];
-      double beta  = values[0][1];
+      double beta = values[0][1];
       double lambda1 = values[0][2];
       double lambda2 = values[0][3];
 
       int offset = (int) values[1][0];
 
-      RowBasedPartition part = (RowBasedPartition) psContext.getMatrixStorageManager().getPart(param.getPartKey());
+      RowBasedPartition part = (RowBasedPartition) psContext.getMatrixStorageManager()
+          .getPart(param.getPartKey());
       for (int i = 0; i < offset; i++) {
-        Vector z = ServerRowUtils.getVector(part.getRow(rowIds[0]*offset + i));
-        Vector n = ServerRowUtils.getVector(part.getRow(rowIds[1]*offset + i));
+        Vector z = ServerRowUtils.getVector(part.getRow(rowIds[0] * offset + i));
+        Vector n = ServerRowUtils.getVector(part.getRow(rowIds[1] * offset + i));
         Vector w = Ufuncs.ftrlthreshold(z, n, alpha, beta, lambda1, lambda2);
-        ServerRowUtils.setVector(part.getRow(rowIds[2]*offset + i), w.ifilter(1e-11));
+        ServerRowUtils.setVector(part.getRow(rowIds[2] * offset + i), w.ifilter(1e-11));
       }
 //      // calculate bias
 //      if (param.getPartKey().getStartCol() <= 0 && param.getPartKey().getEndCol() > 0) {

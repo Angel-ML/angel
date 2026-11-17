@@ -1122,8 +1122,8 @@ public abstract class AngelClient implements AngelClientInterface {
     }
   }
 
-  protected void waitForAllPS(int psNumber) throws ServiceException, InterruptedException {
-    boolean isAllPSReady = true;
+  public void waitForAllPS(int psNumber) throws ServiceException, InterruptedException {
+    boolean isAllPSReady;
     while (true) {
       GetAllPSLocationResponse response =
           master.getAllPSLocation(null, GetAllPSLocationRequest.newBuilder().build());

@@ -128,8 +128,28 @@ public class YarnContainerAllocator extends ContainerAllocator {
   /**
    * resource request table
    */
-  private final Set<ResourceRequest> ask = new TreeSet<ResourceRequest>(
-    new org.apache.hadoop.yarn.api.records.ResourceRequest.ResourceRequestComparator());
+  private final Set<ResourceRequest> ask = new TreeSet<ResourceRequest>(RESOURCE_REQUEST_COMPARATOR);
+
+  /**
+   * Compare resource requests by priority, resource name and capability. Yarn's own
+   * ResourceRequestComparator also compares fields added in later Hadoop versions (e.g. the
+   * execution type in 2.9+), which are never set by this allocator and are null when it runs
+   * against a newer Yarn, causing a NullPointerException.
+   */
+  private static final Comparator<ResourceRequest> RESOURCE_REQUEST_COMPARATOR =
+    new Comparator<ResourceRequest>() {
+      @Override
+      public int compare(ResourceRequest r1, ResourceRequest r2) {
+        int ret = r1.getPriority().compareTo(r2.getPriority());
+        if (ret == 0) {
+          ret = r1.getResourceName().compareTo(r2.getResourceName());
+        }
+        if (ret == 0) {
+          ret = r1.getCapability().compareTo(r2.getCapability());
+        }
+        return ret;
+      }
+    };
 
   /**
    * need release container id set

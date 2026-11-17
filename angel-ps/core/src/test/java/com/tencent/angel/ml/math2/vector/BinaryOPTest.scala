@@ -26,7 +26,7 @@ import breeze.linalg.{DenseVector, HashVector, SparseVector}
 import com.tencent.angel.ml.math2.VFactory
 import org.junit.Test
 
-import scala.collection.JavaConversions._
+import scala.collection.convert.ImplicitConversions._
 
 class BinaryOPTest {
 

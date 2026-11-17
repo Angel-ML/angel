@@ -60,7 +60,7 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
     if (numFeatUsed == featureInfo.numFeature)
       (0 until numFeatUsed).map(fid => featureInfo.getNumBin(fid) > 0).toArray
     else
-      new Array[Boolean](numFeatUsed)
+      new Array[Boolean](featureInfo.numFeature)
   }
 
   private[gbdt] val activeNodes = ArrayBuffer[Int]()
@@ -118,8 +118,11 @@ class FPGBDTTrainer(val workerId: Int, val param: GBDTParam,
     if (numFeatUsed != featureInfo.numFeature) {
       ju.Arrays.fill(isFeatUsed, false)
       for (_ <- 0 until numFeatUsed) {
-        val rand = Random.nextInt(featureInfo.numFeature)
-        isFeatUsed(rand) = featureInfo.getNumBin(rand) > 0
+        val random = Random.nextFloat()
+        if (random <= param.featSampleRatio) {
+          val rand = Random.nextInt(featureInfo.numFeature)
+          isFeatUsed(rand) = featureInfo.getNumBin(rand) > 0
+        }
       }
       histManager.reset(isFeatUsed)
     } else if (forest.length == 1) {

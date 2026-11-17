@@ -2,7 +2,7 @@ package com.tencent.angel.graph.data;
 
 import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.common.StreamSerdeUtils;
-import com.tencent.angel.ml.math2.vector.IntFloatVector;
+import com.tencent.angel.ps.storage.vector.element.ByteArrayElement;
 import com.tencent.angel.ps.storage.vector.element.IElement;
 import io.netty.buffer.ByteBuf;
 import java.io.DataInputStream;
@@ -13,17 +13,18 @@ import java.util.Map;
 
 public class MultiGraphNode implements IElement {
 
-  private IntFloatVector feats; // node's feature
-  private Map<String, long[]> neighbors; // node's neighbors
+  private ByteArrayElement feats; // node's feature
+  private FeatureKeyType keyType;
+  private Map<String, Neighbor> neighbors; // node's neighbors
   private Map<String, int[]> types; // types of neighbors (include the node itself)
   private int[] edgeTypes; // types of edges
-  private IntFloatVector[] edgeFeatures; // edges' features
+  private Feature[] edgeFeatures; // edges' features
   private Map<String, float[]> weights; // edges' weights
   private float[] labels; // node or edges' labels, for multi-label node classification or edge classification separately
   private Map<String, AliasTable> aliasTables;// alias table for weighted sampling
 
-  public MultiGraphNode(IntFloatVector feats, Map<String, long[]> neighbors, Map<String, int[]> types, int[] edgeTypes,
-                        IntFloatVector[] edgeFeatures, Map<String, float[]> weights, float[] labels) {
+  public MultiGraphNode(ByteArrayElement feats, Map<String, Neighbor> neighbors, Map<String, int[]> types, int[] edgeTypes,
+      Feature[] edgeFeatures, Map<String, float[]> weights, float[] labels) {
     this.feats = feats;
     this.neighbors = neighbors;
     this.types = types;
@@ -33,43 +34,52 @@ public class MultiGraphNode implements IElement {
     this.labels = labels;
   }
 
-  public MultiGraphNode(IntFloatVector feats, Map<String, long[]> neighbors, Map<String, int[]> types, int[] edgeTypes,
-                        IntFloatVector[] edgeFeatures, Map<String, float[]> weights, float[] labels, Map<String, AliasTable> aliasTables) {
+  public MultiGraphNode(ByteArrayElement feats, Map<String, Neighbor> neighbors, Map<String, int[]> types, int[] edgeTypes,
+      Feature[] edgeFeatures, Map<String, float[]> weights, float[] labels, Map<String, AliasTable> aliasTables) {
     this(feats, neighbors, types, edgeTypes, edgeFeatures, weights, labels);
     this.aliasTables = aliasTables;
   }
 
-  public MultiGraphNode(IntFloatVector feats, Map<String, long[]> neighbors) {
+  public MultiGraphNode(ByteArrayElement feats, Map<String, Neighbor> neighbors) {
     this(feats, neighbors, null, null,
-            null, null, null);
+        null, null, null);
   }
 
   public MultiGraphNode() {
     this(null, null, null, null,
-            null, null, null);
+        null, null, null);
   }
 
-  public IntFloatVector getFeats() {
+  public FeatureKeyType getKeyType() {
+    return keyType;
+  }
+
+  public void setKeyType(FeatureKeyType keyType) {
+    this.keyType = keyType;
+  }
+
+  public ByteArrayElement getFeats() {
     return feats;
   }
 
-  public void setFeats(IntFloatVector feats) {
+  public void setFeats(ByteArrayElement feats, FeatureKeyType keyType) {
     this.feats = feats;
+    this.keyType = keyType;
   }
 
-  public Map<String, long[]> getNeighbors() {
+  public Map<String, Neighbor> getNeighbors() {
     return neighbors;
   }
 
-  public long[] getNeighbors(String name) {
+  public Neighbor getNeighbors(String name) {
     return neighbors.get(name);
   }
 
-  public void setNeighbors(Map<String, long[]> neighbors) {
+  public void setNeighbors(Map<String, Neighbor> neighbors) {
     this.neighbors = neighbors;
   }
 
-  public void setNeighbors(String name, long[] neighs) {
+  public void setNeighbors(String name, Neighbor neighs) {
     if (this.neighbors == null) {
       this.neighbors = new HashMap<>();
     }
@@ -100,11 +110,11 @@ public class MultiGraphNode implements IElement {
     this.edgeTypes = edgeTypes;
   }
 
-  public IntFloatVector[] getEdgeFeatures() {
+  public Feature[] getEdgeFeatures() {
     return edgeFeatures;
   }
 
-  public void setEdgeFeatures(IntFloatVector[] edgeFeatures) {
+  public void setEdgeFeatures(Feature[] edgeFeatures) {
     this.edgeFeatures = edgeFeatures;
   }
 
@@ -156,18 +166,17 @@ public class MultiGraphNode implements IElement {
 
   @Override
   public MultiGraphNode deepClone() {
-    IntFloatVector cloneFeats = null;
+    ByteArrayElement cloneFeats = null;
     if (feats != null) {
-      cloneFeats = feats.clone();
+      cloneFeats =feats.deepClone();
     }
 
-    Map<String, long[]> cloneNeighbors = null;
-    long[] cNeigh = null;
+    Map<String, Neighbor> cloneNeighbors = null;
+   Neighbor cNeigh = null;
     if (neighbors != null) {
       cloneNeighbors = new HashMap();
-      for (Map.Entry<String, long[]> neigh : neighbors.entrySet()) {
-        cNeigh = new long[neigh.getValue().length];
-        System.arraycopy(neigh.getValue(), 0, cNeigh, 0, neigh.getValue().length);
+      for (Map.Entry<String, Neighbor> neigh : neighbors.entrySet()) {
+        cNeigh = (Neighbor)neigh.getValue().deepClone();
         cloneNeighbors.put(neigh.getKey(), cNeigh);
       }
 
@@ -190,9 +199,9 @@ public class MultiGraphNode implements IElement {
       System.arraycopy(edgeTypes, 0, cloneEdgeTypes, 0, edgeTypes.length);
     }
 
-    IntFloatVector[] cloneEdgeFeatures = null;
+    Feature[] cloneEdgeFeatures = null;
     if (edgeFeatures != null) {
-      cloneEdgeFeatures = new IntFloatVector[edgeFeatures.length];
+      cloneEdgeFeatures = new Feature[edgeFeatures.length];
       System.arraycopy(edgeFeatures, 0, cloneEdgeFeatures, 0, edgeFeatures.length);
     }
 
@@ -223,57 +232,70 @@ public class MultiGraphNode implements IElement {
       }
     }
 
-    return new MultiGraphNode(cloneFeats, cloneNeighbors, cloneTypes, cloneEdgeTypes,
+    MultiGraphNode node = new MultiGraphNode(cloneFeats, cloneNeighbors, cloneTypes, cloneEdgeTypes,
             cloneEdgeFeatures, cloneWeights, cloneLables);
+    node.setKeyType(keyType);
+    return node;
   }
 
   @Override
   public void serialize(ByteBuf output) {
     if (feats != null) {
-      ByteBufSerdeUtils.serializeInt(output, 1);
-      ByteBufSerdeUtils.serializeVector(output, feats);
+      ByteBufSerdeUtils.serializeBoolean(output, true);
+      ByteBufSerdeUtils.serializeByte(output, keyType.getIndex());
+      feats.serialize(output);
     } else {
-      ByteBufSerdeUtils.serializeInt(output, 0);
+      ByteBufSerdeUtils.serializeBoolean(output, false);
     }
+
     if (neighbors != null) {
-      ByteBufSerdeUtils.serializeInt(output, 1);
-      ByteBufSerdeUtils.serializeLongsMap(output, neighbors);
-    } else {
-      ByteBufSerdeUtils.serializeInt(output, 0);
-    }
-    if (types != null) {
-      ByteBufSerdeUtils.serializeInt(output, 1);
-      ByteBufSerdeUtils.serializeIntsMap(output, types);
-    } else {
-      ByteBufSerdeUtils.serializeInt(output, 0);
-    }
-    if (edgeTypes != null) {
-      ByteBufSerdeUtils.serializeInt(output, 1);
-      ByteBufSerdeUtils.serializeInts(output, edgeTypes);
-    } else {
-      ByteBufSerdeUtils.serializeInt(output, 0);
-    }
-    if (edgeFeatures != null) {
-      ByteBufSerdeUtils.serializeInt(output, 1);
-      ByteBufSerdeUtils.serializeInt(output, edgeFeatures.length);
-      for (IntFloatVector edgeFeature : edgeFeatures) {
-        ByteBufSerdeUtils.serializeVector(output, edgeFeature);
+      ByteBufSerdeUtils.serializeInt(output, neighbors.size());
+      for (Map.Entry<String, Neighbor> pair: neighbors.entrySet()) {
+        ByteBufSerdeUtils.serializeBytes(output, pair.getKey().getBytes());
+        ByteBufSerdeUtils.serializeByte(output, pair.getValue().getStorageType().getIndex());
+        pair.getValue().serialize(output);
       }
     } else {
       ByteBufSerdeUtils.serializeInt(output, 0);
     }
+
+    if (types != null) {
+      ByteBufSerdeUtils.serializeBoolean(output, true);
+      ByteBufSerdeUtils.serializeIntsMap(output, types);
+    } else {
+      ByteBufSerdeUtils.serializeBoolean(output, false);
+    }
+
+    if (edgeTypes != null) {
+      ByteBufSerdeUtils.serializeBoolean(output, true);
+      ByteBufSerdeUtils.serializeInts(output, edgeTypes);
+    } else {
+      ByteBufSerdeUtils.serializeBoolean(output, false);
+    }
+
+    if (edgeFeatures != null) {
+      ByteBufSerdeUtils.serializeInt(output, edgeFeatures.length);
+      for (Feature edgeFeature : edgeFeatures) {
+        edgeFeature.serialize(output);
+      }
+    } else {
+      ByteBufSerdeUtils.serializeInt(output, 0);
+    }
+
     if (weights != null) {
-      ByteBufSerdeUtils.serializeInt(output, 1);
+      ByteBufSerdeUtils.serializeBoolean(output, true);
       ByteBufSerdeUtils.serializeFloatsMap(output, weights);
     } else {
-      ByteBufSerdeUtils.serializeInt(output, 0);
+      ByteBufSerdeUtils.serializeBoolean(output, false);
     }
+
     if (labels != null) {
-      ByteBufSerdeUtils.serializeInt(output, 1);
+      ByteBufSerdeUtils.serializeBoolean(output, true);
       ByteBufSerdeUtils.serializeFloats(output, labels);
     } else {
-      ByteBufSerdeUtils.serializeInt(output, 0);
+      ByteBufSerdeUtils.serializeBoolean(output, false);
     }
+
     if (aliasTables != null) {
       ByteBufSerdeUtils.serializeInt(output, aliasTables.size());
       for (Map.Entry<String, AliasTable> pair: aliasTables.entrySet()) {
@@ -287,36 +309,56 @@ public class MultiGraphNode implements IElement {
 
   @Override
   public void deserialize(ByteBuf input) {
-    int featsFlag = ByteBufSerdeUtils.deserializeInt(input);
-    if (featsFlag > 0) {
-      feats = (IntFloatVector) ByteBufSerdeUtils.deserializeVector(input);
+    boolean featsFlag = ByteBufSerdeUtils.deserializeBoolean(input);
+    if (featsFlag) {
+      keyType = FeatureKeyType.valueOf(ByteBufSerdeUtils.deserializeByte(input));
+      feats = new ByteArrayElement();
+      feats.deserialize(input);
     }
-    int neighborsFlag = ByteBufSerdeUtils.deserializeInt(input);
-    if (neighborsFlag > 0) {
-      neighbors = ByteBufSerdeUtils.deserializeLongsMap(input);
-    }
-    int typesFlag = ByteBufSerdeUtils.deserializeInt(input);
-    if (typesFlag > 0) {
-      types = ByteBufSerdeUtils.deserializeIntsMap(input);
-    }
-    int edgeTypesFlag = ByteBufSerdeUtils.deserializeInt(input);
-    if (edgeTypesFlag > 0) {
-      edgeTypes = ByteBufSerdeUtils.deserializeInts(input);
-    }
-    int edgeFeaturesFlag = ByteBufSerdeUtils.deserializeInt(input);
-    if (edgeFeaturesFlag > 0) {
-      int len = ByteBufSerdeUtils.deserializeInt(input);
-      edgeFeatures = new IntFloatVector[len];
-      for (int i = 0; i < len; i++) {
-        edgeFeatures[i] = (IntFloatVector) ByteBufSerdeUtils.deserializeVector(input);
+
+    int neighborsSize = ByteBufSerdeUtils.deserializeInt(input);
+    if (neighborsSize > 0) {
+      neighbors = new HashMap<>(neighborsSize);
+      for (int i = 0; i < neighborsSize; i++) {
+        String key = new String(ByteBufSerdeUtils.deserializeBytes(input));
+        NeighborStorageType storageType = NeighborStorageType.valueOf(ByteBufSerdeUtils.deserializeByte(input));
+        Neighbor neighbor;
+        switch (storageType) {
+          case LONGARRAY: neighbor = new LongNeighbor(); break;
+          case INTARRAY: neighbor = new IntNeighbor(); break;
+          default: neighbor = new LongNeighbor(); break;
+        }
+        neighbor.deserialize(input);
+        neighbors.put(key, neighbor);
       }
     }
-    int weightsFlag = ByteBufSerdeUtils.deserializeInt(input);
-    if (weightsFlag > 0) {
+
+    boolean typesFlag = ByteBufSerdeUtils.deserializeBoolean(input);
+    if (typesFlag) {
+      types = ByteBufSerdeUtils.deserializeIntsMap(input);
+    }
+
+    boolean edgeTypesFlag = ByteBufSerdeUtils.deserializeBoolean(input);
+    if (edgeTypesFlag) {
+      edgeTypes = ByteBufSerdeUtils.deserializeInts(input);
+    }
+
+    int edgeFeaturesLen = ByteBufSerdeUtils.deserializeInt(input);
+    if (edgeFeaturesLen > 0) {
+      edgeFeatures = new Feature[edgeFeaturesLen];
+      for (int i = 0; i < edgeFeaturesLen; i++) {
+        edgeFeatures[i] = new Feature();
+        edgeFeatures[i].deserialize(input);
+      }
+    }
+
+    boolean weightsFlag = ByteBufSerdeUtils.deserializeBoolean(input);
+    if (weightsFlag) {
       weights = ByteBufSerdeUtils.deserializeFloatsMap(input);
     }
-    int labelsFlag = ByteBufSerdeUtils.deserializeInt(input);
-    if (labelsFlag > 0) {
+
+    boolean labelsFlag = ByteBufSerdeUtils.deserializeBoolean(input);
+    if (labelsFlag) {
       labels = ByteBufSerdeUtils.deserializeFloats(input);
     }
 
@@ -333,28 +375,37 @@ public class MultiGraphNode implements IElement {
   @Override
   public int bufferLen() {
     // flags len for init value: 8*4
-    int len = 8 * ByteBufSerdeUtils.INT_LENGTH;
+    int len = 5 * ByteBufSerdeUtils.BOOLEN_LENGTH + 3 * ByteBufSerdeUtils.INT_LENGTH;
     if (feats != null) {
-      len += ByteBufSerdeUtils.serializedVectorLen(feats);
+      len += feats.bufferLen() + ByteBufSerdeUtils.BYTE_LENGTH;
     }
+
     if (neighbors != null) {
-      len += ByteBufSerdeUtils.serializedLongsMapLen(neighbors);
+      for (Map.Entry<String, Neighbor> pair: neighbors.entrySet()) {
+        len += ByteBufSerdeUtils.serializedBytesLen(pair.getKey().getBytes());
+        len += ByteBufSerdeUtils.BYTE_LENGTH;
+        len += pair.getValue().bufferLen();
+      }
     }
+
     if (types != null) {
       len += ByteBufSerdeUtils.serializedIntsMapLen(types);
     }
+
     if (edgeTypes != null) {
       len += ByteBufSerdeUtils.serializedIntsLen(edgeTypes);
     }
+
     if (edgeFeatures != null) {
-      len += ByteBufSerdeUtils.INT_LENGTH;
-      for (IntFloatVector edgeFeature : edgeFeatures) {
-        len += ByteBufSerdeUtils.serializedVectorLen(edgeFeature);
+      for (Feature edgeFeature : edgeFeatures) {
+        len += edgeFeature.bufferLen();
       }
     }
+
     if (weights != null) {
       len += ByteBufSerdeUtils.serializedFloatsMapLen(weights);
     }
+
     if (labels != null) {
       len += ByteBufSerdeUtils.serializedFloatsLen(labels);
     }
@@ -371,50 +422,61 @@ public class MultiGraphNode implements IElement {
   @Override
   public void serialize(DataOutputStream output) throws IOException {
     if (feats != null) {
-      StreamSerdeUtils.serializeInt(output, 1);
-      StreamSerdeUtils.serializeVector(output, feats);
+      StreamSerdeUtils.serializeBoolean(output, true);
+      StreamSerdeUtils.serializeByte(output, keyType.getIndex());
+      feats.serialize(output);
     } else {
-      StreamSerdeUtils.serializeInt(output, 0);
+      StreamSerdeUtils.serializeBoolean(output, false);
     }
+
     if (neighbors != null) {
-      StreamSerdeUtils.serializeInt(output, 1);
-      StreamSerdeUtils.serializeLongsMap(output, neighbors);
-    } else {
-      StreamSerdeUtils.serializeInt(output, 0);
-    }
-    if (types != null) {
-      StreamSerdeUtils.serializeInt(output, 1);
-      StreamSerdeUtils.serializeIntsMap(output, types);
-    } else {
-      StreamSerdeUtils.serializeInt(output, 0);
-    }
-    if (edgeTypes != null) {
-      StreamSerdeUtils.serializeInt(output, 1);
-      StreamSerdeUtils.serializeInts(output, edgeTypes);
-    } else {
-      StreamSerdeUtils.serializeInt(output, 0);
-    }
-    if (edgeFeatures != null) {
-      StreamSerdeUtils.serializeInt(output, 1);
-      StreamSerdeUtils.serializeInt(output, edgeFeatures.length);
-      for (IntFloatVector edgeFeature : edgeFeatures) {
-        StreamSerdeUtils.serializeVector(output, edgeFeature);
+      StreamSerdeUtils.serializeInt(output, neighbors.size());
+      for (Map.Entry<String, Neighbor> pair: neighbors.entrySet()) {
+        StreamSerdeUtils.serializeBytes(output, pair.getKey().getBytes());
+        StreamSerdeUtils.serializeByte(output, pair.getValue().getStorageType().getIndex());
+        pair.getValue().serialize(output);
       }
     } else {
       StreamSerdeUtils.serializeInt(output, 0);
     }
+
+    if (types != null) {
+      StreamSerdeUtils.serializeBoolean(output, true);
+      StreamSerdeUtils.serializeIntsMap(output, types);
+    } else {
+      StreamSerdeUtils.serializeBoolean(output, false);
+    }
+
+    if (edgeTypes != null) {
+      StreamSerdeUtils.serializeBoolean(output, true);
+      StreamSerdeUtils.serializeInts(output, edgeTypes);
+    } else {
+      StreamSerdeUtils.serializeBoolean(output, false);
+    }
+
+    if (edgeFeatures != null) {
+      StreamSerdeUtils.serializeInt(output, edgeFeatures.length);
+      for (Feature edgeFeature : edgeFeatures) {
+        edgeFeature.serialize(output);
+      }
+    } else {
+      StreamSerdeUtils.serializeInt(output, 0);
+    }
+
     if (weights != null) {
-      StreamSerdeUtils.serializeInt(output, 1);
+      StreamSerdeUtils.serializeBoolean(output, true);
       StreamSerdeUtils.serializeFloatsMap(output, weights);
     } else {
-      StreamSerdeUtils.serializeInt(output, 0);
+      StreamSerdeUtils.serializeBoolean(output, false);
     }
+
     if (labels != null) {
-      StreamSerdeUtils.serializeInt(output, 1);
+      StreamSerdeUtils.serializeBoolean(output, true);
       StreamSerdeUtils.serializeFloats(output, labels);
     } else {
-      StreamSerdeUtils.serializeInt(output, 0);
+      StreamSerdeUtils.serializeBoolean(output, false);
     }
+
     if (aliasTables != null) {
       StreamSerdeUtils.serializeInt(output, aliasTables.size());
       for (Map.Entry<String, AliasTable> pair: aliasTables.entrySet()) {
@@ -428,38 +490,59 @@ public class MultiGraphNode implements IElement {
 
   @Override
   public void deserialize(DataInputStream input) throws IOException{
-    int featsFlag = StreamSerdeUtils.deserializeInt(input);
-    if (featsFlag > 0) {
-      feats = (IntFloatVector) StreamSerdeUtils.deserializeVector(input);
+    boolean featsFlag = StreamSerdeUtils.deserializeBoolean(input);
+    if (featsFlag) {
+      keyType = FeatureKeyType.valueOf(StreamSerdeUtils.deserializeByte(input));
+      feats = new ByteArrayElement();
+      feats.deserialize(input);
     }
-    int neighborsFlag = StreamSerdeUtils.deserializeInt(input);
-    if (neighborsFlag > 0) {
-      neighbors = StreamSerdeUtils.deserializeLongsMap(input);
-    }
-    int typesFlag = StreamSerdeUtils.deserializeInt(input);
-    if (typesFlag > 0) {
-      types = StreamSerdeUtils.deserializeIntsMap(input);
-    }
-    int edgeTypesFlag = StreamSerdeUtils.deserializeInt(input);
-    if (edgeTypesFlag > 0) {
-      edgeTypes = StreamSerdeUtils.deserializeInts(input);
-    }
-    int edgeFeaturesFlag = StreamSerdeUtils.deserializeInt(input);
-    if (edgeFeaturesFlag > 0) {
-      int len = StreamSerdeUtils.deserializeInt(input);
-      edgeFeatures = new IntFloatVector[len];
-      for (int i = 0; i < len; i++) {
-        edgeFeatures[i] = (IntFloatVector) StreamSerdeUtils.deserializeVector(input);
+
+    int neighborsSize = StreamSerdeUtils.deserializeInt(input);
+    if (neighborsSize > 0) {
+      neighbors = new HashMap<>(neighborsSize);
+      for (int i = 0; i < neighborsSize; i++) {
+        String key = new String(StreamSerdeUtils.deserializeBytes(input));
+        NeighborStorageType storageType = NeighborStorageType.valueOf(StreamSerdeUtils.deserializeByte(input));
+        Neighbor neighbor;
+        switch (storageType) {
+          case LONGARRAY: neighbor = new LongNeighbor(); break;
+          case INTARRAY: neighbor = new IntNeighbor(); break;
+          default: neighbor = new LongNeighbor(); break;
+        }
+        neighbor.deserialize(input);
+        neighbors.put(key, neighbor);
       }
     }
-    int weightsFlag = StreamSerdeUtils.deserializeInt(input);
-    if (weightsFlag > 0) {
+
+    boolean typesFlag = StreamSerdeUtils.deserializeBoolean(input);
+    if (typesFlag) {
+      types = StreamSerdeUtils.deserializeIntsMap(input);
+    }
+
+    boolean edgeTypesFlag = StreamSerdeUtils.deserializeBoolean(input);
+    if (edgeTypesFlag) {
+      edgeTypes = StreamSerdeUtils.deserializeInts(input);
+    }
+
+    int edgeFeaturesLen = StreamSerdeUtils.deserializeInt(input);
+    if (edgeFeaturesLen > 0) {
+      edgeFeatures = new Feature[edgeFeaturesLen];
+      for (int i = 0; i < edgeFeaturesLen; i++) {
+        edgeFeatures[i] = new Feature();
+        edgeFeatures[i].deserialize(input);
+      }
+    }
+
+    boolean weightsFlag = StreamSerdeUtils.deserializeBoolean(input);
+    if (weightsFlag) {
       weights = StreamSerdeUtils.deserializeFloatsMap(input);
     }
-    int labelsFlag = StreamSerdeUtils.deserializeInt(input);
-    if (labelsFlag > 0) {
+
+    boolean labelsFlag = StreamSerdeUtils.deserializeBoolean(input);
+    if (labelsFlag) {
       labels = StreamSerdeUtils.deserializeFloats(input);
     }
+
     int aliasTableSize = StreamSerdeUtils.deserializeInt(input);
     if (aliasTableSize > 0) {
       for (int i = 0; i < aliasTableSize; i++) {

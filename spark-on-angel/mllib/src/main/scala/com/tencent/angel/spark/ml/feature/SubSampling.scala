@@ -40,7 +40,7 @@ object SubSampling {
     * @param data
     * @return
     */
-  def sampling(data: RDD[Array[Int]]): (Long, RDD[Array[Int]]) = {
+  def sampling(data: RDD[Array[Int]], psPartitionNum: Int = -1): (Long, RDD[Array[Int]]) = {
     // First, calculate z(w) for each word
     val numTokens = data.map(sentence => sentence.length).sum()
     val denseDim  = data.flatMap(sentence => sentence).max() + 1
@@ -48,6 +48,10 @@ object SubSampling {
 
     // Create a matrix on server to maintain the frequence for each word
     val freqMatrix = PSMatrixUtils.createPSMatrixCtx("freq", 1, denseDim, RowType.T_INT_DENSE)
+    if (psPartitionNum > 0) {
+      freqMatrix.setMaxColNumInBlock(
+        math.max(1L, (denseDim.toLong + psPartitionNum - 1) / psPartitionNum))
+    }
     val freqMatrixId = PSMatrixUtils.createPSMatrix(freqMatrix)
 
     // Function to initialize the frequence matrix

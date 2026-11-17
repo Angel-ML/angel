@@ -38,6 +38,7 @@ public class LocalMaster extends Thread {
    * Angel Application master
    */
   private final AngelApplicationMaster appMaster;
+  private volatile boolean initialized;
 
   /**
    * Master attempt id
@@ -68,9 +69,10 @@ public class LocalMaster extends Thread {
   @Override public void run() {
     try {
       appMaster.initAndStart();
-    } catch (Exception e) {
+      initialized = true;
+    } catch (Exception | LinkageError e) {
       LOG.fatal("master start failed.", e);
-      LocalClusterContext.get().getLocalCluster().stop();
+      LocalClusterContext.get().setStartupFailure(e);
     }
   }
 
@@ -79,6 +81,10 @@ public class LocalMaster extends Thread {
    *
    * @return Angel Application Master
    */
+  public boolean isInitialized() {
+    return initialized;
+  }
+
   public AngelApplicationMaster getAppMaster() {
     return appMaster;
   }
@@ -87,7 +93,9 @@ public class LocalMaster extends Thread {
    * Exit
    */
   public void exit() {
-    appMaster.getAppContext().getApp().shouldRetry(false);
+    if (appMaster.getAppContext().getApp() != null) {
+      appMaster.getAppContext().getApp().shouldRetry(false);
+    }
     appMaster.shutDownJob();
     interrupt();
   }

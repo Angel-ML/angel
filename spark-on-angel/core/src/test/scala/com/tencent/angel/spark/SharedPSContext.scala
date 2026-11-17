@@ -18,6 +18,8 @@
 
 package com.tencent.angel.spark
 
+import java.nio.file.Files
+import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
@@ -32,6 +34,8 @@ trait SharedPSContext extends BeforeAndAfterAll with BeforeAndAfterEach {
   self: Suite =>
 
   @transient private var _spark: SparkSession = _
+  @transient private lazy val testDirectory =
+    Files.createTempDirectory(getClass.getSimpleName + "-")
 
   def doubleEps: Double = 1e-6
 
@@ -46,9 +50,11 @@ trait SharedPSContext extends BeforeAndAfterAll with BeforeAndAfterEach {
     val psConf = new SparkConf()
       .set("spark.ps.mode", "LOCAL")
       .set("spark.ps.jars", "None")
-      .set("spark.ps.tmp.path", "file:///tmp/stage")
-      .set("spark.ps.out.path", "file:///tmp/output")
-      .set("spark.ps.model.path", "file:///tmp/model")
+      .set("spark.ps.tmp.path", testDirectory.resolve("stage").toUri.toString)
+      .set("spark.ps.out.path", testDirectory.resolve("output").toUri.toString)
+      .set("spark.ps.model.path", testDirectory.resolve("model").toUri.toString)
+      .set("spark.ps.out.tmp.path.prefix", testDirectory.resolve("ps-tmp").toString)
+      .set("spark.hadoop.fs.defaultFS", "file:///")
       .set("spark.ps.instances", "1")
       .set("spark.ps.cores", "1")
       .set("spark.ps.log.level", "DEBUG")
@@ -68,11 +74,14 @@ trait SharedPSContext extends BeforeAndAfterAll with BeforeAndAfterEach {
 
   override def afterAll() {
     try {
-      PSContext.stop() //Todo： aa
-      _spark.stop()
-      _spark = null
+      try PSContext.stop()
+      finally {
+        if (_spark != null) _spark.stop()
+        _spark = null
+      }
     } finally {
-      super.afterAll()
+      try FileUtils.deleteDirectory(testDirectory.toFile)
+      finally super.afterAll()
     }
   }
 

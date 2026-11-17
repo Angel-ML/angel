@@ -8,45 +8,45 @@ import io.netty.buffer.ByteBuf;
 
 public class PartUniversalEmbeddingExtraInitParam extends GeneralPartUpdateParam {
 
-    private int dim;
+  private int dim;
 
-    private int numSlots;
+  private int numSlots;
 
-    public PartUniversalEmbeddingExtraInitParam(int matrixId, PartitionKey partKey,
-                                                KeyValuePart keyValuePart, int dim, int numSlots) {
-        super(matrixId, partKey, keyValuePart);
-        this.dim = dim;
-        this.numSlots = numSlots;
-    }
+  public PartUniversalEmbeddingExtraInitParam(int matrixId, PartitionKey partKey,
+      KeyValuePart keyValuePart, int dim, int numSlots) {
+    super(matrixId, partKey, keyValuePart);
+    this.dim = dim;
+    this.numSlots = numSlots;
+  }
 
-    public PartUniversalEmbeddingExtraInitParam() {
-        this(-1, null, null, -1, -1);
-    }
+  public PartUniversalEmbeddingExtraInitParam() {
+    this(-1, null, null, -1, -1);
+  }
 
-    public int getDim() {
-        return dim;
-    }
+  public int getDim() {
+    return dim;
+  }
 
-    public int getNumSlots() {
-        return numSlots;
-    }
+  public int getNumSlots() {
+    return numSlots;
+  }
 
-    @Override
-    public void serialize(ByteBuf buf) {
-        super.serialize(buf);
-        ByteBufSerdeUtils.serializeInt(buf, dim);
-        ByteBufSerdeUtils.serializeInt(buf, numSlots);
-    }
+  @Override
+  public void serialize(ByteBuf buf) {
+    super.serialize(buf);
+    ByteBufSerdeUtils.serializeInt(buf, dim);
+    ByteBufSerdeUtils.serializeInt(buf, numSlots);
+  }
 
-    @Override
-    public void deserialize(ByteBuf buf) {
-        super.deserialize(buf);
-        dim = ByteBufSerdeUtils.deserializeInt(buf);
-        numSlots = ByteBufSerdeUtils.deserializeInt(buf);
-    }
+  @Override
+  public void deserialize(ByteBuf buf) {
+    super.deserialize(buf);
+    dim = ByteBufSerdeUtils.deserializeInt(buf);
+    numSlots = ByteBufSerdeUtils.deserializeInt(buf);
+  }
 
-    @Override
-    public int bufferLen() {
-        return super.bufferLen() + ByteBufSerdeUtils.INT_LENGTH * 2;
-    }
+  @Override
+  public int bufferLen() {
+    return super.bufferLen() + ByteBufSerdeUtils.INT_LENGTH * 2;
+  }
 }

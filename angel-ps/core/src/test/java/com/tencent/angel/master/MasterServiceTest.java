@@ -39,6 +39,7 @@ import com.tencent.angel.protobuf.generated.PSAgentMasterServiceProtos;
 import com.tencent.angel.protobuf.generated.WorkerMasterServiceProtos.*;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
+import com.tencent.angel.ps.storage.partitioner.RangePartitioner;
 import com.tencent.angel.worker.Worker;
 import com.tencent.angel.worker.WorkerAttemptId;
 import com.tencent.angel.worker.WorkerGroupId;
@@ -106,12 +107,13 @@ import static org.junit.Assert.*;
 
       // add matrix
       MatrixContext mMatrix = new MatrixContext();
-      mMatrix.setName("w1");
+      mMatrix.setName("MasterServiceTest_w1");
       mMatrix.setRowNum(1);
       mMatrix.setColNum(100000);
       mMatrix.setMaxRowNumInBlock(1);
       mMatrix.setMaxColNumInBlock(50000);
       mMatrix.setRowType(RowType.T_INT_DENSE);
+      mMatrix.setPartitionerClass(RangePartitioner.class);
       mMatrix.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix.set(MatrixConf.MATRIX_HOGWILD, "true");
       mMatrix.set(MatrixConf.MATRIX_AVERAGE, "false");
@@ -119,12 +121,13 @@ import static org.junit.Assert.*;
       angelClient.addMatrix(mMatrix);
 
       MatrixContext mMatrix2 = new MatrixContext();
-      mMatrix2.setName("w2");
+      mMatrix2.setName("MasterServiceTest_w2");
       mMatrix2.setRowNum(1);
       mMatrix2.setColNum(100000);
       mMatrix2.setMaxRowNumInBlock(1);
       mMatrix2.setMaxColNumInBlock(50000);
       mMatrix2.setRowType(RowType.T_DOUBLE_DENSE);
+      mMatrix2.setPartitionerClass(RangePartitioner.class);
       mMatrix2.set(MatrixConf.MATRIX_OPLOG_ENABLEFILTER, "false");
       mMatrix2.set(MatrixConf.MATRIX_HOGWILD, "false");
       mMatrix2.set(MatrixConf.MATRIX_AVERAGE, "false");

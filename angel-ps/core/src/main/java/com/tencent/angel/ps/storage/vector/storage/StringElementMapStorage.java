@@ -15,6 +15,7 @@
  *
  */
 
+
 package com.tencent.angel.ps.storage.vector.storage;
 
 import com.tencent.angel.common.ByteBufSerdeUtils;
@@ -105,7 +106,7 @@ public class StringElementMapStorage extends StringElementStorage {
     @Override
     public StringElementMapStorage deepClone() {
         Object2ObjectOpenHashMap<String, IElement> clonedData = new Object2ObjectOpenHashMap(data.size());
-        ObjectIterator<Object2ObjectMap.Entry<String, IElement>> iter = clonedData
+        ObjectIterator<Object2ObjectMap.Entry<String, IElement>> iter = data
                 .object2ObjectEntrySet().fastIterator();
         while(iter.hasNext()) {
             Object2ObjectMap.Entry<String, IElement> entry = iter.next();
@@ -230,7 +231,7 @@ public class StringElementMapStorage extends StringElementStorage {
             for (Entry<String, IElement> entry : data.entrySet()) {
                 if (entry != null && entry.getKey() != null && entry.getValue() != null)
                     dataLen += (ByteBufSerdeUtils.serializedUTF8Len(entry.getKey())
-                            + ByteBufSerdeUtils.serializedObjectLen(entry.getValue()));
+                    + ByteBufSerdeUtils.serializedObjectLen(entry.getValue()));
             }
         }
         return dataLen;

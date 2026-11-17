@@ -17,6 +17,7 @@
 
 package com.tencent.angel.utils;
 
+import com.tencent.angel.ps.server.data.profiling.ServerTimes;
 import com.tencent.angel.ps.server.data.response.IStreamResponse;
 import com.tencent.angel.ps.server.data.response.Response;
 import com.tencent.angel.ps.server.data.response.ResponseData;
@@ -94,20 +95,26 @@ public class ByteBufUtils {
     return allocResultBuf(response.bufferLen(), useDirect);
   }
 
-  public static ByteBuf serializeResponse(Response response, boolean useDirectorBuffer) {
+  public static ByteBuf serializeResponse(Response response, boolean useDirectorBuffer, ServerTimes serverTimes) {
     ResponseData data = response.getData();
 
     // If is stream response, just return bytebuf
     if (data != null
         && (data instanceof IStreamResponse)
         && (((IStreamResponse) data).getOutputBuffer() != null)) {
+      // For stream response
+      // Set server times to null for stream rpc
+      response.setServerTimes(null);
       return ((IStreamResponse) data).getOutputBuffer();
     }
 
     ByteBuf buf = null;
     try {
+      serverTimes.allocateResponseBufStart = System.currentTimeMillis();
       buf = allocResultBuf(response, useDirectorBuffer);
+      serverTimes.serilizeResponseStart = System.currentTimeMillis();
       response.serialize(buf);
+      serverTimes.serilizeResponseOver = System.currentTimeMillis();
     } catch (Throwable x) {
       LOG.error("serialize response failed ", x);
       if (buf != null) {

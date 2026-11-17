@@ -4,7 +4,7 @@ import com.tencent.angel.spark.ml.tree.exception.GBDTException
 import com.tencent.angel.spark.ml.tree.gbdt.tree.GBTTree
 import com.tencent.angel.spark.ml.tree.split.SplitEntry
 
-import scala.collection.JavaConversions._
+import scala.collection.convert.ImplicitConversions._
 import scala.collection.mutable
 
 object FeatureImportance {

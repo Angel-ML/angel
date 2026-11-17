@@ -6,7 +6,6 @@ import com.tencent.angel.graph.client.constent.Constent;
 import com.tencent.angel.ps.storage.vector.element.IElement;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
