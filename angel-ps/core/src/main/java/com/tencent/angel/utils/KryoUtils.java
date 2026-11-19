@@ -19,6 +19,8 @@
 package com.tencent.angel.utils;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoException;
+import com.esotericsoftware.kryo.Registration;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.tencent.angel.ml.metric.Metric;
@@ -46,6 +48,9 @@ public class KryoUtils {
     KryoReflectionFactorySupport kryoRef = kryoRefs.get();
     if (kryoRef == null) {
       kryoRef = new KryoReflectionFactorySupport();
+      // The class and the object of a metric are read separately, so the graph state must be kept
+      // between them; deserializeAlgoMetric resets it once the whole metric has been read
+      kryoRef.setAutoReset(false);
       kryoRefs.set(kryoRef);
     }
 
@@ -62,10 +67,34 @@ public class KryoUtils {
     return baos.toByteArray();
   }
 
+  /**
+   * Deserialize an algorithm metric. The class header is checked before any object is created, so
+   * data that does not describe a {@link Metric} is rejected without instantiating the class it
+   * names.
+   *
+   * @param data serialized metric, written by {@link #serializeAlgoMetric(Metric)}
+   * @return the metric, or null if a null metric was serialized
+   * @throws KryoException if the data does not describe a {@link Metric}
+   */
   public static Metric deserializeAlgoMetric(byte[] data) {
     ByteArrayInputStream bais = new ByteArrayInputStream(data);
     Input input = new Input(bais);
     KryoReflectionFactorySupport kryoRef = getKryoRef();
-    return ((Metric) kryoRef.readClassAndObject(input));
+    try {
+      Registration registration = kryoRef.readClass(input);
+      if (registration == null) {
+        return null;
+      }
+
+      Class<?> type = registration.getType();
+      if (!Metric.class.isAssignableFrom(type)) {
+        throw new KryoException(
+            "Serialized algorithm metric has type " + type.getName() + ", which is not a "
+                + Metric.class.getName());
+      }
+      return (Metric) kryoRef.readObject(input, type);
+    } finally {
+      kryoRef.reset();
+    }
   }
 }
