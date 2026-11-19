@@ -25,14 +25,13 @@ import org.apache.spark.{SparkConf, SparkContext}
 
 object PSVectorExample {
 
-  def start(): Unit = {
+  def start(args: Array[String] = Array.empty[String]): Unit = {
+    val params = com.tencent.angel.spark.ml.core.ArgsUtil.parse(args)
     val conf = new SparkConf()
-    conf.setMaster("local[1]")
+    conf.setMaster(params.getOrElse("mode", conf.get("spark.master", "local[1]")))
     conf.setAppName("PSVector Examples")
-    conf.set("spark.ps.model", "LOCAL")
-    conf.set("spark.ps.jars", "")
-    conf.set("spark.ps.instances", "1")
-    conf.set("spark.ps.cores", "1")
+    conf.setIfMissing("spark.ps.instances", "1")
+    conf.setIfMissing("spark.ps.cores", "1")
 
     val sc = new SparkContext(conf)
     sc.setLogLevel("ERROR")
@@ -46,7 +45,7 @@ object PSVectorExample {
 
   def main(args: Array[String]): Unit = {
 
-    start()
+    start(args)
 
     // create a dense PSVector with 10 dimension (also create a 5x10 dense matrix)
     val dense = PSVector.dense(10, 5)
@@ -63,10 +62,13 @@ object PSVectorExample {
     y.fill(2.0)
 
     // dot-product operation
-    println(VectorUtils.dot(x, y))
+    val dot = VectorUtils.dot(x, y)
+    require(math.abs(dot - 20.0) < 1e-8, "Unexpected PS vector dot product")
+    println(dot)
 
     // pull the whole vector to local
     val vector = dense.pull()
+    require(math.abs(vector.sum() - 10.0) < 1e-8, "PS vector fill failed")
     println(vector.sum())
 
     // pull the vector with indices
@@ -81,7 +83,9 @@ object PSVectorExample {
     val update = VFactory.sparseDoubleVector(10, Array(1, 2), Array(0.0, 0.0))
     dense.update(update)
 
-    println(dense.pull(Array(1, 2, 3)).sum())
+    val updatedSum = dense.pull(Array(1, 2, 3)).sum()
+    require(math.abs(updatedSum - 2.0) < 1e-8, "PS vector update failed")
+    println(updatedSum)
 
 
     stop()

@@ -28,7 +28,7 @@ import com.tencent.angel.psagent.matrix.ResponseType
 import com.tencent.angel.psagent.matrix.transport.adapter.RowSplitCombineUtils
 import org.apache.commons.logging.{Log, LogFactory}
 
-import scala.collection.JavaConversions._
+import scala.collection.convert.ImplicitConversions._
 import scala.collection.mutable
 
 /**

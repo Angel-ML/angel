@@ -72,7 +72,10 @@ public abstract class NettyServer implements RpcServer {
 
   final InetSocketAddress addr;
 
+  private final Configuration conf;
+
   public NettyServer(InetSocketAddress addr, Configuration conf) {
+    this.conf = conf;
     int nThreads =
       conf.getInt(AngelConf.SERVER_IO_THREAD, Math.max(8, (int)(Runtime.getRuntime().availableProcessors() * 0.25)));
     IOMode ioMode = IOMode.valueOf(conf.get(AngelConf.NETWORK_IO_MODE, "NIO"));
@@ -201,13 +204,13 @@ public abstract class NettyServer implements RpcServer {
           Class<? extends VersionedProtocol> class_ = className2Class.get(header.getProtocol());
           if (class_ == null) {
             try {
-              className2Class.put(header.getProtocol(),
-                (Class<? extends VersionedProtocol>) Class.forName(header.getProtocol()));
+              class_ = com.tencent.angel.security.RpcClassGuard
+                  .resolveProtocol(header.getProtocol(), conf);
+              className2Class.put(header.getProtocol(), class_);
             } catch (Exception e1) {
               LOG.error("ClassNotFoundException.", e1);
               throw new ClassNotFoundException(e1.getMessage(), e1);
             }
-            class_ = className2Class.get(header.getProtocol());
           }
 
           returnValue = call(class_, rpcRequestBody, System.currentTimeMillis());

@@ -125,11 +125,13 @@ private[angel] class Client(
 private[angel] class KubernetesClientApplication {
 
   private final val LOG: Log = LogFactory.getLog(classOf[KubernetesClientApplication])
-  private var k8sClient:KubernetesClient = _
-  private var angelMasterPodName: String = _
+  @volatile private var k8sClient: KubernetesClient = _
+  @volatile private var angelMasterPodName: String = _
+  @volatile private var submissionConf: Configuration = _
 
 
   def run(conf: Configuration): Unit = {
+    submissionConf = new Configuration(conf)
     val kubernetesMaster = conf.get(AngelConf.ANGEL_KUBERNETES_MASTER)
     val appName = conf.get(AngelConf.ANGEL_JOB_NAME, AngelConf.DEFAULT_ANGEL_JOB_NAME)
     val kubernetesAppId = s"angel-${conf.get(AngelConf.ANGEL_KUBERNETES_APP_ID).replaceAll("_", "-")}"
@@ -175,7 +177,11 @@ private[angel] class KubernetesClientApplication {
     LOG.info("waiting for get angel master pod ip, pod name is: " + angelMasterPodName)
     try {
       pod = k8sClient.pods().withName(angelMasterPodName).get()
-      podIp = pod.getStatus.getPodIP
+      val phase = pod.getStatus.getPhase
+      if (phase == "Failed" || phase == "Succeeded") {
+        throw new IllegalStateException(s"Kubernetes master pod $angelMasterPodName terminated: $phase")
+      }
+      if (phase == "Running") podIp = pod.getStatus.getPodIP
     } catch {
        case npe: NullPointerException =>
           Thread.sleep(1000)
@@ -188,9 +194,20 @@ private[angel] class KubernetesClientApplication {
     podIp
   }
 
-  //todo
-  def deleteMasterPod: Unit ={
-
+  def deleteMasterPod: Unit = {
+    val conf = submissionConf
+    val name = angelMasterPodName
+    if (conf != null && name != null) {
+      val namespace = conf.get(AngelConf.ANGEL_KUBERNETES_NAMESPACE,
+        AngelConf.DEFAULT_ANGEL_KUBERNETES_NAMESPACE)
+      tryWithResource(AngelKubernetesClientFactory.createKubernetesClient(
+        conf.get(AngelConf.ANGEL_KUBERNETES_MASTER), Some(namespace),
+        AngelConf.ANGEL_KUBERNETES_AUTH_SUBMISSION_CONF_PREFIX, conf, None, None)) { client =>
+        val appId = s"angel-${conf.get(AngelConf.ANGEL_KUBERNETES_APP_ID).replaceAll("_", "-")}"
+        client.pods().withLabel(Constants.ANGEL_APP_ID_LABEL, appId).delete()
+        client.configMaps().withName(name.stripSuffix("-master") + "-master-conf-map").delete()
+      }
+    }
   }
 
   private def tryWithResource[R <: Closeable, T](createResource: => R)(f: R => T): T = {

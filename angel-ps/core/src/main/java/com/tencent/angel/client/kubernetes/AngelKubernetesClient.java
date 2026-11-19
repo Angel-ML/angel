@@ -56,7 +56,8 @@ public class AngelKubernetesClient extends AngelClient {
     /**
      * Kubernetes client app for start angel master
      */
-    private KubernetesClientApplication k8sClientApp;
+    private KubernetesSubmissionBridge k8sClientApp;
+    private volatile Throwable submissionFailure;
 
     @Override public void addMatrix(MatrixContext mContext) throws AngelException {
         super.addMatrix(mContext);
@@ -109,7 +110,7 @@ public class AngelKubernetesClient extends AngelClient {
             Path submitJobFile = JobSubmissionFiles.getJobConfPath(submitJobDir);
             writeConf(conf, submitJobFile);
 
-            k8sClientApp = new KubernetesClientApplication();
+            k8sClientApp = new KubernetesSubmissionBridge(conf);
             /**
              * Launch master and executor thread
              */
@@ -118,10 +119,9 @@ public class AngelKubernetesClient extends AngelClient {
                 public void run() {
                     try {
                         k8sClientApp.run(conf);
-                    } catch (Exception e) {
-                        LOG.error("launch master pod exception");
-                        e.printStackTrace();
-                        throw e;
+                    } catch (Exception | LinkageError e) {
+                        submissionFailure = e;
+                        LOG.error("launch master pod exception", e);
                     }
                 }
             });
@@ -139,7 +139,9 @@ public class AngelKubernetesClient extends AngelClient {
     }
 
     @Override public void kill() {
-        System.exit(-1);
+        if (k8sClientApp != null) {
+            k8sClientApp.deleteMasterPod();
+        }
     }
 
     private void writeConf(Configuration conf, Path jobFile) throws IOException {
@@ -158,6 +160,9 @@ public class AngelKubernetesClient extends AngelClient {
         int tryTime = 0;
         TConnection connection = TConnectionManager.getConnection(conf);
         while (tryTime < maxWaitSeconds) {
+            if (submissionFailure != null) {
+                throw new AngelException("Kubernetes master submission failed", submissionFailure);
+            }
             String masterPodIp = k8sClientApp.getAngelMasterPodIp();
             port = conf.getInt(AngelConf.ANGEL_KUBERNETES_MASTER_PORT, AngelConf.DEFAULT_ANGEL_KUBERNETES_MASTER_PORT);
             if(masterPodIp == null || "".equals(masterPodIp)) {
@@ -182,7 +187,7 @@ public class AngelKubernetesClient extends AngelClient {
             }
         }
 
-        if (tryTime >= maxWaitSeconds && masterLocation == null) {
+        if (tryTime >= maxWaitSeconds) {
             throw new IOException("wait for master location timeout");
         }
     }

@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ml.matrix.psf.update
 
-import scala.collection.JavaConversions._
+import scala.collection.convert.ImplicitConversions._
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math2.utils.VectorUtils
 import com.tencent.angel.ml.math2.vector._

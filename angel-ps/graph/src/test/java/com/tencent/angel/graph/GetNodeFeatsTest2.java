@@ -86,9 +86,11 @@ public class GetNodeFeatsTest2 {
 
     // use local deploy mode and dummy dataspliter
     conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL");
+    conf.set(AngelConf.ANGEL_PS_ROUTER_TYPE, "range");
     conf.setBoolean(AngelConf.ANGEL_AM_USE_DUMMY_DATASPLITER, true);
     conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, CombineTextInputFormat.class.getName());
-    conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH, "file:///F:\\test\\model_1");
+    conf.set(AngelConf.ANGEL_SAVE_MODEL_PATH,
+        LOCAL_FS + TMP_PATH + "/get-node-feats2-" + System.nanoTime());
     conf.set(AngelConf.ANGEL_TRAIN_DATA_PATH, LOCAL_FS + TMP_PATH + "/in");
     conf.set(AngelConf.ANGEL_LOG_PATH, LOCAL_FS + TMP_PATH + "/log");
 
@@ -110,6 +112,7 @@ public class GetNodeFeatsTest2 {
     MatrixContext siMat = new MatrixContext();
     siMat.setName(NODE);
     siMat.setRowType(RowType.T_ANY_LONGKEY_SPARSE);
+    siMat.setPartitionerClass(com.tencent.angel.ps.storage.partitioner.RangePartitioner.class);
     siMat.setRowNum(1);
     siMat.setColNum(10);
     siMat.setMaxColNumInBlock(5);

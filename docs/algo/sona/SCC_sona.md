@@ -1,6 +1,8 @@
 # SCC
 
-> SCC(connected components)算法用于求解图的强连通分量。
+> SCC(Strongly Connected Components)算法用于求解图的强连通分量。
+
+> **注意**：SCC 算法实现暂未包含在当前开源版本中，本文档仅作为算法原理参考，示例命令暂无法运行。
 
 ## 1. 算法介绍
 SCC算法处理有向图中的强连通分量的计算问题。对在同一个强连通分量中的节点，分配一个相同的标签。我们基于Spark On Angel实现了大规模网络上的强连通分量算法。
@@ -51,8 +53,8 @@ $SPARK_HOME/bin/spark-submit \
   --num-executors 1 \
   --executor-cores 4 \
   --executor-memory 10g \
-  --class org.apache.spark.angel.examples.graph.SCCExample \
-  ../lib/spark-on-angel-examples-3.3.0.jar
+  --class com.tencent.angel.spark.examples.cluster.SCCExample \
+  ../lib/spark-on-angel-examples-3.4.0.jar
   input:$input output:$output sep:tab storageLevel:MEMORY_ONLY useBalancePartition:true \
   partitionNum:4 psPartitionNum:1
 ```

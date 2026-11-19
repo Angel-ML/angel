@@ -90,10 +90,11 @@ public class DynamicLongArray extends DynamicArray {
   @Override
   public void deserialize(ByteBuf in) {
     data = ByteBufSerdeUtils.deserializeLongs(in);
+    deserializedSize = data.length;
   }
 
   @Override
   public int bufferLen() {
-    return ByteBufSerdeUtils.LONG_LENGTH * (batchSize * currentBatchIndex + currentBatchPos);
+    return ByteBufSerdeUtils.INT_LENGTH + ByteBufSerdeUtils.LONG_LENGTH * (batchSize * currentBatchIndex + currentBatchPos);
   }
 }

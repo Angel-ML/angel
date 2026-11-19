@@ -18,7 +18,7 @@
 
 package com.tencent.angel.ml.matrix.psf.aggr
 
-import scala.collection.JavaConversions._
+import scala.collection.convert.ImplicitConversions._
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.{BinaryAggrFunc, ScalarAggrResult, ScalarPartitionAggrResult}
 import com.tencent.angel.ml.matrix.psf.get.base.{GetResult, PartitionGetResult}
 import com.tencent.angel.ps.storage.vector.{ServerRow, ServerRowUtils}

@@ -27,35 +27,35 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 public class NnzFeature extends UnaryAggrFunc {
 
-    public NnzFeature(int matrixId, int rowId) {
-        super(matrixId, rowId);
-    }
+  public NnzFeature(int matrixId, int rowId) {
+    super(matrixId, rowId);
+  }
 
-    public NnzFeature() {
-        this(-1, -1);
-    }
+  public NnzFeature() {
+    this(-1, -1);
+  }
 
-    @Override
-    public double mergeInit() {
-        return 0;
-    }
+  @Override
+  public double mergeInit() {
+    return 0;
+  }
 
-    @Override
-    public double mergeOp(double a, double b) {
-        return a + b;
-    }
+  @Override
+  public double mergeOp(double a, double b) {
+    return a + b;
+  }
 
-    @Override
-    public double processRow(ServerRow row) {
-        LongElementStorage storage = ((ServerLongAnyRow) row).getStorage();
-        ObjectIterator<Long2ObjectMap.Entry<IElement>> it = storage.iterator();
-        long size = 0;
-        while (it.hasNext()) {
-            GraphNode node = (GraphNode) (it.next().getValue());
-            if (node.getFeats() != null) {
-                size++;
-            }
-        }
-        return size;
+  @Override
+  public double processRow(ServerRow row) {
+    LongElementStorage storage = ((ServerLongAnyRow) row).getStorage();
+    ObjectIterator<Long2ObjectMap.Entry<IElement>> it = storage.iterator();
+    long size = 0;
+    while (it.hasNext()) {
+      GraphNode node = (GraphNode) (it.next().getValue());
+      if (node.getFeats() != null) {
+        size++;
+      }
     }
+    return size;
+  }
 }

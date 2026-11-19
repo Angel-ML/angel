@@ -19,6 +19,8 @@
 package com.tencent.angel.graph.client.initneighbor;
 
 import com.tencent.angel.PartitionKey;
+import com.tencent.angel.exception.AngelException;
+import com.tencent.angel.psagent.matrix.oplog.cache.RowUpdateSplitUtils;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.UpdateParam;
 import com.tencent.angel.psagent.PSAgentContext;
@@ -51,11 +53,18 @@ public class InitNeighborParam extends UpdateParam {
     List<PartitionKey> partitions =
         PSAgentContext.get().getMatrixMetaManager().getPartitions(matrixId);
 
+    if (nodeIds.length == 0) {
+      return partParams;
+    }
+    if (partitions.isEmpty() || !RowUpdateSplitUtils.isInRange(nodeIds, partitions)) {
+      throw new AngelException("Node ids are outside the range partitions for matrix " + matrixId);
+    }
+
     int nodeIndex = 0;
     int partIndex = 0;
-    while (nodeIndex < nodeIds.length || partIndex < partitions.size()) {
+    while (nodeIndex < nodeIds.length && partIndex < partitions.size()) {
       int length = 0;
-      int endOffset = (int) partitions.get(partIndex).getEndCol();
+      long endOffset = partitions.get(partIndex).getEndCol();
       while (nodeIndex < nodeIds.length && nodeIds[nodeIndex] < endOffset) {
         nodeIndex++;
         length++;

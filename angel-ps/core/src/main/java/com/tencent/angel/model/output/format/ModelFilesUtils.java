@@ -43,6 +43,7 @@ public class ModelFilesUtils {
   }
 
   public static MatrixFormat initFormat(String formatClass, Configuration conf) throws IOException {
+    com.tencent.angel.security.RpcClassGuard.checkFormatClass(formatClass, conf);
     try {
       Constructor constructor = Class.forName(formatClass).getConstructor(Configuration.class);
       return (MatrixFormat) constructor.newInstance(conf);

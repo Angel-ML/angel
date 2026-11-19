@@ -35,7 +35,7 @@ public class InitNodeTypes extends UpdateFunc {
 
     row.startWrite();
     try {
-      for(int i = 0; i < nodeIds.length; i++) {
+      for (int i = 0; i < nodeIds.length; i++) {
         GraphNode graphNode = (GraphNode) row.get(nodeIds[i]);
         if (graphNode == null) {
           graphNode = new GraphNode();

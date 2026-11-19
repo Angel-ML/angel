@@ -22,6 +22,7 @@ package com.tencent.angel.spark.ml.tree.sketch;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 
@@ -53,6 +54,7 @@ public class HeapQuantileSketch extends QuantileSketch {
    */
   private float[] samplesArr; // array of size samples
   private long[] weightsArr; // array of cut points
+  private int[] count;
 
   public HeapQuantileSketch(int k, long estimateN) {
     super(estimateN);
@@ -367,6 +369,94 @@ public class HeapQuantileSketch extends QuantileSketch {
       index = left;
     }
     return res;
+  }
+
+  public float[] getMedianQuantilies(int evenPartition, int numTrain) {
+    SketchUtils.checkEvenPartiotion(evenPartition);
+    if (samplesArr == null || weightsArr == null) {
+      makeSummary();
+    }
+
+    ArrayList<Float> splits = new ArrayList<>();
+    ArrayList<Integer> counts = new ArrayList<>();
+
+
+    if (samplesArr.length == 0) {
+      return new float[1];
+    }
+
+    int dataLen = samplesArr.length;
+    int zeroNum = numTrain - dataLen;
+
+    if (minValue > 0 && zeroNum > 0) {
+      minValue = 0;
+    }
+
+    int index = 1;
+    splits.add(minValue);
+    float lastValue = minValue;
+    while(index < samplesArr.length) {
+      if (samplesArr[index] < 0) {
+        if (samplesArr[index] != lastValue) {
+          splits.add(samplesArr[index]);
+          lastValue = samplesArr[index];
+          counts.add(index);
+        }
+        index += 1;
+      } else if (minValue < 0 && samplesArr[index] >= 0 && lastValue < 0) {
+        splits.add(0.0f);
+        counts.add(index);
+        lastValue = 0;
+      } else if (lastValue == 0 && index == 1 && samplesArr[index - 1] >= 0) {
+        lastValue = 0;
+        index -= 1;
+      } else {
+        if (samplesArr[index] != lastValue) {
+          splits.add(samplesArr[index]);
+          lastValue = samplesArr[index];
+          counts.add(index + zeroNum);
+        }
+        index += 1;
+      }
+    }
+    counts.add(index + zeroNum);
+
+    int len = evenPartition;
+    float[] res;
+    if (splits.size() > len) {
+      res = new float[len + 2];
+    } else {
+      res = new float[splits.size()];
+    }
+    count = new int[res.length];
+
+    if (splits.size() > len) {
+      res[0] = splits.get(0);
+      count[0] = counts.get(0);
+
+      for (int i = 1; i < res.length; i++) {
+        int cutIndex = splits.size() * (i) / (res.length);
+        if (cutIndex < splits.size()) {
+          res[i] = splits.get(cutIndex);
+          count[i] = counts.get(cutIndex);
+        }
+      }
+      res[res.length - 1] = splits.get(splits.size() - 1);
+      count[res.length - 1] = counts.get(counts.size() - 1);
+    } else{
+      for(int i= 0; i < splits.size(); i++) {
+        res[i] = splits.get(i);
+        count[i] = counts.get(i);
+      }
+    }
+    splits.clear();
+    counts.clear();
+
+    return res;
+  }
+
+  public int[] getCount() {
+    return count;
   }
 
   private float getQuantileFromArr(float fraction) {

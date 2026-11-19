@@ -19,7 +19,7 @@ package com.tencent.angel.graph.client.psf.init.initneighbors;
 
 import com.tencent.angel.graph.client.psf.init.GeneralInitParam;
 import com.tencent.angel.graph.data.GraphNode;
-import com.tencent.angel.graph.data.LongNeighbor;
+import com.tencent.angel.graph.data.Neighbor;
 import com.tencent.angel.graph.utils.GraphMatrixUtils;
 import com.tencent.angel.ml.matrix.psf.update.base.GeneralPartUpdateParam;
 import com.tencent.angel.ml.matrix.psf.update.base.PartitionUpdateParam;
@@ -55,13 +55,13 @@ public class InitNeighbor extends UpdateFunc {
 
     row.startWrite();
     try {
-      for(int i = 0;  i < nodeIds.length; i++) {
+      for (int i = 0; i < nodeIds.length; i++) {
         GraphNode graphNode = (GraphNode) row.get(nodeIds[i]);
         if (graphNode == null) {
           graphNode = new GraphNode();
           row.set(nodeIds[i], graphNode);
         }
-        graphNode.setNeighbors(((LongNeighbor)neighbors[i]).getNodeIds());
+        graphNode.setNeighbors((Neighbor) neighbors[i]);
       }
     } finally {
       row.endWrite();

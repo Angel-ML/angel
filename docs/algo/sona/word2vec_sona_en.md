@@ -71,7 +71,7 @@ $SPARK_HOME/bin/spark-submit \
   --executor-cores 4 \
   --executor-memory 10g \
   --class com.tencent.angel.spark.examples.cluster.Word2vecExample \
-  ../lib/spark-on-angel-examples-3.3.0.jar \
+  ../lib/spark-on-angel-examples-3.4.0.jar \
   input:$input output:$output embedding:32 negative:5 epoch:10 stepSize:0.01 batchSize:50 psPartitionNum:10 remapping:false window:5
 ```
 

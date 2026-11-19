@@ -12,7 +12,7 @@ object NeighborDataOps {
                 needReplicateEdges: Boolean = false,
                 dropSelfLoopEdges: Boolean = true
                ): RDD[(Long, Long)] = {
-    dataset.select(srcNodeIdCol, dstNodeIdCol).rdd.mapPartitions { iter =>
+    dataset.select(srcNodeIdCol, dstNodeIdCol).rdd.filter(row => !row.anyNull).mapPartitions { iter =>
       iter.flatMap { row =>
         if (dropSelfLoopEdges && row.getLong(0) == row.getLong(1))
           Iterator.empty
@@ -73,12 +73,13 @@ object NeighborDataOps {
       edge.map { a => (a._1, a._2, a._3) }
   }
 
+
   def loadCompressedEdges(dataset: Dataset[_],
                           srcNodeIdCol: String,
                           dstNodeIdCol: String,
                           compressCol: String
                          ): RDD[(Long, Long)] = {
-    dataset.select(srcNodeIdCol, dstNodeIdCol, compressCol).rdd.mapPartitions { iter =>
+    dataset.select(srcNodeIdCol, dstNodeIdCol, compressCol).rdd.filter(row => !row.anyNull).mapPartitions { iter =>
       iter.flatMap { row =>
         if (row.getLong(0) == row.getLong(1))
           Iterator.empty

@@ -39,7 +39,7 @@ public abstract class KeyValuePart extends DataPart {
 
   @Override
   public int bufferLen() {
-    return ByteBufSerdeUtils.INT_LENGTH * 2;
+    return ByteBufSerdeUtils.INT_LENGTH;
   }
 
 }

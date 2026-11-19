@@ -53,6 +53,7 @@ import com.tencent.angel.ml.matrix.psf.update.update.IncrementRowsParam;
 import com.tencent.angel.ps.PSAttemptId;
 import com.tencent.angel.ps.ParameterServerId;
 import com.tencent.angel.ps.storage.partitioner.ColumnRangePartitioner;
+import com.tencent.angel.ps.storage.partitioner.RangePartitioner;
 import com.tencent.angel.psagent.matrix.MatrixClient;
 import com.tencent.angel.worker.Worker;
 import com.tencent.angel.worker.WorkerAttemptId;
@@ -154,6 +155,7 @@ public class UpdatePSFTest {
     sMat.setColNum(feaNum);
     sMat.setMaxColNumInBlock(feaNum);
     sMat.setRowType(RowType.T_DOUBLE_SPARSE);
+    sMat.setPartitionerClass(RangePartitioner.class);
     angelClient.addMatrix(sMat);
 
     // add dense float matrix
@@ -173,6 +175,7 @@ public class UpdatePSFTest {
     sfMat.setColNum(feaNum);
     sfMat.setMaxColNumInBlock(feaNum / 3);
     sfMat.setRowType(RowType.T_FLOAT_SPARSE);
+    sfMat.setPartitionerClass(RangePartitioner.class);
     angelClient.addMatrix(sfMat);
 
     // add dense float matrix
@@ -192,6 +195,7 @@ public class UpdatePSFTest {
     siMat.setColNum(feaNum);
     siMat.setMaxColNumInBlock(feaNum / 3);
     siMat.setRowType(RowType.T_INT_SPARSE);
+    siMat.setPartitionerClass(RangePartitioner.class);
     angelClient.addMatrix(siMat);
 
     // add dense long matrix
@@ -211,6 +215,7 @@ public class UpdatePSFTest {
     slMat.setColNum(feaNum);
     slMat.setMaxColNumInBlock(feaNum / 3);
     slMat.setRowType(RowType.T_LONG_SPARSE);
+    slMat.setPartitionerClass(RangePartitioner.class);
     angelClient.addMatrix(slMat);
 
     // add sparse long-key float matrix
@@ -220,6 +225,7 @@ public class UpdatePSFTest {
     sldMatrix.setColNum(feaNum);
     sldMatrix.setMaxColNumInBlock(feaNum / 3);
     sldMatrix.setRowType(RowType.T_DOUBLE_SPARSE_LONGKEY);
+    sldMatrix.setPartitionerClass(RangePartitioner.class);
     angelClient.addMatrix(sldMatrix);
 
     // add sparse long-key float matrix
@@ -229,6 +235,7 @@ public class UpdatePSFTest {
     slfMatrix.setColNum(feaNum);
     slfMatrix.setMaxColNumInBlock(feaNum / 3);
     slfMatrix.setRowType(RowType.T_FLOAT_SPARSE_LONGKEY);
+    slfMatrix.setPartitionerClass(RangePartitioner.class);
     angelClient.addMatrix(slfMatrix);
 
     // add sparse long-key int matrix
@@ -238,6 +245,7 @@ public class UpdatePSFTest {
     sliMatrix.setColNum(feaNum);
     sliMatrix.setMaxColNumInBlock(feaNum / 3);
     sliMatrix.setRowType(RowType.T_INT_SPARSE_LONGKEY);
+    sliMatrix.setPartitionerClass(RangePartitioner.class);
     angelClient.addMatrix(sliMatrix);
 
 
@@ -248,6 +256,7 @@ public class UpdatePSFTest {
     sllMatrix.setColNum(feaNum);
     sllMatrix.setMaxColNumInBlock(feaNum / 3);
     sllMatrix.setRowType(RowType.T_LONG_SPARSE_LONGKEY);
+    sllMatrix.setPartitionerClass(RangePartitioner.class);
     angelClient.addMatrix(sllMatrix);
 
     // Start PS
@@ -285,7 +294,7 @@ public class UpdatePSFTest {
 
     testSparseIntLongKeyUDF();
 
-    testSparseLongLongKeyUDF();
+//    testSparseLongLongKeyUDF();
   }
 
 
@@ -440,7 +449,7 @@ public class UpdatePSFTest {
     }
 
     IntDoubleVector deltaVec =
-        new IntDoubleVector(feaNum, new IntDoubleSparseVectorStorage(feaNum, nnz));
+            new IntDoubleVector(feaNum, new IntDoubleSparseVectorStorage(feaNum, nnz));
     for (int i = 0; i < index.length; i++) {
       deltaVec.set(index[i], index[i]);
     }

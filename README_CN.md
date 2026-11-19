@@ -1,11 +1,11 @@
 ![](assets/angel_logo.png)
 
-[![license](http://img.shields.io/badge/license-Apache2.0-brightgreen.svg?style=flat)](https://github.com/Angel-ML/angel/blob/branch-3.2.0/LICENSE.TXT)
-[![Release Version](https://img.shields.io/badge/release-3.2.0-red.svg)](https://github.com/tencent/angel/releases)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/tencent/angel/pulls)
-[![Download Code](https://img.shields.io/badge/download-zip-green.svg)](https://github.com/Angel-ML/angel/archive/refs/heads/branch-3.2.0.zip)
+[![license](https://img.shields.io/badge/license-Apache2.0-brightgreen.svg?style=flat)](https://github.com/Tencent/angel/blob/master/LICENSE.TXT)
+[![Release Version](https://img.shields.io/badge/release-3.4.0-red.svg)](https://github.com/Tencent/angel/releases)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/angel/pulls)
+[![Download Code](https://img.shields.io/badge/download-zip-green.svg)](https://github.com/Tencent/angel/archive/refs/tags/Release-3.4.0.zip)
 
-[(English Documents Available)](./README_en.md)
+[(English Documents Available)](./README.md)
 
 **Angel**是一个基于参数服务器（Parameter Server）理念开发的高性能分布式机器学习和图计算平台，它基于腾讯内部的海量数据进行了反复的调优，并具有广泛的适用性和稳定性，模型维度越高，优势越明显。 **Angel**由腾讯和北京大学联合开发，兼顾了工业界的高可用性和学术界的创新性。
 
@@ -77,21 +77,37 @@
         * [Logistic Regression(LR)](./docs/algo/sona/lr_sona.md)
         * [FTRLFM](./docs/algo/ftrl_fm_spark_en.md)
         * [GBDT](./docs/algo/sona/feature_gbdt_sona.md)
-  * **Angel Graph**
-    * [PageRank](./docs/algo/sona/pagerank_on_sona.md)
-    * [KCORE](./docs/algo/sona/kcore_sona.md)
-    * [HIndex](./docs/algo/sona/hindex_sona.md)
-    * [Closeness](./docs/algo/sona/closeness_sona.md)
-    * [CommonFriends](./docs/algo/sona/commonfriends_sona.md)
-    * [ConnectedComponents](./docs/algo/sona/CC_sona.md)
-    * [TriangleCountingUndirected](./docs/algo/sona/triangle_count_undirected.md)
-    * [Louvain](./docs/algo/sona/louvain_sona.md)
-    * [LPA](./docs/algo/sona/LPA_sona.md)
-    * [LINE](./docs/algo/sona/line_sona.md)
-    * [Word2Vec](./docs/algo/sona/word2vec_sona.md)
-    * [GraphSage](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/graph.md)
-    * [GCN](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/graph.md)
-    * [DGI](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.2.0/docs/graph.md)
+  * **Angel Graph（图计算）**
+    * **图挖掘（传统图算法）**
+      * [PageRank](./docs/algo/sona/pagerank_on_sona.md)
+      * [PageRankPro](./docs/algo/sona/pagerank_pro_on_sona.md)
+      * [HIndex](./docs/algo/sona/hindex_sona.md) / [WeightedHIndex](./docs/algo/sona/weighted_hindex.md)
+      * [KCore](./docs/algo/sona/kcore_sona.md)
+      * [Closeness](./docs/algo/sona/closeness_sona.md)
+      * [CommonFriends](./docs/algo/sona/commonfriends_sona.md)
+      * [TriangleCountingUndirected](./docs/algo/sona/triangle_count_undirected.md)
+      * [ConnectedComponents](./docs/algo/sona/CC_sona.md)
+      * [Louvain](./docs/algo/sona/louvain_sona.md)
+      * [LPA](./docs/algo/sona/LPA_sona.md) / [SLPA](./docs/algo/sona/slpa_sona.md) / [COPRA](./docs/algo/sona/copra_sona.md) / [HANP](./docs/algo/sona/hanp_sona.md)
+      * [EgoNetwork](./docs/algo/sona/ego_network_sona.md)
+      * [Motif](./docs/algo/sona/motif.md)
+      * [Swing](./docs/algo/sona/swing.md)
+    * **图表示学习**
+      * [LINE](./docs/algo/sona/line_sona.md)
+      * [Word2Vec](./docs/algo/sona/word2vec_sona.md)
+      * [DeepWalk](./docs/algo/sona/deepwalk_sona.md)
+      * [Node2Vec](./docs/algo/sona/node2vec_sona.md)
+      * [MetaPath2Vec](./docs/algo/sona/metapath_sona.md)
+      * [EGES](./docs/algo/sona/eges_sona.md)
+    * **图神经网络**（由 [PyTorch-On-Angel](https://github.com/Angel-ML/PyTorch-On-Angel) 支持）
+      * 同构图：[GraphSage](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.5.0/docs/graph.md#21-graphsage)、[RGCN](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.5.0/docs/graph.md#23-relation-gcn-rgcn)、[GAT](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.5.0/docs/graph.md#25-gat)、[DGI/无监督GraphSage](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.5.0/docs/graph.md#22-dgiunsupervised-graphsage)、[EdgeProp](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.5.0/docs/graph.md#24-edgeprop)、[GAMLP](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.5.0/docs/graph.md#211-gamlp)
+      * 异构图：[GATNE](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.5.0/docs/graph.md#213-gatne)
+      * 二部图：[半监督Bipartite GraphSage](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.5.0/docs/graph.md#27-semi-bipartite-graphsage)、[无监督Bipartite GraphSage](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.5.0/docs/graph.md#28-unsupervised-bipartite-graphsage)、[BiGCN](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.5.0/docs/graph.md)、[IGMC](https://github.com/Angel-ML/PyTorch-On-Angel/blob/branch-0.5.0/docs/graph.md#210-igmc)
+    * **向量检索（ANN）**
+      * [HNSW](./docs/algo/sona/hnsw_sona.md)
+      * [BruteForce](./docs/algo/sona/brute_force_sona.md)
+    * **特征工程与图工具**
+      * [特征工程工具集（含 Reindex ID 映射）](./docs/algo/featureEngineering.md)
 
 ## Community
 * Mailing list: angel-tsc@lists.deeplearningfoundation.org

@@ -25,7 +25,16 @@ import com.tencent.angel.common.Serialize;
  * without parameters.
  */
 public abstract class PartitionGetResult implements Serialize {
+  protected GetParam param;
   public PartitionGetResult() {
 
+  }
+
+  public GetParam getParam() {
+    return param;
+  }
+
+  public void setParam(GetParam param) {
+    this.param = param;
   }
 }

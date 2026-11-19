@@ -20,7 +20,7 @@ package com.tencent.angel.graph.model.neighbor.dynamic;
 
 import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.common.StreamSerdeUtils;
-import com.tencent.angel.common.collections.DynamicLongArray;
+import com.tencent.angel.common.collections.CompressedDynamicLongArray;
 import com.tencent.angel.ps.storage.vector.element.IElement;
 import com.twitter.chill.ScalaKryoInstantiator;
 import io.netty.buffer.ByteBuf;
@@ -30,12 +30,12 @@ import java.io.IOException;
 import java.util.Arrays;
 
 /**
- * The complex object that contains a integer array,, it can be stored in PS
+ * The complex object that contains a compressed long array, it can be stored on PS
  */
 public class DynamicNeighborElement implements IElement {
 
   private byte[] data;
-  private DynamicLongArray dynamicData;
+  private CompressedDynamicLongArray dynamicData;
 
   public DynamicNeighborElement(byte[] data) {
     this.data = data;
@@ -43,8 +43,9 @@ public class DynamicNeighborElement implements IElement {
   }
 
   public DynamicNeighborElement() {
-    this.dynamicData = new DynamicLongArray(-1);
-    this.data = new byte[0];
+    // set size to be the average num of neighbors for each node
+    this.dynamicData = new CompressedDynamicLongArray(80, 32);
+    this.data = null;
   }
 
   public byte[] getData() {
@@ -52,10 +53,12 @@ public class DynamicNeighborElement implements IElement {
   }
 
   public void trans() {
-    long[] temp = dynamicData.getData();
-    Arrays.sort(temp);
-    this.data = ScalaKryoInstantiator.defaultPool().toBytesWithoutClass(temp);
-    this.dynamicData = null;
+    if (data == null) {
+      long[] temp = dynamicData.getData();
+      Arrays.sort(temp);
+      this.data = ScalaKryoInstantiator.defaultPool().toBytesWithoutClass(temp);
+      this.dynamicData = null;
+    }
   }
 
   public void add(long[] in) {
@@ -83,7 +86,11 @@ public class DynamicNeighborElement implements IElement {
 
   @Override
   public int bufferLen() {
-    return 4 + data.length;
+    if (data == null) {
+      return dynamicData.bufferLen();
+    } else {
+      return 4 + data.length;
+    }
   }
 
   @Override
@@ -94,6 +101,7 @@ public class DynamicNeighborElement implements IElement {
   @Override
   public void deserialize(DataInputStream input) throws IOException {
     data = StreamSerdeUtils.deserializeBytes(input);
+    dynamicData = null;
   }
 
   @Override

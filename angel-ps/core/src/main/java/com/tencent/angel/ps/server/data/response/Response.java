@@ -22,6 +22,8 @@ import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.common.Serialize;
 import com.tencent.angel.ps.server.data.ServerState;
 import com.tencent.angel.ps.server.data.TransportMethod;
+import com.tencent.angel.ps.server.data.profiling.ServerTimes;
+import com.tencent.angel.ps.server.data.request.RequestData;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -42,21 +44,29 @@ public class Response implements Serialize {
    */
   private ResponseData data;
 
+  private RequestData requestData;
+
+  /**
+   * Server times
+   */
+  public volatile ServerTimes serverTimes;
+
   /**
    * Create a new Response.
    *
    * @param header response header(meta data)
    */
-  public Response(ResponseHeader header, ResponseData data) {
+  public Response(ResponseHeader header, ResponseData data, ServerTimes serverTimes) {
     this.header = header;
     this.data = data;
+    this.serverTimes = serverTimes;
   }
 
   /**
    * Create a new Response.
    */
   public Response() {
-    this(null, null);
+    this(null, null, null);
   }
 
   @Override public void serialize(ByteBuf buf) {
@@ -67,21 +77,49 @@ public class Response implements Serialize {
     } else {
       ByteBufSerdeUtils.serializeBoolean(buf, false);
     }
+
+    if(serverTimes != null) {
+      ByteBufSerdeUtils.serializeBoolean(buf, true);
+      serverTimes.serialize(buf);
+    } else {
+      ByteBufSerdeUtils.serializeBoolean(buf, false);
+    }
+  }
+
+  public void deserializeHeader(ByteBuf buf) {
+    header = new ResponseHeader();
+    header.deserialize(buf);
+  }
+
+  public void deserializeData(ByteBuf buf) {
+    if(ByteBufSerdeUtils.deserializeBoolean(buf)) {
+      data = ResponseFactory.createEmptyResponseData(TransportMethod.valueOf(header.methodId));
+      data.setRequestData(requestData);
+      data.deserialize(buf);
+    }
+
+    if(ByteBufSerdeUtils.deserializeBoolean(buf)) {
+      serverTimes = new ServerTimes();
+      serverTimes.deserialize(buf);
+    }
   }
 
   @Override public void deserialize(ByteBuf buf) {
-    header = new ResponseHeader();
-    header.deserialize(buf);
-    if(ByteBufSerdeUtils.deserializeBoolean(buf)) {
-      data = ResponseFactory.createEmptyResponseData(TransportMethod.valueOf(header.methodId));
-      data.deserialize(buf);
-    }
+    deserializeHeader(buf);
+    deserializeData(buf);
   }
 
   @Override public int bufferLen() {
     int len = header.bufferLen();
+
+    len += ByteBufSerdeUtils.BOOLEN_LENGTH;
     if(data != null) {
-      len = data.bufferLen();
+      len += data.getDataLen();
+    }
+
+    len += ByteBufSerdeUtils.BOOLEN_LENGTH;
+    if(serverTimes != null) {
+      len += serverTimes.bufferLen();
     }
     return len;
   }
@@ -144,6 +182,7 @@ public class Response implements Serialize {
   public String toString() {
     return "Response{" +
         "header=" + header +
+        "data=" + header + data.getDataLen() +
         '}';
   }
 
@@ -161,5 +200,17 @@ public class Response implements Serialize {
 
   public void setData(ResponseData data) {
     this.data = data;
+  }
+
+  public ServerTimes getServerTimes() {
+    return serverTimes;
+  }
+
+  public void setServerTimes(ServerTimes serverTimes) {
+    this.serverTimes = serverTimes;
+  }
+
+  public void setRequestData(RequestData requestData) {
+    this.requestData = requestData;
   }
 }

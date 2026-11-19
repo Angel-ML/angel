@@ -31,9 +31,19 @@ case "$ANGEL_ON_K8S_CMD" in
       exec "$@"
       ;;
 esac
-ANGEL_CLASSPATH="$ANGEL_CLASSPATH:${ANGEL_HOME}/lib/*:$CLASSPATH"
+ANGEL_LIB_CLASSPATH=""
+for jar in "${ANGEL_HOME}"/lib/*.jar; do
+  if compgen -G "${ANGEL_HOME}/lib/hadoop-common-2.*.jar" > /dev/null; then
+    case "${jar##*/}" in
+      hadoop-client-api-*.jar | hadoop-client-runtime-*.jar) continue ;;
+    esac
+  fi
+  ANGEL_LIB_CLASSPATH="${ANGEL_LIB_CLASSPATH:+$ANGEL_LIB_CLASSPATH:}$jar"
+done
+ANGEL_CLASSPATH="${ANGEL_CLASSPATH:+$ANGEL_CLASSPATH:}$ANGEL_LIB_CLASSPATH${CLASSPATH:+:$CLASSPATH}"
 env | grep ANGEL_JAVA_OPT_ | sort -t_ -k4 -n | sed 's/[^=]*=\(.*\)/\1/g' > /tmp/java_opts.txt
 readarray -t ANGEL_EXECUTOR_JAVA_OPTS < /tmp/java_opts.txt
+ANGEL_MASTER_JAVA_OPTS=("${ANGEL_EXECUTOR_JAVA_OPTS[@]}")
 
 if [ -n "$ANGEL_EXTRA_CLASSPATH" ]; then
   ANGEL_CLASSPATH="$ANGEL_CLASSPATH:$ANGEL_EXTRA_CLASSPATH"

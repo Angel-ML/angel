@@ -22,7 +22,7 @@
     <parent>
         <groupId>com.tencent.angel</groupId>
         <artifactId>angel-ps</artifactId>
-        <version>3.3.0</version>
+        <version>3.4.0</version>
     </parent>
     <artifactId>angel-ps-core</artifactId>
     <name>angel-ps-core</name>
@@ -53,6 +53,12 @@
             <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-client</artifactId>
             <version>3.0.0</version>
+        </dependency>
+        <!-- Runtime for the generated stubs under com.tencent.angel.flatbuffers (flatc 23.5.26). -->
+        <dependency>
+            <groupId>com.google.flatbuffers</groupId>
+            <artifactId>flatbuffers-java</artifactId>
+            <version>23.5.26</version>
         </dependency>
     </dependencies>
 

@@ -27,34 +27,34 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 
 public class NnzEdge extends UnaryAggrFunc {
 
-    public NnzEdge(int matrixId, int rowId) {
-        super(matrixId, rowId);
-    }
+  public NnzEdge(int matrixId, int rowId) {
+    super(matrixId, rowId);
+  }
 
-    public NnzEdge() {
-    }
+  public NnzEdge() {
+  }
 
-    @Override
-    public double mergeInit() {
-        return 0;
-    }
+  @Override
+  public double mergeInit() {
+    return 0;
+  }
 
-    @Override
-    public double mergeOp(double a, double b) {
-        return a + b;
-    }
+  @Override
+  public double mergeOp(double a, double b) {
+    return a + b;
+  }
 
-    @Override
-    public double processRow(ServerRow row) {
-        LongElementStorage storage = ((ServerLongAnyRow) row).getStorage();
-        ObjectIterator<Long2ObjectMap.Entry<IElement>> it = storage.iterator();
-        long size = 0;
-        while (it.hasNext()) {
-            GraphNode node = (GraphNode) (it.next().getValue());
-            if (node.getNeighbors() != null) {
-                size += node.getNeighbors().length;
-            }
-        }
-        return size;
+  @Override
+  public double processRow(ServerRow row) {
+    LongElementStorage storage = ((ServerLongAnyRow) row).getStorage();
+    ObjectIterator<Long2ObjectMap.Entry<IElement>> it = storage.iterator();
+    long size = 0;
+    while (it.hasNext()) {
+      GraphNode node = (GraphNode) (it.next().getValue());
+      if (node.getNeighbors() != null) {
+        size += node.getNeighbors().getNeighborsNum();
+      }
     }
+    return size;
+  }
 }

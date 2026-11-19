@@ -125,17 +125,20 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
   var wtMat: PSModel = PSModel(WORD_TOPIC_MAT, V, K, blockNum(V, K), K)
     .setRowType(RowType.T_INT_SPARSE)
     .setOplogType("T_INT_SPARSE")
+    .setPartitionerType("range")
 
   val tMat = PSModel(TOPIC_MAT, 1, K, 1, K)
     .setRowType(RowType.T_LONG_DENSE)
     .setOplogType("T_LONG_DENSE")
     .setNeedSave(false)
+    .setPartitionerType("range")
 
 
   val vocabularyMatrix = PSModel(VOCABULARY_MAT, 1, numTasks, 1, numTasks)
     .setRowType(RowType.T_INT_DENSE)
     .setOplogType("T_INT_DENSE")
     .setNeedSave(false)
+    .setPartitionerType("range")
 
 
   val actType = conf.get(AngelConf.ANGEL_ACTION_TYPE)

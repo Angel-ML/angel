@@ -1,0 +1,450 @@
+/*
+ * Tencent is pleased to support the open source community by making Angel available.
+ *
+ * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/Apache-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
+/**
+ * Author: zhitaowang (zhitaowang@tecent.com)
+ * Created At: 2021/03/01
+ */
+package com.tencent.angel.spark.ml.graph.algo.embedding.bge
+
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.concurrent.TimeUnit
+
+import com.tencent.angel.graph.common.param.ModelContext
+import com.tencent.angel.graph.common.psf.param.IntKeysUpdateParam
+import com.tencent.angel.graph.utils.ModelContextUtils
+import com.tencent.angel.ml.matrix.{MatrixContext, RowType}
+import com.tencent.angel.model.output.format.{MatrixFilesMeta, ModelFilesConstent}
+import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadContext, ModelSaveContext}
+import com.tencent.angel.ps.storage.vector.element.IElement
+import com.tencent.angel.spark.context.{AngelPSContext, PSContext}
+import com.tencent.angel.spark.ml.util.LogUtils
+import com.tencent.angel.spark.models.PSMatrix
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
+import org.apache.hadoop.fs.Path
+import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SparkSession
+
+import scala.util.Random
+
+
+/**
+  * Base class of BGE PS Model
+  *
+  * @param embeddingMatrix embedding matrix
+  */
+class BGEPSModel(embeddingMatrix: PSMatrix, modelContext: ModelContext) extends AlgoPSModel {
+  checkpointContext.addReadWriteMatrix(embeddingMatrix)
+
+  /**
+    * Negative sample for a batch nodes
+    *
+    * @param srcNodeIds   src node ids
+    * @param tgtNodeIds   tgt node ids
+    * @param sampleNum sample number per node
+    * @param seed      random seed
+    * @return sample results
+    */
+  def negativeSample(srcNodeIds: Array[Int], tgtNodeIds: Array[Int], sampleNum: Int, seed: Int) = {
+    //val seed = UUID.randomUUID().hashCode()
+    val rand = new Random(seed)
+    val sampleTgtNodes = new Array[Array[Int]](srcNodeIds.length)
+    val sampleSrcNodes = new Array[Array[Int]](srcNodeIds.length)
+    var nodeIndex: Int = 0
+
+    val maxNodeId = modelContext.getMaxNodeId.toInt
+    val minNodeId = modelContext.getMinNodeId.toInt
+    for (i <- srcNodeIds.indices) {
+      var sampleIndex: Int = 0
+      sampleTgtNodes(nodeIndex) = new Array[Int](sampleNum)
+      while (sampleIndex < sampleNum) {
+        val target = rand.nextInt(maxNodeId - minNodeId) + minNodeId
+        if (target != srcNodeIds(i) && target != tgtNodeIds(i)) {
+          sampleTgtNodes(nodeIndex)(sampleIndex) = target
+          sampleIndex += 1
+        }
+      }
+      sampleIndex = 0
+      sampleSrcNodes(nodeIndex) = new Array[Int](sampleNum)
+      while (sampleIndex < sampleNum) {
+        val source = rand.nextInt(maxNodeId - minNodeId) + minNodeId
+        if (source != srcNodeIds(i) && source != tgtNodeIds(i)) {
+          sampleSrcNodes(nodeIndex)(sampleIndex) = source
+          sampleIndex += 1
+        }
+      }
+      nodeIndex += 1
+    }
+    (sampleSrcNodes, sampleTgtNodes)
+  }
+
+  /**
+    * Push the update to PS
+    *
+    * @param srcUpdates  src node embedding updates
+    * @param tgtUpdates tgt node embedding updates
+    * @return future object for async
+    */
+  def adjust(srcUpdates: Int2ObjectOpenHashMap[Array[Float]], tgtUpdates: Int2ObjectOpenHashMap[Array[Float]]) = {
+    embeddingMatrix.asyncPsfUpdate(new BGEAdjust(
+      new BGEAdjustParam(embeddingMatrix.id, srcUpdates, tgtUpdates))).get(600000, TimeUnit.MILLISECONDS)
+  }
+
+  /**
+    * Get node embedding vectors
+    *
+    * @param srcNodes        src nodes
+    * @param tgtNodes       tgt nodes
+    * @param srcNegSamples source negative sample nodes
+    * @param tgtNegSamples target negative sample nodes
+    * @param negative        negative sample number per node
+    * @return node id to embedding vector map
+    */
+  def getEmbedding(srcNodes: Array[Int], tgtNodes: Array[Int], srcNegSamples: Array[Array[Int]], tgtNegSamples: Array[Array[Int]], negative: Int) = {
+    embeddingMatrix.asyncPsfGet(new BGEGetEmbedding(new BGEGetEmbeddingParam(embeddingMatrix.id, srcNodes, tgtNodes,
+      srcNegSamples, tgtNegSamples, negative))).get(600000, TimeUnit.MILLISECONDS).asInstanceOf[BGEGetEmbeddingResult].getResult
+  }
+
+  /**
+    * Initialize the embedding vector on PS
+    *
+    * @param seed      random seed
+    * @param dimension embedding vector dimension
+    */
+  def randomInitialize(seed: Int, dimension: Int) = {
+    if (modelContext.isUseHashPartition) {
+      // Init as mini-batch
+      val beforeRandomize = System.currentTimeMillis()
+      modelContext.getMinNodeId.toInt.to(modelContext.getMaxNodeId.toInt).sliding(10000000, 10000000).foreach(e => {
+        embeddingMatrix.asyncPsfUpdate(new LINEModelRandomizeAsNodes(
+          new RandomizeUpdateAsNodesParam(embeddingMatrix.id, dimension, e.toArray, seed)))
+          .get(600000, TimeUnit.MILLISECONDS)
+      })
+      logTime(s"Model successfully Randomized, cost ${(System.currentTimeMillis() - beforeRandomize) / 1000.0}s")
+    } else {
+      // Just init by range
+      val beforeRandomize = System.currentTimeMillis()
+      embeddingMatrix.asyncPsfUpdate(new BGEModelRandomize(
+        new RandomizeUpdateParam(embeddingMatrix.id, dimension, seed)))
+        .get(1800000, TimeUnit.MILLISECONDS)
+      logTime(s"Model successfully Randomized, cost ${(System.currentTimeMillis() - beforeRandomize) / 1000.0}s")
+    }
+  }
+
+  def extraInitialize(extraInputRDD: RDD[String], extraOutputRDD: RDD[String], batchSize: Int): Unit = {
+    val conf = SparkContext.getOrCreate().getConf
+    val keyValueSep = conf.get("spark.hadoop.angel.line.keyvalue.sep", "colon") match {
+      case "space" => " "
+      case "comma" => ","
+      case "tab" => "\t"
+      case "colon" => ":"
+      case "bar" => "\\|"
+    }
+    val featSep = conf.get("spark.hadoop.angel.line.feature.sep", "space") match {
+      case "space" => " "
+      case "comma" => ","
+      case "tab" => "\t"
+      case "colon" => ":"
+      case "bar" => "\\|"
+    }
+    var beforeInitialize = System.currentTimeMillis()
+    if (extraInputRDD != null) {
+      extraInputRDD.mapPartitions { iterator =>
+        iterator.sliding(batchSize, batchSize)
+          .foreach(batch => extraUpdate(batch.toArray, keyValueSep, featSep, true))
+        Iterator.single()
+      }.count()
+    }
+    LogUtils.logTime(s"Model successfully extra Initial input embedding, " +
+      s"cost ${(System.currentTimeMillis() - beforeInitialize) / 1000.0}s")
+    if (extraOutputRDD != null) {
+      beforeInitialize = System.currentTimeMillis()
+      extraOutputRDD.mapPartitions { iterator =>
+        iterator.sliding(batchSize, batchSize)
+          .foreach(batch => extraUpdate(batch.toArray, keyValueSep, featSep, false))
+        Iterator.single()
+      }.count()
+      LogUtils.logTime(s"Model successfully extra Initial output embedding, " +
+        s"cost ${(System.currentTimeMillis() - beforeInitialize) / 1000.0}s")
+    }
+  }
+
+  def extraUpdate(strings: Array[String], keyValueSep: String, featSep: String, isInput: Boolean): Unit = {
+    val updates = new Int2ObjectOpenHashMap[Array[Float]]()
+    if (keyValueSep.equals(featSep)) {
+      strings.map { line =>
+        val splits = line.split(keyValueSep)
+        val key = splits(0).toInt
+        val value = splits.slice(1, splits.length).map(v => v.toFloat)
+        updates.put(key, value)
+      }
+    } else {
+      strings.map { line =>
+        val splits = line.split(keyValueSep)
+        val key = splits(0).toInt
+        val value = splits(1).split(featSep).map(v => v.toFloat)
+        updates.put(key, value)
+      }
+    }
+    if (isInput) {
+      embeddingMatrix.psfUpdate(new BGEAdjust(new BGEAdjustParam(embeddingMatrix.id, updates, null,
+        true))).get()
+    } else {
+      embeddingMatrix.psfUpdate(new BGEAdjust(new BGEAdjustParam(embeddingMatrix.id, null, updates,
+        true))).get()
+    }
+
+  }
+
+  /**
+    * Dump the embedding matrix on PS to HDFS
+    *
+    * @param checkpointId checkpoint id
+    */
+  def checkpointEmbeddingMatrix(checkpointId: Int) = {
+    val matrixNames = new Array[String](1)
+    matrixNames(0) = embeddingMatrix.name
+    CheckpointUtils.checkpoint(checkpointId, matrixNames)
+  }
+
+  /**
+    * Save the model on PS to hdfs
+    *
+    * @param modelPathRoot model save root path
+    * @param epoch         epoch index
+    */
+  def save(modelPathRoot: String, epoch: Int): Unit = {
+    save(new Path(modelPathRoot, s"CP_$epoch").toString)
+  }
+
+  /**
+    * Save the model on PS to hdfs
+    *
+    * @param modelPath save path
+    */
+  def save(modelPath: String): Unit = {
+    logTime(s"saving model to $modelPath")
+    val ss = SparkSession.builder().getOrCreate()
+
+    // Delete if exist
+    deleteIfExists(modelPath, ss)
+
+    // Save use  format
+    val srcEmbSaveContext = new ModelSaveContext(new Path(modelPath, s"src_embedding").toString)
+    srcEmbSaveContext.addMatrix(new MatrixSaveContext(embeddingMatrix.name, classOf[BGESrcEmbOutputFormat].getTypeName))
+    PSContext.instance().save(srcEmbSaveContext)
+    deleteMetaIfExists(new Path(modelPath, s"src_embedding").toString)
+
+    val tgtEmbSaveContext = new ModelSaveContext(new Path(modelPath, s"tgt_embedding").toString)
+    tgtEmbSaveContext.addMatrix(new MatrixSaveContext(embeddingMatrix.name, classOf[BGETgtEmbOutputFormat].getTypeName))
+    PSContext.instance().save(tgtEmbSaveContext)
+    deleteMetaIfExists(new Path(modelPath, s"tgt_embedding").toString)
+  }
+
+  private def deleteMetaIfExists(modelPath: String): Unit = {
+    // Remove the meta file
+    try {
+      val metaPath = new Path(new Path(modelPath, embeddingMatrix.name), ModelFilesConstent.modelMetaFileName)
+      // Build hadoop conf
+      val conf = AngelPSContext.convertToHadoop(SparkContext.getOrCreate().getConf)
+      val fs = metaPath.getFileSystem(conf)
+      // Remove
+      val ret = fs.delete(metaPath, true)
+      if (!ret) {
+        LogUtils.logTime(s"Warning: remove meta file failed !!!")
+      }
+    } catch {
+      case e: Throwable => LogUtils.logTime(s"Warning: remove meta file failed !!!")
+    }
+  }
+
+  private def deleteIfExists(modelPath: String, ss: SparkSession): Unit = {
+    val path = new Path(modelPath)
+    val fs = path.getFileSystem(ss.sparkContext.hadoopConfiguration)
+    if (fs.exists(path)) {
+      fs.delete(path, true)
+    }
+  }
+
+  /**
+    * Load model from hdfs to PS
+    *
+    * @param modelPath model save path
+    */
+  def load(modelPath: String): Unit = {
+    val startTime = System.currentTimeMillis()
+    logTime(s"load model from $modelPath")
+
+    val loadContext = new ModelLoadContext(modelPath)
+    loadContext.addMatrix(new MatrixLoadContext(embeddingMatrix.name))
+    PSContext.getOrCreate(SparkContext.getOrCreate()).load(loadContext)
+    logTime(s"model load time=${System.currentTimeMillis() - startTime} ms")
+  }
+
+  def logTime(msg: String): Unit = {
+    val time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date)
+    println(s"[$time] $msg")
+  }
+}
+
+object BGEPSModel {
+  val embedding = "embedding"
+  val neighborTable = "neighborTable"
+  val aliasTable = "aliasTable"
+
+  def apply(modelContext: ModelContext, dimension: Int, isWeighted: Boolean, extraInputEmbeddingRDD: RDD[String], extraOutputEmbeddingRDD: RDD[String], batchSize: Int): BGEPSModel = {
+
+    // Create a matrix for embedding vectors
+
+    val embeddingContext: MatrixContext = ModelContextUtils.createMatrixContext(modelContext,
+      embedding, RowType.T_ANY_INTKEY_SPARSE, classOf[BGENode])
+
+    // If use range partition, as id is in int range and continues, we use dense format to speed up data access
+    if (modelContext.isUseRangePartition) {
+      embeddingContext.setRowType(RowType.T_ANY_INTKEY_DENSE)
+      embeddingContext.setIndexStart(0)
+    }
+
+    val embeddingMatrix: PSMatrix = PSMatrix.matrix(embeddingContext)
+
+    var model: BGEPSModel = null
+    if (isWeighted) {
+      // Create a matrix for alias table
+      val aliasTableContext = ModelContextUtils.createMatrixContextWithUserDefinePartition(modelContext, aliasTable,
+        RowType.T_INT_SPARSE, classOf[EdgeAliasTablePartition])
+
+      val aliasTableMatrix: PSMatrix = PSMatrix.matrix(aliasTableContext)
+
+      model = new BGEWithWeightPSModel(embeddingMatrix, embeddingMatrix, aliasTableMatrix, modelContext)
+    } else {
+      model = new BGEPSModel(embeddingMatrix, modelContext)
+    }
+
+    // init model
+    if (extraInputEmbeddingRDD != null || extraOutputEmbeddingRDD != null) {
+      model.randomInitialize(model.hashCode(), dimension)
+      model.extraInitialize(extraInputEmbeddingRDD, extraOutputEmbeddingRDD, batchSize)
+    } else {
+      model.randomInitialize(model.hashCode(), dimension)
+    }
+    model
+  }
+
+  def getMaxId(oldModelPath: String): Long = {
+    val meteFilePath = new Path(new Path(oldModelPath, BGEPSModel.embedding), ModelFilesConstent.modelMetaFileName)
+    val meta = new MatrixFilesMeta
+    val conf = AngelPSContext.convertToHadoop(SparkContext.getOrCreate().getConf)
+    val fs = meteFilePath.getFileSystem(conf)
+    if (!fs.exists(meteFilePath)) throw new IOException("matrix meta file does not exist ")
+    val input = fs.open(meteFilePath)
+    try
+      meta.read(input)
+    catch {
+      case e: Throwable =>
+        throw new IOException("Read meta failed ", e)
+    } finally input.close()
+    val colNum = meta.getCol
+    LogUtils.logTime("Load model max col is: " + colNum)
+    colNum
+  }
+}
+
+/**
+  * PS model for weighted bge
+  *
+  * @param embeddingMatrix     embedding matrix
+  * @param neighborTableMatrix neighbor table matrix
+  * @param aliasTableMatrix    alias table matrix
+  * @param modelContext        model context
+  */
+class BGEWithWeightPSModel(embeddingMatrix: PSMatrix,
+                           neighborTableMatrix: PSMatrix,
+                           aliasTableMatrix: PSMatrix,
+                           modelContext: ModelContext) extends BGEPSModel(embeddingMatrix: PSMatrix,
+  modelContext: ModelContext) {
+
+  /**
+    * Notice the PS that all neighbors are push, PS will build the alias table
+    *
+    * @return
+    */
+  def initNeighborsOver() = {
+    neighborTableMatrix.asyncPsfUpdate(new InitAliasTable(new InitAliasTableParam(neighborTableMatrix.id,
+      aliasTableMatrix.id))).get(1800000, TimeUnit.MILLISECONDS)
+  }
+
+  /**
+    * Push the neighbor table to PS for a mini-batch nodes
+    *
+    * @param pairs nodes to neighbor table map
+    * @return
+    */
+  def initNeighbors(pairs: Seq[(Int, Iterable[(Int, Float)])]) = {
+    var index = 0
+    val nodeIds = new Array[Int](pairs.size)
+    val edgeWightPairs = new Array[IElement](pairs.size)
+
+    pairs.foreach(pair => {
+      nodeIds(index) = pair._1
+      val iter = pair._2
+      val neighbors = new Array[Int](iter.size)
+      val weights = new Array[Float](iter.size)
+      var neighborIndex = 0
+      iter.foreach(it => {
+        neighbors(neighborIndex) = it._1
+        weights(neighborIndex) = it._2
+        neighborIndex += 1
+      })
+      edgeWightPairs(index) = new EdgeWeightPairs(neighbors, weights)
+      index += 1
+    })
+
+    neighborTableMatrix.asyncPsfUpdate(
+      new InitEdgeWeight(
+        new IntKeysUpdateParam(
+          neighborTableMatrix.id, nodeIds, edgeWightPairs)))
+      .get(1800000, TimeUnit.MILLISECONDS)
+  }
+
+  /**
+    * Sample a mini-batch edges
+    *
+    * @param batchSize       sample number
+    * @param sampleBatchSize sample batch size
+    * @return sampled edges
+    */
+  def sampleEdges(batchSize: Int, sampleBatchSize: Int) = {
+    val table = PSPartitionAliasTable.get(aliasTableMatrix)
+    val sampleResult = aliasTableMatrix.asyncPsfGet(new SampleWithWeight(new SampleWithWeightParam(aliasTableMatrix.id,
+      batchSize, sampleBatchSize, table))).get(600000, TimeUnit.MILLISECONDS).asInstanceOf[SampleWithWeightResult]
+    (sampleResult.getSrcNodes, sampleResult.getDstNodes)
+  }
+
+  /**
+    * Dump the alias table on PS to HDFS
+    *
+    * @param checkpointId checkpoint id
+    */
+  def checkpointEmbeddingAndAliasTable(checkpointId: Int) = {
+    val matrixNames = new Array[String](2)
+    matrixNames(0) = embeddingMatrix.name
+    matrixNames(1) = aliasTableMatrix.name
+    CheckpointUtils.checkpoint(checkpointId, matrixNames)
+  }
+}

@@ -3,7 +3,9 @@
 source ./spark-on-angel-env.sh
 
 ${SPARK_HOME}/bin/spark-submit \
-    --master yarn-cluster \
+    --master yarn \
+    --deploy-mode cluster \
+    --conf spark.executor.extraJavaOptions=-XX:+UseG1GC \
     --conf spark.ps.jars=${SONA_ANGEL_JARS} \
     --conf spark.ps.instances=2 \
     --conf spark.ps.cores=2 \
@@ -18,4 +20,4 @@ ${SPARK_HOME}/bin/spark-submit \
     ./../lib/spark-on-angel-examples-${ANGEL_VERSION}.jar \
     input:${ANGEL_HDFS_HOME}/data/bc/edge \
     output:${ANGEL_HDFS_HOME}/output \
-    resetProp:0.15 \
+    resetProp:0.15

@@ -23,7 +23,7 @@ Angel Graph有以下核心能力：
 ![angel-graph](../img/angel_graph.png)
 
 
-Angel Graph中的Spark On Angel模块将Angel灵活的参数服务器插件式地赋能给原生Spark，为Spark提供了高效的数据存储/更新/共享服务，因而非常适用于分布式图计算框架。同时Spark On Angel又沿用了原生Spark的变成接口，使得在该框架上的算法开发可以利用Spark的能力。
+Angel Graph中的Spark On Angel模块将Angel灵活的参数服务器插件式地赋能给原生Spark，为Spark提供了高效的数据存储/更新/共享服务，因而非常适用于分布式图计算框架。同时Spark On Angel又沿用了原生Spark的编程接口，使得在该框架上的算法开发可以利用Spark的能力。
 
 #### Spark组件
 

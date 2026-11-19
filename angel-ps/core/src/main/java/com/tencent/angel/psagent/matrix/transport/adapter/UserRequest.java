@@ -40,6 +40,17 @@ public abstract class UserRequest {
   private static final AtomicInteger idGen = new AtomicInteger(0);
 
   /**
+   * Wall-clock timestamp at which this user request was created (i.e. the moment the
+   * caller — typically Spark driver / executor code — entered the
+   * {@code MatrixClient} async path). Used as the start-of-lifetime reference for the
+   * adapter-level deadline watchdog: any user request still un-completed after a
+   * configurable window is forcibly failed (see {@code UserRequestAdapter}). This is the
+   * last-resort safety net that prevents a single stuck partition response from hanging
+   * a Spark task indefinitely on {@code FutureResult.get()}.
+   */
+  private final long createTs = System.currentTimeMillis();
+
+  /**
    * Create a new UserRequest
    *
    * @param type request type
@@ -47,6 +58,11 @@ public abstract class UserRequest {
   public UserRequest(UserRequestType type) {
     this.requestId = idGen.incrementAndGet();
     this.type = type;
+  }
+
+  /** @return the creation wall-clock timestamp of this user request, in milliseconds. */
+  public long getCreateTs() {
+    return createTs;
   }
 
   /**

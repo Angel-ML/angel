@@ -34,6 +34,8 @@ public class IntArrayElement implements IElement {
     this.data = data;
   }
 
+  public IntArrayElement() { this(null); }
+
   public int[] getData() {
     return data;
   }

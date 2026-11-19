@@ -18,10 +18,13 @@
 
 package com.tencent.angel.client;
 
+import com.google.protobuf.ServiceException;
+import com.tencent.angel.AngelDeployMode;
 import com.tencent.angel.RunningMode;
 import com.tencent.angel.conf.AngelConf;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.exception.InvalidParameterException;
+import com.tencent.angel.master.deploy.DeployUtils;
 import com.tencent.angel.ml.matrix.MatrixContext;
 import com.tencent.angel.ml.matrix.RowType;
 import com.tencent.angel.model.ModelLoadContext;
@@ -56,6 +59,10 @@ public class AngelPSClient {
   public AngelPSClient(Configuration conf) {
     this.conf = conf;
     client = AngelClientFactory.get(conf);
+  }
+
+  public String getAppId() {
+    return client.getAppId();
   }
 
   private void loadSysConfig() throws InvalidParameterException {
@@ -118,6 +125,16 @@ public class AngelPSClient {
     client.run();
     return new AngelContext(client.getMasterLocation(), conf);
   }
+
+  public void waitAllPSReady() throws ServiceException, InterruptedException {
+    int psNum = client.getConf().getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER);
+    client.waitForAllPS(psNum);
+  }
+
+  public AngelClient getClient() {
+    return client;
+  }
+
 
   /**
    * Add a matrix
@@ -194,6 +211,18 @@ public class AngelPSClient {
       client.stop();
     } catch (AngelException e) {
       LOG.warn("kill ps failed.", e);
+    }
+  }
+
+  /**
+   * Wait all PS start
+   */
+  public void waitPS() {
+    try {
+      client.waitForAllPS(conf.getInt(AngelConf.ANGEL_PS_NUMBER, AngelConf.DEFAULT_ANGEL_PS_NUMBER));
+    } catch (Exception e) {
+      LOG.warn("check ps failed.", e);
+      throw new AngelException("ps start failed");
     }
   }
 }

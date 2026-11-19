@@ -4,6 +4,7 @@ import com.tencent.angel.graph.common.conf.Constents;
 import com.tencent.angel.graph.common.psf.param.LongKeysGetParam;
 import com.tencent.angel.graph.common.psf.result.GetLongsResult;
 import com.tencent.angel.graph.model.general.get.PartGeneralGetResult;
+import com.tencent.angel.graph.model.neighbor.dynamic.DynamicNeighborElement;
 import com.tencent.angel.graph.utils.GeneralGetUtils;
 import com.tencent.angel.ml.matrix.psf.get.base.GetFunc;
 import com.tencent.angel.ml.matrix.psf.get.base.GetResult;
@@ -11,9 +12,9 @@ import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetParam;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
 import com.tencent.angel.ps.storage.vector.element.ByteArrayElement;
 import com.tencent.angel.ps.storage.vector.element.IElement;
+import com.tencent.angel.ps.storage.vector.element.LongArrayElement;
 import com.twitter.chill.ScalaKryoInstantiator;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-
 import java.util.List;
 
 /**

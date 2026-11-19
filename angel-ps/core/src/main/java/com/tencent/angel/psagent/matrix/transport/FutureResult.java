@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2017-2018 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/Apache-2.0
@@ -20,11 +20,20 @@ package com.tencent.angel.psagent.matrix.transport;
 
 import com.tencent.angel.exception.PSRPCException;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A simple implements of Future interface. It contains a "result" member which will be set while
  * the asynchronous task run over. Once the "result" is set, the blocked get operations will be
  * waked up.
+ *
+ * <p>Thread-safety / write-once guarantee: it is possible for two threads to attempt to terminate
+ * the same {@code FutureResult} at the same time, e.g. the response dispatcher delivers a SUCCESS
+ * just as the timeout checker raises a TIMEOUT, or the channel-closed event runs concurrently
+ * with a real response. Without protection the {@code result} / {@code exeExp} fields would
+ * race and the caller could observe a result silently overwritten by a contradicting failure
+ * (or vice versa). The {@link AtomicBoolean} below ensures only the first terminating call
+ * actually mutates state and counts down the latch; subsequent calls are ignored.</p>
  */
 public class FutureResult<T> implements Future<T> {
 
@@ -34,6 +43,12 @@ public class FutureResult<T> implements Future<T> {
   private volatile T result = null;
 
   private volatile ExecutionException exeExp = null;
+
+  /**
+   * Single-shot guard: ensures {@link #set} / {@link #setExecuteException} take effect at most
+   * once. Mutually exclusive winners; later callers no-op.
+   */
+  private final AtomicBoolean done = new AtomicBoolean(false);
 
   /**
    * counter latch
@@ -49,7 +64,7 @@ public class FutureResult<T> implements Future<T> {
   }
 
   @Override public boolean isDone() {
-    return result != null;
+    return done.get();
   }
 
   @Override public T get() throws InterruptedException, ExecutionException {
@@ -92,22 +107,30 @@ public class FutureResult<T> implements Future<T> {
   }
 
   /**
-   * Set the result of the asynchronous task.
+   * Set the result of the asynchronous task. No-op if already terminated by a previous
+   * {@code set} or {@code setExecuteException} call.
    *
    * @param result the result of the asynchronous task
    */
   public void set(T result) {
-    this.result = result;
-    counter.countDown();
+    if (done.compareAndSet(false, true)) {
+      this.result = result;
+      counter.countDown();
+    }
   }
 
   /**
-   * Set the execution exception, if you task executes failed, you can use it to break the waiting task
+   * Set the execution exception, if you task executes failed, you can use it to break the
+   * waiting task. No-op if already terminated by a previous {@code set} or
+   * {@code setExecuteException} call.
+   *
    * @param e execution exception
    */
   public void setExecuteException(ExecutionException e) {
-    this.exeExp = e;
-    counter.countDown();
+    if (done.compareAndSet(false, true)) {
+      this.exeExp = e;
+      counter.countDown();
+    }
   }
 
 

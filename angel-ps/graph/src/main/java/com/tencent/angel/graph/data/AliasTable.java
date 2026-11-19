@@ -4,7 +4,6 @@ import com.tencent.angel.common.ByteBufSerdeUtils;
 import com.tencent.angel.common.StreamSerdeUtils;
 import com.tencent.angel.ps.storage.vector.element.IElement;
 import io.netty.buffer.ByteBuf;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;

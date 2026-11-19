@@ -19,6 +19,8 @@
 package com.tencent.angel.spark.ml.online_learning
 
 import com.tencent.angel.conf.MatrixConf
+import com.tencent.angel.graph.common.param.ModelContext
+import com.tencent.angel.graph.utils.ModelContextUtils
 import com.tencent.angel.ml.core.utils.PSMatrixUtils
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math2.storage.LongKeyVectorStorage
@@ -30,7 +32,7 @@ import com.tencent.angel.model.{MatrixLoadContext, MatrixSaveContext, ModelLoadC
 import com.tencent.angel.ps.storage.partitioner.{ColumnRangePartitioner, Partitioner}
 import com.tencent.angel.spark.context.AngelPSContext
 import com.tencent.angel.spark.ml.psf.ftrl.ComputeW
-import com.tencent.angel.spark.ml.util.AutoPartitioner
+import com.tencent.angel.spark.ml.util.{AutoPartitioner, LoadBalancePartitioner}
 import com.tencent.angel.spark.models.impl.{PSMatrixImpl, PSVectorImpl}
 import com.tencent.angel.spark.models.{PSMatrix, PSVector}
 import org.apache.spark.rdd.RDD
@@ -52,6 +54,27 @@ class FTRL() extends Serializable {
     this.lambda2 = lambda2
     this.alpha = alpha
     this.beta = beta
+  }
+
+  def init(modelContext: ModelContext, data: RDD[LabeledData], useBalancePartition: Boolean,
+           bits: Int, path: String): Unit = {
+    val ctx = ModelContextUtils.createMatrixContext(
+      modelContext, name, RowType.T_FLOAT_SPARSE_LONGKEY, 3)
+
+    // TODO: remove later
+    if (useBalancePartition && modelContext.isUseRangePartition) {
+      val partitioner = new LoadBalancePartitioner(bits, modelContext.getPartitionNum)
+      partitioner.partition(data.map(e => e.getX), ctx)
+    }
+
+    // Load old model
+    if (path != null && path.length > 0) {
+      ctx.set(MatrixConf.MATRIX_LOAD_PATH, path)
+    }
+
+    val matId = PSMatrixUtils.createPSMatrix(ctx)
+    wPS = new PSVectorImpl(matId, 2, ctx.getColNum, ctx.getRowType)
+    matrix = new PSMatrixImpl(matId, ctx.getName, ctx.getRowNum, ctx.getColNum, ctx.getRowType)
   }
 
   /** Init with `dim` given, the default start index is 0
@@ -79,6 +102,13 @@ class FTRL() extends Serializable {
     val ctx = new MatrixContext(name, 3, dim, nnz, -1, -1)
     ctx.setRowType(rowType)
     ctx.setPartitionerClass(partitioner.getClass)
+    init(ctx)
+  }
+
+  def init(modelContext: ModelContext, path: String): Unit = {
+    val ctx = ModelContextUtils.createMatrixContext(modelContext, name, RowType.T_FLOAT_SPARSE_LONGKEY, 3)
+    if (path.length > 0)
+      ctx.set(MatrixConf.MATRIX_LOAD_PATH, path)
     init(ctx)
   }
 
@@ -227,13 +257,13 @@ class FTRL() extends Serializable {
 
       // sample the feature index with Possion sampling
       val possion = Ufuncs.ftrlpossion(localN, feature, possionRate).ifilter(10e-10)
-      val grad = possion.mul(multiplier)
+      val grad = possion.imul(multiplier)
 
       // calculate delta z/n
       deltaZ.iadd(grad)
       Ufuncs.iaxpy2(deltaN, grad, 1)
       OptFuncs.iftrldetalintersect(grad, localN, alpha)
-      deltaZ.isub(grad.mul(weight))
+      deltaZ.isub(grad.imul(weight))
 
       val loss = if (label > 0) log1pExp(margin) else log1pExp(margin) - margin
       lossSum += loss

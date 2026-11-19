@@ -59,8 +59,8 @@ public class GetNodeAttrsParam extends GetParam {
     // Generate Part psf get param
     List<PartitionGetParam> partParams = new ArrayList<>(parts.length);
     assert parts.length == nodeIdsParts.length;
-    for(int i = 0; i < parts.length; i++) {
-      if(nodeIdsParts[i] != null && nodeIdsParts[i].size() > 0) {
+    for (int i = 0; i < parts.length; i++) {
+      if (nodeIdsParts[i] != null && nodeIdsParts[i].size() > 0) {
         partParams.add(new GeneralPartGetParam(matrixId, parts[i], nodeIdsParts[i]));
       }
     }

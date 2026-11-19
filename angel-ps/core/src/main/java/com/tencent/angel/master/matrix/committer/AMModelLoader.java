@@ -320,6 +320,8 @@ public class AMModelLoader {
     Path metaFilePath = new Path(matrixPath, ModelFilesConstent.modelMetaFileName);
     MatrixFilesMeta matrixFilesMeta = new MatrixFilesMeta();
     FileSystem fs = metaFilePath.getFileSystem(context.getConf());
+    com.tencent.angel.security.ModelPathGuard.checkOwnership(fs,
+        new Path(modelLoadContext.getLoadPath()), context.getConf());
     if (fs.exists(metaFilePath)) {
       FSDataInputStream input = fs.open(metaFilePath);
       try {

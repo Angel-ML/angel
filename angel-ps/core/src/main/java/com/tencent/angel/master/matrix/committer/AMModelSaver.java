@@ -211,13 +211,11 @@ public class AMModelSaver extends AbstractService {
           } finally {
             lock.unlock();
           }
-        }
-
-        try {
-          Thread.sleep(100);
-        } catch (InterruptedException e) {
-          if (!stopped.get()) {
-            LOG.error("model save dispatcher is interrupt ", e);
+          try {
+            Thread.sleep(100);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            break;
           }
         }
       }
@@ -968,7 +966,10 @@ public class AMModelSaver extends AbstractService {
   }
 
   private void finalCommit(Path tmpCombinePath, Path outputPath, FileSystem fs) throws IOException {
+    com.tencent.angel.security.ModelPathGuard.ensureSafeOverwrite(fs, outputPath);
     HdfsUtil.rename(tmpCombinePath, outputPath, fs);
+    com.tencent.angel.security.ModelPathGuard
+        .writeOwnership(fs, outputPath, context.getConf());
     LOG.info("final commit from " + tmpCombinePath + " to " + outputPath);
   }
 }

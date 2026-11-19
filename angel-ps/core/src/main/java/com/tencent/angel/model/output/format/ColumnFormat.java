@@ -422,7 +422,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       throws IOException {
     Vector vec = ServerRowUtils.getVector((ServerIntFloatRow) rows[0]);
     //int size = rows.length;
-    int indexOffset = (int) part.getPartitionKey().getStartCol();
+    int indexOffset = (int) ((com.tencent.angel.ps.storage.vector.storage.Storage) rows[0].getStorage()).getIndexOffset();
     IntFloatVectorStorage storage = ((IntFloatVector) vec).getStorage();
 
     IntFloatsCol col = new IntFloatsCol(0, new float[rows.length]);
@@ -468,7 +468,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       throws IOException {
     Vector vec = ServerRowUtils.getVector((ServerIntDoubleRow) rows[0]);
     //int size = rows.length;
-    int indexOffset = (int) part.getPartitionKey().getStartCol();
+    int indexOffset = (int) ((com.tencent.angel.ps.storage.vector.storage.Storage) rows[0].getStorage()).getIndexOffset();
     IntDoubleVectorStorage storage = ((IntDoubleVector) vec).getStorage();
 
     IntDoublesCol col = new IntDoublesCol(0, new double[rows.length]);
@@ -512,7 +512,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
     Vector vec = ServerRowUtils.getVector((ServerIntIntRow) rows[0]);
     //int size = rows.size();
-    int indexOffset = (int) part.getPartitionKey().getStartCol();
+    int indexOffset = (int) ((com.tencent.angel.ps.storage.vector.storage.Storage) rows[0].getStorage()).getIndexOffset();
     IntIntVectorStorage storage = ((IntIntVector) vec).getStorage();
 
     IntIntsCol col = new IntIntsCol(0, new int[rows.length]);
@@ -556,7 +556,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
     Vector vec = ServerRowUtils.getVector((ServerIntLongRow) rows[0]);
     //int size = rows.size();
-    int indexOffset = (int) part.getPartitionKey().getStartCol();
+    int indexOffset = (int) ((com.tencent.angel.ps.storage.vector.storage.Storage) rows[0].getStorage()).getIndexOffset();
     IntLongVectorStorage storage = ((IntLongVector) vec).getStorage();
 
     IntLongsCol col = new IntLongsCol(0, new long[rows.length]);
@@ -601,7 +601,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       throws IOException {
     Vector vec = ServerRowUtils.getVector((ServerLongFloatRow) rows[0]);
     //int size = rows.size();
-    long indexOffset = part.getPartitionKey().getStartCol();
+    long indexOffset = ((com.tencent.angel.ps.storage.vector.storage.Storage) rows[0].getStorage()).getIndexOffset();
 
     LongFloatsCol col = new LongFloatsCol(0, new float[rows.length]);
     if (vec instanceof IntFloatVector) {
@@ -670,7 +670,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       throws IOException {
     Vector vec = ServerRowUtils.getVector((ServerLongDoubleRow) rows[0]);
     //int size = rows.size();
-    long indexOffset = part.getPartitionKey().getStartCol();
+    long indexOffset = ((com.tencent.angel.ps.storage.vector.storage.Storage) rows[0].getStorage()).getIndexOffset();
 
     LongDoublesCol col = new LongDoublesCol(0, new double[rows.length]);
     if (vec instanceof IntDoubleVector) {
@@ -739,7 +739,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       PSMatrixSaveContext saveContext, DataOutputStream output) throws IOException {
     Vector vec = ServerRowUtils.getVector((ServerLongIntRow) rows[0]);
     //int size = rows.size();
-    long indexOffset = part.getPartitionKey().getStartCol();
+    long indexOffset = ((com.tencent.angel.ps.storage.vector.storage.Storage) rows[0].getStorage()).getIndexOffset();
 
     LongIntsCol col = new LongIntsCol(0, new int[rows.length]);
     if (vec instanceof IntIntVector) {
@@ -808,7 +808,7 @@ public abstract class ColumnFormat extends MatrixFormatImpl {
       throws IOException {
     Vector vec = ServerRowUtils.getVector((ServerLongLongRow) rows[0]);
     //int size = rows.size();
-    long indexOffset = part.getPartitionKey().getStartCol();
+    long indexOffset = ((com.tencent.angel.ps.storage.vector.storage.Storage) rows[0].getStorage()).getIndexOffset();
 
     LongLongsCol col = new LongLongsCol(0, new long[rows.length]);
     if (vec instanceof IntLongVector) {
